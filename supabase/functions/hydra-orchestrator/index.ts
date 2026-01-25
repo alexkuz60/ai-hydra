@@ -30,6 +30,15 @@ async function callLovableAI(
   temperature: number,
   maxTokens: number
 ) {
+  // OpenAI models use max_completion_tokens, others use max_tokens
+  const isOpenAI = model.startsWith("openai/");
+  const tokenParam = isOpenAI 
+    ? { max_completion_tokens: maxTokens }
+    : { max_tokens: maxTokens };
+
+  // OpenAI models via Lovable AI don't support custom temperature
+  const tempParam = isOpenAI ? {} : { temperature };
+
   const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
     method: "POST",
     headers: {
@@ -42,8 +51,8 @@ async function callLovableAI(
         { role: "system", content: systemPrompt },
         { role: "user", content: message },
       ],
-      temperature,
-      max_tokens: maxTokens,
+      ...tempParam,
+      ...tokenParam,
     }),
   });
 
@@ -183,7 +192,7 @@ serve(async (req) => {
 
     // Default system prompts for each role
     const defaultPrompts: Record<string, string> = {
-      assistant: `You are an expert AI assistant participating in a multi-agent discussion. Provide clear, well-reasoned responses. Be concise but thorough. Your perspective may differ from other AI models in this conversation.`,
+      assistant: `You are an expert participating in a multi-agent discussion. Provide clear, well-reasoned responses. Be concise but thorough. Your perspective may differ from other AI models in this conversation.`,
       critic: `You are a critical analyst. Your task is to find weaknesses, contradictions, and potential problems in reasoning. Be constructive but rigorous. Challenge assumptions and identify logical flaws.`,
       arbiter: `You are a discussion arbiter. Synthesize different viewpoints, highlight consensus and disagreements. Form a balanced final decision based on the merits of each argument.`,
     };
