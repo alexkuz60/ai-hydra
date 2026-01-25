@@ -61,6 +61,42 @@ export type Database = {
           },
         ]
       }
+      model_presets: {
+        Row: {
+          created_at: string
+          id: string
+          max_tokens: number
+          name: string
+          role: string
+          system_prompt: string | null
+          temperature: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          max_tokens?: number
+          name: string
+          role?: string
+          system_prompt?: string | null
+          temperature?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          max_tokens?: number
+          name?: string
+          role?: string
+          system_prompt?: string | null
+          temperature?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           anthropic_api_key: string | null

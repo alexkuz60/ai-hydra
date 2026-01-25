@@ -110,6 +110,18 @@ const translations: Translations = {
   'settings.resetDefaults': { ru: 'Сбросить настройки', en: 'Reset to Defaults' },
   'settings.precise': { ru: 'Точность', en: 'Precise' },
   'settings.creative': { ru: 'Креатив', en: 'Creative' },
+  
+  // Presets
+  'presets.title': { ru: 'Пресеты', en: 'Presets' },
+  'presets.save': { ru: 'Сохранить как пресет', en: 'Save as Preset' },
+  'presets.saveTitle': { ru: 'Сохранить пресет', en: 'Save Preset' },
+  'presets.name': { ru: 'Название пресета', en: 'Preset Name' },
+  'presets.namePlaceholder': { ru: 'Мой пресет...', en: 'My preset...' },
+  'presets.saved': { ru: 'Пресет сохранён', en: 'Preset saved' },
+  'presets.deleted': { ru: 'Пресет удалён', en: 'Preset deleted' },
+  'presets.applied': { ru: 'Пресет применён', en: 'Preset applied' },
+  'presets.empty': { ru: 'Нет сохранённых пресетов', en: 'No saved presets' },
+  'presets.deleteConfirm': { ru: 'Удалить пресет?', en: 'Delete preset?' },
 };
 
 interface LanguageContextType {
