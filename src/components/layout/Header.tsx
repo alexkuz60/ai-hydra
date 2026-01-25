@@ -3,7 +3,6 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useTheme } from '@/contexts/ThemeContext';
-import { useUserRoles } from '@/hooks/useUserRoles';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -12,13 +11,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { User, LogOut, Settings, Moon, Sun, Globe, Zap, Shield } from 'lucide-react';
+import { User, LogOut, Settings, Moon, Sun, Globe, Zap } from 'lucide-react';
 
 export function Header() {
   const { user, signOut } = useAuth();
   const { t, language, setLanguage, availableLanguages } = useLanguage();
   const { theme, toggleTheme } = useTheme();
-  const { isSupervisor } = useUserRoles();
   const navigate = useNavigate();
 
   const handleSignOut = async () => {
@@ -49,20 +47,11 @@ export function Header() {
                 {t('nav.warRoom')}
               </Link>
               <Link 
-                to="/sessions" 
+                to="/tasks" 
                 className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
               >
-                {t('nav.sessions')}
+                {t('nav.tasks')}
               </Link>
-              {isSupervisor && (
-                <Link 
-                  to="/admin" 
-                  className="text-sm font-medium text-hydra-arbiter hover:text-hydra-arbiter/80 transition-colors flex items-center gap-1"
-                >
-                  <Shield className="h-4 w-4" />
-                  Админ
-                </Link>
-              )}
             </>
           )}
         </nav>

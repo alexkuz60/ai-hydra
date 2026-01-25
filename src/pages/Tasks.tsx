@@ -11,7 +11,7 @@ import { toast } from 'sonner';
 import { Plus, Trash2, MessageSquare, Loader2, Calendar } from 'lucide-react';
 import { format } from 'date-fns';
 
-interface Session {
+interface Task {
   id: string;
   title: string;
   description: string | null;
@@ -20,15 +20,15 @@ interface Session {
   updated_at: string;
 }
 
-export default function Sessions() {
+export default function Tasks() {
   const { user, loading: authLoading } = useAuth();
   const { t } = useLanguage();
   const navigate = useNavigate();
 
-  const [sessions, setSessions] = useState<Session[]>([]);
+  const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
-  const [newSessionTitle, setNewSessionTitle] = useState('');
+  const [newTaskTitle, setNewTaskTitle] = useState('');
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -37,11 +37,11 @@ export default function Sessions() {
     }
 
     if (user) {
-      fetchSessions();
+      fetchTasks();
     }
   }, [user, authLoading, navigate]);
 
-  const fetchSessions = async () => {
+  const fetchTasks = async () => {
     if (!user) return;
 
     try {
@@ -52,7 +52,7 @@ export default function Sessions() {
         .order('updated_at', { ascending: false });
 
       if (error) throw error;
-      setSessions(data || []);
+      setTasks(data || []);
     } catch (error: any) {
       toast.error(error.message);
     } finally {
@@ -60,8 +60,8 @@ export default function Sessions() {
     }
   };
 
-  const handleCreateSession = async () => {
-    if (!user || !newSessionTitle.trim()) return;
+  const handleCreateTask = async () => {
+    if (!user || !newTaskTitle.trim()) return;
     setCreating(true);
 
     try {
@@ -69,19 +69,19 @@ export default function Sessions() {
         .from('sessions')
         .insert({
           user_id: user.id,
-          title: newSessionTitle.trim(),
+          title: newTaskTitle.trim(),
         })
         .select()
         .single();
 
       if (error) throw error;
 
-      setSessions([data, ...sessions]);
-      setNewSessionTitle('');
+      setTasks([data, ...tasks]);
+      setNewTaskTitle('');
       toast.success(t('common.success'));
       
-      // Navigate to war room with new session
-      navigate(`/war-room?session=${data.id}`);
+      // Navigate to war room with new task
+      navigate(`/war-room?task=${data.id}`);
     } catch (error: any) {
       toast.error(error.message);
     } finally {
@@ -89,24 +89,24 @@ export default function Sessions() {
     }
   };
 
-  const handleDeleteSession = async (sessionId: string) => {
+  const handleDeleteTask = async (taskId: string) => {
     try {
       const { error } = await supabase
         .from('sessions')
         .delete()
-        .eq('id', sessionId);
+        .eq('id', taskId);
 
       if (error) throw error;
 
-      setSessions(sessions.filter(s => s.id !== sessionId));
+      setTasks(tasks.filter(t => t.id !== taskId));
       toast.success(t('common.success'));
     } catch (error: any) {
       toast.error(error.message);
     }
   };
 
-  const handleOpenSession = (sessionId: string) => {
-    navigate(`/war-room?session=${sessionId}`);
+  const handleOpenTask = (taskId: string) => {
+    navigate(`/war-room?task=${taskId}`);
   };
 
   if (authLoading || loading) {
@@ -123,27 +123,27 @@ export default function Sessions() {
     <Layout>
       <div className="container max-w-4xl px-4 py-8">
         <div className="flex items-center justify-between mb-8">
-          <h1 className="text-3xl font-bold">{t('sessions.title')}</h1>
+          <h1 className="text-3xl font-bold">{t('tasks.title')}</h1>
         </div>
 
-        {/* Create New Session */}
+        {/* Create New Task */}
         <HydraCard variant="glass" className="p-6 mb-8">
           <HydraCardHeader>
             <Plus className="h-5 w-5 text-primary" />
-            <HydraCardTitle>{t('sessions.new')}</HydraCardTitle>
+            <HydraCardTitle>{t('tasks.new')}</HydraCardTitle>
           </HydraCardHeader>
           <HydraCardContent>
             <div className="flex gap-3">
               <Input
-                value={newSessionTitle}
-                onChange={(e) => setNewSessionTitle(e.target.value)}
-                placeholder="Название сессии..."
+                value={newTaskTitle}
+                onChange={(e) => setNewTaskTitle(e.target.value)}
+                placeholder="Название задачи..."
                 className="flex-1"
-                onKeyDown={(e) => e.key === 'Enter' && handleCreateSession()}
+                onKeyDown={(e) => e.key === 'Enter' && handleCreateTask()}
               />
               <Button 
-                onClick={handleCreateSession} 
-                disabled={creating || !newSessionTitle.trim()}
+                onClick={handleCreateTask} 
+                disabled={creating || !newTaskTitle.trim()}
                 className="hydra-glow-sm"
               >
                 {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
@@ -152,28 +152,28 @@ export default function Sessions() {
           </HydraCardContent>
         </HydraCard>
 
-        {/* Sessions List */}
+        {/* Tasks List */}
         <div className="space-y-4">
-          {sessions.length === 0 ? (
+          {tasks.length === 0 ? (
             <HydraCard variant="glass" className="p-8 text-center">
               <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <p className="text-muted-foreground">{t('sessions.empty')}</p>
+              <p className="text-muted-foreground">{t('tasks.empty')}</p>
             </HydraCard>
           ) : (
-            sessions.map((session) => (
+            tasks.map((task) => (
               <HydraCard 
-                key={session.id} 
+                key={task.id} 
                 variant="glass" 
                 glow 
                 className="p-4 cursor-pointer hover:border-primary/50 transition-colors"
-                onClick={() => handleOpenSession(session.id)}
+                onClick={() => handleOpenTask(task.id)}
               >
                 <div className="flex items-center justify-between">
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold truncate">{session.title}</h3>
+                    <h3 className="font-semibold truncate">{task.title}</h3>
                     <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
                       <Calendar className="h-3 w-3" />
-                      <span>{format(new Date(session.updated_at), 'dd.MM.yyyy HH:mm')}</span>
+                      <span>{format(new Date(task.updated_at), 'dd.MM.yyyy HH:mm')}</span>
                     </div>
                   </div>
                   <Button
@@ -182,7 +182,7 @@ export default function Sessions() {
                     className="text-muted-foreground hover:text-hydra-critical shrink-0"
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleDeleteSession(session.id);
+                      handleDeleteTask(task.id);
                     }}
                   >
                     <Trash2 className="h-4 w-4" />

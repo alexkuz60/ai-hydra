@@ -9,6 +9,8 @@ import { HydraCard, HydraCardHeader, HydraCardTitle, HydraCardContent } from '@/
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { ModelSelector } from '@/components/warroom/ModelSelector';
+import { useAvailableModels, LOVABLE_AI_MODELS, PERSONAL_KEY_MODELS } from '@/hooks/useAvailableModels';
 import { 
   Send, 
   Loader2, 
@@ -18,7 +20,8 @@ import {
   User, 
   Plus,
   MessageSquare,
-  Sparkles
+  Sparkles,
+  Target
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -35,7 +38,7 @@ interface Message {
   created_at: string;
 }
 
-interface Session {
+interface Task {
   id: string;
   title: string;
 }
@@ -73,13 +76,15 @@ export default function WarRoom() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const { isAdmin, lovableModels, personalModels, hasAnyModels } = useAvailableModels();
 
-  const [sessions, setSessions] = useState<Session[]>([]);
-  const [currentSession, setCurrentSession] = useState<Session | null>(null);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [currentTask, setCurrentTask] = useState<Task | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [selectedModel, setSelectedModel] = useState<string>('');
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -88,31 +93,42 @@ export default function WarRoom() {
     }
 
     if (user) {
-      fetchSessions();
+      fetchTasks();
     }
   }, [user, authLoading, navigate]);
 
   useEffect(() => {
-    const sessionId = searchParams.get('session');
-    if (sessionId && sessions.length > 0) {
-      const session = sessions.find(s => s.id === sessionId);
-      if (session) {
-        setCurrentSession(session);
-        fetchMessages(sessionId);
+    const taskId = searchParams.get('task');
+    if (taskId && tasks.length > 0) {
+      const task = tasks.find(t => t.id === taskId);
+      if (task) {
+        setCurrentTask(task);
+        fetchMessages(taskId);
       }
-    } else if (sessions.length > 0 && !currentSession) {
-      setCurrentSession(sessions[0]);
-      fetchMessages(sessions[0].id);
+    } else if (tasks.length > 0 && !currentTask) {
+      setCurrentTask(tasks[0]);
+      fetchMessages(tasks[0].id);
     }
-  }, [searchParams, sessions]);
+  }, [searchParams, tasks]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  // Set default model when available models change
+  useEffect(() => {
+    if (!selectedModel && (lovableModels.length > 0 || personalModels.length > 0)) {
+      if (lovableModels.length > 0) {
+        setSelectedModel(lovableModels[0].id);
+      } else if (personalModels.length > 0) {
+        setSelectedModel(personalModels[0].id);
+      }
+    }
+  }, [lovableModels, personalModels, selectedModel]);
+
   // Subscribe to realtime messages
   useEffect(() => {
-    if (!currentSession) return;
+    if (!currentTask) return;
 
     const channel = supabase
       .channel('messages-changes')
@@ -122,7 +138,7 @@ export default function WarRoom() {
           event: 'INSERT',
           schema: 'public',
           table: 'messages',
-          filter: `session_id=eq.${currentSession.id}`,
+          filter: `session_id=eq.${currentTask.id}`,
         },
         (payload) => {
           const newMessage = payload.new as Message;
@@ -134,9 +150,9 @@ export default function WarRoom() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [currentSession]);
+  }, [currentTask]);
 
-  const fetchSessions = async () => {
+  const fetchTasks = async () => {
     if (!user) return;
 
     try {
@@ -147,7 +163,7 @@ export default function WarRoom() {
         .order('updated_at', { ascending: false });
 
       if (error) throw error;
-      setSessions(data || []);
+      setTasks(data || []);
     } catch (error: any) {
       toast.error(error.message);
     } finally {
@@ -155,12 +171,12 @@ export default function WarRoom() {
     }
   };
 
-  const fetchMessages = async (sessionId: string) => {
+  const fetchMessages = async (taskId: string) => {
     try {
       const { data, error } = await supabase
         .from('messages')
         .select('*')
-        .eq('session_id', sessionId)
+        .eq('session_id', taskId)
         .order('created_at', { ascending: true });
 
       if (error) throw error;
@@ -170,7 +186,7 @@ export default function WarRoom() {
     }
   };
 
-  const handleCreateSession = async () => {
+  const handleCreateTask = async () => {
     if (!user) return;
 
     try {
@@ -178,24 +194,24 @@ export default function WarRoom() {
         .from('sessions')
         .insert({
           user_id: user.id,
-          title: `Сессия ${new Date().toLocaleDateString()}`,
+          title: `Задача ${new Date().toLocaleDateString()}`,
         })
         .select('id, title')
         .single();
 
       if (error) throw error;
 
-      setSessions([data, ...sessions]);
-      setCurrentSession(data);
+      setTasks([data, ...tasks]);
+      setCurrentTask(data);
       setMessages([]);
-      navigate(`/war-room?session=${data.id}`);
+      navigate(`/war-room?task=${data.id}`);
     } catch (error: any) {
       toast.error(error.message);
     }
   };
 
   const handleSendMessage = async () => {
-    if (!user || !currentSession || !input.trim()) return;
+    if (!user || !currentTask || !input.trim() || !selectedModel) return;
     setSending(true);
 
     const messageContent = input.trim();
@@ -206,7 +222,7 @@ export default function WarRoom() {
       const { error } = await supabase
         .from('messages')
         .insert({
-          session_id: currentSession.id,
+          session_id: currentTask.id,
           user_id: user.id,
           role: 'user' as MessageRole,
           content: messageContent,
@@ -214,7 +230,11 @@ export default function WarRoom() {
 
       if (error) throw error;
 
-      // Call the Hydra orchestrator to get parallel LLM responses
+      // Determine which model to use and which endpoint
+      const isLovableModel = LOVABLE_AI_MODELS.some(m => m.id === selectedModel);
+      const personalModel = PERSONAL_KEY_MODELS.find(m => m.id === selectedModel);
+
+      // Call the Hydra orchestrator to get LLM response
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/hydra-orchestrator`,
         {
@@ -224,9 +244,11 @@ export default function WarRoom() {
             'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
           },
           body: JSON.stringify({
-            session_id: currentSession.id,
+            session_id: currentTask.id,
             message: messageContent,
-            models: { openai: true, gemini: true, anthropic: true },
+            selected_model: selectedModel,
+            use_lovable_ai: isLovableModel,
+            provider: personalModel?.provider || null,
             temperature: 0.7,
             max_tokens: 2048,
           }),
@@ -236,19 +258,19 @@ export default function WarRoom() {
       const data = await response.json();
       
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to get AI responses');
+        if (response.status === 429) {
+          toast.error('Превышен лимит запросов. Попробуйте позже.');
+        } else if (response.status === 402) {
+          toast.error('Требуется пополнение баланса Lovable AI.');
+        } else {
+          throw new Error(data.error || 'Failed to get AI response');
+        }
+        return;
       }
 
-      // Check for any errors in responses
-      const errors = data.responses?.filter((r: any) => r.error) || [];
-      if (errors.length > 0) {
-        errors.forEach((e: any) => {
-          toast.warning(`${e.provider}: ${e.error}`);
-        });
-      }
-
-      if (data.successful === 0) {
-        toast.error(t('warRoom.noApiKeys'));
+      // Check for any errors in response
+      if (data.error) {
+        toast.error(data.error);
       }
       
     } catch (error: any) {
@@ -271,38 +293,38 @@ export default function WarRoom() {
   return (
     <Layout>
       <div className="h-[calc(100vh-4rem)] flex">
-        {/* Sessions Sidebar */}
+        {/* Tasks Sidebar */}
         <aside className="w-64 border-r border-border bg-sidebar hidden lg:flex flex-col">
           <div className="p-4 border-b border-sidebar-border">
             <Button 
-              onClick={handleCreateSession}
+              onClick={handleCreateTask}
               className="w-full hydra-glow-sm"
               size="sm"
             >
               <Plus className="h-4 w-4 mr-2" />
-              {t('sessions.new')}
+              {t('tasks.new')}
             </Button>
           </div>
           <ScrollArea className="flex-1 hydra-scrollbar">
             <div className="p-2 space-y-1">
-              {sessions.map((session) => (
+              {tasks.map((task) => (
                 <button
-                  key={session.id}
+                  key={task.id}
                   onClick={() => {
-                    setCurrentSession(session);
-                    fetchMessages(session.id);
-                    navigate(`/war-room?session=${session.id}`);
+                    setCurrentTask(task);
+                    fetchMessages(task.id);
+                    navigate(`/war-room?task=${task.id}`);
                   }}
                   className={cn(
                     'w-full text-left px-3 py-2 rounded-lg text-sm transition-colors',
-                    currentSession?.id === session.id
+                    currentTask?.id === task.id
                       ? 'bg-sidebar-accent text-sidebar-accent-foreground'
                       : 'text-sidebar-foreground hover:bg-sidebar-accent/50'
                   )}
                 >
                   <div className="flex items-center gap-2">
-                    <MessageSquare className="h-4 w-4 shrink-0" />
-                    <span className="truncate">{session.title}</span>
+                    <Target className="h-4 w-4 shrink-0" />
+                    <span className="truncate">{task.title}</span>
                   </div>
                 </button>
               ))}
@@ -312,8 +334,20 @@ export default function WarRoom() {
 
         {/* Main Content */}
         <div className="flex-1 flex flex-col">
-          {currentSession ? (
+          {currentTask ? (
             <>
+              {/* Model Selector Header */}
+              <div className="border-b border-border p-3 bg-background/50 flex items-center justify-between">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Target className="h-4 w-4" />
+                  <span className="font-medium">{currentTask.title}</span>
+                </div>
+                <ModelSelector 
+                  value={selectedModel} 
+                  onChange={setSelectedModel} 
+                />
+              </div>
+
               {/* Messages Area */}
               <ScrollArea className="flex-1 p-4 hydra-scrollbar">
                 <div className="max-w-4xl mx-auto space-y-4">
@@ -386,7 +420,7 @@ export default function WarRoom() {
                   />
                   <Button
                     onClick={handleSendMessage}
-                    disabled={sending || !input.trim()}
+                    disabled={sending || !input.trim() || !selectedModel}
                     className="hydra-glow-sm self-end"
                     size="lg"
                   >
@@ -402,11 +436,11 @@ export default function WarRoom() {
           ) : (
             <div className="flex-1 flex items-center justify-center">
               <HydraCard variant="glass" className="p-8 text-center max-w-md">
-                <MessageSquare className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+                <Target className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
                 <h2 className="text-xl font-semibold mb-2">{t('warRoom.noSession')}</h2>
-                <Button onClick={handleCreateSession} className="hydra-glow-sm mt-4">
+                <Button onClick={handleCreateTask} className="hydra-glow-sm mt-4">
                   <Plus className="h-4 w-4 mr-2" />
-                  {t('sessions.new')}
+                  {t('tasks.new')}
                 </Button>
               </HydraCard>
             </div>

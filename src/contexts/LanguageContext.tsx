@@ -13,12 +13,13 @@ const translations: Translations = {
   // Navigation
   'nav.home': { ru: 'Главная', en: 'Home' },
   'nav.warRoom': { ru: 'War Room', en: 'War Room' },
-  'nav.sessions': { ru: 'Сессии', en: 'Sessions' },
+  'nav.tasks': { ru: 'Задачи', en: 'Tasks' },
   'nav.profile': { ru: 'Профиль', en: 'Profile' },
   'nav.settings': { ru: 'Настройки', en: 'Settings' },
   'nav.logout': { ru: 'Выйти', en: 'Logout' },
   'nav.login': { ru: 'Войти', en: 'Login' },
   'nav.signup': { ru: 'Регистрация', en: 'Sign Up' },
+  'nav.admin': { ru: 'Админ-панель', en: 'Admin Panel' },
   
   // Auth
   'auth.email': { ru: 'Email', en: 'Email' },
@@ -60,13 +61,16 @@ const translations: Translations = {
   'warRoom.critic': { ru: 'Критик', en: 'Critic' },
   'warRoom.sendPrompt': { ru: 'Отправить запрос', en: 'Send Prompt' },
   'warRoom.placeholder': { ru: 'Введите ваш запрос...', en: 'Enter your prompt...' },
-  'warRoom.noSession': { ru: 'Выберите или создайте сессию', en: 'Select or create a session' },
+  'warRoom.noSession': { ru: 'Выберите или создайте задачу', en: 'Select or create a task' },
+  'warRoom.noApiKeys': { ru: 'Нет доступных моделей. Добавьте API ключи в профиле.', en: 'No models available. Add API keys in profile.' },
+  'warRoom.selectModel': { ru: 'Выберите модель', en: 'Select model' },
+  'warRoom.personalKeys': { ru: 'Персональные ключи', en: 'Personal Keys' },
   
-  // Sessions
-  'sessions.title': { ru: 'Сессии', en: 'Sessions' },
-  'sessions.new': { ru: 'Новая сессия', en: 'New Session' },
-  'sessions.empty': { ru: 'Нет активных сессий', en: 'No active sessions' },
-  'sessions.delete': { ru: 'Удалить', en: 'Delete' },
+  // Tasks (formerly Sessions)
+  'tasks.title': { ru: 'Задачи', en: 'Tasks' },
+  'tasks.new': { ru: 'Новая задача', en: 'New Task' },
+  'tasks.empty': { ru: 'Нет активных задач', en: 'No active tasks' },
+  'tasks.delete': { ru: 'Удалить', en: 'Delete' },
   
   // Models
   'model.gemini': { ru: 'Gemini Pro', en: 'Gemini Pro' },

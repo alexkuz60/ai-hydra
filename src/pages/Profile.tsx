@@ -12,7 +12,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { User, Key, Settings, Loader2, Eye, EyeOff, Check, Moon, Sun, Globe } from 'lucide-react';
+import { User, Key, Settings, Loader2, Eye, EyeOff, Check, Moon, Sun, Globe, Shield } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 interface Profile {
   id: string;
@@ -33,6 +34,7 @@ export default function Profile() {
   const navigate = useNavigate();
 
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [showKeys, setShowKeys] = useState({
@@ -78,6 +80,7 @@ export default function Profile() {
         setOpenaiKey(data.openai_api_key || '');
         setGeminiKey(data.google_gemini_api_key || '');
         setAnthropicKey(data.anthropic_api_key || '');
+        setIsAdmin(data.username === 'AlexKuz');
       }
     } catch (error: any) {
       toast.error(error.message);
@@ -146,7 +149,17 @@ export default function Profile() {
   return (
     <Layout>
       <div className="container max-w-4xl px-4 py-8">
-        <h1 className="text-3xl font-bold mb-8">{t('profile.title')}</h1>
+        <div className="flex items-center justify-between mb-8">
+          <h1 className="text-3xl font-bold">{t('profile.title')}</h1>
+          {isAdmin && (
+            <Button asChild variant="outline" className="border-hydra-arbiter text-hydra-arbiter hover:bg-hydra-arbiter/10">
+              <Link to="/admin" className="flex items-center gap-2">
+                <Shield className="h-4 w-4" />
+                {t('nav.admin')}
+              </Link>
+            </Button>
+          )}
+        </div>
 
         <Tabs defaultValue="profile" className="space-y-6">
           <TabsList className="grid w-full grid-cols-3 max-w-md">

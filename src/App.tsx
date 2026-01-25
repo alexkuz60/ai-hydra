@@ -10,7 +10,7 @@ import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import Profile from "./pages/Profile";
-import Sessions from "./pages/Sessions";
+import Tasks from "./pages/Tasks";
 import WarRoom from "./pages/WarRoom";
 import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
@@ -31,7 +31,7 @@ const App = () => (
                 <Route path="/login" element={<Login />} />
                 <Route path="/signup" element={<Signup />} />
                 <Route path="/profile" element={<Profile />} />
-                <Route path="/sessions" element={<Sessions />} />
+                <Route path="/tasks" element={<Tasks />} />
                 <Route path="/war-room" element={<WarRoom />} />
                 <Route path="/admin" element={<Admin />} />
                 <Route path="*" element={<NotFound />} />
