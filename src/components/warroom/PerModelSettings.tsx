@@ -339,8 +339,7 @@ export function PerModelSettings({ selectedModels, settings, onChange, className
             const modelSettings = getModelSettings(modelId);
             
             return (
-              <TabsContent key={modelId} value={modelId} className="mt-0">
-                <ScrollArea className="max-h-[60vh]">
+              <TabsContent key={modelId} value={modelId} className="mt-0 max-h-[400px] overflow-y-auto hydra-scrollbar">
                   <div className="p-4 space-y-4">
                     {/* Role Selection */}
                     <div className="space-y-2">
@@ -532,7 +531,6 @@ export function PerModelSettings({ selectedModels, settings, onChange, className
                       )}
                     </div>
                   </div>
-                </ScrollArea>
               </TabsContent>
             );
           })}
