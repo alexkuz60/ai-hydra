@@ -1,1 +1,4 @@
 project_id = "hrgpnotiuiaioadrziuz"
+
+[functions.hydra-orchestrator]
+verify_jwt = false
