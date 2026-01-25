@@ -22,7 +22,9 @@ import {
   Pencil,
   Check,
   X,
-  Search
+  Search,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
@@ -65,6 +67,7 @@ export default function WarRoom() {
   const [editedTitle, setEditedTitle] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [perModelSettings, setPerModelSettings] = useState<PerModelSettingsData>({});
+  const [settingsCollapsed, setSettingsCollapsed] = useState(false);
   useEffect(() => {
     if (!authLoading && !user) {
       navigate('/login');
@@ -391,14 +394,6 @@ export default function WarRoom() {
               )}
             </div>
           </ScrollArea>
-          
-          {/* Per-Model Settings Panel */}
-          <PerModelSettings 
-            selectedModels={selectedModels}
-            settings={perModelSettings}
-            onChange={setPerModelSettings}
-            currentMessage={input}
-          />
         </aside>
 
         {/* Main Content */}
@@ -456,6 +451,17 @@ export default function WarRoom() {
                 <MultiModelSelector 
                   value={selectedModels} 
                   onChange={setSelectedModels} 
+                />
+              </div>
+
+              {/* Per-Model Settings (mobile/tablet) */}
+              <div className="lg:hidden">
+                <PerModelSettings
+                  selectedModels={selectedModels}
+                  settings={perModelSettings}
+                  onChange={setPerModelSettings}
+                  currentMessage={input}
+                  className="border-t-0"
                 />
               </div>
 
@@ -525,6 +531,40 @@ export default function WarRoom() {
             </div>
           )}
         </div>
+
+        {/* Settings Sidebar (right) */}
+        <aside
+          className={cn(
+            'hidden lg:flex flex-col border-l border-border bg-sidebar transition-[width] duration-200',
+            settingsCollapsed ? 'w-12' : 'w-96'
+          )}
+        >
+          <div className="h-12 flex items-center justify-between border-b border-sidebar-border px-2">
+            <div className={cn('px-2 text-sm font-medium truncate', settingsCollapsed && 'sr-only')}>
+              {t('settings.modelSettings')}
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => setSettingsCollapsed(v => !v)}
+              aria-label={settingsCollapsed ? t('common.expand') : t('common.collapse')}
+              title={settingsCollapsed ? t('common.expand') : t('common.collapse')}
+            >
+              {settingsCollapsed ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+            </Button>
+          </div>
+
+          {!settingsCollapsed && (
+            <PerModelSettings
+              selectedModels={selectedModels}
+              settings={perModelSettings}
+              onChange={setPerModelSettings}
+              currentMessage={input}
+              className="border-t-0"
+            />
+          )}
+        </aside>
       </div>
     </Layout>
   );
