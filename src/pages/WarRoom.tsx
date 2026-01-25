@@ -10,7 +10,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { MultiModelSelector } from '@/components/warroom/MultiModelSelector';
-import { ModelSettings, ModelSettingsData, DEFAULT_SETTINGS } from '@/components/warroom/ModelSettings';
+import { PerModelSettings, PerModelSettingsData, DEFAULT_MODEL_SETTINGS } from '@/components/warroom/PerModelSettings';
 import { ChatMessage } from '@/components/warroom/ChatMessage';
 import { useAvailableModels, LOVABLE_AI_MODELS, PERSONAL_KEY_MODELS } from '@/hooks/useAvailableModels';
 import { 
@@ -64,7 +64,7 @@ export default function WarRoom() {
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [editedTitle, setEditedTitle] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
-  const [modelSettings, setModelSettings] = useState<ModelSettingsData>(DEFAULT_SETTINGS);
+  const [perModelSettings, setPerModelSettings] = useState<PerModelSettingsData>({});
   useEffect(() => {
     if (!authLoading && !user) {
       navigate('/login');
@@ -261,18 +261,23 @@ export default function WarRoom() {
 
       if (error) throw error;
 
-      // Prepare models with their metadata
+      // Prepare models with their metadata and individual settings
       const modelsToCall = selectedModels.map(modelId => {
         const isLovable = LOVABLE_AI_MODELS.some(m => m.id === modelId);
         const personalModel = PERSONAL_KEY_MODELS.find(m => m.id === modelId);
+        const settings = perModelSettings[modelId] || DEFAULT_MODEL_SETTINGS;
         return {
           model_id: modelId,
           use_lovable_ai: isLovable,
           provider: personalModel?.provider || null,
+          temperature: settings.temperature,
+          max_tokens: settings.maxTokens,
+          system_prompt: settings.systemPrompt,
+          role: settings.role,
         };
       });
 
-      // Call the Hydra orchestrator with multiple models
+      // Call the Hydra orchestrator with multiple models (each with its own settings)
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/hydra-orchestrator`,
         {
@@ -285,10 +290,6 @@ export default function WarRoom() {
             session_id: currentTask.id,
             message: messageContent,
             models: modelsToCall,
-            temperature: modelSettings.temperature,
-            max_tokens: modelSettings.maxTokens,
-            system_prompt: modelSettings.systemPrompt,
-            role: modelSettings.role,
           }),
         }
       );
@@ -391,10 +392,11 @@ export default function WarRoom() {
             </div>
           </ScrollArea>
           
-          {/* Model Settings Panel */}
-          <ModelSettings 
-            settings={modelSettings}
-            onChange={setModelSettings}
+          {/* Per-Model Settings Panel */}
+          <PerModelSettings 
+            selectedModels={selectedModels}
+            settings={perModelSettings}
+            onChange={setPerModelSettings}
           />
         </aside>
 

@@ -116,8 +116,14 @@ const translations: Translations = {
   'settings.systemPrompt': { ru: 'Системный промпт', en: 'System Prompt' },
   'settings.systemPromptPlaceholder': { ru: 'Введите инструкции для модели...', en: 'Enter instructions for the model...' },
   'settings.resetDefaults': { ru: 'Сбросить настройки', en: 'Reset to Defaults' },
+  'settings.reset': { ru: 'Сбросить', en: 'Reset' },
+  'settings.copyToAll': { ru: 'Копировать на все', en: 'Copy to All' },
+  'settings.copiedToAll': { ru: 'Настройки скопированы', en: 'Settings copied' },
   'settings.precise': { ru: 'Точность', en: 'Precise' },
   'settings.creative': { ru: 'Креатив', en: 'Creative' },
+  
+  // War Room extras
+  'warRoom.noModelsSelected': { ru: 'Модели не выбраны', en: 'No models selected' },
   
   // Presets
   'presets.title': { ru: 'Пресеты', en: 'Presets' },
