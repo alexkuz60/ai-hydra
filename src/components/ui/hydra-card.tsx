@@ -1,0 +1,65 @@
+import React from 'react';
+import { cn } from '@/lib/utils';
+
+interface HydraCardProps extends React.HTMLAttributes<HTMLDivElement> {
+  variant?: 'default' | 'expert' | 'critic' | 'arbiter' | 'user' | 'glass';
+  glow?: boolean;
+}
+
+export function HydraCard({ 
+  children, 
+  className, 
+  variant = 'default',
+  glow = false,
+  ...props 
+}: HydraCardProps) {
+  return (
+    <div
+      className={cn(
+        'rounded-lg border border-border bg-card p-4 transition-all duration-300',
+        {
+          'hydra-card-expert': variant === 'expert',
+          'hydra-card-critic': variant === 'critic',
+          'hydra-card-arbiter': variant === 'arbiter',
+          'hydra-card-user': variant === 'user',
+          'hydra-glass': variant === 'glass',
+          'hydra-glow-sm hover:hydra-glow': glow,
+        },
+        className
+      )}
+      {...props}
+    >
+      {children}
+    </div>
+  );
+}
+
+interface HydraCardHeaderProps extends React.HTMLAttributes<HTMLDivElement> {}
+
+export function HydraCardHeader({ children, className, ...props }: HydraCardHeaderProps) {
+  return (
+    <div className={cn('flex items-center gap-2 mb-3', className)} {...props}>
+      {children}
+    </div>
+  );
+}
+
+interface HydraCardTitleProps extends React.HTMLAttributes<HTMLHeadingElement> {}
+
+export function HydraCardTitle({ children, className, ...props }: HydraCardTitleProps) {
+  return (
+    <h3 className={cn('text-sm font-semibold', className)} {...props}>
+      {children}
+    </h3>
+  );
+}
+
+interface HydraCardContentProps extends React.HTMLAttributes<HTMLDivElement> {}
+
+export function HydraCardContent({ children, className, ...props }: HydraCardContentProps) {
+  return (
+    <div className={cn('text-sm', className)} {...props}>
+      {children}
+    </div>
+  );
+}
