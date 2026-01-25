@@ -141,6 +141,14 @@ const translations: Translations = {
   'settings.promptName': { ru: 'Название промпта', en: 'Prompt name' },
   'settings.promptNamePlaceholder': { ru: 'Мой промпт...', en: 'My prompt...' },
   'settings.loadFromLibrary': { ru: 'Из библиотеки', en: 'From Library' },
+  'settings.copyPrompt': { ru: 'Копировать', en: 'Copy' },
+  'settings.clearPrompt': { ru: 'Очистить', en: 'Clear' },
+  'settings.pastePrompt': { ru: 'Вставить', en: 'Paste' },
+  'settings.promptCopied': { ru: 'Промпт скопирован', en: 'Prompt copied' },
+  'settings.promptCleared': { ru: 'Промпт очищен', en: 'Prompt cleared' },
+  'settings.promptPasted': { ru: 'Промпт вставлен', en: 'Prompt pasted' },
+  'settings.promptTokens': { ru: 'токенов', en: 'tokens' },
+  'settings.promptCost': { ru: 'стоимость', en: 'cost' },
 
   // Prompt Library
   'promptLibrary.title': { ru: 'Библиотека промптов', en: 'Prompt Library' },
