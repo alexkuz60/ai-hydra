@@ -27,7 +27,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
-import { Settings, ChevronDown, ChevronUp, RotateCcw, Copy, DollarSign, Pencil, Save, Undo2, Library } from 'lucide-react';
+import { Settings, ChevronDown, ChevronUp, RotateCcw, Copy, DollarSign, Pencil, Save, Undo2, Library, Clipboard, Trash2 } from 'lucide-react';
 import { PromptLibraryPicker } from './PromptLibraryPicker';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -463,95 +463,161 @@ export function PerModelSettings({ selectedModels, settings, onChange, className
                     </div>
 
                     {/* Role Prompt */}
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <Label className="text-xs text-muted-foreground">{t('settings.rolePrompt')}</Label>
-                        <div className="flex items-center gap-2">
-                          {editingPromptModel === modelId && (
-                            <span className="text-[10px] text-primary font-medium">{t('settings.promptEditing')}</span>
+                    {(() => {
+                      const promptTokens = estimateTokens(modelSettings.systemPrompt);
+                      const pricing = getModelPricing(modelId);
+                      const promptCost = pricing ? (promptTokens / 1_000_000) * pricing.input : null;
+                      
+                      return (
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <Label className="text-xs text-muted-foreground">{t('settings.rolePrompt')}</Label>
+                            <div className="flex items-center gap-2">
+                              {/* Token count and cost */}
+                              {promptTokens > 0 && (
+                                <span className="text-[10px] text-muted-foreground font-mono">
+                                  ~{promptTokens} {t('settings.promptTokens')}
+                                  {promptCost !== null && ` • ${formatPrice(promptCost)}`}
+                                </span>
+                              )}
+                              {editingPromptModel === modelId && (
+                                <span className="text-[10px] text-primary font-medium">{t('settings.promptEditing')}</span>
+                              )}
+                              {/* Expand/collapse toggle for long prompts */}
+                              {modelSettings.systemPrompt.length > 150 && (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-5 w-5"
+                                  onClick={() => {
+                                    setExpandedPrompts(prev => ({
+                                      ...prev,
+                                      [modelId]: !prev[modelId]
+                                    }));
+                                  }}
+                                >
+                                  {expandedPrompts[modelId] ? (
+                                    <ChevronUp className="h-3 w-3" />
+                                  ) : (
+                                    <ChevronDown className="h-3 w-3" />
+                                  )}
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+                          
+                          {/* Collapsible prompt display / Editable textarea */}
+                          {editingPromptModel === modelId ? (
+                            <Textarea
+                              value={modelSettings.systemPrompt}
+                              onChange={(e) => {
+                                updateModelSettings(modelId, { systemPrompt: e.target.value });
+                              }}
+                              className="min-h-[100px] max-h-[200px] text-xs resize-none overflow-y-auto hydra-scrollbar"
+                              placeholder={t('settings.systemPromptPlaceholder')}
+                              autoFocus
+                            />
+                          ) : (
+                            <div 
+                              className={cn(
+                                "bg-muted/50 rounded-md p-2 text-xs cursor-pointer hover:bg-muted/70 transition-colors",
+                                expandedPrompts[modelId] ? "max-h-[200px] overflow-y-auto hydra-scrollbar" : "max-h-[60px] overflow-hidden"
+                              )}
+                              onClick={() => handleStartEditPrompt(modelId)}
+                            >
+                              <p className="whitespace-pre-wrap text-muted-foreground">
+                                {modelSettings.systemPrompt || t('settings.systemPromptPlaceholder')}
+                              </p>
+                              {!expandedPrompts[modelId] && modelSettings.systemPrompt.length > 150 && (
+                                <span className="text-primary text-[10px]">...</span>
+                              )}
+                            </div>
                           )}
-                          {/* Expand/collapse toggle for long prompts */}
-                          {modelSettings.systemPrompt.length > 150 && (
+                          
+                          {/* Quick action buttons: Copy, Clear, Paste */}
+                          <div className="flex gap-1">
                             <Button
                               variant="ghost"
-                              size="icon"
-                              className="h-5 w-5"
+                              size="sm"
+                              className="h-6 px-2 text-[10px]"
                               onClick={() => {
-                                setExpandedPrompts(prev => ({
-                                  ...prev,
-                                  [modelId]: !prev[modelId]
-                                }));
+                                navigator.clipboard.writeText(modelSettings.systemPrompt);
+                                toast.success(t('settings.promptCopied'));
+                              }}
+                              disabled={!modelSettings.systemPrompt}
+                            >
+                              <Copy className="h-3 w-3 mr-1" />
+                              {t('settings.copyPrompt')}
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 px-2 text-[10px]"
+                              onClick={async () => {
+                                try {
+                                  const text = await navigator.clipboard.readText();
+                                  if (text) {
+                                    handleStartEditPrompt(modelId);
+                                    updateModelSettings(modelId, { systemPrompt: text });
+                                    toast.success(t('settings.promptPasted'));
+                                  }
+                                } catch {
+                                  toast.error('Clipboard access denied');
+                                }
                               }}
                             >
-                              {expandedPrompts[modelId] ? (
-                                <ChevronUp className="h-3 w-3" />
-                              ) : (
-                                <ChevronDown className="h-3 w-3" />
-                              )}
+                              <Clipboard className="h-3 w-3 mr-1" />
+                              {t('settings.pastePrompt')}
                             </Button>
-                          )}
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 px-2 text-[10px] text-destructive hover:text-destructive"
+                              onClick={() => {
+                                handleStartEditPrompt(modelId);
+                                updateModelSettings(modelId, { systemPrompt: '' });
+                                toast.success(t('settings.promptCleared'));
+                              }}
+                              disabled={!modelSettings.systemPrompt}
+                            >
+                              <Trash2 className="h-3 w-3 mr-1" />
+                              {t('settings.clearPrompt')}
+                            </Button>
+                          </div>
+                          
+                          {/* Prompt library buttons */}
+                          <div className="grid grid-cols-2 gap-1.5">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-7 text-xs"
+                              onClick={() => handleOpenLibrary(modelId)}
+                            >
+                              <Library className="h-3 w-3 mr-1" />
+                              {t('settings.loadFromLibrary')}
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-7 text-xs"
+                              onClick={() => handleRevertPrompt(modelId)}
+                            >
+                              <Undo2 className="h-3 w-3 mr-1" />
+                              {t('settings.revertPrompt')}
+                            </Button>
+                            <Button
+                              variant="default"
+                              size="sm"
+                              className="col-span-2 h-7 text-xs"
+                              onClick={() => handleOpenSaveDialog(modelId)}
+                            >
+                              <Save className="h-3 w-3 mr-1" />
+                              {t('settings.savePrompt')}
+                            </Button>
+                          </div>
                         </div>
-                      </div>
-                      
-                      {/* Collapsible prompt display / Editable textarea */}
-                      {editingPromptModel === modelId ? (
-                        <Textarea
-                          value={modelSettings.systemPrompt}
-                          onChange={(e) => {
-                            updateModelSettings(modelId, { systemPrompt: e.target.value });
-                          }}
-                          className="min-h-[100px] max-h-[200px] text-xs resize-none overflow-y-auto hydra-scrollbar"
-                          placeholder={t('settings.systemPromptPlaceholder')}
-                          autoFocus
-                        />
-                      ) : (
-                        <div 
-                          className={cn(
-                            "bg-muted/50 rounded-md p-2 text-xs cursor-pointer hover:bg-muted/70 transition-colors",
-                            expandedPrompts[modelId] ? "max-h-[200px] overflow-y-auto hydra-scrollbar" : "max-h-[60px] overflow-hidden"
-                          )}
-                          onClick={() => handleStartEditPrompt(modelId)}
-                        >
-                          <p className="whitespace-pre-wrap text-muted-foreground">
-                            {modelSettings.systemPrompt || t('settings.systemPromptPlaceholder')}
-                          </p>
-                          {!expandedPrompts[modelId] && modelSettings.systemPrompt.length > 150 && (
-                            <span className="text-primary text-[10px]">...</span>
-                          )}
-                        </div>
-                      )}
-                      
-                      {/* Prompt action buttons */}
-                      <div className="grid grid-cols-2 gap-1.5">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="h-7 text-xs"
-                          onClick={() => handleOpenLibrary(modelId)}
-                        >
-                          <Library className="h-3 w-3 mr-1" />
-                          {t('settings.loadFromLibrary')}
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="h-7 text-xs"
-                          onClick={() => handleRevertPrompt(modelId)}
-                        >
-                          <Undo2 className="h-3 w-3 mr-1" />
-                          {t('settings.revertPrompt')}
-                        </Button>
-                        <Button
-                          variant="default"
-                          size="sm"
-                          className="col-span-2 h-7 text-xs"
-                          onClick={() => handleOpenSaveDialog(modelId)}
-                        >
-                          <Save className="h-3 w-3 mr-1" />
-                          {t('settings.savePrompt')}
-                        </Button>
-                      </div>
-                    </div>
+                      );
+                    })()}
 
                     {/* Action Buttons */}
                     <div className="flex gap-2">
