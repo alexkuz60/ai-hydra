@@ -9,7 +9,7 @@ import { HydraCard, HydraCardHeader, HydraCardTitle, HydraCardContent } from '@/
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { ModelSelector } from '@/components/warroom/ModelSelector';
+import { MultiModelSelector } from '@/components/warroom/MultiModelSelector';
 import { useAvailableModels, LOVABLE_AI_MODELS, PERSONAL_KEY_MODELS } from '@/hooks/useAvailableModels';
 import { 
   Send, 
@@ -89,7 +89,7 @@ export default function WarRoom() {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
-  const [selectedModel, setSelectedModel] = useState<string>('');
+  const [selectedModels, setSelectedModels] = useState<string[]>([]);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [editedTitle, setEditedTitle] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
@@ -124,14 +124,14 @@ export default function WarRoom() {
 
   // Set default model when available models change
   useEffect(() => {
-    if (!selectedModel && (lovableModels.length > 0 || personalModels.length > 0)) {
+    if (selectedModels.length === 0 && (lovableModels.length > 0 || personalModels.length > 0)) {
       if (lovableModels.length > 0) {
-        setSelectedModel(lovableModels[0].id);
+        setSelectedModels([lovableModels[0].id]);
       } else if (personalModels.length > 0) {
-        setSelectedModel(personalModels[0].id);
+        setSelectedModels([personalModels[0].id]);
       }
     }
-  }, [lovableModels, personalModels, selectedModel]);
+  }, [lovableModels, personalModels, selectedModels]);
 
   // Subscribe to realtime messages
   useEffect(() => {
@@ -253,7 +253,7 @@ export default function WarRoom() {
   };
 
   const handleSendMessage = async () => {
-    if (!user || !currentTask || !input.trim() || !selectedModel) return;
+    if (!user || !currentTask || !input.trim() || selectedModels.length === 0) return;
     setSending(true);
 
     const messageContent = input.trim();
@@ -272,11 +272,18 @@ export default function WarRoom() {
 
       if (error) throw error;
 
-      // Determine which model to use and which endpoint
-      const isLovableModel = LOVABLE_AI_MODELS.some(m => m.id === selectedModel);
-      const personalModel = PERSONAL_KEY_MODELS.find(m => m.id === selectedModel);
+      // Prepare models with their metadata
+      const modelsToCall = selectedModels.map(modelId => {
+        const isLovable = LOVABLE_AI_MODELS.some(m => m.id === modelId);
+        const personalModel = PERSONAL_KEY_MODELS.find(m => m.id === modelId);
+        return {
+          model_id: modelId,
+          use_lovable_ai: isLovable,
+          provider: personalModel?.provider || null,
+        };
+      });
 
-      // Call the Hydra orchestrator to get LLM response
+      // Call the Hydra orchestrator with multiple models
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/hydra-orchestrator`,
         {
@@ -288,9 +295,7 @@ export default function WarRoom() {
           body: JSON.stringify({
             session_id: currentTask.id,
             message: messageContent,
-            selected_model: selectedModel,
-            use_lovable_ai: isLovableModel,
-            provider: personalModel?.provider || null,
+            models: modelsToCall,
             temperature: 0.7,
             max_tokens: 2048,
           }),
@@ -310,9 +315,11 @@ export default function WarRoom() {
         return;
       }
 
-      // Check for any errors in response
-      if (data.error) {
-        toast.error(data.error);
+      // Check for partial errors
+      if (data.errors && data.errors.length > 0) {
+        data.errors.forEach((err: { model: string; error: string }) => {
+          toast.error(`${err.model}: ${err.error}`);
+        });
       }
       
     } catch (error: any) {
@@ -446,9 +453,9 @@ export default function WarRoom() {
                     </div>
                   )}
                 </div>
-                <ModelSelector 
-                  value={selectedModel} 
-                  onChange={setSelectedModel} 
+                <MultiModelSelector 
+                  value={selectedModels} 
+                  onChange={setSelectedModels} 
                 />
               </div>
 
@@ -524,7 +531,7 @@ export default function WarRoom() {
                   />
                   <Button
                     onClick={handleSendMessage}
-                    disabled={sending || !input.trim() || !selectedModel}
+                    disabled={sending || !input.trim() || selectedModels.length === 0}
                     className="hydra-glow-sm self-end"
                     size="lg"
                   >
