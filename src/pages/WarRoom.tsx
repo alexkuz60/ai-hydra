@@ -336,7 +336,7 @@ export default function WarRoom() {
 
   return (
     <Layout>
-      <div className="h-[calc(100vh-4rem)] flex">
+      <div className="h-[calc(100vh-4rem)] flex overflow-hidden">
         {/* Tasks Sidebar */}
         <aside className="w-64 border-r border-border bg-sidebar hidden lg:flex flex-col">
           <div className="p-4 border-b border-sidebar-border space-y-3">
@@ -461,7 +461,7 @@ export default function WarRoom() {
                   settings={perModelSettings}
                   onChange={setPerModelSettings}
                   currentMessage={input}
-                  className="border-t-0"
+                  className="border-t-0 flex-1 min-h-0"
                 />
               </div>
 
@@ -561,7 +561,7 @@ export default function WarRoom() {
               settings={perModelSettings}
               onChange={setPerModelSettings}
               currentMessage={input}
-              className="border-t-0"
+              className="border-t-0 flex-1 min-h-0"
             />
           )}
         </aside>

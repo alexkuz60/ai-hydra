@@ -304,7 +304,11 @@ export function PerModelSettings({ selectedModels, settings, onChange, className
   }
 
   return (
-    <Collapsible open={isOpen} onOpenChange={setIsOpen} className={cn('border-t border-sidebar-border', className)}>
+    <Collapsible
+      open={isOpen}
+      onOpenChange={setIsOpen}
+      className={cn('border-t border-sidebar-border flex flex-col min-h-0', className)}
+    >
       <CollapsibleTrigger asChild>
         <Button
           variant="ghost"
@@ -318,8 +322,8 @@ export function PerModelSettings({ selectedModels, settings, onChange, className
           <ChevronDown className={cn('h-4 w-4 transition-transform', isOpen && 'rotate-180')} />
         </Button>
       </CollapsibleTrigger>
-      <CollapsibleContent>
-        <Tabs value={tabValue} onValueChange={setActiveTab} className="w-full">
+      <CollapsibleContent className="flex flex-col h-[55vh] md:h-[60vh] lg:flex-1 lg:h-auto min-h-0">
+        <Tabs value={tabValue} onValueChange={setActiveTab} className="w-full flex flex-col h-full min-h-0">
           <div className="px-2 pt-2">
             <ScrollArea className="w-full">
               <TabsList className="w-full h-auto flex-wrap justify-start gap-1 bg-transparent p-0">
@@ -340,7 +344,8 @@ export function PerModelSettings({ selectedModels, settings, onChange, className
             const modelSettings = getModelSettings(modelId);
             
             return (
-              <TabsContent key={modelId} value={modelId} className="mt-0 max-h-[400px] overflow-y-auto hydra-scrollbar">
+              <TabsContent key={modelId} value={modelId} className="mt-0 flex-1 min-h-0">
+                <ScrollArea className="h-full hydra-scrollbar">
                   <div className="p-4 space-y-4">
                     {/* Role Selection */}
                     <div className="space-y-2">
@@ -572,6 +577,7 @@ export function PerModelSettings({ selectedModels, settings, onChange, className
                       )}
                     </div>
                   </div>
+                </ScrollArea>
               </TabsContent>
             );
           })}
