@@ -53,9 +53,33 @@ function getModelPricing(modelId: string): ModelPricing | null {
 }
 
 function formatPrice(price: number): string {
+  if (price < 0.0001) return `$${price.toFixed(6)}`;
   if (price < 0.01) return `$${price.toFixed(4)}`;
-  if (price < 1) return `$${price.toFixed(2)}`;
+  if (price < 1) return `$${price.toFixed(3)}`;
   return `$${price.toFixed(2)}`;
+}
+
+// Approximate token count: ~4 characters per token for English, ~2 for Russian
+function estimateTokens(text: string): number {
+  if (!text) return 0;
+  // Check if mostly Cyrillic
+  const cyrillicRatio = (text.match(/[\u0400-\u04FF]/g) || []).length / text.length;
+  const charsPerToken = cyrillicRatio > 0.3 ? 2 : 4;
+  return Math.ceil(text.length / charsPerToken);
+}
+
+function calculateRequestCost(
+  pricing: ModelPricing,
+  inputTokens: number,
+  maxOutputTokens: number
+): { inputCost: number; outputCost: number; totalCost: number } {
+  const inputCost = (inputTokens / 1_000_000) * pricing.input;
+  const outputCost = (maxOutputTokens / 1_000_000) * pricing.output;
+  return {
+    inputCost,
+    outputCost,
+    totalCost: inputCost + outputCost,
+  };
 }
 
 export type AgentRole = 'assistant' | 'critic' | 'arbiter';
@@ -76,6 +100,7 @@ interface PerModelSettingsProps {
   settings: PerModelSettingsData;
   onChange: (settings: PerModelSettingsData) => void;
   className?: string;
+  currentMessage?: string; // Current message text for cost estimation
 }
 
 const DEFAULT_SYSTEM_PROMPTS: Record<AgentRole, string> = {
@@ -108,7 +133,7 @@ function getModelShortName(modelId: string): string {
   return name.slice(0, 12);
 }
 
-export function PerModelSettings({ selectedModels, settings, onChange, className }: PerModelSettingsProps) {
+export function PerModelSettings({ selectedModels, settings, onChange, className, currentMessage = '' }: PerModelSettingsProps) {
   const { t } = useLanguage();
   const [isOpen, setIsOpen] = useState(true);
   const [activeTab, setActiveTab] = useState<string>(selectedModels[0] || '');
@@ -228,6 +253,9 @@ export function PerModelSettings({ selectedModels, settings, onChange, className
                     {/* Pricing Info */}
                     {(() => {
                       const pricing = getModelPricing(modelId);
+                      const inputTokens = estimateTokens(currentMessage + modelSettings.systemPrompt);
+                      const costEstimate = pricing ? calculateRequestCost(pricing, inputTokens, modelSettings.maxTokens) : null;
+                      
                       return (
                         <div className="space-y-2">
                           <Label className="text-xs text-muted-foreground flex items-center gap-1">
@@ -235,17 +263,43 @@ export function PerModelSettings({ selectedModels, settings, onChange, className
                             {t('settings.pricing')}
                           </Label>
                           {pricing ? (
-                            <div className="bg-muted/50 rounded-md p-2 text-xs">
+                            <div className="bg-muted/50 rounded-md p-2 text-xs space-y-2">
+                              {/* Base pricing */}
                               <div className="flex justify-between items-center">
                                 <span className="text-muted-foreground">{t('settings.inputCost')}:</span>
-                                <span className="font-mono text-primary">{formatPrice(pricing.input)}</span>
+                                <span className="font-mono text-muted-foreground">{formatPrice(pricing.input)}</span>
                               </div>
-                              <div className="flex justify-between items-center mt-1">
+                              <div className="flex justify-between items-center">
                                 <span className="text-muted-foreground">{t('settings.outputCost')}:</span>
-                                <span className="font-mono text-primary">{formatPrice(pricing.output)}</span>
+                                <span className="font-mono text-muted-foreground">{formatPrice(pricing.output)}</span>
                               </div>
-                              <div className="text-[10px] text-muted-foreground mt-1 text-center">
+                              <div className="text-[10px] text-muted-foreground text-center border-b border-border pb-2">
                                 {t('settings.perMillion')}
+                              </div>
+                              
+                              {/* Cost estimate */}
+                              <div className="pt-1">
+                                <div className="text-[10px] text-muted-foreground mb-1">{t('settings.estimatedCost')}:</div>
+                                {inputTokens > 0 ? (
+                                  <>
+                                    <div className="flex justify-between items-center">
+                                      <span className="text-muted-foreground">{t('settings.inputTokens')}:</span>
+                                      <span className="font-mono">~{inputTokens.toLocaleString()}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center">
+                                      <span className="text-muted-foreground">{t('settings.outputTokens')}:</span>
+                                      <span className="font-mono">≤{modelSettings.maxTokens.toLocaleString()}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center mt-1 pt-1 border-t border-border font-medium">
+                                      <span>{t('settings.totalCost')}:</span>
+                                      <span className="font-mono text-primary">≤{formatPrice(costEstimate!.totalCost)}</span>
+                                    </div>
+                                  </>
+                                ) : (
+                                  <div className="text-[10px] text-muted-foreground italic">
+                                    {t('settings.enterMessage')}
+                                  </div>
+                                )}
                               </div>
                             </div>
                           ) : (

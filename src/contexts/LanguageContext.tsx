@@ -126,6 +126,11 @@ const translations: Translations = {
   'settings.outputCost': { ru: 'Вывод', en: 'Output' },
   'settings.perMillion': { ru: 'за 1M токенов', en: 'per 1M tokens' },
   'settings.noPricing': { ru: 'Цена не указана', en: 'Pricing not available' },
+  'settings.estimatedCost': { ru: 'Расчёт стоимости', en: 'Estimated Cost' },
+  'settings.inputTokens': { ru: 'Токенов ввода', en: 'Input tokens' },
+  'settings.outputTokens': { ru: 'Токенов вывода', en: 'Output tokens' },
+  'settings.totalCost': { ru: 'Итого', en: 'Total' },
+  'settings.enterMessage': { ru: 'Введите сообщение для расчёта', en: 'Enter message to calculate' },
   
   // War Room extras
   'warRoom.noModelsSelected': { ru: 'Модели не выбраны', en: 'No models selected' },

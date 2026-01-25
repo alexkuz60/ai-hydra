@@ -397,6 +397,7 @@ export default function WarRoom() {
             selectedModels={selectedModels}
             settings={perModelSettings}
             onChange={setPerModelSettings}
+            currentMessage={input}
           />
         </aside>
 
