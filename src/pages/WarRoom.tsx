@@ -24,7 +24,8 @@ import {
   Target,
   Pencil,
   Check,
-  X
+  X,
+  Search
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
@@ -91,6 +92,7 @@ export default function WarRoom() {
   const [selectedModel, setSelectedModel] = useState<string>('');
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [editedTitle, setEditedTitle] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
   useEffect(() => {
     if (!authLoading && !user) {
       navigate('/login');
@@ -335,7 +337,7 @@ export default function WarRoom() {
       <div className="h-[calc(100vh-4rem)] flex">
         {/* Tasks Sidebar */}
         <aside className="w-64 border-r border-border bg-sidebar hidden lg:flex flex-col">
-          <div className="p-4 border-b border-sidebar-border">
+          <div className="p-4 border-b border-sidebar-border space-y-3">
             <Button 
               onClick={handleCreateTask}
               className="w-full hydra-glow-sm"
@@ -344,10 +346,23 @@ export default function WarRoom() {
               <Plus className="h-4 w-4 mr-2" />
               {t('tasks.new')}
             </Button>
+            <div className="relative">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder={t('tasks.search')}
+                className="pl-8 h-8 text-sm"
+              />
+            </div>
           </div>
           <ScrollArea className="flex-1 hydra-scrollbar">
             <div className="p-2 space-y-1">
-              {tasks.map((task) => (
+              {tasks
+                .filter(task => 
+                  task.title.toLowerCase().includes(searchQuery.toLowerCase())
+                )
+                .map((task) => (
                 <button
                   key={task.id}
                   onClick={() => {
@@ -368,6 +383,13 @@ export default function WarRoom() {
                   </div>
                 </button>
               ))}
+              {tasks.length > 0 && tasks.filter(task => 
+                task.title.toLowerCase().includes(searchQuery.toLowerCase())
+              ).length === 0 && (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  {t('tasks.noResults')}
+                </p>
+              )}
             </div>
           </ScrollArea>
         </aside>
