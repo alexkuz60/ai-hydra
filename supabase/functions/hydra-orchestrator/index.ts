@@ -18,6 +18,8 @@ interface RequestBody {
   models: ModelRequest[];
   temperature?: number;
   max_tokens?: number;
+  system_prompt?: string;
+  role?: 'assistant' | 'critic' | 'arbiter';
 }
 
 async function callLovableAI(
@@ -165,7 +167,7 @@ serve(async (req) => {
       });
     }
 
-    const { session_id, message, models, temperature = 0.7, max_tokens = 2048 }: RequestBody = await req.json();
+    const { session_id, message, models, temperature = 0.7, max_tokens = 2048, system_prompt, role = 'assistant' }: RequestBody = await req.json();
 
     if (!session_id || !message || !models || models.length === 0) {
       return new Response(JSON.stringify({ error: "session_id, message, and models are required" }), {
@@ -179,7 +181,14 @@ serve(async (req) => {
       .eq("user_id", user.id)
       .single();
 
-    const systemPrompt = `You are an expert AI assistant participating in a multi-agent discussion. Provide clear, well-reasoned responses. Be concise but thorough. Your perspective may differ from other AI models in this conversation.`;
+    // Use custom system prompt or default based on role
+    const defaultPrompts: Record<string, string> = {
+      assistant: `You are an expert AI assistant participating in a multi-agent discussion. Provide clear, well-reasoned responses. Be concise but thorough. Your perspective may differ from other AI models in this conversation.`,
+      critic: `You are a critical analyst. Your task is to find weaknesses, contradictions, and potential problems in reasoning. Be constructive but rigorous. Challenge assumptions and identify logical flaws.`,
+      arbiter: `You are a discussion arbiter. Synthesize different viewpoints, highlight consensus and disagreements. Form a balanced final decision based on the merits of each argument.`,
+    };
+    
+    const finalSystemPrompt = system_prompt || defaultPrompts[role] || defaultPrompts.assistant;
 
     const lovableKey = Deno.env.get("LOVABLE_API_KEY");
     const isAdmin = profile?.username === "AlexKuz";
@@ -198,7 +207,7 @@ serve(async (req) => {
           if (!lovableKey) {
             throw new Error("Lovable AI not configured");
           }
-          return await callLovableAI(lovableKey, modelReq.model_id, message, systemPrompt, temperature, max_tokens);
+          return await callLovableAI(lovableKey, modelReq.model_id, message, finalSystemPrompt, temperature, max_tokens);
         } else {
           // Use personal API key
           let apiKey: string | null = null;
@@ -210,7 +219,7 @@ serve(async (req) => {
             throw new Error(`No API key configured for ${modelReq.provider}`);
           }
 
-          return await callPersonalModel(modelReq.provider!, apiKey, modelReq.model_id, message, systemPrompt, temperature, max_tokens);
+          return await callPersonalModel(modelReq.provider!, apiKey, modelReq.model_id, message, finalSystemPrompt, temperature, max_tokens);
         }
       } catch (error: any) {
         return { error: true, model: modelReq.model_id, message: error.message || "Unknown error" };
@@ -233,7 +242,7 @@ serve(async (req) => {
       const messagesToInsert = results.map(result => ({
         session_id,
         user_id: user.id,
-        role: "assistant",
+        role: role, // Use the role from request (assistant, critic, arbiter)
         model_name: result.model,
         content: result.content,
         metadata: { provider: result.provider },
