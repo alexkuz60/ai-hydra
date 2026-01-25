@@ -340,7 +340,7 @@ export function PerModelSettings({ selectedModels, settings, onChange, className
             
             return (
               <TabsContent key={modelId} value={modelId} className="mt-0">
-                <ScrollArea className="max-h-[350px]">
+                <ScrollArea className="max-h-[60vh]">
                   <div className="p-4 space-y-4">
                     {/* Role Selection */}
                     <div className="space-y-2">
