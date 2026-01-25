@@ -12,6 +12,7 @@ import Signup from "./pages/Signup";
 import Profile from "./pages/Profile";
 import Sessions from "./pages/Sessions";
 import WarRoom from "./pages/WarRoom";
+import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -32,6 +33,7 @@ const App = () => (
                 <Route path="/profile" element={<Profile />} />
                 <Route path="/sessions" element={<Sessions />} />
                 <Route path="/war-room" element={<WarRoom />} />
+                <Route path="/admin" element={<Admin />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </BrowserRouter>
