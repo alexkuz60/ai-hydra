@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { HydraCard, HydraCardHeader, HydraCardTitle, HydraCardContent } from '@/components/ui/hydra-card';
 import { Button } from '@/components/ui/button';
+import { MarkdownRenderer } from './MarkdownRenderer';
 import { 
   Brain, 
   Shield, 
@@ -108,8 +109,12 @@ export function ChatMessage({ message, onDelete }: ChatMessageProps) {
         )}
       </HydraCardHeader>
       
-      <HydraCardContent className="text-foreground/90 whitespace-pre-wrap">
-        {truncatedContent}
+      <HydraCardContent className="text-foreground/90">
+        {message.role === 'user' ? (
+          <p className="whitespace-pre-wrap">{truncatedContent}</p>
+        ) : (
+          <MarkdownRenderer content={truncatedContent} className="text-sm" />
+        )}
       </HydraCardContent>
       
       {message.reasoning_path && isExpanded && (
