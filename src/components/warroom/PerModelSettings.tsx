@@ -136,12 +136,16 @@ function getModelShortName(modelId: string): string {
 export function PerModelSettings({ selectedModels, settings, onChange, className, currentMessage = '' }: PerModelSettingsProps) {
   const { t } = useLanguage();
   const [isOpen, setIsOpen] = useState(true);
-  const [activeTab, setActiveTab] = useState<string>(selectedModels[0] || '');
+  const [activeTab, setActiveTab] = useState<string>('');
 
-  // Ensure active tab is valid
+  // Ensure active tab is valid - always set to first model if current is invalid or empty
   React.useEffect(() => {
-    if (selectedModels.length > 0 && !selectedModels.includes(activeTab)) {
-      setActiveTab(selectedModels[0]);
+    if (selectedModels.length > 0) {
+      if (!activeTab || !selectedModels.includes(activeTab)) {
+        setActiveTab(selectedModels[0]);
+      }
+    } else {
+      setActiveTab('');
     }
   }, [selectedModels, activeTab]);
 
