@@ -131,6 +131,15 @@ const translations: Translations = {
   'settings.outputTokens': { ru: 'Токенов вывода', en: 'Output tokens' },
   'settings.totalCost': { ru: 'Итого', en: 'Total' },
   'settings.enterMessage': { ru: 'Введите сообщение для расчёта', en: 'Enter message to calculate' },
+  'settings.rolePrompt': { ru: 'Ролевой промпт', en: 'Role Prompt' },
+  'settings.editPrompt': { ru: 'Редактировать', en: 'Edit' },
+  'settings.revertPrompt': { ru: 'Вернуть', en: 'Revert' },
+  'settings.savePrompt': { ru: 'Сохранить в библиотеку', en: 'Save to Library' },
+  'settings.promptEditing': { ru: 'Редактирование', en: 'Editing' },
+  'settings.promptSaved': { ru: 'Промпт сохранён в библиотеку', en: 'Prompt saved to library' },
+  'settings.promptReverted': { ru: 'Промпт восстановлен', en: 'Prompt reverted' },
+  'settings.promptName': { ru: 'Название промпта', en: 'Prompt name' },
+  'settings.promptNamePlaceholder': { ru: 'Мой промпт...', en: 'My prompt...' },
   
   // War Room extras
   'warRoom.noModelsSelected': { ru: 'Модели не выбраны', en: 'No models selected' },
