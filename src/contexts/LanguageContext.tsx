@@ -140,6 +140,19 @@ const translations: Translations = {
   'settings.promptReverted': { ru: 'Промпт восстановлен', en: 'Prompt reverted' },
   'settings.promptName': { ru: 'Название промпта', en: 'Prompt name' },
   'settings.promptNamePlaceholder': { ru: 'Мой промпт...', en: 'My prompt...' },
+  'settings.loadFromLibrary': { ru: 'Из библиотеки', en: 'From Library' },
+
+  // Prompt Library
+  'promptLibrary.title': { ru: 'Библиотека промптов', en: 'Prompt Library' },
+  'promptLibrary.searchPlaceholder': { ru: 'Поиск промптов...', en: 'Search prompts...' },
+  'promptLibrary.allRoles': { ru: 'Все роли', en: 'All roles' },
+  'promptLibrary.empty': { ru: 'Библиотека пуста. Сохраните первый промпт!', en: 'Library is empty. Save your first prompt!' },
+  'promptLibrary.noResults': { ru: 'Промпты не найдены', en: 'No prompts found' },
+  'promptLibrary.applied': { ru: 'Промпт применён', en: 'Prompt applied' },
+  'promptLibrary.deleted': { ru: 'Промпт удалён', en: 'Prompt deleted' },
+  'promptLibrary.shared': { ru: 'Публичный', en: 'Shared' },
+  'promptLibrary.own': { ru: 'Ваш промпт', en: 'Your prompt' },
+  'promptLibrary.usedTimes': { ru: 'Использован: {count}', en: 'Used: {count}' },
   
   // War Room extras
   'warRoom.noModelsSelected': { ru: 'Модели не выбраны', en: 'No models selected' },

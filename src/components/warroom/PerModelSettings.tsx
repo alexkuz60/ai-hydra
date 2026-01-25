@@ -27,7 +27,8 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
-import { Settings, ChevronDown, RotateCcw, Copy, DollarSign, Pencil, Save, Undo2 } from 'lucide-react';
+import { Settings, ChevronDown, RotateCcw, Copy, DollarSign, Pencil, Save, Undo2, Library } from 'lucide-react';
+import { PromptLibraryPicker } from './PromptLibraryPicker';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -154,6 +155,8 @@ export function PerModelSettings({ selectedModels, settings, onChange, className
   const [savePromptName, setSavePromptName] = useState('');
   const [savingPrompt, setSavingPrompt] = useState(false);
   const [modelToSave, setModelToSave] = useState<string | null>(null);
+  const [libraryOpen, setLibraryOpen] = useState(false);
+  const [libraryTargetModel, setLibraryTargetModel] = useState<string | null>(null);
 
   // Ensure active tab is always valid when selection changes
   React.useEffect(() => {
@@ -272,6 +275,20 @@ export function PerModelSettings({ selectedModels, settings, onChange, className
       toast.error(error.message);
     } finally {
       setSavingPrompt(false);
+    }
+  };
+
+  const handleOpenLibrary = (modelId: string) => {
+    setLibraryTargetModel(modelId);
+    setLibraryOpen(true);
+  };
+
+  const handleApplyFromLibrary = (prompt: { content: string; role: AgentRole }) => {
+    if (libraryTargetModel) {
+      updateModelSettings(libraryTargetModel, {
+        role: prompt.role,
+        systemPrompt: prompt.content,
+      });
     }
   };
 
@@ -460,21 +477,20 @@ export function PerModelSettings({ selectedModels, settings, onChange, className
                         placeholder={t('settings.systemPromptPlaceholder')}
                       />
                       {/* Prompt action buttons */}
-                      <div className="flex gap-1.5">
+                      <div className="grid grid-cols-2 gap-1.5">
                         <Button
                           variant="outline"
                           size="sm"
-                          className="flex-1 h-7 text-xs"
-                          onClick={() => handleStartEditPrompt(modelId)}
-                          disabled={editingPromptModel === modelId}
+                          className="h-7 text-xs"
+                          onClick={() => handleOpenLibrary(modelId)}
                         >
-                          <Pencil className="h-3 w-3 mr-1" />
-                          {t('settings.editPrompt')}
+                          <Library className="h-3 w-3 mr-1" />
+                          {t('settings.loadFromLibrary')}
                         </Button>
                         <Button
                           variant="outline"
                           size="sm"
-                          className="flex-1 h-7 text-xs"
+                          className="h-7 text-xs"
                           onClick={() => handleRevertPrompt(modelId)}
                         >
                           <Undo2 className="h-3 w-3 mr-1" />
@@ -483,7 +499,7 @@ export function PerModelSettings({ selectedModels, settings, onChange, className
                         <Button
                           variant="default"
                           size="sm"
-                          className="flex-1 h-7 text-xs"
+                          className="col-span-2 h-7 text-xs"
                           onClick={() => handleOpenSaveDialog(modelId)}
                         >
                           <Save className="h-3 w-3 mr-1" />
@@ -552,6 +568,14 @@ export function PerModelSettings({ selectedModels, settings, onChange, className
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Prompt Library Picker */}
+      <PromptLibraryPicker
+        open={libraryOpen}
+        onOpenChange={setLibraryOpen}
+        onSelect={handleApplyFromLibrary}
+        currentRole={libraryTargetModel ? getModelSettings(libraryTargetModel).role : undefined}
+      />
     </Collapsible>
   );
 }
