@@ -136,18 +136,22 @@ function getModelShortName(modelId: string): string {
 export function PerModelSettings({ selectedModels, settings, onChange, className, currentMessage = '' }: PerModelSettingsProps) {
   const { t } = useLanguage();
   const [isOpen, setIsOpen] = useState(true);
-  const [activeTab, setActiveTab] = useState<string>('');
+  const [activeTab, setActiveTab] = useState<string>(() => selectedModels[0] || '');
 
-  // Ensure active tab is valid - always set to first model if current is invalid or empty
+  // Ensure active tab is always valid when selection changes
   React.useEffect(() => {
-    if (selectedModels.length > 0) {
-      if (!activeTab || !selectedModels.includes(activeTab)) {
-        setActiveTab(selectedModels[0]);
-      }
-    } else {
-      setActiveTab('');
-    }
-  }, [selectedModels, activeTab]);
+    setActiveTab((prev) => {
+      if (selectedModels.length === 0) return '';
+      if (!prev || !selectedModels.includes(prev)) return selectedModels[0];
+      return prev;
+    });
+  }, [selectedModels]);
+
+  const tabValue = React.useMemo(() => {
+    if (selectedModels.length === 0) return '';
+    if (activeTab && selectedModels.includes(activeTab)) return activeTab;
+    return selectedModels[0];
+  }, [activeTab, selectedModels]);
 
   const getModelSettings = (modelId: string): SingleModelSettings => {
     return settings[modelId] || DEFAULT_MODEL_SETTINGS;
@@ -212,7 +216,7 @@ export function PerModelSettings({ selectedModels, settings, onChange, className
         </Button>
       </CollapsibleTrigger>
       <CollapsibleContent>
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <Tabs value={tabValue} onValueChange={setActiveTab} className="w-full">
           <div className="px-2 pt-2">
             <ScrollArea className="w-full">
               <TabsList className="w-full h-auto flex-wrap justify-start gap-1 bg-transparent p-0">
