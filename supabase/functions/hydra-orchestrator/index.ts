@@ -68,10 +68,24 @@ async function callLovableAI(
   }
 
   const data = await response.json();
+  
+  // Log full response for debugging
+  console.log(`[${model}] Full API response:`, JSON.stringify(data, null, 2));
+  
+  const content = data.choices?.[0]?.message?.content || "";
+  if (!content) {
+    console.warn(`[${model}] Empty content received. Response structure:`, {
+      hasChoices: !!data.choices,
+      choicesLength: data.choices?.length,
+      firstChoice: data.choices?.[0],
+      finishReason: data.choices?.[0]?.finish_reason,
+    });
+  }
+  
   return {
     model,
     provider: "lovable",
-    content: data.choices?.[0]?.message?.content || "",
+    content,
   };
 }
 
