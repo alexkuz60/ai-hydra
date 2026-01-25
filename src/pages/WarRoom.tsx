@@ -21,8 +21,12 @@ import {
   Plus,
   MessageSquare,
   Sparkles,
-  Target
+  Target,
+  Pencil,
+  Check,
+  X
 } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 
 type MessageRole = 'user' | 'assistant' | 'critic' | 'arbiter';
@@ -85,7 +89,8 @@ export default function WarRoom() {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [selectedModel, setSelectedModel] = useState<string>('');
-
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [editedTitle, setEditedTitle] = useState('');
   useEffect(() => {
     if (!authLoading && !user) {
       navigate('/login');
@@ -208,6 +213,41 @@ export default function WarRoom() {
     } catch (error: any) {
       toast.error(error.message);
     }
+  };
+
+  const handleStartEditTitle = () => {
+    if (currentTask) {
+      setEditedTitle(currentTask.title);
+      setIsEditingTitle(true);
+    }
+  };
+
+  const handleSaveTitle = async () => {
+    if (!currentTask || !editedTitle.trim()) return;
+    
+    const newTitle = editedTitle.trim().slice(0, 100); // Limit to 100 chars
+    
+    try {
+      const { error } = await supabase
+        .from('sessions')
+        .update({ title: newTitle })
+        .eq('id', currentTask.id);
+
+      if (error) throw error;
+
+      // Update local state
+      setCurrentTask({ ...currentTask, title: newTitle });
+      setTasks(tasks.map(t => t.id === currentTask.id ? { ...t, title: newTitle } : t));
+      setIsEditingTitle(false);
+      toast.success(t('common.success'));
+    } catch (error: any) {
+      toast.error(error.message);
+    }
+  };
+
+  const handleCancelEditTitle = () => {
+    setIsEditingTitle(false);
+    setEditedTitle('');
   };
 
   const handleSendMessage = async () => {
@@ -337,10 +377,52 @@ export default function WarRoom() {
           {currentTask ? (
             <>
               {/* Model Selector Header */}
-              <div className="border-b border-border p-3 bg-background/50 flex items-center justify-between">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Target className="h-4 w-4" />
-                  <span className="font-medium">{currentTask.title}</span>
+              <div className="border-b border-border p-3 bg-background/50 flex items-center justify-between gap-4">
+                <div className="flex items-center gap-2 text-sm min-w-0 flex-1">
+                  <Target className="h-4 w-4 text-muted-foreground shrink-0" />
+                  {isEditingTitle ? (
+                    <div className="flex items-center gap-2 flex-1">
+                      <Input
+                        value={editedTitle}
+                        onChange={(e) => setEditedTitle(e.target.value)}
+                        className="h-7 text-sm max-w-xs"
+                        maxLength={100}
+                        autoFocus
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') handleSaveTitle();
+                          if (e.key === 'Escape') handleCancelEditTitle();
+                        }}
+                      />
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 text-primary hover:text-primary/80"
+                        onClick={handleSaveTitle}
+                      >
+                        <Check className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 text-muted-foreground hover:text-hydra-critical"
+                        onClick={handleCancelEditTitle}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="font-medium truncate">{currentTask.title}</span>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6 text-muted-foreground hover:text-primary shrink-0"
+                        onClick={handleStartEditTitle}
+                      >
+                        <Pencil className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  )}
                 </div>
                 <ModelSelector 
                   value={selectedModel} 
