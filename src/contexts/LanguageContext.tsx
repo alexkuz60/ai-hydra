@@ -71,6 +71,8 @@ const translations: Translations = {
   'tasks.new': { ru: 'Новая задача', en: 'New Task' },
   'tasks.empty': { ru: 'Нет активных задач', en: 'No active tasks' },
   'tasks.delete': { ru: 'Удалить', en: 'Delete' },
+  'tasks.search': { ru: 'Поиск задач...', en: 'Search tasks...' },
+  'tasks.noResults': { ru: 'Задачи не найдены', en: 'No tasks found' },
   
   // Models
   'model.gemini': { ru: 'Gemini Pro', en: 'Gemini Pro' },
