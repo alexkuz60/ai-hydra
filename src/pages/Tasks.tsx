@@ -10,6 +10,16 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Plus, Trash2, MessageSquare, Loader2, Calendar } from 'lucide-react';
 import { format } from 'date-fns';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface Task {
   id: string;
@@ -29,6 +39,7 @@ export default function Tasks() {
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [newTaskTitle, setNewTaskTitle] = useState('');
+  const [taskToDelete, setTaskToDelete] = useState<Task | null>(null);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -89,19 +100,23 @@ export default function Tasks() {
     }
   };
 
-  const handleDeleteTask = async (taskId: string) => {
+  const handleDeleteTask = async () => {
+    if (!taskToDelete) return;
+    
     try {
       const { error } = await supabase
         .from('sessions')
         .delete()
-        .eq('id', taskId);
+        .eq('id', taskToDelete.id);
 
       if (error) throw error;
 
-      setTasks(tasks.filter(t => t.id !== taskId));
+      setTasks(tasks.filter(t => t.id !== taskToDelete.id));
       toast.success(t('common.success'));
     } catch (error: any) {
       toast.error(error.message);
+    } finally {
+      setTaskToDelete(null);
     }
   };
 
@@ -176,23 +191,49 @@ export default function Tasks() {
                       <span>{format(new Date(task.updated_at), 'dd.MM.yyyy HH:mm')}</span>
                     </div>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="text-muted-foreground hover:text-hydra-critical shrink-0"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDeleteTask(task.id);
-                    }}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </HydraCard>
-            ))
-          )}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="text-muted-foreground hover:text-hydra-critical shrink-0"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setTaskToDelete(task);
+                      }}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </HydraCard>
+              ))
+            )}
+          </div>
         </div>
-      </div>
-    </Layout>
-  );
-}
+
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={!!taskToDelete} onOpenChange={(open) => !open && setTaskToDelete(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>{t('tasks.deleteConfirmTitle')}</AlertDialogTitle>
+              <AlertDialogDescription>
+                {t('tasks.deleteConfirmDescription')}
+                {taskToDelete && (
+                  <span className="block mt-2 font-medium text-foreground">
+                    "{taskToDelete.title}"
+                  </span>
+                )}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+              <AlertDialogAction 
+                onClick={handleDeleteTask}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                {t('tasks.delete')}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </Layout>
+    );
+  }

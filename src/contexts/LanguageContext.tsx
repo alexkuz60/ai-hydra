@@ -73,6 +73,8 @@ const translations: Translations = {
   'tasks.delete': { ru: 'Удалить', en: 'Delete' },
   'tasks.search': { ru: 'Поиск задач...', en: 'Search tasks...' },
   'tasks.noResults': { ru: 'Задачи не найдены', en: 'No tasks found' },
+  'tasks.deleteConfirmTitle': { ru: 'Удалить задачу?', en: 'Delete task?' },
+  'tasks.deleteConfirmDescription': { ru: 'Это действие нельзя отменить. Задача и все связанные сообщения будут удалены навсегда.', en: 'This action cannot be undone. The task and all related messages will be permanently deleted.' },
   
   // Models
   'model.gemini': { ru: 'Gemini Pro', en: 'Gemini Pro' },
