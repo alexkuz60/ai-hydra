@@ -18,9 +18,45 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
-import { Settings, ChevronDown, RotateCcw, Copy } from 'lucide-react';
+import { Settings, ChevronDown, RotateCcw, Copy, DollarSign } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+
+// Pricing per 1M tokens (input/output) in USD
+interface ModelPricing {
+  input: number;
+  output: number;
+}
+
+const MODEL_PRICING: Record<string, ModelPricing> = {
+  // Google models
+  'google/gemini-2.5-pro': { input: 1.25, output: 10.00 },
+  'google/gemini-3-pro-preview': { input: 1.25, output: 10.00 },
+  'google/gemini-3-flash-preview': { input: 0.10, output: 0.40 },
+  'google/gemini-2.5-flash': { input: 0.15, output: 0.60 },
+  'google/gemini-2.5-flash-lite': { input: 0.075, output: 0.30 },
+  'google/gemini-3-pro-image-preview': { input: 0.0315, output: 0.0315 },
+  // OpenAI models
+  'openai/gpt-5': { input: 2.50, output: 10.00 },
+  'openai/gpt-5-mini': { input: 0.40, output: 1.60 },
+  'openai/gpt-5-nano': { input: 0.10, output: 0.40 },
+  'openai/gpt-5.2': { input: 3.00, output: 12.00 },
+  'openai/gpt-4o': { input: 2.50, output: 10.00 },
+  // Anthropic models
+  'anthropic/claude-3-opus': { input: 15.00, output: 75.00 },
+  'anthropic/claude-3-sonnet': { input: 3.00, output: 15.00 },
+  'anthropic/claude-3-haiku': { input: 0.25, output: 1.25 },
+};
+
+function getModelPricing(modelId: string): ModelPricing | null {
+  return MODEL_PRICING[modelId] || null;
+}
+
+function formatPrice(price: number): string {
+  if (price < 0.01) return `$${price.toFixed(4)}`;
+  if (price < 1) return `$${price.toFixed(2)}`;
+  return `$${price.toFixed(2)}`;
+}
 
 export type AgentRole = 'assistant' | 'critic' | 'arbiter';
 
@@ -188,6 +224,38 @@ export function PerModelSettings({ selectedModels, settings, onChange, className
                         </SelectContent>
                       </Select>
                     </div>
+
+                    {/* Pricing Info */}
+                    {(() => {
+                      const pricing = getModelPricing(modelId);
+                      return (
+                        <div className="space-y-2">
+                          <Label className="text-xs text-muted-foreground flex items-center gap-1">
+                            <DollarSign className="h-3 w-3" />
+                            {t('settings.pricing')}
+                          </Label>
+                          {pricing ? (
+                            <div className="bg-muted/50 rounded-md p-2 text-xs">
+                              <div className="flex justify-between items-center">
+                                <span className="text-muted-foreground">{t('settings.inputCost')}:</span>
+                                <span className="font-mono text-primary">{formatPrice(pricing.input)}</span>
+                              </div>
+                              <div className="flex justify-between items-center mt-1">
+                                <span className="text-muted-foreground">{t('settings.outputCost')}:</span>
+                                <span className="font-mono text-primary">{formatPrice(pricing.output)}</span>
+                              </div>
+                              <div className="text-[10px] text-muted-foreground mt-1 text-center">
+                                {t('settings.perMillion')}
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="bg-muted/50 rounded-md p-2 text-xs text-muted-foreground text-center">
+                              {t('settings.noPricing')}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()}
 
                     {/* Temperature */}
                     <div className="space-y-2">

@@ -121,6 +121,11 @@ const translations: Translations = {
   'settings.copiedToAll': { ru: 'Настройки скопированы', en: 'Settings copied' },
   'settings.precise': { ru: 'Точность', en: 'Precise' },
   'settings.creative': { ru: 'Креатив', en: 'Creative' },
+  'settings.pricing': { ru: 'Стоимость', en: 'Pricing' },
+  'settings.inputCost': { ru: 'Ввод', en: 'Input' },
+  'settings.outputCost': { ru: 'Вывод', en: 'Output' },
+  'settings.perMillion': { ru: 'за 1M токенов', en: 'per 1M tokens' },
+  'settings.noPricing': { ru: 'Цена не указана', en: 'Pricing not available' },
   
   // War Room extras
   'warRoom.noModelsSelected': { ru: 'Модели не выбраны', en: 'No models selected' },
