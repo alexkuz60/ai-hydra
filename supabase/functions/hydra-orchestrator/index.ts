@@ -10,16 +10,16 @@ interface ModelRequest {
   model_id: string;
   use_lovable_ai: boolean;
   provider?: string | null;
+  temperature?: number;
+  max_tokens?: number;
+  system_prompt?: string;
+  role?: 'assistant' | 'critic' | 'arbiter';
 }
 
 interface RequestBody {
   session_id: string;
   message: string;
   models: ModelRequest[];
-  temperature?: number;
-  max_tokens?: number;
-  system_prompt?: string;
-  role?: 'assistant' | 'critic' | 'arbiter';
 }
 
 async function callLovableAI(
@@ -167,7 +167,7 @@ serve(async (req) => {
       });
     }
 
-    const { session_id, message, models, temperature = 0.7, max_tokens = 2048, system_prompt, role = 'assistant' }: RequestBody = await req.json();
+    const { session_id, message, models }: RequestBody = await req.json();
 
     if (!session_id || !message || !models || models.length === 0) {
       return new Response(JSON.stringify({ error: "session_id, message, and models are required" }), {
@@ -181,27 +181,33 @@ serve(async (req) => {
       .eq("user_id", user.id)
       .single();
 
-    // Use custom system prompt or default based on role
+    // Default system prompts for each role
     const defaultPrompts: Record<string, string> = {
       assistant: `You are an expert AI assistant participating in a multi-agent discussion. Provide clear, well-reasoned responses. Be concise but thorough. Your perspective may differ from other AI models in this conversation.`,
       critic: `You are a critical analyst. Your task is to find weaknesses, contradictions, and potential problems in reasoning. Be constructive but rigorous. Challenge assumptions and identify logical flaws.`,
       arbiter: `You are a discussion arbiter. Synthesize different viewpoints, highlight consensus and disagreements. Form a balanced final decision based on the merits of each argument.`,
     };
-    
-    const finalSystemPrompt = system_prompt || defaultPrompts[role] || defaultPrompts.assistant;
 
     const lovableKey = Deno.env.get("LOVABLE_API_KEY");
     const isAdmin = profile?.username === "AlexKuz";
 
-    const results: { model: string; provider: string; content: string }[] = [];
     const errors: { model: string; error: string }[] = [];
 
     console.log(`Processing ${models.length} models:`, models.map(m => m.model_id));
 
-    // Process all models in parallel
+    // Process all models in parallel with individual settings
     const modelPromises = models.map(async (modelReq) => {
-      console.log(`Starting request for model: ${modelReq.model_id}, use_lovable_ai: ${modelReq.use_lovable_ai}`);
+      // Use per-model settings or defaults
+      const temperature = modelReq.temperature ?? 0.7;
+      const maxTokens = modelReq.max_tokens ?? 2048;
+      const role = modelReq.role ?? 'assistant';
+      const systemPrompt = modelReq.system_prompt || defaultPrompts[role] || defaultPrompts.assistant;
+
+      console.log(`Starting request for model: ${modelReq.model_id}, role: ${role}, temp: ${temperature}`);
+      
       try {
+        let result: { model: string; provider: string; content: string };
+        
         if (modelReq.use_lovable_ai) {
           // Check if user is admin
           if (!isAdmin) {
@@ -210,9 +216,7 @@ serve(async (req) => {
           if (!lovableKey) {
             throw new Error("Lovable AI not configured");
           }
-          const result = await callLovableAI(lovableKey, modelReq.model_id, message, finalSystemPrompt, temperature, max_tokens);
-          console.log(`Success for model: ${modelReq.model_id}`);
-          return result;
+          result = await callLovableAI(lovableKey, modelReq.model_id, message, systemPrompt, temperature, maxTokens);
         } else {
           // Use personal API key
           let apiKey: string | null = null;
@@ -224,10 +228,11 @@ serve(async (req) => {
             throw new Error(`No API key configured for ${modelReq.provider}`);
           }
 
-          const result = await callPersonalModel(modelReq.provider!, apiKey, modelReq.model_id, message, finalSystemPrompt, temperature, max_tokens);
-          console.log(`Success for model: ${modelReq.model_id}`);
-          return result;
+          result = await callPersonalModel(modelReq.provider!, apiKey, modelReq.model_id, message, systemPrompt, temperature, maxTokens);
         }
+        
+        console.log(`Success for model: ${modelReq.model_id}`);
+        return { ...result, role }; // Include role in result for DB insert
       } catch (error: any) {
         console.error(`Error for model ${modelReq.model_id}:`, error.message || error);
         return { error: true, model: modelReq.model_id, message: error.message || "Unknown error" };
@@ -238,22 +243,23 @@ serve(async (req) => {
     console.log(`All results received: ${allResults.length}`);
 
     // Separate successes and errors
+    const successResults: { model: string; provider: string; content: string; role: string }[] = [];
     for (const result of allResults) {
       if ('error' in result && result.error === true) {
         errors.push({ model: result.model, error: result.message });
       } else {
-        results.push(result as { model: string; provider: string; content: string });
+        successResults.push(result as { model: string; provider: string; content: string; role: string });
       }
     }
     
-    console.log(`Results: ${results.length} successes, ${errors.length} errors`);
+    console.log(`Results: ${successResults.length} successes, ${errors.length} errors`);
 
-    // Save all successful responses to database
-    if (results.length > 0) {
-      const messagesToInsert = results.map(result => ({
+    // Save all successful responses to database with individual roles
+    if (successResults.length > 0) {
+      const messagesToInsert = successResults.map(result => ({
         session_id,
         user_id: user.id,
-        role: role, // Use the role from request (assistant, critic, arbiter)
+        role: result.role as 'assistant' | 'critic' | 'arbiter',
         model_name: result.model,
         content: result.content,
         metadata: { provider: result.provider },
@@ -264,7 +270,7 @@ serve(async (req) => {
 
     return new Response(JSON.stringify({ 
       success: true, 
-      responses: results,
+      responses: successResults,
       errors: errors.length > 0 ? errors : undefined 
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
