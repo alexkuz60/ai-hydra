@@ -196,8 +196,11 @@ serve(async (req) => {
     const results: { model: string; provider: string; content: string }[] = [];
     const errors: { model: string; error: string }[] = [];
 
+    console.log(`Processing ${models.length} models:`, models.map(m => m.model_id));
+
     // Process all models in parallel
     const modelPromises = models.map(async (modelReq) => {
+      console.log(`Starting request for model: ${modelReq.model_id}, use_lovable_ai: ${modelReq.use_lovable_ai}`);
       try {
         if (modelReq.use_lovable_ai) {
           // Check if user is admin
@@ -207,7 +210,9 @@ serve(async (req) => {
           if (!lovableKey) {
             throw new Error("Lovable AI not configured");
           }
-          return await callLovableAI(lovableKey, modelReq.model_id, message, finalSystemPrompt, temperature, max_tokens);
+          const result = await callLovableAI(lovableKey, modelReq.model_id, message, finalSystemPrompt, temperature, max_tokens);
+          console.log(`Success for model: ${modelReq.model_id}`);
+          return result;
         } else {
           // Use personal API key
           let apiKey: string | null = null;
@@ -219,14 +224,18 @@ serve(async (req) => {
             throw new Error(`No API key configured for ${modelReq.provider}`);
           }
 
-          return await callPersonalModel(modelReq.provider!, apiKey, modelReq.model_id, message, finalSystemPrompt, temperature, max_tokens);
+          const result = await callPersonalModel(modelReq.provider!, apiKey, modelReq.model_id, message, finalSystemPrompt, temperature, max_tokens);
+          console.log(`Success for model: ${modelReq.model_id}`);
+          return result;
         }
       } catch (error: any) {
+        console.error(`Error for model ${modelReq.model_id}:`, error.message || error);
         return { error: true, model: modelReq.model_id, message: error.message || "Unknown error" };
       }
     });
 
     const allResults = await Promise.all(modelPromises);
+    console.log(`All results received: ${allResults.length}`);
 
     // Separate successes and errors
     for (const result of allResults) {
@@ -236,6 +245,8 @@ serve(async (req) => {
         results.push(result as { model: string; provider: string; content: string });
       }
     }
+    
+    console.log(`Results: ${results.length} successes, ${errors.length} errors`);
 
     // Save all successful responses to database
     if (results.length > 0) {

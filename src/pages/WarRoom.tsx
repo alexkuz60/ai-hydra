@@ -5,22 +5,18 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { HydraCard, HydraCardHeader, HydraCardTitle, HydraCardContent } from '@/components/ui/hydra-card';
+import { HydraCard } from '@/components/ui/hydra-card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { MultiModelSelector } from '@/components/warroom/MultiModelSelector';
 import { ModelSettings, ModelSettingsData, DEFAULT_SETTINGS } from '@/components/warroom/ModelSettings';
+import { ChatMessage } from '@/components/warroom/ChatMessage';
 import { useAvailableModels, LOVABLE_AI_MODELS, PERSONAL_KEY_MODELS } from '@/hooks/useAvailableModels';
 import { 
   Send, 
   Loader2, 
-  Brain, 
-  Shield, 
-  Scale, 
-  User, 
   Plus,
-  MessageSquare,
   Sparkles,
   Target,
   Pencil,
@@ -49,32 +45,6 @@ interface Task {
   title: string;
 }
 
-const roleConfig = {
-  user: {
-    icon: User,
-    label: 'role.user',
-    variant: 'user' as const,
-    color: 'text-primary',
-  },
-  assistant: {
-    icon: Brain,
-    label: 'role.assistant',
-    variant: 'expert' as const,
-    color: 'text-hydra-expert',
-  },
-  critic: {
-    icon: Shield,
-    label: 'role.critic',
-    variant: 'critic' as const,
-    color: 'text-hydra-critical',
-  },
-  arbiter: {
-    icon: Scale,
-    label: 'role.arbiter',
-    variant: 'arbiter' as const,
-    color: 'text-hydra-arbiter',
-  },
-};
 
 export default function WarRoom() {
   const { user, loading: authLoading } = useAuth();
@@ -244,6 +214,23 @@ export default function WarRoom() {
       setTasks(tasks.map(t => t.id === currentTask.id ? { ...t, title: newTitle } : t));
       setIsEditingTitle(false);
       toast.success(t('common.success'));
+    } catch (error: any) {
+      toast.error(error.message);
+    }
+  };
+
+  const handleDeleteMessage = async (messageId: string) => {
+    try {
+      const { error } = await supabase
+        .from('messages')
+        .delete()
+        .eq('id', messageId);
+
+      if (error) throw error;
+
+      // Update local state
+      setMessages(messages.filter(m => m.id !== messageId));
+      toast.success(t('messages.deleted'));
     } catch (error: any) {
       toast.error(error.message);
     }
@@ -480,45 +467,13 @@ export default function WarRoom() {
                       </p>
                     </div>
                   ) : (
-                    messages.map((message) => {
-                      const config = roleConfig[message.role];
-                      const Icon = config.icon;
-
-                      return (
-                        <HydraCard 
-                          key={message.id} 
-                          variant={config.variant}
-                          className="animate-slide-up"
-                        >
-                          <HydraCardHeader>
-                            <Icon className={cn('h-5 w-5', config.color)} />
-                            <HydraCardTitle className={config.color}>
-                              {t(config.label)}
-                              {message.model_name && (
-                                <span className="text-muted-foreground font-normal ml-2">
-                                  ({message.model_name})
-                                </span>
-                              )}
-                            </HydraCardTitle>
-                            {message.confidence_score && (
-                              <span className="text-xs text-muted-foreground ml-auto">
-                                Confidence: {(message.confidence_score * 100).toFixed(0)}%
-                              </span>
-                            )}
-                          </HydraCardHeader>
-                          <HydraCardContent className="text-foreground/90 whitespace-pre-wrap">
-                            {message.content}
-                          </HydraCardContent>
-                          {message.reasoning_path && (
-                            <div className="mt-3 pt-3 border-t border-border/50">
-                              <p className="text-xs text-muted-foreground font-mono">
-                                Chain of Thought: {message.reasoning_path}
-                              </p>
-                            </div>
-                          )}
-                        </HydraCard>
-                      );
-                    })
+                    messages.map((message) => (
+                      <ChatMessage 
+                        key={message.id} 
+                        message={message}
+                        onDelete={handleDeleteMessage}
+                      />
+                    ))
                   )}
                   <div ref={messagesEndRef} />
                 </div>

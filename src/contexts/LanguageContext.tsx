@@ -99,6 +99,14 @@ const translations: Translations = {
   'common.addLanguage': { ru: 'Добавить язык...', en: 'Add language...' },
   'common.selectAll': { ru: 'Выбрать все', en: 'Select all' },
   'common.deselectAll': { ru: 'Снять все', en: 'Deselect all' },
+  'common.delete': { ru: 'Удалить', en: 'Delete' },
+  'common.collapse': { ru: 'Свернуть', en: 'Collapse' },
+  'common.expand': { ru: 'Развернуть', en: 'Expand' },
+  
+  // Messages
+  'messages.deleteTitle': { ru: 'Удалить сообщение?', en: 'Delete message?' },
+  'messages.deleteConfirm': { ru: 'Это действие нельзя отменить. Сообщение будет удалено навсегда.', en: 'This action cannot be undone. The message will be permanently deleted.' },
+  'messages.deleted': { ru: 'Сообщение удалено', en: 'Message deleted' },
   
   // Settings
   'settings.modelSettings': { ru: 'Настройки модели', en: 'Model Settings' },
