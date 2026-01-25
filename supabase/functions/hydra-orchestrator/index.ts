@@ -6,12 +6,16 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+interface ModelRequest {
+  model_id: string;
+  use_lovable_ai: boolean;
+  provider?: string | null;
+}
+
 interface RequestBody {
   session_id: string;
   message: string;
-  selected_model: string;
-  use_lovable_ai: boolean;
-  provider?: string;
+  models: ModelRequest[];
   temperature?: number;
   max_tokens?: number;
 }
@@ -161,10 +165,10 @@ serve(async (req) => {
       });
     }
 
-    const { session_id, message, selected_model, use_lovable_ai, provider, temperature = 0.7, max_tokens = 2048 }: RequestBody = await req.json();
+    const { session_id, message, models, temperature = 0.7, max_tokens = 2048 }: RequestBody = await req.json();
 
-    if (!session_id || !message || !selected_model) {
-      return new Response(JSON.stringify({ error: "session_id, message, and selected_model are required" }), {
+    if (!session_id || !message || !models || models.length === 0) {
+      return new Response(JSON.stringify({ error: "session_id, message, and models are required" }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -175,53 +179,74 @@ serve(async (req) => {
       .eq("user_id", user.id)
       .single();
 
-    const systemPrompt = `You are an expert AI assistant. Provide clear, well-reasoned responses. Be concise but thorough.`;
+    const systemPrompt = `You are an expert AI assistant participating in a multi-agent discussion. Provide clear, well-reasoned responses. Be concise but thorough. Your perspective may differ from other AI models in this conversation.`;
 
-    let result;
+    const lovableKey = Deno.env.get("LOVABLE_API_KEY");
+    const isAdmin = profile?.username === "AlexKuz";
 
-    if (use_lovable_ai) {
-      // Check if user is admin (AlexKuz)
-      if (profile?.username !== "AlexKuz") {
-        return new Response(JSON.stringify({ error: "Lovable AI access restricted to admin only" }), {
-          status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+    const results: { model: string; provider: string; content: string }[] = [];
+    const errors: { model: string; error: string }[] = [];
+
+    // Process all models in parallel
+    const modelPromises = models.map(async (modelReq) => {
+      try {
+        if (modelReq.use_lovable_ai) {
+          // Check if user is admin
+          if (!isAdmin) {
+            throw new Error("Lovable AI access restricted to admin only");
+          }
+          if (!lovableKey) {
+            throw new Error("Lovable AI not configured");
+          }
+          return await callLovableAI(lovableKey, modelReq.model_id, message, systemPrompt, temperature, max_tokens);
+        } else {
+          // Use personal API key
+          let apiKey: string | null = null;
+          if (modelReq.provider === "openai") apiKey = profile?.openai_api_key;
+          if (modelReq.provider === "gemini") apiKey = profile?.google_gemini_api_key;
+          if (modelReq.provider === "anthropic") apiKey = profile?.anthropic_api_key;
+
+          if (!apiKey) {
+            throw new Error(`No API key configured for ${modelReq.provider}`);
+          }
+
+          return await callPersonalModel(modelReq.provider!, apiKey, modelReq.model_id, message, systemPrompt, temperature, max_tokens);
+        }
+      } catch (error: any) {
+        return { error: true, model: modelReq.model_id, message: error.message || "Unknown error" };
       }
-
-      const lovableKey = Deno.env.get("LOVABLE_API_KEY");
-      if (!lovableKey) {
-        return new Response(JSON.stringify({ error: "Lovable AI not configured" }), {
-          status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-
-      result = await callLovableAI(lovableKey, selected_model, message, systemPrompt, temperature, max_tokens);
-    } else {
-      // Use personal API key
-      let apiKey: string | null = null;
-      if (provider === "openai") apiKey = profile?.openai_api_key;
-      if (provider === "gemini") apiKey = profile?.google_gemini_api_key;
-      if (provider === "anthropic") apiKey = profile?.anthropic_api_key;
-
-      if (!apiKey) {
-        return new Response(JSON.stringify({ error: `No API key configured for ${provider}` }), {
-          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-
-      result = await callPersonalModel(provider!, apiKey, selected_model, message, systemPrompt, temperature, max_tokens);
-    }
-
-    // Save response to database
-    await supabase.from("messages").insert({
-      session_id,
-      user_id: user.id,
-      role: "assistant",
-      model_name: result.model,
-      content: result.content,
-      metadata: { provider: result.provider },
     });
 
-    return new Response(JSON.stringify({ success: true, response: result }), {
+    const allResults = await Promise.all(modelPromises);
+
+    // Separate successes and errors
+    for (const result of allResults) {
+      if ('error' in result && result.error === true) {
+        errors.push({ model: result.model, error: result.message });
+      } else {
+        results.push(result as { model: string; provider: string; content: string });
+      }
+    }
+
+    // Save all successful responses to database
+    if (results.length > 0) {
+      const messagesToInsert = results.map(result => ({
+        session_id,
+        user_id: user.id,
+        role: "assistant",
+        model_name: result.model,
+        content: result.content,
+        metadata: { provider: result.provider },
+      }));
+
+      await supabase.from("messages").insert(messagesToInsert);
+    }
+
+    return new Response(JSON.stringify({ 
+      success: true, 
+      responses: results,
+      errors: errors.length > 0 ? errors : undefined 
+    }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error: any) {

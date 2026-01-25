@@ -64,6 +64,8 @@ const translations: Translations = {
   'warRoom.noSession': { ru: 'Выберите или создайте задачу', en: 'Select or create a task' },
   'warRoom.noApiKeys': { ru: 'Нет доступных моделей. Добавьте API ключи в профиле.', en: 'No models available. Add API keys in profile.' },
   'warRoom.selectModel': { ru: 'Выберите модель', en: 'Select model' },
+  'warRoom.selectModels': { ru: 'Выберите модели', en: 'Select models' },
+  'warRoom.modelsSelected': { ru: 'Выбрано: {count}', en: '{count} selected' },
   'warRoom.personalKeys': { ru: 'Персональные ключи', en: 'Personal Keys' },
   
   // Tasks (formerly Sessions)
@@ -95,6 +97,8 @@ const translations: Translations = {
   'common.cancel': { ru: 'Отмена', en: 'Cancel' },
   'common.confirm': { ru: 'Подтвердить', en: 'Confirm' },
   'common.addLanguage': { ru: 'Добавить язык...', en: 'Add language...' },
+  'common.selectAll': { ru: 'Выбрать все', en: 'Select all' },
+  'common.deselectAll': { ru: 'Снять все', en: 'Deselect all' },
 };
 
 interface LanguageContextType {
