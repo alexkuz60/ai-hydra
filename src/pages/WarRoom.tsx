@@ -198,6 +198,9 @@ export default function WarRoom() {
     if (!user || !currentSession || !input.trim()) return;
     setSending(true);
 
+    const messageContent = input.trim();
+    setInput('');
+
     try {
       // Insert user message
       const { error } = await supabase
@@ -206,15 +209,47 @@ export default function WarRoom() {
           session_id: currentSession.id,
           user_id: user.id,
           role: 'user' as MessageRole,
-          content: input.trim(),
+          content: messageContent,
         });
 
       if (error) throw error;
 
-      setInput('');
+      // Call the Hydra orchestrator to get parallel LLM responses
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/hydra-orchestrator`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
+          },
+          body: JSON.stringify({
+            session_id: currentSession.id,
+            message: messageContent,
+            models: { openai: true, gemini: true, anthropic: true },
+            temperature: 0.7,
+            max_tokens: 2048,
+          }),
+        }
+      );
+
+      const data = await response.json();
       
-      // TODO: Here you would trigger the AI processing pipeline
-      // For now, we just save the user message
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to get AI responses');
+      }
+
+      // Check for any errors in responses
+      const errors = data.responses?.filter((r: any) => r.error) || [];
+      if (errors.length > 0) {
+        errors.forEach((e: any) => {
+          toast.warning(`${e.provider}: ${e.error}`);
+        });
+      }
+
+      if (data.successful === 0) {
+        toast.error(t('warRoom.noApiKeys'));
+      }
       
     } catch (error: any) {
       toast.error(error.message);
