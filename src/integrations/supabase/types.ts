@@ -99,13 +99,10 @@ export type Database = {
       }
       profiles: {
         Row: {
-          anthropic_api_key: string | null
           avatar_url: string | null
           created_at: string
           display_name: string | null
-          google_gemini_api_key: string | null
           id: string
-          openai_api_key: string | null
           preferred_language: string
           preferred_theme: string
           updated_at: string
@@ -113,13 +110,10 @@ export type Database = {
           username: string | null
         }
         Insert: {
-          anthropic_api_key?: string | null
           avatar_url?: string | null
           created_at?: string
           display_name?: string | null
-          google_gemini_api_key?: string | null
           id?: string
-          openai_api_key?: string | null
           preferred_language?: string
           preferred_theme?: string
           updated_at?: string
@@ -127,13 +121,10 @@ export type Database = {
           username?: string | null
         }
         Update: {
-          anthropic_api_key?: string | null
           avatar_url?: string | null
           created_at?: string
           display_name?: string | null
-          google_gemini_api_key?: string | null
           id?: string
-          openai_api_key?: string | null
           preferred_language?: string
           preferred_theme?: string
           updated_at?: string
@@ -218,6 +209,36 @@ export type Database = {
           is_active?: boolean
           session_config?: Json | null
           title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_api_keys: {
+        Row: {
+          anthropic_api_key: string | null
+          created_at: string
+          google_gemini_api_key: string | null
+          id: string
+          openai_api_key: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          anthropic_api_key?: string | null
+          created_at?: string
+          google_gemini_api_key?: string | null
+          id?: string
+          openai_api_key?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          anthropic_api_key?: string | null
+          created_at?: string
+          google_gemini_api_key?: string | null
+          id?: string
+          openai_api_key?: string | null
           updated_at?: string
           user_id?: string
         }

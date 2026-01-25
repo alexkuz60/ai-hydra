@@ -22,6 +22,9 @@ interface Profile {
   display_name: string | null;
   preferred_language: string;
   preferred_theme: string;
+}
+
+interface ApiKeys {
   openai_api_key: string | null;
   google_gemini_api_key: string | null;
   anthropic_api_key: string | null;
@@ -65,22 +68,33 @@ export default function Profile() {
     if (!user) return;
 
     try {
-      const { data, error } = await supabase
+      // Fetch profile data
+      const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('*')
         .eq('user_id', user.id)
         .maybeSingle();
 
-      if (error) throw error;
+      if (profileError) throw profileError;
 
-      if (data) {
-        setProfile(data);
-        setDisplayName(data.display_name || '');
-        setUsername(data.username || '');
-        setOpenaiKey(data.openai_api_key || '');
-        setGeminiKey(data.google_gemini_api_key || '');
-        setAnthropicKey(data.anthropic_api_key || '');
-        setIsAdmin(data.username === 'AlexKuz');
+      if (profileData) {
+        setProfile(profileData);
+        setDisplayName(profileData.display_name || '');
+        setUsername(profileData.username || '');
+        setIsAdmin(profileData.username === 'AlexKuz');
+      }
+
+      // Fetch API keys from separate secure table
+      const { data: apiKeysData } = await supabase
+        .from('user_api_keys')
+        .select('openai_api_key, google_gemini_api_key, anthropic_api_key')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (apiKeysData) {
+        setOpenaiKey(apiKeysData.openai_api_key || '');
+        setGeminiKey(apiKeysData.google_gemini_api_key || '');
+        setAnthropicKey(apiKeysData.anthropic_api_key || '');
       }
     } catch (error: any) {
       toast.error(error.message);
@@ -118,14 +132,15 @@ export default function Profile() {
     setSaving(true);
 
     try {
+      // Upsert API keys to the separate secure table
       const { error } = await supabase
-        .from('profiles')
-        .update({
+        .from('user_api_keys')
+        .upsert({
+          user_id: user.id,
           openai_api_key: openaiKey || null,
           google_gemini_api_key: geminiKey || null,
           anthropic_api_key: anthropicKey || null,
-        })
-        .eq('user_id', user.id);
+        }, { onConflict: 'user_id' });
 
       if (error) throw error;
       toast.success(t('profile.saved'));

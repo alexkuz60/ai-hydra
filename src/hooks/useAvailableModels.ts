@@ -51,19 +51,29 @@ export function useAvailableModels() {
 
     const fetchData = async () => {
       try {
-        // Check if user is admin (AlexKuz)
+        // Check if user is admin (AlexKuz) from profiles
         const { data: profile } = await supabase
           .from('profiles')
-          .select('username, openai_api_key, google_gemini_api_key, anthropic_api_key')
+          .select('username')
           .eq('user_id', user.id)
           .single();
 
         if (profile) {
           setIsAdmin(profile.username === 'AlexKuz');
+        }
+
+        // Fetch API keys from separate secure table
+        const { data: apiKeys } = await supabase
+          .from('user_api_keys')
+          .select('openai_api_key, google_gemini_api_key, anthropic_api_key')
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        if (apiKeys) {
           setUserApiKeys({
-            openai: !!profile.openai_api_key,
-            gemini: !!profile.google_gemini_api_key,
-            anthropic: !!profile.anthropic_api_key,
+            openai: !!apiKeys.openai_api_key,
+            gemini: !!apiKeys.google_gemini_api_key,
+            anthropic: !!apiKeys.anthropic_api_key,
           });
         }
       } catch (error) {
