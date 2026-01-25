@@ -142,6 +142,54 @@ export type Database = {
         }
         Relationships: []
       }
+      prompt_library: {
+        Row: {
+          content: string
+          created_at: string
+          description: string | null
+          embedding: string | null
+          id: string
+          is_default: boolean
+          is_shared: boolean
+          name: string
+          role: string
+          tags: string[] | null
+          updated_at: string
+          usage_count: number
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          description?: string | null
+          embedding?: string | null
+          id?: string
+          is_default?: boolean
+          is_shared?: boolean
+          name: string
+          role?: string
+          tags?: string[] | null
+          updated_at?: string
+          usage_count?: number
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          description?: string | null
+          embedding?: string | null
+          id?: string
+          is_default?: boolean
+          is_shared?: boolean
+          name?: string
+          role?: string
+          tags?: string[] | null
+          updated_at?: string
+          usage_count?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
       sessions: {
         Row: {
           created_at: string

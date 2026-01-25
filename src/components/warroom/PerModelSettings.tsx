@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Slider } from '@/components/ui/slider';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -18,9 +20,17 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
-import { Settings, ChevronDown, RotateCcw, Copy, DollarSign } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { Settings, ChevronDown, RotateCcw, Copy, DollarSign, Pencil, Save, Undo2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 // Pricing per 1M tokens (input/output) in USD
 interface ModelPricing {
@@ -135,8 +145,15 @@ function getModelShortName(modelId: string): string {
 
 export function PerModelSettings({ selectedModels, settings, onChange, className, currentMessage = '' }: PerModelSettingsProps) {
   const { t } = useLanguage();
+  const { user } = useAuth();
   const [isOpen, setIsOpen] = useState(true);
   const [activeTab, setActiveTab] = useState<string>(() => selectedModels[0] || '');
+  const [editingPromptModel, setEditingPromptModel] = useState<string | null>(null);
+  const [originalPrompts, setOriginalPrompts] = useState<Record<string, string>>({});
+  const [saveDialogOpen, setSaveDialogOpen] = useState(false);
+  const [savePromptName, setSavePromptName] = useState('');
+  const [savingPrompt, setSavingPrompt] = useState(false);
+  const [modelToSave, setModelToSave] = useState<string | null>(null);
 
   // Ensure active tab is always valid when selection changes
   React.useEffect(() => {
@@ -177,6 +194,12 @@ export function PerModelSettings({ selectedModels, settings, onChange, className
       ...settings,
       [modelId]: DEFAULT_MODEL_SETTINGS,
     });
+    setEditingPromptModel(null);
+    setOriginalPrompts(prev => {
+      const newPrompts = { ...prev };
+      delete newPrompts[modelId];
+      return newPrompts;
+    });
     toast.success(t('settings.resetDefaults'));
   };
 
@@ -188,6 +211,68 @@ export function PerModelSettings({ selectedModels, settings, onChange, className
     });
     onChange(newSettings);
     toast.success(t('settings.copiedToAll'));
+  };
+
+  // Prompt editing handlers
+  const handleStartEditPrompt = (modelId: string) => {
+    const currentSettings = getModelSettings(modelId);
+    setOriginalPrompts(prev => ({ ...prev, [modelId]: currentSettings.systemPrompt }));
+    setEditingPromptModel(modelId);
+  };
+
+  const handleRevertPrompt = (modelId: string) => {
+    const original = originalPrompts[modelId];
+    if (original !== undefined) {
+      updateModelSettings(modelId, { systemPrompt: original });
+      setOriginalPrompts(prev => {
+        const newPrompts = { ...prev };
+        delete newPrompts[modelId];
+        return newPrompts;
+      });
+    } else {
+      const role = getModelSettings(modelId).role;
+      updateModelSettings(modelId, { systemPrompt: DEFAULT_SYSTEM_PROMPTS[role] });
+    }
+    setEditingPromptModel(null);
+    toast.success(t('settings.promptReverted'));
+  };
+
+  const handleOpenSaveDialog = (modelId: string) => {
+    setModelToSave(modelId);
+    setSavePromptName('');
+    setSaveDialogOpen(true);
+  };
+
+  const handleSavePromptToLibrary = async () => {
+    if (!user || !modelToSave || !savePromptName.trim()) return;
+    setSavingPrompt(true);
+
+    try {
+      const modelSettings = getModelSettings(modelToSave);
+      const { error } = await supabase
+        .from('prompt_library')
+        .insert({
+          user_id: user.id,
+          name: savePromptName.trim(),
+          role: modelSettings.role,
+          content: modelSettings.systemPrompt,
+        });
+
+      if (error) throw error;
+
+      toast.success(t('settings.promptSaved'));
+      setSaveDialogOpen(false);
+      setEditingPromptModel(null);
+      setOriginalPrompts(prev => {
+        const newPrompts = { ...prev };
+        delete newPrompts[modelToSave];
+        return newPrompts;
+      });
+    } catch (error: any) {
+      toast.error(error.message);
+    } finally {
+      setSavingPrompt(false);
+    }
   };
 
   if (selectedModels.length === 0) {
@@ -355,15 +440,56 @@ export function PerModelSettings({ selectedModels, settings, onChange, className
                       />
                     </div>
 
-                    {/* System Prompt */}
+                    {/* Role Prompt */}
                     <div className="space-y-2">
-                      <Label className="text-xs text-muted-foreground">{t('settings.systemPrompt')}</Label>
+                      <div className="flex items-center justify-between">
+                        <Label className="text-xs text-muted-foreground">{t('settings.rolePrompt')}</Label>
+                        {editingPromptModel === modelId && (
+                          <span className="text-[10px] text-primary font-medium">{t('settings.promptEditing')}</span>
+                        )}
+                      </div>
                       <Textarea
                         value={modelSettings.systemPrompt}
-                        onChange={(e) => updateModelSettings(modelId, { systemPrompt: e.target.value })}
+                        onChange={(e) => {
+                          if (editingPromptModel !== modelId) {
+                            handleStartEditPrompt(modelId);
+                          }
+                          updateModelSettings(modelId, { systemPrompt: e.target.value });
+                        }}
                         className="min-h-[100px] text-xs resize-none"
                         placeholder={t('settings.systemPromptPlaceholder')}
                       />
+                      {/* Prompt action buttons */}
+                      <div className="flex gap-1.5">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="flex-1 h-7 text-xs"
+                          onClick={() => handleStartEditPrompt(modelId)}
+                          disabled={editingPromptModel === modelId}
+                        >
+                          <Pencil className="h-3 w-3 mr-1" />
+                          {t('settings.editPrompt')}
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="flex-1 h-7 text-xs"
+                          onClick={() => handleRevertPrompt(modelId)}
+                        >
+                          <Undo2 className="h-3 w-3 mr-1" />
+                          {t('settings.revertPrompt')}
+                        </Button>
+                        <Button
+                          variant="default"
+                          size="sm"
+                          className="flex-1 h-7 text-xs"
+                          onClick={() => handleOpenSaveDialog(modelId)}
+                        >
+                          <Save className="h-3 w-3 mr-1" />
+                          {t('settings.savePrompt')}
+                        </Button>
+                      </div>
                     </div>
 
                     {/* Action Buttons */}
@@ -396,6 +522,36 @@ export function PerModelSettings({ selectedModels, settings, onChange, className
           })}
         </Tabs>
       </CollapsibleContent>
+
+      {/* Save Prompt Dialog */}
+      <Dialog open={saveDialogOpen} onOpenChange={setSaveDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{t('settings.savePrompt')}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>{t('settings.promptName')}</Label>
+              <Input
+                value={savePromptName}
+                onChange={(e) => setSavePromptName(e.target.value)}
+                placeholder={t('settings.promptNamePlaceholder')}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSaveDialogOpen(false)}>
+              {t('common.cancel')}
+            </Button>
+            <Button 
+              onClick={handleSavePromptToLibrary}
+              disabled={!savePromptName.trim() || savingPrompt}
+            >
+              {savingPrompt ? t('common.loading') : t('profile.save')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Collapsible>
   );
 }
