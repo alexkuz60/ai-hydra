@@ -99,6 +99,17 @@ const translations: Translations = {
   'common.addLanguage': { ru: 'Добавить язык...', en: 'Add language...' },
   'common.selectAll': { ru: 'Выбрать все', en: 'Select all' },
   'common.deselectAll': { ru: 'Снять все', en: 'Deselect all' },
+  
+  // Settings
+  'settings.modelSettings': { ru: 'Настройки модели', en: 'Model Settings' },
+  'settings.role': { ru: 'Роль агента', en: 'Agent Role' },
+  'settings.temperature': { ru: 'Температура', en: 'Temperature' },
+  'settings.maxTokens': { ru: 'Макс. токенов', en: 'Max Tokens' },
+  'settings.systemPrompt': { ru: 'Системный промпт', en: 'System Prompt' },
+  'settings.systemPromptPlaceholder': { ru: 'Введите инструкции для модели...', en: 'Enter instructions for the model...' },
+  'settings.resetDefaults': { ru: 'Сбросить настройки', en: 'Reset to Defaults' },
+  'settings.precise': { ru: 'Точность', en: 'Precise' },
+  'settings.creative': { ru: 'Креатив', en: 'Creative' },
 };
 
 interface LanguageContextType {

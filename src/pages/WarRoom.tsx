@@ -10,6 +10,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { MultiModelSelector } from '@/components/warroom/MultiModelSelector';
+import { ModelSettings, ModelSettingsData, DEFAULT_SETTINGS } from '@/components/warroom/ModelSettings';
 import { useAvailableModels, LOVABLE_AI_MODELS, PERSONAL_KEY_MODELS } from '@/hooks/useAvailableModels';
 import { 
   Send, 
@@ -93,6 +94,7 @@ export default function WarRoom() {
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [editedTitle, setEditedTitle] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [modelSettings, setModelSettings] = useState<ModelSettingsData>(DEFAULT_SETTINGS);
   useEffect(() => {
     if (!authLoading && !user) {
       navigate('/login');
@@ -296,8 +298,10 @@ export default function WarRoom() {
             session_id: currentTask.id,
             message: messageContent,
             models: modelsToCall,
-            temperature: 0.7,
-            max_tokens: 2048,
+            temperature: modelSettings.temperature,
+            max_tokens: modelSettings.maxTokens,
+            system_prompt: modelSettings.systemPrompt,
+            role: modelSettings.role,
           }),
         }
       );
@@ -399,6 +403,12 @@ export default function WarRoom() {
               )}
             </div>
           </ScrollArea>
+          
+          {/* Model Settings Panel */}
+          <ModelSettings 
+            settings={modelSettings}
+            onChange={setModelSettings}
+          />
         </aside>
 
         {/* Main Content */}
