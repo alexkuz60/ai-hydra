@@ -78,8 +78,8 @@ export default function ExpertPanel() {
       if (taskId) {
         fetchTask(taskId);
       } else {
-        // No task specified, redirect to tasks page
-        navigate('/tasks');
+        // No task specified, load last task
+        fetchLastTask();
       }
     }
   }, [user, authLoading, navigate, searchParams]);
@@ -137,7 +137,7 @@ export default function ExpertPanel() {
     try {
       const { data, error } = await supabase
         .from('sessions')
-        .select('id, title')
+        .select('id, title, session_config')
         .eq('id', taskId)
         .eq('user_id', user.id)
         .single();
@@ -145,9 +145,60 @@ export default function ExpertPanel() {
       if (error) throw error;
       
       setCurrentTask(data);
+      
+      // Apply saved model configuration if not passed via navigation state
+      if (!initialState?.selectedModels && data.session_config) {
+        const config = data.session_config as { selectedModels?: string[]; perModelSettings?: PerModelSettingsData };
+        if (config.selectedModels) {
+          setSelectedModels(config.selectedModels);
+        }
+        if (config.perModelSettings) {
+          setPerModelSettings(config.perModelSettings);
+        }
+      }
+      
       fetchMessages(taskId);
     } catch (error: any) {
       toast.error(error.message);
+      navigate('/tasks');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchLastTask = async () => {
+    if (!user) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('sessions')
+        .select('id, title, session_config')
+        .eq('user_id', user.id)
+        .order('updated_at', { ascending: false })
+        .limit(1)
+        .single();
+
+      if (error || !data) {
+        // No tasks — redirect to tasks page
+        navigate('/tasks');
+        return;
+      }
+
+      setCurrentTask(data);
+
+      // Apply saved model configuration
+      if (data.session_config) {
+        const config = data.session_config as { selectedModels?: string[]; perModelSettings?: PerModelSettingsData };
+        if (config.selectedModels) {
+          setSelectedModels(config.selectedModels);
+        }
+        if (config.perModelSettings) {
+          setPerModelSettings(config.perModelSettings);
+        }
+      }
+
+      fetchMessages(data.id);
+    } catch (error) {
       navigate('/tasks');
     } finally {
       setLoading(false);
