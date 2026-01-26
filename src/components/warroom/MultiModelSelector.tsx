@@ -69,7 +69,7 @@ export function MultiModelSelector({ value, onChange, className }: MultiModelSel
           <div className="flex items-center gap-2 truncate">
             <Users className="h-4 w-4 shrink-0" />
             {selectedCount === 0 ? (
-              <span className="text-muted-foreground">{t('warRoom.selectModels')}</span>
+              <span className="text-muted-foreground">{t('tasks.modelSelector')}</span>
             ) : selectedCount === 1 ? (
               <span className="truncate">{selectedModels[0]?.name}</span>
             ) : (

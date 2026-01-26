@@ -80,6 +80,7 @@ const translations: Translations = {
   'tasks.deleteConfirmDescription': { ru: 'Это действие нельзя отменить. Задача и все связанные сообщения будут удалены навсегда.', en: 'This action cannot be undone. The task and all related messages will be permanently deleted.' },
   'tasks.modelConfig': { ru: 'Настройки моделей', en: 'Model Settings' },
   'tasks.selectModelsFirst': { ru: 'Сначала выберите модели', en: 'Select models first' },
+  'tasks.modelSelector': { ru: 'Выбор моделей', en: 'Model Selection' },
   
   // Models
   'model.gemini': { ru: 'Gemini Pro', en: 'Gemini Pro' },

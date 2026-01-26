@@ -9,7 +9,7 @@ import { HydraCard } from '@/components/ui/hydra-card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { MultiModelSelector } from '@/components/warroom/MultiModelSelector';
+
 import { PerModelSettings, PerModelSettingsData, DEFAULT_MODEL_SETTINGS } from '@/components/warroom/PerModelSettings';
 import { ChatMessage } from '@/components/warroom/ChatMessage';
 import { useAvailableModels, LOVABLE_AI_MODELS, PERSONAL_KEY_MODELS } from '@/hooks/useAvailableModels';
@@ -414,8 +414,8 @@ export default function ExpertPanel() {
         <div className="flex-1 flex flex-col">
           {currentTask ? (
             <>
-              {/* Model Selector Header */}
-              <div className="border-b border-border p-3 bg-background/50 flex items-center justify-between gap-4">
+              {/* Task Header */}
+              <div className="border-b border-border p-3 bg-background/50 flex items-center gap-4">
                 <div className="flex items-center gap-2 text-sm min-w-0 flex-1">
                   <Target className="h-4 w-4 text-muted-foreground shrink-0" />
                   {isEditingTitle ? (
@@ -462,10 +462,6 @@ export default function ExpertPanel() {
                     </div>
                   )}
                 </div>
-                <MultiModelSelector 
-                  value={selectedModels} 
-                  onChange={setSelectedModels} 
-                />
               </div>
 
               {/* Per-Model Settings (mobile/tablet) */}
