@@ -62,18 +62,15 @@ export function useAvailableModels() {
           setIsAdmin(profile.username === 'AlexKuz');
         }
 
-        // Fetch API keys from separate secure table
-        const { data: apiKeys } = await supabase
-          .from('user_api_keys')
-          .select('openai_api_key, google_gemini_api_key, anthropic_api_key')
-          .eq('user_id', user.id)
-          .maybeSingle();
+        // Fetch API key status using Vault-backed function
+        const { data: keyStatus } = await supabase
+          .rpc('get_my_api_key_status');
 
-        if (apiKeys) {
+        if (keyStatus && keyStatus.length > 0) {
           setUserApiKeys({
-            openai: !!apiKeys.openai_api_key,
-            gemini: !!apiKeys.google_gemini_api_key,
-            anthropic: !!apiKeys.anthropic_api_key,
+            openai: keyStatus[0].has_openai || false,
+            gemini: keyStatus[0].has_gemini || false,
+            anthropic: keyStatus[0].has_anthropic || false,
           });
         }
       } catch (error) {

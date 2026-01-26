@@ -84,17 +84,14 @@ export default function Profile() {
         setIsAdmin(profileData.username === 'AlexKuz');
       }
 
-      // Fetch API keys from separate secure table
+      // Fetch decrypted API keys from Vault
       const { data: apiKeysData } = await supabase
-        .from('user_api_keys')
-        .select('openai_api_key, google_gemini_api_key, anthropic_api_key')
-        .eq('user_id', user.id)
-        .maybeSingle();
+        .rpc('get_my_api_keys');
 
-      if (apiKeysData) {
-        setOpenaiKey(apiKeysData.openai_api_key || '');
-        setGeminiKey(apiKeysData.google_gemini_api_key || '');
-        setAnthropicKey(apiKeysData.anthropic_api_key || '');
+      if (apiKeysData && apiKeysData.length > 0) {
+        setOpenaiKey(apiKeysData[0].openai_api_key || '');
+        setGeminiKey(apiKeysData[0].google_gemini_api_key || '');
+        setAnthropicKey(apiKeysData[0].anthropic_api_key || '');
       }
     } catch (error: any) {
       toast.error(error.message);
@@ -132,15 +129,15 @@ export default function Profile() {
     setSaving(true);
 
     try {
-      // Upsert API keys to the separate secure table
-      const { error } = await supabase
-        .from('user_api_keys')
-        .upsert({
-          user_id: user.id,
-          openai_api_key: openaiKey || null,
-          google_gemini_api_key: geminiKey || null,
-          anthropic_api_key: anthropicKey || null,
-        }, { onConflict: 'user_id' });
+      // Save each API key through Vault-backed function
+      const savePromises = [
+        supabase.rpc('save_api_key', { p_provider: 'openai', p_api_key: openaiKey || '' }),
+        supabase.rpc('save_api_key', { p_provider: 'anthropic', p_api_key: anthropicKey || '' }),
+        supabase.rpc('save_api_key', { p_provider: 'gemini', p_api_key: geminiKey || '' }),
+      ];
+
+      const results = await Promise.all(savePromises);
+      const error = results.find(r => r.error)?.error;
 
       if (error) throw error;
       toast.success(t('profile.saved'));
