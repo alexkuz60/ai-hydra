@@ -48,7 +48,7 @@ interface Task {
 }
 
 
-export default function WarRoom() {
+export default function ExpertPanel() {
   const { user, loading: authLoading } = useAuth();
   const { t } = useLanguage();
   const navigate = useNavigate();
@@ -186,7 +186,7 @@ export default function WarRoom() {
       setTasks([data, ...tasks]);
       setCurrentTask(data);
       setMessages([]);
-      navigate(`/war-room?task=${data.id}`);
+      navigate(`/expert-panel?task=${data.id}`);
     } catch (error: any) {
       toast.error(error.message);
     }
@@ -370,7 +370,7 @@ export default function WarRoom() {
                   onClick={() => {
                     setCurrentTask(task);
                     fetchMessages(task.id);
-                    navigate(`/war-room?task=${task.id}`);
+                    navigate(`/expert-panel?task=${task.id}`);
                   }}
                   className={cn(
                     'w-full text-left px-3 py-2 rounded-lg text-sm transition-colors',
@@ -494,7 +494,7 @@ export default function WarRoom() {
                   <Textarea
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
-                    placeholder={t('warRoom.placeholder')}
+                    placeholder={t('expertPanel.placeholder')}
                     className="flex-1 min-h-[60px] max-h-[200px] resize-none"
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' && !e.shiftKey) {
@@ -522,7 +522,7 @@ export default function WarRoom() {
             <div className="flex-1 flex items-center justify-center">
               <HydraCard variant="glass" className="p-8 text-center max-w-md">
                 <Target className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-                <h2 className="text-xl font-semibold mb-2">{t('warRoom.noSession')}</h2>
+                <h2 className="text-xl font-semibold mb-2">{t('expertPanel.noSession')}</h2>
                 <Button onClick={handleCreateTask} className="hydra-glow-sm mt-4">
                   <Plus className="h-4 w-4 mr-2" />
                   {t('tasks.new')}

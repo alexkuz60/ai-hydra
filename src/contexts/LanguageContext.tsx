@@ -12,7 +12,7 @@ interface Translations {
 const translations: Translations = {
   // Navigation
   'nav.home': { ru: 'Главная', en: 'Home' },
-  'nav.warRoom': { ru: 'War Room', en: 'War Room' },
+  'nav.expertPanel': { ru: 'Панель экспертов', en: 'Expert Panel' },
   'nav.tasks': { ru: 'Задачи', en: 'Tasks' },
   'nav.profile': { ru: 'Профиль', en: 'Profile' },
   'nav.settings': { ru: 'Настройки', en: 'Settings' },
@@ -54,19 +54,19 @@ const translations: Translations = {
   'hero.getStarted': { ru: 'Начать работу', en: 'Get Started' },
   'hero.learnMore': { ru: 'Подробнее', en: 'Learn More' },
   
-  // War Room
-  'warRoom.title': { ru: 'War Room', en: 'War Room' },
-  'warRoom.mainStage': { ru: 'Ответ Арбитра', en: 'Arbiter Response' },
-  'warRoom.experts': { ru: 'Эксперты', en: 'Experts' },
-  'warRoom.critic': { ru: 'Критик', en: 'Critic' },
-  'warRoom.sendPrompt': { ru: 'Отправить запрос', en: 'Send Prompt' },
-  'warRoom.placeholder': { ru: 'Введите ваш запрос...', en: 'Enter your prompt...' },
-  'warRoom.noSession': { ru: 'Выберите или создайте задачу', en: 'Select or create a task' },
-  'warRoom.noApiKeys': { ru: 'Нет доступных моделей. Добавьте API ключи в профиле.', en: 'No models available. Add API keys in profile.' },
-  'warRoom.selectModel': { ru: 'Выберите модель', en: 'Select model' },
-  'warRoom.selectModels': { ru: 'Выберите модели', en: 'Select models' },
-  'warRoom.modelsSelected': { ru: 'Выбрано: {count}', en: '{count} selected' },
-  'warRoom.personalKeys': { ru: 'Персональные ключи', en: 'Personal Keys' },
+  // Expert Panel
+  'expertPanel.title': { ru: 'Панель экспертов', en: 'Expert Panel' },
+  'expertPanel.mainStage': { ru: 'Ответ Арбитра', en: 'Arbiter Response' },
+  'expertPanel.experts': { ru: 'Эксперты', en: 'Experts' },
+  'expertPanel.critic': { ru: 'Критик', en: 'Critic' },
+  'expertPanel.sendPrompt': { ru: 'Отправить запрос', en: 'Send Prompt' },
+  'expertPanel.placeholder': { ru: 'Введите ваш запрос...', en: 'Enter your prompt...' },
+  'expertPanel.noSession': { ru: 'Выберите или создайте задачу', en: 'Select or create a task' },
+  'expertPanel.noApiKeys': { ru: 'Нет доступных моделей. Добавьте API ключи в профиле.', en: 'No models available. Add API keys in profile.' },
+  'expertPanel.selectModel': { ru: 'Выберите модель', en: 'Select model' },
+  'expertPanel.selectModels': { ru: 'Выберите модели', en: 'Select models' },
+  'expertPanel.modelsSelected': { ru: 'Выбрано: {count}', en: '{count} selected' },
+  'expertPanel.personalKeys': { ru: 'Персональные ключи', en: 'Personal Keys' },
   
   // Tasks (formerly Sessions)
   'tasks.title': { ru: 'Задачи', en: 'Tasks' },
@@ -163,7 +163,7 @@ const translations: Translations = {
   'promptLibrary.usedTimes': { ru: 'Использован: {count}', en: 'Used: {count}' },
   
   // War Room extras
-  'warRoom.noModelsSelected': { ru: 'Модели не выбраны', en: 'No models selected' },
+  'expertPanel.noModelsSelected': { ru: 'Модели не выбраны', en: 'No models selected' },
   
   // Presets
   'presets.title': { ru: 'Пресеты', en: 'Presets' },

@@ -11,7 +11,7 @@ import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import Profile from "./pages/Profile";
 import Tasks from "./pages/Tasks";
-import WarRoom from "./pages/WarRoom";
+import ExpertPanel from "./pages/ExpertPanel";
 import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 
@@ -32,7 +32,7 @@ const App = () => (
                 <Route path="/signup" element={<Signup />} />
                 <Route path="/profile" element={<Profile />} />
                 <Route path="/tasks" element={<Tasks />} />
-                <Route path="/war-room" element={<WarRoom />} />
+                <Route path="/expert-panel" element={<ExpertPanel />} />
                 <Route path="/admin" element={<Admin />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
