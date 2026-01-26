@@ -73,7 +73,7 @@ const Index = () => {
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 {user ? (
                   <Button size="lg" asChild className="hydra-glow text-lg px-8">
-                    <Link to="/war-room">
+                    <Link to="/expert-panel">
                       {t('nav.warRoom')}
                       <ArrowRight className="ml-2 h-5 w-5" />
                     </Link>
