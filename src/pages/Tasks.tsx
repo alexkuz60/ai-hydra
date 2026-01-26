@@ -201,7 +201,7 @@ export default function Tasks() {
   const getModelRole = (modelId: string) => {
     const settings = perModelSettings[modelId];
     const role = settings?.role || DEFAULT_MODEL_SETTINGS.role;
-    return t(`warRoom.role_${role}`) || role;
+    return t(`role.${role}`);
   };
 
   if (authLoading || loading) {
