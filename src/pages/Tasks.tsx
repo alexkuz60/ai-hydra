@@ -398,18 +398,7 @@ export default function Tasks() {
                         </Button>
                       </div>
                     ) : (
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-semibold truncate">{task.title}</h3>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-6 w-6 text-muted-foreground hover:text-primary shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                          onClick={(e) => handleStartEditTitle(task, e)}
-                          title={t('tasks.editTitle')}
-                        >
-                          <Pencil className="h-3 w-3" />
-                        </Button>
-                      </div>
+                      <h3 className="font-semibold truncate">{task.title}</h3>
                     )}
                     <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
                       <Calendar className="h-3 w-3" />
@@ -431,17 +420,30 @@ export default function Tasks() {
                       </div>
                     )}
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="text-muted-foreground hover:text-hydra-critical shrink-0"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setTaskToDelete(task);
-                    }}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                  <div className="flex items-center gap-1 shrink-0">
+                    {editingTaskId !== task.id && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-muted-foreground hover:text-primary opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={(e) => handleStartEditTitle(task, e)}
+                        title={t('tasks.editTitle')}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                    )}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-muted-foreground hover:text-hydra-critical"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setTaskToDelete(task);
+                      }}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               </HydraCard>
             ))
