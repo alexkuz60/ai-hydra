@@ -69,6 +69,13 @@ const translations: Translations = {
   'expertPanel.modelsSelected': { ru: 'Выбрано: {count}', en: '{count} selected' },
   'expertPanel.personalKeys': { ru: 'Персональные ключи', en: 'Personal Keys' },
   
+  // Model selection (Tasks page)
+  'models.noApiKeys': { ru: 'Нет доступных моделей. Добавьте API ключи в профиле.', en: 'No models available. Add API keys in profile.' },
+  'models.selectModel': { ru: 'Выберите модель', en: 'Select model' },
+  'models.modelsSelected': { ru: 'Выбрано: {count}', en: '{count} selected' },
+  'models.personalKeys': { ru: 'Персональные ключи', en: 'Personal Keys' },
+  'models.noModelsSelected': { ru: 'Модели не выбраны', en: 'No models selected' },
+  
   // Tasks (formerly Sessions)
   'tasks.title': { ru: 'Задачи', en: 'Tasks' },
   'tasks.new': { ru: 'Новая задача', en: 'New Task' },
@@ -166,7 +173,7 @@ const translations: Translations = {
   'promptLibrary.own': { ru: 'Ваш промпт', en: 'Your prompt' },
   'promptLibrary.usedTimes': { ru: 'Использован: {count}', en: 'Used: {count}' },
   
-  // War Room extras
+  // Expert Panel extras (legacy)
   'expertPanel.noModelsSelected': { ru: 'Модели не выбраны', en: 'No models selected' },
   
   // Presets

@@ -37,7 +37,7 @@ export function ModelSelector({ value, onChange, className }: ModelSelectorProps
     return (
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
         <AlertCircle className="h-4 w-4 text-hydra-critical" />
-        <span>{t('warRoom.noApiKeys')}</span>
+        <span>{t('models.noApiKeys')}</span>
       </div>
     );
   }
@@ -45,7 +45,7 @@ export function ModelSelector({ value, onChange, className }: ModelSelectorProps
   return (
     <Select value={value} onValueChange={onChange}>
       <SelectTrigger className={cn('w-[220px]', className)}>
-        <SelectValue placeholder={t('warRoom.selectModel')} />
+        <SelectValue placeholder={t('models.selectModel')} />
       </SelectTrigger>
       <SelectContent className="hydra-glass max-h-[300px]">
         {/* Lovable AI Models (Admin only) */}
@@ -68,7 +68,7 @@ export function ModelSelector({ value, onChange, className }: ModelSelectorProps
           <SelectGroup>
             <SelectLabel className="flex items-center gap-2 text-muted-foreground">
               <Key className="h-3 w-3" />
-              {t('warRoom.personalKeys')}
+              {t('models.personalKeys')}
             </SelectLabel>
             {personalModels.map((model) => (
               <SelectItem key={model.id} value={model.id}>

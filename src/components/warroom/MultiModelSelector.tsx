@@ -51,7 +51,7 @@ export function MultiModelSelector({ value, onChange, className }: MultiModelSel
     return (
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
         <AlertCircle className="h-4 w-4 text-hydra-critical" />
-        <span>{t('warRoom.noApiKeys')}</span>
+        <span>{t('models.noApiKeys')}</span>
       </div>
     );
   }
@@ -73,7 +73,7 @@ export function MultiModelSelector({ value, onChange, className }: MultiModelSel
             ) : selectedCount === 1 ? (
               <span className="truncate">{selectedModels[0]?.name}</span>
             ) : (
-              <span>{t('warRoom.modelsSelected').replace('{count}', String(selectedCount))}</span>
+              <span>{t('models.modelsSelected').replace('{count}', String(selectedCount))}</span>
             )}
           </div>
           <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
@@ -122,7 +122,7 @@ export function MultiModelSelector({ value, onChange, className }: MultiModelSel
                 <div className="flex items-center justify-between px-2 py-1.5">
                   <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
                     <Key className="h-3 w-3" />
-                    {t('warRoom.personalKeys')}
+                    {t('models.personalKeys')}
                   </div>
                   <Button
                     variant="ghost"
