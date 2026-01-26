@@ -216,29 +216,29 @@ export type Database = {
       }
       user_api_keys: {
         Row: {
-          anthropic_api_key: string | null
+          anthropic_vault_id: string | null
           created_at: string
-          google_gemini_api_key: string | null
+          gemini_vault_id: string | null
           id: string
-          openai_api_key: string | null
+          openai_vault_id: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
-          anthropic_api_key?: string | null
+          anthropic_vault_id?: string | null
           created_at?: string
-          google_gemini_api_key?: string | null
+          gemini_vault_id?: string | null
           id?: string
-          openai_api_key?: string | null
+          openai_vault_id?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
-          anthropic_api_key?: string | null
+          anthropic_vault_id?: string | null
           created_at?: string
-          google_gemini_api_key?: string | null
+          gemini_vault_id?: string | null
           id?: string
-          openai_api_key?: string | null
+          openai_vault_id?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -270,6 +270,24 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      delete_user_secret: { Args: { p_secret_id: string }; Returns: undefined }
+      get_decrypted_secret: { Args: { p_secret_id: string }; Returns: string }
+      get_my_api_key_status: {
+        Args: never
+        Returns: {
+          has_anthropic: boolean
+          has_gemini: boolean
+          has_openai: boolean
+        }[]
+      }
+      get_my_api_keys: {
+        Args: never
+        Returns: {
+          anthropic_api_key: string
+          google_gemini_api_key: string
+          openai_api_key: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -278,6 +296,18 @@ export type Database = {
         Returns: boolean
       }
       is_admin_or_supervisor: { Args: { _user_id: string }; Returns: boolean }
+      save_api_key: {
+        Args: { p_api_key: string; p_provider: string }
+        Returns: undefined
+      }
+      store_user_secret: {
+        Args: {
+          p_secret_name: string
+          p_secret_value: string
+          p_user_id: string
+        }
+        Returns: string
+      }
     }
     Enums: {
       app_role: "user" | "moderator" | "admin" | "supervisor"
