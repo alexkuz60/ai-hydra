@@ -88,6 +88,8 @@ const translations: Translations = {
   'tasks.modelConfig': { ru: 'Настройки моделей', en: 'Model Settings' },
   'tasks.selectModelsFirst': { ru: 'Сначала выберите модели', en: 'Select models first' },
   'tasks.modelSelector': { ru: 'Выбор моделей', en: 'Model Selection' },
+  'tasks.editTitle': { ru: 'Редактировать название', en: 'Edit title' },
+  'tasks.titleSaved': { ru: 'Название сохранено', en: 'Title saved' },
   
   // Models
   'model.gemini': { ru: 'Gemini Pro', en: 'Gemini Pro' },

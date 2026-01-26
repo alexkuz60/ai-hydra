@@ -16,17 +16,11 @@ import { useAvailableModels, LOVABLE_AI_MODELS, PERSONAL_KEY_MODELS } from '@/ho
 import { 
   Send, 
   Loader2, 
-  Plus,
   Sparkles,
   Target,
-  Pencil,
-  Check,
-  X,
-  Search,
   ChevronLeft,
   ChevronRight
 } from 'lucide-react';
-import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 
 type MessageRole = 'user' | 'assistant' | 'critic' | 'arbiter';
@@ -55,7 +49,7 @@ export default function ExpertPanel() {
   const [searchParams] = useSearchParams();
   const location = useLocation();
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const { isAdmin, lovableModels, personalModels, hasAnyModels } = useAvailableModels();
+  const { lovableModels, personalModels } = useAvailableModels();
 
   // Get initial state from navigation (passed from Tasks page)
   const initialState = location.state as {
@@ -63,19 +57,16 @@ export default function ExpertPanel() {
     perModelSettings?: PerModelSettingsData;
   } | null;
 
-  const [tasks, setTasks] = useState<Task[]>([]);
   const [currentTask, setCurrentTask] = useState<Task | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [selectedModels, setSelectedModels] = useState<string[]>(initialState?.selectedModels || []);
-  const [isEditingTitle, setIsEditingTitle] = useState(false);
-  const [editedTitle, setEditedTitle] = useState('');
-  const [searchQuery, setSearchQuery] = useState('');
   const [perModelSettings, setPerModelSettings] = useState<PerModelSettingsData>(initialState?.perModelSettings || {});
   const [settingsCollapsed, setSettingsCollapsed] = useState(false);
   const [initialStateApplied, setInitialStateApplied] = useState(false);
+
   useEffect(() => {
     if (!authLoading && !user) {
       navigate('/login');
@@ -83,23 +74,15 @@ export default function ExpertPanel() {
     }
 
     if (user) {
-      fetchTasks();
-    }
-  }, [user, authLoading, navigate]);
-
-  useEffect(() => {
-    const taskId = searchParams.get('task');
-    if (taskId && tasks.length > 0) {
-      const task = tasks.find(t => t.id === taskId);
-      if (task) {
-        setCurrentTask(task);
-        fetchMessages(taskId);
+      const taskId = searchParams.get('task');
+      if (taskId) {
+        fetchTask(taskId);
+      } else {
+        // No task specified, redirect to tasks page
+        navigate('/tasks');
       }
-    } else if (tasks.length > 0 && !currentTask) {
-      setCurrentTask(tasks[0]);
-      fetchMessages(tasks[0].id);
     }
-  }, [searchParams, tasks]);
+  }, [user, authLoading, navigate, searchParams]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -148,20 +131,24 @@ export default function ExpertPanel() {
     };
   }, [currentTask]);
 
-  const fetchTasks = async () => {
+  const fetchTask = async (taskId: string) => {
     if (!user) return;
 
     try {
       const { data, error } = await supabase
         .from('sessions')
         .select('id, title')
+        .eq('id', taskId)
         .eq('user_id', user.id)
-        .order('updated_at', { ascending: false });
+        .single();
 
       if (error) throw error;
-      setTasks(data || []);
+      
+      setCurrentTask(data);
+      fetchMessages(taskId);
     } catch (error: any) {
       toast.error(error.message);
+      navigate('/tasks');
     } finally {
       setLoading(false);
     }
@@ -182,60 +169,6 @@ export default function ExpertPanel() {
     }
   };
 
-  const handleCreateTask = async () => {
-    if (!user) return;
-
-    try {
-      const { data, error } = await supabase
-        .from('sessions')
-        .insert({
-          user_id: user.id,
-          title: `Задача ${new Date().toLocaleDateString()}`,
-        })
-        .select('id, title')
-        .single();
-
-      if (error) throw error;
-
-      setTasks([data, ...tasks]);
-      setCurrentTask(data);
-      setMessages([]);
-      navigate(`/expert-panel?task=${data.id}`);
-    } catch (error: any) {
-      toast.error(error.message);
-    }
-  };
-
-  const handleStartEditTitle = () => {
-    if (currentTask) {
-      setEditedTitle(currentTask.title);
-      setIsEditingTitle(true);
-    }
-  };
-
-  const handleSaveTitle = async () => {
-    if (!currentTask || !editedTitle.trim()) return;
-    
-    const newTitle = editedTitle.trim().slice(0, 100); // Limit to 100 chars
-    
-    try {
-      const { error } = await supabase
-        .from('sessions')
-        .update({ title: newTitle })
-        .eq('id', currentTask.id);
-
-      if (error) throw error;
-
-      // Update local state
-      setCurrentTask({ ...currentTask, title: newTitle });
-      setTasks(tasks.map(t => t.id === currentTask.id ? { ...t, title: newTitle } : t));
-      setIsEditingTitle(false);
-      toast.success(t('common.success'));
-    } catch (error: any) {
-      toast.error(error.message);
-    }
-  };
-
   const handleDeleteMessage = async (messageId: string) => {
     try {
       const { error } = await supabase
@@ -251,11 +184,6 @@ export default function ExpertPanel() {
     } catch (error: any) {
       toast.error(error.message);
     }
-  };
-
-  const handleCancelEditTitle = () => {
-    setIsEditingTitle(false);
-    setEditedTitle('');
   };
 
   const handleSendMessage = async () => {
@@ -348,198 +276,93 @@ export default function ExpertPanel() {
     );
   }
 
+  // If no task, show redirect message (will redirect via useEffect)
+  if (!currentTask) {
+    return (
+      <Layout>
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </Layout>
+    );
+  }
+
   return (
     <Layout>
       <div className="h-[calc(100vh-4rem)] flex overflow-hidden">
-        {/* Tasks Sidebar */}
-        <aside className="w-64 border-r border-border bg-sidebar hidden lg:flex flex-col">
-          <div className="p-4 border-b border-sidebar-border space-y-3">
-            <Button 
-              onClick={handleCreateTask}
-              className="w-full hydra-glow-sm"
-              size="sm"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              {t('tasks.new')}
-            </Button>
-            <div className="relative">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder={t('tasks.search')}
-                className="pl-8 h-8 text-sm"
-              />
-            </div>
-          </div>
-          <ScrollArea className="flex-1 hydra-scrollbar">
-            <div className="p-2 space-y-1">
-              {tasks
-                .filter(task => 
-                  task.title.toLowerCase().includes(searchQuery.toLowerCase())
-                )
-                .map((task) => (
-                <button
-                  key={task.id}
-                  onClick={() => {
-                    setCurrentTask(task);
-                    fetchMessages(task.id);
-                    navigate(`/expert-panel?task=${task.id}`);
-                  }}
-                  className={cn(
-                    'w-full text-left px-3 py-2 rounded-lg text-sm transition-colors',
-                    currentTask?.id === task.id
-                      ? 'bg-sidebar-accent text-sidebar-accent-foreground'
-                      : 'text-sidebar-foreground hover:bg-sidebar-accent/50'
-                  )}
-                >
-                  <div className="flex items-center gap-2">
-                    <Target className="h-4 w-4 shrink-0" />
-                    <span className="truncate">{task.title}</span>
-                  </div>
-                </button>
-              ))}
-              {tasks.length > 0 && tasks.filter(task => 
-                task.title.toLowerCase().includes(searchQuery.toLowerCase())
-              ).length === 0 && (
-                <p className="text-sm text-muted-foreground text-center py-4">
-                  {t('tasks.noResults')}
-                </p>
-              )}
-            </div>
-          </ScrollArea>
-        </aside>
-
         {/* Main Content */}
         <div className="flex-1 flex flex-col">
-          {currentTask ? (
-            <>
-              {/* Task Header */}
-              <div className="border-b border-border p-3 bg-background/50 flex items-center gap-4">
-                <div className="flex items-center gap-2 text-sm min-w-0 flex-1">
-                  <Target className="h-4 w-4 text-muted-foreground shrink-0" />
-                  {isEditingTitle ? (
-                    <div className="flex items-center gap-2 flex-1">
-                      <Input
-                        value={editedTitle}
-                        onChange={(e) => setEditedTitle(e.target.value)}
-                        className="h-7 text-sm max-w-xs"
-                        maxLength={100}
-                        autoFocus
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') handleSaveTitle();
-                          if (e.key === 'Escape') handleCancelEditTitle();
-                        }}
-                      />
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7 text-primary hover:text-primary/80"
-                        onClick={handleSaveTitle}
-                      >
-                        <Check className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7 text-muted-foreground hover:text-hydra-critical"
-                        onClick={handleCancelEditTitle}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-2 min-w-0">
-                      <span className="font-medium truncate">{currentTask.title}</span>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-6 w-6 text-muted-foreground hover:text-primary shrink-0"
-                        onClick={handleStartEditTitle}
-                      >
-                        <Pencil className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Per-Model Settings (mobile/tablet) */}
-              <div className="lg:hidden">
-                <PerModelSettings
-                  selectedModels={selectedModels}
-                  settings={perModelSettings}
-                  onChange={setPerModelSettings}
-                  currentMessage={input}
-                  className="border-t-0 flex-1 min-h-0"
-                />
-              </div>
-
-              {/* Messages Area */}
-              <ScrollArea className="flex-1 p-4 hydra-scrollbar">
-                <div className="max-w-4xl mx-auto space-y-4">
-                  {messages.length === 0 ? (
-                    <div className="text-center py-16">
-                      <Sparkles className="h-12 w-12 text-primary mx-auto mb-4 animate-pulse-glow" />
-                      <p className="text-muted-foreground">
-                        Начните диалог с AI-Hydra
-                      </p>
-                    </div>
-                  ) : (
-                    messages.map((message) => (
-                      <ChatMessage 
-                        key={message.id} 
-                        message={message}
-                        onDelete={handleDeleteMessage}
-                      />
-                    ))
-                  )}
-                  <div ref={messagesEndRef} />
-                </div>
-              </ScrollArea>
-
-              {/* Input Area */}
-              <div className="border-t border-border p-4 bg-background/80 backdrop-blur-sm">
-                <div className="max-w-4xl mx-auto flex gap-3">
-                  <Textarea
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    placeholder={t('expertPanel.placeholder')}
-                    className="flex-1 min-h-[60px] max-h-[200px] resize-none"
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' && !e.shiftKey) {
-                        e.preventDefault();
-                        handleSendMessage();
-                      }
-                    }}
-                  />
-                  <Button
-                    onClick={handleSendMessage}
-                    disabled={sending || !input.trim() || selectedModels.length === 0}
-                    className="hydra-glow-sm self-end"
-                    size="lg"
-                  >
-                    {sending ? (
-                      <Loader2 className="h-5 w-5 animate-spin" />
-                    ) : (
-                      <Send className="h-5 w-5" />
-                    )}
-                  </Button>
-                </div>
-              </div>
-            </>
-          ) : (
-            <div className="flex-1 flex items-center justify-center">
-              <HydraCard variant="glass" className="p-8 text-center max-w-md">
-                <Target className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-                <h2 className="text-xl font-semibold mb-2">{t('expertPanel.noSession')}</h2>
-                <Button onClick={handleCreateTask} className="hydra-glow-sm mt-4">
-                  <Plus className="h-4 w-4 mr-2" />
-                  {t('tasks.new')}
-                </Button>
-              </HydraCard>
+          {/* Task Header */}
+          <div className="border-b border-border p-3 bg-background/50 flex items-center gap-4">
+            <div className="flex items-center gap-2 text-sm min-w-0 flex-1">
+              <Target className="h-4 w-4 text-muted-foreground shrink-0" />
+              <span className="font-medium truncate">{currentTask.title}</span>
             </div>
-          )}
+          </div>
+
+          {/* Per-Model Settings (mobile/tablet) */}
+          <div className="lg:hidden">
+            <PerModelSettings
+              selectedModels={selectedModels}
+              settings={perModelSettings}
+              onChange={setPerModelSettings}
+              currentMessage={input}
+              className="border-t-0 flex-1 min-h-0"
+            />
+          </div>
+
+          {/* Messages Area */}
+          <ScrollArea className="flex-1 p-4 hydra-scrollbar">
+            <div className="max-w-4xl mx-auto space-y-4">
+              {messages.length === 0 ? (
+                <div className="text-center py-16">
+                  <Sparkles className="h-12 w-12 text-primary mx-auto mb-4 animate-pulse-glow" />
+                  <p className="text-muted-foreground">
+                    Начните диалог с AI-Hydra
+                  </p>
+                </div>
+              ) : (
+                messages.map((message) => (
+                  <ChatMessage 
+                    key={message.id} 
+                    message={message}
+                    onDelete={handleDeleteMessage}
+                  />
+                ))
+              )}
+              <div ref={messagesEndRef} />
+            </div>
+          </ScrollArea>
+
+          {/* Input Area */}
+          <div className="border-t border-border p-4 bg-background/80 backdrop-blur-sm">
+            <div className="max-w-4xl mx-auto flex gap-3">
+              <Textarea
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                placeholder={t('expertPanel.placeholder')}
+                className="flex-1 min-h-[60px] max-h-[200px] resize-none"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSendMessage();
+                  }
+                }}
+              />
+              <Button
+                onClick={handleSendMessage}
+                disabled={sending || !input.trim() || selectedModels.length === 0}
+                className="hydra-glow-sm self-end"
+                size="lg"
+              >
+                {sending ? (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                ) : (
+                  <Send className="h-5 w-5" />
+                )}
+              </Button>
+            </div>
+          </div>
         </div>
 
         {/* Settings Sidebar (right) */}
