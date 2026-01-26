@@ -81,10 +81,15 @@ export default function Tasks() {
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
   const [editedTaskTitle, setEditedTaskTitle] = useState('');
   
-  // Model configuration state
+  // Model configuration state for new task
   const [selectedModels, setSelectedModels] = useState<string[]>([]);
   const [perModelSettings, setPerModelSettings] = useState<PerModelSettingsData>({});
   const [settingsOpen, setSettingsOpen] = useState(false);
+  
+  // Editing existing task's models
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [editingModels, setEditingModels] = useState<string[]>([]);
+  const [editingModelSettings, setEditingModelSettings] = useState<PerModelSettingsData>({});
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -237,11 +242,66 @@ export default function Tasks() {
     setEditedTaskTitle('');
   };
 
-  // Get role label for a model
+  // Get role label for a model (for new task form)
   const getModelRole = (modelId: string) => {
     const settings = perModelSettings[modelId];
     const role = settings?.role || DEFAULT_MODEL_SETTINGS.role;
     return t(`role.${role}`);
+  };
+
+  // Get role label for a model in existing task
+  const getTaskModelRole = (task: Task, modelId: string) => {
+    const settings = task.session_config?.perModelSettings?.[modelId];
+    const role = settings?.role || DEFAULT_MODEL_SETTINGS.role;
+    return t(`role.${role}`);
+  };
+
+  // Start editing existing task's models
+  const handleStartEditModels = (task: Task, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setEditingTask(task);
+    setEditingModels(task.session_config?.selectedModels || []);
+    setEditingModelSettings(task.session_config?.perModelSettings || {});
+  };
+
+  // Save edited models for existing task
+  const handleSaveEditedModels = async () => {
+    if (!editingTask) return;
+    
+    try {
+      const sessionConfig = {
+        selectedModels: editingModels,
+        perModelSettings: editingModelSettings,
+      };
+
+      const { error } = await supabase
+        .from('sessions')
+        .update({ 
+          session_config: JSON.parse(JSON.stringify(sessionConfig)),
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', editingTask.id);
+
+      if (error) throw error;
+
+      setTasks(tasks.map(t => 
+        t.id === editingTask.id 
+          ? { ...t, session_config: sessionConfig, updated_at: new Date().toISOString() } 
+          : t
+      ));
+      
+      toast.success(t('tasks.configSaved'));
+      setEditingTask(null);
+    } catch (error: any) {
+      toast.error(error.message);
+    }
+  };
+
+  // Cancel editing existing task's models
+  const handleCancelEditModels = () => {
+    setEditingTask(null);
+    setEditingModels([]);
+    setEditingModelSettings({});
   };
 
   if (authLoading || loading) {
@@ -332,7 +392,7 @@ export default function Tasks() {
           </HydraCardContent>
         </HydraCard>
         
-        {/* Model Settings Sheet */}
+        {/* Model Settings Sheet for New Task */}
         <Sheet open={settingsOpen} onOpenChange={setSettingsOpen}>
           <SheetContent side="right" className="w-full sm:max-w-lg p-0 flex flex-col">
             <SheetHeader className="p-4 border-b">
@@ -346,6 +406,46 @@ export default function Tasks() {
                 className="border-t-0"
               />
             </ScrollArea>
+          </SheetContent>
+        </Sheet>
+
+        {/* Model Settings Sheet for Existing Task */}
+        <Sheet open={!!editingTask} onOpenChange={(open) => !open && handleCancelEditModels()}>
+          <SheetContent side="right" className="w-full sm:max-w-lg p-0 flex flex-col">
+            <SheetHeader className="p-4 border-b">
+              <SheetTitle className="flex items-center gap-2">
+                <Settings className="h-5 w-5" />
+                {editingTask?.title}
+              </SheetTitle>
+            </SheetHeader>
+            
+            {/* Model Selector */}
+            <div className="p-4 border-b">
+              <MultiModelSelector 
+                value={editingModels} 
+                onChange={setEditingModels}
+                className="w-full"
+              />
+            </div>
+            
+            <ScrollArea className="flex-1">
+              <PerModelSettings
+                selectedModels={editingModels}
+                settings={editingModelSettings}
+                onChange={setEditingModelSettings}
+                className="border-t-0"
+              />
+            </ScrollArea>
+            
+            {/* Save/Cancel buttons */}
+            <div className="p-4 border-t flex justify-end gap-2">
+              <Button variant="outline" onClick={handleCancelEditModels}>
+                {t('common.cancel')}
+              </Button>
+              <Button onClick={handleSaveEditedModels} disabled={editingModels.length === 0}>
+                {t('common.save')}
+              </Button>
+            </div>
           </SheetContent>
         </Sheet>
 
@@ -414,7 +514,9 @@ export default function Tasks() {
                             className="flex items-center gap-1.5 text-xs py-0.5 px-2 rounded-full bg-muted/50"
                           >
                             {getModelIcon(modelId)}
-                            <span className="truncate max-w-[120px]">{getModelName(modelId)}</span>
+                            <span className="truncate max-w-[100px]">{getModelName(modelId)}</span>
+                            <span className="text-muted-foreground">•</span>
+                            <span className="text-muted-foreground">{getTaskModelRole(task, modelId)}</span>
                           </div>
                         ))}
                       </div>
@@ -422,20 +524,31 @@ export default function Tasks() {
                   </div>
                   <div className="flex items-center gap-1 shrink-0">
                     {editingTaskId !== task.id && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-muted-foreground hover:text-primary opacity-0 group-hover:opacity-100 transition-opacity"
-                        onClick={(e) => handleStartEditTitle(task, e)}
-                        title={t('tasks.editTitle')}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
+                      <>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-muted-foreground hover:text-primary opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={(e) => handleStartEditModels(task, e)}
+                          title={t('tasks.modelConfig')}
+                        >
+                          <Settings className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-muted-foreground hover:text-primary opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={(e) => handleStartEditTitle(task, e)}
+                          title={t('tasks.editTitle')}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                      </>
                     )}
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-8 w-8 text-muted-foreground hover:text-hydra-critical"
+                      className="h-8 w-8 text-muted-foreground hover:text-hydra-critical opacity-0 group-hover:opacity-100 transition-opacity"
                       onClick={(e) => {
                         e.stopPropagation();
                         setTaskToDelete(task);

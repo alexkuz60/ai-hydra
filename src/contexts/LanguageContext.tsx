@@ -90,6 +90,7 @@ const translations: Translations = {
   'tasks.modelSelector': { ru: 'Выбор моделей', en: 'Model Selection' },
   'tasks.editTitle': { ru: 'Редактировать название', en: 'Edit title' },
   'tasks.titleSaved': { ru: 'Название сохранено', en: 'Title saved' },
+  'tasks.configSaved': { ru: 'Настройки сохранены', en: 'Settings saved' },
   
   // Models
   'model.gemini': { ru: 'Gemini Pro', en: 'Gemini Pro' },
