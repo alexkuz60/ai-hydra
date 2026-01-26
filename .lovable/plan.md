@@ -1,181 +1,162 @@
 
-## План: Улучшение навигации и UI карточки задачи
+## План: Рейтинг сообщений и упрощение Панели экспертов
 
 ### Что делаем
 
-1. **Автозагрузка последней задачи при переходе в Панель экспертов**
-   - При клике на "Панель экспертов" → загружать чат последней задачи (по `updated_at`)
-   - Если задач нет → перенаправлять на страницу "Задачи"
+1. **Удаляем панель настроек моделей из ExpertPanel**
+   - Убираем правый сайдбар с настройками (`PerModelSettings`)
+   - Убираем мобильную версию настроек
+   - Настройки моделей остаются только на странице "Задачи"
 
-2. **Перенос иконки редактирования вправо**
-   - Переместить иконку ✏️ к кнопке 🗑️
-   - Логика: теперь редактируем не только название, но и конфигурацию моделей
+2. **Добавляем рейтинговую систему для сообщений ИИ**
+   - Рейтинг 0-10 баллов для каждого сообщения AI (не для пользовательских)
+   - Иконки мозга вместо звезд (11 состояний: 0-10)
+   - Сохранение рейтинга в поле `metadata` таблицы `messages`
 
 ### Визуальный результат
 
-**Карточка задачи — текущая структура:**
+**Упрощенная Панель экспертов:**
 ```text
-┌─────────────────────────────────────────────────────────────┐
-│  Название задачи ✏️                                 🗑️    │
-│  📅 24.01.2025 15:30                                        │
-│  [GPT-5] [Gemini]                                           │
-└─────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────┐
+│  📋 Название задачи                                          │
+├──────────────────────────────────────────────────────────────┤
+│                                                              │
+│  ┌────────────────────────────────────────────────────────┐ │
+│  │ 🧠 Эксперт (GPT-5)                                     │ │
+│  │ Ответ модели...                                        │ │
+│  │                                                        │ │
+│  │ Рейтинг: 🧠🧠🧠🧠🧠🧠🧠🧠○○  8/10      ▾ ▴  🗑️       │ │
+│  └────────────────────────────────────────────────────────┘ │
+│                                                              │
+│  ┌────────────────────────────────────────────────────────┐ │
+│  │ 🛡️ Критик (Gemini)                                     │ │
+│  │ Критический анализ...                                  │ │
+│  │                                                        │ │
+│  │ Рейтинг: 🧠🧠🧠🧠🧠○○○○○  5/10      ▾ ▴  🗑️          │ │
+│  └────────────────────────────────────────────────────────┘ │
+│                                                              │
+├──────────────────────────────────────────────────────────────┤
+│  [Введите сообщение...                              ] [➤]   │
+└──────────────────────────────────────────────────────────────┘
 ```
 
-**Карточка задачи — новая структура:**
+**Компонент рейтинга (кликабельные иконки мозга):**
 ```text
-┌─────────────────────────────────────────────────────────────┐
-│  Название задачи                              ✏️    🗑️    │
-│  📅 24.01.2025 15:30                                        │
-│  [GPT-5] [Gemini]                                           │
-└─────────────────────────────────────────────────────────────┘
-```
-
-**Режим редактирования:**
-```text
-┌─────────────────────────────────────────────────────────────┐
-│  [Редактируемое название...      ] ✓  ✕             🗑️    │
-│  📅 24.01.2025 15:30                                        │
-│  [GPT-5] [Gemini]                                           │
-└─────────────────────────────────────────────────────────────┘
+Рейтинг: 🧠🧠🧠🧠🧠🧠🧠○○○  7/10
+         ↑ клик на любую иконку устанавливает рейтинг
 ```
 
 ### Технические изменения
 
 #### 1. Изменения в `src/pages/ExpertPanel.tsx`
 
-**Текущая логика (строки 76-84):**
+**Удалить:**
+- Импорт `PerModelSettings`
+- Импорты `ChevronLeft`, `ChevronRight`
+- State `settingsCollapsed`
+- Весь блок `<aside>` (правый сайдбар, строки 419-451)
+- Мобильную версию настроек (строки 354-363)
+
+**Результат:** Панель содержит только хедер с названием задачи, чат и поле ввода
+
+#### 2. Изменения в `src/components/warroom/ChatMessage.tsx`
+
+**Добавить:**
+- Props: `onRatingChange: (messageId: string, rating: number) => void`
+- State: локальный `rating` из `message.metadata?.rating`
+- Компонент `BrainRating` с 11 кликабельными иконками мозга
+- Отображение рейтинга только для AI-сообщений (role !== 'user')
+
+**Компонент BrainRating:**
 ```tsx
-if (user) {
-  const taskId = searchParams.get('task');
-  if (taskId) {
-    fetchTask(taskId);
-  } else {
-    // No task specified, redirect to tasks page
-    navigate('/tasks');
-  }
+interface BrainRatingProps {
+  value: number;  // 0-10
+  onChange: (value: number) => void;
+}
+
+function BrainRating({ value, onChange }: BrainRatingProps) {
+  return (
+    <div className="flex items-center gap-0.5">
+      {Array.from({ length: 11 }, (_, i) => (
+        <button
+          key={i}
+          onClick={() => onChange(i)}
+          className={cn(
+            "h-5 w-5 transition-colors hover:scale-110",
+            i <= value 
+              ? "text-primary" 
+              : "text-muted-foreground/30"
+          )}
+        >
+          <Brain className="h-4 w-4" />
+        </button>
+      ))}
+      <span className="ml-2 text-xs text-muted-foreground">
+        {value}/10
+      </span>
+    </div>
+  );
 }
 ```
 
-**Новая логика:**
-- Если есть `?task=` параметр → загрузить эту задачу
-- Если параметра нет → запросить последнюю задачу из БД (ORDER BY `updated_at` DESC LIMIT 1)
-- Если задач нет → перенаправить на `/tasks`
+#### 3. Изменения в `src/pages/ExpertPanel.tsx` (обработчик рейтинга)
 
-#### 2. Изменения в `src/pages/Tasks.tsx`
-
-**Изменить структуру карточки (строки 400-412):**
-
-Текущая структура:
+**Добавить функцию:**
 ```tsx
-<div className="flex items-center gap-2">
-  <h3 className="font-semibold truncate">{task.title}</h3>
-  <Button ... onClick={handleStartEditTitle}>  // ✏️ рядом с названием
-    <Pencil />
-  </Button>
-</div>
+const handleRatingChange = async (messageId: string, rating: number) => {
+  try {
+    // Get current metadata
+    const message = messages.find(m => m.id === messageId);
+    const currentMetadata = (message?.metadata as Record<string, unknown>) || {};
+    
+    const { error } = await supabase
+      .from('messages')
+      .update({ 
+        metadata: { ...currentMetadata, rating } 
+      })
+      .eq('id', messageId);
+
+    if (error) throw error;
+
+    // Update local state
+    setMessages(msgs => msgs.map(m => 
+      m.id === messageId 
+        ? { ...m, metadata: { ...currentMetadata, rating } }
+        : m
+    ));
+  } catch (error: any) {
+    toast.error(error.message);
+  }
+};
 ```
 
-Новая структура:
+#### 4. Добавить переводы в `src/contexts/LanguageContext.tsx`
+
 ```tsx
-<div className="flex-1 min-w-0">
-  <h3 className="font-semibold truncate">{task.title}</h3>
-  ...
-</div>
-<div className="flex items-center gap-1 shrink-0">
-  <Button ... onClick={handleStartEditTitle}>  // ✏️
-    <Pencil />
-  </Button>
-  <Button ... onClick={setTaskToDelete}>  // 🗑️
-    <Trash2 />
-  </Button>
-</div>
+'messages.rating': { ru: 'Рейтинг', en: 'Rating' },
+```
+
+### Структура данных
+
+**Сохранение рейтинга в metadata:**
+```json
+{
+  "provider": "lovable",
+  "rating": 8
+}
 ```
 
 ### Файлы для изменения
 
 | Файл | Изменения |
 |------|-----------|
-| `src/pages/ExpertPanel.tsx` | Добавить логику автозагрузки последней задачи при отсутствии параметра `?task=` |
-| `src/pages/Tasks.tsx` | Переместить кнопку редактирования вправо к кнопке удаления |
-
-### Детали реализации
-
-**ExpertPanel.tsx — новая функция fetchLastTask:**
-```tsx
-const fetchLastTask = async () => {
-  if (!user) return;
-  
-  try {
-    const { data, error } = await supabase
-      .from('sessions')
-      .select('id, title, session_config')
-      .eq('user_id', user.id)
-      .order('updated_at', { ascending: false })
-      .limit(1)
-      .single();
-    
-    if (error || !data) {
-      // Нет задач — перенаправляем на страницу Задачи
-      navigate('/tasks');
-      return;
-    }
-    
-    // Загружаем последнюю задачу
-    setCurrentTask(data);
-    
-    // Применяем сохраненную конфигурацию моделей
-    if (data.session_config) {
-      const config = data.session_config as Task['session_config'];
-      if (config?.selectedModels) {
-        setSelectedModels(config.selectedModels);
-      }
-      if (config?.perModelSettings) {
-        setPerModelSettings(config.perModelSettings);
-      }
-    }
-    
-    fetchMessages(data.id);
-  } catch (error) {
-    navigate('/tasks');
-  } finally {
-    setLoading(false);
-  }
-};
-```
-
-**Tasks.tsx — новая структура блока кнопок:**
-```tsx
-// Группа кнопок справа
-<div className="flex items-center gap-1 shrink-0">
-  {editingTaskId !== task.id && (
-    <Button
-      variant="ghost"
-      size="icon"
-      className="h-8 w-8 text-muted-foreground hover:text-primary opacity-0 group-hover:opacity-100 transition-opacity"
-      onClick={(e) => handleStartEditTitle(task, e)}
-      title={t('tasks.editTitle')}
-    >
-      <Pencil className="h-4 w-4" />
-    </Button>
-  )}
-  <Button
-    variant="ghost"
-    size="icon"
-    className="h-8 w-8 text-muted-foreground hover:text-hydra-critical"
-    onClick={(e) => {
-      e.stopPropagation();
-      setTaskToDelete(task);
-    }}
-  >
-    <Trash2 className="h-4 w-4" />
-  </Button>
-</div>
-```
+| `src/pages/ExpertPanel.tsx` | Удалить правый сайдбар и настройки, добавить обработчик рейтинга |
+| `src/components/warroom/ChatMessage.tsx` | Добавить компонент рейтинга с иконками мозга |
+| `src/contexts/LanguageContext.tsx` | Добавить переводы для рейтинга |
 
 ### Результат
 
-- При клике на "Панель экспертов" автоматически открывается последняя активная задача
-- Новые пользователи без задач сразу попадают на страницу создания задач
-- Кнопки редактирования и удаления сгруппированы справа для лучшего UX
-- Семантика: "редактировать задачу" (не только название) отражена в расположении кнопки
+- **ExpertPanel** максимально упрощен — только чат
+- Вся конфигурация моделей централизована на странице **Tasks**
+- Каждое сообщение AI можно оценить по шкале 0-10 с помощью кликабельных иконок мозга
+- Рейтинги сохраняются в БД и отображаются при повторном открытии чата
