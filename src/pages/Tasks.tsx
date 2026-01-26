@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Json } from '@/integrations/supabase/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Layout } from '@/components/layout/Layout';
@@ -8,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { HydraCard, HydraCardHeader, HydraCardTitle, HydraCardContent } from '@/components/ui/hydra-card';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Plus, Trash2, MessageSquare, Loader2, Calendar, Settings } from 'lucide-react';
+import { Plus, Trash2, MessageSquare, Loader2, Calendar, Settings, Bot, Sparkles, Cpu } from 'lucide-react';
 import { format } from 'date-fns';
 import {
   AlertDialog,
@@ -29,6 +30,7 @@ import {
 import { MultiModelSelector } from '@/components/warroom/MultiModelSelector';
 import { PerModelSettings, PerModelSettingsData, DEFAULT_MODEL_SETTINGS } from '@/components/warroom/PerModelSettings';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { useAvailableModels, ModelOption, LOVABLE_AI_MODELS, PERSONAL_KEY_MODELS } from '@/hooks/useAvailableModels';
 
 interface Task {
   id: string;
@@ -37,12 +39,37 @@ interface Task {
   is_active: boolean;
   created_at: string;
   updated_at: string;
+  session_config: {
+    selectedModels?: string[];
+    perModelSettings?: PerModelSettingsData;
+  } | null;
 }
+
+// Get model icon based on provider
+const getModelIcon = (modelId: string) => {
+  const allModels = [...LOVABLE_AI_MODELS, ...PERSONAL_KEY_MODELS];
+  const model = allModels.find(m => m.id === modelId);
+  
+  if (!model) return <Bot className="h-4 w-4 text-muted-foreground" />;
+  
+  if (model.provider === 'lovable') {
+    return <Sparkles className="h-4 w-4 text-primary" />;
+  }
+  return <Cpu className="h-4 w-4 text-accent-foreground" />;
+};
+
+// Get model display name
+const getModelName = (modelId: string) => {
+  const allModels = [...LOVABLE_AI_MODELS, ...PERSONAL_KEY_MODELS];
+  const model = allModels.find(m => m.id === modelId);
+  return model?.name || modelId;
+};
 
 export default function Tasks() {
   const { user, loading: authLoading } = useAuth();
   const { t } = useLanguage();
   const navigate = useNavigate();
+  const { lovableModels, personalModels } = useAvailableModels();
 
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
@@ -77,7 +104,14 @@ export default function Tasks() {
         .order('updated_at', { ascending: false });
 
       if (error) throw error;
-      setTasks(data || []);
+      
+      // Parse session_config for each task
+      const tasksWithConfig = (data || []).map(task => ({
+        ...task,
+        session_config: task.session_config as Task['session_config']
+      }));
+      
+      setTasks(tasksWithConfig);
     } catch (error: any) {
       toast.error(error.message);
     } finally {
@@ -90,18 +124,29 @@ export default function Tasks() {
     setCreating(true);
 
     try {
+      const sessionConfig = {
+        selectedModels,
+        perModelSettings,
+      };
+
       const { data, error } = await supabase
         .from('sessions')
-        .insert({
+        .insert([{
           user_id: user.id,
           title: newTaskTitle.trim(),
-        })
+          session_config: JSON.parse(JSON.stringify(sessionConfig)),
+        }])
         .select()
         .single();
 
       if (error) throw error;
 
-      setTasks([data, ...tasks]);
+      const newTask = {
+        ...data,
+        session_config: data.session_config as Task['session_config']
+      };
+
+      setTasks([newTask, ...tasks]);
       setNewTaskTitle('');
       toast.success(t('common.success'));
       
@@ -139,13 +184,24 @@ export default function Tasks() {
     }
   };
 
-  const handleOpenTask = (taskId: string) => {
-    navigate(`/expert-panel?task=${taskId}`, {
+  const handleOpenTask = (task: Task) => {
+    // Load saved configuration from task
+    const savedModels = task.session_config?.selectedModels || [];
+    const savedSettings = task.session_config?.perModelSettings || {};
+    
+    navigate(`/expert-panel?task=${task.id}`, {
       state: {
-        selectedModels,
-        perModelSettings,
+        selectedModels: savedModels,
+        perModelSettings: savedSettings,
       }
     });
+  };
+
+  // Get role label for a model
+  const getModelRole = (modelId: string) => {
+    const settings = perModelSettings[modelId];
+    const role = settings?.role || DEFAULT_MODEL_SETTINGS.role;
+    return t(`warRoom.role_${role}`) || role;
   };
 
   if (authLoading || loading) {
@@ -209,6 +265,24 @@ export default function Tasks() {
                 </Button>
               </div>
               
+              {/* Selected models preview */}
+              {selectedModels.length > 0 && (
+                <div className="space-y-2 pt-2 border-t border-border/50">
+                  {selectedModels.map((modelId) => (
+                    <div 
+                      key={modelId}
+                      className="flex items-center gap-3 text-sm py-1.5 px-2 rounded-md bg-muted/30"
+                    >
+                      {getModelIcon(modelId)}
+                      <span className="font-medium flex-1 truncate">{getModelName(modelId)}</span>
+                      <span className="text-xs text-muted-foreground px-2 py-0.5 rounded bg-background/50">
+                        {getModelRole(modelId)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+              
               {selectedModels.length === 0 && (
                 <p className="text-xs text-muted-foreground">
                   {t('tasks.selectModelsFirst')}
@@ -249,59 +323,74 @@ export default function Tasks() {
                 variant="glass" 
                 glow 
                 className="p-4 cursor-pointer hover:border-primary/50 transition-colors"
-                onClick={() => handleOpenTask(task.id)}
+                onClick={() => handleOpenTask(task)}
               >
-                <div className="flex items-center justify-between">
+                <div className="flex items-start justify-between gap-4">
                   <div className="flex-1 min-w-0">
                     <h3 className="font-semibold truncate">{task.title}</h3>
                     <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
                       <Calendar className="h-3 w-3" />
                       <span>{format(new Date(task.updated_at), 'dd.MM.yyyy HH:mm')}</span>
                     </div>
+                    
+                    {/* Saved models preview */}
+                    {task.session_config?.selectedModels && task.session_config.selectedModels.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5 mt-2">
+                        {task.session_config.selectedModels.map((modelId) => (
+                          <div 
+                            key={modelId}
+                            className="flex items-center gap-1.5 text-xs py-0.5 px-2 rounded-full bg-muted/50"
+                          >
+                            {getModelIcon(modelId)}
+                            <span className="truncate max-w-[120px]">{getModelName(modelId)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="text-muted-foreground hover:text-hydra-critical shrink-0"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setTaskToDelete(task);
-                      }}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </HydraCard>
-              ))
-            )}
-          </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="text-muted-foreground hover:text-hydra-critical shrink-0"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setTaskToDelete(task);
+                    }}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              </HydraCard>
+            ))
+          )}
         </div>
+      </div>
 
-        {/* Delete Confirmation Dialog */}
-        <AlertDialog open={!!taskToDelete} onOpenChange={(open) => !open && setTaskToDelete(null)}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>{t('tasks.deleteConfirmTitle')}</AlertDialogTitle>
-              <AlertDialogDescription>
-                {t('tasks.deleteConfirmDescription')}
-                {taskToDelete && (
-                  <span className="block mt-2 font-medium text-foreground">
-                    "{taskToDelete.title}"
-                  </span>
-                )}
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
-              <AlertDialogAction 
-                onClick={handleDeleteTask}
-                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              >
-                {t('tasks.delete')}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-      </Layout>
-    );
-  }
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!taskToDelete} onOpenChange={(open) => !open && setTaskToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('tasks.deleteConfirmTitle')}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t('tasks.deleteConfirmDescription')}
+              {taskToDelete && (
+                <span className="block mt-2 font-medium text-foreground">
+                  "{taskToDelete.title}"
+                </span>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDeleteTask}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {t('tasks.delete')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </Layout>
+  );
+}
