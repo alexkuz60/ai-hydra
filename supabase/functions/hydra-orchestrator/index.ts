@@ -198,11 +198,16 @@ serve(async (req) => {
       });
     }
 
+    // Fetch username from profiles
     const { data: profile } = await supabase
       .from("profiles")
-      .select("username, openai_api_key, google_gemini_api_key, anthropic_api_key")
+      .select("username")
       .eq("user_id", user.id)
       .single();
+
+    // Fetch decrypted API keys from Vault via RPC
+    const { data: apiKeysResult } = await supabase.rpc('get_my_api_keys');
+    const apiKeys = apiKeysResult?.[0] || null;
 
     // Default system prompts for each role
     const defaultPrompts: Record<string, string> = {
@@ -243,9 +248,9 @@ serve(async (req) => {
         } else {
           // Use personal API key
           let apiKey: string | null = null;
-          if (modelReq.provider === "openai") apiKey = profile?.openai_api_key;
-          if (modelReq.provider === "gemini") apiKey = profile?.google_gemini_api_key;
-          if (modelReq.provider === "anthropic") apiKey = profile?.anthropic_api_key;
+          if (modelReq.provider === "openai") apiKey = apiKeys?.openai_api_key;
+          if (modelReq.provider === "gemini") apiKey = apiKeys?.google_gemini_api_key;
+          if (modelReq.provider === "anthropic") apiKey = apiKeys?.anthropic_api_key;
 
           if (!apiKey) {
             throw new Error(`No API key configured for ${modelReq.provider}`);
