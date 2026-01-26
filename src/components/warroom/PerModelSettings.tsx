@@ -297,7 +297,7 @@ export function PerModelSettings({ selectedModels, settings, onChange, className
     return (
       <div className={cn('border-t border-sidebar-border p-4', className)}>
         <p className="text-xs text-muted-foreground text-center">
-          {t('warRoom.noModelsSelected')}
+          {t('models.noModelsSelected')}
         </p>
       </div>
     );
