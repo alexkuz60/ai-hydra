@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { HydraCard, HydraCardHeader, HydraCardTitle, HydraCardContent } from '@/components/ui/hydra-card';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Plus, Trash2, MessageSquare, Loader2, Calendar } from 'lucide-react';
+import { Plus, Trash2, MessageSquare, Loader2, Calendar, Settings } from 'lucide-react';
 import { format } from 'date-fns';
 import {
   AlertDialog,
@@ -20,6 +20,15 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet';
+import { MultiModelSelector } from '@/components/warroom/MultiModelSelector';
+import { PerModelSettings, PerModelSettingsData, DEFAULT_MODEL_SETTINGS } from '@/components/warroom/PerModelSettings';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface Task {
   id: string;
@@ -40,6 +49,11 @@ export default function Tasks() {
   const [creating, setCreating] = useState(false);
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [taskToDelete, setTaskToDelete] = useState<Task | null>(null);
+  
+  // Model configuration state
+  const [selectedModels, setSelectedModels] = useState<string[]>([]);
+  const [perModelSettings, setPerModelSettings] = useState<PerModelSettingsData>({});
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -91,8 +105,13 @@ export default function Tasks() {
       setNewTaskTitle('');
       toast.success(t('common.success'));
       
-      // Navigate to war room with new task
-      navigate(`/war-room?task=${data.id}`);
+      // Navigate to expert panel with new task and model settings
+      navigate(`/expert-panel?task=${data.id}`, {
+        state: {
+          selectedModels,
+          perModelSettings,
+        }
+      });
     } catch (error: any) {
       toast.error(error.message);
     } finally {
@@ -121,7 +140,12 @@ export default function Tasks() {
   };
 
   const handleOpenTask = (taskId: string) => {
-    navigate(`/war-room?task=${taskId}`);
+    navigate(`/expert-panel?task=${taskId}`, {
+      state: {
+        selectedModels,
+        perModelSettings,
+      }
+    });
   };
 
   if (authLoading || loading) {
@@ -148,24 +172,68 @@ export default function Tasks() {
             <HydraCardTitle>{t('tasks.new')}</HydraCardTitle>
           </HydraCardHeader>
           <HydraCardContent>
-            <div className="flex gap-3">
-              <Input
-                value={newTaskTitle}
-                onChange={(e) => setNewTaskTitle(e.target.value)}
-                placeholder="Название задачи..."
-                className="flex-1"
-                onKeyDown={(e) => e.key === 'Enter' && handleCreateTask()}
-              />
-              <Button 
-                onClick={handleCreateTask} 
-                disabled={creating || !newTaskTitle.trim()}
-                className="hydra-glow-sm"
-              >
-                {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
-              </Button>
+            <div className="space-y-4">
+              {/* Task title input */}
+              <div className="flex gap-3">
+                <Input
+                  value={newTaskTitle}
+                  onChange={(e) => setNewTaskTitle(e.target.value)}
+                  placeholder="Название задачи..."
+                  className="flex-1"
+                  onKeyDown={(e) => e.key === 'Enter' && handleCreateTask()}
+                />
+                <Button 
+                  onClick={handleCreateTask} 
+                  disabled={creating || !newTaskTitle.trim() || selectedModels.length === 0}
+                  className="hydra-glow-sm"
+                >
+                  {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+                </Button>
+              </div>
+              
+              {/* Model selector and settings button */}
+              <div className="flex items-center gap-3">
+                <MultiModelSelector 
+                  value={selectedModels} 
+                  onChange={setSelectedModels}
+                  className="flex-1"
+                />
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setSettingsOpen(true)}
+                  disabled={selectedModels.length === 0}
+                  title={t('tasks.modelConfig')}
+                >
+                  <Settings className="h-4 w-4" />
+                </Button>
+              </div>
+              
+              {selectedModels.length === 0 && (
+                <p className="text-xs text-muted-foreground">
+                  {t('tasks.selectModelsFirst')}
+                </p>
+              )}
             </div>
           </HydraCardContent>
         </HydraCard>
+        
+        {/* Model Settings Sheet */}
+        <Sheet open={settingsOpen} onOpenChange={setSettingsOpen}>
+          <SheetContent side="right" className="w-full sm:max-w-lg p-0 flex flex-col">
+            <SheetHeader className="p-4 border-b">
+              <SheetTitle>{t('tasks.modelConfig')}</SheetTitle>
+            </SheetHeader>
+            <ScrollArea className="flex-1">
+              <PerModelSettings
+                selectedModels={selectedModels}
+                settings={perModelSettings}
+                onChange={setPerModelSettings}
+                className="border-t-0"
+              />
+            </ScrollArea>
+          </SheetContent>
+        </Sheet>
 
         {/* Tasks List */}
         <div className="space-y-4">

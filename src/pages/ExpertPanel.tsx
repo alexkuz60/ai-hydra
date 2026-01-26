@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Layout } from '@/components/layout/Layout';
@@ -53,8 +53,15 @@ export default function ExpertPanel() {
   const { t } = useLanguage();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const location = useLocation();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { isAdmin, lovableModels, personalModels, hasAnyModels } = useAvailableModels();
+
+  // Get initial state from navigation (passed from Tasks page)
+  const initialState = location.state as {
+    selectedModels?: string[];
+    perModelSettings?: PerModelSettingsData;
+  } | null;
 
   const [tasks, setTasks] = useState<Task[]>([]);
   const [currentTask, setCurrentTask] = useState<Task | null>(null);
@@ -62,12 +69,13 @@ export default function ExpertPanel() {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
-  const [selectedModels, setSelectedModels] = useState<string[]>([]);
+  const [selectedModels, setSelectedModels] = useState<string[]>(initialState?.selectedModels || []);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [editedTitle, setEditedTitle] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
-  const [perModelSettings, setPerModelSettings] = useState<PerModelSettingsData>({});
+  const [perModelSettings, setPerModelSettings] = useState<PerModelSettingsData>(initialState?.perModelSettings || {});
   const [settingsCollapsed, setSettingsCollapsed] = useState(false);
+  const [initialStateApplied, setInitialStateApplied] = useState(false);
   useEffect(() => {
     if (!authLoading && !user) {
       navigate('/login');
@@ -97,8 +105,14 @@ export default function ExpertPanel() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Set default model when available models change
+  // Set default model when available models change (only if no initial state was passed)
   useEffect(() => {
+    // Skip if initial state from Tasks page was applied
+    if (initialStateApplied || (initialState?.selectedModels && initialState.selectedModels.length > 0)) {
+      if (!initialStateApplied) setInitialStateApplied(true);
+      return;
+    }
+    
     if (selectedModels.length === 0 && (lovableModels.length > 0 || personalModels.length > 0)) {
       if (lovableModels.length > 0) {
         setSelectedModels([lovableModels[0].id]);
@@ -106,7 +120,7 @@ export default function ExpertPanel() {
         setSelectedModels([personalModels[0].id]);
       }
     }
-  }, [lovableModels, personalModels, selectedModels]);
+  }, [lovableModels, personalModels, selectedModels, initialState, initialStateApplied]);
 
   // Subscribe to realtime messages
   useEffect(() => {
