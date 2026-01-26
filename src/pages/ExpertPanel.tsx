@@ -11,7 +11,6 @@ import { toast } from 'sonner';
 
 import { PerModelSettingsData, DEFAULT_MODEL_SETTINGS } from '@/components/warroom/PerModelSettings';
 import { ChatMessage } from '@/components/warroom/ChatMessage';
-import { ModelStats } from '@/components/warroom/ModelStats';
 import { useAvailableModels, LOVABLE_AI_MODELS, PERSONAL_KEY_MODELS } from '@/hooks/useAvailableModels';
 import { 
   Send, 
@@ -376,9 +375,6 @@ export default function ExpertPanel() {
           {/* Messages Area */}
           <ScrollArea className="flex-1 p-4 hydra-scrollbar">
             <div className="max-w-4xl mx-auto space-y-4">
-              {/* Model Stats */}
-              <ModelStats />
-              
               {messages.length === 0 ? (
                 <div className="text-center py-16">
                   <Sparkles className="h-12 w-12 text-primary mx-auto mb-4 animate-pulse-glow" />

@@ -12,6 +12,7 @@ import Signup from "./pages/Signup";
 import Profile from "./pages/Profile";
 import Tasks from "./pages/Tasks";
 import ExpertPanel from "./pages/ExpertPanel";
+import ModelRatings from "./pages/ModelRatings";
 import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 
@@ -33,6 +34,7 @@ const App = () => (
                 <Route path="/profile" element={<Profile />} />
                 <Route path="/tasks" element={<Tasks />} />
                 <Route path="/expert-panel" element={<ExpertPanel />} />
+                <Route path="/model-ratings" element={<ModelRatings />} />
                 <Route path="/war-room" element={<Navigate to="/expert-panel" replace />} />
                 <Route path="/admin" element={<Admin />} />
                 <Route path="*" element={<NotFound />} />

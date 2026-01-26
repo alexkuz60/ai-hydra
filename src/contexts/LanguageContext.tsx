@@ -21,6 +21,7 @@ const translations: Translations = {
   'nav.signup': { ru: 'Регистрация', en: 'Sign Up' },
   'nav.admin': { ru: 'Админ-панель', en: 'Admin Panel' },
   'nav.warRoom': { ru: 'Экспертный Совет', en: 'Expert Council' },
+  'nav.modelRatings': { ru: 'Рейтинг моделей', en: 'Model Ratings' },
   
   // Auth
   'auth.email': { ru: 'Email', en: 'Email' },
@@ -128,6 +129,13 @@ const translations: Translations = {
   'stats.totalBrains': { ru: 'Всего мозгов', en: 'Total brains' },
   'stats.avgRating': { ru: 'Средний балл', en: 'Average rating' },
   'stats.responseCount': { ru: 'Количество ответов', en: 'Response count' },
+  
+  // Ratings page
+  'ratings.title': { ru: 'Рейтинг моделей', en: 'Model Ratings' },
+  'ratings.empty': { ru: 'Пока нет данных о рейтингах. Начните оценивать ответы моделей!', en: 'No rating data yet. Start rating model responses!' },
+  'ratings.overall': { ru: 'Общий', en: 'Overall' },
+  'ratings.allModels': { ru: 'Все модели', en: 'All Models' },
+  'ratings.noDataForRole': { ru: 'Нет данных для этой роли', en: 'No data for this role' },
   
   // Settings
   'settings.modelSettings': { ru: 'Настройки модели', en: 'Model Settings' },
