@@ -5,23 +5,19 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { HydraCard } from '@/components/ui/hydra-card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
-import { PerModelSettings, PerModelSettingsData, DEFAULT_MODEL_SETTINGS } from '@/components/warroom/PerModelSettings';
+import { PerModelSettingsData, DEFAULT_MODEL_SETTINGS } from '@/components/warroom/PerModelSettings';
 import { ChatMessage } from '@/components/warroom/ChatMessage';
 import { useAvailableModels, LOVABLE_AI_MODELS, PERSONAL_KEY_MODELS } from '@/hooks/useAvailableModels';
 import { 
   Send, 
   Loader2, 
   Sparkles,
-  Target,
-  ChevronLeft,
-  ChevronRight
+  Target
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
 
 type MessageRole = 'user' | 'assistant' | 'critic' | 'arbiter';
 
@@ -34,6 +30,7 @@ interface Message {
   reasoning_path: string | null;
   confidence_score: number | null;
   created_at: string;
+  metadata?: unknown;
 }
 
 interface Task {
@@ -64,7 +61,6 @@ export default function ExpertPanel() {
   const [sending, setSending] = useState(false);
   const [selectedModels, setSelectedModels] = useState<string[]>(initialState?.selectedModels || []);
   const [perModelSettings, setPerModelSettings] = useState<PerModelSettingsData>(initialState?.perModelSettings || {});
-  const [settingsCollapsed, setSettingsCollapsed] = useState(false);
   const [initialStateApplied, setInitialStateApplied] = useState(false);
 
   useEffect(() => {
@@ -237,6 +233,30 @@ export default function ExpertPanel() {
     }
   };
 
+  const handleRatingChange = async (messageId: string, rating: number) => {
+    try {
+      const message = messages.find(m => m.id === messageId);
+      const currentMetadata = (message?.metadata as Record<string, unknown>) || {};
+
+      const { error } = await supabase
+        .from('messages')
+        .update({
+          metadata: { ...currentMetadata, rating }
+        })
+        .eq('id', messageId);
+
+      if (error) throw error;
+
+      setMessages(msgs => msgs.map(m =>
+        m.id === messageId
+          ? { ...m, metadata: { ...currentMetadata, rating } }
+          : m
+      ));
+    } catch (error: any) {
+      toast.error(error.message);
+    }
+  };
+
   const handleSendMessage = async () => {
     if (!user || !currentTask || !input.trim() || selectedModels.length === 0) return;
     setSending(true);
@@ -351,16 +371,6 @@ export default function ExpertPanel() {
             </div>
           </div>
 
-          {/* Per-Model Settings (mobile/tablet) */}
-          <div className="lg:hidden">
-            <PerModelSettings
-              selectedModels={selectedModels}
-              settings={perModelSettings}
-              onChange={setPerModelSettings}
-              currentMessage={input}
-              className="border-t-0 flex-1 min-h-0"
-            />
-          </div>
 
           {/* Messages Area */}
           <ScrollArea className="flex-1 p-4 hydra-scrollbar">
@@ -378,6 +388,7 @@ export default function ExpertPanel() {
                     key={message.id} 
                     message={message}
                     onDelete={handleDeleteMessage}
+                    onRatingChange={handleRatingChange}
                   />
                 ))
               )}
@@ -416,39 +427,6 @@ export default function ExpertPanel() {
           </div>
         </div>
 
-        {/* Settings Sidebar (right) */}
-        <aside
-          className={cn(
-            'hidden lg:flex flex-col border-l border-border bg-sidebar transition-[width] duration-200',
-            settingsCollapsed ? 'w-12' : 'w-96'
-          )}
-        >
-          <div className="h-12 flex items-center justify-between border-b border-sidebar-border px-2">
-            <div className={cn('px-2 text-sm font-medium truncate', settingsCollapsed && 'sr-only')}>
-              {t('settings.modelSettings')}
-            </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8"
-              onClick={() => setSettingsCollapsed(v => !v)}
-              aria-label={settingsCollapsed ? t('common.expand') : t('common.collapse')}
-              title={settingsCollapsed ? t('common.expand') : t('common.collapse')}
-            >
-              {settingsCollapsed ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-            </Button>
-          </div>
-
-          {!settingsCollapsed && (
-            <PerModelSettings
-              selectedModels={selectedModels}
-              settings={perModelSettings}
-              onChange={setPerModelSettings}
-              currentMessage={input}
-              className="border-t-0 flex-1 min-h-0"
-            />
-          )}
-        </aside>
       </div>
     </Layout>
   );

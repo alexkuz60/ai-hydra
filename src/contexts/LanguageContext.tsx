@@ -120,6 +120,7 @@ const translations: Translations = {
   // Messages
   'messages.deleteTitle': { ru: 'Удалить сообщение?', en: 'Delete message?' },
   'messages.deleteConfirm': { ru: 'Это действие нельзя отменить. Сообщение будет удалено навсегда.', en: 'This action cannot be undone. The message will be permanently deleted.' },
+  'messages.rating': { ru: 'Рейтинг', en: 'Rating' },
   'messages.deleted': { ru: 'Сообщение удалено', en: 'Message deleted' },
   
   // Settings
