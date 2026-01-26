@@ -20,6 +20,7 @@ const translations: Translations = {
   'nav.login': { ru: 'Войти', en: 'Login' },
   'nav.signup': { ru: 'Регистрация', en: 'Sign Up' },
   'nav.admin': { ru: 'Админ-панель', en: 'Admin Panel' },
+  'nav.warRoom': { ru: 'Экспертный Совет', en: 'Expert Council' },
   
   // Auth
   'auth.email': { ru: 'Email', en: 'Email' },
