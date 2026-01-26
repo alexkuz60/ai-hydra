@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { HydraCard, HydraCardHeader, HydraCardTitle, HydraCardContent } from '@/components/ui/hydra-card';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Plus, Trash2, MessageSquare, Loader2, Calendar, Settings, Bot, Sparkles, Cpu } from 'lucide-react';
+import { Plus, Trash2, MessageSquare, Loader2, Calendar, Settings, Bot, Sparkles, Cpu, Pencil, Check, X } from 'lucide-react';
 import { format } from 'date-fns';
 import {
   AlertDialog,
@@ -76,6 +76,10 @@ export default function Tasks() {
   const [creating, setCreating] = useState(false);
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [taskToDelete, setTaskToDelete] = useState<Task | null>(null);
+  
+  // Inline editing state
+  const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
+  const [editedTaskTitle, setEditedTaskTitle] = useState('');
   
   // Model configuration state
   const [selectedModels, setSelectedModels] = useState<string[]>([]);
@@ -195,6 +199,42 @@ export default function Tasks() {
         perModelSettings: savedSettings,
       }
     });
+  };
+
+  // Inline editing handlers
+  const handleStartEditTitle = (task: Task, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setEditingTaskId(task.id);
+    setEditedTaskTitle(task.title);
+  };
+
+  const handleSaveTitle = async (taskId: string, e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    if (!editedTaskTitle.trim()) return;
+    
+    const newTitle = editedTaskTitle.trim().slice(0, 100);
+    
+    try {
+      const { error } = await supabase
+        .from('sessions')
+        .update({ title: newTitle })
+        .eq('id', taskId);
+
+      if (error) throw error;
+
+      setTasks(tasks.map(t => t.id === taskId ? { ...t, title: newTitle } : t));
+      setEditingTaskId(null);
+      setEditedTaskTitle('');
+      toast.success(t('tasks.titleSaved'));
+    } catch (error: any) {
+      toast.error(error.message);
+    }
+  };
+
+  const handleCancelEditTitle = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setEditingTaskId(null);
+    setEditedTaskTitle('');
   };
 
   // Get role label for a model
@@ -322,12 +362,55 @@ export default function Tasks() {
                 key={task.id} 
                 variant="glass" 
                 glow 
-                className="p-4 cursor-pointer hover:border-primary/50 transition-colors"
-                onClick={() => handleOpenTask(task)}
+                className="p-4 cursor-pointer hover:border-primary/50 transition-colors group"
+                onClick={() => editingTaskId !== task.id && handleOpenTask(task)}
               >
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold truncate">{task.title}</h3>
+                    {editingTaskId === task.id ? (
+                      <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                        <Input
+                          value={editedTaskTitle}
+                          onChange={(e) => setEditedTaskTitle(e.target.value)}
+                          className="h-8 text-sm flex-1"
+                          maxLength={100}
+                          autoFocus
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') handleSaveTitle(task.id);
+                            if (e.key === 'Escape') handleCancelEditTitle(e as any);
+                          }}
+                        />
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 text-primary hover:text-primary/80 shrink-0"
+                          onClick={(e) => handleSaveTitle(task.id, e)}
+                        >
+                          <Check className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 text-muted-foreground hover:text-hydra-critical shrink-0"
+                          onClick={handleCancelEditTitle}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-semibold truncate">{task.title}</h3>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6 text-muted-foreground hover:text-primary shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={(e) => handleStartEditTitle(task, e)}
+                          title={t('tasks.editTitle')}
+                        >
+                          <Pencil className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    )}
                     <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
                       <Calendar className="h-3 w-3" />
                       <span>{format(new Date(task.updated_at), 'dd.MM.yyyy HH:mm')}</span>
