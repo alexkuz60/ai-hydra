@@ -99,6 +99,16 @@ export default {
           "0%, 100%": { opacity: "0.6" },
           "50%": { opacity: "1" },
         },
+        "glow-pulse-bar": {
+          "0%, 100%": { 
+            boxShadow: "0 0 5px hsl(var(--hydra-glow))",
+            opacity: "0.8"
+          },
+          "50%": { 
+            boxShadow: "0 0 12px hsl(var(--hydra-glow))",
+            opacity: "1"
+          },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",

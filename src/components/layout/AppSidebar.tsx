@@ -101,10 +101,22 @@ export function AppSidebar() {
                     asChild
                     isActive={isActive(item.path)}
                     tooltip={item.label}
+                    className={cn(
+                      "hydra-menu-hover transition-all duration-200",
+                      isActive(item.path) && "hydra-menu-active"
+                    )}
                   >
-                    <Link to={item.path}>
-                      <item.icon className="h-4 w-4" />
-                      <span>{item.label}</span>
+                    <Link to={item.path} className="flex items-center gap-2">
+                      <item.icon className={cn(
+                        "h-4 w-4 transition-all duration-200",
+                        isActive(item.path) && "text-hydra-glow hydra-text-glow"
+                      )} />
+                      <span className={cn(
+                        "transition-colors duration-200",
+                        isActive(item.path) && "text-sidebar-primary font-medium"
+                      )}>
+                        {item.label}
+                      </span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>

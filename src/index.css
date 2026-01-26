@@ -220,6 +220,49 @@
   .hydra-scrollbar::-webkit-scrollbar-thumb:hover {
     background: hsl(var(--hydra-glow) / 0.6);
   }
+
+  /* Menu item animations */
+  .hydra-menu-hover {
+    transition: all 0.2s ease-out;
+  }
+
+  .hydra-menu-hover:hover {
+    background: hsl(var(--sidebar-accent));
+    box-shadow: 0 0 10px hsl(var(--hydra-glow) / 0.15);
+    transform: translateX(2px);
+  }
+
+  .hydra-menu-active {
+    position: relative;
+    background: linear-gradient(90deg, 
+      hsl(var(--hydra-glow) / 0.15), 
+      transparent
+    ) !important;
+  }
+
+  .hydra-menu-active::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: hsl(var(--hydra-glow));
+    box-shadow: 0 0 10px hsl(var(--hydra-glow));
+    animation: glow-pulse-bar 2s ease-in-out infinite;
+    border-radius: 0 2px 2px 0;
+  }
+
+  @keyframes glow-pulse-bar {
+    0%, 100% { 
+      box-shadow: 0 0 5px hsl(var(--hydra-glow));
+      opacity: 0.8;
+    }
+    50% { 
+      box-shadow: 0 0 12px hsl(var(--hydra-glow));
+      opacity: 1;
+    }
+  }
 }
 
 @layer utilities {
