@@ -1,158 +1,101 @@
 
-## План: Перенос настроек моделей в панель "Задачи"
+## План: Редактирование задач из списка и упрощение панели экспертов
 
-### Что реализуем
+### Что делаем
 
-1. **Перенос MultiModelSelector** — селектор выбора AI-моделей переносится в страницу Tasks
-2. **Выдвижная панель настроек** — PerModelSettings перемещается в Sheet (боковую выдвигающуюся панель)
-3. **Сохранение состояния** — выбранные модели и их настройки будут связаны с конкретной задачей
+1. **Удаляем из ExpertPanel** левый сайдбар с:
+   - Кнопкой "+Новая задача"
+   - Полем поиска задач
+   - Списком задач
+   - Функционалом редактирования названия (переносим в Tasks)
 
-### Визуальный макет
+2. **Добавляем в Tasks** inline-редактирование названия задачи прямо в списке
 
+### Визуальный результат
+
+**Страница "Задачи" (Tasks):**
 ```text
 ┌──────────────────────────────────────────────────────────────┐
-│  ⚡ AI-Hydra                                                 │
-├────────────────────────────────────────────────────────────────
+│  Задачи                                                      │
+├──────────────────────────────────────────────────────────────┤
+│  + Новая задача                                              │
+│  ┌────────────────────┐ ┌──────┐ ⚙️                         │
+│  │ Название задачи... │ │  +   │                            │
+│  └────────────────────┘ └──────┘                            │
+│  👥 Выбор моделей: GPT-5, Gemini (2)  ▼                     │
+│  ┌─────────────────────────────────────────────────────────┐│
+│  │ ✨ GPT-5                                      Эксперт   ││
+│  │ ⚡ Gemini 3 Flash                             Критик    ││
+│  └─────────────────────────────────────────────────────────┘│
+├──────────────────────────────────────────────────────────────┤
+│  ┌─────────────────────────────────────────────────────────┐│
+│  │  📋 Задача 1                        ✏️    🗑️           ││
+│  │     24.01.2025                                          ││  <-- клик на ✏️ включает редактирование
+│  │     [GPT-5] [Gemini]                                    ││
+│  └─────────────────────────────────────────────────────────┘│
 │                                                              │
-│   Задачи                                                     │
-│                                                              │
-│   ┌──────────────────────────────────────────────────────┐   │
-│   │  + Новая задача                                      │   │
-│   │  ┌────────────────────┐  ┌──────────┐ ⚙️             │   │
-│   │  │ Название задачи... │  │ Создать  │ Настройки     │   │
-│   │  └────────────────────┘  └──────────┘                │   │
-│   │                                                      │   │
-│   │  👥 Модели: GPT-5, Gemini 3 Flash (2 выбрано)  ▼     │   │
-│   └──────────────────────────────────────────────────────┘   │
-│                                                              │
-│   ┌──────────────────────────────────────────────────────┐   │
-│   │  📋 Задача 1                          🗑️            │   │
-│   │     24.01.2025 14:30                                 │   │
-│   └──────────────────────────────────────────────────────┘   │
-│                                                              │
+│  ┌─────────────────────────────────────────────────────────┐│
+│  │  [Название редактируется...    ] ✓ ✕    🗑️           ││  <-- режим редактирования
+│  │     23.01.2025                                          ││
+│  └─────────────────────────────────────────────────────────┘│
 └──────────────────────────────────────────────────────────────┘
-                                                      
-                                        ┌────────────────────┐
-                                        │ ← Настройки модели │
-                                        │                    │
-                                        │  [Tabs: Model1 | ] │
-                                        │                    │
-                                        │  Роль: Эксперт  ▼  │
-                                        │  Temperature: 0.7  │
-                                        │  Max tokens: 2048  │
-                                        │  System prompt:    │
-                                        │  ┌──────────────┐  │
-                                        │  │  ...         │  │
-                                        │  └──────────────┘  │
-                                        │                    │
-                                        │  [Сбросить]        │
-                                        └────────────────────┘
+```
+
+**Панель экспертов (ExpertPanel) — упрощенная:**
+```text
+┌──────────────────────────────────────────────────────────────┐
+│  📋 Название задачи                                          │
+├──────────────────────────────────────────────────────────────┤
+│                                                              │
+│                    💬 Сообщения чата                         │
+│                                                              │
+├──────────────────────────────────────────────────────────────┤
+│  [Введите сообщение...                              ] [➤]   │
+└──────────────────────────────────────────────────────────────┘
 ```
 
 ### Технические изменения
 
-#### 1. Обновление `src/pages/Tasks.tsx`
+#### 1. Изменения в `src/pages/ExpertPanel.tsx`
 
-- Добавить импорты `MultiModelSelector`, `PerModelSettings` и `Sheet` компонентов
-- Добавить state для `selectedModels` и `perModelSettings`
-- Добавить кнопку настроек (⚙️) рядом с формой создания задачи
-- Обернуть `PerModelSettings` в `Sheet` (выдвигается справа)
-- Передавать выбранные модели при создании задачи → Expert Panel
+**Удалить:**
+- Импорты: `Plus`, `Pencil`, `Check`, `X`, `Search`
+- State переменные: `tasks`, `searchQuery`, `isEditingTitle`, `editedTitle`
+- Функции: `fetchTasks`, `handleCreateTask`, `handleStartEditTitle`, `handleSaveTitle`, `handleCancelEditTitle`
+- Весь блок `<aside>` (левый сайдбар, строки 354-411)
+- Блок редактирования названия из хедера (оставить только отображение)
+- Fallback с кнопкой "Новая задача" (строки 531-541) — заменить на редирект
 
-```tsx
-import { MultiModelSelector } from '@/components/warroom/MultiModelSelector';
-import { PerModelSettings, PerModelSettingsData, DEFAULT_MODEL_SETTINGS } from '@/components/warroom/PerModelSettings';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
-import { Settings } from 'lucide-react';
+**Оставить:**
+- Загрузку текущей задачи по URL параметру `?task=`
+- Отображение названия задачи (без редактирования)
+- Чат с сообщениями
+- Правый сайдбар с настройками моделей
 
-// State
-const [selectedModels, setSelectedModels] = useState<string[]>([]);
-const [perModelSettings, setPerModelSettings] = useState<PerModelSettingsData>({});
-const [settingsOpen, setSettingsOpen] = useState(false);
+#### 2. Изменения в `src/pages/Tasks.tsx`
 
-// В JSX добавляем:
-<MultiModelSelector value={selectedModels} onChange={setSelectedModels} />
-<Sheet open={settingsOpen} onOpenChange={setSettingsOpen}>
-  <SheetTrigger asChild>
-    <Button variant="ghost" size="icon"><Settings /></Button>
-  </SheetTrigger>
-  <SheetContent>
-    <SheetHeader>
-      <SheetTitle>{t('settings.modelSettings')}</SheetTitle>
-    </SheetHeader>
-    <PerModelSettings
-      selectedModels={selectedModels}
-      settings={perModelSettings}
-      onChange={setPerModelSettings}
-    />
-  </SheetContent>
-</Sheet>
-```
+**Добавить:**
+- State: `editingTaskId`, `editedTaskTitle`
+- Функцию `handleSaveTaskTitle(taskId: string)`
+- Кнопку редактирования (✏️) в карточке каждой задачи
+- Inline Input для редактирования названия с кнопками сохранения/отмены
 
-#### 2. Передача настроек в Expert Panel
-
-При навигации передаём параметры через URL state:
-```tsx
-navigate(`/expert-panel?task=${data.id}`, { 
-  state: { 
-    selectedModels, 
-    perModelSettings 
-  } 
-});
-```
-
-#### 3. Обновление `src/pages/ExpertPanel.tsx`
-
-- Принимать начальные настройки из `location.state`
-- Убрать секцию выбора моделей из хедера (оставить только название задачи)
-- Оставить правый sidebar с настройками для текущей сессии
+#### 3. Добавить переводы в `src/contexts/LanguageContext.tsx`
 
 ```tsx
-import { useLocation } from 'react-router-dom';
-
-const location = useLocation();
-const initialState = location.state as { 
-  selectedModels?: string[]; 
-  perModelSettings?: PerModelSettingsData 
-} | null;
-
-// Инициализация state из переданных параметров
-useEffect(() => {
-  if (initialState?.selectedModels?.length) {
-    setSelectedModels(initialState.selectedModels);
-  }
-  if (initialState?.perModelSettings) {
-    setPerModelSettings(initialState.perModelSettings);
-  }
-}, []);
-```
-
-#### 4. Добавление переводов в `LanguageContext.tsx`
-
-```tsx
-'tasks.modelConfig': { ru: 'Настройки моделей', en: 'Model Settings' },
-'tasks.selectModelsFirst': { ru: 'Сначала выберите модели', en: 'Select models first' },
-```
-
-#### 5. Исправление навигации в `Tasks.tsx`
-
-Заменить `/war-room` на `/expert-panel`:
-```tsx
-navigate(`/expert-panel?task=${data.id}`);
+'tasks.editTitle': { ru: 'Редактировать название', en: 'Edit title' },
 ```
 
 ### Файлы для изменения
 
 | Файл | Изменения |
 |------|-----------|
-| `src/pages/Tasks.tsx` | Добавить MultiModelSelector + Sheet с PerModelSettings, передача state при навигации |
-| `src/pages/ExpertPanel.tsx` | Принимать начальные настройки из location.state |
-| `src/contexts/LanguageContext.tsx` | Добавить новые ключи переводов |
+| `src/pages/ExpertPanel.tsx` | Удалить левый сайдбар, редактирование названия, упростить компонент |
+| `src/pages/Tasks.tsx` | Добавить inline-редактирование названия задачи в списке |
+| `src/contexts/LanguageContext.tsx` | Добавить ключ перевода `tasks.editTitle` |
 
 ### Результат
 
-- На странице "Задачи" пользователь выбирает модели ДО создания задачи
-- Кнопка ⚙️ открывает боковую панель настроек моделей (Sheet)
-- При создании задачи настройки передаются в Expert Panel
-- В Expert Panel пользователь может продолжить редактировать настройки в процессе работы
-- Более логичный UX: сначала выбор инструментов, потом работа
+- **ExpertPanel** становится чистым интерфейсом для работы с конкретной задачей (только чат + настройки)
+- Вся навигация и управление задачами централизованы на странице **Tasks**
+- Пользователь может переименовывать задачи прямо в списке без открытия панели экспертов
