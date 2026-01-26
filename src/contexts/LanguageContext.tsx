@@ -123,6 +123,12 @@ const translations: Translations = {
   'messages.rating': { ru: 'Рейтинг', en: 'Rating' },
   'messages.deleted': { ru: 'Сообщение удалено', en: 'Message deleted' },
   
+  // Stats
+  'stats.modelRatings': { ru: 'Рейтинг моделей', en: 'Model Ratings' },
+  'stats.totalBrains': { ru: 'Всего мозгов', en: 'Total brains' },
+  'stats.avgRating': { ru: 'Средний балл', en: 'Average rating' },
+  'stats.responseCount': { ru: 'Количество ответов', en: 'Response count' },
+  
   // Settings
   'settings.modelSettings': { ru: 'Настройки модели', en: 'Model Settings' },
   'settings.role': { ru: 'Роль агента', en: 'Agent Role' },
