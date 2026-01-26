@@ -36,6 +36,7 @@ interface Message {
   reasoning_path: string | null;
   confidence_score: number | null;
   created_at: string;
+  metadata?: unknown;
 }
 
 const roleConfig = {
@@ -65,18 +66,61 @@ const roleConfig = {
   },
 };
 
+interface BrainRatingProps {
+  value: number;
+  onChange: (value: number) => void;
+}
+
+function BrainRating({ value, onChange }: BrainRatingProps) {
+  const { t } = useLanguage();
+  
+  return (
+    <div className="flex items-center gap-0.5">
+      <span className="text-xs text-muted-foreground mr-1">{t('messages.rating')}:</span>
+      {Array.from({ length: 11 }, (_, i) => (
+        <button
+          key={i}
+          onClick={(e) => {
+            e.stopPropagation();
+            onChange(i);
+          }}
+          className={cn(
+            "p-0.5 transition-all hover:scale-125",
+            i <= value 
+              ? "text-primary" 
+              : "text-muted-foreground/30"
+          )}
+          title={`${i}/10`}
+        >
+          <Brain className="h-4 w-4" />
+        </button>
+      ))}
+      <span className="ml-2 text-xs text-muted-foreground font-medium">
+        {value}/10
+      </span>
+    </div>
+  );
+}
+
 interface ChatMessageProps {
   message: Message;
   onDelete: (messageId: string) => void;
+  onRatingChange: (messageId: string, rating: number) => void;
 }
 
 const MAX_COLLAPSED_LINES = 3;
 
-export function ChatMessage({ message, onDelete }: ChatMessageProps) {
+export function ChatMessage({ message, onDelete, onRatingChange }: ChatMessageProps) {
   const { t } = useLanguage();
   const [isExpanded, setIsExpanded] = useState(true);
   const config = roleConfig[message.role];
   const Icon = config.icon;
+
+  // Get rating from metadata
+  const metadataObj = (typeof message.metadata === 'object' && message.metadata !== null) 
+    ? message.metadata as Record<string, unknown>
+    : {};
+  const rating = (typeof metadataObj.rating === 'number' ? metadataObj.rating : 0);
 
   // Check if content is long enough to be collapsible
   const lines = message.content.split('\n');
@@ -86,6 +130,8 @@ export function ChatMessage({ message, onDelete }: ChatMessageProps) {
   const truncatedContent = isLongContent && !isExpanded
     ? lines.slice(0, MAX_COLLAPSED_LINES).join('\n').slice(0, 300) + '...'
     : message.content;
+
+  const isAiMessage = message.role !== 'user';
 
   return (
     <HydraCard 
@@ -122,6 +168,16 @@ export function ChatMessage({ message, onDelete }: ChatMessageProps) {
           <p className="text-xs text-muted-foreground font-mono">
             Chain of Thought: {message.reasoning_path}
           </p>
+        </div>
+      )}
+
+      {/* Rating for AI messages */}
+      {isAiMessage && (
+        <div className="px-4 pb-3">
+          <BrainRating 
+            value={rating} 
+            onChange={(newRating) => onRatingChange(message.id, newRating)} 
+          />
         </div>
       )}
 
