@@ -16,16 +16,46 @@ interface ModelRequest {
   role?: 'assistant' | 'critic' | 'arbiter';
 }
 
+interface Attachment {
+  name: string;
+  url: string;
+  type: string;
+}
+
 interface RequestBody {
   session_id: string;
   message: string;
+  attachments?: Attachment[];
   models: ModelRequest[];
+}
+
+// Helper to build multimodal content for OpenAI-compatible APIs
+type ContentPart = { type: "text"; text: string } | { type: "image_url"; image_url: { url: string } };
+
+function buildMultimodalContent(message: string, attachments: Attachment[]): ContentPart[] {
+  const content: ContentPart[] = [];
+  
+  if (message) {
+    content.push({ type: "text", text: message });
+  }
+  
+  for (const att of attachments) {
+    if (att.type.startsWith('image/')) {
+      content.push({
+        type: "image_url",
+        image_url: { url: att.url }
+      });
+    }
+  }
+  
+  return content;
 }
 
 async function callLovableAI(
   apiKey: string,
   model: string,
   message: string,
+  attachments: Attachment[],
   systemPrompt: string,
   temperature: number,
   maxTokens: number
@@ -39,6 +69,12 @@ async function callLovableAI(
   // OpenAI models via Lovable AI don't support custom temperature
   const tempParam = isOpenAI ? {} : { temperature };
 
+  // Build user content: multimodal if images, plain text otherwise
+  const imageAttachments = attachments.filter(a => a.type.startsWith('image/'));
+  const userContent = imageAttachments.length > 0 
+    ? buildMultimodalContent(message, attachments)
+    : message;
+
   const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
     method: "POST",
     headers: {
@@ -49,7 +85,7 @@ async function callLovableAI(
       model,
       messages: [
         { role: "system", content: systemPrompt },
-        { role: "user", content: message },
+        { role: "user", content: userContent },
       ],
       ...tempParam,
       ...tokenParam,
@@ -94,11 +130,19 @@ async function callPersonalModel(
   apiKey: string,
   model: string,
   message: string,
+  attachments: Attachment[],
   systemPrompt: string,
   temperature: number,
   maxTokens: number
 ) {
+  const imageAttachments = attachments.filter(a => a.type.startsWith('image/'));
+  
   if (provider === "openai") {
+    // OpenAI uses image_url format
+    const userContent = imageAttachments.length > 0 
+      ? buildMultimodalContent(message, attachments)
+      : message;
+      
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -109,7 +153,7 @@ async function callPersonalModel(
         model,
         messages: [
           { role: "system", content: systemPrompt },
-          { role: "user", content: message },
+          { role: "user", content: userContent },
         ],
         temperature,
         max_tokens: maxTokens,
@@ -122,13 +166,28 @@ async function callPersonalModel(
   }
 
   if (provider === "gemini") {
+    // Gemini uses inline_data for images (requires base64) or fileData
+    // For URLs, we'll pass them as file_data with uri
+    const parts: Array<{ text?: string; file_data?: { mime_type: string; file_uri: string } }> = [];
+    
+    parts.push({ text: `${systemPrompt}\n\nUser: ${message}` });
+    
+    for (const att of imageAttachments) {
+      parts.push({
+        file_data: {
+          mime_type: att.type,
+          file_uri: att.url
+        }
+      });
+    }
+    
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${apiKey}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          contents: [{ parts: [{ text: `${systemPrompt}\n\nUser: ${message}` }] }],
+          contents: [{ parts }],
           generationConfig: { temperature, maxOutputTokens: maxTokens },
         }),
       }
@@ -140,6 +199,32 @@ async function callPersonalModel(
   }
 
   if (provider === "anthropic") {
+    // Anthropic uses source.url for images
+    type AnthropicContent = 
+      | string 
+      | Array<{ type: "text"; text: string } | { type: "image"; source: { type: "url"; url: string } }>;
+    
+    let userContent: AnthropicContent;
+    
+    if (imageAttachments.length > 0) {
+      const contentParts: Array<{ type: "text"; text: string } | { type: "image"; source: { type: "url"; url: string } }> = [];
+      
+      if (message) {
+        contentParts.push({ type: "text", text: message });
+      }
+      
+      for (const att of imageAttachments) {
+        contentParts.push({
+          type: "image",
+          source: { type: "url", url: att.url }
+        });
+      }
+      
+      userContent = contentParts;
+    } else {
+      userContent = message;
+    }
+    
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
@@ -151,7 +236,7 @@ async function callPersonalModel(
         model: "claude-3-5-sonnet-20241022",
         max_tokens: maxTokens,
         system: systemPrompt,
-        messages: [{ role: "user", content: message }],
+        messages: [{ role: "user", content: userContent }],
         temperature,
       }),
     });
@@ -190,13 +275,16 @@ serve(async (req) => {
       });
     }
 
-    const { session_id, message, models }: RequestBody = await req.json();
+    const { session_id, message, attachments, models }: RequestBody = await req.json();
 
     if (!session_id || !message || !models || models.length === 0) {
       return new Response(JSON.stringify({ error: "session_id, message, and models are required" }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+    
+    // Default to empty array if no attachments provided
+    const messageAttachments = attachments || [];
 
     // Fetch username from profiles
     const { data: profile } = await supabase
@@ -244,7 +332,7 @@ serve(async (req) => {
           if (!lovableKey) {
             throw new Error("Lovable AI not configured");
           }
-          result = await callLovableAI(lovableKey, modelReq.model_id, message, systemPrompt, temperature, maxTokens);
+          result = await callLovableAI(lovableKey, modelReq.model_id, message, messageAttachments, systemPrompt, temperature, maxTokens);
         } else {
           // Use personal API key
           let apiKey: string | null = null;
@@ -256,7 +344,7 @@ serve(async (req) => {
             throw new Error(`No API key configured for ${modelReq.provider}`);
           }
 
-          result = await callPersonalModel(modelReq.provider!, apiKey, modelReq.model_id, message, systemPrompt, temperature, maxTokens);
+          result = await callPersonalModel(modelReq.provider!, apiKey, modelReq.model_id, message, messageAttachments, systemPrompt, temperature, maxTokens);
         }
         
         console.log(`Success for model: ${modelReq.model_id}`);
