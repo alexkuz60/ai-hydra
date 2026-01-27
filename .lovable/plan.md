@@ -1,254 +1,237 @@
 
+## План: Исправление обработки изображений для AI и отображения в чате
 
-## План: Прикрепление файлов к сообщениям
+### Обнаруженные проблемы
 
-### Что делаем
+**Проблема 1: ИИ-модели не получают изображения**
 
-Добавляем возможность прикреплять файлы (изображения, документы) к сообщениям пользователя в чате. Файлы будут загружаться в хранилище и отображаться в сообщениях.
-
-### Визуальный результат
-
-**Поле ввода с кнопкой прикрепления:**
-```text
-┌─────────────────────────────────────────────────────────────────┐
-│ [📎] [Введите ваш запрос...                            ] [➤]   │
-│                                                                 │
-│ ┌──────────┐ ┌──────────┐                                       │
-│ │ 📄 doc.pdf│ │ 🖼️ img.png│  × × (превью прикрепленных файлов)  │
-│ └──────────┘ └──────────┘                                       │
-└─────────────────────────────────────────────────────────────────┘
+Сейчас в hydra-orchestrator передается только текст сообщения:
+```typescript
+body: JSON.stringify({
+  session_id: currentTask.id,
+  message: messageContent,  // ← только текст!
+  models: modelsToCall,
+}),
 ```
 
-**Сообщение с вложениями:**
-```text
-┌─────────────────────────────────────────────────────────────────┐
-│ 👤 Пользователь                                                 │
-│                                                                 │
-│ Текст сообщения...                                             │
-│                                                                 │
-│ ┌──────────────┐ ┌──────────────┐                               │
-│ │    🖼️         │ │   📄         │                               │
-│ │  image.png   │ │  doc.pdf     │                               │
-│ └──────────────┘ └──────────────┘                               │
-└─────────────────────────────────────────────────────────────────┘
-```
+AI API (OpenAI, Gemini и др.) требуют multimodal формат для изображений.
+
+**Проблема 2: Изображения не отображаются в ленте чата**
+
+Вложения сохраняются в `metadata.attachments`, но нужно убедиться, что:
+1. Файлы успешно загружаются в storage
+2. URL правильно формируется
+3. ChatMessage корректно читает metadata
 
 ### Архитектура решения
 
 ```text
-┌─────────────────┐      ┌──────────────────┐      ┌─────────────────┐
-│   ExpertPanel   │ ───▶ │  Storage Bucket  │      │    messages     │
-│ (file upload)   │      │ "message-files"  │      │   (metadata)    │
-└─────────────────┘      └──────────────────┘      └─────────────────┘
-         │                        │                        │
-         │                        │                        │
-         ▼                        ▼                        ▼
-   1. Выбор файлов      2. Загрузка в         3. Сохранение URL
-      через input          storage               в metadata
+Клиент (ExpertPanel)                 Edge Function (hydra-orchestrator)
+       │                                      │
+       ▼                                      ▼
+┌─────────────────┐                   ┌─────────────────┐
+│ 1. Загрузка     │                   │ 3. Multimodal   │
+│    файлов в     │─────────────────▶│    запрос к     │
+│    storage      │  attachments[]    │    AI API       │
+└─────────────────┘                   └─────────────────┘
+       │                                      │
+       ▼                                      ▼
+┌─────────────────┐                   ┌─────────────────┐
+│ 2. Сохранение   │                   │ 4. Ответ с      │
+│    metadata в   │                   │    анализом     │
+│    messages     │                   │    изображения  │
+└─────────────────┘                   └─────────────────┘
 ```
 
 ### Технические изменения
 
-#### 1. Создание Storage Bucket (SQL миграция)
+#### 1. Изменения в `src/pages/ExpertPanel.tsx`
 
-```sql
--- Создать bucket для файлов сообщений
-INSERT INTO storage.buckets (id, name, public)
-VALUES ('message-files', 'message-files', true);
+Добавить передачу вложений в hydra-orchestrator:
 
--- RLS политики для bucket
-CREATE POLICY "Users can upload their own files"
-ON storage.objects FOR INSERT
-TO authenticated
-WITH CHECK (
-  bucket_id = 'message-files' AND
-  (storage.foldername(name))[1] = auth.uid()::text
-);
-
-CREATE POLICY "Users can view their own files"
-ON storage.objects FOR SELECT
-TO authenticated
-USING (
-  bucket_id = 'message-files' AND
-  (storage.foldername(name))[1] = auth.uid()::text
-);
-
-CREATE POLICY "Users can delete their own files"
-ON storage.objects FOR DELETE
-TO authenticated
-USING (
-  bucket_id = 'message-files' AND
-  (storage.foldername(name))[1] = auth.uid()::text
-);
-```
-
-#### 2. Новый компонент FileUpload (`src/components/warroom/FileUpload.tsx`)
-
-```tsx
-interface AttachedFile {
-  file: File;
-  preview?: string;  // для изображений
-  id: string;        // уникальный ID для удаления
-}
-
-interface FileUploadProps {
-  files: AttachedFile[];
-  onFilesChange: (files: AttachedFile[]) => void;
-  disabled?: boolean;
-  maxFiles?: number;
-  maxSizeMB?: number;
-}
-```
-
-**Функционал:**
-- Кнопка 📎 для выбора файлов
-- Поддержка drag & drop
-- Превью изображений
-- Иконки для документов (PDF, DOCX и др.)
-- Кнопка удаления для каждого файла
-- Ограничение: макс. 5 файлов, макс. 10MB каждый
-
-#### 3. Изменения в `src/pages/ExpertPanel.tsx`
-
-**Добавить:**
-- State `attachedFiles: AttachedFile[]`
-- Функция `uploadFiles()` - загрузка в storage
-- Интеграция компонента FileUpload в область ввода
-- Сохранение URL файлов в `metadata.attachments` при отправке
-
-**Логика отправки сообщения:**
-```tsx
-const handleSendMessage = async () => {
-  // ... existing validation ...
-  
-  // 1. Upload files to storage
-  const attachmentUrls: { name: string; url: string; type: string }[] = [];
-  
-  for (const attached of attachedFiles) {
-    const filePath = `${user.id}/${currentTask.id}/${Date.now()}_${attached.file.name}`;
-    const { error: uploadError } = await supabase.storage
-      .from('message-files')
-      .upload(filePath, attached.file);
-      
-    if (!uploadError) {
-      const { data: urlData } = supabase.storage
-        .from('message-files')
-        .getPublicUrl(filePath);
-      attachmentUrls.push({
-        name: attached.file.name,
-        url: urlData.publicUrl,
-        type: attached.file.type,
-      });
-    }
+```typescript
+// Call the Hydra orchestrator with multiple models
+const response = await fetch(
+  `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/hydra-orchestrator`,
+  {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${...}`,
+    },
+    body: JSON.stringify({
+      session_id: currentTask.id,
+      message: messageContent,
+      attachments: attachmentUrls, // ← ДОБАВИТЬ передачу вложений
+      models: modelsToCall,
+    }),
   }
-  
-  // 2. Insert message with attachments in metadata
-  await supabase.from('messages').insert({
-    session_id: currentTask.id,
-    user_id: user.id,
-    role: 'user',
-    content: messageContent,
-    metadata: attachmentUrls.length > 0 ? { attachments: attachmentUrls } : null,
-  });
-  
-  // 3. Clear attached files
-  setAttachedFiles([]);
-  
-  // ... rest of the function ...
-};
+);
 ```
 
-#### 4. Изменения в `src/components/warroom/ChatMessage.tsx`
+#### 2. Изменения в `supabase/functions/hydra-orchestrator/index.ts`
 
-**Добавить отображение вложений:**
-```tsx
+**2.1 Обновить интерфейс RequestBody:**
+```typescript
 interface Attachment {
   name: string;
   url: string;
   type: string;
 }
 
-// В компоненте ChatMessage:
-const attachments = (metadataObj.attachments as Attachment[] | undefined) || [];
-
-// Рендер вложений после контента:
-{attachments.length > 0 && (
-  <div className="flex flex-wrap gap-2 mt-3">
-    {attachments.map((att, idx) => (
-      <AttachmentPreview key={idx} attachment={att} />
-    ))}
-  </div>
-)}
-```
-
-**Компонент AttachmentPreview:**
-- Для изображений: превью с возможностью открыть в полном размере
-- Для документов: иконка + имя файла + ссылка для скачивания
-
-#### 5. Переводы в `src/contexts/LanguageContext.tsx`
-
-```tsx
-'files.attach': { ru: 'Прикрепить файл', en: 'Attach file' },
-'files.remove': { ru: 'Удалить', en: 'Remove' },
-'files.maxSize': { ru: 'Максимальный размер: {size}MB', en: 'Max size: {size}MB' },
-'files.maxFiles': { ru: 'Максимум файлов: {count}', en: 'Max files: {count}' },
-'files.tooLarge': { ru: 'Файл слишком большой', en: 'File too large' },
-'files.tooMany': { ru: 'Слишком много файлов', en: 'Too many files' },
-'files.uploading': { ru: 'Загрузка...', en: 'Uploading...' },
-'files.download': { ru: 'Скачать', en: 'Download' },
-```
-
-### Структура данных
-
-**Metadata сообщения с вложениями:**
-```json
-{
-  "attachments": [
-    {
-      "name": "document.pdf",
-      "url": "https://...storage.../message-files/user_id/session_id/123_document.pdf",
-      "type": "application/pdf"
-    },
-    {
-      "name": "screenshot.png",
-      "url": "https://...storage.../message-files/user_id/session_id/124_screenshot.png",
-      "type": "image/png"
-    }
-  ]
+interface RequestBody {
+  session_id: string;
+  message: string;
+  attachments?: Attachment[];  // ← добавить
+  models: ModelRequest[];
 }
 ```
 
-**Путь файла в storage:**
-```text
-message-files/
-  └── {user_id}/
-       └── {session_id}/
-            └── {timestamp}_{original_filename}
+**2.2 Обновить функцию callLovableAI для multimodal:**
+```typescript
+async function callLovableAI(
+  apiKey: string,
+  model: string,
+  message: string,
+  attachments: Attachment[],  // ← добавить
+  systemPrompt: string,
+  temperature: number,
+  maxTokens: number
+) {
+  // Формирование multimodal content для изображений
+  const userContent: Array<{type: string; text?: string; image_url?: {url: string}}> = [];
+  
+  // Добавить текст сообщения
+  if (message) {
+    userContent.push({ type: "text", text: message });
+  }
+  
+  // Добавить изображения
+  for (const att of attachments) {
+    if (att.type.startsWith('image/')) {
+      userContent.push({
+        type: "image_url",
+        image_url: { url: att.url }
+      });
+    }
+  }
+
+  const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    method: "POST",
+    headers: { ... },
+    body: JSON.stringify({
+      model,
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userContent.length === 1 ? message : userContent },
+      ],
+      ...
+    }),
+  });
+  // ...
+}
 ```
 
-### Файлы для изменения/создания
+**2.3 Обновить callPersonalModel аналогично для OpenAI и Gemini:**
+
+Для **OpenAI**:
+```typescript
+messages: [
+  { role: "system", content: systemPrompt },
+  { 
+    role: "user", 
+    content: attachments.length > 0 
+      ? buildMultimodalContent(message, attachments)
+      : message 
+  },
+],
+```
+
+Для **Gemini**:
+```typescript
+contents: [{
+  parts: [
+    { text: `${systemPrompt}\n\nUser: ${message}` },
+    ...attachments
+      .filter(a => a.type.startsWith('image/'))
+      .map(a => ({ 
+        inline_data: { 
+          mime_type: a.type, 
+          data: a.url // или base64 
+        }
+      }))
+  ]
+}],
+```
+
+Для **Anthropic**:
+```typescript
+messages: [{ 
+  role: "user", 
+  content: attachments.length > 0
+    ? [
+        { type: "text", text: message },
+        ...attachments
+          .filter(a => a.type.startsWith('image/'))
+          .map(a => ({ 
+            type: "image", 
+            source: { type: "url", url: a.url }
+          }))
+      ]
+    : message 
+}],
+```
+
+#### 3. Добавить логирование загрузки файлов
+
+В `ExpertPanel.tsx` добавить отладочные логи для проверки успешности загрузки:
+
+```typescript
+console.log('Uploading file:', attached.file.name, 'to path:', filePath);
+const { error: uploadError, data: uploadData } = await supabase.storage
+  .from('message-files')
+  .upload(filePath, fileToUpload);
+
+if (uploadError) {
+  console.error('Upload error:', uploadError);
+  // ...
+} else {
+  console.log('Upload success:', uploadData);
+  const { data: urlData } = supabase.storage
+    .from('message-files')
+    .getPublicUrl(filePath);
+  console.log('Public URL:', urlData.publicUrl);
+  // ...
+}
+```
+
+### Файлы для изменения
 
 | Файл | Действие | Описание |
 |------|----------|----------|
-| SQL миграция | Создать | Storage bucket + RLS политики |
-| `src/components/warroom/FileUpload.tsx` | Создать | Компонент выбора и превью файлов |
-| `src/pages/ExpertPanel.tsx` | Изменить | Добавить загрузку файлов, state, UI |
-| `src/components/warroom/ChatMessage.tsx` | Изменить | Отображение вложений в сообщениях |
-| `src/contexts/LanguageContext.tsx` | Изменить | Добавить переводы |
+| `src/pages/ExpertPanel.tsx` | Изменить | Передавать attachments в hydra-orchestrator, добавить логирование |
+| `supabase/functions/hydra-orchestrator/index.ts` | Изменить | Принимать attachments и формировать multimodal запросы к AI |
 
-### Ограничения и валидация
+### Поддержка multimodal для разных провайдеров
 
-- **Максимум файлов:** 5 на сообщение
-- **Максимальный размер:** 10 MB на файл
-- **Поддерживаемые форматы:** изображения (jpg, png, gif, webp), документы (pdf, docx, txt, md)
-- **Структура хранения:** файлы группируются по user_id и session_id для RLS
+| Провайдер | Формат изображений | Примечания |
+|-----------|-------------------|------------|
+| OpenAI (gpt-4o, gpt-4-turbo) | `image_url.url` | Поддерживает URL напрямую |
+| Gemini | `inline_data.data` (base64) или URL | Зависит от версии API |
+| Anthropic | `source.url` или `source.base64` | Поддерживает оба формата |
+| Lovable AI | `image_url.url` | Прокси к OpenAI формату |
+
+### Ограничения
+
+- Некоторые модели (например, text-only) не поддерживают изображения — для них изображения будут игнорироваться
+- Gemini может требовать base64 вместо URL для некоторых типов изображений
+- Размер изображения ограничен политиками провайдеров (обычно до 20MB)
 
 ### Результат
 
-- Пользователь может прикреплять файлы к сообщениям через кнопку 📎 или drag & drop
-- Файлы отображаются как превью перед отправкой
-- В отправленном сообщении видны прикрепленные файлы
-- Изображения показываются как превью с возможностью увеличения
-- Документы отображаются как ссылки для скачивания
-- Файлы безопасно хранятся в storage с RLS политиками
-
+После изменений:
+1. Пользователь прикрепляет изображение к сообщению
+2. Изображение загружается в storage и URL сохраняется в metadata
+3. Сообщение с изображением отображается в ленте чата
+4. При вызове AI модели получают изображение в multimodal формате и могут его анализировать
+5. AI отвечает с учетом содержимого изображения
