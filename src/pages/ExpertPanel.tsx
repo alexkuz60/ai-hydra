@@ -14,10 +14,12 @@ import { sanitizeFileName } from '@/lib/fileUtils';
 import { Message, MessageRole } from '@/types/messages';
 
 import { PerModelSettingsData, DEFAULT_MODEL_SETTINGS } from '@/components/warroom/PerModelSettings';
-import { ChatMessage } from '@/components/warroom/ChatMessage';
+import { ChatMessage, UserDisplayInfo } from '@/components/warroom/ChatMessage';
 import { FileUpload, AttachedFile } from '@/components/warroom/FileUpload';
 import { useAvailableModels, LOVABLE_AI_MODELS, PERSONAL_KEY_MODELS } from '@/hooks/useAvailableModels';
 import { usePasteHandler } from '@/hooks/usePasteHandler';
+import { useUserProfile } from '@/hooks/useUserProfile';
+import { useUserRoles } from '@/hooks/useUserRoles';
 import { 
   Send, 
   Loader2, 
@@ -39,6 +41,14 @@ export default function ExpertPanel() {
   const location = useLocation();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { lovableModels, personalModels } = useAvailableModels();
+  const { profile } = useUserProfile();
+  const { isSupervisor } = useUserRoles();
+  
+  // User display info for chat messages
+  const userDisplayInfo: UserDisplayInfo = {
+    displayName: profile?.displayName || null,
+    isSupervisor,
+  };
 
   // Get initial state from navigation (passed from Tasks page)
   const initialState = location.state as {
@@ -439,6 +449,7 @@ export default function ExpertPanel() {
                   <ChatMessage 
                     key={message.id} 
                     message={message}
+                    userDisplayInfo={userDisplayInfo}
                     onDelete={handleDeleteMessage}
                     onRatingChange={handleRatingChange}
                   />
