@@ -7,7 +7,8 @@ import {
   Brain, 
   Shield, 
   Scale, 
-  User, 
+  User,
+  Crown,
   ChevronDown, 
   ChevronUp, 
   Trash2 
@@ -26,6 +27,12 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Message, MessageRole } from '@/types/messages';
+
+// User display info passed from parent
+export interface UserDisplayInfo {
+  displayName: string | null;
+  isSupervisor: boolean;
+}
 
 const roleConfig = {
   user: {
@@ -92,17 +99,21 @@ function BrainRating({ value, onChange }: BrainRatingProps) {
 
 interface ChatMessageProps {
   message: Message;
+  userDisplayInfo?: UserDisplayInfo;
   onDelete: (messageId: string) => void;
   onRatingChange: (messageId: string, rating: number) => void;
 }
 
 const MAX_COLLAPSED_LINES = 3;
 
-export function ChatMessage({ message, onDelete, onRatingChange }: ChatMessageProps) {
+export function ChatMessage({ message, userDisplayInfo, onDelete, onRatingChange }: ChatMessageProps) {
   const { t } = useLanguage();
   const [isExpanded, setIsExpanded] = useState(true);
   const config = roleConfig[message.role];
-  const Icon = config.icon;
+  
+  // For user messages, show custom display based on role
+  const isUserMessage = message.role === 'user';
+  const Icon = isUserMessage && userDisplayInfo?.isSupervisor ? Crown : config.icon;
 
   // Get rating and attachments from metadata
   const metadataObj = (typeof message.metadata === 'object' && message.metadata !== null) 
@@ -128,9 +139,12 @@ export function ChatMessage({ message, onDelete, onRatingChange }: ChatMessagePr
       className="animate-slide-up group relative"
     >
       <HydraCardHeader>
-        <Icon className={cn('h-5 w-5', config.color)} />
-        <HydraCardTitle className={config.color}>
-          {t(config.label)}
+        <Icon className={cn('h-5 w-5', isUserMessage && userDisplayInfo?.isSupervisor ? 'text-amber-500' : config.color)} />
+        <HydraCardTitle className={isUserMessage && userDisplayInfo?.isSupervisor ? 'text-amber-500' : config.color}>
+          {isUserMessage && userDisplayInfo?.isSupervisor 
+            ? `${t('role.supervisor')}${userDisplayInfo.displayName ? ` (${userDisplayInfo.displayName})` : ''}`
+            : t(config.label)
+          }
           {message.model_name && (
             <span className="text-muted-foreground font-normal ml-2">
               ({message.model_name})

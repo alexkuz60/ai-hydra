@@ -101,6 +101,7 @@ const translations: Translations = {
   
   // Roles
   'role.user': { ru: 'Пользователь', en: 'User' },
+  'role.supervisor': { ru: 'Супервизор', en: 'Supervisor' },
   'role.assistant': { ru: 'Эксперт', en: 'Expert' },
   'role.critic': { ru: 'Критик', en: 'Critic' },
   'role.arbiter': { ru: 'Арбитр', en: 'Arbiter' },
