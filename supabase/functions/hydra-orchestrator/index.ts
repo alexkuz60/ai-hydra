@@ -254,6 +254,9 @@ async function callLovableAI(
   console.log(`[${model}] Full API response:`, JSON.stringify(data, null, 2));
   
   const content = data.choices?.[0]?.message?.content || "";
+  // Extract reasoning from thinking models (if present)
+  const reasoning = data.choices?.[0]?.message?.reasoning || null;
+  
   if (!content) {
     console.warn(`[${model}] Empty content received. Response structure:`, {
       hasChoices: !!data.choices,
@@ -263,10 +266,15 @@ async function callLovableAI(
     });
   }
   
+  if (reasoning) {
+    console.log(`[${model}] Reasoning captured: ${reasoning.length} chars`);
+  }
+  
   return {
     model,
     provider: "lovable",
     content,
+    reasoning,
   };
 }
 
@@ -524,12 +532,12 @@ serve(async (req) => {
     console.log(`All results received: ${allResults.length}`);
 
     // Separate successes and errors
-    const successResults: { model: string; provider: string; content: string; role: string }[] = [];
+    const successResults: { model: string; provider: string; content: string; role: string; reasoning?: string | null }[] = [];
     for (const result of allResults) {
       if ('error' in result && result.error === true) {
         errors.push({ model: result.model, error: result.message });
       } else {
-        successResults.push(result as { model: string; provider: string; content: string; role: string });
+        successResults.push(result as { model: string; provider: string; content: string; role: string; reasoning?: string | null });
       }
     }
     
@@ -543,6 +551,7 @@ serve(async (req) => {
         role: result.role as 'assistant' | 'critic' | 'arbiter',
         model_name: result.model,
         content: result.content,
+        reasoning_path: result.reasoning || null,
         metadata: { provider: result.provider },
       }));
 

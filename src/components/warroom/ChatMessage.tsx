@@ -3,6 +3,7 @@ import { HydraCard, HydraCardHeader, HydraCardTitle, HydraCardContent } from '@/
 import { Button } from '@/components/ui/button';
 import { MarkdownRenderer } from './MarkdownRenderer';
 import { AttachmentPreview, Attachment } from './AttachmentPreview';
+import { ThinkingBlock } from './ThinkingBlock';
 import { 
   Brain, 
   Shield, 
@@ -159,6 +160,14 @@ export function ChatMessage({ message, userDisplayInfo, onDelete, onRatingChange
       </HydraCardHeader>
       
       <HydraCardContent className="text-foreground/90">
+        {/* Thinking/Reasoning block for AI messages */}
+        {message.reasoning_path && isAiMessage && (
+          <ThinkingBlock 
+            reasoning={message.reasoning_path} 
+            messageId={message.id}
+          />
+        )}
+        
         {message.role === 'user' ? (
           <p className="whitespace-pre-wrap">{truncatedContent}</p>
         ) : (
@@ -175,13 +184,6 @@ export function ChatMessage({ message, userDisplayInfo, onDelete, onRatingChange
         )}
       </HydraCardContent>
       
-      {message.reasoning_path && isExpanded && (
-        <div className="mt-3 pt-3 border-t border-border/50 px-4 pb-4">
-          <p className="text-xs text-muted-foreground font-mono">
-            Chain of Thought: {message.reasoning_path}
-          </p>
-        </div>
-      )}
 
       {/* Rating for AI messages */}
       {isAiMessage && (

@@ -218,6 +218,13 @@ const translations: Translations = {
   'presets.applied': { ru: 'Пресет применён', en: 'Preset applied' },
   'presets.empty': { ru: 'Нет сохранённых пресетов', en: 'No saved presets' },
   'presets.deleteConfirm': { ru: 'Удалить пресет?', en: 'Delete preset?' },
+  
+  // Thinking block
+  'thinking.title': { ru: 'Процесс размышления', en: 'Thinking Process' },
+  'thinking.translate': { ru: 'Перевести', en: 'Translate' },
+  'thinking.translating': { ru: 'Перевод...', en: 'Translating...' },
+  'thinking.translated': { ru: 'Переведено', en: 'Translated' },
+  'thinking.translateError': { ru: 'Не удалось перевести', en: 'Translation failed' },
 };
 
 interface LanguageContextType {
