@@ -131,9 +131,10 @@ const translations: Translations = {
   'files.maxFiles': { ru: 'Максимум файлов: {count}', en: 'Max files: {count}' },
   'files.tooLarge': { ru: 'Файл слишком большой', en: 'File too large' },
   'files.tooMany': { ru: 'Слишком много файлов', en: 'Too many files' },
-  'files.uploading': { ru: 'Загрузка...', en: 'Uploading...' },
+  'files.uploading': { ru: 'Загрузка файлов...', en: 'Uploading files...' },
   'files.download': { ru: 'Скачать', en: 'Download' },
   'files.invalidType': { ru: 'Неподдерживаемый тип файла', en: 'Unsupported file type' },
+  'files.uploadError': { ru: 'Ошибка загрузки', en: 'Upload error' },
   
   // Stats
   'stats.modelRatings': { ru: 'Рейтинг моделей', en: 'Model Ratings' },
