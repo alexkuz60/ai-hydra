@@ -32,8 +32,17 @@ export function ThinkingBlock({ reasoning, messageId }: ThinkingBlockProps) {
 
       if (error) throw error;
       
+      console.log("Translation response:", data);
+      
       if (data?.translation) {
         setTranslatedText(data.translation);
+      } else {
+        console.warn("Empty translation received:", data);
+        toast({
+          title: t('common.error'),
+          description: t('thinking.translateEmpty'),
+          variant: 'destructive'
+        });
       }
     } catch (error) {
       console.error('Translation error:', error);

@@ -225,6 +225,7 @@ const translations: Translations = {
   'thinking.translating': { ru: 'Перевод...', en: 'Translating...' },
   'thinking.translated': { ru: 'Переведено', en: 'Translated' },
   'thinking.translateError': { ru: 'Не удалось перевести', en: 'Translation failed' },
+  'thinking.translateEmpty': { ru: 'Перевод вернул пустой результат', en: 'Translation returned empty result' },
 };
 
 interface LanguageContextType {
