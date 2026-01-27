@@ -1,9 +1,15 @@
 import React, { useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
-import { Paperclip, X, FileText, Image as ImageIcon } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { Paperclip, FileText, Image as ImageIcon } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { toast } from '@/hooks/use-toast';
+import { 
+  ALLOWED_IMAGE_TYPES, 
+  ALLOWED_DOC_TYPES, 
+  MAX_FILES, 
+  MAX_SIZE_MB, 
+  isImageType 
+} from '@/lib/fileUtils';
 
 export interface AttachedFile {
   file: File;
@@ -19,13 +25,6 @@ interface FileUploadProps {
   maxSizeMB?: number;
 }
 
-const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-const ALLOWED_DOC_TYPES = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain', 'text/markdown'];
-
-function isImageType(type: string): boolean {
-  return ALLOWED_IMAGE_TYPES.includes(type);
-}
-
 function getFileIcon(type: string) {
   if (isImageType(type)) {
     return ImageIcon;
@@ -37,8 +36,8 @@ export function FileUpload({
   files,
   onFilesChange,
   disabled = false,
-  maxFiles = 5,
-  maxSizeMB = 10,
+  maxFiles = MAX_FILES,
+  maxSizeMB = MAX_SIZE_MB,
 }: FileUploadProps) {
   const { t } = useLanguage();
   const inputRef = useRef<HTMLInputElement>(null);

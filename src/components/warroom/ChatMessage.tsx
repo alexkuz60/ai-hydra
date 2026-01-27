@@ -25,20 +25,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-
-type MessageRole = 'user' | 'assistant' | 'critic' | 'arbiter';
-
-interface Message {
-  id: string;
-  session_id: string;
-  role: MessageRole;
-  model_name: string | null;
-  content: string;
-  reasoning_path: string | null;
-  confidence_score: number | null;
-  created_at: string;
-  metadata?: unknown;
-}
+import { Message, MessageRole } from '@/types/messages';
 
 const roleConfig = {
   user: {

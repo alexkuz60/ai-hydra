@@ -10,48 +10,20 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { compressImage } from '@/lib/imageCompression';
+import { sanitizeFileName } from '@/lib/fileUtils';
+import { Message, MessageRole } from '@/types/messages';
 
 import { PerModelSettingsData, DEFAULT_MODEL_SETTINGS } from '@/components/warroom/PerModelSettings';
 import { ChatMessage } from '@/components/warroom/ChatMessage';
 import { FileUpload, AttachedFile } from '@/components/warroom/FileUpload';
 import { useAvailableModels, LOVABLE_AI_MODELS, PERSONAL_KEY_MODELS } from '@/hooks/useAvailableModels';
+import { usePasteHandler } from '@/hooks/usePasteHandler';
 import { 
   Send, 
   Loader2, 
   Sparkles,
   Target
 } from 'lucide-react';
-
-type MessageRole = 'user' | 'assistant' | 'critic' | 'arbiter';
-
-// Sanitize filename for Supabase Storage (removes Cyrillic and special characters)
-function sanitizeFileName(fileName: string): string {
-  const lastDotIndex = fileName.lastIndexOf('.');
-  const ext = lastDotIndex > 0 ? fileName.slice(lastDotIndex) : '';
-  const nameWithoutExt = lastDotIndex > 0 ? fileName.slice(0, lastDotIndex) : fileName;
-  
-  const safeBaseName = nameWithoutExt
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-zA-Z0-9_-]/g, '_')
-    .replace(/_+/g, '_')
-    .replace(/^_|_$/g, '')
-    || 'file';
-  
-  return safeBaseName + ext.toLowerCase();
-}
-
-interface Message {
-  id: string;
-  session_id: string;
-  role: MessageRole;
-  model_name: string | null;
-  content: string;
-  reasoning_path: string | null;
-  confidence_score: number | null;
-  created_at: string;
-  metadata?: unknown;
-}
 
 interface Task {
   id: string;
@@ -84,6 +56,12 @@ export default function ExpertPanel() {
   const [initialStateApplied, setInitialStateApplied] = useState(false);
   const [attachedFiles, setAttachedFiles] = useState<AttachedFile[]>([]);
   const [uploadProgress, setUploadProgress] = useState<{ current: number; total: number } | null>(null);
+  
+  const { handlePaste } = usePasteHandler({ 
+    attachedFiles, 
+    setAttachedFiles, 
+    disabled: sending 
+  });
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -559,53 +537,7 @@ export default function ExpertPanel() {
                       handleSendMessage();
                     }
                   }}
-                  onPaste={(e) => {
-                    const items = e.clipboardData?.items;
-                    if (!items) return;
-                    
-                    const imageFiles: File[] = [];
-                    for (let i = 0; i < items.length; i++) {
-                      const item = items[i];
-                      if (item.type.startsWith('image/')) {
-                        const file = item.getAsFile();
-                        if (file) {
-                          imageFiles.push(file);
-                        }
-                      }
-                    }
-                    
-                    if (imageFiles.length > 0) {
-                      e.preventDefault();
-                      const maxFiles = 5;
-                      const maxSizeMB = 10;
-                      
-                      const newFiles: AttachedFile[] = [];
-                      for (const file of imageFiles) {
-                        if (attachedFiles.length + newFiles.length >= maxFiles) {
-                          toast.error(t('files.tooMany'));
-                          break;
-                        }
-                        if (file.size > maxSizeMB * 1024 * 1024) {
-                          toast.error(`${t('files.tooLarge')}: ${file.name}`);
-                          continue;
-                        }
-                        // Generate safe filename for clipboard images
-                        const ext = file.type.split('/')[1] || 'png';
-                        const safeName = `clipboard_${Date.now()}_${newFiles.length}.${ext}`;
-                        const renamedFile = new File([file], safeName, { type: file.type });
-                        
-                        newFiles.push({
-                          id: crypto.randomUUID(),
-                          file: renamedFile,
-                          preview: URL.createObjectURL(file),
-                        });
-                      }
-                      
-                      if (newFiles.length > 0) {
-                        setAttachedFiles(prev => [...prev, ...newFiles]);
-                      }
-                    }
-                  }}
+                  onPaste={handlePaste}
                 />
                 <Button
                   onClick={handleSendMessage}
