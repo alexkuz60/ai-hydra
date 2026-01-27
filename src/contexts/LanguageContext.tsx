@@ -124,6 +124,17 @@ const translations: Translations = {
   'messages.rating': { ru: 'Рейтинг', en: 'Rating' },
   'messages.deleted': { ru: 'Сообщение удалено', en: 'Message deleted' },
   
+  // Files
+  'files.attach': { ru: 'Прикрепить файл', en: 'Attach file' },
+  'files.remove': { ru: 'Удалить', en: 'Remove' },
+  'files.maxSize': { ru: 'Максимальный размер: {size}MB', en: 'Max size: {size}MB' },
+  'files.maxFiles': { ru: 'Максимум файлов: {count}', en: 'Max files: {count}' },
+  'files.tooLarge': { ru: 'Файл слишком большой', en: 'File too large' },
+  'files.tooMany': { ru: 'Слишком много файлов', en: 'Too many files' },
+  'files.uploading': { ru: 'Загрузка...', en: 'Uploading...' },
+  'files.download': { ru: 'Скачать', en: 'Download' },
+  'files.invalidType': { ru: 'Неподдерживаемый тип файла', en: 'Unsupported file type' },
+  
   // Stats
   'stats.modelRatings': { ru: 'Рейтинг моделей', en: 'Model Ratings' },
   'stats.totalBrains': { ru: 'Всего мозгов', en: 'Total brains' },

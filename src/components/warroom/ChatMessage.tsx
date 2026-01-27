@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { HydraCard, HydraCardHeader, HydraCardTitle, HydraCardContent } from '@/components/ui/hydra-card';
 import { Button } from '@/components/ui/button';
 import { MarkdownRenderer } from './MarkdownRenderer';
+import { AttachmentPreview, Attachment } from './AttachmentPreview';
 import { 
   Brain, 
   Shield, 
@@ -116,11 +117,12 @@ export function ChatMessage({ message, onDelete, onRatingChange }: ChatMessagePr
   const config = roleConfig[message.role];
   const Icon = config.icon;
 
-  // Get rating from metadata
+  // Get rating and attachments from metadata
   const metadataObj = (typeof message.metadata === 'object' && message.metadata !== null) 
     ? message.metadata as Record<string, unknown>
     : {};
   const rating = (typeof metadataObj.rating === 'number' ? metadataObj.rating : 0);
+  const attachments = (Array.isArray(metadataObj.attachments) ? metadataObj.attachments : []) as Attachment[];
 
   // Check if content is long enough to be collapsible
   const lines = message.content.split('\n');
@@ -160,6 +162,15 @@ export function ChatMessage({ message, onDelete, onRatingChange }: ChatMessagePr
           <p className="whitespace-pre-wrap">{truncatedContent}</p>
         ) : (
           <MarkdownRenderer content={truncatedContent} className="text-sm" />
+        )}
+        
+        {/* Attachments */}
+        {attachments.length > 0 && (
+          <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-border/30">
+            {attachments.map((att, idx) => (
+              <AttachmentPreview key={idx} attachment={att} />
+            ))}
+          </div>
         )}
       </HydraCardContent>
       
