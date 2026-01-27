@@ -51,6 +51,17 @@ const DOCUMENT_MIME_TYPES: Record<string, string> = {
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'docx',
 };
 
+// Thinking models that use reasoning tokens (need higher limits)
+const THINKING_MODELS = [
+  'google/gemini-2.5-pro',
+  'google/gemini-3-pro-preview',
+  'openai/gpt-5',
+  'openai/gpt-5.2',
+];
+
+// Multiplier for thinking models (reasoning consumes ~80-90% of tokens)
+const THINKING_MODEL_TOKEN_MULTIPLIER = 4;
+
 // Helper to build multimodal content for OpenAI-compatible APIs
 type ContentPart = { type: "text"; text: string } | { type: "image_url"; image_url: { url: string } };
 
@@ -460,11 +471,17 @@ serve(async (req) => {
     const modelPromises = models.map(async (modelReq) => {
       // Use per-model settings or defaults
       const temperature = modelReq.temperature ?? 0.7;
-      const maxTokens = modelReq.max_tokens ?? 2048;
       const role = modelReq.role ?? 'assistant';
       const systemPrompt = modelReq.system_prompt || defaultPrompts[role] || defaultPrompts.assistant;
 
-      console.log(`Starting request for model: ${modelReq.model_id}, role: ${role}, temp: ${temperature}`);
+      // Check if this is a thinking model that needs more tokens
+      const isThinkingModel = THINKING_MODELS.some(tm => modelReq.model_id.includes(tm));
+      const baseMaxTokens = modelReq.max_tokens ?? 2048;
+      const maxTokens = isThinkingModel 
+        ? baseMaxTokens * THINKING_MODEL_TOKEN_MULTIPLIER 
+        : baseMaxTokens;
+
+      console.log(`Starting request for model: ${modelReq.model_id}, role: ${role}, temp: ${temperature}, maxTokens: ${maxTokens}${isThinkingModel ? ' (thinking model x4)' : ''}`);
       
       try {
         let result: { model: string; provider: string; content: string };
