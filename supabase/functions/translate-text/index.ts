@@ -33,7 +33,7 @@ serve(async (req) => {
       );
     }
 
-    // Use a fast and cheap model for translation
+    // Use a reliable model for translation
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -41,7 +41,7 @@ serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "openai/gpt-5-nano",
+        model: "openai/gpt-5-mini",
         messages: [
           { 
             role: "system", 
@@ -72,7 +72,14 @@ serve(async (req) => {
     }
 
     const data = await response.json();
-    const translation = data.choices?.[0]?.message?.content || "";
+    console.log("Translation API response:", JSON.stringify(data, null, 2));
+    
+    const message = data.choices?.[0]?.message;
+    const translation = message?.content || message?.text || "";
+    
+    if (!translation) {
+      console.warn("Empty translation received. Full response:", JSON.stringify(data));
+    }
 
     return new Response(
       JSON.stringify({ translation }),
