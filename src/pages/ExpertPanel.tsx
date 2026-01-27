@@ -65,6 +65,7 @@ export default function ExpertPanel() {
   const [perModelSettings, setPerModelSettings] = useState<PerModelSettingsData>(initialState?.perModelSettings || {});
   const [initialStateApplied, setInitialStateApplied] = useState(false);
   const [attachedFiles, setAttachedFiles] = useState<AttachedFile[]>([]);
+  const [uploadProgress, setUploadProgress] = useState<{ current: number; total: number } | null>(null);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -270,10 +271,18 @@ export default function ExpertPanel() {
     setAttachedFiles([]);
 
     try {
-      // Upload files to storage
+      // Upload files to storage with progress tracking
       const attachmentUrls: { name: string; url: string; type: string }[] = [];
+      const totalFiles = filesToUpload.length;
       
-      for (const attached of filesToUpload) {
+      if (totalFiles > 0) {
+        setUploadProgress({ current: 0, total: totalFiles });
+      }
+      
+      for (let i = 0; i < filesToUpload.length; i++) {
+        const attached = filesToUpload[i];
+        setUploadProgress({ current: i, total: totalFiles });
+        
         const filePath = `${user.id}/${currentTask.id}/${Date.now()}_${attached.file.name}`;
         const { error: uploadError } = await supabase.storage
           .from('message-files')
@@ -290,13 +299,18 @@ export default function ExpertPanel() {
           });
         } else {
           console.error('Upload error:', uploadError);
+          toast.error(`${t('files.uploadError')}: ${attached.file.name}`);
         }
         
         // Revoke preview URL
         if (attached.preview) {
           URL.revokeObjectURL(attached.preview);
         }
+        
+        setUploadProgress({ current: i + 1, total: totalFiles });
       }
+      
+      setUploadProgress(null);
 
       // Insert user message with attachments in metadata
       const messageMetadata = attachmentUrls.length > 0 ? { attachments: attachmentUrls } : undefined;
@@ -435,8 +449,31 @@ export default function ExpertPanel() {
           {/* Input Area */}
           <div className="border-t border-border p-4 bg-background/80 backdrop-blur-sm">
             <div className="max-w-4xl mx-auto">
+              {/* Upload progress indicator */}
+              {uploadProgress && (
+                <div className="mb-3 p-3 rounded-lg border border-primary/30 bg-primary/5">
+                  <div className="flex items-center gap-3">
+                    <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                    <div className="flex-1">
+                      <div className="flex justify-between text-sm mb-1">
+                        <span className="text-foreground">{t('files.uploading')}</span>
+                        <span className="text-muted-foreground">
+                          {uploadProgress.current}/{uploadProgress.total}
+                        </span>
+                      </div>
+                      <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                        <div 
+                          className="h-full bg-primary transition-all duration-300 ease-out"
+                          style={{ width: `${(uploadProgress.current / uploadProgress.total) * 100}%` }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
               {/* File preview area */}
-              {attachedFiles.length > 0 && (
+              {attachedFiles.length > 0 && !uploadProgress && (
                 <div className="mb-3 flex flex-wrap gap-2 p-2 rounded-lg border border-dashed border-border/50 bg-muted/30">
                   {attachedFiles.map((attached) => {
                     const isImage = attached.file.type.startsWith('image/');
