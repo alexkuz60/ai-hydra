@@ -24,6 +24,23 @@ import {
 
 type MessageRole = 'user' | 'assistant' | 'critic' | 'arbiter';
 
+// Sanitize filename for Supabase Storage (removes Cyrillic and special characters)
+function sanitizeFileName(fileName: string): string {
+  const lastDotIndex = fileName.lastIndexOf('.');
+  const ext = lastDotIndex > 0 ? fileName.slice(lastDotIndex) : '';
+  const nameWithoutExt = lastDotIndex > 0 ? fileName.slice(0, lastDotIndex) : fileName;
+  
+  const safeBaseName = nameWithoutExt
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-zA-Z0-9_-]/g, '_')
+    .replace(/_+/g, '_')
+    .replace(/^_|_$/g, '')
+    || 'file';
+  
+  return safeBaseName + ext.toLowerCase();
+}
+
 interface Message {
   id: string;
   session_id: string;
@@ -287,7 +304,8 @@ export default function ExpertPanel() {
         // Compress image before upload
         const fileToUpload = await compressImage(attached.file);
         
-        const filePath = `${user.id}/${currentTask.id}/${Date.now()}_${attached.file.name}`;
+        const safeName = sanitizeFileName(attached.file.name);
+        const filePath = `${user.id}/${currentTask.id}/${Date.now()}_${safeName}`;
         const { error: uploadError } = await supabase.storage
           .from('message-files')
           .upload(filePath, fileToUpload);
@@ -571,9 +589,14 @@ export default function ExpertPanel() {
                           toast.error(`${t('files.tooLarge')}: ${file.name}`);
                           continue;
                         }
+                        // Generate safe filename for clipboard images
+                        const ext = file.type.split('/')[1] || 'png';
+                        const safeName = `clipboard_${Date.now()}_${newFiles.length}.${ext}`;
+                        const renamedFile = new File([file], safeName, { type: file.type });
+                        
                         newFiles.push({
                           id: crypto.randomUUID(),
-                          file,
+                          file: renamedFile,
                           preview: URL.createObjectURL(file),
                         });
                       }
