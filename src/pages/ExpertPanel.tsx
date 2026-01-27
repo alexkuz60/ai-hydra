@@ -9,6 +9,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { compressImage } from '@/lib/imageCompression';
 
 import { PerModelSettingsData, DEFAULT_MODEL_SETTINGS } from '@/components/warroom/PerModelSettings';
 import { ChatMessage } from '@/components/warroom/ChatMessage';
@@ -283,10 +284,13 @@ export default function ExpertPanel() {
         const attached = filesToUpload[i];
         setUploadProgress({ current: i, total: totalFiles });
         
+        // Compress image before upload
+        const fileToUpload = await compressImage(attached.file);
+        
         const filePath = `${user.id}/${currentTask.id}/${Date.now()}_${attached.file.name}`;
         const { error: uploadError } = await supabase.storage
           .from('message-files')
-          .upload(filePath, attached.file);
+          .upload(filePath, fileToUpload);
           
         if (!uploadError) {
           const { data: urlData } = supabase.storage
