@@ -535,6 +535,48 @@ export default function ExpertPanel() {
                       handleSendMessage();
                     }
                   }}
+                  onPaste={(e) => {
+                    const items = e.clipboardData?.items;
+                    if (!items) return;
+                    
+                    const imageFiles: File[] = [];
+                    for (let i = 0; i < items.length; i++) {
+                      const item = items[i];
+                      if (item.type.startsWith('image/')) {
+                        const file = item.getAsFile();
+                        if (file) {
+                          imageFiles.push(file);
+                        }
+                      }
+                    }
+                    
+                    if (imageFiles.length > 0) {
+                      e.preventDefault();
+                      const maxFiles = 5;
+                      const maxSizeMB = 10;
+                      
+                      const newFiles: AttachedFile[] = [];
+                      for (const file of imageFiles) {
+                        if (attachedFiles.length + newFiles.length >= maxFiles) {
+                          toast.error(t('files.tooMany'));
+                          break;
+                        }
+                        if (file.size > maxSizeMB * 1024 * 1024) {
+                          toast.error(`${t('files.tooLarge')}: ${file.name}`);
+                          continue;
+                        }
+                        newFiles.push({
+                          id: crypto.randomUUID(),
+                          file,
+                          preview: URL.createObjectURL(file),
+                        });
+                      }
+                      
+                      if (newFiles.length > 0) {
+                        setAttachedFiles(prev => [...prev, ...newFiles]);
+                      }
+                    }
+                  }}
                 />
                 <Button
                   onClick={handleSendMessage}
