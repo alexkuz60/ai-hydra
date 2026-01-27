@@ -90,9 +90,15 @@ export default function ExpertPanel() {
     }
   }, [user, authLoading, navigate, searchParams]);
 
+  const prevMessagesLengthRef = useRef(messages.length);
+  
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+    // Only scroll to bottom when new messages are added, not on rating updates
+    if (messages.length > prevMessagesLengthRef.current) {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+    prevMessagesLengthRef.current = messages.length;
+  }, [messages.length]);
 
   // Set default model when available models change (only if no initial state was passed)
   useEffect(() => {
