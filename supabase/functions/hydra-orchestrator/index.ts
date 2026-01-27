@@ -1,5 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { getDocument } from "https://esm.sh/pdfjs-serverless";
+import mammoth from "https://esm.sh/mammoth@1.6.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -29,6 +31,26 @@ interface RequestBody {
   models: ModelRequest[];
 }
 
+interface DocumentText {
+  name: string;
+  text: string;
+}
+
+interface ProcessedAttachments {
+  images: Attachment[];
+  documentTexts: DocumentText[];
+  errors: { name: string; error: string }[];
+}
+
+// Constants for document processing
+const MAX_DOCUMENT_TEXT_LENGTH = 50000;
+const FETCH_TIMEOUT_MS = 30000;
+
+const DOCUMENT_MIME_TYPES: Record<string, string> = {
+  'application/pdf': 'pdf',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'docx',
+};
+
 // Helper to build multimodal content for OpenAI-compatible APIs
 type ContentPart = { type: "text"; text: string } | { type: "image_url"; image_url: { url: string } };
 
@@ -49,6 +71,118 @@ function buildMultimodalContent(message: string, attachments: Attachment[]): Con
   }
   
   return content;
+}
+
+// Fetch file from URL with timeout
+async function fetchFileAsArrayBuffer(url: string): Promise<ArrayBuffer> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+  
+  try {
+    const response = await fetch(url, { signal: controller.signal });
+    if (!response.ok) {
+      throw new Error(`Failed to fetch file: ${response.status} ${response.statusText}`);
+    }
+    return await response.arrayBuffer();
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+// Extract text from PDF using pdfjs-serverless
+async function extractTextFromPDF(buffer: ArrayBuffer): Promise<string> {
+  const data = new Uint8Array(buffer);
+  const doc = await getDocument({ data, useSystemFonts: true }).promise;
+  const textParts: string[] = [];
+  
+  for (let i = 1; i <= doc.numPages; i++) {
+    const page = await doc.getPage(i);
+    const content = await page.getTextContent();
+    // deno-lint-ignore no-explicit-any
+    const pageText = content.items.map((item: any) => item.str || '').join(' ');
+    textParts.push(pageText);
+  }
+  
+  return textParts.join('\n\n');
+}
+
+// Extract text from DOCX using mammoth
+async function extractTextFromDOCX(buffer: ArrayBuffer): Promise<string> {
+  const result = await mammoth.extractRawText({ arrayBuffer: buffer });
+  return result.value;
+}
+
+// Process all attachments: separate images and extract text from documents
+async function processDocumentAttachments(attachments: Attachment[]): Promise<ProcessedAttachments> {
+  const images: Attachment[] = [];
+  const documentTexts: DocumentText[] = [];
+  const errors: { name: string; error: string }[] = [];
+  
+  for (const att of attachments) {
+    // Handle images as-is for multimodal
+    if (att.type.startsWith('image/')) {
+      images.push(att);
+      continue;
+    }
+    
+    // Check if it's a supported document type
+    const docType = DOCUMENT_MIME_TYPES[att.type];
+    if (!docType) {
+      console.log(`Skipping unsupported file type: ${att.type} (${att.name})`);
+      continue;
+    }
+    
+    try {
+      console.log(`Extracting text from ${docType}: ${att.name}`);
+      
+      // Fetch the file
+      const buffer = await fetchFileAsArrayBuffer(att.url);
+      
+      // Extract text based on type
+      let text: string;
+      if (docType === 'pdf') {
+        text = await extractTextFromPDF(buffer);
+      } else if (docType === 'docx') {
+        text = await extractTextFromDOCX(buffer);
+      } else {
+        continue;
+      }
+      
+      // Truncate if too long
+      if (text.length > MAX_DOCUMENT_TEXT_LENGTH) {
+        text = text.substring(0, MAX_DOCUMENT_TEXT_LENGTH) + '\n\n[... текст обрезан из-за превышения лимита ...]';
+      }
+      
+      if (text.trim()) {
+        documentTexts.push({ name: att.name, text: text.trim() });
+        console.log(`Successfully extracted ${text.length} chars from ${att.name}`);
+      } else {
+        console.warn(`Empty text extracted from ${att.name}`);
+      }
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      console.error(`Error extracting text from ${att.name}:`, errorMessage);
+      errors.push({ name: att.name, error: errorMessage });
+    }
+  }
+  
+  return { images, documentTexts, errors };
+}
+
+// Build enhanced message with document texts prepended
+function buildEnhancedMessage(
+  originalMessage: string,
+  documentTexts: DocumentText[]
+): string {
+  if (documentTexts.length === 0) {
+    return originalMessage;
+  }
+  
+  const documentSections = documentTexts.map(doc => 
+    `--- Документ: ${doc.name} ---\n${doc.text}\n--- Конец документа ---`
+  ).join('\n\n');
+  
+  return `Пользователь приложил следующие документы к своему запросу:\n\n${documentSections}\n\n=== Вопрос пользователя ===\n${originalMessage}`;
 }
 
 async function callLovableAI(
@@ -286,6 +420,17 @@ serve(async (req) => {
     // Default to empty array if no attachments provided
     const messageAttachments = attachments || [];
 
+    // Process document attachments: extract text from PDF/DOCX, keep images for multimodal
+    console.log(`Processing ${messageAttachments.length} attachments...`);
+    const { images, documentTexts, errors: docErrors } = await processDocumentAttachments(messageAttachments);
+    console.log(`Processed: ${images.length} images, ${documentTexts.length} document texts, ${docErrors.length} errors`);
+    
+    // Build enhanced message with document texts
+    const enhancedMessage = buildEnhancedMessage(message, documentTexts);
+    if (documentTexts.length > 0) {
+      console.log(`Enhanced message length: ${enhancedMessage.length} chars`);
+    }
+
     // Fetch username from profiles
     const { data: profile } = await supabase
       .from("profiles")
@@ -332,7 +477,8 @@ serve(async (req) => {
           if (!lovableKey) {
             throw new Error("Lovable AI not configured");
           }
-          result = await callLovableAI(lovableKey, modelReq.model_id, message, messageAttachments, systemPrompt, temperature, maxTokens);
+          // Use enhanced message (with document texts) and images for multimodal
+          result = await callLovableAI(lovableKey, modelReq.model_id, enhancedMessage, images, systemPrompt, temperature, maxTokens);
         } else {
           // Use personal API key
           let apiKey: string | null = null;
@@ -344,14 +490,16 @@ serve(async (req) => {
             throw new Error(`No API key configured for ${modelReq.provider}`);
           }
 
-          result = await callPersonalModel(modelReq.provider!, apiKey, modelReq.model_id, message, messageAttachments, systemPrompt, temperature, maxTokens);
+          // Use enhanced message (with document texts) and images for multimodal
+          result = await callPersonalModel(modelReq.provider!, apiKey, modelReq.model_id, enhancedMessage, images, systemPrompt, temperature, maxTokens);
         }
         
         console.log(`Success for model: ${modelReq.model_id}`);
         return { ...result, role }; // Include role in result for DB insert
-      } catch (error: any) {
-        console.error(`Error for model ${modelReq.model_id}:`, error.message || error);
-        return { error: true, model: modelReq.model_id, message: error.message || "Unknown error" };
+      } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : (error as { message?: string })?.message || "Unknown error";
+        console.error(`Error for model ${modelReq.model_id}:`, errorMessage);
+        return { error: true, model: modelReq.model_id, message: errorMessage };
       }
     });
 
@@ -384,17 +532,25 @@ serve(async (req) => {
       await supabase.from("messages").insert(messagesToInsert);
     }
 
+    // Combine document processing errors with model errors
+    const allErrors = [
+      ...docErrors.map(e => ({ model: `document:${e.name}`, error: e.error })),
+      ...errors
+    ];
+
     return new Response(JSON.stringify({ 
       success: true, 
       responses: successResults,
-      errors: errors.length > 0 ? errors : undefined 
+      documentTextsExtracted: documentTexts.length,
+      errors: allErrors.length > 0 ? allErrors : undefined 
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Orchestrator error:", error);
-    const status = error.status || 500;
-    return new Response(JSON.stringify({ error: error.message || "Unknown error" }), {
+    const status = (error as { status?: number })?.status || 500;
+    const message = error instanceof Error ? error.message : "Unknown error";
+    return new Response(JSON.stringify({ error: message }), {
       status, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
