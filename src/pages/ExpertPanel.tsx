@@ -8,9 +8,11 @@ import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 
 import { PerModelSettingsData, DEFAULT_MODEL_SETTINGS } from '@/components/warroom/PerModelSettings';
 import { ChatMessage } from '@/components/warroom/ChatMessage';
+import { FileUpload, AttachedFile } from '@/components/warroom/FileUpload';
 import { useAvailableModels, LOVABLE_AI_MODELS, PERSONAL_KEY_MODELS } from '@/hooks/useAvailableModels';
 import { 
   Send, 
@@ -62,6 +64,7 @@ export default function ExpertPanel() {
   const [selectedModels, setSelectedModels] = useState<string[]>(initialState?.selectedModels || []);
   const [perModelSettings, setPerModelSettings] = useState<PerModelSettingsData>(initialState?.perModelSettings || {});
   const [initialStateApplied, setInitialStateApplied] = useState(false);
+  const [attachedFiles, setAttachedFiles] = useState<AttachedFile[]>([]);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -263,9 +266,41 @@ export default function ExpertPanel() {
 
     const messageContent = input.trim();
     setInput('');
+    const filesToUpload = [...attachedFiles];
+    setAttachedFiles([]);
 
     try {
-      // Insert user message
+      // Upload files to storage
+      const attachmentUrls: { name: string; url: string; type: string }[] = [];
+      
+      for (const attached of filesToUpload) {
+        const filePath = `${user.id}/${currentTask.id}/${Date.now()}_${attached.file.name}`;
+        const { error: uploadError } = await supabase.storage
+          .from('message-files')
+          .upload(filePath, attached.file);
+          
+        if (!uploadError) {
+          const { data: urlData } = supabase.storage
+            .from('message-files')
+            .getPublicUrl(filePath);
+          attachmentUrls.push({
+            name: attached.file.name,
+            url: urlData.publicUrl,
+            type: attached.file.type,
+          });
+        } else {
+          console.error('Upload error:', uploadError);
+        }
+        
+        // Revoke preview URL
+        if (attached.preview) {
+          URL.revokeObjectURL(attached.preview);
+        }
+      }
+
+      // Insert user message with attachments in metadata
+      const messageMetadata = attachmentUrls.length > 0 ? { attachments: attachmentUrls } : undefined;
+      
       const { error } = await supabase
         .from('messages')
         .insert({
@@ -273,6 +308,7 @@ export default function ExpertPanel() {
           user_id: user.id,
           role: 'user' as MessageRole,
           content: messageContent,
+          metadata: messageMetadata,
         });
 
       if (error) throw error;
@@ -398,31 +434,84 @@ export default function ExpertPanel() {
 
           {/* Input Area */}
           <div className="border-t border-border p-4 bg-background/80 backdrop-blur-sm">
-            <div className="max-w-4xl mx-auto flex gap-3">
-              <Textarea
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                placeholder={t('expertPanel.placeholder')}
-                className="flex-1 min-h-[60px] max-h-[200px] resize-none"
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    handleSendMessage();
-                  }
-                }}
-              />
-              <Button
-                onClick={handleSendMessage}
-                disabled={sending || !input.trim() || selectedModels.length === 0}
-                className="hydra-glow-sm self-end"
-                size="lg"
-              >
-                {sending ? (
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                ) : (
-                  <Send className="h-5 w-5" />
-                )}
-              </Button>
+            <div className="max-w-4xl mx-auto">
+              {/* File preview area */}
+              {attachedFiles.length > 0 && (
+                <div className="mb-3 flex flex-wrap gap-2 p-2 rounded-lg border border-dashed border-border/50 bg-muted/30">
+                  {attachedFiles.map((attached) => {
+                    const isImage = attached.file.type.startsWith('image/');
+                    return (
+                      <div
+                        key={attached.id}
+                        className={cn(
+                          "relative group rounded-md overflow-hidden border border-border/50",
+                          "bg-background/80 flex items-center",
+                          isImage ? "w-16 h-16" : "px-2 py-1 gap-1"
+                        )}
+                      >
+                        {isImage && attached.preview ? (
+                          <img
+                            src={attached.preview}
+                            alt={attached.file.name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <span className="text-xs truncate max-w-[100px]">
+                            {attached.file.name}
+                          </span>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (attached.preview) URL.revokeObjectURL(attached.preview);
+                            setAttachedFiles(files => files.filter(f => f.id !== attached.id));
+                          }}
+                          className="absolute top-0.5 right-0.5 bg-destructive text-destructive-foreground rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <span className="sr-only">Remove</span>
+                          <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M18 6L6 18M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+              
+              <div className="flex gap-3 items-end">
+                {/* Attach button */}
+                <FileUpload
+                  files={attachedFiles}
+                  onFilesChange={setAttachedFiles}
+                  disabled={sending}
+                />
+                
+                <Textarea
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  placeholder={t('expertPanel.placeholder')}
+                  className="flex-1 min-h-[60px] max-h-[200px] resize-none"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      handleSendMessage();
+                    }
+                  }}
+                />
+                <Button
+                  onClick={handleSendMessage}
+                  disabled={sending || !input.trim() || selectedModels.length === 0}
+                  className="hydra-glow-sm"
+                  size="lg"
+                >
+                  {sending ? (
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                  ) : (
+                    <Send className="h-5 w-5" />
+                  )}
+                </Button>
+              </div>
             </div>
           </div>
         </div>
