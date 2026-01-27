@@ -348,6 +348,7 @@ export default function ExpertPanel() {
       });
 
       // Call the Hydra orchestrator with multiple models (each with its own settings)
+      // Include attachments for multimodal AI processing
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/hydra-orchestrator`,
         {
@@ -359,6 +360,7 @@ export default function ExpertPanel() {
           body: JSON.stringify({
             session_id: currentTask.id,
             message: messageContent,
+            attachments: attachmentUrls, // Pass attachments for multimodal AI
             models: modelsToCall,
           }),
         }
