@@ -1,6 +1,6 @@
 // Common types for messages and attachments
 
-export type MessageRole = 'user' | 'assistant' | 'critic' | 'arbiter';
+export type MessageRole = 'user' | 'assistant' | 'critic' | 'arbiter' | 'consultant';
 
 export interface Attachment {
   name: string;

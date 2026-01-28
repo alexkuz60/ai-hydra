@@ -93,7 +93,7 @@ function calculateRequestCost(
   };
 }
 
-export type AgentRole = 'assistant' | 'critic' | 'arbiter';
+export type AgentRole = 'assistant' | 'critic' | 'arbiter' | 'consultant';
 
 export interface SingleModelSettings {
   temperature: number;
@@ -118,6 +118,7 @@ const DEFAULT_SYSTEM_PROMPTS: Record<AgentRole, string> = {
   assistant: `Вы - эксперт в своей области. Предоставляйте четкие, хорошо обоснованные ответы. Будьте лаконичны, но основательны.`,
   critic: `Вы - критик-аналитик. Ваша задача - находить слабые места, противоречия и потенциальные проблемы в рассуждениях. Будьте конструктивны, но строги.`,
   arbiter: `Вы - арбитр дискуссии. Синтезируйте различные точки зрения, выделяйте консенсус и расхождения. Формируйте взвешенное финальное решение.`,
+  consultant: `Вы - консультант, привлечённый для разового экспертного запроса. Предоставьте глубокий, детальный ответ на конкретный вопрос. При необходимости проведите анализ, предложите решения и альтернативы.`,
 };
 
 export const DEFAULT_MODEL_SETTINGS: SingleModelSettings = {
@@ -361,6 +362,7 @@ export function PerModelSettings({ selectedModels, settings, onChange, className
                           <SelectItem value="assistant">{t('role.assistant')}</SelectItem>
                           <SelectItem value="critic">{t('role.critic')}</SelectItem>
                           <SelectItem value="arbiter">{t('role.arbiter')}</SelectItem>
+                          <SelectItem value="consultant">{t('role.consultant')}</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
