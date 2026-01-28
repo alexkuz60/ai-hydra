@@ -1,7 +1,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { getDocument } from "https://esm.sh/pdfjs-serverless";
-import mammoth from "https://esm.sh/mammoth@1.6.0";
+// Note: PDF/DOCX extraction temporarily disabled due to esm.sh issues
+// import { getDocument } from "https://esm.sh/pdfjs-serverless";
+// import mammoth from "https://esm.sh/mammoth@1.6.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -100,27 +101,18 @@ async function fetchFileAsArrayBuffer(url: string): Promise<ArrayBuffer> {
   }
 }
 
-// Extract text from PDF using pdfjs-serverless
-async function extractTextFromPDF(buffer: ArrayBuffer): Promise<string> {
-  const data = new Uint8Array(buffer);
-  const doc = await getDocument({ data, useSystemFonts: true }).promise;
-  const textParts: string[] = [];
-  
-  for (let i = 1; i <= doc.numPages; i++) {
-    const page = await doc.getPage(i);
-    const content = await page.getTextContent();
-    // deno-lint-ignore no-explicit-any
-    const pageText = content.items.map((item: any) => item.str || '').join(' ');
-    textParts.push(pageText);
-  }
-  
-  return textParts.join('\n\n');
+// Extract text from PDF - temporarily disabled
+async function extractTextFromPDF(_buffer: ArrayBuffer): Promise<string> {
+  // PDF extraction temporarily disabled due to esm.sh import issues
+  console.warn("PDF extraction is temporarily disabled");
+  return "[PDF extraction temporarily unavailable]";
 }
 
-// Extract text from DOCX using mammoth
-async function extractTextFromDOCX(buffer: ArrayBuffer): Promise<string> {
-  const result = await mammoth.extractRawText({ arrayBuffer: buffer });
-  return result.value;
+// Extract text from DOCX - temporarily disabled
+async function extractTextFromDOCX(_buffer: ArrayBuffer): Promise<string> {
+  // DOCX extraction temporarily disabled due to esm.sh import issues
+  console.warn("DOCX extraction is temporarily disabled");
+  return "[DOCX extraction temporarily unavailable]";
 }
 
 // Process all attachments: separate images and extract text from documents
@@ -378,6 +370,15 @@ async function callPersonalModel(
       userContent = message;
     }
     
+    // Map model IDs to actual Anthropic model names
+    const anthropicModelMap: Record<string, string> = {
+      'claude-3-5-sonnet': 'claude-3-5-sonnet-20241022',
+      'claude-3-5-haiku': 'claude-3-5-haiku-20241022',
+      'claude-3-opus': 'claude-3-opus-20240229',
+      'claude-3-haiku': 'claude-3-haiku-20240307',
+    };
+    const actualModel = anthropicModelMap[model] || 'claude-3-5-sonnet-20241022';
+    
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
@@ -386,7 +387,7 @@ async function callPersonalModel(
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "claude-3-5-sonnet-20241022",
+        model: actualModel,
         max_tokens: maxTokens,
         system: systemPrompt,
         messages: [{ role: "user", content: userContent }],
@@ -396,7 +397,35 @@ async function callPersonalModel(
 
     if (!response.ok) throw new Error(`Anthropic error: ${await response.text()}`);
     const data = await response.json();
-    return { model: "claude-3-5-sonnet", provider: "anthropic", content: data.content?.[0]?.text || "" };
+    return { model, provider: "anthropic", content: data.content?.[0]?.text || "" };
+  }
+
+  if (provider === "xai") {
+    // xAI Grok uses OpenAI-compatible API
+    const userContent = imageAttachments.length > 0 
+      ? buildMultimodalContent(message, attachments)
+      : message;
+      
+    const response = await fetch("https://api.x.ai/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model,
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userContent },
+        ],
+        temperature,
+        max_tokens: maxTokens,
+      }),
+    });
+
+    if (!response.ok) throw new Error(`xAI error: ${await response.text()}`);
+    const data = await response.json();
+    return { model, provider: "xai", content: data.choices?.[0]?.message?.content || "" };
   }
 
   throw new Error(`Unknown provider: ${provider}`);
@@ -510,6 +539,7 @@ serve(async (req) => {
           if (modelReq.provider === "openai") apiKey = apiKeys?.openai_api_key;
           if (modelReq.provider === "gemini") apiKey = apiKeys?.google_gemini_api_key;
           if (modelReq.provider === "anthropic") apiKey = apiKeys?.anthropic_api_key;
+          if (modelReq.provider === "xai") apiKey = apiKeys?.xai_api_key;
 
           if (!apiKey) {
             throw new Error(`No API key configured for ${modelReq.provider}`);

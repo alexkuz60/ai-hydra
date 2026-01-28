@@ -28,6 +28,7 @@ interface ApiKeys {
   openai_api_key: string | null;
   google_gemini_api_key: string | null;
   anthropic_api_key: string | null;
+  xai_api_key: string | null;
 }
 
 export default function Profile() {
@@ -44,6 +45,7 @@ export default function Profile() {
     openai: false,
     gemini: false,
     anthropic: false,
+    xai: false,
   });
 
   // Form states
@@ -52,6 +54,7 @@ export default function Profile() {
   const [openaiKey, setOpenaiKey] = useState('');
   const [geminiKey, setGeminiKey] = useState('');
   const [anthropicKey, setAnthropicKey] = useState('');
+  const [xaiKey, setXaiKey] = useState('');
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -92,6 +95,7 @@ export default function Profile() {
         setOpenaiKey(apiKeysData[0].openai_api_key || '');
         setGeminiKey(apiKeysData[0].google_gemini_api_key || '');
         setAnthropicKey(apiKeysData[0].anthropic_api_key || '');
+        setXaiKey(apiKeysData[0].xai_api_key || '');
       }
     } catch (error: any) {
       toast.error(error.message);
@@ -134,6 +138,7 @@ export default function Profile() {
         supabase.rpc('save_api_key', { p_provider: 'openai', p_api_key: openaiKey || '' }),
         supabase.rpc('save_api_key', { p_provider: 'anthropic', p_api_key: anthropicKey || '' }),
         supabase.rpc('save_api_key', { p_provider: 'gemini', p_api_key: geminiKey || '' }),
+        supabase.rpc('save_api_key', { p_provider: 'xai', p_api_key: xaiKey || '' }),
       ];
 
       const results = await Promise.all(savePromises);
@@ -366,6 +371,30 @@ export default function Profile() {
                       onClick={() => setShowKeys({ ...showKeys, anthropic: !showKeys.anthropic })}
                     >
                       {showKeys.anthropic ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </Button>
+                  </div>
+                </div>
+
+                {/* xAI (Grok) */}
+                <div className="space-y-2">
+                  <Label htmlFor="xai">xAI (Grok)</Label>
+                  <div className="relative">
+                    <Input
+                      id="xai"
+                      type={showKeys.xai ? 'text' : 'password'}
+                      value={xaiKey}
+                      onChange={(e) => setXaiKey(e.target.value)}
+                      placeholder="xai-..."
+                      className="pr-10"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="absolute right-0 top-0 h-full px-3"
+                      onClick={() => setShowKeys({ ...showKeys, xai: !showKeys.xai })}
+                    >
+                      {showKeys.xai ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </Button>
                   </div>
                 </div>
