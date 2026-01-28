@@ -1,7 +1,17 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { cn } from '@/lib/utils';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Message, MessageRole } from '@/types/messages';
@@ -18,7 +28,8 @@ import {
   ChevronsUpDown,
   ChevronDown,
   Filter,
-  X
+  X,
+  Trash2
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -37,6 +48,7 @@ interface DialogBlock {
   supervisorMessage?: Message;
   contentPreview: string;
   aiResponses: AIResponse[];
+  responseCount: number;
 }
 
 interface ChatTreeNavProps {
@@ -45,6 +57,7 @@ interface ChatTreeNavProps {
   userDisplayInfo: UserDisplayInfo;
   onMessageClick: (messageId: string) => void;
   onMessageDoubleClick?: (messageId: string) => void;
+  onDeleteMessageGroup?: (userMessageId: string) => void;
   activeParticipant: string | null;
   filteredParticipant?: string | null;
   allCollapsed?: boolean;
@@ -71,12 +84,15 @@ export function ChatTreeNav({
   perModelSettings,
   onMessageClick,
   onMessageDoubleClick,
+  onDeleteMessageGroup,
   activeParticipant,
   filteredParticipant,
   allCollapsed,
   onCollapseAllToggle,
 }: ChatTreeNavProps) {
   const { t } = useLanguage();
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [blockToDelete, setBlockToDelete] = useState<DialogBlock | null>(null);
 
   const dialogBlocks = useMemo(() => {
     const blocks: DialogBlock[] = [];
@@ -94,6 +110,7 @@ export function ChatTreeNav({
           supervisorMessage: msg,
           contentPreview: msg.content.slice(0, 50) + (msg.content.length > 50 ? '...' : ''),
           aiResponses: [],
+          responseCount: 0,
         };
       } else {
         // AI response
@@ -113,6 +130,7 @@ export function ChatTreeNav({
         if (currentBlock) {
           // Add to current supervisor block
           currentBlock.aiResponses.push(aiResponse);
+          currentBlock.responseCount++;
         } else {
           // Standalone AI message (e.g., consultant without preceding user message)
           blocks.push({
@@ -120,6 +138,7 @@ export function ChatTreeNav({
             type: 'standalone-ai',
             contentPreview: msg.content.slice(0, 50) + '...',
             aiResponses: [aiResponse],
+            responseCount: 1,
           });
         }
       }
@@ -132,6 +151,20 @@ export function ChatTreeNav({
 
     return blocks;
   }, [messages, perModelSettings, t]);
+
+  const handleDeleteClick = (e: React.MouseEvent, block: DialogBlock) => {
+    e.stopPropagation();
+    setBlockToDelete(block);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = () => {
+    if (blockToDelete && onDeleteMessageGroup) {
+      onDeleteMessageGroup(blockToDelete.id);
+    }
+    setDeleteDialogOpen(false);
+    setBlockToDelete(null);
+  };
 
   if (dialogBlocks.length === 0) {
     return (
@@ -207,7 +240,7 @@ export function ChatTreeNav({
               const currentIndex = supervisorIndex;
               
               return (
-                <div key={block.id} className="space-y-0.5">
+                <div key={block.id} className="space-y-0.5 group/block">
                   {/* Supervisor node */}
                   <Tooltip>
                     <TooltipTrigger asChild>
@@ -225,6 +258,21 @@ export function ChatTreeNav({
                         <span className="flex-1 text-sm truncate text-sidebar-foreground">
                           {t('role.supervisor')} #{currentIndex}
                         </span>
+                        {block.responseCount > 0 && (
+                          <span className="text-xs text-muted-foreground">
+                            +{block.responseCount}
+                          </span>
+                        )}
+                        {onDeleteMessageGroup && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-5 w-5 opacity-0 group-hover/block:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
+                            onClick={(e) => handleDeleteClick(e, block)}
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        )}
                         <Info className="h-3.5 w-3.5 text-muted-foreground" />
                       </div>
                     </TooltipTrigger>
@@ -295,6 +343,27 @@ export function ChatTreeNav({
           })}
         </div>
       </ScrollArea>
+
+      {/* Delete confirmation dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('messages.deleteGroupTitle')}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t('messages.deleteGroupConfirm').replace('{count}', String((blockToDelete?.responseCount || 0) + 1))}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={confirmDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {t('common.delete')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

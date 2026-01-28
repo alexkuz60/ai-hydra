@@ -261,6 +261,33 @@ export default function ExpertPanel() {
     }
   };
 
+  // Delete a user message and all AI responses until the next user message
+  const handleDeleteMessageGroup = async (userMessageId: string) => {
+    const userMsgIndex = messages.findIndex(m => m.id === userMessageId);
+    if (userMsgIndex === -1 || messages[userMsgIndex].role !== 'user') return;
+
+    // Find all messages to delete: user message + subsequent AI responses
+    const idsToDelete: string[] = [userMessageId];
+    for (let i = userMsgIndex + 1; i < messages.length; i++) {
+      if (messages[i].role === 'user') break; // Stop at next user message
+      idsToDelete.push(messages[i].id);
+    }
+
+    try {
+      const { error } = await supabase
+        .from('messages')
+        .delete()
+        .in('id', idsToDelete);
+
+      if (error) throw error;
+
+      setMessages(messages.filter(m => !idsToDelete.includes(m.id)));
+      toast.success(t('messages.groupDeleted'));
+    } catch (error: any) {
+      toast.error(error.message);
+    }
+  };
+
   const handleRatingChange = async (messageId: string, rating: number) => {
     try {
       const message = messages.find(m => m.id === messageId);
@@ -628,6 +655,7 @@ export default function ExpertPanel() {
               userDisplayInfo={userDisplayInfo}
               onMessageClick={handleMessageClick}
               onMessageDoubleClick={handleMessageDoubleClick}
+              onDeleteMessageGroup={handleDeleteMessageGroup}
               activeParticipant={activeParticipant}
               filteredParticipant={filteredParticipant}
               allCollapsed={allCollapsed}

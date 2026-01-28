@@ -143,6 +143,9 @@ const translations: Translations = {
   'messages.deleteConfirm': { ru: 'Это действие нельзя отменить. Сообщение будет удалено навсегда.', en: 'This action cannot be undone. The message will be permanently deleted.' },
   'messages.rating': { ru: 'Рейтинг', en: 'Rating' },
   'messages.deleted': { ru: 'Сообщение удалено', en: 'Message deleted' },
+  'messages.groupDeleted': { ru: 'Сообщения удалены', en: 'Messages deleted' },
+  'messages.deleteGroupTitle': { ru: 'Удалить запрос и ответы?', en: 'Delete query and responses?' },
+  'messages.deleteGroupConfirm': { ru: 'Будут удалены запрос пользователя и все ответы AI ({count} сообщений).', en: 'User query and all AI responses will be deleted ({count} messages).' },
   
   // Files
   'files.attach': { ru: 'Прикрепить файл', en: 'Attach file' },
