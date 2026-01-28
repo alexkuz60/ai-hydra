@@ -6,6 +6,7 @@ import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -560,37 +561,39 @@ export default function ExpertPanel() {
     );
   }
 
-  const handleParticipantClick = (participantId: string) => {
-    setActiveParticipant(participantId);
+  const handleMessageClick = (messageId: string) => {
+    setActiveParticipant(messageId);
     
-    // Find first message of this participant and scroll to it
-    const firstMessage = messages.find(m =>
-      participantId === 'user'
-        ? m.role === 'user'
-        : m.model_name === participantId
-    );
-
-    if (firstMessage) {
-      messageRefs.current.get(firstMessage.id)?.scrollIntoView({
-        behavior: 'smooth',
-        block: 'center',
-      });
-    }
+    messageRefs.current.get(messageId)?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'center',
+    });
   };
 
   return (
     <Layout>
       <div className="h-[calc(100vh-4rem)] flex overflow-hidden">
-        {/* Tree Navigation */}
-        <ChatTreeNav
-          messages={messages}
-          perModelSettings={perModelSettings}
-          userDisplayInfo={userDisplayInfo}
-          onParticipantClick={handleParticipantClick}
-          activeParticipant={activeParticipant}
-        />
+        <ResizablePanelGroup direction="horizontal">
+          {/* Navigation Panel - resizable */}
+          <ResizablePanel 
+            defaultSize={20} 
+            minSize={15} 
+            maxSize={35}
+            className="bg-sidebar"
+          >
+            <ChatTreeNav
+              messages={messages}
+              perModelSettings={perModelSettings}
+              userDisplayInfo={userDisplayInfo}
+              onMessageClick={handleMessageClick}
+              activeParticipant={activeParticipant}
+            />
+          </ResizablePanel>
 
-        {/* Main Content */}
+          <ResizableHandle withHandle />
+
+          {/* Main Content */}
+          <ResizablePanel defaultSize={80}>
         <div className="flex-1 flex flex-col min-w-0">
           {/* Task Header */}
           <div className="border-b border-border p-3 bg-background/50 flex items-center gap-4">
@@ -751,8 +754,9 @@ export default function ExpertPanel() {
               </div>
             </div>
           </div>
-        </div>
-
+          </div>
+        </ResizablePanel>
+        </ResizablePanelGroup>
       </div>
     </Layout>
   );
