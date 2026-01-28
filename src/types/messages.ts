@@ -21,6 +21,7 @@ export interface Message {
   model_name: string | null;
   content: string;
   reasoning_path: string | null;
+  reasoning_translated: string | null;
   confidence_score: number | null;
   created_at: string;
   metadata?: MessageMetadata | unknown;
