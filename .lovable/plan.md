@@ -1,62 +1,185 @@
 
-## План: Исправление прокрутки чата
 
-### Проблема
-Внутренний контейнер чата (строка 642) использует `flex-1`, который не работает внутри `ResizablePanel`, потому что панель не является flex-контейнером.
+## План: Статистика использования токенов в профиле
 
-### Текущий код (не работает):
-```tsx
-<ResizablePanel defaultSize={80}>
-  <div className="flex-1 flex flex-col min-w-0">  ❌
-    ...
-    <ScrollArea className="flex-1 p-4">
-```
+### Обзор
+Добавить новую вкладку "Статистика" в профиле пользователя, отображающую использование токенов и примерную стоимость запросов на основе данных из API ответов.
 
-### Исправленный код:
-```tsx
-<ResizablePanel defaultSize={80}>
-  <div className="h-full flex flex-col min-w-0">  ✅
-    ...
-    <ScrollArea className="flex-1 p-4">
+---
+
+### Архитектура решения
+
+```text
+┌─────────────────────────────────────────────────────────────┐
+│                    hydra-orchestrator                       │
+│  ┌─────────────┐                                            │
+│  │ API Response│ ──► Извлечение usage.prompt_tokens,        │
+│  │             │     usage.completion_tokens                │
+│  └─────────────┘                                            │
+│         │                                                   │
+│         ▼                                                   │
+│  ┌─────────────────────────────────────────────────────┐    │
+│  │ metadata: {                                         │    │
+│  │   provider: "lovable",                              │    │
+│  │   prompt_tokens: 1250,                              │    │
+│  │   completion_tokens: 850,                           │    │
+│  │   total_tokens: 2100                                │    │
+│  │ }                                                   │    │
+│  └─────────────────────────────────────────────────────┘    │
+└─────────────────────────────────────────────────────────────┘
+                           │
+                           ▼
+┌─────────────────────────────────────────────────────────────┐
+│                     Profile.tsx                             │
+│  ┌──────────┬────────────────┬───────────────┬───────────┐  │
+│  │ Профиль  │   Настройки    │   API Ключи   │Статистика │  │
+│  └──────────┴────────────────┴───────────────┴───────────┘  │
+│                                                             │
+│  ┌─────────────────────────────────────────────────────┐    │
+│  │ 📊 Сводка использования                             │    │
+│  │ ────────────────────────────────────────────────    │    │
+│  │ Всего токенов:    125,430                          │    │
+│  │ Входных:           75,250                          │    │
+│  │ Выходных:          50,180                          │    │
+│  │ Примерная стоимость: ~$1.25                        │    │
+│  └─────────────────────────────────────────────────────┘    │
+│                                                             │
+│  ┌─────────────────────────────────────────────────────┐    │
+│  │ По моделям:                                         │    │
+│  │ ────────────────────────────────────────────────    │    │
+│  │ 🏆 gemini-2.5-pro    42,000 tok   $0.45             │    │
+│  │    gpt-5-mini        38,500 tok   $0.35             │    │
+│  │    gemini-3-flash    25,000 tok   $0.25             │    │
+│  └─────────────────────────────────────────────────────┘    │
+└─────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-### Почему это работает
+### Изменения по файлам
 
-1. `ResizablePanel` имеет фиксированную высоту от `ResizablePanelGroup`
-2. `h-full` заставляет внутренний div занять 100% этой высоты
-3. `flex flex-col` создаёт вертикальный flex-контейнер
-4. `ScrollArea` с `flex-1` занимает оставшееся пространство и получает ограниченную высоту
-5. Прокрутка появляется, когда контент превышает эту высоту
-
----
-
-### Файл для изменения
-
-| Файл | Изменение |
+| Файл | Изменения |
 |------|-----------|
-| `src/pages/ExpertPanel.tsx` | Строка 642: заменить `flex-1 flex` на `h-full flex` |
+| `supabase/functions/hydra-orchestrator/index.ts` | Извлечение и сохранение `usage` данных в metadata |
+| `src/pages/Profile.tsx` | Добавление 4-й вкладки "Статистика" с компонентом UsageStats |
+| `src/components/profile/UsageStats.tsx` | **Новый файл** - компонент статистики |
+| `src/contexts/LanguageContext.tsx` | Добавление переводов для статистики |
 
 ---
 
-### Изменение (1 строка)
+### Технические детали
 
-**Было:**
-```tsx
-<div className="flex-1 flex flex-col min-w-0">
+#### 1. Изменения в hydra-orchestrator
+
+**Текущий код (строки 578-586):**
+```typescript
+const messagesToInsert = successResults.map(result => ({
+  session_id,
+  user_id: user.id,
+  role: result.role as 'assistant' | 'critic' | 'arbiter',
+  model_name: result.model,
+  content: result.content,
+  reasoning_path: result.reasoning || null,
+  metadata: { provider: result.provider },
+}));
 ```
 
-**Стало:**
-```tsx
-<div className="h-full flex flex-col min-w-0">
+**Новый код:**
+```typescript
+const messagesToInsert = successResults.map(result => ({
+  session_id,
+  user_id: user.id,
+  role: result.role as 'assistant' | 'critic' | 'arbiter',
+  model_name: result.model,
+  content: result.content,
+  reasoning_path: result.reasoning || null,
+  metadata: { 
+    provider: result.provider,
+    prompt_tokens: result.usage?.prompt_tokens || 0,
+    completion_tokens: result.usage?.completion_tokens || 0,
+    total_tokens: result.usage?.total_tokens || 0,
+  },
+}));
+```
+
+Также необходимо обновить функции `callLovableAI` и `callPersonalModel`, чтобы возвращать `usage` объект из API ответа.
+
+#### 2. Компонент UsageStats
+
+Новый компонент будет:
+- Загружать все сообщения пользователя с токен-метаданными
+- Агрегировать по моделям и общую статистику
+- Рассчитывать примерную стоимость по справочнику цен (уже есть в проекте)
+- Отображать графики/таблицы
+
+#### 3. Расчёт стоимости
+
+Использовать существующий справочник цен из `ModelSettings.tsx` (Cost Forecast feature):
+
+```typescript
+const MODEL_PRICES: Record<string, { input: number; output: number }> = {
+  'google/gemini-2.5-pro': { input: 1.25, output: 5.0 },
+  'google/gemini-2.5-flash': { input: 0.075, output: 0.3 },
+  'openai/gpt-5': { input: 2.5, output: 10.0 },
+  'openai/gpt-5-mini': { input: 0.15, output: 0.6 },
+  // ...
+};
+
+function calculateCost(model: string, promptTokens: number, completionTokens: number): number {
+  const prices = MODEL_PRICES[model] || { input: 0.5, output: 1.5 };
+  return (promptTokens * prices.input + completionTokens * prices.output) / 1_000_000;
+}
 ```
 
 ---
 
-### Ожидаемый результат
+### Новые переводы
 
-- Вертикальный скроллбар появится в области чата
-- Прокрутка мышью/тачпадом будет работать
-- Навигация через панель участников продолжит работать
-- Скролл к новым сообщениям сохранится
+```typescript
+// Profile stats
+'profile.stats': { ru: 'Статистика', en: 'Statistics' },
+'profile.statsTitle': { ru: 'Использование токенов', en: 'Token Usage' },
+'profile.totalTokens': { ru: 'Всего токенов', en: 'Total Tokens' },
+'profile.inputTokens': { ru: 'Входных токенов', en: 'Input Tokens' },
+'profile.outputTokens': { ru: 'Выходных токенов', en: 'Output Tokens' },
+'profile.estimatedCost': { ru: 'Примерная стоимость', en: 'Estimated Cost' },
+'profile.byModel': { ru: 'По моделям', en: 'By Model' },
+'profile.noUsageData': { ru: 'Нет данных об использовании. Начните использовать модели!', en: 'No usage data. Start using models!' },
+'profile.requestCount': { ru: 'Запросов', en: 'Requests' },
+```
+
+---
+
+### UI дизайн вкладки "Статистика"
+
+1. **Сводная карточка** (наверху):
+   - Общее количество токенов (с иконкой)
+   - Входные / Выходные токены (отдельно)
+   - Примерная стоимость в USD
+
+2. **Таблица по моделям**:
+   - Название модели
+   - Количество запросов
+   - Токенов (input/output)
+   - Стоимость
+   - Сортировка по общему использованию
+
+3. **Период** (опционально в будущем):
+   - Фильтр по дате (7 дней / 30 дней / всё время)
+
+---
+
+### Обратная совместимость
+
+Старые сообщения без токен-данных будут отображаться с нулевыми значениями. Это корректное поведение, так как исторические данные недоступны.
+
+---
+
+### Шаги реализации
+
+1. Обновить `hydra-orchestrator` для сохранения usage данных
+2. Создать `src/components/profile/UsageStats.tsx`
+3. Обновить `src/pages/Profile.tsx` с новой вкладкой
+4. Добавить переводы в `LanguageContext.tsx`
+5. Развернуть edge function
+
