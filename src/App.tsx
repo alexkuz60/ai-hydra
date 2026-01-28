@@ -1,3 +1,4 @@
+import { Suspense, lazy } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -6,18 +7,27 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { AuthProvider } from "@/contexts/AuthContext";
-import Index from "./pages/Index";
-import Login from "./pages/Login";
-import Signup from "./pages/Signup";
-import Profile from "./pages/Profile";
-import Tasks from "./pages/Tasks";
-import ExpertPanel from "./pages/ExpertPanel";
-import ModelRatings from "./pages/ModelRatings";
-import RoleLibrary from "./pages/RoleLibrary";
-import Admin from "./pages/Admin";
-import NotFound from "./pages/NotFound";
+
+// Lazy load pages to reduce initial bundle size and improve FID
+const Index = lazy(() => import("./pages/Index"));
+const Login = lazy(() => import("./pages/Login"));
+const Signup = lazy(() => import("./pages/Signup"));
+const Profile = lazy(() => import("./pages/Profile"));
+const Tasks = lazy(() => import("./pages/Tasks"));
+const ExpertPanel = lazy(() => import("./pages/ExpertPanel"));
+const ModelRatings = lazy(() => import("./pages/ModelRatings"));
+const RoleLibrary = lazy(() => import("./pages/RoleLibrary"));
+const Admin = lazy(() => import("./pages/Admin"));
+const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
+
+// Minimal loading fallback to avoid layout shift
+const PageLoader = () => (
+  <div className="min-h-screen flex items-center justify-center bg-background">
+    <div className="animate-pulse text-muted-foreground">Loading...</div>
+  </div>
+);
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -28,19 +38,21 @@ const App = () => (
             <Toaster />
             <Sonner />
             <BrowserRouter>
-              <Routes>
-                <Route path="/" element={<Index />} />
-                <Route path="/login" element={<Login />} />
-                <Route path="/signup" element={<Signup />} />
-                <Route path="/profile" element={<Profile />} />
-                <Route path="/tasks" element={<Tasks />} />
-                <Route path="/expert-panel" element={<ExpertPanel />} />
-                <Route path="/model-ratings" element={<ModelRatings />} />
-                <Route path="/role-library" element={<RoleLibrary />} />
-                <Route path="/war-room" element={<Navigate to="/expert-panel" replace />} />
-                <Route path="/admin" element={<Admin />} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
+              <Suspense fallback={<PageLoader />}>
+                <Routes>
+                  <Route path="/" element={<Index />} />
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/signup" element={<Signup />} />
+                  <Route path="/profile" element={<Profile />} />
+                  <Route path="/tasks" element={<Tasks />} />
+                  <Route path="/expert-panel" element={<ExpertPanel />} />
+                  <Route path="/model-ratings" element={<ModelRatings />} />
+                  <Route path="/role-library" element={<RoleLibrary />} />
+                  <Route path="/war-room" element={<Navigate to="/expert-panel" replace />} />
+                  <Route path="/admin" element={<Admin />} />
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </Suspense>
             </BrowserRouter>
           </TooltipProvider>
         </AuthProvider>
