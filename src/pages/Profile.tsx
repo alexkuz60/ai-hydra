@@ -12,8 +12,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { User, Key, Settings, Loader2, Eye, EyeOff, Check, Moon, Sun, Globe, Shield } from 'lucide-react';
+import { User, Key, Settings, Loader2, Eye, EyeOff, Check, Moon, Sun, Globe, Shield, BarChart3 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { UsageStats } from '@/components/profile/UsageStats';
 
 interface Profile {
   id: string;
@@ -179,7 +180,7 @@ export default function Profile() {
         </div>
 
         <Tabs defaultValue="profile" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3 max-w-md">
+          <TabsList className="grid w-full grid-cols-4 max-w-lg">
             <TabsTrigger value="profile" className="flex items-center gap-2">
               <User className="h-4 w-4" />
               <span className="hidden sm:inline">{t('nav.profile')}</span>
@@ -191,6 +192,10 @@ export default function Profile() {
             <TabsTrigger value="api-keys" className="flex items-center gap-2">
               <Key className="h-4 w-4" />
               <span className="hidden sm:inline">{t('profile.apiKeys')}</span>
+            </TabsTrigger>
+            <TabsTrigger value="stats" className="flex items-center gap-2">
+              <BarChart3 className="h-4 w-4" />
+              <span className="hidden sm:inline">{t('profile.stats')}</span>
             </TabsTrigger>
           </TabsList>
 
@@ -405,6 +410,10 @@ export default function Profile() {
                 </Button>
               </HydraCardContent>
             </HydraCard>
+          </TabsContent>
+
+          <TabsContent value="stats">
+            <UsageStats />
           </TabsContent>
         </Tabs>
       </div>

@@ -51,6 +51,15 @@ const translations: Translations = {
   'profile.language': { ru: 'Язык интерфейса', en: 'Interface Language' },
   'profile.themeDark': { ru: 'Тёмная', en: 'Dark' },
   'profile.themeLight': { ru: 'Светлая', en: 'Light' },
+  'profile.stats': { ru: 'Статистика', en: 'Statistics' },
+  'profile.statsTitle': { ru: 'Использование токенов', en: 'Token Usage' },
+  'profile.totalTokens': { ru: 'Всего токенов', en: 'Total Tokens' },
+  'profile.inputTokens': { ru: 'Входных токенов', en: 'Input Tokens' },
+  'profile.outputTokens': { ru: 'Выходных токенов', en: 'Output Tokens' },
+  'profile.estimatedCost': { ru: 'Примерная стоимость', en: 'Estimated Cost' },
+  'profile.byModel': { ru: 'По моделям', en: 'By Model' },
+  'profile.noUsageData': { ru: 'Нет данных об использовании. Начните использовать модели!', en: 'No usage data. Start using models!' },
+  'profile.requestCount': { ru: 'Запросов', en: 'Requests' },
   
   // Home / Hero
   'hero.title': { ru: 'AI-Hydra', en: 'AI-Hydra' },

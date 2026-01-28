@@ -248,6 +248,8 @@ async function callLovableAI(
   const content = data.choices?.[0]?.message?.content || "";
   // Extract reasoning from thinking models (if present)
   const reasoning = data.choices?.[0]?.message?.reasoning || null;
+  // Extract usage statistics
+  const usage = data.usage || null;
   
   if (!content) {
     console.warn(`[${model}] Empty content received. Response structure:`, {
@@ -261,12 +263,17 @@ async function callLovableAI(
   if (reasoning) {
     console.log(`[${model}] Reasoning captured: ${reasoning.length} chars`);
   }
+
+  if (usage) {
+    console.log(`[${model}] Usage: prompt=${usage.prompt_tokens}, completion=${usage.completion_tokens}, total=${usage.total_tokens}`);
+  }
   
   return {
     model,
     provider: "lovable",
     content,
     reasoning,
+    usage,
   };
 }
 
@@ -307,7 +314,12 @@ async function callPersonalModel(
 
     if (!response.ok) throw new Error(`OpenAI error: ${await response.text()}`);
     const data = await response.json();
-    return { model, provider: "openai", content: data.choices?.[0]?.message?.content || "" };
+    return { 
+      model, 
+      provider: "openai", 
+      content: data.choices?.[0]?.message?.content || "",
+      usage: data.usage || null,
+    };
   }
 
   if (provider === "gemini") {
@@ -340,7 +352,18 @@ async function callPersonalModel(
 
     if (!response.ok) throw new Error(`Gemini error: ${await response.text()}`);
     const data = await response.json();
-    return { model: "gemini-1.5-pro", provider: "gemini", content: data.candidates?.[0]?.content?.parts?.[0]?.text || "" };
+    // Gemini returns usageMetadata instead of usage
+    const usageMetadata = data.usageMetadata;
+    return { 
+      model: "gemini-1.5-pro", 
+      provider: "gemini", 
+      content: data.candidates?.[0]?.content?.parts?.[0]?.text || "",
+      usage: usageMetadata ? {
+        prompt_tokens: usageMetadata.promptTokenCount || 0,
+        completion_tokens: usageMetadata.candidatesTokenCount || 0,
+        total_tokens: usageMetadata.totalTokenCount || 0,
+      } : null,
+    };
   }
 
   if (provider === "anthropic") {
@@ -397,7 +420,17 @@ async function callPersonalModel(
 
     if (!response.ok) throw new Error(`Anthropic error: ${await response.text()}`);
     const data = await response.json();
-    return { model, provider: "anthropic", content: data.content?.[0]?.text || "" };
+    // Anthropic returns usage in a similar format
+    return { 
+      model, 
+      provider: "anthropic", 
+      content: data.content?.[0]?.text || "",
+      usage: data.usage ? {
+        prompt_tokens: data.usage.input_tokens || 0,
+        completion_tokens: data.usage.output_tokens || 0,
+        total_tokens: (data.usage.input_tokens || 0) + (data.usage.output_tokens || 0),
+      } : null,
+    };
   }
 
   if (provider === "xai") {
@@ -425,7 +458,12 @@ async function callPersonalModel(
 
     if (!response.ok) throw new Error(`xAI error: ${await response.text()}`);
     const data = await response.json();
-    return { model, provider: "xai", content: data.choices?.[0]?.message?.content || "" };
+    return { 
+      model, 
+      provider: "xai", 
+      content: data.choices?.[0]?.message?.content || "",
+      usage: data.usage || null,
+    };
   }
 
   throw new Error(`Unknown provider: ${provider}`);
@@ -562,18 +600,24 @@ serve(async (req) => {
     console.log(`All results received: ${allResults.length}`);
 
     // Separate successes and errors
-    const successResults: { model: string; provider: string; content: string; role: string; reasoning?: string | null }[] = [];
+    interface UsageData {
+      prompt_tokens?: number;
+      completion_tokens?: number;
+      total_tokens?: number;
+    }
+    
+    const successResults: { model: string; provider: string; content: string; role: string; reasoning?: string | null; usage?: UsageData | null }[] = [];
     for (const result of allResults) {
       if ('error' in result && result.error === true) {
         errors.push({ model: result.model, error: result.message });
       } else {
-        successResults.push(result as { model: string; provider: string; content: string; role: string; reasoning?: string | null });
+        successResults.push(result as { model: string; provider: string; content: string; role: string; reasoning?: string | null; usage?: UsageData | null });
       }
     }
     
     console.log(`Results: ${successResults.length} successes, ${errors.length} errors`);
 
-    // Save all successful responses to database with individual roles
+    // Save all successful responses to database with individual roles and usage data
     if (successResults.length > 0) {
       const messagesToInsert = successResults.map(result => ({
         session_id,
@@ -582,7 +626,12 @@ serve(async (req) => {
         model_name: result.model,
         content: result.content,
         reasoning_path: result.reasoning || null,
-        metadata: { provider: result.provider },
+        metadata: { 
+          provider: result.provider,
+          prompt_tokens: result.usage?.prompt_tokens || 0,
+          completion_tokens: result.usage?.completion_tokens || 0,
+          total_tokens: result.usage?.total_tokens || 0,
+        },
       }));
 
       await supabase.from("messages").insert(messagesToInsert);
