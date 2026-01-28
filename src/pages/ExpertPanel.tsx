@@ -16,7 +16,8 @@ import { Message, MessageRole } from '@/types/messages';
 import { PerModelSettingsData, DEFAULT_MODEL_SETTINGS } from '@/components/warroom/PerModelSettings';
 import { ChatMessage, UserDisplayInfo } from '@/components/warroom/ChatMessage';
 import { FileUpload, AttachedFile } from '@/components/warroom/FileUpload';
-import { useAvailableModels, LOVABLE_AI_MODELS, PERSONAL_KEY_MODELS } from '@/hooks/useAvailableModels';
+import { ConsultantSelector } from '@/components/warroom/ConsultantSelector';
+import { useAvailableModels, LOVABLE_AI_MODELS, PERSONAL_KEY_MODELS, ModelOption } from '@/hooks/useAvailableModels';
 import { usePasteHandler } from '@/hooks/usePasteHandler';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useUserRoles } from '@/hooks/useUserRoles';
@@ -66,6 +67,7 @@ export default function ExpertPanel() {
   const [initialStateApplied, setInitialStateApplied] = useState(false);
   const [attachedFiles, setAttachedFiles] = useState<AttachedFile[]>([]);
   const [uploadProgress, setUploadProgress] = useState<{ current: number; total: number } | null>(null);
+  const [selectedConsultant, setSelectedConsultant] = useState<string | null>(null);
   
   const { handlePaste } = usePasteHandler({ 
     attachedFiles, 
@@ -270,6 +272,135 @@ export default function ExpertPanel() {
       ));
     } catch (error: any) {
       toast.error(error.message);
+    }
+  };
+
+  // Get all available models for consultant selection
+  const allAvailableModels: ModelOption[] = [...lovableModels, ...personalModels];
+
+  const handleSendToConsultant = async () => {
+    if (!user || !currentTask || !input.trim() || !selectedConsultant) return;
+    setSending(true);
+
+    const messageContent = input.trim();
+    setInput('');
+    const filesToUpload = [...attachedFiles];
+    setAttachedFiles([]);
+
+    try {
+      // Upload files (same logic as handleSendMessage)
+      const attachmentUrls: { name: string; url: string; type: string }[] = [];
+      const totalFiles = filesToUpload.length;
+      
+      if (totalFiles > 0) {
+        setUploadProgress({ current: 0, total: totalFiles });
+      }
+      
+      for (let i = 0; i < filesToUpload.length; i++) {
+        const attached = filesToUpload[i];
+        setUploadProgress({ current: i, total: totalFiles });
+        
+        const fileToUpload = await compressImage(attached.file);
+        const safeName = sanitizeFileName(attached.file.name);
+        const filePath = `${user.id}/${currentTask.id}/${Date.now()}_${safeName}`;
+        const { error: uploadError } = await supabase.storage
+          .from('message-files')
+          .upload(filePath, fileToUpload);
+          
+        if (!uploadError) {
+          const { data: urlData } = supabase.storage
+            .from('message-files')
+            .getPublicUrl(filePath);
+          attachmentUrls.push({
+            name: attached.file.name,
+            url: urlData.publicUrl,
+            type: attached.file.type,
+          });
+        } else {
+          console.error('Upload error:', uploadError);
+          toast.error(`${t('files.uploadError')}: ${attached.file.name}`);
+        }
+        
+        if (attached.preview) {
+          URL.revokeObjectURL(attached.preview);
+        }
+        
+        setUploadProgress({ current: i + 1, total: totalFiles });
+      }
+      
+      setUploadProgress(null);
+
+      // Insert user message
+      const messageMetadata = attachmentUrls.length > 0 ? { attachments: attachmentUrls } : undefined;
+      
+      const { error } = await supabase
+        .from('messages')
+        .insert({
+          session_id: currentTask.id,
+          user_id: user.id,
+          role: 'user' as MessageRole,
+          content: messageContent,
+          metadata: messageMetadata,
+        });
+
+      if (error) throw error;
+
+      // Prepare ONLY the consultant model with consultant role
+      const isLovable = LOVABLE_AI_MODELS.some(m => m.id === selectedConsultant);
+      const personalModel = PERSONAL_KEY_MODELS.find(m => m.id === selectedConsultant);
+      const settings = perModelSettings[selectedConsultant] || DEFAULT_MODEL_SETTINGS;
+      
+      const consultantModel = {
+        model_id: selectedConsultant,
+        use_lovable_ai: isLovable,
+        provider: personalModel?.provider || null,
+        temperature: settings.temperature,
+        max_tokens: settings.maxTokens,
+        system_prompt: settings.systemPrompt || DEFAULT_MODEL_SETTINGS.systemPrompt,
+        role: 'consultant' as const, // Force consultant role
+      };
+
+      // Call the Hydra orchestrator with only the consultant model
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/hydra-orchestrator`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
+          },
+          body: JSON.stringify({
+            session_id: currentTask.id,
+            message: messageContent,
+            attachments: attachmentUrls,
+            models: [consultantModel], // Only one model
+          }),
+        }
+      );
+
+      const data = await response.json();
+      
+      if (!response.ok) {
+        if (response.status === 429) {
+          toast.error('Превышен лимит запросов. Попробуйте позже.');
+        } else if (response.status === 402) {
+          toast.error('Требуется пополнение баланса Lovable AI.');
+        } else {
+          throw new Error(data.error || 'Failed to get AI response');
+        }
+        return;
+      }
+
+      if (data.errors && data.errors.length > 0) {
+        data.errors.forEach((err: { model: string; error: string }) => {
+          toast.error(`${err.model}: ${err.error}`);
+        });
+      }
+      
+    } catch (error: any) {
+      toast.error(error.message);
+    } finally {
+      setSending(false);
     }
   };
 
@@ -556,6 +687,18 @@ export default function ExpertPanel() {
                   }}
                   onPaste={handlePaste}
                 />
+                
+                {/* Consultant selector */}
+                <ConsultantSelector
+                  availableModels={allAvailableModels}
+                  selectedConsultant={selectedConsultant}
+                  onSelectConsultant={setSelectedConsultant}
+                  onSendToConsultant={handleSendToConsultant}
+                  disabled={sending}
+                  sending={sending}
+                  hasMessage={!!input.trim()}
+                />
+                
                 <Button
                   onClick={handleSendMessage}
                   disabled={sending || !input.trim() || selectedModels.length === 0}

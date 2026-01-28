@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
+// Consultant feature translations will be added below
+
 type Language = 'ru' | 'en';
 
 interface Translations {
@@ -107,6 +109,12 @@ const translations: Translations = {
   'role.critic': { ru: 'Критик', en: 'Critic' },
   'role.arbiter': { ru: 'Арбитр', en: 'Arbiter' },
   'role.consultant': { ru: 'Консультант', en: 'Consultant' },
+  
+  // Consultant feature
+  'consultant.select': { ru: 'Консультант', en: 'Consultant' },
+  'consultant.selectModel': { ru: 'Выберите модель консультанта', en: 'Select consultant model' },
+  'consultant.askOnly': { ru: 'Спросить', en: 'Ask' },
+  'consultant.onlyRequest': { ru: 'Запрос только консультанту', en: 'Consultant-only request' },
   
   // Common
   'common.loading': { ru: 'Загрузка...', en: 'Loading...' },
