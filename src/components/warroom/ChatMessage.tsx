@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { HydraCard, HydraCardHeader, HydraCardTitle, HydraCardContent } from '@/components/ui/hydra-card';
 import { Button } from '@/components/ui/button';
 import { MarkdownRenderer } from './MarkdownRenderer';
@@ -110,14 +110,22 @@ interface ChatMessageProps {
   userDisplayInfo?: UserDisplayInfo;
   onDelete: (messageId: string) => void;
   onRatingChange: (messageId: string, rating: number) => void;
+  forceCollapsed?: boolean;
 }
 
 const MAX_COLLAPSED_LINES = 3;
 
-export function ChatMessage({ message, userDisplayInfo, onDelete, onRatingChange }: ChatMessageProps) {
+export function ChatMessage({ message, userDisplayInfo, onDelete, onRatingChange, forceCollapsed }: ChatMessageProps) {
   const { t } = useLanguage();
   const [isExpanded, setIsExpanded] = useState(true);
   const config = roleConfig[message.role];
+
+  // Synchronize with forceCollapsed
+  useEffect(() => {
+    if (forceCollapsed !== undefined) {
+      setIsExpanded(!forceCollapsed);
+    }
+  }, [forceCollapsed]);
   
   // For user messages, show custom display based on role
   const isUserMessage = message.role === 'user';
