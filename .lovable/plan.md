@@ -1,268 +1,341 @@
 
-
-## План: Интеграция Perplexity для веб-поиска консультантами
+## План: Навигация по чату TreeView с инфо-иконками
 
 ### Цель
-Подключить Perplexity API как специализированный инструмент веб-поиска для роли "Консультант" в Панели экспертов. Пользователь сможет задавать вопросы с включённым веб-поиском и получать ответы с актуальной информацией из интернета и источниками.
+Добавить боковую панель навигации в Панели экспертов с древовидной структурой участников чата:
+- **Супервизор** (корневой узел - пользователь с supervisor-ролью)
+  - ИИ 1 (модель с ролью/настройками)
+  - ИИ 2
+  - ...
+
+Каждый узел будет иметь:
+- Иконку роли (Crown для супервизора, Brain/Shield/Scale для ИИ)
+- Название (для ИИ - название модели)
+- Инфо-иконку с tooltip показывающим детали (роль, системный промпт, кол-во сообщений)
+- Возможность клика для скролла к сообщениям этого участника
 
 ---
 
 ### Архитектура решения
 
 ```text
-┌─────────────────────────────────────────────────────────────────┐
-│                    ConsultantSelector.tsx                        │
-│                                                                  │
-│  Расширить UI:                                                  │
-│  ┌─────────────────────────────────────────────────────────────┐│
-│  │ [🔍 Веб-поиск] ← переключатель для активации Perplexity    ││
-│  │ [💡 Выбор модели] ← dropdown с моделями Perplexity          ││
-│  │ [📤 Спросить] ← кнопка отправки                              ││
-│  └─────────────────────────────────────────────────────────────┘│
-└─────────────────────────────────────────────────────────────────┘
-                           │
-                           ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                    ExpertPanel.tsx                               │
-│                                                                  │
-│  Новый handler: handleSendToPerplexity()                        │
-│  - Вызов edge function perplexity-search                        │
-│  - Сохранение ответа с citations в messages                     │
-└─────────────────────────────────────────────────────────────────┘
-                           │
-                           ▼
-┌─────────────────────────────────────────────────────────────────┐
-│           supabase/functions/perplexity-search/                  │
-│                                                                  │
-│  - PERPLEXITY_API_KEY из коннектора                             │
-│  - POST к api.perplexity.ai/chat/completions                    │
-│  - Модели: sonar, sonar-pro, sonar-reasoning                    │
-│  - Возврат ответа + citations                                   │
-└─────────────────────────────────────────────────────────────────┘
+┌────────────────────────────────────────────────────────────────────────┐
+│                         ExpertPanel.tsx                                 │
+│                                                                         │
+│  ┌─────────────────┐  ┌──────────────────────────────────────────────┐ │
+│  │ ChatTreeNav     │  │                Chat Area                      │ │
+│  │                 │  │                                               │ │
+│  │ 👑 Супервизор   │  │  ┌────────────────────────────────────────┐  │ │
+│  │   (info-icon)   │  │  │ Message 1                              │  │ │
+│  │                 │  │  └────────────────────────────────────────┘  │ │
+│  │ ├─ 🧠 GPT-5     │  │  ┌────────────────────────────────────────┐  │ │
+│  │ │    (info)     │  │  │ Message 2                              │  │ │
+│  │ │               │  │  └────────────────────────────────────────┘  │ │
+│  │ ├─ 🛡 Claude    │  │                                               │ │
+│  │ │    (info)     │  │                                               │ │
+│  │ │               │  │                                               │ │
+│  │ └─ ⚖ Gemini    │  │                                               │ │
+│  │      (info)     │  │                                               │ │
+│  └─────────────────┘  └──────────────────────────────────────────────┘ │
+└────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-### Часть 1: Подключение коннектора Perplexity
+### Часть 1: Новый компонент ChatTreeNav
 
-Сначала необходимо подключить коннектор Perplexity к проекту через Settings → Connectors. Это сделает `PERPLEXITY_API_KEY` доступным для edge functions.
+#### Файл: `src/components/warroom/ChatTreeNav.tsx`
 
----
-
-### Часть 2: Edge Function perplexity-search
-
-#### Файл: `supabase/functions/perplexity-search/index.ts`
+Создать новый компонент с древовидной структурой:
 
 ```typescript
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, ...',
-};
-
-// Поддерживаемые модели Perplexity
-const PERPLEXITY_MODELS = {
-  'sonar': 'Fast, lightweight search',
-  'sonar-pro': 'Multi-step reasoning with 2x more citations',
-  'sonar-reasoning': 'Chain-of-thought reasoning with real-time search',
-};
-
-Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
-  }
-
-  // Проверка авторизации
-  // ...
-
-  const { message, model, session_id, user_id } = await req.json();
-  
-  const apiKey = Deno.env.get('PERPLEXITY_API_KEY');
-  if (!apiKey) {
-    return new Response(
-      JSON.stringify({ error: 'Perplexity connector not configured' }),
-      { status: 500, headers: corsHeaders }
-    );
-  }
-
-  // Вызов Perplexity API
-  const response = await fetch('https://api.perplexity.ai/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${apiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: model || 'sonar',
-      messages: [
-        { role: 'system', content: 'Be precise and provide sources.' },
-        { role: 'user', content: message }
-      ],
-    }),
-  });
-
-  const data = await response.json();
-  
-  // Сохранение в базу с role: 'consultant'
-  await supabase.from('messages').insert({
-    session_id,
-    user_id,
-    role: 'consultant',
-    model_name: `perplexity/${model}`,
-    content: data.choices[0].message.content,
-    metadata: { 
-      provider: 'perplexity',
-      citations: data.citations || []
-    },
-  });
-
-  return new Response(JSON.stringify({ 
-    success: true,
-    content: data.choices[0].message.content,
-    citations: data.citations || []
-  }), { headers: corsHeaders });
-});
-```
-
----
-
-### Часть 3: Расширение UI для веб-поиска
-
-#### 3.1 Обновить ConsultantSelector.tsx
-
-| Элемент | Описание |
-|---------|----------|
-| Toggle "Веб-поиск" | Switch для активации режима Perplexity |
-| Selector модели Perplexity | sonar / sonar-pro / sonar-reasoning |
-| Иконка поиска | Globe/Search вместо Lightbulb когда веб-поиск активен |
-
-```typescript
-interface ConsultantSelectorProps {
-  // существующие props...
-  webSearchEnabled: boolean;
-  onWebSearchToggle: (enabled: boolean) => void;
-  perplexityModel: string;
-  onPerplexityModelChange: (model: string) => void;
+interface ChatParticipant {
+  id: string;           // 'user' или model_id
+  type: 'supervisor' | 'ai';
+  name: string;         // Имя пользователя или модели
+  role?: AgentRole;     // assistant | critic | arbiter | consultant
+  icon: React.ElementType;
+  color: string;
+  messageCount: number;
+  systemPrompt?: string;
 }
 
-// Модели Perplexity для выбора
-const PERPLEXITY_MODELS = [
-  { id: 'sonar', name: 'Sonar (быстрый)' },
-  { id: 'sonar-pro', name: 'Sonar Pro (детальный)' },
-  { id: 'sonar-reasoning', name: 'Sonar Reasoning (аналитический)' },
-];
+interface ChatTreeNavProps {
+  messages: Message[];
+  selectedModels: string[];
+  perModelSettings: PerModelSettingsData;
+  userDisplayInfo: UserDisplayInfo;
+  onParticipantClick: (participantId: string) => void;
+  activeParticipant: string | null;
+}
 ```
 
-#### 3.2 Обновить ExpertPanel.tsx
+**Функциональность:**
+1. Анализ `messages` для подсчёта сообщений каждого участника
+2. Построение дерева: Супервизор → AI модели
+3. Collapsible секции для сворачивания AI-узлов
+4. Инфо-иконки с Tooltip для каждого участника:
+   - **Супервизор**: имя, кол-во сообщений
+   - **AI**: роль, модель, системный промпт (первые 100 символов), кол-во сообщений
 
-Добавить состояние и handler для веб-поиска:
+---
+
+### Часть 2: Структура компонента
 
 ```typescript
-const [webSearchEnabled, setWebSearchEnabled] = useState(false);
-const [perplexityModel, setPerplexityModel] = useState('sonar');
-
-const handleSendWithWebSearch = async () => {
-  // Вызов perplexity-search edge function
-  const response = await fetch(
-    `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/perplexity-search`,
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${session?.access_token}`,
-      },
-      body: JSON.stringify({
-        session_id: currentTask.id,
-        user_id: user.id,
-        message: messageContent,
-        model: perplexityModel,
-      }),
-    }
-  );
-  // ...
+// Иконки и цвета по ролям (повторно используем из ChatMessage)
+const roleIcons = {
+  user: { icon: Crown, color: 'text-amber-500' },
+  assistant: { icon: Brain, color: 'text-hydra-expert' },
+  critic: { icon: Shield, color: 'text-hydra-critical' },
+  arbiter: { icon: Scale, color: 'text-hydra-arbiter' },
+  consultant: { icon: Lightbulb, color: 'text-amber-400' },
 };
+
+// Вычисление участников из сообщений
+const participants = useMemo(() => {
+  const result: ChatParticipant[] = [];
+  
+  // Супервизор (все user сообщения)
+  const userMessages = messages.filter(m => m.role === 'user');
+  result.push({
+    id: 'user',
+    type: 'supervisor',
+    name: userDisplayInfo.displayName || t('role.supervisor'),
+    icon: Crown,
+    color: 'text-amber-500',
+    messageCount: userMessages.length,
+  });
+  
+  // AI модели (группировка по model_name)
+  const modelGroups = new Map<string, Message[]>();
+  messages.filter(m => m.role !== 'user').forEach(m => {
+    const key = m.model_name || 'unknown';
+    const existing = modelGroups.get(key) || [];
+    existing.push(m);
+    modelGroups.set(key, existing);
+  });
+  
+  modelGroups.forEach((msgs, modelName) => {
+    const lastRole = msgs[msgs.length - 1]?.role || 'assistant';
+    const settings = perModelSettings[modelName];
+    result.push({
+      id: modelName,
+      type: 'ai',
+      name: getModelShortName(modelName),
+      role: settings?.role || lastRole,
+      icon: roleIcons[lastRole].icon,
+      color: roleIcons[lastRole].color,
+      messageCount: msgs.length,
+      systemPrompt: settings?.systemPrompt,
+    });
+  });
+  
+  return result;
+}, [messages, perModelSettings, userDisplayInfo]);
 ```
 
 ---
 
-### Часть 4: Отображение источников в чате
+### Часть 3: UI компонента
 
-#### 4.1 Обновить ChatMessage.tsx
-
-Добавить отображение citations из metadata для сообщений от Perplexity:
-
-```tsx
-// Внутри ChatMessage
-const citations = (message.metadata as any)?.citations as string[] | undefined;
-
-{citations && citations.length > 0 && (
-  <div className="mt-3 pt-3 border-t border-white/10">
-    <p className="text-xs text-muted-foreground mb-2">Источники:</p>
-    <div className="flex flex-wrap gap-2">
-      {citations.map((url, index) => (
-        <a 
-          key={index}
-          href={url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-xs text-primary hover:underline flex items-center gap-1"
-        >
-          <ExternalLink className="h-3 w-3" />
-          [{index + 1}]
-        </a>
-      ))}
+```typescript
+return (
+  <div className="w-56 border-r border-border bg-sidebar flex flex-col">
+    <div className="p-3 border-b border-border">
+      <h3 className="text-sm font-medium text-sidebar-foreground flex items-center gap-2">
+        <Users className="h-4 w-4" />
+        {t('chat.participants')}
+      </h3>
     </div>
+    
+    <ScrollArea className="flex-1">
+      <div className="p-2 space-y-1">
+        {participants.map((participant, index) => (
+          <div 
+            key={participant.id}
+            className={cn(
+              "flex items-center gap-2 p-2 rounded-md cursor-pointer transition-all",
+              participant.type === 'ai' && "ml-4", // Отступ для AI
+              activeParticipant === participant.id && "bg-sidebar-accent",
+              "hover:bg-sidebar-accent/50"
+            )}
+            onClick={() => onParticipantClick(participant.id)}
+          >
+            {/* Линия дерева для AI */}
+            {participant.type === 'ai' && (
+              <div className="absolute left-4 w-px h-full bg-border" />
+            )}
+            
+            {/* Иконка роли */}
+            <participant.icon className={cn("h-4 w-4", participant.color)} />
+            
+            {/* Имя */}
+            <span className="flex-1 text-sm truncate">
+              {participant.name}
+            </span>
+            
+            {/* Счётчик сообщений */}
+            <Badge variant="secondary" className="text-xs">
+              {participant.messageCount}
+            </Badge>
+            
+            {/* Info tooltip */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Info className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground" />
+              </TooltipTrigger>
+              <TooltipContent side="right" className="max-w-xs">
+                <div className="space-y-1">
+                  {participant.type === 'supervisor' ? (
+                    <>
+                      <p className="font-medium">{t('role.supervisor')}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {t('chat.messagesCount')}: {participant.messageCount}
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <p className="font-medium">{participant.name}</p>
+                      <p className="text-xs">
+                        <span className="text-muted-foreground">{t('settings.role')}:</span>{' '}
+                        {t(`role.${participant.role}`)}
+                      </p>
+                      {participant.systemPrompt && (
+                        <p className="text-xs text-muted-foreground line-clamp-3">
+                          {participant.systemPrompt.slice(0, 100)}...
+                        </p>
+                      )}
+                      <p className="text-xs text-muted-foreground">
+                        {t('chat.messagesCount')}: {participant.messageCount}
+                      </p>
+                    </>
+                  )}
+                </div>
+              </TooltipContent>
+            </Tooltip>
+          </div>
+        ))}
+      </div>
+    </ScrollArea>
   </div>
-)}
+);
+```
+
+---
+
+### Часть 4: Интеграция в ExpertPanel
+
+#### Обновить `src/pages/ExpertPanel.tsx`
+
+1. Добавить состояние для активного участника:
+```typescript
+const [activeParticipant, setActiveParticipant] = useState<string | null>(null);
+```
+
+2. Добавить refs для скролла к сообщениям:
+```typescript
+const messageRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+```
+
+3. Добавить handler для клика по участнику:
+```typescript
+const handleParticipantClick = (participantId: string) => {
+  setActiveParticipant(participantId);
+  
+  // Найти первое сообщение этого участника и проскролить
+  const firstMessage = messages.find(m => 
+    participantId === 'user' 
+      ? m.role === 'user' 
+      : m.model_name === participantId
+  );
+  
+  if (firstMessage) {
+    messageRefs.current.get(firstMessage.id)?.scrollIntoView({ 
+      behavior: 'smooth', 
+      block: 'center' 
+    });
+  }
+};
+```
+
+4. Обновить layout с боковой панелью:
+```typescript
+<div className="h-[calc(100vh-4rem)] flex overflow-hidden">
+  {/* Tree Navigation */}
+  <ChatTreeNav
+    messages={messages}
+    selectedModels={selectedModels}
+    perModelSettings={perModelSettings}
+    userDisplayInfo={userDisplayInfo}
+    onParticipantClick={handleParticipantClick}
+    activeParticipant={activeParticipant}
+  />
+  
+  {/* Main Content */}
+  <div className="flex-1 flex flex-col">
+    {/* ... existing chat area ... */}
+  </div>
+</div>
 ```
 
 ---
 
 ### Часть 5: Локализация
 
-Добавить в LanguageContext.tsx:
+#### Добавить в `src/contexts/LanguageContext.tsx`:
 
 ```typescript
-'consultant.webSearch': { ru: 'Веб-поиск', en: 'Web Search' },
-'consultant.webSearchEnabled': { ru: 'Поиск в интернете включён', en: 'Web search enabled' },
-'consultant.perplexityModel': { ru: 'Модель поиска', en: 'Search Model' },
-'consultant.sonar': { ru: 'Sonar (быстрый)', en: 'Sonar (fast)' },
-'consultant.sonarPro': { ru: 'Sonar Pro (детальный)', en: 'Sonar Pro (detailed)' },
-'consultant.sonarReasoning': { ru: 'Sonar Reasoning (аналитический)', en: 'Sonar Reasoning (analytical)' },
-'consultant.sources': { ru: 'Источники', en: 'Sources' },
-'consultant.perplexityNotConfigured': { ru: 'Perplexity не настроен', en: 'Perplexity not configured' },
+'chat.participants': { ru: 'Участники', en: 'Participants' },
+'chat.messagesCount': { ru: 'Сообщений', en: 'Messages' },
+'chat.scrollTo': { ru: 'Перейти к сообщениям', en: 'Scroll to messages' },
+'chat.noParticipants': { ru: 'Нет участников', en: 'No participants' },
 ```
 
 ---
 
-### Часть 6: Конфигурация
+### Часть 6: Визуальная связь с сообщениями
 
-Добавить в supabase/config.toml:
+Для подсветки сообщений выбранного участника:
 
-```toml
-[functions.perplexity-search]
-verify_jwt = false
+```typescript
+// В ChatMessage добавить подсветку
+<HydraCard 
+  variant={config.variant}
+  className={cn(
+    "animate-slide-up group relative",
+    isHighlighted && "ring-2 ring-primary/50"
+  )}
+>
 ```
 
 ---
 
-### Шаги реализации
+### Опциональные улучшения
 
-1. **Коннектор**: Подключить Perplexity через Settings → Connectors
-2. **Edge Function**: Создать `supabase/functions/perplexity-search/index.ts`
-3. **Config**: Добавить функцию в config.toml
-4. **UI Components**: Расширить ConsultantSelector с переключателем веб-поиска
-5. **ExpertPanel**: Добавить handler для Perplexity запросов
-6. **ChatMessage**: Добавить отображение citations
-7. **Локализация**: Добавить переводы
-8. **Deploy**: Развернуть edge function
+1. **Сворачивание панели** - кнопка для скрытия TreeNav на мобильных
+2. **Фильтр по участнику** - показывать только сообщения выбранного
+3. **Статистика в tooltip** - средний рейтинг ответов модели
+
+---
+
+### Файлы для изменения
+
+| Файл | Действие |
+|------|----------|
+| `src/components/warroom/ChatTreeNav.tsx` | Создать новый |
+| `src/pages/ExpertPanel.tsx` | Интегрировать ChatTreeNav |
+| `src/contexts/LanguageContext.tsx` | Добавить переводы |
+| `src/components/warroom/ChatMessage.tsx` | Опционально: добавить подсветку |
 
 ---
 
 ### Ожидаемый результат
 
-- Переключатель "Веб-поиск" в интерфейсе консультанта
-- Выбор модели Perplexity: sonar / sonar-pro / sonar-reasoning
-- Ответы с актуальной информацией из интернета
-- Кликабельные ссылки на источники в сообщениях
-- Визуальная индикация (иконка Globe) для сообщений с веб-поиском
-
+- Левая панель с деревом участников чата
+- Супервизор (Crown) как корневой узел
+- AI модели как дочерние узлы с отступом
+- Иконки ролей с цветовой кодировкой
+- Badges с количеством сообщений
+- Info-иконки с tooltips (роль, системный промпт, статистика)
+- Клик переносит к сообщениям участника
