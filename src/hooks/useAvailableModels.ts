@@ -5,7 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 export interface ModelOption {
   id: string;
   name: string;
-  provider: 'lovable' | 'openai' | 'gemini' | 'anthropic';
+  provider: 'lovable' | 'openai' | 'gemini' | 'anthropic' | 'xai';
   requiresApiKey: boolean;
 }
 
@@ -15,22 +15,46 @@ export const LOVABLE_AI_MODELS: ModelOption[] = [
   { id: 'google/gemini-3-pro-preview', name: 'Gemini 3 Pro Preview', provider: 'lovable', requiresApiKey: false },
   { id: 'google/gemini-2.5-pro', name: 'Gemini 2.5 Pro', provider: 'lovable', requiresApiKey: false },
   { id: 'google/gemini-2.5-flash', name: 'Gemini 2.5 Flash', provider: 'lovable', requiresApiKey: false },
+  { id: 'google/gemini-2.5-flash-lite', name: 'Gemini 2.5 Flash Lite', provider: 'lovable', requiresApiKey: false },
   { id: 'openai/gpt-5', name: 'GPT-5', provider: 'lovable', requiresApiKey: false },
   { id: 'openai/gpt-5-mini', name: 'GPT-5 Mini', provider: 'lovable', requiresApiKey: false },
+  { id: 'openai/gpt-5-nano', name: 'GPT-5 Nano', provider: 'lovable', requiresApiKey: false },
   { id: 'openai/gpt-5.2', name: 'GPT-5.2', provider: 'lovable', requiresApiKey: false },
 ];
 
-// Models requiring personal API keys
+// Models requiring personal API keys - expanded list
 export const PERSONAL_KEY_MODELS: ModelOption[] = [
-  { id: 'gpt-4o', name: 'GPT-4o (OpenAI)', provider: 'openai', requiresApiKey: true },
-  { id: 'gemini-1.5-pro', name: 'Gemini 1.5 Pro (Google)', provider: 'gemini', requiresApiKey: true },
-  { id: 'claude-3-5-sonnet', name: 'Claude 3.5 Sonnet (Anthropic)', provider: 'anthropic', requiresApiKey: true },
+  // OpenAI models
+  { id: 'gpt-4o', name: 'GPT-4o', provider: 'openai', requiresApiKey: true },
+  { id: 'gpt-4o-mini', name: 'GPT-4o Mini', provider: 'openai', requiresApiKey: true },
+  { id: 'gpt-4-turbo', name: 'GPT-4 Turbo', provider: 'openai', requiresApiKey: true },
+  { id: 'o1', name: 'o1 (Reasoning)', provider: 'openai', requiresApiKey: true },
+  { id: 'o1-mini', name: 'o1 Mini', provider: 'openai', requiresApiKey: true },
+  { id: 'o3-mini', name: 'o3 Mini', provider: 'openai', requiresApiKey: true },
+  
+  // Anthropic Claude models
+  { id: 'claude-3-5-sonnet', name: 'Claude 3.5 Sonnet', provider: 'anthropic', requiresApiKey: true },
+  { id: 'claude-3-5-haiku', name: 'Claude 3.5 Haiku', provider: 'anthropic', requiresApiKey: true },
+  { id: 'claude-3-opus', name: 'Claude 3 Opus', provider: 'anthropic', requiresApiKey: true },
+  { id: 'claude-3-haiku', name: 'Claude 3 Haiku', provider: 'anthropic', requiresApiKey: true },
+  
+  // Google Gemini models
+  { id: 'gemini-2.0-flash', name: 'Gemini 2.0 Flash', provider: 'gemini', requiresApiKey: true },
+  { id: 'gemini-1.5-pro', name: 'Gemini 1.5 Pro', provider: 'gemini', requiresApiKey: true },
+  { id: 'gemini-1.5-flash', name: 'Gemini 1.5 Flash', provider: 'gemini', requiresApiKey: true },
+  
+  // xAI Grok models
+  { id: 'grok-3', name: 'Grok 3', provider: 'xai', requiresApiKey: true },
+  { id: 'grok-3-fast', name: 'Grok 3 Fast', provider: 'xai', requiresApiKey: true },
+  { id: 'grok-3-mini', name: 'Grok 3 Mini', provider: 'xai', requiresApiKey: true },
+  { id: 'grok-3-mini-fast', name: 'Grok 3 Mini Fast', provider: 'xai', requiresApiKey: true },
 ];
 
 interface UserApiKeys {
   openai: boolean;
   gemini: boolean;
   anthropic: boolean;
+  xai: boolean;
 }
 
 export function useAvailableModels() {
@@ -40,6 +64,7 @@ export function useAvailableModels() {
     openai: false,
     gemini: false,
     anthropic: false,
+    xai: false,
   });
   const [loading, setLoading] = useState(true);
 
@@ -71,6 +96,7 @@ export function useAvailableModels() {
             openai: keyStatus[0].has_openai || false,
             gemini: keyStatus[0].has_gemini || false,
             anthropic: keyStatus[0].has_anthropic || false,
+            xai: keyStatus[0].has_xai || false,
           });
         }
       } catch (error) {
@@ -88,6 +114,7 @@ export function useAvailableModels() {
     if (model.provider === 'openai') return userApiKeys.openai;
     if (model.provider === 'gemini') return userApiKeys.gemini;
     if (model.provider === 'anthropic') return userApiKeys.anthropic;
+    if (model.provider === 'xai') return userApiKeys.xai;
     return false;
   });
 

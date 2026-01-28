@@ -226,6 +226,7 @@ export type Database = {
           openai_vault_id: string | null
           updated_at: string
           user_id: string
+          xai_vault_id: string | null
         }
         Insert: {
           anthropic_vault_id?: string | null
@@ -235,6 +236,7 @@ export type Database = {
           openai_vault_id?: string | null
           updated_at?: string
           user_id: string
+          xai_vault_id?: string | null
         }
         Update: {
           anthropic_vault_id?: string | null
@@ -244,6 +246,7 @@ export type Database = {
           openai_vault_id?: string | null
           updated_at?: string
           user_id?: string
+          xai_vault_id?: string | null
         }
         Relationships: []
       }
@@ -281,6 +284,7 @@ export type Database = {
           has_anthropic: boolean
           has_gemini: boolean
           has_openai: boolean
+          has_xai: boolean
         }[]
       }
       get_my_api_keys: {
@@ -289,6 +293,7 @@ export type Database = {
           anthropic_api_key: string
           google_gemini_api_key: string
           openai_api_key: string
+          xai_api_key: string
         }[]
       }
       has_role: {
