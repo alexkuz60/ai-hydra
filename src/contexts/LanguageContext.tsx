@@ -240,6 +240,12 @@ const translations: Translations = {
   'thinking.showTranslated': { ru: 'Показать перевод', en: 'Show translation' },
   'thinking.hasSaved': { ru: 'Перевод сохранён', en: 'Translation saved' },
 
+  // Chat TreeNav
+  'chat.participants': { ru: 'Участники', en: 'Participants' },
+  'chat.messagesCount': { ru: 'Сообщений', en: 'Messages' },
+  'chat.scrollTo': { ru: 'Перейти к сообщениям', en: 'Scroll to messages' },
+  'chat.noParticipants': { ru: 'Нет участников', en: 'No participants' },
+
   // Role Library
   'roleLibrary.title': { ru: 'Библиотека ИИ-ролей', en: 'AI Role Library' },
   'roleLibrary.new': { ru: 'Новая роль', en: 'New Role' },

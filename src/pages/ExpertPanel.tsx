@@ -15,6 +15,7 @@ import { Message, MessageRole } from '@/types/messages';
 
 import { PerModelSettingsData, DEFAULT_MODEL_SETTINGS } from '@/components/warroom/PerModelSettings';
 import { ChatMessage, UserDisplayInfo } from '@/components/warroom/ChatMessage';
+import { ChatTreeNav } from '@/components/warroom/ChatTreeNav';
 import { FileUpload, AttachedFile } from '@/components/warroom/FileUpload';
 import { ConsultantSelector } from '@/components/warroom/ConsultantSelector';
 import { useAvailableModels, LOVABLE_AI_MODELS, PERSONAL_KEY_MODELS, ModelOption } from '@/hooks/useAvailableModels';
@@ -68,6 +69,8 @@ export default function ExpertPanel() {
   const [attachedFiles, setAttachedFiles] = useState<AttachedFile[]>([]);
   const [uploadProgress, setUploadProgress] = useState<{ current: number; total: number } | null>(null);
   const [selectedConsultant, setSelectedConsultant] = useState<string | null>(null);
+  const [activeParticipant, setActiveParticipant] = useState<string | null>(null);
+  const messageRefs = useRef<Map<string, HTMLDivElement>>(new Map());
   
   const { handlePaste } = usePasteHandler({ 
     attachedFiles, 
@@ -557,11 +560,38 @@ export default function ExpertPanel() {
     );
   }
 
+  const handleParticipantClick = (participantId: string) => {
+    setActiveParticipant(participantId);
+    
+    // Find first message of this participant and scroll to it
+    const firstMessage = messages.find(m =>
+      participantId === 'user'
+        ? m.role === 'user'
+        : m.model_name === participantId
+    );
+
+    if (firstMessage) {
+      messageRefs.current.get(firstMessage.id)?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center',
+      });
+    }
+  };
+
   return (
     <Layout>
       <div className="h-[calc(100vh-4rem)] flex overflow-hidden">
+        {/* Tree Navigation */}
+        <ChatTreeNav
+          messages={messages}
+          perModelSettings={perModelSettings}
+          userDisplayInfo={userDisplayInfo}
+          onParticipantClick={handleParticipantClick}
+          activeParticipant={activeParticipant}
+        />
+
         {/* Main Content */}
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col min-w-0">
           {/* Task Header */}
           <div className="border-b border-border p-3 bg-background/50 flex items-center gap-4">
             <div className="flex items-center gap-2 text-sm min-w-0 flex-1">
@@ -583,13 +613,20 @@ export default function ExpertPanel() {
                 </div>
               ) : (
                 messages.map((message) => (
-                  <ChatMessage 
-                    key={message.id} 
-                    message={message}
-                    userDisplayInfo={userDisplayInfo}
-                    onDelete={handleDeleteMessage}
-                    onRatingChange={handleRatingChange}
-                  />
+                  <div
+                    key={message.id}
+                    ref={(el) => {
+                      if (el) messageRefs.current.set(message.id, el);
+                      else messageRefs.current.delete(message.id);
+                    }}
+                  >
+                    <ChatMessage 
+                      message={message}
+                      userDisplayInfo={userDisplayInfo}
+                      onDelete={handleDeleteMessage}
+                      onRatingChange={handleRatingChange}
+                    />
+                  </div>
                 ))
               )}
               <div ref={messagesEndRef} />
