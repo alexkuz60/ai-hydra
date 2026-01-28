@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { HydraCard, HydraCardHeader, HydraCardTitle, HydraCardContent } from '@/components/ui/hydra-card';
 import { Button } from '@/components/ui/button';
 import { MarkdownRenderer } from './MarkdownRenderer';
@@ -110,22 +110,27 @@ interface ChatMessageProps {
   userDisplayInfo?: UserDisplayInfo;
   onDelete: (messageId: string) => void;
   onRatingChange: (messageId: string, rating: number) => void;
-  forceCollapsed?: boolean;
+  isCollapsed?: boolean;
+  onToggleCollapse?: (messageId: string) => void;
 }
 
 const MAX_COLLAPSED_LINES = 3;
 
-export function ChatMessage({ message, userDisplayInfo, onDelete, onRatingChange, forceCollapsed }: ChatMessageProps) {
+export function ChatMessage({ message, userDisplayInfo, onDelete, onRatingChange, isCollapsed, onToggleCollapse }: ChatMessageProps) {
   const { t } = useLanguage();
-  const [isExpanded, setIsExpanded] = useState(true);
-  const config = roleConfig[message.role];
-
-  // Synchronize with forceCollapsed
-  useEffect(() => {
-    if (forceCollapsed !== undefined) {
-      setIsExpanded(!forceCollapsed);
+  // Use controlled state from parent if provided, otherwise local state
+  const [localExpanded, setLocalExpanded] = useState(true);
+  const isExpanded = isCollapsed !== undefined ? !isCollapsed : localExpanded;
+  
+  const handleToggleExpand = () => {
+    if (onToggleCollapse) {
+      onToggleCollapse(message.id);
+    } else {
+      setLocalExpanded(!localExpanded);
     }
-  }, [forceCollapsed]);
+  };
+  
+  const config = roleConfig[message.role];
   
   // For user messages, show custom display based on role
   const isUserMessage = message.role === 'user';
@@ -218,7 +223,7 @@ export function ChatMessage({ message, userDisplayInfo, onDelete, onRatingChange
             variant="ghost"
             size="icon"
             className="h-7 w-7 text-muted-foreground hover:text-foreground"
-            onClick={() => setIsExpanded(!isExpanded)}
+            onClick={handleToggleExpand}
             title={isExpanded ? t('common.collapse') : t('common.expand')}
           >
             {isExpanded ? (

@@ -23,6 +23,7 @@ import { useAvailableModels, LOVABLE_AI_MODELS, PERSONAL_KEY_MODELS, ModelOption
 import { usePasteHandler } from '@/hooks/usePasteHandler';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useUserRoles } from '@/hooks/useUserRoles';
+import { useMessageCollapseState } from '@/hooks/useMessageCollapseState';
 import { 
   Send, 
   Loader2, 
@@ -72,8 +73,11 @@ export default function ExpertPanel() {
   const [selectedConsultant, setSelectedConsultant] = useState<string | null>(null);
   const [activeParticipant, setActiveParticipant] = useState<string | null>(null);
   const [filteredParticipant, setFilteredParticipant] = useState<string | null>(null);
-  const [allCollapsed, setAllCollapsed] = useState(false);
   const messageRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+  
+  // Persistent collapse state per message
+  const { isCollapsed, toggleCollapsed, collapseAll, expandAll, collapsedCount } = useMessageCollapseState(currentTask?.id || null);
+  const allCollapsed = messages.length > 0 && collapsedCount === messages.length;
   
   const { handlePaste } = usePasteHandler({ 
     attachedFiles, 
@@ -600,7 +604,11 @@ export default function ExpertPanel() {
   };
 
   const handleCollapseAllToggle = () => {
-    setAllCollapsed(!allCollapsed);
+    if (allCollapsed) {
+      expandAll();
+    } else {
+      collapseAll(messages.map(m => m.id));
+    }
   };
 
   return (
@@ -665,7 +673,8 @@ export default function ExpertPanel() {
                       userDisplayInfo={userDisplayInfo}
                       onDelete={handleDeleteMessage}
                       onRatingChange={handleRatingChange}
-                      forceCollapsed={allCollapsed}
+                      isCollapsed={isCollapsed(message.id)}
+                      onToggleCollapse={toggleCollapsed}
                     />
                   </div>
                 ))
