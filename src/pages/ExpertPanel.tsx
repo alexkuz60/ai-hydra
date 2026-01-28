@@ -194,25 +194,65 @@ export default function ExpertPanel() {
     if (!user) return;
 
     try {
-      const { data, error } = await supabase
+      // Шаг 1: Найти сессию с самым последним сообщением
+      const { data: lastMessage } = await supabase
+        .from('messages')
+        .select('session_id')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (lastMessage) {
+        // Загрузить сессию по session_id из последнего сообщения
+        const { data: session, error } = await supabase
+          .from('sessions')
+          .select('id, title, session_config')
+          .eq('id', lastMessage.session_id)
+          .eq('user_id', user.id)
+          .single();
+
+        if (error || !session) {
+          navigate('/tasks');
+          return;
+        }
+
+        setCurrentTask(session);
+
+        // Apply saved model configuration
+        if (session.session_config) {
+          const config = session.session_config as { selectedModels?: string[]; perModelSettings?: PerModelSettingsData };
+          if (config.selectedModels) {
+            setSelectedModels(config.selectedModels);
+          }
+          if (config.perModelSettings) {
+            setPerModelSettings(config.perModelSettings);
+          }
+        }
+
+        fetchMessages(session.id);
+        return;
+      }
+
+      // Шаг 2 (Fallback): Нет сообщений — ищем самую новую сессию по created_at
+      const { data: fallbackSession, error: fallbackError } = await supabase
         .from('sessions')
         .select('id, title, session_config')
         .eq('user_id', user.id)
-        .order('updated_at', { ascending: false })
+        .order('created_at', { ascending: false })
         .limit(1)
-        .single();
+        .maybeSingle();
 
-      if (error || !data) {
-        // No tasks — redirect to tasks page
+      if (fallbackError || !fallbackSession) {
         navigate('/tasks');
         return;
       }
 
-      setCurrentTask(data);
+      setCurrentTask(fallbackSession);
 
       // Apply saved model configuration
-      if (data.session_config) {
-        const config = data.session_config as { selectedModels?: string[]; perModelSettings?: PerModelSettingsData };
+      if (fallbackSession.session_config) {
+        const config = fallbackSession.session_config as { selectedModels?: string[]; perModelSettings?: PerModelSettingsData };
         if (config.selectedModels) {
           setSelectedModels(config.selectedModels);
         }
@@ -221,7 +261,7 @@ export default function ExpertPanel() {
         }
       }
 
-      fetchMessages(data.id);
+      fetchMessages(fallbackSession.id);
     } catch (error) {
       navigate('/tasks');
     } finally {
