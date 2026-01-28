@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, memo, useCallback } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -33,6 +33,8 @@ import {
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
+// ==================== Types ====================
+
 interface AIResponse {
   id: string;
   modelName: string;
@@ -64,6 +66,8 @@ interface ChatTreeNavProps {
   onCollapseAllToggle?: () => void;
 }
 
+// ==================== Constants ====================
+
 const roleConfig: Record<string, { icon: LucideIcon; color: string; label: string }> = {
   user: { icon: Crown, color: 'text-amber-500', label: 'supervisor' },
   assistant: { icon: Brain, color: 'text-hydra-expert', label: 'assistant' },
@@ -79,7 +83,300 @@ function getModelShortName(modelId: string | null): string {
   return name.toUpperCase().replace(/-/g, ' ').replace(/\./g, ' ');
 }
 
-export function ChatTreeNav({
+// ==================== Subcomponents ====================
+
+interface TreeHeaderProps {
+  allCollapsed?: boolean;
+  onCollapseAllToggle?: () => void;
+}
+
+const TreeHeader = memo(function TreeHeader({ allCollapsed, onCollapseAllToggle }: TreeHeaderProps) {
+  const { t } = useLanguage();
+  
+  return (
+    <div className="p-3 border-b border-border flex items-center justify-between">
+      <h3 className="text-sm font-medium text-sidebar-foreground flex items-center gap-2">
+        <Users className="h-4 w-4" />
+        {t('chat.participants')}
+      </h3>
+      
+      {onCollapseAllToggle && (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6"
+              onClick={onCollapseAllToggle}
+            >
+              {allCollapsed ? (
+                <ChevronDown className="h-4 w-4" />
+              ) : (
+                <ChevronsUpDown className="h-4 w-4" />
+              )}
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            {allCollapsed ? t('chat.expandAll') : t('chat.collapseAll')}
+          </TooltipContent>
+        </Tooltip>
+      )}
+    </div>
+  );
+});
+
+interface FilterIndicatorProps {
+  filteredParticipant: string;
+  onClear: () => void;
+}
+
+const FilterIndicator = memo(function FilterIndicator({ filteredParticipant, onClear }: FilterIndicatorProps) {
+  const { t } = useLanguage();
+  
+  if (!filteredParticipant) return null;
+  
+  return (
+    <div className="flex items-center gap-2 p-2 mx-2 mt-2 bg-primary/10 rounded-md">
+      <Filter className="h-4 w-4 text-primary" />
+      <span className="text-xs flex-1">{t('chat.filtered')}</span>
+      <Button 
+        variant="ghost" 
+        size="icon" 
+        className="h-5 w-5"
+        onClick={onClear}
+      >
+        <X className="h-3 w-3" />
+      </Button>
+    </div>
+  );
+});
+
+interface AIResponseNodeProps {
+  ai: AIResponse;
+  isActive: boolean;
+  isFiltered: boolean;
+  onClick: () => void;
+  onDoubleClick: () => void;
+}
+
+const AIResponseNode = memo(function AIResponseNode({ 
+  ai, 
+  isActive, 
+  isFiltered, 
+  onClick, 
+  onDoubleClick 
+}: AIResponseNodeProps) {
+  const Icon = ai.icon;
+  
+  return (
+    <div
+      className={cn(
+        "relative flex items-center gap-2 p-2 rounded-md cursor-pointer transition-colors ml-4",
+        isActive && "bg-sidebar-accent",
+        isFiltered && "ring-2 ring-primary",
+        "hover:bg-sidebar-accent/50"
+      )}
+      onClick={onClick}
+      onDoubleClick={onDoubleClick}
+    >
+      {/* Tree connector line */}
+      <div className="absolute -left-2 top-0 bottom-0 w-px bg-border" />
+      <Icon className={cn("h-4 w-4 shrink-0", ai.color)} />
+      <span className="flex-1 text-sm truncate text-sidebar-foreground">
+        {ai.displayName}
+      </span>
+    </div>
+  );
+});
+
+interface SupervisorNodeProps {
+  block: DialogBlock;
+  index: number;
+  activeParticipant: string | null;
+  filteredParticipant: string | null;
+  onMessageClick: (id: string) => void;
+  onMessageDoubleClick?: (id: string) => void;
+  onDeleteClick: (e: React.MouseEvent, block: DialogBlock) => void;
+  canDelete: boolean;
+}
+
+const SupervisorNode = memo(function SupervisorNode({
+  block,
+  index,
+  activeParticipant,
+  filteredParticipant,
+  onMessageClick,
+  onMessageDoubleClick,
+  onDeleteClick,
+  canDelete,
+}: SupervisorNodeProps) {
+  const { t } = useLanguage();
+  
+  const handleClick = useCallback(() => onMessageClick(block.id), [onMessageClick, block.id]);
+  const handleDoubleClick = useCallback(() => onMessageDoubleClick?.(block.id), [onMessageDoubleClick, block.id]);
+  const handleDelete = useCallback((e: React.MouseEvent) => onDeleteClick(e, block), [onDeleteClick, block]);
+  
+  return (
+    <div className="space-y-0.5 group/block">
+      {/* Supervisor node */}
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <div
+            className={cn(
+              "flex items-center gap-2 p-2 rounded-md cursor-pointer transition-colors",
+              activeParticipant === block.id && "bg-sidebar-accent",
+              filteredParticipant === block.id && "ring-2 ring-primary",
+              "hover:bg-sidebar-accent/50"
+            )}
+            onClick={handleClick}
+            onDoubleClick={handleDoubleClick}
+          >
+            <Crown className="h-4 w-4 text-amber-500 shrink-0" />
+            <span className="flex-1 text-sm truncate text-sidebar-foreground">
+              {t('role.supervisor')} #{index}
+            </span>
+            {block.responseCount > 0 && (
+              <span className="text-xs text-muted-foreground">
+                +{block.responseCount}
+              </span>
+            )}
+            {canDelete && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-5 w-5 opacity-0 group-hover/block:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
+                onClick={handleDelete}
+              >
+                <Trash2 className="h-3 w-3" />
+              </Button>
+            )}
+            <Info className="h-3.5 w-3.5 text-muted-foreground" />
+          </div>
+        </TooltipTrigger>
+        <TooltipContent side="right" className="max-w-xs">
+          <p className="text-sm italic">"{block.contentPreview}"</p>
+        </TooltipContent>
+      </Tooltip>
+
+      {/* AI responses under this supervisor */}
+      {block.aiResponses.map((ai) => (
+        <AIResponseNode
+          key={ai.id}
+          ai={ai}
+          isActive={activeParticipant === ai.id}
+          isFiltered={filteredParticipant === ai.id}
+          onClick={() => onMessageClick(ai.id)}
+          onDoubleClick={() => onMessageDoubleClick?.(ai.id)}
+        />
+      ))}
+    </div>
+  );
+});
+
+interface StandaloneAINodeProps {
+  block: DialogBlock;
+  activeParticipant: string | null;
+  filteredParticipant: string | null;
+  onMessageClick: (id: string) => void;
+  onMessageDoubleClick?: (id: string) => void;
+}
+
+const StandaloneAINode = memo(function StandaloneAINode({
+  block,
+  activeParticipant,
+  filteredParticipant,
+  onMessageClick,
+  onMessageDoubleClick,
+}: StandaloneAINodeProps) {
+  const ai = block.aiResponses[0];
+  if (!ai) return null;
+  
+  const Icon = ai.icon;
+  
+  const handleClick = useCallback(() => onMessageClick(ai.id), [onMessageClick, ai.id]);
+  const handleDoubleClick = useCallback(() => onMessageDoubleClick?.(ai.id), [onMessageDoubleClick, ai.id]);
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <div
+          className={cn(
+            "flex items-center gap-2 p-2 rounded-md cursor-pointer transition-colors",
+            activeParticipant === ai.id && "bg-sidebar-accent",
+            filteredParticipant === ai.id && "ring-2 ring-primary",
+            "hover:bg-sidebar-accent/50"
+          )}
+          onClick={handleClick}
+          onDoubleClick={handleDoubleClick}
+        >
+          <Icon className={cn("h-4 w-4 shrink-0", ai.color)} />
+          <span className="flex-1 text-sm truncate text-sidebar-foreground">
+            {ai.displayName}
+          </span>
+          <Info className="h-3.5 w-3.5 text-muted-foreground" />
+        </div>
+      </TooltipTrigger>
+      <TooltipContent side="right" className="max-w-xs">
+        <p className="text-sm italic">"{block.contentPreview}"</p>
+      </TooltipContent>
+    </Tooltip>
+  );
+});
+
+interface DeleteDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  messageCount: number;
+  onConfirm: () => void;
+}
+
+const DeleteDialog = memo(function DeleteDialog({ 
+  open, 
+  onOpenChange, 
+  messageCount, 
+  onConfirm 
+}: DeleteDialogProps) {
+  const { t } = useLanguage();
+  
+  return (
+    <AlertDialog open={open} onOpenChange={onOpenChange}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>{t('messages.deleteGroupTitle')}</AlertDialogTitle>
+          <AlertDialogDescription>
+            {t('messages.deleteGroupConfirm').replace('{count}', String(messageCount))}
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+          <AlertDialogAction 
+            onClick={onConfirm}
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+          >
+            {t('common.delete')}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+});
+
+const EmptyState = memo(function EmptyState() {
+  const { t } = useLanguage();
+  
+  return (
+    <div className="flex flex-col h-full bg-sidebar">
+      <TreeHeader />
+      <div className="flex-1 flex items-center justify-center p-4">
+        <p className="text-sm text-muted-foreground">{t('chat.noParticipants')}</p>
+      </div>
+    </div>
+  );
+});
+
+// ==================== Main Component ====================
+
+export const ChatTreeNav = memo(function ChatTreeNav({
   messages,
   perModelSettings,
   onMessageClick,
@@ -94,13 +391,32 @@ export function ChatTreeNav({
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [blockToDelete, setBlockToDelete] = useState<DialogBlock | null>(null);
 
+  // Callbacks - must be before any early returns
+  const handleDeleteClick = useCallback((e: React.MouseEvent, block: DialogBlock) => {
+    e.stopPropagation();
+    setBlockToDelete(block);
+    setDeleteDialogOpen(true);
+  }, []);
+
+  const confirmDelete = useCallback(() => {
+    if (blockToDelete && onDeleteMessageGroup) {
+      onDeleteMessageGroup(blockToDelete.id);
+    }
+    setDeleteDialogOpen(false);
+    setBlockToDelete(null);
+  }, [blockToDelete, onDeleteMessageGroup]);
+
+  const handleClearFilter = useCallback(() => {
+    onMessageDoubleClick?.('');
+  }, [onMessageDoubleClick]);
+
+  // Memoized dialog blocks computation
   const dialogBlocks = useMemo(() => {
     const blocks: DialogBlock[] = [];
     let currentBlock: DialogBlock | null = null;
 
     messages.forEach((msg) => {
       if (msg.role === 'user') {
-        // Start a new supervisor block
         if (currentBlock) {
           blocks.push(currentBlock);
         }
@@ -113,7 +429,6 @@ export function ChatTreeNav({
           responseCount: 0,
         };
       } else {
-        // AI response
         const settings = perModelSettings[msg.model_name || ''];
         const role = settings?.role || msg.role;
         const config = roleConfig[role] || roleConfig.assistant;
@@ -128,11 +443,9 @@ export function ChatTreeNav({
         };
 
         if (currentBlock) {
-          // Add to current supervisor block
           currentBlock.aiResponses.push(aiResponse);
           currentBlock.responseCount++;
         } else {
-          // Standalone AI message (e.g., consultant without preceding user message)
           blocks.push({
             id: msg.id,
             type: 'standalone-ai',
@@ -144,7 +457,6 @@ export function ChatTreeNav({
       }
     });
 
-    // Push the last block
     if (currentBlock) {
       blocks.push(currentBlock);
     }
@@ -152,218 +464,76 @@ export function ChatTreeNav({
     return blocks;
   }, [messages, perModelSettings, t]);
 
-  const handleDeleteClick = (e: React.MouseEvent, block: DialogBlock) => {
-    e.stopPropagation();
-    setBlockToDelete(block);
-    setDeleteDialogOpen(true);
-  };
-
-  const confirmDelete = () => {
-    if (blockToDelete && onDeleteMessageGroup) {
-      onDeleteMessageGroup(blockToDelete.id);
-    }
-    setDeleteDialogOpen(false);
-    setBlockToDelete(null);
-  };
+  // Memoized supervisor indices
+  const supervisorIndices = useMemo(() => {
+    const indices = new Map<string, number>();
+    let idx = 0;
+    dialogBlocks.forEach((block) => {
+      if (block.type === 'supervisor-block') {
+        idx++;
+        indices.set(block.id, idx);
+      }
+    });
+    return indices;
+  }, [dialogBlocks]);
 
   if (dialogBlocks.length === 0) {
-    return (
-      <div className="flex flex-col h-full bg-sidebar">
-        <div className="p-3 border-b border-border flex items-center justify-between">
-          <h3 className="text-sm font-medium text-sidebar-foreground flex items-center gap-2">
-            <Users className="h-4 w-4" />
-            {t('chat.participants')}
-          </h3>
-        </div>
-        <div className="flex-1 flex items-center justify-center p-4">
-          <p className="text-sm text-muted-foreground">{t('chat.noParticipants')}</p>
-        </div>
-      </div>
-    );
+    return <EmptyState />;
   }
-
-  // Count supervisor blocks for numbering
-  let supervisorIndex = 0;
 
   return (
     <div className="flex flex-col h-full bg-sidebar">
-      <div className="p-3 border-b border-border flex items-center justify-between">
-        <h3 className="text-sm font-medium text-sidebar-foreground flex items-center gap-2">
-          <Users className="h-4 w-4" />
-          {t('chat.participants')}
-        </h3>
-        
-        {onCollapseAllToggle && (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-6 w-6"
-                onClick={onCollapseAllToggle}
-              >
-                {allCollapsed ? (
-                  <ChevronDown className="h-4 w-4" />
-                ) : (
-                  <ChevronsUpDown className="h-4 w-4" />
-                )}
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              {allCollapsed ? t('chat.expandAll') : t('chat.collapseAll')}
-            </TooltipContent>
-          </Tooltip>
-        )}
-      </div>
+      <TreeHeader 
+        allCollapsed={allCollapsed} 
+        onCollapseAllToggle={onCollapseAllToggle} 
+      />
 
-      {/* Filter indicator */}
       {filteredParticipant && (
-        <div className="flex items-center gap-2 p-2 mx-2 mt-2 bg-primary/10 rounded-md">
-          <Filter className="h-4 w-4 text-primary" />
-          <span className="text-xs flex-1">{t('chat.filtered')}</span>
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="h-5 w-5"
-            onClick={() => onMessageDoubleClick?.('')}
-          >
-            <X className="h-3 w-3" />
-          </Button>
-        </div>
+        <FilterIndicator 
+          filteredParticipant={filteredParticipant} 
+          onClear={handleClearFilter} 
+        />
       )}
 
       <ScrollArea className="flex-1">
         <div className="p-2 space-y-0.5">
           {dialogBlocks.map((block) => {
             if (block.type === 'supervisor-block') {
-              supervisorIndex++;
-              const currentIndex = supervisorIndex;
-              
               return (
-                <div key={block.id} className="space-y-0.5 group/block">
-                  {/* Supervisor node */}
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <div
-                        className={cn(
-                          "flex items-center gap-2 p-2 rounded-md cursor-pointer transition-colors",
-                          activeParticipant === block.id && "bg-sidebar-accent",
-                          filteredParticipant === block.id && "ring-2 ring-primary",
-                          "hover:bg-sidebar-accent/50"
-                        )}
-                        onClick={() => onMessageClick(block.id)}
-                        onDoubleClick={() => onMessageDoubleClick?.(block.id)}
-                      >
-                        <Crown className="h-4 w-4 text-amber-500 shrink-0" />
-                        <span className="flex-1 text-sm truncate text-sidebar-foreground">
-                          {t('role.supervisor')} #{currentIndex}
-                        </span>
-                        {block.responseCount > 0 && (
-                          <span className="text-xs text-muted-foreground">
-                            +{block.responseCount}
-                          </span>
-                        )}
-                        {onDeleteMessageGroup && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-5 w-5 opacity-0 group-hover/block:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
-                            onClick={(e) => handleDeleteClick(e, block)}
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
-                        )}
-                        <Info className="h-3.5 w-3.5 text-muted-foreground" />
-                      </div>
-                    </TooltipTrigger>
-                    <TooltipContent side="right" className="max-w-xs">
-                      <p className="text-sm italic">"{block.contentPreview}"</p>
-                    </TooltipContent>
-                  </Tooltip>
-
-                  {/* AI responses under this supervisor */}
-                  {block.aiResponses.map((ai) => {
-                    const Icon = ai.icon;
-                    return (
-                      <div
-                        key={ai.id}
-                        className={cn(
-                          "relative flex items-center gap-2 p-2 rounded-md cursor-pointer transition-colors ml-4",
-                          activeParticipant === ai.id && "bg-sidebar-accent",
-                          filteredParticipant === ai.id && "ring-2 ring-primary",
-                          "hover:bg-sidebar-accent/50"
-                        )}
-                        onClick={() => onMessageClick(ai.id)}
-                        onDoubleClick={() => onMessageDoubleClick?.(ai.id)}
-                      >
-                        {/* Tree connector line */}
-                        <div className="absolute -left-2 top-0 bottom-0 w-px bg-border" />
-
-                        <Icon className={cn("h-4 w-4 shrink-0", ai.color)} />
-                        <span className="flex-1 text-sm truncate text-sidebar-foreground">
-                          {ai.displayName}
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
+                <SupervisorNode
+                  key={block.id}
+                  block={block}
+                  index={supervisorIndices.get(block.id) || 0}
+                  activeParticipant={activeParticipant}
+                  filteredParticipant={filteredParticipant || null}
+                  onMessageClick={onMessageClick}
+                  onMessageDoubleClick={onMessageDoubleClick}
+                  onDeleteClick={handleDeleteClick}
+                  canDelete={!!onDeleteMessageGroup}
+                />
               );
             } else {
-              // Standalone AI block (consultant etc.)
-              const ai = block.aiResponses[0];
-              if (!ai) return null;
-              const Icon = ai.icon;
-
               return (
-                <Tooltip key={block.id}>
-                  <TooltipTrigger asChild>
-                    <div
-                      className={cn(
-                        "flex items-center gap-2 p-2 rounded-md cursor-pointer transition-colors",
-                        activeParticipant === ai.id && "bg-sidebar-accent",
-                        filteredParticipant === ai.id && "ring-2 ring-primary",
-                        "hover:bg-sidebar-accent/50"
-                      )}
-                      onClick={() => onMessageClick(ai.id)}
-                      onDoubleClick={() => onMessageDoubleClick?.(ai.id)}
-                    >
-                      <Icon className={cn("h-4 w-4 shrink-0", ai.color)} />
-                      <span className="flex-1 text-sm truncate text-sidebar-foreground">
-                        {ai.displayName}
-                      </span>
-                      <Info className="h-3.5 w-3.5 text-muted-foreground" />
-                    </div>
-                  </TooltipTrigger>
-                  <TooltipContent side="right" className="max-w-xs">
-                    <p className="text-sm italic">"{block.contentPreview}"</p>
-                  </TooltipContent>
-                </Tooltip>
+                <StandaloneAINode
+                  key={block.id}
+                  block={block}
+                  activeParticipant={activeParticipant}
+                  filteredParticipant={filteredParticipant || null}
+                  onMessageClick={onMessageClick}
+                  onMessageDoubleClick={onMessageDoubleClick}
+                />
               );
             }
           })}
         </div>
       </ScrollArea>
 
-      {/* Delete confirmation dialog */}
-      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{t('messages.deleteGroupTitle')}</AlertDialogTitle>
-            <AlertDialogDescription>
-              {t('messages.deleteGroupConfirm').replace('{count}', String((blockToDelete?.responseCount || 0) + 1))}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={confirmDelete}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              {t('common.delete')}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <DeleteDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        messageCount={(blockToDelete?.responseCount || 0) + 1}
+        onConfirm={confirmDelete}
+      />
     </div>
   );
-}
+});
