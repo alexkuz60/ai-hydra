@@ -639,7 +639,7 @@ export default function ExpertPanel() {
 
           {/* Main Content */}
           <ResizablePanel defaultSize={80}>
-        <div className="flex-1 flex flex-col min-w-0">
+        <div className="h-full flex flex-col min-w-0">
           {/* Task Header */}
           <div className="border-b border-border p-3 bg-background/50 flex items-center gap-4">
             <div className="flex items-center gap-2 text-sm min-w-0 flex-1">
