@@ -1,0 +1,172 @@
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+import { Message } from '@/types/messages';
+import { useLanguage } from '@/contexts/LanguageContext';
+
+interface UseMessagesProps {
+  sessionId: string | null;
+}
+
+interface UseMessagesReturn {
+  messages: Message[];
+  setMessages: React.Dispatch<React.SetStateAction<Message[]>>;
+  displayedMessages: Message[];
+  filteredParticipant: string | null;
+  setFilteredParticipant: React.Dispatch<React.SetStateAction<string | null>>;
+  activeParticipant: string | null;
+  setActiveParticipant: React.Dispatch<React.SetStateAction<string | null>>;
+  handleDeleteMessage: (messageId: string) => Promise<void>;
+  handleDeleteMessageGroup: (userMessageId: string) => Promise<void>;
+  handleRatingChange: (messageId: string, rating: number) => Promise<void>;
+  fetchMessages: (taskId: string) => Promise<void>;
+}
+
+export function useMessages({ sessionId }: UseMessagesProps): UseMessagesReturn {
+  const { t } = useLanguage();
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [filteredParticipant, setFilteredParticipant] = useState<string | null>(null);
+  const [activeParticipant, setActiveParticipant] = useState<string | null>(null);
+
+  // Fetch messages for a session
+  const fetchMessages = useCallback(async (taskId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('messages')
+        .select('*')
+        .eq('session_id', taskId)
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+      setMessages(data || []);
+    } catch (error: any) {
+      toast.error(error.message);
+    }
+  }, []);
+
+  // Subscribe to realtime messages
+  useEffect(() => {
+    if (!sessionId) return;
+
+    // Fetch initial messages
+    fetchMessages(sessionId);
+
+    const channel = supabase
+      .channel('messages-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages',
+          filter: `session_id=eq.${sessionId}`,
+        },
+        (payload) => {
+          const newMessage = payload.new as Message;
+          setMessages(prev => [...prev, newMessage]);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [sessionId, fetchMessages]);
+
+  // Delete a single message
+  const handleDeleteMessage = useCallback(async (messageId: string) => {
+    try {
+      const { error } = await supabase
+        .from('messages')
+        .delete()
+        .eq('id', messageId);
+
+      if (error) throw error;
+
+      setMessages(msgs => msgs.filter(m => m.id !== messageId));
+      toast.success(t('messages.deleted'));
+    } catch (error: any) {
+      toast.error(error.message);
+    }
+  }, [t]);
+
+  // Delete a user message and all AI responses until the next user message
+  const handleDeleteMessageGroup = useCallback(async (userMessageId: string) => {
+    const userMsgIndex = messages.findIndex(m => m.id === userMessageId);
+    if (userMsgIndex === -1 || messages[userMsgIndex].role !== 'user') return;
+
+    // Find all messages to delete: user message + subsequent AI responses
+    const idsToDelete: string[] = [userMessageId];
+    for (let i = userMsgIndex + 1; i < messages.length; i++) {
+      if (messages[i].role === 'user') break;
+      idsToDelete.push(messages[i].id);
+    }
+
+    try {
+      const { error } = await supabase
+        .from('messages')
+        .delete()
+        .in('id', idsToDelete);
+
+      if (error) throw error;
+
+      setMessages(msgs => msgs.filter(m => !idsToDelete.includes(m.id)));
+      toast.success(t('messages.groupDeleted'));
+    } catch (error: any) {
+      toast.error(error.message);
+    }
+  }, [messages, t]);
+
+  // Update message rating
+  const handleRatingChange = useCallback(async (messageId: string, rating: number) => {
+    try {
+      const message = messages.find(m => m.id === messageId);
+      const currentMetadata = (message?.metadata as Record<string, unknown>) || {};
+
+      const { error } = await supabase
+        .from('messages')
+        .update({
+          metadata: { ...currentMetadata, rating }
+        })
+        .eq('id', messageId);
+
+      if (error) throw error;
+
+      setMessages(msgs => msgs.map(m =>
+        m.id === messageId
+          ? { ...m, metadata: { ...currentMetadata, rating } }
+          : m
+      ));
+    } catch (error: any) {
+      toast.error(error.message);
+    }
+  }, [messages]);
+
+  // Filter messages based on selected participant
+  const displayedMessages = useMemo(() => {
+    if (!filteredParticipant) return messages;
+
+    const targetMessage = messages.find(m => m.id === filteredParticipant);
+    if (!targetMessage) return messages;
+
+    if (targetMessage.role === 'user') {
+      return messages.filter(m => m.role === 'user');
+    } else {
+      return messages.filter(m => m.model_name === targetMessage.model_name);
+    }
+  }, [messages, filteredParticipant]);
+
+  return {
+    messages,
+    setMessages,
+    displayedMessages,
+    filteredParticipant,
+    setFilteredParticipant,
+    activeParticipant,
+    setActiveParticipant,
+    handleDeleteMessage,
+    handleDeleteMessageGroup,
+    handleRatingChange,
+    fetchMessages,
+  };
+}
