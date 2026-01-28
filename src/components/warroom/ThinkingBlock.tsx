@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Sparkles, ChevronDown, Languages, Loader2 } from 'lucide-react';
+import { Sparkles, ChevronDown, Languages, Loader2, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -10,19 +10,45 @@ import { useToast } from '@/hooks/use-toast';
 interface ThinkingBlockProps {
   reasoning: string;
   messageId: string;
+  savedTranslation?: string | null;
+  onTranslationSaved?: (translation: string) => void;
 }
 
-export function ThinkingBlock({ reasoning, messageId }: ThinkingBlockProps) {
+export function ThinkingBlock({ 
+  reasoning, 
+  messageId, 
+  savedTranslation,
+  onTranslationSaved 
+}: ThinkingBlockProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isTranslating, setIsTranslating] = useState(false);
-  const [translatedText, setTranslatedText] = useState<string | null>(null);
+  const [translatedText, setTranslatedText] = useState<string | null>(savedTranslation || null);
   const { language, t } = useLanguage();
   const { toast } = useToast();
+
+  // Update local state if savedTranslation prop changes
+  useEffect(() => {
+    if (savedTranslation) {
+      setTranslatedText(savedTranslation);
+    }
+  }, [savedTranslation]);
 
   const displayText = translatedText || reasoning;
 
   const handleTranslate = async () => {
-    if (isTranslating || translatedText) return;
+    if (isTranslating) return;
+    
+    // If already have translation, toggle to original
+    if (translatedText) {
+      setTranslatedText(null);
+      return;
+    }
+    
+    // If saved translation exists, load it
+    if (savedTranslation) {
+      setTranslatedText(savedTranslation);
+      return;
+    }
     
     setIsTranslating(true);
     try {
@@ -36,6 +62,18 @@ export function ThinkingBlock({ reasoning, messageId }: ThinkingBlockProps) {
       
       if (data?.translation) {
         setTranslatedText(data.translation);
+        
+        // Save translation to database
+        const { error: updateError } = await supabase
+          .from('messages')
+          .update({ reasoning_translated: data.translation })
+          .eq('id', messageId);
+        
+        if (updateError) {
+          console.error('Failed to save translation:', updateError);
+        } else {
+          onTranslationSaved?.(data.translation);
+        }
       } else {
         console.warn("Empty translation received:", data);
         toast({
@@ -56,6 +94,13 @@ export function ThinkingBlock({ reasoning, messageId }: ThinkingBlockProps) {
     }
   };
 
+  const getButtonLabel = () => {
+    if (isTranslating) return t('thinking.translating');
+    if (translatedText) return t('thinking.showOriginal');
+    if (savedTranslation) return t('thinking.showTranslated');
+    return t('thinking.translate');
+  };
+
   return (
     <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
       <div className="mb-3 border border-border/30 rounded-lg bg-muted/20">
@@ -67,6 +112,11 @@ export function ThinkingBlock({ reasoning, messageId }: ThinkingBlockProps) {
           {translatedText && (
             <span className="text-[10px] text-amber-500/70 ml-1">
               ({t('thinking.translated')})
+            </span>
+          )}
+          {savedTranslation && !translatedText && (
+            <span className="text-[10px] text-primary/70 ml-1" title={t('thinking.hasSaved')}>
+              <Check className="h-3 w-3 inline" />
             </span>
           )}
           <ChevronDown className={cn(
@@ -81,7 +131,7 @@ export function ThinkingBlock({ reasoning, messageId }: ThinkingBlockProps) {
               {displayText}
             </pre>
             
-            {language === 'ru' && !translatedText && (
+            {language === 'ru' && (
               <Button 
                 variant="ghost" 
                 size="sm"
@@ -94,7 +144,7 @@ export function ThinkingBlock({ reasoning, messageId }: ThinkingBlockProps) {
                 ) : (
                   <Languages className="h-3 w-3 mr-1" />
                 )}
-                {isTranslating ? t('thinking.translating') : t('thinking.translate')}
+                {getButtonLabel()}
               </Button>
             )}
           </div>

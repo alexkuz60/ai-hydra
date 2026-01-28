@@ -165,6 +165,7 @@ export function ChatMessage({ message, userDisplayInfo, onDelete, onRatingChange
           <ThinkingBlock 
             reasoning={message.reasoning_path} 
             messageId={message.id}
+            savedTranslation={message.reasoning_translated}
           />
         )}
         

@@ -23,6 +23,7 @@ export type Database = {
           metadata: Json | null
           model_name: string | null
           reasoning_path: string | null
+          reasoning_translated: string | null
           role: Database["public"]["Enums"]["message_role"]
           session_id: string
           user_id: string
@@ -35,6 +36,7 @@ export type Database = {
           metadata?: Json | null
           model_name?: string | null
           reasoning_path?: string | null
+          reasoning_translated?: string | null
           role: Database["public"]["Enums"]["message_role"]
           session_id: string
           user_id: string
@@ -47,6 +49,7 @@ export type Database = {
           metadata?: Json | null
           model_name?: string | null
           reasoning_path?: string | null
+          reasoning_translated?: string | null
           role?: Database["public"]["Enums"]["message_role"]
           session_id?: string
           user_id?: string
