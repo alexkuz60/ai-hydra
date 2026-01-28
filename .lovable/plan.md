@@ -1,9 +1,9 @@
 
 
-## План: Создание панели "Библиотека ИИ-ролей"
+## План: Интеграция Perplexity для веб-поиска консультантами
 
 ### Цель
-Создать полноценную страницу управления библиотекой промптов для ИИ-ролей по аналогии с панелью "Задачи", с возможностью добавления, просмотра, редактирования и удаления промптов.
+Подключить Perplexity API как специализированный инструмент веб-поиска для роли "Консультант" в Панели экспертов. Пользователь сможет задавать вопросы с включённым веб-поиском и получать ответы с актуальной информацией из интернета и источниками.
 
 ---
 
@@ -11,298 +11,258 @@
 
 ```text
 ┌─────────────────────────────────────────────────────────────────┐
-│                    AppSidebar.tsx                                │
+│                    ConsultantSelector.tsx                        │
 │                                                                  │
-│  Добавить новый пункт меню:                                     │
-│  { path: '/role-library', icon: Library, label: 'Библиотека' } │
+│  Расширить UI:                                                  │
+│  ┌─────────────────────────────────────────────────────────────┐│
+│  │ [🔍 Веб-поиск] ← переключатель для активации Perplexity    ││
+│  │ [💡 Выбор модели] ← dropdown с моделями Perplexity          ││
+│  │ [📤 Спросить] ← кнопка отправки                              ││
+│  └─────────────────────────────────────────────────────────────┘│
 └─────────────────────────────────────────────────────────────────┘
                            │
                            ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│                    App.tsx                                       │
+│                    ExpertPanel.tsx                               │
 │                                                                  │
-│  Добавить маршрут:                                              │
-│  <Route path="/role-library" element={<RoleLibrary />} />       │
+│  Новый handler: handleSendToPerplexity()                        │
+│  - Вызов edge function perplexity-search                        │
+│  - Сохранение ответа с citations в messages                     │
 └─────────────────────────────────────────────────────────────────┘
                            │
                            ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│                    RoleLibrary.tsx                               │
+│           supabase/functions/perplexity-search/                  │
 │                                                                  │
-│  Структура (по аналогии с Tasks.tsx):                          │
-│  ┌────────────────────────────────────────────────────────────┐ │
-│  │  HydraCard: Создание нового промпта                        │ │
-│  │  - Название (Input)                                        │ │
-│  │  - Описание (Input, опционально)                           │ │
-│  │  - Роль (Select: expert/critic/arbiter)                    │ │
-│  │  - Контент промпта (Textarea)                              │ │
-│  │  - Переключатель "Публичный" (Switch)                      │ │
-│  │  - Кнопка "Создать"                                        │ │
-│  └────────────────────────────────────────────────────────────┘ │
-│                                                                  │
-│  ┌────────────────────────────────────────────────────────────┐ │
-│  │  Фильтры и поиск                                           │ │
-│  │  - Поиск по названию/контенту                              │ │
-│  │  - Фильтр по роли (все / эксперт / критик / арбитр)        │ │
-│  │  - Фильтр: свои / публичные                                │ │
-│  └────────────────────────────────────────────────────────────┘ │
-│                                                                  │
-│  ┌────────────────────────────────────────────────────────────┐ │
-│  │  Список промптов (cards)                                   │ │
-│  │  Каждая карточка:                                          │ │
-│  │  - Название (inline edit)                                  │ │
-│  │  - Badge роли (цвет по роли)                               │ │
-│  │  - Описание (если есть)                                    │ │
-│  │  - Контент (truncated, expand toggle)                      │ │
-│  │  - Счётчик использования                                   │ │
-│  │  - Иконка публичности                                      │ │
-│  │  - Кнопки: редактировать / удалить                         │ │
-│  └────────────────────────────────────────────────────────────┘ │
+│  - PERPLEXITY_API_KEY из коннектора                             │
+│  - POST к api.perplexity.ai/chat/completions                    │
+│  - Модели: sonar, sonar-pro, sonar-reasoning                    │
+│  - Возврат ответа + citations                                   │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-### Часть 1: Навигация
+### Часть 1: Подключение коннектора Perplexity
 
-#### 1.1 Добавить пункт меню в AppSidebar.tsx
+Сначала необходимо подключить коннектор Perplexity к проекту через Settings → Connectors. Это сделает `PERPLEXITY_API_KEY` доступным для edge functions.
+
+---
+
+### Часть 2: Edge Function perplexity-search
+
+#### Файл: `supabase/functions/perplexity-search/index.ts`
 
 ```typescript
-import { Library } from 'lucide-react';
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, ...',
+};
 
-const navItems = user ? [
-  { path: '/', icon: Home, label: t('nav.home') },
-  { path: '/expert-panel', icon: Users, label: t('nav.expertPanel') },
-  { path: '/tasks', icon: CheckSquare, label: t('nav.tasks') },
-  { path: '/role-library', icon: Library, label: t('nav.roleLibrary') }, // новый пункт
-  { path: '/model-ratings', icon: BarChart3, label: t('nav.modelRatings') },
-] : [
-  { path: '/', icon: Home, label: t('nav.home') },
+// Поддерживаемые модели Perplexity
+const PERPLEXITY_MODELS = {
+  'sonar': 'Fast, lightweight search',
+  'sonar-pro': 'Multi-step reasoning with 2x more citations',
+  'sonar-reasoning': 'Chain-of-thought reasoning with real-time search',
+};
+
+Deno.serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  // Проверка авторизации
+  // ...
+
+  const { message, model, session_id, user_id } = await req.json();
+  
+  const apiKey = Deno.env.get('PERPLEXITY_API_KEY');
+  if (!apiKey) {
+    return new Response(
+      JSON.stringify({ error: 'Perplexity connector not configured' }),
+      { status: 500, headers: corsHeaders }
+    );
+  }
+
+  // Вызов Perplexity API
+  const response = await fetch('https://api.perplexity.ai/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: model || 'sonar',
+      messages: [
+        { role: 'system', content: 'Be precise and provide sources.' },
+        { role: 'user', content: message }
+      ],
+    }),
+  });
+
+  const data = await response.json();
+  
+  // Сохранение в базу с role: 'consultant'
+  await supabase.from('messages').insert({
+    session_id,
+    user_id,
+    role: 'consultant',
+    model_name: `perplexity/${model}`,
+    content: data.choices[0].message.content,
+    metadata: { 
+      provider: 'perplexity',
+      citations: data.citations || []
+    },
+  });
+
+  return new Response(JSON.stringify({ 
+    success: true,
+    content: data.choices[0].message.content,
+    citations: data.citations || []
+  }), { headers: corsHeaders });
+});
+```
+
+---
+
+### Часть 3: Расширение UI для веб-поиска
+
+#### 3.1 Обновить ConsultantSelector.tsx
+
+| Элемент | Описание |
+|---------|----------|
+| Toggle "Веб-поиск" | Switch для активации режима Perplexity |
+| Selector модели Perplexity | sonar / sonar-pro / sonar-reasoning |
+| Иконка поиска | Globe/Search вместо Lightbulb когда веб-поиск активен |
+
+```typescript
+interface ConsultantSelectorProps {
+  // существующие props...
+  webSearchEnabled: boolean;
+  onWebSearchToggle: (enabled: boolean) => void;
+  perplexityModel: string;
+  onPerplexityModelChange: (model: string) => void;
+}
+
+// Модели Perplexity для выбора
+const PERPLEXITY_MODELS = [
+  { id: 'sonar', name: 'Sonar (быстрый)' },
+  { id: 'sonar-pro', name: 'Sonar Pro (детальный)' },
+  { id: 'sonar-reasoning', name: 'Sonar Reasoning (аналитический)' },
 ];
 ```
 
-#### 1.2 Добавить маршрут в App.tsx
+#### 3.2 Обновить ExpertPanel.tsx
+
+Добавить состояние и handler для веб-поиска:
 
 ```typescript
-import RoleLibrary from "./pages/RoleLibrary";
+const [webSearchEnabled, setWebSearchEnabled] = useState(false);
+const [perplexityModel, setPerplexityModel] = useState('sonar');
 
-<Route path="/role-library" element={<RoleLibrary />} />
+const handleSendWithWebSearch = async () => {
+  // Вызов perplexity-search edge function
+  const response = await fetch(
+    `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/perplexity-search`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session?.access_token}`,
+      },
+      body: JSON.stringify({
+        session_id: currentTask.id,
+        user_id: user.id,
+        message: messageContent,
+        model: perplexityModel,
+      }),
+    }
+  );
+  // ...
+};
 ```
 
 ---
 
-### Часть 2: Локализация
+### Часть 4: Отображение источников в чате
+
+#### 4.1 Обновить ChatMessage.tsx
+
+Добавить отображение citations из metadata для сообщений от Perplexity:
+
+```tsx
+// Внутри ChatMessage
+const citations = (message.metadata as any)?.citations as string[] | undefined;
+
+{citations && citations.length > 0 && (
+  <div className="mt-3 pt-3 border-t border-white/10">
+    <p className="text-xs text-muted-foreground mb-2">Источники:</p>
+    <div className="flex flex-wrap gap-2">
+      {citations.map((url, index) => (
+        <a 
+          key={index}
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-xs text-primary hover:underline flex items-center gap-1"
+        >
+          <ExternalLink className="h-3 w-3" />
+          [{index + 1}]
+        </a>
+      ))}
+    </div>
+  </div>
+)}
+```
+
+---
+
+### Часть 5: Локализация
 
 Добавить в LanguageContext.tsx:
 
 ```typescript
-// Navigation
-'nav.roleLibrary': { ru: 'Библиотека ролей', en: 'Role Library' },
-
-// Role Library page
-'roleLibrary.title': { ru: 'Библиотека ИИ-ролей', en: 'AI Role Library' },
-'roleLibrary.new': { ru: 'Новая роль', en: 'New Role' },
-'roleLibrary.empty': { ru: 'Библиотека пуста', en: 'Library is empty' },
-'roleLibrary.name': { ru: 'Название', en: 'Name' },
-'roleLibrary.namePlaceholder': { ru: 'Название роли...', en: 'Role name...' },
-'roleLibrary.description': { ru: 'Описание', en: 'Description' },
-'roleLibrary.descriptionPlaceholder': { ru: 'Краткое описание...', en: 'Brief description...' },
-'roleLibrary.content': { ru: 'Системный промпт', en: 'System Prompt' },
-'roleLibrary.contentPlaceholder': { ru: 'Инструкции для ИИ...', en: 'Instructions for AI...' },
-'roleLibrary.role': { ru: 'Роль', en: 'Role' },
-'roleLibrary.isShared': { ru: 'Публичный', en: 'Public' },
-'roleLibrary.create': { ru: 'Создать', en: 'Create' },
-'roleLibrary.created': { ru: 'Роль создана', en: 'Role created' },
-'roleLibrary.updated': { ru: 'Роль обновлена', en: 'Role updated' },
-'roleLibrary.deleted': { ru: 'Роль удалена', en: 'Role deleted' },
-'roleLibrary.deleteConfirmTitle': { ru: 'Удалить роль?', en: 'Delete role?' },
-'roleLibrary.deleteConfirmDescription': { ru: 'Это действие нельзя отменить.', en: 'This action cannot be undone.' },
-'roleLibrary.search': { ru: 'Поиск...', en: 'Search...' },
-'roleLibrary.filterAll': { ru: 'Все', en: 'All' },
-'roleLibrary.filterOwn': { ru: 'Мои', en: 'My own' },
-'roleLibrary.filterShared': { ru: 'Публичные', en: 'Public' },
-'roleLibrary.usedCount': { ru: 'Использований: {count}', en: 'Used: {count} times' },
-'roleLibrary.noResults': { ru: 'Ничего не найдено', en: 'No results found' },
+'consultant.webSearch': { ru: 'Веб-поиск', en: 'Web Search' },
+'consultant.webSearchEnabled': { ru: 'Поиск в интернете включён', en: 'Web search enabled' },
+'consultant.perplexityModel': { ru: 'Модель поиска', en: 'Search Model' },
+'consultant.sonar': { ru: 'Sonar (быстрый)', en: 'Sonar (fast)' },
+'consultant.sonarPro': { ru: 'Sonar Pro (детальный)', en: 'Sonar Pro (detailed)' },
+'consultant.sonarReasoning': { ru: 'Sonar Reasoning (аналитический)', en: 'Sonar Reasoning (analytical)' },
+'consultant.sources': { ru: 'Источники', en: 'Sources' },
+'consultant.perplexityNotConfigured': { ru: 'Perplexity не настроен', en: 'Perplexity not configured' },
 ```
 
 ---
 
-### Часть 3: Страница RoleLibrary.tsx
+### Часть 6: Конфигурация
 
-#### 3.1 Структура компонента
+Добавить в supabase/config.toml:
 
-| Секция | Описание |
-|--------|----------|
-| Форма создания | HydraCard с полями для нового промпта |
-| Фильтры | Поиск + фильтр по роли + фильтр своих/публичных |
-| Список | Карточки промптов с действиями |
-
-#### 3.2 Основной функционал
-
-**Состояния:**
-```typescript
-interface RolePrompt {
-  id: string;
-  name: string;
-  description: string | null;
-  content: string;
-  role: string;
-  is_shared: boolean;
-  is_default: boolean;
-  usage_count: number;
-  user_id: string;
-  created_at: string;
-  updated_at: string;
-}
-
-const [prompts, setPrompts] = useState<RolePrompt[]>([]);
-const [loading, setLoading] = useState(true);
-const [searchQuery, setSearchQuery] = useState('');
-const [roleFilter, setRoleFilter] = useState<string>('all');
-const [ownerFilter, setOwnerFilter] = useState<'all' | 'own' | 'shared'>('all');
-
-// Форма создания
-const [newName, setNewName] = useState('');
-const [newDescription, setNewDescription] = useState('');
-const [newContent, setNewContent] = useState('');
-const [newRole, setNewRole] = useState<AgentRole>('assistant');
-const [newIsShared, setNewIsShared] = useState(false);
-const [creating, setCreating] = useState(false);
-
-// Редактирование
-const [editingId, setEditingId] = useState<string | null>(null);
-const [editSheet, setEditSheet] = useState(false);
-const [editingPrompt, setEditingPrompt] = useState<RolePrompt | null>(null);
-
-// Удаление
-const [promptToDelete, setPromptToDelete] = useState<RolePrompt | null>(null);
+```toml
+[functions.perplexity-search]
+verify_jwt = false
 ```
-
-**CRUD операции:**
-- `fetchPrompts()` - загрузка всех промптов (своих + публичных)
-- `handleCreate()` - создание нового промпта
-- `handleUpdate()` - обновление существующего
-- `handleDelete()` - удаление
-
-**Фильтрация:**
-```typescript
-const filteredPrompts = prompts.filter(prompt => {
-  // Поиск
-  const matchesSearch = 
-    prompt.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    prompt.content.toLowerCase().includes(searchQuery.toLowerCase());
-  
-  // Фильтр по роли
-  const matchesRole = roleFilter === 'all' || prompt.role === roleFilter;
-  
-  // Фильтр по владельцу
-  const matchesOwner = 
-    ownerFilter === 'all' ||
-    (ownerFilter === 'own' && prompt.user_id === user?.id) ||
-    (ownerFilter === 'shared' && prompt.is_shared);
-  
-  return matchesSearch && matchesRole && matchesOwner;
-});
-```
-
-#### 3.3 UI элементы
-
-**Карточка промпта:**
-```tsx
-<HydraCard variant="glass" glow className="p-4">
-  <div className="flex items-start justify-between gap-4">
-    <div className="flex-1 min-w-0">
-      {/* Заголовок с inline edit */}
-      <div className="flex items-center gap-2 mb-1">
-        <h3 className="font-medium truncate">{prompt.name}</h3>
-        <Badge className={getRoleBadgeColor(prompt.role)}>
-          {t(`role.${prompt.role}`)}
-        </Badge>
-        {prompt.is_shared && <Users className="h-3.5 w-3.5" />}
-      </div>
-      
-      {/* Описание */}
-      {prompt.description && (
-        <p className="text-sm text-muted-foreground mb-2">{prompt.description}</p>
-      )}
-      
-      {/* Контент с truncate */}
-      <p className="text-xs text-muted-foreground/70 line-clamp-2">
-        {prompt.content}
-      </p>
-      
-      {/* Метаданные */}
-      <div className="flex items-center gap-4 mt-2 text-[10px] text-muted-foreground">
-        <span>{t('roleLibrary.usedCount').replace('{count}', String(prompt.usage_count))}</span>
-        <span>{format(new Date(prompt.updated_at), 'dd.MM.yyyy')}</span>
-      </div>
-    </div>
-    
-    {/* Действия (только для своих) */}
-    {prompt.user_id === user?.id && (
-      <div className="flex items-center gap-1">
-        <Button variant="ghost" size="icon" onClick={() => openEditSheet(prompt)}>
-          <Pencil className="h-4 w-4" />
-        </Button>
-        <Button variant="ghost" size="icon" onClick={() => setPromptToDelete(prompt)}>
-          <Trash2 className="h-4 w-4" />
-        </Button>
-      </div>
-    )}
-  </div>
-</HydraCard>
-```
-
-**Sheet для редактирования:**
-```tsx
-<Sheet open={editSheet} onOpenChange={setEditSheet}>
-  <SheetContent>
-    <SheetHeader>
-      <SheetTitle>{t('roleLibrary.edit')}</SheetTitle>
-    </SheetHeader>
-    
-    {/* Форма редактирования: name, description, role, content, is_shared */}
-    
-    <SheetFooter>
-      <Button variant="outline" onClick={() => setEditSheet(false)}>
-        {t('common.cancel')}
-      </Button>
-      <Button onClick={handleUpdate}>
-        {t('common.save')}
-      </Button>
-    </SheetFooter>
-  </SheetContent>
-</Sheet>
-```
-
----
-
-### Часть 4: Стилизация
-
-| Элемент | Цвет бейджа роли |
-|---------|------------------|
-| expert (assistant) | `bg-primary/20 text-primary` |
-| critic | `bg-orange-500/20 text-orange-400` |
-| arbiter | `bg-purple-500/20 text-purple-400` |
 
 ---
 
 ### Шаги реализации
 
-1. **Локализация**: Добавить ключи переводов в LanguageContext.tsx
-2. **Маршрутизация**: Добавить Route в App.tsx
-3. **Навигация**: Добавить пункт меню в AppSidebar.tsx
-4. **Страница**: Создать src/pages/RoleLibrary.tsx с полным CRUD функционалом
-5. **Тестирование**: Проверить создание, редактирование, удаление промптов
+1. **Коннектор**: Подключить Perplexity через Settings → Connectors
+2. **Edge Function**: Создать `supabase/functions/perplexity-search/index.ts`
+3. **Config**: Добавить функцию в config.toml
+4. **UI Components**: Расширить ConsultantSelector с переключателем веб-поиска
+5. **ExpertPanel**: Добавить handler для Perplexity запросов
+6. **ChatMessage**: Добавить отображение citations
+7. **Локализация**: Добавить переводы
+8. **Deploy**: Развернуть edge function
 
 ---
 
 ### Ожидаемый результат
 
-- Новый пункт "Библиотека ролей" в боковом меню (для авторизованных пользователей)
-- Полноценная страница управления промптами ИИ-ролей
-- Возможность создавать, просматривать, редактировать и удалять свои промпты
-- Возможность видеть публичные промпты других пользователей
-- Фильтрация и поиск по библиотеке
-- Единый стиль с панелью "Задачи" (HydraCard, Sheet, AlertDialog)
+- Переключатель "Веб-поиск" в интерфейсе консультанта
+- Выбор модели Perplexity: sonar / sonar-pro / sonar-reasoning
+- Ответы с актуальной информацией из интернета
+- Кликабельные ссылки на источники в сообщениях
+- Визуальная индикация (иконка Globe) для сообщений с веб-поиском
 
