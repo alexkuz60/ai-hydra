@@ -49,7 +49,7 @@ import {
 } from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
-type AgentRole = 'assistant' | 'critic' | 'arbiter';
+type AgentRole = 'assistant' | 'critic' | 'arbiter' | 'consultant';
 type OwnerFilter = 'all' | 'own' | 'shared';
 
 interface RolePrompt {
@@ -70,6 +70,7 @@ const ROLE_BADGE_COLORS: Record<string, string> = {
   assistant: 'bg-primary/20 text-primary border-primary/30',
   critic: 'bg-orange-500/20 text-orange-400 border-orange-500/30',
   arbiter: 'bg-purple-500/20 text-purple-400 border-purple-500/30',
+  consultant: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
 };
 
 export default function RoleLibrary() {
@@ -307,6 +308,7 @@ export default function RoleLibrary() {
                     <SelectItem value="assistant">{t('role.assistant')}</SelectItem>
                     <SelectItem value="critic">{t('role.critic')}</SelectItem>
                     <SelectItem value="arbiter">{t('role.arbiter')}</SelectItem>
+                    <SelectItem value="consultant">{t('role.consultant')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -373,6 +375,7 @@ export default function RoleLibrary() {
               <SelectItem value="assistant">{t('role.assistant')}</SelectItem>
               <SelectItem value="critic">{t('role.critic')}</SelectItem>
               <SelectItem value="arbiter">{t('role.arbiter')}</SelectItem>
+              <SelectItem value="consultant">{t('role.consultant')}</SelectItem>
             </SelectContent>
           </Select>
 
@@ -494,6 +497,7 @@ export default function RoleLibrary() {
                       <SelectItem value="assistant">{t('role.assistant')}</SelectItem>
                       <SelectItem value="critic">{t('role.critic')}</SelectItem>
                       <SelectItem value="arbiter">{t('role.arbiter')}</SelectItem>
+                      <SelectItem value="consultant">{t('role.consultant')}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

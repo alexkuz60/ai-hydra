@@ -106,6 +106,7 @@ const translations: Translations = {
   'role.assistant': { ru: 'Эксперт', en: 'Expert' },
   'role.critic': { ru: 'Критик', en: 'Critic' },
   'role.arbiter': { ru: 'Арбитр', en: 'Arbiter' },
+  'role.consultant': { ru: 'Консультант', en: 'Consultant' },
   
   // Common
   'common.loading': { ru: 'Загрузка...', en: 'Loading...' },

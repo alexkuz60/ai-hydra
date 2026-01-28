@@ -12,7 +12,8 @@ import {
   Crown,
   ChevronDown, 
   ChevronUp, 
-  Trash2 
+  Trash2,
+  Lightbulb
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -59,6 +60,12 @@ const roleConfig = {
     label: 'role.arbiter',
     variant: 'arbiter' as const,
     color: 'text-hydra-arbiter',
+  },
+  consultant: {
+    icon: Lightbulb,
+    label: 'role.consultant',
+    variant: 'glass' as const,
+    color: 'text-amber-400',
   },
 };
 

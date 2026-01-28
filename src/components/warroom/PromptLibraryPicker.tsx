@@ -175,6 +175,7 @@ export function PromptLibraryPicker({ open, onOpenChange, onSelect, currentRole 
               <SelectItem value="assistant">{t('role.assistant')}</SelectItem>
               <SelectItem value="critic">{t('role.critic')}</SelectItem>
               <SelectItem value="arbiter">{t('role.arbiter')}</SelectItem>
+              <SelectItem value="consultant">{t('role.consultant')}</SelectItem>
             </SelectContent>
           </Select>
         </div>
