@@ -36,7 +36,8 @@ import {
   CheckSquare, 
   Home,
   ChevronUp,
-  BarChart3
+  BarChart3,
+  Library
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -60,6 +61,7 @@ export function AppSidebar() {
     { path: '/', icon: Home, label: t('nav.home') },
     { path: '/expert-panel', icon: Users, label: t('nav.expertPanel') },
     { path: '/tasks', icon: CheckSquare, label: t('nav.tasks') },
+    { path: '/role-library', icon: Library, label: t('nav.roleLibrary') },
     { path: '/model-ratings', icon: BarChart3, label: t('nav.modelRatings') },
   ] : [
     { path: '/', icon: Home, label: t('nav.home') },

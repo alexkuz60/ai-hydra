@@ -13,6 +13,7 @@ import Profile from "./pages/Profile";
 import Tasks from "./pages/Tasks";
 import ExpertPanel from "./pages/ExpertPanel";
 import ModelRatings from "./pages/ModelRatings";
+import RoleLibrary from "./pages/RoleLibrary";
 import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 
@@ -35,6 +36,7 @@ const App = () => (
                 <Route path="/tasks" element={<Tasks />} />
                 <Route path="/expert-panel" element={<ExpertPanel />} />
                 <Route path="/model-ratings" element={<ModelRatings />} />
+                <Route path="/role-library" element={<RoleLibrary />} />
                 <Route path="/war-room" element={<Navigate to="/expert-panel" replace />} />
                 <Route path="/admin" element={<Admin />} />
                 <Route path="*" element={<NotFound />} />
