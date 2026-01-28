@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -13,7 +14,11 @@ import {
   Scale, 
   Lightbulb, 
   Users, 
-  Info 
+  Info,
+  ChevronsUpDown,
+  ChevronDown,
+  Filter,
+  X
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -39,7 +44,11 @@ interface ChatTreeNavProps {
   perModelSettings: PerModelSettingsData;
   userDisplayInfo: UserDisplayInfo;
   onMessageClick: (messageId: string) => void;
+  onMessageDoubleClick?: (messageId: string) => void;
   activeParticipant: string | null;
+  filteredParticipant?: string | null;
+  allCollapsed?: boolean;
+  onCollapseAllToggle?: () => void;
 }
 
 const roleConfig: Record<string, { icon: LucideIcon; color: string; label: string }> = {
@@ -61,7 +70,11 @@ export function ChatTreeNav({
   messages,
   perModelSettings,
   onMessageClick,
+  onMessageDoubleClick,
   activeParticipant,
+  filteredParticipant,
+  allCollapsed,
+  onCollapseAllToggle,
 }: ChatTreeNavProps) {
   const { t } = useLanguage();
 
@@ -123,7 +136,7 @@ export function ChatTreeNav({
   if (dialogBlocks.length === 0) {
     return (
       <div className="flex flex-col h-full bg-sidebar">
-        <div className="p-3 border-b border-border">
+        <div className="p-3 border-b border-border flex items-center justify-between">
           <h3 className="text-sm font-medium text-sidebar-foreground flex items-center gap-2">
             <Users className="h-4 w-4" />
             {t('chat.participants')}
@@ -141,12 +154,50 @@ export function ChatTreeNav({
 
   return (
     <div className="flex flex-col h-full bg-sidebar">
-      <div className="p-3 border-b border-border">
+      <div className="p-3 border-b border-border flex items-center justify-between">
         <h3 className="text-sm font-medium text-sidebar-foreground flex items-center gap-2">
           <Users className="h-4 w-4" />
           {t('chat.participants')}
         </h3>
+        
+        {onCollapseAllToggle && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6"
+                onClick={onCollapseAllToggle}
+              >
+                {allCollapsed ? (
+                  <ChevronDown className="h-4 w-4" />
+                ) : (
+                  <ChevronsUpDown className="h-4 w-4" />
+                )}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              {allCollapsed ? t('chat.expandAll') : t('chat.collapseAll')}
+            </TooltipContent>
+          </Tooltip>
+        )}
       </div>
+
+      {/* Filter indicator */}
+      {filteredParticipant && (
+        <div className="flex items-center gap-2 p-2 mx-2 mt-2 bg-primary/10 rounded-md">
+          <Filter className="h-4 w-4 text-primary" />
+          <span className="text-xs flex-1">{t('chat.filtered')}</span>
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="h-5 w-5"
+            onClick={() => onMessageDoubleClick?.('')}
+          >
+            <X className="h-3 w-3" />
+          </Button>
+        </div>
+      )}
 
       <ScrollArea className="flex-1">
         <div className="p-2 space-y-0.5">
@@ -164,9 +215,11 @@ export function ChatTreeNav({
                         className={cn(
                           "flex items-center gap-2 p-2 rounded-md cursor-pointer transition-colors",
                           activeParticipant === block.id && "bg-sidebar-accent",
+                          filteredParticipant === block.id && "ring-2 ring-primary",
                           "hover:bg-sidebar-accent/50"
                         )}
                         onClick={() => onMessageClick(block.id)}
+                        onDoubleClick={() => onMessageDoubleClick?.(block.id)}
                       >
                         <Crown className="h-4 w-4 text-amber-500 shrink-0" />
                         <span className="flex-1 text-sm truncate text-sidebar-foreground">
@@ -189,9 +242,11 @@ export function ChatTreeNav({
                         className={cn(
                           "relative flex items-center gap-2 p-2 rounded-md cursor-pointer transition-colors ml-4",
                           activeParticipant === ai.id && "bg-sidebar-accent",
+                          filteredParticipant === ai.id && "ring-2 ring-primary",
                           "hover:bg-sidebar-accent/50"
                         )}
                         onClick={() => onMessageClick(ai.id)}
+                        onDoubleClick={() => onMessageDoubleClick?.(ai.id)}
                       >
                         {/* Tree connector line */}
                         <div className="absolute -left-2 top-0 bottom-0 w-px bg-border" />
@@ -218,9 +273,11 @@ export function ChatTreeNav({
                       className={cn(
                         "flex items-center gap-2 p-2 rounded-md cursor-pointer transition-colors",
                         activeParticipant === ai.id && "bg-sidebar-accent",
+                        filteredParticipant === ai.id && "ring-2 ring-primary",
                         "hover:bg-sidebar-accent/50"
                       )}
                       onClick={() => onMessageClick(ai.id)}
+                      onDoubleClick={() => onMessageDoubleClick?.(ai.id)}
                     >
                       <Icon className={cn("h-4 w-4 shrink-0", ai.color)} />
                       <span className="flex-1 text-sm truncate text-sidebar-foreground">

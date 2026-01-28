@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -71,6 +71,8 @@ export default function ExpertPanel() {
   const [uploadProgress, setUploadProgress] = useState<{ current: number; total: number } | null>(null);
   const [selectedConsultant, setSelectedConsultant] = useState<string | null>(null);
   const [activeParticipant, setActiveParticipant] = useState<string | null>(null);
+  const [filteredParticipant, setFilteredParticipant] = useState<string | null>(null);
+  const [allCollapsed, setAllCollapsed] = useState(false);
   const messageRefs = useRef<Map<string, HTMLDivElement>>(new Map());
   
   const { handlePaste } = usePasteHandler({ 
@@ -540,6 +542,23 @@ export default function ExpertPanel() {
     }
   };
 
+  // Filter messages based on selected participant (must be before early returns)
+  const displayedMessages = useMemo(() => {
+    if (!filteredParticipant) return messages;
+    
+    // Find the message to determine filter type
+    const targetMessage = messages.find(m => m.id === filteredParticipant);
+    if (!targetMessage) return messages;
+    
+    if (targetMessage.role === 'user') {
+      // Filter all user messages
+      return messages.filter(m => m.role === 'user');
+    } else {
+      // Filter by model_name for AI messages
+      return messages.filter(m => m.model_name === targetMessage.model_name);
+    }
+  }, [messages, filteredParticipant]);
+
   if (authLoading || loading) {
     return (
       <Layout>
@@ -570,6 +589,20 @@ export default function ExpertPanel() {
     });
   };
 
+  const handleMessageDoubleClick = (messageId: string) => {
+    // Toggle filter: if clicking the same participant, clear filter
+    // If clicking empty string (from X button), clear filter
+    if (!messageId || filteredParticipant === messageId) {
+      setFilteredParticipant(null);
+    } else {
+      setFilteredParticipant(messageId);
+    }
+  };
+
+  const handleCollapseAllToggle = () => {
+    setAllCollapsed(!allCollapsed);
+  };
+
   return (
     <Layout>
       <div className="h-[calc(100vh-4rem)] flex overflow-hidden">
@@ -586,7 +619,11 @@ export default function ExpertPanel() {
               perModelSettings={perModelSettings}
               userDisplayInfo={userDisplayInfo}
               onMessageClick={handleMessageClick}
+              onMessageDoubleClick={handleMessageDoubleClick}
               activeParticipant={activeParticipant}
+              filteredParticipant={filteredParticipant}
+              allCollapsed={allCollapsed}
+              onCollapseAllToggle={handleCollapseAllToggle}
             />
           </ResizablePanel>
 
@@ -607,15 +644,15 @@ export default function ExpertPanel() {
           {/* Messages Area */}
           <ScrollArea className="flex-1 p-4 hydra-scrollbar">
             <div className="max-w-4xl mx-auto space-y-4">
-              {messages.length === 0 ? (
+              {displayedMessages.length === 0 ? (
                 <div className="text-center py-16">
                   <Sparkles className="h-12 w-12 text-primary mx-auto mb-4 animate-pulse-glow" />
                   <p className="text-muted-foreground">
-                    Начните диалог с AI-Hydra
+                    {filteredParticipant ? 'Нет сообщений по фильтру' : 'Начните диалог с AI-Hydra'}
                   </p>
                 </div>
               ) : (
-                messages.map((message) => (
+                displayedMessages.map((message) => (
                   <div
                     key={message.id}
                     ref={(el) => {
@@ -628,6 +665,7 @@ export default function ExpertPanel() {
                       userDisplayInfo={userDisplayInfo}
                       onDelete={handleDeleteMessage}
                       onRatingChange={handleRatingChange}
+                      forceCollapsed={allCollapsed}
                     />
                   </div>
                 ))

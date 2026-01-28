@@ -245,6 +245,10 @@ const translations: Translations = {
   'chat.messagesCount': { ru: 'Сообщений', en: 'Messages' },
   'chat.scrollTo': { ru: 'Перейти к сообщениям', en: 'Scroll to messages' },
   'chat.noParticipants': { ru: 'Нет участников', en: 'No participants' },
+  'chat.collapseAll': { ru: 'Свернуть всё', en: 'Collapse All' },
+  'chat.expandAll': { ru: 'Развернуть всё', en: 'Expand All' },
+  'chat.filtered': { ru: 'Фильтр активен', en: 'Filter active' },
+  'chat.clearFilter': { ru: 'Сбросить фильтр', en: 'Clear filter' },
 
   // Role Library
   'roleLibrary.title': { ru: 'Библиотека ИИ-ролей', en: 'AI Role Library' },
