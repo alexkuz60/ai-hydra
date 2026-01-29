@@ -63,7 +63,27 @@ export function useMessages({ sessionId }: UseMessagesProps): UseMessagesReturn 
         },
         (payload) => {
           const newMessage = payload.new as Message;
-          setMessages(prev => [...prev, newMessage]);
+          // Insert message in correct position based on created_at
+          setMessages(prev => {
+            // Check if message already exists
+            if (prev.some(m => m.id === newMessage.id)) return prev;
+            
+            // Find correct insertion position based on created_at
+            const newTimestamp = new Date(newMessage.created_at).getTime();
+            const insertIndex = prev.findIndex(m => 
+              new Date(m.created_at).getTime() > newTimestamp
+            );
+            
+            if (insertIndex === -1) {
+              // Add to end
+              return [...prev, newMessage];
+            } else {
+              // Insert at correct position
+              const newArray = [...prev];
+              newArray.splice(insertIndex, 0, newMessage);
+              return newArray;
+            }
+          });
         }
       )
       .subscribe();
