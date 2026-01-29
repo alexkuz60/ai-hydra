@@ -660,7 +660,31 @@ serve(async (req) => {
       });
     }
 
-    const { session_id, message, attachments, models }: RequestBody = await req.json();
+    // Parse request body
+    const requestBody = await req.json();
+    
+    // Handle HTTP tool testing action
+    if (requestBody.action === 'test_http_tool') {
+      const { http_config, test_args, tool_name } = requestBody;
+      
+      if (!http_config || !http_config.url) {
+        return new Response(JSON.stringify({ success: false, error: 'http_config with url is required' }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      
+      console.log(`[Test HTTP Tool] Testing tool: ${tool_name || 'unnamed'}`);
+      
+      // Import and use the HTTP execution function
+      const { testHttpTool } = await import("./tools.ts");
+      const result = await testHttpTool(http_config, test_args || {});
+      
+      return new Response(JSON.stringify(result), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    
+    const { session_id, message, attachments, models }: RequestBody = requestBody;
 
     if (!session_id || !message || !models || models.length === 0) {
       return new Response(JSON.stringify({ error: "session_id, message, and models are required" }), {

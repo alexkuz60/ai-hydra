@@ -574,6 +574,137 @@ function extractByPath(obj: unknown, path: string): unknown {
   return current;
 }
 
+// Test HTTP tool directly (for UI testing before saving)
+export async function testHttpTool(
+  config: HttpConfig,
+  args: Record<string, unknown>
+): Promise<{ success: boolean; result?: unknown; error?: string; warning?: string; full_response?: unknown; response_body?: string }> {
+  const HTTP_TIMEOUT = 30000; // 30 seconds
+  const MAX_RESPONSE_SIZE = 100 * 1024; // 100KB
+  
+  try {
+    // Substitute parameters in URL
+    const url = substituteParams(config.url, args);
+    
+    // Validate URL
+    if (isInternalUrl(url)) {
+      return {
+        success: false,
+        error: 'Вызов внутренних адресов запрещён в целях безопасности'
+      };
+    }
+    
+    // Substitute parameters in headers
+    const headers: Record<string, string> = {};
+    if (config.headers) {
+      for (const [key, value] of Object.entries(config.headers)) {
+        headers[key] = substituteParams(value, args);
+      }
+    }
+    
+    // Add Content-Type for POST/PUT if not specified
+    if ((config.method === 'POST' || config.method === 'PUT') && !headers['Content-Type']) {
+      headers['Content-Type'] = 'application/json';
+    }
+    
+    // Prepare body for POST/PUT
+    let body: string | undefined;
+    if (config.body_template && (config.method === 'POST' || config.method === 'PUT')) {
+      body = substituteParams(config.body_template, args);
+    }
+    
+    console.log(`[Test HTTP] ${config.method} ${url}`);
+    
+    // Execute request with timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), HTTP_TIMEOUT);
+    
+    try {
+      const response = await fetch(url, {
+        method: config.method,
+        headers,
+        body,
+        signal: controller.signal,
+      });
+      
+      clearTimeout(timeoutId);
+      
+      // Check response size
+      const contentLength = response.headers.get('content-length');
+      if (contentLength && parseInt(contentLength, 10) > MAX_RESPONSE_SIZE) {
+        return {
+          success: false,
+          error: `Размер ответа превышает лимит (${MAX_RESPONSE_SIZE / 1024}KB)`
+        };
+      }
+      
+      // Read response
+      const text = await response.text();
+      
+      if (text.length > MAX_RESPONSE_SIZE) {
+        return {
+          success: false,
+          error: `Размер ответа превышает лимит (${MAX_RESPONSE_SIZE / 1024}KB)`
+        };
+      }
+      
+      if (!response.ok) {
+        return {
+          success: false,
+          error: `HTTP ${response.status}: ${response.statusText}`,
+          response_body: text.slice(0, 500)
+        };
+      }
+      
+      // Parse response
+      let data: unknown;
+      try {
+        data = JSON.parse(text);
+      } catch {
+        // Not JSON, return as text
+        data = text;
+      }
+      
+      // Extract by path if specified
+      let result = data;
+      if (config.response_path) {
+        result = extractByPath(data, config.response_path);
+        if (result === undefined) {
+          return {
+            success: true,
+            warning: `Путь '${config.response_path}' не найден в ответе`,
+            full_response: data
+          };
+        }
+      }
+      
+      return {
+        success: true,
+        result
+      };
+      
+    } catch (fetchError: unknown) {
+      clearTimeout(timeoutId);
+      
+      if (fetchError instanceof Error && fetchError.name === 'AbortError') {
+        return {
+          success: false,
+          error: `Таймаут запроса (${HTTP_TIMEOUT / 1000} сек)`
+        };
+      }
+      throw fetchError;
+    }
+    
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    console.error(`[Test HTTP] Error:`, message);
+    return {
+      success: false,
+      error: `Ошибка HTTP запроса: ${message}`
+    };
+  }
+}
+
 // Execute HTTP API tool
 async function executeHttpApiTool(
   toolName: string, 

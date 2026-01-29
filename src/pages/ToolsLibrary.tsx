@@ -58,6 +58,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
+import { HttpToolTester } from '@/components/tools/HttpToolTester';
 
 type OwnerFilter = 'all' | 'own' | 'shared';
 type ToolType = 'prompt' | 'http_api';
@@ -854,6 +855,23 @@ export default function ToolsLibrary() {
                         Путь для извлечения данных из ответа (опционально)
                       </p>
                     </div>
+
+                    {/* HTTP Tool Tester */}
+                    {newHttpUrl.trim() && (
+                      <HttpToolTester
+                        httpConfig={{
+                          url: newHttpUrl.trim(),
+                          method: newHttpMethod,
+                          headers: newHttpHeaders.length > 0 
+                            ? Object.fromEntries(newHttpHeaders.filter(h => h.key.trim()).map(h => [h.key.trim(), h.value]))
+                            : undefined,
+                          body_template: newHttpBodyTemplate.trim() || undefined,
+                          response_path: newHttpResponsePath.trim() || undefined,
+                        }}
+                        parameters={newParameters}
+                        toolName={newDisplayName || 'Новый инструмент'}
+                      />
+                    )}
                   </div>
                 )}
 
@@ -1083,6 +1101,23 @@ export default function ToolsLibrary() {
                         Путь для извлечения данных из ответа (опционально)
                       </p>
                     </div>
+
+                    {/* HTTP Tool Tester */}
+                    {editHttpUrl.trim() && (
+                      <HttpToolTester
+                        httpConfig={{
+                          url: editHttpUrl.trim(),
+                          method: editHttpMethod,
+                          headers: editHttpHeaders.length > 0 
+                            ? Object.fromEntries(editHttpHeaders.filter(h => h.key.trim()).map(h => [h.key.trim(), h.value]))
+                            : undefined,
+                          body_template: editHttpBodyTemplate.trim() || undefined,
+                          response_path: editHttpResponsePath.trim() || undefined,
+                        }}
+                        parameters={editParameters}
+                        toolName={editDisplayName || 'Инструмент'}
+                      />
+                    )}
                   </div>
                 )}
 
