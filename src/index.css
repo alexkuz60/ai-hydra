@@ -47,6 +47,7 @@
     --hydra-warning: 45 90% 55%;
     --hydra-expert: 280 75% 55%;
     --hydra-arbiter: 45 85% 55%;
+    --hydra-consultant: 38 92% 50%;
     --hydra-surface: 45 15% 90%;
     --hydra-surface-elevated: 45 10% 95%;
 
@@ -98,6 +99,7 @@
     --hydra-warning: 45 95% 60%;
     --hydra-expert: 280 80% 65%;
     --hydra-arbiter: 45 90% 60%;
+    --hydra-consultant: 38 92% 55%;
     --hydra-surface: 225 30% 14%;
     --hydra-surface-elevated: 225 28% 18%;
 

@@ -264,6 +264,17 @@ const translations: Translations = {
   'chat.filtered': { ru: 'Фильтр активен', en: 'Filter active' },
   'chat.clearFilter': { ru: 'Сбросить фильтр', en: 'Clear filter' },
 
+  // D-Chat (Consultant Panel)
+  'dchat.title': { ru: 'D-Чат', en: 'D-Chat' },
+  'dchat.webSearch': { ru: 'Веб-поиск', en: 'Web Search' },
+  'dchat.expert': { ru: 'Специалист', en: 'Expert' },
+  'dchat.critic': { ru: 'Критик', en: 'Critic' },
+  'dchat.arbiter': { ru: 'Арбитр', en: 'Arbiter' },
+  'dchat.selectModel': { ru: 'Выберите модель', en: 'Select model' },
+  'dchat.placeholder': { ru: 'Введите запрос...', en: 'Enter query...' },
+  'dchat.empty': { ru: 'Задайте вопрос консультанту', en: 'Ask the consultant a question' },
+  'dchat.clear': { ru: 'Очистить историю', en: 'Clear history' },
+
   // Role Library
   'roleLibrary.title': { ru: 'Библиотека ИИ-ролей', en: 'AI Role Library' },
   'roleLibrary.new': { ru: 'Новая роль', en: 'New Role' },
