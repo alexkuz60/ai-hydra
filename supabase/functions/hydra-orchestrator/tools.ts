@@ -79,6 +79,36 @@ export const AVAILABLE_TOOLS: ToolDefinition[] = [
         required: []
       }
     }
+  },
+  {
+    type: "function",
+    function: {
+      name: "web_search",
+      description: "Выполняет поиск информации в интернете и возвращает актуальные результаты. Используйте для поиска новостей, фактов, статистики, документации и любой информации, которая может быть недоступна в обучающих данных модели.",
+      parameters: {
+        type: "object",
+        properties: {
+          query: {
+            type: "string",
+            description: "Поисковый запрос на любом языке"
+          },
+          search_depth: {
+            type: "string",
+            description: "Глубина поиска: 'basic' (быстрый) или 'advanced' (глубокий, с большим контекстом)",
+            enum: ["basic", "advanced"]
+          },
+          include_domains: {
+            type: "string",
+            description: "Домены для поиска (через запятую), например: 'wikipedia.org,arxiv.org'"
+          },
+          exclude_domains: {
+            type: "string",
+            description: "Домены для исключения (через запятую), например: 'pinterest.com'"
+          }
+        },
+        required: ["query"]
+      }
+    }
   }
 ];
 
@@ -93,6 +123,13 @@ interface CalculatorArgs {
 interface DatetimeArgs {
   timezone?: string;
   format?: "full" | "date" | "time" | "iso";
+}
+
+interface WebSearchArgs {
+  query: string;
+  search_depth?: "basic" | "advanced";
+  include_domains?: string;
+  exclude_domains?: string;
 }
 
 // Safe math expression evaluator (no eval)
@@ -350,6 +387,80 @@ function executeCurrentDatetime(args: DatetimeArgs): string {
   }
 }
 
+async function executeWebSearch(args: WebSearchArgs): Promise<string> {
+  const tavilyApiKey = Deno.env.get('TAVILY_API_KEY');
+  
+  if (!tavilyApiKey) {
+    return JSON.stringify({
+      success: false,
+      error: "TAVILY_API_KEY не настроен. Веб-поиск недоступен."
+    });
+  }
+  
+  try {
+    const requestBody: Record<string, unknown> = {
+      api_key: tavilyApiKey,
+      query: args.query,
+      search_depth: args.search_depth || "basic",
+      include_answer: true,
+      include_raw_content: false,
+      max_results: 5,
+    };
+    
+    // Add domain filters if provided
+    if (args.include_domains) {
+      requestBody.include_domains = args.include_domains.split(',').map(d => d.trim());
+    }
+    if (args.exclude_domains) {
+      requestBody.exclude_domains = args.exclude_domains.split(',').map(d => d.trim());
+    }
+    
+    console.log('[Tool] Web search request:', { query: args.query, search_depth: args.search_depth });
+    
+    const response = await fetch('https://api.tavily.com/search', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(requestBody),
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('[Tool] Tavily API error:', response.status, errorText);
+      return JSON.stringify({
+        success: false,
+        error: `Ошибка поиска: ${response.status} - ${errorText}`
+      });
+    }
+    
+    const data = await response.json();
+    
+    // Format results for the model
+    const results = (data.results || []).map((r: { title: string; url: string; content: string; score?: number }) => ({
+      title: r.title,
+      url: r.url,
+      content: r.content,
+      relevance: r.score
+    }));
+    
+    return JSON.stringify({
+      success: true,
+      query: args.query,
+      answer: data.answer || null,
+      results,
+      sources_count: results.length
+    });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    console.error('[Tool] Web search error:', message);
+    return JSON.stringify({
+      success: false,
+      error: `Ошибка веб-поиска: ${message}`
+    });
+  }
+}
+
 // ============================================
 // Main Executor
 // ============================================
@@ -379,6 +490,9 @@ export async function executeToolCall(toolCall: ToolCall): Promise<ToolResult> {
       break;
     case "current_datetime":
       result = executeCurrentDatetime(args as unknown as DatetimeArgs);
+      break;
+    case "web_search":
+      result = await executeWebSearch(args as unknown as WebSearchArgs);
       break;
     default:
       result = JSON.stringify({ success: false, error: `Unknown tool: ${funcName}` });
