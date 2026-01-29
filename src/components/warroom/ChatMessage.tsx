@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { MarkdownRenderer } from './MarkdownRenderer';
 import { AttachmentPreview, Attachment } from './AttachmentPreview';
 import { ThinkingBlock } from './ThinkingBlock';
+import { ToolCallDisplay } from './ToolCallDisplay';
 import { 
   Brain, 
   Shield, 
@@ -28,7 +29,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Message, MessageRole } from '@/types/messages';
+import { Message, MessageRole, MessageMetadata } from '@/types/messages';
+import { ToolCall, ToolResult } from '@/types/tools';
 
 // User display info passed from parent
 export interface UserDisplayInfo {
@@ -136,12 +138,14 @@ export function ChatMessage({ message, userDisplayInfo, onDelete, onRatingChange
   const isUserMessage = message.role === 'user';
   const Icon = isUserMessage && userDisplayInfo?.isSupervisor ? Crown : config.icon;
 
-  // Get rating and attachments from metadata
+  // Get rating, attachments, and tool calls from metadata
   const metadataObj = (typeof message.metadata === 'object' && message.metadata !== null) 
-    ? message.metadata as Record<string, unknown>
-    : {};
+    ? message.metadata as MessageMetadata
+    : {} as MessageMetadata;
   const rating = (typeof metadataObj.rating === 'number' ? metadataObj.rating : 0);
   const attachments = (Array.isArray(metadataObj.attachments) ? metadataObj.attachments : []) as Attachment[];
+  const toolCalls = metadataObj.tool_calls as ToolCall[] | undefined;
+  const toolResults = metadataObj.tool_results as ToolResult[] | undefined;
 
   // Check if content is long enough to be collapsible
   const lines = message.content.split('\n');
@@ -186,6 +190,14 @@ export function ChatMessage({ message, userDisplayInfo, onDelete, onRatingChange
             reasoning={message.reasoning_path} 
             messageId={message.id}
             savedTranslation={message.reasoning_translated}
+          />
+        )}
+        
+        {/* Tool calls display for AI messages */}
+        {isAiMessage && toolCalls && toolCalls.length > 0 && (
+          <ToolCallDisplay 
+            toolCalls={toolCalls} 
+            toolResults={toolResults}
           />
         )}
         

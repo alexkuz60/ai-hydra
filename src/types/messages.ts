@@ -1,5 +1,7 @@
 // Common types for messages and attachments
 
+import { ToolCall, ToolResult } from './tools';
+
 export type MessageRole = 'user' | 'assistant' | 'critic' | 'arbiter' | 'consultant';
 
 export interface Attachment {
@@ -11,6 +13,9 @@ export interface Attachment {
 export interface MessageMetadata {
   attachments?: Attachment[];
   rating?: number;
+  // Tool calling support
+  tool_calls?: ToolCall[];
+  tool_results?: ToolResult[];
   [key: string]: unknown;
 }
 
