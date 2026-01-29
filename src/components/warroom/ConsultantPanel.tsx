@@ -94,13 +94,14 @@ export function ConsultantPanel({
     
     // Check if we have AI responses (sourceMessages > 1 means supervisor + AI responses)
     if (initialQuery.sourceMessages && initialQuery.sourceMessages.length > 1) {
-      // Has AI responses - auto-trigger moderator
+      // Has AI responses - auto-trigger moderator (hide user message with aggregated text)
       setIsModeratingContext(true);
       sendQuery(
         initialQuery.content,
         'moderator',
         selectedModel,
-        initialQuery.messageId
+        initialQuery.messageId,
+        true // hideUserMessage - don't show aggregated text in D-chat
       ).finally(() => {
         setIsModeratingContext(false);
         onClearInitialQuery?.();

@@ -30,7 +30,8 @@ interface UseConsultantChatReturn {
     content: string,
     mode: ConsultantMode,
     modelId: string,
-    sourceMessageId?: string | null
+    sourceMessageId?: string | null,
+    hideUserMessage?: boolean
   ) => Promise<void>;
   clearMessages: () => void;
 }
@@ -51,20 +52,10 @@ export function useConsultantChat({
   const [sending, setSending] = useState(false);
 
   const sendQuery = useCallback(
-    async (content: string, mode: ConsultantMode, modelId: string, sourceMessageId?: string | null) => {
+    async (content: string, mode: ConsultantMode, modelId: string, sourceMessageId?: string | null, hideUserMessage?: boolean) => {
       if (!sessionId || !content.trim() || !modelId) return;
 
       setSending(true);
-
-      // Add user message
-      const userMessage: ConsultantMessage = {
-        id: crypto.randomUUID(),
-        role: 'user',
-        content,
-        mode,
-        model_name: null,
-        created_at: new Date().toISOString(),
-      };
 
       // Add placeholder for AI response
       const placeholderId = crypto.randomUUID();
@@ -79,7 +70,20 @@ export function useConsultantChat({
         sourceMessageId: sourceMessageId || null,
       };
 
-      setMessages((prev) => [...prev, userMessage, placeholderMessage]);
+      // Add user message only if not hidden (for auto-moderation from navigator)
+      if (hideUserMessage) {
+        setMessages((prev) => [...prev, placeholderMessage]);
+      } else {
+        const userMessage: ConsultantMessage = {
+          id: crypto.randomUUID(),
+          role: 'user',
+          content,
+          mode,
+          model_name: null,
+          created_at: new Date().toISOString(),
+        };
+        setMessages((prev) => [...prev, userMessage, placeholderMessage]);
+      }
 
       try {
         const session = await supabase.auth.getSession();
