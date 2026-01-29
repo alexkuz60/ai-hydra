@@ -96,12 +96,23 @@ function calculateRequestCost(
 
 export type AgentRole = 'assistant' | 'critic' | 'arbiter' | 'consultant';
 
+// Available tools that can be toggled per model
+export const AVAILABLE_TOOL_IDS = ['calculator', 'current_datetime', 'web_search'] as const;
+export type ToolId = typeof AVAILABLE_TOOL_IDS[number];
+
+export const TOOL_INFO: Record<ToolId, { name: string; description: string; icon: string }> = {
+  calculator: { name: 'Калькулятор', description: 'Математические вычисления', icon: '🧮' },
+  current_datetime: { name: 'Дата/Время', description: 'Текущая дата и время', icon: '🕐' },
+  web_search: { name: 'Веб-поиск', description: 'Поиск в интернете (Tavily)', icon: '🔍' },
+};
+
 export interface SingleModelSettings {
   temperature: number;
   maxTokens: number;
   systemPrompt: string;
   role: AgentRole;
   enableTools: boolean;
+  enabledTools?: ToolId[]; // Specific tools enabled for this model
 }
 
 export interface PerModelSettingsData {
@@ -129,6 +140,7 @@ export const DEFAULT_MODEL_SETTINGS: SingleModelSettings = {
   systemPrompt: DEFAULT_SYSTEM_PROMPTS.assistant,
   role: 'assistant',
   enableTools: true,
+  enabledTools: [...AVAILABLE_TOOL_IDS], // All tools enabled by default
 };
 
 // Get short display name for model
@@ -371,18 +383,57 @@ export function PerModelSettings({ selectedModels, settings, onChange, className
                     </div>
 
                     {/* Enable Tools Toggle */}
-                    <div className="flex items-center justify-between py-2 px-3 rounded-lg bg-muted/30 border border-border/50">
-                      <div className="flex items-center gap-2">
-                        <Wrench className="h-4 w-4 text-muted-foreground" />
-                        <div>
-                          <Label className="text-sm font-medium">{t('settings.enableTools')}</Label>
-                          <p className="text-[10px] text-muted-foreground">{t('settings.enableToolsDesc')}</p>
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between py-2 px-3 rounded-lg bg-muted/30 border border-border/50">
+                        <div className="flex items-center gap-2">
+                          <Wrench className="h-4 w-4 text-muted-foreground" />
+                          <div>
+                            <Label className="text-sm font-medium">{t('settings.enableTools')}</Label>
+                            <p className="text-[10px] text-muted-foreground">{t('settings.enableToolsDesc')}</p>
+                          </div>
                         </div>
+                        <Switch
+                          checked={modelSettings.enableTools ?? true}
+                          onCheckedChange={(checked) => updateModelSettings(modelId, { enableTools: checked })}
+                        />
                       </div>
-                      <Switch
-                        checked={modelSettings.enableTools ?? true}
-                        onCheckedChange={(checked) => updateModelSettings(modelId, { enableTools: checked })}
-                      />
+
+                      {/* Individual Tool Selection */}
+                      {(modelSettings.enableTools ?? true) && (
+                        <div className="ml-2 pl-3 border-l-2 border-border/50 space-y-2">
+                          <Label className="text-xs text-muted-foreground">Доступные инструменты</Label>
+                          {AVAILABLE_TOOL_IDS.map((toolId) => {
+                            const toolInfo = TOOL_INFO[toolId];
+                            const enabledTools = modelSettings.enabledTools ?? [...AVAILABLE_TOOL_IDS];
+                            const isEnabled = enabledTools.includes(toolId);
+                            
+                            return (
+                              <div
+                                key={toolId}
+                                className="flex items-center justify-between py-1.5 px-2 rounded bg-background/50 border border-border/30"
+                              >
+                                <div className="flex items-center gap-2">
+                                  <span className="text-sm">{toolInfo.icon}</span>
+                                  <div>
+                                    <span className="text-xs font-medium">{toolInfo.name}</span>
+                                    <p className="text-[10px] text-muted-foreground">{toolInfo.description}</p>
+                                  </div>
+                                </div>
+                                <Switch
+                                  checked={isEnabled}
+                                  onCheckedChange={(checked) => {
+                                    const newEnabledTools = checked
+                                      ? [...enabledTools, toolId]
+                                      : enabledTools.filter(t => t !== toolId);
+                                    updateModelSettings(modelId, { enabledTools: newEnabledTools });
+                                  }}
+                                  className="scale-75"
+                                />
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
                     </div>
 
                     {/* Pricing Info */}

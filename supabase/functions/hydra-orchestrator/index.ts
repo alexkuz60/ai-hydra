@@ -22,6 +22,7 @@ interface ModelRequest {
   system_prompt?: string;
   role?: 'assistant' | 'critic' | 'arbiter';
   enable_tools?: boolean;
+  enabled_tools?: string[]; // Specific tools enabled for this model
 }
 
 interface Attachment {
@@ -201,7 +202,8 @@ async function callLovableAI(
   systemPrompt: string,
   temperature: number,
   maxTokens: number,
-  enableTools: boolean = true
+  enableTools: boolean = true,
+  enabledTools?: string[] // Specific tools enabled for this model
 ): Promise<{
   model: string;
   provider: string;
@@ -257,9 +259,16 @@ async function callLovableAI(
       ...tokenParam,
     };
 
-    // Add tools only if enabled
+    // Add tools only if enabled (filter by enabledTools if provided)
     if (enableTools && AVAILABLE_TOOLS.length > 0) {
-      requestBody.tools = AVAILABLE_TOOLS;
+      const filteredTools = enabledTools && enabledTools.length > 0
+        ? AVAILABLE_TOOLS.filter(t => enabledTools.includes(t.function.name))
+        : AVAILABLE_TOOLS;
+      
+      if (filteredTools.length > 0) {
+        requestBody.tools = filteredTools;
+        console.log(`[${model}] Tools enabled: ${filteredTools.map(t => t.function.name).join(', ')}`);
+      }
     }
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -661,7 +670,8 @@ serve(async (req) => {
           }
           // Use enhanced message (with document texts) and images for multimodal
           const enableTools = modelReq.enable_tools !== false; // Default to true
-          result = await callLovableAI(lovableKey, modelReq.model_id, enhancedMessage, images, systemPrompt, temperature, maxTokens, enableTools);
+          const enabledTools = modelReq.enabled_tools;
+          result = await callLovableAI(lovableKey, modelReq.model_id, enhancedMessage, images, systemPrompt, temperature, maxTokens, enableTools, enabledTools);
         } else {
           // Use personal API key
           let apiKey: string | null = null;
