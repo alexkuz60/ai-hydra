@@ -30,11 +30,36 @@ function formatArguments(args: string): string {
   }
 }
 
-function formatResult(result: ToolResult): { success: boolean; display: string } {
+interface SearchResult {
+  title: string;
+  url: string;
+  content: string;
+  relevance?: number;
+}
+
+interface ParsedSearchResult {
+  success: boolean;
+  query?: string;
+  answer?: string | null;
+  results?: SearchResult[];
+  sources_count?: number;
+  error?: string;
+}
+
+function formatResult(result: ToolResult, toolName: string): { success: boolean; display: string; searchData?: ParsedSearchResult } {
   const parsed = result.parsed || parseToolResult(result.content);
   
   if (!parsed.success) {
     return { success: false, display: parsed.error || 'Ошибка выполнения' };
+  }
+  
+  // Special handling for web_search
+  if (toolName === 'web_search') {
+    const searchData = parsed as ParsedSearchResult;
+    if (searchData.answer) {
+      return { success: true, display: searchData.answer, searchData };
+    }
+    return { success: true, display: `Найдено ${searchData.sources_count || 0} результатов`, searchData };
   }
   
   // Format based on tool type
@@ -72,7 +97,8 @@ export function ToolCallDisplay({ toolCalls, toolResults, isExecuting }: ToolCal
         const Icon = getToolIcon(call.function.name);
         const result = resultsMap.get(call.id);
         const hasResult = !!result;
-        const formattedResult = result ? formatResult(result) : null;
+        const formattedResult = result ? formatResult(result, call.function.name) : null;
+        const isWebSearch = call.function.name === 'web_search';
         
         return (
           <div 
@@ -125,11 +151,29 @@ export function ToolCallDisplay({ toolCalls, toolResults, isExecuting }: ToolCal
               {/* Result */}
               {hasResult && formattedResult && (
                 <div className={cn(
-                  "text-sm mt-1.5 font-medium",
+                  "text-sm mt-1.5",
                   formattedResult.success ? "text-accent-foreground" : "text-destructive"
                 )}>
                   {formattedResult.success ? '→ ' : '✗ '}
-                  {formattedResult.display}
+                  <span className="font-medium">{formattedResult.display}</span>
+                  
+                  {/* Web search sources */}
+                  {isWebSearch && formattedResult.searchData?.results && formattedResult.searchData.results.length > 0 && (
+                    <div className="mt-2 space-y-1">
+                      {formattedResult.searchData.results.slice(0, 3).map((source, idx) => (
+                        <a
+                          key={idx}
+                          href={source.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors"
+                        >
+                          <span className="text-primary/60">[{idx + 1}]</span>
+                          <span className="truncate">{source.title}</span>
+                        </a>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
