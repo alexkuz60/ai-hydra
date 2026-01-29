@@ -21,6 +21,7 @@ interface ModelRequest {
   max_tokens?: number;
   system_prompt?: string;
   role?: 'assistant' | 'critic' | 'arbiter';
+  enable_tools?: boolean;
 }
 
 interface Attachment {
@@ -659,7 +660,8 @@ serve(async (req) => {
             throw new Error("Lovable AI not configured");
           }
           // Use enhanced message (with document texts) and images for multimodal
-          result = await callLovableAI(lovableKey, modelReq.model_id, enhancedMessage, images, systemPrompt, temperature, maxTokens);
+          const enableTools = modelReq.enable_tools !== false; // Default to true
+          result = await callLovableAI(lovableKey, modelReq.model_id, enhancedMessage, images, systemPrompt, temperature, maxTokens, enableTools);
         } else {
           // Use personal API key
           let apiKey: string | null = null;

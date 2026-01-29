@@ -27,7 +27,8 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
-import { Settings, ChevronDown, ChevronUp, RotateCcw, Copy, DollarSign, Pencil, Save, Undo2, Library, Clipboard, Trash2 } from 'lucide-react';
+import { Settings, ChevronDown, ChevronUp, RotateCcw, Copy, DollarSign, Pencil, Save, Undo2, Library, Clipboard, Trash2, Wrench } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
 import { PromptLibraryPicker } from './PromptLibraryPicker';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -100,6 +101,7 @@ export interface SingleModelSettings {
   maxTokens: number;
   systemPrompt: string;
   role: AgentRole;
+  enableTools: boolean;
 }
 
 export interface PerModelSettingsData {
@@ -126,6 +128,7 @@ export const DEFAULT_MODEL_SETTINGS: SingleModelSettings = {
   maxTokens: 2048,
   systemPrompt: DEFAULT_SYSTEM_PROMPTS.assistant,
   role: 'assistant',
+  enableTools: true,
 };
 
 // Get short display name for model
@@ -365,6 +368,21 @@ export function PerModelSettings({ selectedModels, settings, onChange, className
                           <SelectItem value="consultant">{t('role.consultant')}</SelectItem>
                         </SelectContent>
                       </Select>
+                    </div>
+
+                    {/* Enable Tools Toggle */}
+                    <div className="flex items-center justify-between py-2 px-3 rounded-lg bg-muted/30 border border-border/50">
+                      <div className="flex items-center gap-2">
+                        <Wrench className="h-4 w-4 text-muted-foreground" />
+                        <div>
+                          <Label className="text-sm font-medium">{t('settings.enableTools')}</Label>
+                          <p className="text-[10px] text-muted-foreground">{t('settings.enableToolsDesc')}</p>
+                        </div>
+                      </div>
+                      <Switch
+                        checked={modelSettings.enableTools ?? true}
+                        onCheckedChange={(checked) => updateModelSettings(modelId, { enableTools: checked })}
+                      />
                     </div>
 
                     {/* Pricing Info */}

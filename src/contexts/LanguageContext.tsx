@@ -213,6 +213,8 @@ const translations: Translations = {
   'settings.promptPasted': { ru: 'Промпт вставлен', en: 'Prompt pasted' },
   'settings.promptTokens': { ru: 'токенов', en: 'tokens' },
   'settings.promptCost': { ru: 'стоимость', en: 'cost' },
+  'settings.enableTools': { ru: 'Инструменты', en: 'Tools' },
+  'settings.enableToolsDesc': { ru: 'Калькулятор, дата и время', en: 'Calculator, date and time' },
 
   // Prompt Library
   'promptLibrary.title': { ru: 'Библиотека промптов', en: 'Prompt Library' },

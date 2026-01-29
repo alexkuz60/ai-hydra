@@ -183,6 +183,7 @@ export function useSendMessage({
           max_tokens: settings.maxTokens,
           system_prompt: settings.systemPrompt,
           role: settings.role,
+          enable_tools: settings.enableTools ?? true,
         };
       });
 
@@ -241,6 +242,7 @@ export function useSendMessage({
         max_tokens: settings.maxTokens,
         system_prompt: settings.systemPrompt || DEFAULT_MODEL_SETTINGS.systemPrompt,
         role: 'consultant' as const,
+        enable_tools: settings.enableTools ?? true,
       };
 
       await callOrchestrator(messageContent, attachmentUrls, [consultantModel]);
