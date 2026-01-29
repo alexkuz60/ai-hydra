@@ -17,6 +17,7 @@ const Tasks = lazy(() => import("./pages/Tasks"));
 const ExpertPanel = lazy(() => import("./pages/ExpertPanel"));
 const ModelRatings = lazy(() => import("./pages/ModelRatings"));
 const RoleLibrary = lazy(() => import("./pages/RoleLibrary"));
+const ToolsLibrary = lazy(() => import("./pages/ToolsLibrary"));
 const Admin = lazy(() => import("./pages/Admin"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
@@ -48,6 +49,7 @@ const App = () => (
                   <Route path="/expert-panel" element={<ExpertPanel />} />
                   <Route path="/model-ratings" element={<ModelRatings />} />
                   <Route path="/role-library" element={<RoleLibrary />} />
+                  <Route path="/tools-library" element={<ToolsLibrary />} />
                   <Route path="/war-room" element={<Navigate to="/expert-panel" replace />} />
                   <Route path="/admin" element={<Admin />} />
                   <Route path="*" element={<NotFound />} />

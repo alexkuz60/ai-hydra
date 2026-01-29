@@ -14,6 +14,48 @@ export type Database = {
   }
   public: {
     Tables: {
+      custom_tools: {
+        Row: {
+          created_at: string
+          description: string
+          display_name: string
+          id: string
+          is_shared: boolean
+          name: string
+          parameters: Json
+          prompt_template: string
+          updated_at: string
+          usage_count: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          display_name: string
+          id?: string
+          is_shared?: boolean
+          name: string
+          parameters?: Json
+          prompt_template: string
+          updated_at?: string
+          usage_count?: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          display_name?: string
+          id?: string
+          is_shared?: boolean
+          name?: string
+          parameters?: Json
+          prompt_template?: string
+          updated_at?: string
+          usage_count?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
       messages: {
         Row: {
           confidence_score: number | null

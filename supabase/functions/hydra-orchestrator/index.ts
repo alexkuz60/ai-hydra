@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { AVAILABLE_TOOLS, executeToolCalls, ToolCall, ToolResult } from "./tools.ts";
+import { AVAILABLE_TOOLS, executeToolCalls, ToolCall, ToolResult, registerCustomTools } from "./tools.ts";
 // Note: PDF/DOCX extraction temporarily disabled due to esm.sh issues
 // import { getDocument } from "https://esm.sh/pdfjs-serverless";
 // import mammoth from "https://esm.sh/mammoth@1.6.0";
@@ -22,7 +22,22 @@ interface ModelRequest {
   system_prompt?: string;
   role?: 'assistant' | 'critic' | 'arbiter';
   enable_tools?: boolean;
-  enabled_tools?: string[]; // Specific tools enabled for this model
+  enabled_tools?: string[]; // Built-in tools enabled for this model
+  enabled_custom_tools?: string[]; // Custom tool IDs enabled for this model
+}
+
+interface CustomToolDef {
+  id: string;
+  name: string;
+  display_name: string;
+  description: string;
+  prompt_template: string;
+  parameters: Array<{
+    name: string;
+    type: 'string' | 'number' | 'boolean';
+    description: string;
+    required: boolean;
+  }>;
 }
 
 interface Attachment {
@@ -203,7 +218,8 @@ async function callLovableAI(
   temperature: number,
   maxTokens: number,
   enableTools: boolean = true,
-  enabledTools?: string[] // Specific tools enabled for this model
+  enabledTools?: string[], // Built-in tools enabled for this model
+  customTools?: CustomToolDef[] // Custom tools enabled for this model
 ): Promise<{
   model: string;
   provider: string;
@@ -240,6 +256,11 @@ async function callLovableAI(
     { role: "user", content: userContent },
   ];
 
+  // Register custom tools for this request
+  if (customTools && customTools.length > 0) {
+    registerCustomTools(customTools);
+  }
+
   // Track all tool calls and results across iterations
   const allToolCalls: ToolCall[] = [];
   const allToolResults: ToolResult[] = [];
@@ -260,14 +281,51 @@ async function callLovableAI(
     };
 
     // Add tools only if enabled (filter by enabledTools if provided)
-    if (enableTools && AVAILABLE_TOOLS.length > 0) {
-      const filteredTools = enabledTools && enabledTools.length > 0
-        ? AVAILABLE_TOOLS.filter(t => enabledTools.includes(t.function.name))
-        : AVAILABLE_TOOLS;
+    if (enableTools) {
+      const allTools: typeof AVAILABLE_TOOLS = [];
       
-      if (filteredTools.length > 0) {
-        requestBody.tools = filteredTools;
-        console.log(`[${model}] Tools enabled: ${filteredTools.map(t => t.function.name).join(', ')}`);
+      // Add built-in tools
+      if (AVAILABLE_TOOLS.length > 0) {
+        const filteredBuiltIn = enabledTools && enabledTools.length > 0
+          ? AVAILABLE_TOOLS.filter(t => enabledTools.includes(t.function.name))
+          : AVAILABLE_TOOLS;
+        allTools.push(...filteredBuiltIn);
+      }
+      
+      // Add custom tools (convert to OpenAI tool format)
+      if (customTools && customTools.length > 0) {
+        for (const ct of customTools) {
+          const properties: Record<string, { type: string; description?: string }> = {};
+          const required: string[] = [];
+          
+          for (const param of ct.parameters) {
+            properties[param.name] = {
+              type: param.type,
+              description: param.description,
+            };
+            if (param.required) {
+              required.push(param.name);
+            }
+          }
+          
+          allTools.push({
+            type: "function",
+            function: {
+              name: `custom_${ct.name}`,
+              description: ct.description,
+              parameters: {
+                type: "object",
+                properties,
+                required,
+              },
+            },
+          });
+        }
+      }
+      
+      if (allTools.length > 0) {
+        requestBody.tools = allTools;
+        console.log(`[${model}] Tools enabled: ${allTools.map(t => t.function.name).join(', ')}`);
       }
     }
 
@@ -637,6 +695,42 @@ serve(async (req) => {
     const lovableKey = Deno.env.get("LOVABLE_API_KEY");
     const isAdmin = profile?.username === "AlexKuz";
 
+    // Collect all custom tool IDs needed across all models
+    const allCustomToolIds = new Set<string>();
+    for (const m of models) {
+      if (m.enabled_custom_tools) {
+        for (const id of m.enabled_custom_tools) {
+          allCustomToolIds.add(id);
+        }
+      }
+    }
+
+    // Fetch custom tools from database if any are enabled
+    let customToolsMap: Map<string, CustomToolDef> = new Map();
+    if (allCustomToolIds.size > 0) {
+      console.log(`Fetching ${allCustomToolIds.size} custom tools...`);
+      const { data: customToolsData, error: customToolsError } = await supabase
+        .from('custom_tools')
+        .select('id, name, display_name, description, prompt_template, parameters')
+        .in('id', Array.from(allCustomToolIds));
+      
+      if (customToolsError) {
+        console.error('Error fetching custom tools:', customToolsError);
+      } else if (customToolsData) {
+        for (const ct of customToolsData) {
+          customToolsMap.set(ct.id, {
+            id: ct.id,
+            name: ct.name,
+            display_name: ct.display_name,
+            description: ct.description,
+            prompt_template: ct.prompt_template,
+            parameters: (ct.parameters as CustomToolDef['parameters']) || [],
+          });
+        }
+        console.log(`Loaded ${customToolsMap.size} custom tools`);
+      }
+    }
+
     const errors: { model: string; error: string }[] = [];
 
     console.log(`Processing ${models.length} models:`, models.map(m => m.model_id));
@@ -671,7 +765,19 @@ serve(async (req) => {
           // Use enhanced message (with document texts) and images for multimodal
           const enableTools = modelReq.enable_tools !== false; // Default to true
           const enabledTools = modelReq.enabled_tools;
-          result = await callLovableAI(lovableKey, modelReq.model_id, enhancedMessage, images, systemPrompt, temperature, maxTokens, enableTools, enabledTools);
+          
+          // Get custom tools for this model
+          const modelCustomTools: CustomToolDef[] = [];
+          if (modelReq.enabled_custom_tools) {
+            for (const ctId of modelReq.enabled_custom_tools) {
+              const ct = customToolsMap.get(ctId);
+              if (ct) {
+                modelCustomTools.push(ct);
+              }
+            }
+          }
+          
+          result = await callLovableAI(lovableKey, modelReq.model_id, enhancedMessage, images, systemPrompt, temperature, maxTokens, enableTools, enabledTools, modelCustomTools);
         } else {
           // Use personal API key
           let apiKey: string | null = null;

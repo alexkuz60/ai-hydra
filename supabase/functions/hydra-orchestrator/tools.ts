@@ -462,6 +462,68 @@ async function executeWebSearch(args: WebSearchArgs): Promise<string> {
 }
 
 // ============================================
+// Custom Tool Interface
+// ============================================
+
+export interface CustomToolDefinition {
+  id: string;
+  name: string;
+  display_name: string;
+  description: string;
+  prompt_template: string;
+  parameters: Array<{
+    name: string;
+    type: 'string' | 'number' | 'boolean';
+    description: string;
+    required: boolean;
+  }>;
+}
+
+// Store for custom tools during execution
+let customToolsRegistry: Map<string, CustomToolDefinition> = new Map();
+
+export function registerCustomTools(tools: CustomToolDefinition[]): void {
+  customToolsRegistry.clear();
+  for (const tool of tools) {
+    customToolsRegistry.set(`custom_${tool.name}`, tool);
+  }
+  console.log(`[Tools] Registered ${tools.length} custom tools`);
+}
+
+// Execute a custom tool by substituting parameters into the prompt template
+function executeCustomTool(toolName: string, args: Record<string, unknown>): string {
+  const customTool = customToolsRegistry.get(toolName);
+  if (!customTool) {
+    return JSON.stringify({ success: false, error: `Custom tool not found: ${toolName}` });
+  }
+  
+  // Substitute parameters in the prompt template
+  let result = customTool.prompt_template;
+  for (const [key, value] of Object.entries(args)) {
+    const placeholder = `{{${key}}}`;
+    result = result.replaceAll(placeholder, String(value));
+  }
+  
+  // Check for missing required parameters
+  const missingParams = customTool.parameters
+    .filter(p => p.required && (args[p.name] === undefined || args[p.name] === ''))
+    .map(p => p.name);
+  
+  if (missingParams.length > 0) {
+    return JSON.stringify({
+      success: false,
+      error: `Missing required parameters: ${missingParams.join(', ')}`
+    });
+  }
+  
+  return JSON.stringify({
+    success: true,
+    tool_name: customTool.display_name,
+    result: result.trim()
+  });
+}
+
+// ============================================
 // Main Executor
 // ============================================
 
@@ -484,18 +546,23 @@ export async function executeToolCall(toolCall: ToolCall): Promise<ToolResult> {
   
   let result: string;
   
-  switch (funcName) {
-    case "calculator":
-      result = executeCalculator(args as unknown as CalculatorArgs);
-      break;
-    case "current_datetime":
-      result = executeCurrentDatetime(args as unknown as DatetimeArgs);
-      break;
-    case "web_search":
-      result = await executeWebSearch(args as unknown as WebSearchArgs);
-      break;
-    default:
-      result = JSON.stringify({ success: false, error: `Unknown tool: ${funcName}` });
+  // Check if it's a custom tool (prefixed with "custom_")
+  if (funcName.startsWith("custom_")) {
+    result = executeCustomTool(funcName, args);
+  } else {
+    switch (funcName) {
+      case "calculator":
+        result = executeCalculator(args as unknown as CalculatorArgs);
+        break;
+      case "current_datetime":
+        result = executeCurrentDatetime(args as unknown as DatetimeArgs);
+        break;
+      case "web_search":
+        result = await executeWebSearch(args as unknown as WebSearchArgs);
+        break;
+      default:
+        result = JSON.stringify({ success: false, error: `Unknown tool: ${funcName}` });
+    }
   }
   
   console.log(`[Tool] ${funcName} result:`, result);

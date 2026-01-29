@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -27,12 +27,13 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
-import { Settings, ChevronDown, ChevronUp, RotateCcw, Copy, DollarSign, Pencil, Save, Undo2, Library, Clipboard, Trash2, Wrench } from 'lucide-react';
+import { Settings, ChevronDown, ChevronUp, RotateCcw, Copy, DollarSign, Pencil, Save, Undo2, Library, Clipboard, Trash2, Wrench, User } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { PromptLibraryPicker } from './PromptLibraryPicker';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { useCustomTools, CustomTool } from '@/hooks/useCustomTools';
 
 // Pricing per 1M tokens (input/output) in USD
 interface ModelPricing {
@@ -112,7 +113,8 @@ export interface SingleModelSettings {
   systemPrompt: string;
   role: AgentRole;
   enableTools: boolean;
-  enabledTools?: ToolId[]; // Specific tools enabled for this model
+  enabledTools?: ToolId[]; // Built-in tools enabled for this model
+  enabledCustomTools?: string[]; // Custom tool IDs enabled for this model
 }
 
 export interface PerModelSettingsData {
@@ -140,7 +142,8 @@ export const DEFAULT_MODEL_SETTINGS: SingleModelSettings = {
   systemPrompt: DEFAULT_SYSTEM_PROMPTS.assistant,
   role: 'assistant',
   enableTools: true,
-  enabledTools: [...AVAILABLE_TOOL_IDS], // All tools enabled by default
+  enabledTools: [...AVAILABLE_TOOL_IDS], // All built-in tools enabled by default
+  enabledCustomTools: [], // No custom tools enabled by default
 };
 
 // Get short display name for model
@@ -163,6 +166,7 @@ function getModelShortName(modelId: string): string {
 export function PerModelSettings({ selectedModels, settings, onChange, className, currentMessage = '' }: PerModelSettingsProps) {
   const { t } = useLanguage();
   const { user } = useAuth();
+  const { tools: customTools, loading: customToolsLoading } = useCustomTools();
   const [isOpen, setIsOpen] = useState(true);
   const [activeTab, setActiveTab] = useState<string>(() => selectedModels[0] || '');
   const [editingPromptModel, setEditingPromptModel] = useState<string | null>(null);
@@ -432,6 +436,45 @@ export function PerModelSettings({ selectedModels, settings, onChange, className
                               </div>
                             );
                           })}
+                          
+                          {/* Custom Tools Section */}
+                          {customTools.length > 0 && (
+                            <>
+                              <div className="flex items-center gap-2 mt-3 pt-2 border-t border-border/30">
+                                <User className="h-3 w-3 text-muted-foreground" />
+                                <Label className="text-xs text-muted-foreground">Пользовательские инструменты</Label>
+                              </div>
+                              {customTools.map((tool) => {
+                                const enabledCustomTools = modelSettings.enabledCustomTools ?? [];
+                                const isEnabled = enabledCustomTools.includes(tool.id);
+                                
+                                return (
+                                  <div
+                                    key={tool.id}
+                                    className="flex items-center justify-between py-1.5 px-2 rounded bg-background/50 border border-border/30"
+                                  >
+                                    <div className="flex items-center gap-2 min-w-0">
+                                      <Wrench className="h-3.5 w-3.5 text-primary shrink-0" />
+                                      <div className="min-w-0">
+                                        <span className="text-xs font-medium truncate block">{tool.display_name}</span>
+                                        <p className="text-[10px] text-muted-foreground truncate">{tool.description}</p>
+                                      </div>
+                                    </div>
+                                    <Switch
+                                      checked={isEnabled}
+                                      onCheckedChange={(checked) => {
+                                        const newEnabledCustomTools = checked
+                                          ? [...enabledCustomTools, tool.id]
+                                          : enabledCustomTools.filter(id => id !== tool.id);
+                                        updateModelSettings(modelId, { enabledCustomTools: newEnabledCustomTools });
+                                      }}
+                                      className="scale-75 shrink-0"
+                                    />
+                                  </div>
+                                );
+                              })}
+                            </>
+                          )}
                         </div>
                       )}
                     </div>
