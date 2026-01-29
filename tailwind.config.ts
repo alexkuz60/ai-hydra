@@ -69,6 +69,7 @@ export default {
           warning: "hsl(var(--hydra-warning))",
           expert: "hsl(var(--hydra-expert))",
           arbiter: "hsl(var(--hydra-arbiter))",
+          consultant: "hsl(var(--hydra-consultant))",
           surface: "hsl(var(--hydra-surface))",
           "surface-elevated": "hsl(var(--hydra-surface-elevated))",
         },

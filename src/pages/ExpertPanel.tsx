@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 import { cn } from '@/lib/utils';
-
+import { ConsultantPanel } from '@/components/warroom/ConsultantPanel';
 import { ChatMessage, UserDisplayInfo } from '@/components/warroom/ChatMessage';
 import { ChatTreeNav } from '@/components/warroom/ChatTreeNav';
 import { FileUpload } from '@/components/warroom/FileUpload';
@@ -20,6 +20,7 @@ import { useMessageCollapseState } from '@/hooks/useMessageCollapseState';
 import { useSession } from '@/hooks/useSession';
 import { useMessages } from '@/hooks/useMessages';
 import { useSendMessage } from '@/hooks/useSendMessage';
+import { useConsultantPanelWidth } from '@/hooks/useConsultantPanelWidth';
 import { 
   Send, 
   Loader2, 
@@ -38,6 +39,9 @@ export default function ExpertPanel() {
   const messageRefs = useRef<Map<string, HTMLDivElement>>(new Map());
   const [input, setInput] = useState('');
   const [selectedConsultant, setSelectedConsultant] = useState<string | null>(null);
+  
+  // D-Chat panel width persistence
+  const { width: consultantPanelWidth, saveWidth: saveConsultantPanelWidth, isCollapsed: isDChatCollapsed } = useConsultantPanelWidth();
 
   // User display info for chat messages
   const userDisplayInfo: UserDisplayInfo = {
@@ -192,7 +196,7 @@ export default function ExpertPanel() {
           <ResizableHandle withHandle />
 
           {/* Main Content */}
-          <ResizablePanel defaultSize={80}>
+          <ResizablePanel defaultSize={80 - consultantPanelWidth} minSize={40}>
             <div className="h-full flex flex-col min-w-0">
               {/* Task Header */}
               <div className="border-b border-border p-3 bg-background/50 flex items-center gap-4">
@@ -355,6 +359,23 @@ export default function ExpertPanel() {
                 </div>
               </div>
             </div>
+          </ResizablePanel>
+
+          <ResizableHandle withHandle />
+
+          {/* D-Chat Panel */}
+          <ResizablePanel
+            defaultSize={consultantPanelWidth}
+            minSize={3}
+            maxSize={30}
+            onResize={saveConsultantPanelWidth}
+          >
+            <ConsultantPanel
+              sessionId={currentTask?.id || null}
+              availableModels={allAvailableModels}
+              isCollapsed={isDChatCollapsed}
+              onExpand={() => saveConsultantPanelWidth(20)}
+            />
           </ResizablePanel>
         </ResizablePanelGroup>
       </div>
