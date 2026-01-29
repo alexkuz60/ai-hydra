@@ -1,145 +1,181 @@
 
 
-## План: Исправление навигации на последний активный чат
+# План: Tool Calling (Function Calling) в hydra-orchestrator
 
-### Проблема
-При обновлении страницы Expert Panel всегда загружается сессия "Выбор ИИ для уеб-поиска", хотя последние сообщения были в другой сессии ("БПФ - код и математика").
+## Обзор
 
-### Причина
-Текущая логика сортирует сессии по полю `updated_at`, которое обновляется при любом изменении записи в таблице `sessions` (например, при изменении конфигурации моделей). Это не отражает реальную активность чата.
+Добавление поддержки вызова внешних инструментов (Tool Calling) позволит AI-моделям в AI-Hydra выполнять действия: веб-поиск, вычисления, обращение к API и другие операции во время генерации ответа.
 
-**Данные из базы:**
-| Сессия | updated_at | Последнее сообщение |
-|--------|------------|---------------------|
-| Выбор ИИ для уеб-поиска | 27 янв 15:32 | 26 янв 18:59 |
-| БПФ - код и математика | 26 янв 19:09 | **28 янв 10:57** ✓ |
-
-### Решение
-Изменить запрос `fetchLastTask()` так, чтобы определять "последний чат" по времени последнего сообщения, а не по `updated_at` сессии.
-
----
-
-### Изменения
-
-**Файл: `src/pages/ExpertPanel.tsx`**
-
-Функция `fetchLastTask()` (строки 193-230):
-
-**Текущий код:**
-```typescript
-const { data, error } = await supabase
-  .from('sessions')
-  .select('id, title, session_config')
-  .eq('user_id', user.id)
-  .order('updated_at', { ascending: false })
-  .limit(1)
-  .single();
-```
-
-**Новый код с подзапросом к сообщениям:**
-```typescript
-// Получаем сессию с самым последним сообщением
-const { data, error } = await supabase
-  .from('messages')
-  .select('session_id, sessions!inner(id, title, session_config, user_id)')
-  .eq('sessions.user_id', user.id)
-  .order('created_at', { ascending: false })
-  .limit(1)
-  .single();
-
-if (error || !data) {
-  // Нет сообщений — ищем сессию без сообщений (fallback)
-  const { data: emptySession } = await supabase
-    .from('sessions')
-    .select('id, title, session_config')
-    .eq('user_id', user.id)
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .single();
-    
-  if (!emptySession) {
-    navigate('/tasks');
-    return;
-  }
-  
-  setCurrentTask(emptySession);
-  // ... apply config
-  fetchMessages(emptySession.id);
-  return;
-}
-
-const session = data.sessions;
-setCurrentTask({ id: session.id, title: session.title });
-// ... apply config from session.session_config
-fetchMessages(session.id);
-```
-
----
-
-### Логика работы
+## Архитектура решения
 
 ```text
-┌─────────────────────────────────────────────────────────────┐
-│               Новая логика fetchLastTask()                  │
-├─────────────────────────────────────────────────────────────┤
-│                                                             │
-│  1. SELECT session_id FROM messages                         │
-│     JOIN sessions                                           │
-│     WHERE sessions.user_id = current_user                   │
-│     ORDER BY messages.created_at DESC                       │
-│     LIMIT 1                                                 │
-│                       │                                     │
-│                       ▼                                     │
-│  ┌─────────────────────────────────────────────────┐        │
-│  │ Найдена сессия с сообщениями?                   │        │
-│  │                                                 │        │
-│  │  ДА  ─────► Загрузить эту сессию               │        │
-│  │                                                 │        │
-│  │  НЕТ ─────► Fallback: сессия по created_at     │        │
-│  │             (пустые сессии или новый юзер)      │        │
-│  └─────────────────────────────────────────────────┘        │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
+┌─────────────────┐     ┌────────────────────┐     ┌─────────────────┐
+│    Frontend     │────▶│  hydra-orchestrator │────▶│   AI Model      │
+│  (ExpertPanel)  │     │                    │     │  (with tools)   │
+└─────────────────┘     └────────┬───────────┘     └────────┬────────┘
+                                 │                          │
+                                 │  ◀── tool_calls ─────────┘
+                                 │
+                        ┌────────▼───────────┐
+                        │   Tool Executor    │
+                        │  ┌───────────────┐ │
+                        │  │ Web Search    │ │
+                        │  │ Calculator    │ │
+                        │  │ Code Execute  │ │
+                        │  │ External API  │ │
+                        │  └───────────────┘ │
+                        └────────────────────┘
 ```
+
+## Фазы реализации
+
+### Фаза 1: Базовая инфраструктура Tool Calling
+
+**1.1. Типы и интерфейсы для инструментов**
+
+Создать файл определений инструментов с поддержкой:
+- `ToolDefinition` - схема инструмента (name, description, parameters)
+- `ToolCall` - запрос на вызов от модели
+- `ToolResult` - результат выполнения
+
+**1.2. Обновление hydra-orchestrator**
+
+Модифицировать функции `callLovableAI` и `callPersonalModel`:
+- Добавить параметр `tools` в запросы к API
+- Обработать ответы с `tool_calls` 
+- Реализовать цикл: запрос → tool_calls → выполнение → продолжение
+
+**1.3. Tool Executor**
+
+Создать исполнитель инструментов:
+```text
+executeTools(toolCalls) → Promise<ToolResult[]>
+```
+
+### Фаза 2: Встроенные инструменты
+
+**2.1. Калькулятор (`calculator`)**
+- Безопасное вычисление математических выражений
+- Поддержка базовых и научных операций
+
+**2.2. Текущая дата/время (`current_datetime`)**
+- Возврат текущего времени в разных форматах
+- Поддержка часовых поясов
+
+**2.3. Веб-поиск (`web_search`)** (опционально)
+- Интеграция с API поиска (Tavily, SerpAPI)
+- Требует настройки API-ключа
+
+### Фаза 3: UI и отображение
+
+**3.1. Обновление типа Message**
+
+Расширить `metadata` для хранения информации о tool calls:
+```typescript
+metadata: {
+  tool_calls?: ToolCall[];
+  tool_results?: ToolResult[];
+}
+```
+
+**3.2. Компонент ToolCallDisplay**
+
+Создать компонент для отображения:
+- Иконка и название инструмента
+- Параметры вызова
+- Результат выполнения
+- Статус (выполняется/завершён/ошибка)
+
+**3.3. Интеграция в ChatMessage**
+
+Обновить ChatMessage для рендеринга tool calls между блоками текста.
 
 ---
 
-### Альтернативный подход (без JOIN)
+## Технические детали
 
-Если join через сообщения не работает корректно с типами, можно использовать двухэтапный запрос:
+### Изменения в файлах
+
+| Файл | Изменение |
+|------|-----------|
+| `supabase/functions/hydra-orchestrator/index.ts` | Добавить tools в API-запросы, реализовать цикл обработки tool_calls |
+| `supabase/functions/hydra-orchestrator/tools.ts` | Новый файл: определения и исполнители инструментов |
+| `src/types/messages.ts` | Расширить типы для tool_calls |
+| `src/components/warroom/ToolCallDisplay.tsx` | Новый компонент отображения |
+| `src/components/warroom/ChatMessage.tsx` | Интеграция ToolCallDisplay |
+
+### Формат Tool Calling (OpenAI-совместимый)
 
 ```typescript
-// 1. Найти сессию с последним сообщением
-const { data: lastMessage } = await supabase
-  .from('messages')
-  .select('session_id')
-  .eq('user_id', user.id)
-  .order('created_at', { ascending: false })
-  .limit(1)
-  .single();
-
-if (lastMessage) {
-  // 2. Загрузить эту сессию
-  return fetchTask(lastMessage.session_id);
+// Запрос к API
+{
+  tools: [{
+    type: "function",
+    function: {
+      name: "calculator",
+      description: "Evaluate mathematical expressions",
+      parameters: {
+        type: "object",
+        properties: {
+          expression: { type: "string" }
+        },
+        required: ["expression"]
+      }
+    }
+  }]
 }
 
-// 3. Fallback на сессию без сообщений
-const { data: fallbackSession } = await supabase
-  .from('sessions')
-  .select('id, title, session_config')
-  .eq('user_id', user.id)
-  .order('created_at', { ascending: false })
-  .limit(1)
-  .single();
+// Ответ с tool_call
+{
+  choices: [{
+    message: {
+      tool_calls: [{
+        id: "call_123",
+        type: "function",
+        function: {
+          name: "calculator",
+          arguments: '{"expression": "2+2*3"}'
+        }
+      }]
+    }
+  }]
+}
 ```
 
-Этот подход проще и надёжнее для типизации.
+### Цикл обработки в orchestrator
+
+```text
+1. Отправить запрос с tools
+2. Если ответ содержит tool_calls:
+   a. Выполнить каждый tool call
+   b. Собрать результаты
+   c. Отправить новый запрос с tool results
+   d. Повторить с шага 2
+3. Вернуть финальный ответ
+```
+
+### Ограничения безопасности
+
+- Максимум 5 итераций tool calling (защита от бесконечных циклов)
+- Таймаут на выполнение инструмента: 30 секунд
+- Валидация входных параметров через JSON Schema
+- Логирование всех вызовов для аудита
 
 ---
 
-### Шаги реализации
+## Порядок реализации
 
-1. Изменить `fetchLastTask()` в `ExpertPanel.tsx` для сортировки по последнему сообщению
-2. Добавить fallback для сессий без сообщений
-3. Протестировать навигацию при обновлении страницы
+1. **Шаг 1**: Создать `tools.ts` с типами и базовыми инструментами (calculator, datetime)
+2. **Шаг 2**: Обновить `hydra-orchestrator/index.ts` - добавить tools в запросы
+3. **Шаг 3**: Реализовать цикл обработки tool_calls
+4. **Шаг 4**: Создать `ToolCallDisplay.tsx` компонент
+5. **Шаг 5**: Обновить `ChatMessage.tsx` для отображения tool calls
+6. **Шаг 6**: Расширить типы в `src/types/messages.ts`
+
+## Ожидаемый результат
+
+После реализации AI-модели смогут:
+- Выполнять вычисления ("Посчитай 15% от 2500")
+- Узнавать текущее время ("Который сейчас час в Токио?")
+- Расширяться новыми инструментами через конфигурацию
 
