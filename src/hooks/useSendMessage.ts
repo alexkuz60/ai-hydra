@@ -185,6 +185,7 @@ export function useSendMessage({
           role: settings.role,
           enable_tools: settings.enableTools ?? true,
           enabled_tools: settings.enabledTools ?? ['calculator', 'current_datetime', 'web_search'],
+          enabled_custom_tools: settings.enabledCustomTools ?? [],
         };
       });
 
@@ -245,6 +246,7 @@ export function useSendMessage({
         role: 'consultant' as const,
         enable_tools: settings.enableTools ?? true,
         enabled_tools: settings.enabledTools ?? ['calculator', 'current_datetime', 'web_search'],
+        enabled_custom_tools: settings.enabledCustomTools ?? [],
       };
 
       await callOrchestrator(messageContent, attachmentUrls, [consultantModel]);
