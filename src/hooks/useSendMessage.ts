@@ -29,6 +29,7 @@ interface UseSendMessageReturn {
   setAttachedFiles: React.Dispatch<React.SetStateAction<AttachedFile[]>>;
   sendMessage: (messageContent: string) => Promise<void>;
   sendToConsultant: (messageContent: string, consultantId: string) => Promise<void>;
+  copyConsultantResponse: (content: string, sourceMessageId: string | null) => Promise<void>;
 }
 
 export function useSendMessage({
@@ -253,9 +254,38 @@ export function useSendMessage({
     } catch (error: any) {
       toast.error(error.message);
     } finally {
-      setSending(false);
+    setSending(false);
     }
   }, [userId, sessionId, perModelSettings, attachedFiles, uploadFiles, callOrchestrator]);
+
+  // Copy consultant response to main chat
+  const copyConsultantResponse = useCallback(async (
+    content: string,
+    sourceMessageId: string | null
+  ) => {
+    if (!userId || !sessionId || !content.trim()) return;
+
+    const currentSessionId = sessionId;
+    const currentUserId = userId;
+
+    try {
+      const metadata: Json | undefined = sourceMessageId 
+        ? { source_message_id: sourceMessageId } as unknown as Json
+        : undefined;
+
+      const { error } = await supabase.from('messages').insert({
+        session_id: currentSessionId,
+        user_id: currentUserId,
+        role: 'consultant' as const,
+        content,
+        metadata,
+      });
+
+      if (error) throw error;
+    } catch (error: any) {
+      toast.error(error.message);
+    }
+  }, [userId, sessionId]);
 
   return {
     sending,
@@ -264,5 +294,6 @@ export function useSendMessage({
     setAttachedFiles,
     sendMessage,
     sendToConsultant,
+    copyConsultantResponse,
   };
 }
