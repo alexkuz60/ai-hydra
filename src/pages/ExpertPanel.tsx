@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useCallback } from 'react';
+import React, { useEffect, useRef, useCallback, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Layout } from '@/components/layout/Layout';
@@ -27,7 +27,7 @@ import {
   Sparkles,
   Target
 } from 'lucide-react';
-import { useState } from 'react';
+import { toast } from 'sonner';
 
 export default function ExpertPanel() {
   const { user, loading: authLoading } = useAuth();
@@ -39,6 +39,10 @@ export default function ExpertPanel() {
   const messageRefs = useRef<Map<string, HTMLDivElement>>(new Map());
   const [input, setInput] = useState('');
   const [selectedConsultant, setSelectedConsultant] = useState<string | null>(null);
+  const [dChatContext, setDChatContext] = useState<{
+    messageId: string;
+    content: string;
+  } | null>(null);
   
   // D-Chat panel width persistence
   const { width: consultantPanelWidth, saveWidth: saveConsultantPanelWidth, isCollapsed: isDChatCollapsed } = useConsultantPanelWidth();
@@ -80,6 +84,7 @@ export default function ExpertPanel() {
     setAttachedFiles,
     sendMessage,
     sendToConsultant,
+    copyConsultantResponse,
   } = useSendMessage({
     userId: user?.id || null,
     sessionId: currentTask?.id || null,
@@ -148,6 +153,23 @@ export default function ExpertPanel() {
     }
   }, [allCollapsed, expandAll, collapseAll, messages]);
 
+  // D-Chat: Send message from navigator to D-Chat
+  const handleSendToDChat = useCallback((messageId: string, content: string) => {
+    setDChatContext({ messageId, content });
+    saveConsultantPanelWidth(20); // Expand D-Chat
+  }, [saveConsultantPanelWidth]);
+
+  // D-Chat: Copy response to main chat
+  const handleCopyToMainChat = useCallback(async (content: string, sourceMessageId: string | null) => {
+    await copyConsultantResponse(content, sourceMessageId);
+    toast.success(t('dchat.copiedToChat'));
+  }, [copyConsultantResponse, t]);
+
+  // D-Chat: Clear initial query after it's been used
+  const handleClearDChatContext = useCallback(() => {
+    setDChatContext(null);
+  }, []);
+
   if (authLoading || loading) {
     return (
       <Layout>
@@ -186,6 +208,7 @@ export default function ExpertPanel() {
               onMessageClick={handleMessageClick}
               onMessageDoubleClick={handleMessageDoubleClick}
               onDeleteMessageGroup={handleDeleteMessageGroup}
+              onSendToDChat={handleSendToDChat}
               activeParticipant={activeParticipant}
               filteredParticipant={filteredParticipant}
               allCollapsed={allCollapsed}
@@ -375,6 +398,10 @@ export default function ExpertPanel() {
               availableModels={allAvailableModels}
               isCollapsed={isDChatCollapsed}
               onExpand={() => saveConsultantPanelWidth(20)}
+              onCollapse={() => saveConsultantPanelWidth(3)}
+              initialQuery={dChatContext}
+              onClearInitialQuery={handleClearDChatContext}
+              onCopyToMainChat={handleCopyToMainChat}
             />
           </ResizablePanel>
         </ResizablePanelGroup>

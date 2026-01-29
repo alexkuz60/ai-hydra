@@ -21,6 +21,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Trash2,
+  Copy,
 } from 'lucide-react';
 
 interface ConsultantPanelProps {
@@ -28,6 +29,15 @@ interface ConsultantPanelProps {
   availableModels: ModelOption[];
   isCollapsed: boolean;
   onExpand: () => void;
+  onCollapse: () => void;
+  // Context from navigator
+  initialQuery?: {
+    messageId: string;
+    content: string;
+  } | null;
+  onClearInitialQuery?: () => void;
+  // Copy to main chat
+  onCopyToMainChat?: (content: string, sourceMessageId: string | null) => void;
 }
 
 interface ModeConfig {
@@ -49,6 +59,10 @@ export function ConsultantPanel({
   availableModels,
   isCollapsed,
   onExpand,
+  onCollapse,
+  initialQuery,
+  onClearInitialQuery,
+  onCopyToMainChat,
 }: ConsultantPanelProps) {
   const { t } = useLanguage();
   const [input, setInput] = useState('');
@@ -56,11 +70,21 @@ export function ConsultantPanel({
   const [selectedModel, setSelectedModel] = useState<string>(
     availableModels[0]?.id || ''
   );
+  const [currentSourceMessageId, setCurrentSourceMessageId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const { messages, sending, sendQuery, clearMessages } = useConsultantChat({
     sessionId,
   });
+
+  // Handle initial query from navigator
+  useEffect(() => {
+    if (initialQuery) {
+      setInput(initialQuery.content);
+      setCurrentSourceMessageId(initialQuery.messageId);
+      onClearInitialQuery?.();
+    }
+  }, [initialQuery, onClearInitialQuery]);
 
   // Update selected model when available models change
   useEffect(() => {
@@ -77,8 +101,10 @@ export function ConsultantPanel({
   const handleSend = async () => {
     if (!input.trim() || !selectedModel || sending) return;
     const messageContent = input.trim();
+    const sourceId = currentSourceMessageId;
     setInput('');
-    await sendQuery(messageContent, selectedMode, selectedModel);
+    setCurrentSourceMessageId(null);
+    await sendQuery(messageContent, selectedMode, selectedModel, sourceId);
   };
 
   const handleQuickAction = (mode: ConsultantMode) => {
@@ -147,6 +173,14 @@ export function ConsultantPanel({
               <TooltipContent>{t('dchat.clear')}</TooltipContent>
             </Tooltip>
           )}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onCollapse}>
+                <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>{t('dchat.collapse')}</TooltipContent>
+          </Tooltip>
         </div>
       </div>
 
@@ -200,12 +234,32 @@ export function ConsultantPanel({
             </div>
           ) : (
             messages.map((message) => (
-              <ConsultantMessageItem key={message.id} message={message} />
+              <ConsultantMessageItem 
+                key={message.id} 
+                message={message} 
+                onCopyToMainChat={onCopyToMainChat}
+              />
             ))
           )}
           <div ref={messagesEndRef} />
         </div>
       </ScrollArea>
+
+      {/* Context indicator */}
+      {currentSourceMessageId && (
+        <div className="px-2 py-1 bg-hydra-consultant/10 border-t border-hydra-consultant/20 text-xs text-hydra-consultant flex items-center gap-1">
+          <Lightbulb className="h-3 w-3" />
+          <span>{t('dchat.contextFrom').replace('{index}', currentSourceMessageId.slice(0, 8))}</span>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-4 w-4 ml-auto"
+            onClick={() => setCurrentSourceMessageId(null)}
+          >
+            <ChevronLeft className="h-3 w-3" />
+          </Button>
+        </div>
+      )}
 
       {/* Input area */}
       <div className="p-2 border-t border-border">
@@ -242,7 +296,14 @@ export function ConsultantPanel({
 }
 
 // Message item component
-function ConsultantMessageItem({ message }: { message: ConsultantMessage }) {
+function ConsultantMessageItem({ 
+  message, 
+  onCopyToMainChat 
+}: { 
+  message: ConsultantMessage;
+  onCopyToMainChat?: (content: string, sourceMessageId: string | null) => void;
+}) {
+  const { t } = useLanguage();
   const isUser = message.role === 'user';
   const modeConfig = MODES.find((m) => m.id === message.mode);
 
@@ -293,6 +354,21 @@ function ConsultantMessageItem({ message }: { message: ConsultantMessage }) {
           <div className="prose prose-sm dark:prose-invert max-w-none">
             <MarkdownRenderer content={message.content} />
           </div>
+
+          {/* Copy to chat button (only for consultant responses) */}
+          {!isUser && onCopyToMainChat && message.content && (
+            <div className="mt-2 pt-2 border-t border-border/50">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 text-xs"
+                onClick={() => onCopyToMainChat(message.content, message.sourceMessageId || null)}
+              >
+                <Copy className="h-3 w-3 mr-1" />
+                {t('dchat.copyToChat')}
+              </Button>
+            </div>
+          )}
         </>
       )}
     </div>

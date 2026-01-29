@@ -60,6 +60,7 @@ interface ChatTreeNavProps {
   onMessageClick: (messageId: string) => void;
   onMessageDoubleClick?: (messageId: string) => void;
   onDeleteMessageGroup?: (userMessageId: string) => void;
+  onSendToDChat?: (messageId: string, content: string) => void;
   activeParticipant: string | null;
   filteredParticipant?: string | null;
   allCollapsed?: boolean;
@@ -197,6 +198,7 @@ interface SupervisorNodeProps {
   onMessageClick: (id: string) => void;
   onMessageDoubleClick?: (id: string) => void;
   onDeleteClick: (e: React.MouseEvent, block: DialogBlock) => void;
+  onSendToDChat?: (messageId: string, content: string) => void;
   canDelete: boolean;
 }
 
@@ -208,6 +210,7 @@ const SupervisorNode = memo(function SupervisorNode({
   onMessageClick,
   onMessageDoubleClick,
   onDeleteClick,
+  onSendToDChat,
   canDelete,
 }: SupervisorNodeProps) {
   const { t } = useLanguage();
@@ -215,6 +218,10 @@ const SupervisorNode = memo(function SupervisorNode({
   const handleClick = useCallback(() => onMessageClick(block.id), [onMessageClick, block.id]);
   const handleDoubleClick = useCallback(() => onMessageDoubleClick?.(block.id), [onMessageDoubleClick, block.id]);
   const handleDelete = useCallback((e: React.MouseEvent) => onDeleteClick(e, block), [onDeleteClick, block]);
+  const handleSendToDChat = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    onSendToDChat?.(block.id, block.supervisorMessage?.content || block.contentPreview);
+  }, [onSendToDChat, block]);
   
   return (
     <div className="space-y-0.5 group/block">
@@ -239,6 +246,21 @@ const SupervisorNode = memo(function SupervisorNode({
               <span className="text-xs text-muted-foreground">
                 +{block.responseCount}
               </span>
+            )}
+            {onSendToDChat && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-5 w-5 opacity-0 group-hover/block:opacity-100 transition-opacity text-hydra-consultant hover:text-hydra-consultant/80"
+                    onClick={handleSendToDChat}
+                  >
+                    <Lightbulb className="h-3 w-3" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>{t('dchat.sendToConsultant')}</TooltipContent>
+              </Tooltip>
             )}
             {canDelete && (
               <Button
@@ -382,6 +404,7 @@ export const ChatTreeNav = memo(function ChatTreeNav({
   onMessageClick,
   onMessageDoubleClick,
   onDeleteMessageGroup,
+  onSendToDChat,
   activeParticipant,
   filteredParticipant,
   allCollapsed,
@@ -509,6 +532,7 @@ export const ChatTreeNav = memo(function ChatTreeNav({
                   onMessageClick={onMessageClick}
                   onMessageDoubleClick={onMessageDoubleClick}
                   onDeleteClick={handleDeleteClick}
+                  onSendToDChat={onSendToDChat}
                   canDelete={!!onDeleteMessageGroup}
                 />
               );

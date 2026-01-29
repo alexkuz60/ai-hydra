@@ -15,6 +15,8 @@ export interface ConsultantMessage {
   tool_results?: any[];
   created_at: string;
   isLoading?: boolean;
+  // Source message ID from navigator (for copy-to-chat feature)
+  sourceMessageId?: string | null;
 }
 
 interface UseConsultantChatProps {
@@ -27,7 +29,8 @@ interface UseConsultantChatReturn {
   sendQuery: (
     content: string,
     mode: ConsultantMode,
-    modelId: string
+    modelId: string,
+    sourceMessageId?: string | null
   ) => Promise<void>;
   clearMessages: () => void;
 }
@@ -47,7 +50,7 @@ export function useConsultantChat({
   const [sending, setSending] = useState(false);
 
   const sendQuery = useCallback(
-    async (content: string, mode: ConsultantMode, modelId: string) => {
+    async (content: string, mode: ConsultantMode, modelId: string, sourceMessageId?: string | null) => {
       if (!sessionId || !content.trim() || !modelId) return;
 
       setSending(true);
@@ -72,6 +75,7 @@ export function useConsultantChat({
         model_name: modelId,
         created_at: new Date().toISOString(),
         isLoading: true,
+        sourceMessageId: sourceMessageId || null,
       };
 
       setMessages((prev) => [...prev, userMessage, placeholderMessage]);

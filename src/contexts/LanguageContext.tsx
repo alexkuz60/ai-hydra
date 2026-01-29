@@ -274,6 +274,12 @@ const translations: Translations = {
   'dchat.placeholder': { ru: 'Введите запрос...', en: 'Enter query...' },
   'dchat.empty': { ru: 'Задайте вопрос консультанту', en: 'Ask the consultant a question' },
   'dchat.clear': { ru: 'Очистить историю', en: 'Clear history' },
+  'dchat.sendToConsultant': { ru: 'Спросить в D-чате', en: 'Ask in D-Chat' },
+  'dchat.copyToChat': { ru: 'Копировать в чат', en: 'Copy to chat' },
+  'dchat.collapse': { ru: 'Свернуть', en: 'Collapse' },
+  'dchat.expand': { ru: 'Развернуть', en: 'Expand' },
+  'dchat.contextFrom': { ru: 'Контекст: Сообщение #{index}', en: 'Context: Message #{index}' },
+  'dchat.copiedToChat': { ru: 'Скопировано в чат', en: 'Copied to chat' },
 
   // Role Library
   'roleLibrary.title': { ru: 'Библиотека ИИ-ролей', en: 'AI Role Library' },
