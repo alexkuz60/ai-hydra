@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { AVAILABLE_TOOLS, executeToolCalls, ToolCall, ToolResult } from "./tools.ts";
 // Note: PDF/DOCX extraction temporarily disabled due to esm.sh issues
 // import { getDocument } from "https://esm.sh/pdfjs-serverless";
 // import mammoth from "https://esm.sh/mammoth@1.6.0";
@@ -8,6 +9,9 @@ const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
+
+// Maximum iterations for tool calling loop (prevent infinite loops)
+const MAX_TOOL_ITERATIONS = 5;
 
 interface ModelRequest {
   model_id: string;
@@ -195,8 +199,17 @@ async function callLovableAI(
   attachments: Attachment[],
   systemPrompt: string,
   temperature: number,
-  maxTokens: number
-) {
+  maxTokens: number,
+  enableTools: boolean = true
+): Promise<{
+  model: string;
+  provider: string;
+  content: string;
+  reasoning: string | null;
+  usage: { prompt_tokens?: number; completion_tokens?: number; total_tokens?: number } | null;
+  tool_calls?: ToolCall[];
+  tool_results?: ToolResult[];
+}> {
   // OpenAI models use max_completion_tokens, others use max_tokens
   const isOpenAI = model.startsWith("openai/");
   const tokenParam = isOpenAI 
@@ -212,68 +225,144 @@ async function callLovableAI(
     ? buildMultimodalContent(message, attachments)
     : message;
 
-  const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Authorization": `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
+  // Prepare messages array for the conversation
+  type MessageItem = 
+    | { role: "system"; content: string }
+    | { role: "user"; content: string | ContentPart[] }
+    | { role: "assistant"; content: string | null; tool_calls?: ToolCall[] }
+    | { role: "tool"; tool_call_id: string; content: string };
+
+  const messages: MessageItem[] = [
+    { role: "system", content: systemPrompt },
+    { role: "user", content: userContent },
+  ];
+
+  // Track all tool calls and results across iterations
+  const allToolCalls: ToolCall[] = [];
+  const allToolResults: ToolResult[] = [];
+  let iteration = 0;
+  let finalContent = "";
+  let finalReasoning: string | null = null;
+  let finalUsage: { prompt_tokens?: number; completion_tokens?: number; total_tokens?: number } | null = null;
+
+  while (iteration < MAX_TOOL_ITERATIONS) {
+    iteration++;
+    console.log(`[${model}] Tool calling iteration ${iteration}`);
+
+    const requestBody: Record<string, unknown> = {
       model,
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userContent },
-      ],
+      messages,
       ...tempParam,
       ...tokenParam,
-    }),
-  });
+    };
 
-  if (!response.ok) {
-    if (response.status === 429) {
-      throw { status: 429, message: "Rate limit exceeded" };
+    // Add tools only if enabled
+    if (enableTools && AVAILABLE_TOOLS.length > 0) {
+      requestBody.tools = AVAILABLE_TOOLS;
     }
-    if (response.status === 402) {
-      throw { status: 402, message: "Payment required" };
-    }
-    const error = await response.text();
-    throw new Error(`Lovable AI error: ${error}`);
-  }
 
-  const data = await response.json();
-  
-  // Log full response for debugging
-  console.log(`[${model}] Full API response:`, JSON.stringify(data, null, 2));
-  
-  const content = data.choices?.[0]?.message?.content || "";
-  // Extract reasoning from thinking models (if present)
-  const reasoning = data.choices?.[0]?.message?.reasoning || null;
-  // Extract usage statistics
-  const usage = data.usage || null;
-  
-  if (!content) {
-    console.warn(`[${model}] Empty content received. Response structure:`, {
-      hasChoices: !!data.choices,
-      choicesLength: data.choices?.length,
-      firstChoice: data.choices?.[0],
-      finishReason: data.choices?.[0]?.finish_reason,
+    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(requestBody),
     });
-  }
-  
-  if (reasoning) {
-    console.log(`[${model}] Reasoning captured: ${reasoning.length} chars`);
+
+    if (!response.ok) {
+      if (response.status === 429) {
+        throw { status: 429, message: "Rate limit exceeded" };
+      }
+      if (response.status === 402) {
+        throw { status: 402, message: "Payment required" };
+      }
+      const error = await response.text();
+      throw new Error(`Lovable AI error: ${error}`);
+    }
+
+    const data = await response.json();
+    
+    // Log full response for debugging
+    console.log(`[${model}] Full API response (iteration ${iteration}):`, JSON.stringify(data, null, 2));
+    
+    const choice = data.choices?.[0];
+    const messageResponse = choice?.message;
+    const content = messageResponse?.content || "";
+    const reasoning = messageResponse?.reasoning || null;
+    const usage = data.usage || null;
+    const toolCalls = messageResponse?.tool_calls as ToolCall[] | undefined;
+
+    // Update final values
+    if (content) {
+      finalContent = content;
+    }
+    if (reasoning) {
+      finalReasoning = reasoning;
+    }
+    if (usage) {
+      finalUsage = usage;
+    }
+
+    // Check if model wants to call tools
+    if (toolCalls && toolCalls.length > 0) {
+      console.log(`[${model}] Model requested ${toolCalls.length} tool calls`);
+      
+      // Execute all tool calls
+      const results = await executeToolCalls(toolCalls);
+      
+      // Store for metadata
+      allToolCalls.push(...toolCalls);
+      allToolResults.push(...results);
+      
+      // Add assistant message with tool calls to conversation
+      messages.push({
+        role: "assistant",
+        content: content || null,
+        tool_calls: toolCalls,
+      });
+      
+      // Add tool results to conversation
+      for (const result of results) {
+        messages.push({
+          role: "tool",
+          tool_call_id: result.tool_call_id,
+          content: result.content,
+        });
+      }
+      
+      // Continue loop to get final response
+      continue;
+    }
+    
+    // No tool calls - we have the final response
+    break;
   }
 
-  if (usage) {
-    console.log(`[${model}] Usage: prompt=${usage.prompt_tokens}, completion=${usage.completion_tokens}, total=${usage.total_tokens}`);
+  if (!finalContent) {
+    console.warn(`[${model}] Empty content received after ${iteration} iterations`);
+  }
+  
+  if (finalReasoning) {
+    console.log(`[${model}] Reasoning captured: ${finalReasoning.length} chars`);
+  }
+
+  if (finalUsage) {
+    console.log(`[${model}] Usage: prompt=${finalUsage.prompt_tokens}, completion=${finalUsage.completion_tokens}, total=${finalUsage.total_tokens}`);
+  }
+
+  if (allToolCalls.length > 0) {
+    console.log(`[${model}] Total tool calls made: ${allToolCalls.length}`);
   }
   
   return {
     model,
     provider: "lovable",
-    content,
-    reasoning,
-    usage,
+    content: finalContent,
+    reasoning: finalReasoning,
+    usage: finalUsage,
+    tool_calls: allToolCalls.length > 0 ? allToolCalls : undefined,
+    tool_results: allToolResults.length > 0 ? allToolResults : undefined,
   };
 }
 
@@ -606,18 +695,29 @@ serve(async (req) => {
       total_tokens?: number;
     }
     
-    const successResults: { model: string; provider: string; content: string; role: string; reasoning?: string | null; usage?: UsageData | null }[] = [];
+    interface SuccessResult {
+      model: string;
+      provider: string;
+      content: string;
+      role: string;
+      reasoning?: string | null;
+      usage?: UsageData | null;
+      tool_calls?: ToolCall[];
+      tool_results?: ToolResult[];
+    }
+    
+    const successResults: SuccessResult[] = [];
     for (const result of allResults) {
       if ('error' in result && result.error === true) {
         errors.push({ model: result.model, error: result.message });
       } else {
-        successResults.push(result as { model: string; provider: string; content: string; role: string; reasoning?: string | null; usage?: UsageData | null });
+        successResults.push(result as SuccessResult);
       }
     }
     
     console.log(`Results: ${successResults.length} successes, ${errors.length} errors`);
 
-    // Save all successful responses to database with individual roles and usage data
+    // Save all successful responses to database with individual roles, usage data, and tool calls
     if (successResults.length > 0) {
       const messagesToInsert = successResults.map(result => ({
         session_id,
@@ -631,6 +731,9 @@ serve(async (req) => {
           prompt_tokens: result.usage?.prompt_tokens || 0,
           completion_tokens: result.usage?.completion_tokens || 0,
           total_tokens: result.usage?.total_tokens || 0,
+          // Tool calling data
+          tool_calls: result.tool_calls || undefined,
+          tool_results: result.tool_results || undefined,
         },
       }));
 
