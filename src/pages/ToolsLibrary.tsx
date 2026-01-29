@@ -22,9 +22,12 @@ import {
   Wrench,
   X,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Globe,
+  FileText
 } from 'lucide-react';
 import { format } from 'date-fns';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -57,13 +60,23 @@ import {
 } from '@/components/ui/collapsible';
 
 type OwnerFilter = 'all' | 'own' | 'shared';
+type ToolType = 'prompt' | 'http_api';
+type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE';
 
 interface ToolParameter {
   name: string;
   type: 'string' | 'number' | 'boolean';
   description: string;
   required: boolean;
-  [key: string]: unknown; // Allow index signature for Json compatibility
+  [key: string]: unknown;
+}
+
+interface HttpConfig {
+  url: string;
+  method: HttpMethod;
+  headers?: Record<string, string>;
+  body_template?: string;
+  response_path?: string;
 }
 
 interface CustomTool {
@@ -78,6 +91,8 @@ interface CustomTool {
   user_id: string;
   created_at: string;
   updated_at: string;
+  tool_type: ToolType;
+  http_config: HttpConfig | null;
 }
 
 const PARAM_TYPES = [
@@ -85,6 +100,8 @@ const PARAM_TYPES = [
   { value: 'number', label: 'Число' },
   { value: 'boolean', label: 'Да/Нет' },
 ];
+
+const HTTP_METHODS: HttpMethod[] = ['GET', 'POST', 'PUT', 'DELETE'];
 
 export default function ToolsLibrary() {
   const { user, loading: authLoading } = useAuth();
@@ -107,6 +124,12 @@ export default function ToolsLibrary() {
   const [newPromptTemplate, setNewPromptTemplate] = useState('');
   const [newParameters, setNewParameters] = useState<ToolParameter[]>([]);
   const [newIsShared, setNewIsShared] = useState(false);
+  const [newToolType, setNewToolType] = useState<ToolType>('prompt');
+  const [newHttpUrl, setNewHttpUrl] = useState('');
+  const [newHttpMethod, setNewHttpMethod] = useState<HttpMethod>('GET');
+  const [newHttpHeaders, setNewHttpHeaders] = useState<{key: string; value: string}[]>([]);
+  const [newHttpBodyTemplate, setNewHttpBodyTemplate] = useState('');
+  const [newHttpResponsePath, setNewHttpResponsePath] = useState('');
   const [creating, setCreating] = useState(false);
 
   // Edit sheet
@@ -117,6 +140,12 @@ export default function ToolsLibrary() {
   const [editDescription, setEditDescription] = useState('');
   const [editPromptTemplate, setEditPromptTemplate] = useState('');
   const [editParameters, setEditParameters] = useState<ToolParameter[]>([]);
+  const [editToolType, setEditToolType] = useState<ToolType>('prompt');
+  const [editHttpUrl, setEditHttpUrl] = useState('');
+  const [editHttpMethod, setEditHttpMethod] = useState<HttpMethod>('GET');
+  const [editHttpHeaders, setEditHttpHeaders] = useState<{key: string; value: string}[]>([]);
+  const [editHttpBodyTemplate, setEditHttpBodyTemplate] = useState('');
+  const [editHttpResponsePath, setEditHttpResponsePath] = useState('');
   const [editIsShared, setEditIsShared] = useState(false);
   const [updating, setUpdating] = useState(false);
 
@@ -152,7 +181,9 @@ export default function ToolsLibrary() {
       // Parse parameters from JSON - cast through unknown for type safety
       const parsed = (data || []).map(tool => ({
         ...tool,
-        parameters: (Array.isArray(tool.parameters) ? tool.parameters : []) as ToolParameter[]
+        parameters: (Array.isArray(tool.parameters) ? tool.parameters : []) as ToolParameter[],
+        tool_type: (tool.tool_type || 'prompt') as ToolType,
+        http_config: (tool.http_config as unknown) as HttpConfig | null,
       }));
       
       setTools(parsed as CustomTool[]);
@@ -173,7 +204,17 @@ export default function ToolsLibrary() {
   };
 
   const handleCreate = async () => {
-    if (!user || !newName.trim() || !newDisplayName.trim() || !newDescription.trim() || !newPromptTemplate.trim()) return;
+    if (!user || !newName.trim() || !newDisplayName.trim() || !newDescription.trim()) return;
+    
+    // Validation based on tool type
+    if (newToolType === 'prompt' && !newPromptTemplate.trim()) {
+      toast.error('Укажите шаблон промпта');
+      return;
+    }
+    if (newToolType === 'http_api' && !newHttpUrl.trim()) {
+      toast.error('Укажите URL для HTTP запроса');
+      return;
+    }
     
     const validatedName = validateName(newName);
     if (!validatedName) {
@@ -184,6 +225,17 @@ export default function ToolsLibrary() {
     setCreating(true);
 
     try {
+      // Build http_config if HTTP API type
+      const httpConfig: HttpConfig | null = newToolType === 'http_api' ? {
+        url: newHttpUrl.trim(),
+        method: newHttpMethod,
+        headers: newHttpHeaders.length > 0 
+          ? Object.fromEntries(newHttpHeaders.filter(h => h.key.trim()).map(h => [h.key.trim(), h.value]))
+          : undefined,
+        body_template: newHttpBodyTemplate.trim() || undefined,
+        response_path: newHttpResponsePath.trim() || undefined,
+      } : null;
+
       const { data, error } = await supabase
         .from('custom_tools')
         .insert([{
@@ -191,9 +243,11 @@ export default function ToolsLibrary() {
           name: validatedName,
           display_name: newDisplayName.trim(),
           description: newDescription.trim(),
-          prompt_template: newPromptTemplate.trim(),
+          prompt_template: newToolType === 'prompt' ? newPromptTemplate.trim() : '',
           parameters: JSON.parse(JSON.stringify(newParameters)),
           is_shared: newIsShared,
+          tool_type: newToolType,
+          http_config: httpConfig ? JSON.parse(JSON.stringify(httpConfig)) : null,
         }])
         .select()
         .single();
@@ -202,7 +256,9 @@ export default function ToolsLibrary() {
 
       const parsed = {
         ...data,
-        parameters: Array.isArray(data.parameters) ? data.parameters : []
+        parameters: Array.isArray(data.parameters) ? data.parameters : [],
+        tool_type: data.tool_type as ToolType,
+        http_config: (data.http_config as unknown) as HttpConfig | null,
       } as CustomTool;
 
       setTools([parsed, ...tools]);
@@ -228,6 +284,12 @@ export default function ToolsLibrary() {
     setNewParameters([]);
     setNewIsShared(false);
     setParamsExpanded(false);
+    setNewToolType('prompt');
+    setNewHttpUrl('');
+    setNewHttpMethod('GET');
+    setNewHttpHeaders([]);
+    setNewHttpBodyTemplate('');
+    setNewHttpResponsePath('');
   };
 
   const openEditSheet = (tool: CustomTool) => {
@@ -239,11 +301,31 @@ export default function ToolsLibrary() {
     setEditParameters([...tool.parameters]);
     setEditIsShared(tool.is_shared);
     setEditParamsExpanded(tool.parameters.length > 0);
+    setEditToolType(tool.tool_type || 'prompt');
+    
+    // Parse HTTP config
+    const hc = tool.http_config;
+    setEditHttpUrl(hc?.url || '');
+    setEditHttpMethod(hc?.method || 'GET');
+    setEditHttpHeaders(hc?.headers ? Object.entries(hc.headers).map(([key, value]) => ({ key, value })) : []);
+    setEditHttpBodyTemplate(hc?.body_template || '');
+    setEditHttpResponsePath(hc?.response_path || '');
+    
     setEditSheet(true);
   };
 
   const handleUpdate = async () => {
-    if (!editingTool || !editName.trim() || !editDisplayName.trim() || !editDescription.trim() || !editPromptTemplate.trim()) return;
+    if (!editingTool || !editName.trim() || !editDisplayName.trim() || !editDescription.trim()) return;
+    
+    // Validation based on tool type
+    if (editToolType === 'prompt' && !editPromptTemplate.trim()) {
+      toast.error('Укажите шаблон промпта');
+      return;
+    }
+    if (editToolType === 'http_api' && !editHttpUrl.trim()) {
+      toast.error('Укажите URL для HTTP запроса');
+      return;
+    }
     
     const validatedName = validateName(editName);
     if (!validatedName) {
@@ -254,15 +336,28 @@ export default function ToolsLibrary() {
     setUpdating(true);
 
     try {
+      // Build http_config if HTTP API type
+      const httpConfig: HttpConfig | null = editToolType === 'http_api' ? {
+        url: editHttpUrl.trim(),
+        method: editHttpMethod,
+        headers: editHttpHeaders.length > 0 
+          ? Object.fromEntries(editHttpHeaders.filter(h => h.key.trim()).map(h => [h.key.trim(), h.value]))
+          : undefined,
+        body_template: editHttpBodyTemplate.trim() || undefined,
+        response_path: editHttpResponsePath.trim() || undefined,
+      } : null;
+
       const { error } = await supabase
         .from('custom_tools')
         .update({
           name: validatedName,
           display_name: editDisplayName.trim(),
           description: editDescription.trim(),
-          prompt_template: editPromptTemplate.trim(),
+          prompt_template: editToolType === 'prompt' ? editPromptTemplate.trim() : '',
           parameters: JSON.parse(JSON.stringify(editParameters)),
           is_shared: editIsShared,
+          tool_type: editToolType,
+          http_config: httpConfig ? JSON.parse(JSON.stringify(httpConfig)) : null,
         })
         .eq('id', editingTool.id);
 
@@ -275,9 +370,11 @@ export default function ToolsLibrary() {
               name: validatedName,
               display_name: editDisplayName.trim(),
               description: editDescription.trim(),
-              prompt_template: editPromptTemplate.trim(),
+              prompt_template: editToolType === 'prompt' ? editPromptTemplate.trim() : '',
               parameters: editParameters,
               is_shared: editIsShared,
+              tool_type: editToolType,
+              http_config: httpConfig,
               updated_at: new Date().toISOString()
             } 
           : t
@@ -500,11 +597,18 @@ export default function ToolsLibrary() {
                   <div className="flex-1 min-w-0">
                     {/* Header */}
                     <div className="flex items-center gap-2 mb-1 flex-wrap">
-                      <Wrench className="h-4 w-4 text-primary shrink-0" />
+                      {tool.tool_type === 'http_api' ? (
+                        <Globe className="h-4 w-4 text-primary shrink-0" />
+                      ) : (
+                        <FileText className="h-4 w-4 text-primary shrink-0" />
+                      )}
                       <h3 className="font-medium">{tool.display_name}</h3>
                       <code className="text-xs bg-muted px-1.5 py-0.5 rounded font-mono text-muted-foreground">
                         {tool.name}
                       </code>
+                      <Badge variant="secondary" className="text-[10px]">
+                        {tool.tool_type === 'http_api' ? 'HTTP' : 'Prompt'}
+                      </Badge>
                       {tool.is_shared && (
                         <span title="Общий доступ">
                           <Users className="h-3.5 w-3.5 text-muted-foreground" />
@@ -570,6 +674,23 @@ export default function ToolsLibrary() {
             
             <ScrollArea className="flex-1 p-4">
               <div className="space-y-4">
+                {/* Tool Type Selector */}
+                <div className="space-y-2">
+                  <Label>Тип инструмента</Label>
+                  <Tabs value={newToolType} onValueChange={(v) => setNewToolType(v as ToolType)} className="w-full">
+                    <TabsList className="w-full grid grid-cols-2">
+                      <TabsTrigger value="prompt" className="flex items-center gap-2">
+                        <FileText className="h-4 w-4" />
+                        Prompt-шаблон
+                      </TabsTrigger>
+                      <TabsTrigger value="http_api" className="flex items-center gap-2">
+                        <Globe className="h-4 w-4" />
+                        HTTP API
+                      </TabsTrigger>
+                    </TabsList>
+                  </Tabs>
+                </div>
+
                 {/* Display Name */}
                 <div className="space-y-2">
                   <Label>Название <span className="text-destructive">*</span></Label>
@@ -600,24 +721,141 @@ export default function ToolsLibrary() {
                   <Textarea
                     value={newDescription}
                     onChange={(e) => setNewDescription(e.target.value)}
-                    placeholder="Генерирует отчёт на основе предоставленных данных"
+                    placeholder={newToolType === 'http_api' 
+                      ? "Получает текущую погоду для указанного города"
+                      : "Генерирует отчёт на основе предоставленных данных"
+                    }
                     className="min-h-[80px]"
                   />
                 </div>
 
-                {/* Prompt Template */}
-                <div className="space-y-2">
-                  <Label>Шаблон промпта <span className="text-destructive">*</span></Label>
-                  <Textarea
-                    value={newPromptTemplate}
-                    onChange={(e) => setNewPromptTemplate(e.target.value)}
-                    placeholder="Создай отчёт на тему: {{topic}}&#10;Формат: {{format}}"
-                    className="min-h-[120px] font-mono text-sm"
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Используйте {"{{param_name}}"} для подстановки параметров
-                  </p>
-                </div>
+                {/* Prompt Template - only for prompt type */}
+                {newToolType === 'prompt' && (
+                  <div className="space-y-2">
+                    <Label>Шаблон промпта <span className="text-destructive">*</span></Label>
+                    <Textarea
+                      value={newPromptTemplate}
+                      onChange={(e) => setNewPromptTemplate(e.target.value)}
+                      placeholder="Создай отчёт на тему: {{topic}}&#10;Формат: {{format}}"
+                      className="min-h-[120px] font-mono text-sm"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Используйте {"{{param_name}}"} для подстановки параметров
+                    </p>
+                  </div>
+                )}
+
+                {/* HTTP Configuration - only for http_api type */}
+                {newToolType === 'http_api' && (
+                  <div className="space-y-4 p-3 rounded-lg bg-muted/30 border border-border/50">
+                    <h4 className="font-medium text-sm">HTTP конфигурация</h4>
+                    
+                    {/* URL */}
+                    <div className="space-y-2">
+                      <Label>URL <span className="text-destructive">*</span></Label>
+                      <Input
+                        value={newHttpUrl}
+                        onChange={(e) => setNewHttpUrl(e.target.value)}
+                        placeholder="https://api.example.com/v1/{{resource}}"
+                        className="font-mono text-sm"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Используйте {"{{param}}"} для подстановки параметров
+                      </p>
+                    </div>
+
+                    {/* Method */}
+                    <div className="space-y-2">
+                      <Label>Метод</Label>
+                      <Select value={newHttpMethod} onValueChange={(v) => setNewHttpMethod(v as HttpMethod)}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="bg-popover border border-border z-50">
+                          {HTTP_METHODS.map(m => (
+                            <SelectItem key={m} value={m}>{m}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Headers */}
+                    <div className="space-y-2">
+                      <Label>Заголовки</Label>
+                      <div className="space-y-2">
+                        {newHttpHeaders.map((header, index) => (
+                          <div key={index} className="flex gap-2">
+                            <Input
+                              value={header.key}
+                              onChange={(e) => {
+                                const updated = [...newHttpHeaders];
+                                updated[index] = { ...updated[index], key: e.target.value };
+                                setNewHttpHeaders(updated);
+                              }}
+                              placeholder="Header-Name"
+                              className="flex-1 font-mono text-sm"
+                            />
+                            <Input
+                              value={header.value}
+                              onChange={(e) => {
+                                const updated = [...newHttpHeaders];
+                                updated[index] = { ...updated[index], value: e.target.value };
+                                setNewHttpHeaders(updated);
+                              }}
+                              placeholder="{{api_key}}"
+                              className="flex-1 font-mono text-sm"
+                            />
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => setNewHttpHeaders(newHttpHeaders.filter((_, i) => i !== index))}
+                              className="h-9 w-9 shrink-0"
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ))}
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setNewHttpHeaders([...newHttpHeaders, { key: '', value: '' }])}
+                          className="w-full"
+                        >
+                          <Plus className="h-4 w-4 mr-2" />
+                          Добавить заголовок
+                        </Button>
+                      </div>
+                    </div>
+
+                    {/* Body Template - for POST/PUT */}
+                    {(newHttpMethod === 'POST' || newHttpMethod === 'PUT') && (
+                      <div className="space-y-2">
+                        <Label>Тело запроса (JSON)</Label>
+                        <Textarea
+                          value={newHttpBodyTemplate}
+                          onChange={(e) => setNewHttpBodyTemplate(e.target.value)}
+                          placeholder={'{"query": "{{search_term}}", "limit": 10}'}
+                          className="min-h-[80px] font-mono text-sm"
+                        />
+                      </div>
+                    )}
+
+                    {/* Response Path */}
+                    <div className="space-y-2">
+                      <Label>JSONPath для результата</Label>
+                      <Input
+                        value={newHttpResponsePath}
+                        onChange={(e) => setNewHttpResponsePath(e.target.value)}
+                        placeholder="data.results[0].value"
+                        className="font-mono text-sm"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Путь для извлечения данных из ответа (опционально)
+                      </p>
+                    </div>
+                  </div>
+                )}
 
                 {/* Parameters */}
                 <Collapsible open={paramsExpanded} onOpenChange={setParamsExpanded}>
@@ -649,7 +887,7 @@ export default function ToolsLibrary() {
             <SheetFooter className="p-4 border-t">
               <Button
                 onClick={handleCreate}
-                disabled={creating || !newName.trim() || !newDisplayName.trim() || !newDescription.trim() || !newPromptTemplate.trim()}
+                disabled={creating || !newName.trim() || !newDisplayName.trim() || !newDescription.trim() || (newToolType === 'prompt' && !newPromptTemplate.trim()) || (newToolType === 'http_api' && !newHttpUrl.trim())}
                 className="w-full"
               >
                 {creating ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Plus className="h-4 w-4 mr-2" />}
@@ -668,6 +906,23 @@ export default function ToolsLibrary() {
             
             <ScrollArea className="flex-1 p-4">
               <div className="space-y-4">
+                {/* Tool Type Selector */}
+                <div className="space-y-2">
+                  <Label>Тип инструмента</Label>
+                  <Tabs value={editToolType} onValueChange={(v) => setEditToolType(v as ToolType)} className="w-full">
+                    <TabsList className="w-full grid grid-cols-2">
+                      <TabsTrigger value="prompt" className="flex items-center gap-2">
+                        <FileText className="h-4 w-4" />
+                        Prompt-шаблон
+                      </TabsTrigger>
+                      <TabsTrigger value="http_api" className="flex items-center gap-2">
+                        <Globe className="h-4 w-4" />
+                        HTTP API
+                      </TabsTrigger>
+                    </TabsList>
+                  </Tabs>
+                </div>
+
                 {/* Display Name */}
                 <div className="space-y-2">
                   <Label>Название <span className="text-destructive">*</span></Label>
@@ -695,21 +950,141 @@ export default function ToolsLibrary() {
                   <Textarea
                     value={editDescription}
                     onChange={(e) => setEditDescription(e.target.value)}
-                    placeholder="Генерирует отчёт на основе предоставленных данных"
+                    placeholder={editToolType === 'http_api' 
+                      ? "Получает текущую погоду для указанного города"
+                      : "Генерирует отчёт на основе предоставленных данных"
+                    }
                     className="min-h-[80px]"
                   />
                 </div>
 
-                {/* Prompt Template */}
-                <div className="space-y-2">
-                  <Label>Шаблон промпта <span className="text-destructive">*</span></Label>
-                  <Textarea
-                    value={editPromptTemplate}
-                    onChange={(e) => setEditPromptTemplate(e.target.value)}
-                    placeholder="Создай отчёт на тему: {{topic}}"
-                    className="min-h-[120px] font-mono text-sm"
-                  />
-                </div>
+                {/* Prompt Template - only for prompt type */}
+                {editToolType === 'prompt' && (
+                  <div className="space-y-2">
+                    <Label>Шаблон промпта <span className="text-destructive">*</span></Label>
+                    <Textarea
+                      value={editPromptTemplate}
+                      onChange={(e) => setEditPromptTemplate(e.target.value)}
+                      placeholder="Создай отчёт на тему: {{topic}}"
+                      className="min-h-[120px] font-mono text-sm"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Используйте {"{{param_name}}"} для подстановки параметров
+                    </p>
+                  </div>
+                )}
+
+                {/* HTTP Configuration - only for http_api type */}
+                {editToolType === 'http_api' && (
+                  <div className="space-y-4 p-3 rounded-lg bg-muted/30 border border-border/50">
+                    <h4 className="font-medium text-sm">HTTP конфигурация</h4>
+                    
+                    {/* URL */}
+                    <div className="space-y-2">
+                      <Label>URL <span className="text-destructive">*</span></Label>
+                      <Input
+                        value={editHttpUrl}
+                        onChange={(e) => setEditHttpUrl(e.target.value)}
+                        placeholder="https://api.example.com/v1/{{resource}}"
+                        className="font-mono text-sm"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Используйте {"{{param}}"} для подстановки параметров
+                      </p>
+                    </div>
+
+                    {/* Method */}
+                    <div className="space-y-2">
+                      <Label>Метод</Label>
+                      <Select value={editHttpMethod} onValueChange={(v) => setEditHttpMethod(v as HttpMethod)}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="bg-popover border border-border z-50">
+                          {HTTP_METHODS.map(m => (
+                            <SelectItem key={m} value={m}>{m}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Headers */}
+                    <div className="space-y-2">
+                      <Label>Заголовки</Label>
+                      <div className="space-y-2">
+                        {editHttpHeaders.map((header, index) => (
+                          <div key={index} className="flex gap-2">
+                            <Input
+                              value={header.key}
+                              onChange={(e) => {
+                                const updated = [...editHttpHeaders];
+                                updated[index] = { ...updated[index], key: e.target.value };
+                                setEditHttpHeaders(updated);
+                              }}
+                              placeholder="Header-Name"
+                              className="flex-1 font-mono text-sm"
+                            />
+                            <Input
+                              value={header.value}
+                              onChange={(e) => {
+                                const updated = [...editHttpHeaders];
+                                updated[index] = { ...updated[index], value: e.target.value };
+                                setEditHttpHeaders(updated);
+                              }}
+                              placeholder="{{api_key}}"
+                              className="flex-1 font-mono text-sm"
+                            />
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => setEditHttpHeaders(editHttpHeaders.filter((_, i) => i !== index))}
+                              className="h-9 w-9 shrink-0"
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ))}
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setEditHttpHeaders([...editHttpHeaders, { key: '', value: '' }])}
+                          className="w-full"
+                        >
+                          <Plus className="h-4 w-4 mr-2" />
+                          Добавить заголовок
+                        </Button>
+                      </div>
+                    </div>
+
+                    {/* Body Template - for POST/PUT */}
+                    {(editHttpMethod === 'POST' || editHttpMethod === 'PUT') && (
+                      <div className="space-y-2">
+                        <Label>Тело запроса (JSON)</Label>
+                        <Textarea
+                          value={editHttpBodyTemplate}
+                          onChange={(e) => setEditHttpBodyTemplate(e.target.value)}
+                          placeholder={'{"query": "{{search_term}}", "limit": 10}'}
+                          className="min-h-[80px] font-mono text-sm"
+                        />
+                      </div>
+                    )}
+
+                    {/* Response Path */}
+                    <div className="space-y-2">
+                      <Label>JSONPath для результата</Label>
+                      <Input
+                        value={editHttpResponsePath}
+                        onChange={(e) => setEditHttpResponsePath(e.target.value)}
+                        placeholder="data.results[0].value"
+                        className="font-mono text-sm"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Путь для извлечения данных из ответа (опционально)
+                      </p>
+                    </div>
+                  </div>
+                )}
 
                 {/* Parameters */}
                 <Collapsible open={editParamsExpanded} onOpenChange={setEditParamsExpanded}>
@@ -741,7 +1116,7 @@ export default function ToolsLibrary() {
             <SheetFooter className="p-4 border-t">
               <Button
                 onClick={handleUpdate}
-                disabled={updating || !editName.trim() || !editDisplayName.trim() || !editDescription.trim() || !editPromptTemplate.trim()}
+                disabled={updating || !editName.trim() || !editDisplayName.trim() || !editDescription.trim() || (editToolType === 'prompt' && !editPromptTemplate.trim()) || (editToolType === 'http_api' && !editHttpUrl.trim())}
                 className="w-full"
               >
                 {updating && <Loader2 className="h-4 w-4 animate-spin mr-2" />}

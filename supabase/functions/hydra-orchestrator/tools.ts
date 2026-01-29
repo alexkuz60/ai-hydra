@@ -465,6 +465,16 @@ async function executeWebSearch(args: WebSearchArgs): Promise<string> {
 // Custom Tool Interface
 // ============================================
 
+export type ToolType = 'prompt' | 'http_api';
+
+export interface HttpConfig {
+  url: string;
+  method: 'GET' | 'POST' | 'PUT' | 'DELETE';
+  headers?: Record<string, string>;
+  body_template?: string;
+  response_path?: string;
+}
+
 export interface CustomToolDefinition {
   id: string;
   name: string;
@@ -477,6 +487,8 @@ export interface CustomToolDefinition {
     description: string;
     required: boolean;
   }>;
+  tool_type: ToolType;
+  http_config: HttpConfig | null;
 }
 
 // Store for custom tools during execution
@@ -490,22 +502,221 @@ export function registerCustomTools(tools: CustomToolDefinition[]): void {
   console.log(`[Tools] Registered ${tools.length} custom tools`);
 }
 
-// Execute a custom tool by substituting parameters into the prompt template
-function executeCustomTool(toolName: string, args: Record<string, unknown>): string {
-  const customTool = customToolsRegistry.get(toolName);
-  if (!customTool) {
-    return JSON.stringify({ success: false, error: `Custom tool not found: ${toolName}` });
+// ============================================
+// HTTP API Tool Execution
+// ============================================
+
+// Validate URL to prevent SSRF attacks
+function isInternalUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    const hostname = parsed.hostname.toLowerCase();
+    
+    // Block internal addresses
+    if (
+      hostname === 'localhost' ||
+      hostname === '127.0.0.1' ||
+      hostname === '0.0.0.0' ||
+      hostname.startsWith('10.') ||
+      hostname.startsWith('192.168.') ||
+      hostname.startsWith('172.16.') ||
+      hostname.startsWith('172.17.') ||
+      hostname.startsWith('172.18.') ||
+      hostname.startsWith('172.19.') ||
+      hostname.startsWith('172.2') ||
+      hostname.startsWith('172.30.') ||
+      hostname.startsWith('172.31.') ||
+      hostname.endsWith('.local') ||
+      hostname.endsWith('.internal')
+    ) {
+      return true;
+    }
+    return false;
+  } catch {
+    return true; // Invalid URL, block it
   }
+}
+
+// Substitute placeholders in a string
+function substituteParams(template: string, args: Record<string, unknown>): string {
+  let result = template;
+  for (const [key, value] of Object.entries(args)) {
+    const placeholder = `{{${key}}}`;
+    result = result.replaceAll(placeholder, String(value ?? ''));
+  }
+  return result;
+}
+
+// Extract value from JSON using simplified JSONPath
+function extractByPath(obj: unknown, path: string): unknown {
+  if (!path) return obj;
   
+  const parts = path.split('.').flatMap(part => {
+    // Handle array notation like items[0]
+    const match = part.match(/^(\w+)\[(\d+)\]$/);
+    if (match) {
+      return [match[1], parseInt(match[2], 10)];
+    }
+    return [part];
+  });
+  
+  let current: unknown = obj;
+  for (const part of parts) {
+    if (current === null || current === undefined) return undefined;
+    if (typeof part === 'number') {
+      if (!Array.isArray(current)) return undefined;
+      current = current[part];
+    } else {
+      if (typeof current !== 'object') return undefined;
+      current = (current as Record<string, unknown>)[part];
+    }
+  }
+  return current;
+}
+
+// Execute HTTP API tool
+async function executeHttpApiTool(
+  toolName: string, 
+  args: Record<string, unknown>,
+  config: HttpConfig
+): Promise<string> {
+  const HTTP_TIMEOUT = 30000; // 30 seconds
+  const MAX_RESPONSE_SIZE = 100 * 1024; // 100KB
+  
+  try {
+    // Substitute parameters in URL
+    const url = substituteParams(config.url, args);
+    
+    // Validate URL
+    if (isInternalUrl(url)) {
+      return JSON.stringify({
+        success: false,
+        error: 'Вызов внутренних адресов запрещён в целях безопасности'
+      });
+    }
+    
+    // Substitute parameters in headers
+    const headers: Record<string, string> = {};
+    if (config.headers) {
+      for (const [key, value] of Object.entries(config.headers)) {
+        headers[key] = substituteParams(value, args);
+      }
+    }
+    
+    // Add Content-Type for POST/PUT if not specified
+    if ((config.method === 'POST' || config.method === 'PUT') && !headers['Content-Type']) {
+      headers['Content-Type'] = 'application/json';
+    }
+    
+    // Prepare body for POST/PUT
+    let body: string | undefined;
+    if (config.body_template && (config.method === 'POST' || config.method === 'PUT')) {
+      body = substituteParams(config.body_template, args);
+    }
+    
+    console.log(`[Tool HTTP] ${config.method} ${url}`);
+    
+    // Execute request with timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), HTTP_TIMEOUT);
+    
+    try {
+      const response = await fetch(url, {
+        method: config.method,
+        headers,
+        body,
+        signal: controller.signal,
+      });
+      
+      clearTimeout(timeoutId);
+      
+      // Check response size
+      const contentLength = response.headers.get('content-length');
+      if (contentLength && parseInt(contentLength, 10) > MAX_RESPONSE_SIZE) {
+        return JSON.stringify({
+          success: false,
+          error: `Размер ответа превышает лимит (${MAX_RESPONSE_SIZE / 1024}KB)`
+        });
+      }
+      
+      // Read response
+      const text = await response.text();
+      
+      if (text.length > MAX_RESPONSE_SIZE) {
+        return JSON.stringify({
+          success: false,
+          error: `Размер ответа превышает лимит (${MAX_RESPONSE_SIZE / 1024}KB)`
+        });
+      }
+      
+      if (!response.ok) {
+        return JSON.stringify({
+          success: false,
+          error: `HTTP ${response.status}: ${response.statusText}`,
+          response_body: text.slice(0, 500)
+        });
+      }
+      
+      // Parse response
+      let data: unknown;
+      try {
+        data = JSON.parse(text);
+      } catch {
+        // Not JSON, return as text
+        data = text;
+      }
+      
+      // Extract by path if specified
+      let result = data;
+      if (config.response_path) {
+        result = extractByPath(data, config.response_path);
+        if (result === undefined) {
+          return JSON.stringify({
+            success: true,
+            warning: `Путь '${config.response_path}' не найден в ответе`,
+            full_response: data
+          });
+        }
+      }
+      
+      return JSON.stringify({
+        success: true,
+        result
+      });
+      
+    } catch (fetchError: unknown) {
+      clearTimeout(timeoutId);
+      
+      if (fetchError instanceof Error && fetchError.name === 'AbortError') {
+        return JSON.stringify({
+          success: false,
+          error: `Таймаут запроса (${HTTP_TIMEOUT / 1000} сек)`
+        });
+      }
+      throw fetchError;
+    }
+    
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    console.error(`[Tool HTTP] Error:`, message);
+    return JSON.stringify({
+      success: false,
+      error: `Ошибка HTTP запроса: ${message}`
+    });
+  }
+}
+
+// Execute a custom tool by substituting parameters into the prompt template
+function executePromptTool(toolName: string, args: Record<string, unknown>, tool: CustomToolDefinition): string {
   // Substitute parameters in the prompt template
-  let result = customTool.prompt_template;
+  let result = tool.prompt_template;
   for (const [key, value] of Object.entries(args)) {
     const placeholder = `{{${key}}}`;
     result = result.replaceAll(placeholder, String(value));
   }
   
   // Check for missing required parameters
-  const missingParams = customTool.parameters
+  const missingParams = tool.parameters
     .filter(p => p.required && (args[p.name] === undefined || args[p.name] === ''))
     .map(p => p.name);
   
@@ -518,7 +729,7 @@ function executeCustomTool(toolName: string, args: Record<string, unknown>): str
   
   return JSON.stringify({
     success: true,
-    tool_name: customTool.display_name,
+    tool_name: tool.display_name,
     result: result.trim()
   });
 }
@@ -526,6 +737,21 @@ function executeCustomTool(toolName: string, args: Record<string, unknown>): str
 // ============================================
 // Main Executor
 // ============================================
+
+// Execute custom tool (either prompt or HTTP API)
+async function executeCustomTool(toolName: string, args: Record<string, unknown>): Promise<string> {
+  const customTool = customToolsRegistry.get(toolName);
+  if (!customTool) {
+    return JSON.stringify({ success: false, error: `Custom tool not found: ${toolName}` });
+  }
+  
+  // Route based on tool type
+  if (customTool.tool_type === 'http_api' && customTool.http_config) {
+    return await executeHttpApiTool(toolName, args, customTool.http_config);
+  } else {
+    return executePromptTool(toolName, args, customTool);
+  }
+}
 
 export async function executeToolCall(toolCall: ToolCall): Promise<ToolResult> {
   const { id, function: func } = toolCall;
@@ -548,7 +774,7 @@ export async function executeToolCall(toolCall: ToolCall): Promise<ToolResult> {
   
   // Check if it's a custom tool (prefixed with "custom_")
   if (funcName.startsWith("custom_")) {
-    result = executeCustomTool(funcName, args);
+    result = await executeCustomTool(funcName, args);
   } else {
     switch (funcName) {
       case "calculator":
