@@ -22,7 +22,15 @@ import {
   ChevronRight,
   Trash2,
   Copy,
+  Users,
 } from 'lucide-react';
+
+// Source message structure for moderator context
+interface SourceMessage {
+  role: string;
+  model_name: string | null;
+  content: string;
+}
 
 interface ConsultantPanelProps {
   sessionId: string | null;
@@ -30,10 +38,11 @@ interface ConsultantPanelProps {
   isCollapsed: boolean;
   onExpand: () => void;
   onCollapse: () => void;
-  // Context from navigator
+  // Context from navigator (extended for moderator)
   initialQuery?: {
     messageId: string;
     content: string;
+    sourceMessages?: SourceMessage[];
   } | null;
   onClearInitialQuery?: () => void;
   // Copy to main chat
@@ -52,6 +61,7 @@ const MODES: ModeConfig[] = [
   { id: 'expert', icon: User, labelKey: 'dchat.expert', color: 'text-hydra-success' },
   { id: 'critic', icon: Shield, labelKey: 'dchat.critic', color: 'text-hydra-critical' },
   { id: 'arbiter', icon: Scale, labelKey: 'dchat.arbiter', color: 'text-hydra-expert' },
+  { id: 'moderator', icon: Users, labelKey: 'dchat.moderator', color: 'text-hydra-consultant' },
 ];
 
 export function ConsultantPanel({
@@ -71,20 +81,37 @@ export function ConsultantPanel({
     availableModels[0]?.id || ''
   );
   const [currentSourceMessageId, setCurrentSourceMessageId] = useState<string | null>(null);
+  const [isModeratingContext, setIsModeratingContext] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const { messages, sending, sendQuery, clearMessages } = useConsultantChat({
     sessionId,
   });
 
-  // Handle initial query from navigator
+  // Handle initial query from navigator - auto-trigger moderator if multiple AI responses
   useEffect(() => {
-    if (initialQuery) {
+    if (!initialQuery || !selectedModel) return;
+    
+    // Check if we have AI responses (sourceMessages > 1 means supervisor + AI responses)
+    if (initialQuery.sourceMessages && initialQuery.sourceMessages.length > 1) {
+      // Has AI responses - auto-trigger moderator
+      setIsModeratingContext(true);
+      sendQuery(
+        initialQuery.content,
+        'moderator',
+        selectedModel,
+        initialQuery.messageId
+      ).finally(() => {
+        setIsModeratingContext(false);
+        onClearInitialQuery?.();
+      });
+    } else {
+      // Only supervisor message - just set input for manual query
       setInput(initialQuery.content);
       setCurrentSourceMessageId(initialQuery.messageId);
       onClearInitialQuery?.();
     }
-  }, [initialQuery, onClearInitialQuery]);
+  }, [initialQuery, selectedModel, sendQuery, onClearInitialQuery]);
 
   // Update selected model when available models change
   useEffect(() => {
@@ -227,7 +254,15 @@ export function ConsultantPanel({
       {/* Messages area */}
       <ScrollArea className="flex-1 p-3 hydra-scrollbar">
         <div className="space-y-3">
-          {messages.length === 0 ? (
+          {/* Moderating indicator */}
+          {isModeratingContext && (
+            <div className="flex items-center gap-2 p-3 rounded-lg bg-hydra-consultant/10 border border-hydra-consultant/20 text-hydra-consultant">
+              <Users className="h-4 w-4 animate-pulse" />
+              <span className="text-sm">{t('dchat.moderating')}</span>
+            </div>
+          )}
+          
+          {messages.length === 0 && !isModeratingContext ? (
             <div className="text-center py-8 text-muted-foreground text-sm">
               <Lightbulb className="h-8 w-8 mx-auto mb-2 text-hydra-consultant/50" />
               <p>{t('dchat.empty')}</p>

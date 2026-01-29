@@ -280,6 +280,9 @@ const translations: Translations = {
   'dchat.expand': { ru: 'Развернуть', en: 'Expand' },
   'dchat.contextFrom': { ru: 'Контекст: Сообщение #{index}', en: 'Context: Message #{index}' },
   'dchat.copiedToChat': { ru: 'Скопировано в чат', en: 'Copied to chat' },
+  'dchat.moderator': { ru: 'Модератор', en: 'Moderator' },
+  'dchat.moderating': { ru: 'Модератор анализирует...', en: 'Moderator analyzing...' },
+  'dchat.contextAggregated': { ru: 'Анализ {count} ответов', en: 'Analyzing {count} responses' },
 
   // Role Library
   'roleLibrary.title': { ru: 'Библиотека ИИ-ролей', en: 'AI Role Library' },
