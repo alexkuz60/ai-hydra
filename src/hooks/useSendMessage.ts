@@ -184,6 +184,7 @@ export function useSendMessage({
           system_prompt: settings.systemPrompt,
           role: settings.role,
           enable_tools: settings.enableTools ?? true,
+          enabled_tools: settings.enabledTools ?? ['calculator', 'current_datetime', 'web_search'],
         };
       });
 
@@ -243,6 +244,7 @@ export function useSendMessage({
         system_prompt: settings.systemPrompt || DEFAULT_MODEL_SETTINGS.systemPrompt,
         role: 'consultant' as const,
         enable_tools: settings.enableTools ?? true,
+        enabled_tools: settings.enabledTools ?? ['calculator', 'current_datetime', 'web_search'],
       };
 
       await callOrchestrator(messageContent, attachmentUrls, [consultantModel]);
