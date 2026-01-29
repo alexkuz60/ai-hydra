@@ -19,11 +19,13 @@ export type Database = {
           created_at: string
           description: string
           display_name: string
+          http_config: Json | null
           id: string
           is_shared: boolean
           name: string
           parameters: Json
           prompt_template: string
+          tool_type: string
           updated_at: string
           usage_count: number
           user_id: string
@@ -32,11 +34,13 @@ export type Database = {
           created_at?: string
           description: string
           display_name: string
+          http_config?: Json | null
           id?: string
           is_shared?: boolean
           name: string
           parameters?: Json
           prompt_template: string
+          tool_type?: string
           updated_at?: string
           usage_count?: number
           user_id: string
@@ -45,11 +49,13 @@ export type Database = {
           created_at?: string
           description?: string
           display_name?: string
+          http_config?: Json | null
           id?: string
           is_shared?: boolean
           name?: string
           parameters?: Json
           prompt_template?: string
+          tool_type?: string
           updated_at?: string
           usage_count?: number
           user_id?: string

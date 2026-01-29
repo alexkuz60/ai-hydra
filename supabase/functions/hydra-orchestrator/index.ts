@@ -38,6 +38,14 @@ interface CustomToolDef {
     description: string;
     required: boolean;
   }>;
+  tool_type: 'prompt' | 'http_api';
+  http_config: {
+    url: string;
+    method: 'GET' | 'POST' | 'PUT' | 'DELETE';
+    headers?: Record<string, string>;
+    body_template?: string;
+    response_path?: string;
+  } | null;
 }
 
 interface Attachment {
@@ -711,7 +719,7 @@ serve(async (req) => {
       console.log(`Fetching ${allCustomToolIds.size} custom tools...`);
       const { data: customToolsData, error: customToolsError } = await supabase
         .from('custom_tools')
-        .select('id, name, display_name, description, prompt_template, parameters')
+        .select('id, name, display_name, description, prompt_template, parameters, tool_type, http_config')
         .in('id', Array.from(allCustomToolIds));
       
       if (customToolsError) {
@@ -725,6 +733,8 @@ serve(async (req) => {
             description: ct.description,
             prompt_template: ct.prompt_template,
             parameters: (ct.parameters as CustomToolDef['parameters']) || [],
+            tool_type: (ct.tool_type || 'prompt') as 'prompt' | 'http_api',
+            http_config: ct.http_config as CustomToolDef['http_config'],
           });
         }
         console.log(`Loaded ${customToolsMap.size} custom tools`);
