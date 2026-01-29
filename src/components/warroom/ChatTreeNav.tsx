@@ -53,6 +53,13 @@ interface DialogBlock {
   responseCount: number;
 }
 
+// Source message structure for moderator context
+export interface SourceMessage {
+  role: string;
+  model_name: string | null;
+  content: string;
+}
+
 interface ChatTreeNavProps {
   messages: Message[];
   perModelSettings: PerModelSettingsData;
@@ -60,7 +67,7 @@ interface ChatTreeNavProps {
   onMessageClick: (messageId: string) => void;
   onMessageDoubleClick?: (messageId: string) => void;
   onDeleteMessageGroup?: (userMessageId: string) => void;
-  onSendToDChat?: (messageId: string, content: string) => void;
+  onSendToDChat?: (messageId: string, aggregatedContent: string, sourceMessages: SourceMessage[]) => void;
   activeParticipant: string | null;
   filteredParticipant?: string | null;
   allCollapsed?: boolean;
@@ -82,6 +89,32 @@ function getModelShortName(modelId: string | null): string {
   const parts = modelId.split('/');
   const name = parts[parts.length - 1];
   return name.toUpperCase().replace(/-/g, ' ').replace(/\./g, ' ');
+}
+
+// Get role label for moderator context
+function getRoleLabelForModerator(role: string): string {
+  const labels: Record<string, string> = {
+    user: 'Супервизор',
+    assistant: 'Эксперт',
+    critic: 'Критик',
+    arbiter: 'Арбитр',
+    consultant: 'Консультант',
+  };
+  return labels[role] || role;
+}
+
+// Format messages for moderator analysis
+function formatForModerator(sourceMessages: SourceMessage[]): string {
+  const sections = sourceMessages.map((msg, idx) => {
+    if (msg.role === 'user') {
+      return `## ЗАПРОС СУПЕРВИЗОРА\n${msg.content}`;
+    }
+    const roleLabel = getRoleLabelForModerator(msg.role);
+    const modelLabel = msg.model_name?.split('/').pop() || 'Unknown';
+    return `## ОТВЕТ ${idx}: ${roleLabel} (${modelLabel})\n${msg.content}`;
+  });
+  
+  return sections.join('\n\n---\n\n');
 }
 
 // ==================== Subcomponents ====================
@@ -198,8 +231,9 @@ interface SupervisorNodeProps {
   onMessageClick: (id: string) => void;
   onMessageDoubleClick?: (id: string) => void;
   onDeleteClick: (e: React.MouseEvent, block: DialogBlock) => void;
-  onSendToDChat?: (messageId: string, content: string) => void;
+  onSendToDChat?: (messageId: string, aggregatedContent: string, sourceMessages: SourceMessage[]) => void;
   canDelete: boolean;
+  messages: Message[];
 }
 
 const SupervisorNode = memo(function SupervisorNode({
@@ -212,16 +246,37 @@ const SupervisorNode = memo(function SupervisorNode({
   onDeleteClick,
   onSendToDChat,
   canDelete,
+  messages,
 }: SupervisorNodeProps) {
   const { t } = useLanguage();
   
   const handleClick = useCallback(() => onMessageClick(block.id), [onMessageClick, block.id]);
   const handleDoubleClick = useCallback(() => onMessageDoubleClick?.(block.id), [onMessageDoubleClick, block.id]);
   const handleDelete = useCallback((e: React.MouseEvent) => onDeleteClick(e, block), [onDeleteClick, block]);
+  
+  // Collect full context: supervisor message + all AI responses
   const handleSendToDChat = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
-    onSendToDChat?.(block.id, block.supervisorMessage?.content || block.contentPreview);
-  }, [onSendToDChat, block]);
+    
+    // Build source messages array with full content
+    const sourceMessages: SourceMessage[] = [
+      { 
+        role: 'user', 
+        model_name: null, 
+        content: block.supervisorMessage?.content || '' 
+      },
+      ...block.aiResponses.map(ai => ({
+        role: ai.role,
+        model_name: ai.modelName,
+        content: messages.find(m => m.id === ai.id)?.content || ''
+      }))
+    ];
+    
+    // Format aggregated content for moderator
+    const aggregatedContent = formatForModerator(sourceMessages);
+    
+    onSendToDChat?.(block.id, aggregatedContent, sourceMessages);
+  }, [onSendToDChat, block, messages]);
   
   return (
     <div className="space-y-0.5 group/block">
@@ -534,6 +589,7 @@ export const ChatTreeNav = memo(function ChatTreeNav({
                   onDeleteClick={handleDeleteClick}
                   onSendToDChat={onSendToDChat}
                   canDelete={!!onDeleteMessageGroup}
+                  messages={messages}
                 />
               );
             } else {

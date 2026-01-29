@@ -42,6 +42,11 @@ export default function ExpertPanel() {
   const [dChatContext, setDChatContext] = useState<{
     messageId: string;
     content: string;
+    sourceMessages?: Array<{
+      role: string;
+      model_name: string | null;
+      content: string;
+    }>;
   } | null>(null);
   
   // D-Chat panel width persistence
@@ -153,9 +158,13 @@ export default function ExpertPanel() {
     }
   }, [allCollapsed, expandAll, collapseAll, messages]);
 
-  // D-Chat: Send message from navigator to D-Chat
-  const handleSendToDChat = useCallback((messageId: string, content: string) => {
-    setDChatContext({ messageId, content });
+  // D-Chat: Send message from navigator to D-Chat with full context
+  const handleSendToDChat = useCallback((
+    messageId: string, 
+    aggregatedContent: string, 
+    sourceMessages: Array<{ role: string; model_name: string | null; content: string }>
+  ) => {
+    setDChatContext({ messageId, content: aggregatedContent, sourceMessages });
     saveConsultantPanelWidth(20); // Expand D-Chat
   }, [saveConsultantPanelWidth]);
 

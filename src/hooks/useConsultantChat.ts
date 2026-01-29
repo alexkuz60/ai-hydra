@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { LOVABLE_AI_MODELS, PERSONAL_KEY_MODELS } from '@/hooks/useAvailableModels';
 
-export type ConsultantMode = 'web_search' | 'expert' | 'critic' | 'arbiter';
+export type ConsultantMode = 'web_search' | 'expert' | 'critic' | 'arbiter' | 'moderator';
 
 export interface ConsultantMessage {
   id: string;
@@ -36,11 +36,12 @@ interface UseConsultantChatReturn {
 }
 
 // Map consultant mode to message role
-const modeToRole: Record<ConsultantMode, 'consultant' | 'critic' | 'arbiter' | 'assistant'> = {
+const modeToRole: Record<ConsultantMode, 'consultant' | 'critic' | 'arbiter' | 'assistant' | 'moderator'> = {
   web_search: 'consultant',
   expert: 'assistant',
   critic: 'critic',
   arbiter: 'arbiter',
+  moderator: 'moderator',
 };
 
 export function useConsultantChat({
