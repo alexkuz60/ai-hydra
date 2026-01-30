@@ -14,22 +14,22 @@ interface InputNodeProps {
 
 export const InputNode = memo(({ data, selected }: InputNodeProps) => {
   return (
-    <div className={cn(
-      "px-4 py-3 min-w-[140px] rounded-lg border-2 transition-all shadow-sm",
-      "bg-[hsl(45_15%_92%)] border-hydra-info",
-      "dark:!bg-[hsl(225_30%_12%)] dark:border-hydra-info dark:shadow-[0_0_10px_hsl(210_90%_65%/0.3)]",
-      selected && "ring-2 ring-primary ring-offset-2 ring-offset-background"
-    )}>
-      <div className="flex items-center gap-2">
-        <div className="p-1.5 rounded bg-hydra-info/20">
-          <ArrowDownToLine className="h-4 w-4 text-hydra-info" />
+    <div 
+      className={cn(
+        "w-[120px] h-[120px] rounded-full border-2 transition-all flex items-center justify-center",
+        "border-hydra-info",
+        selected && "ring-2 ring-primary ring-offset-2 ring-offset-background"
+      )}
+      style={{
+        backgroundColor: 'hsl(var(--node-bg))',
+        boxShadow: '0 0 12px hsl(210 90% 65% / 0.4)',
+      }}
+    >
+      <div className="flex flex-col items-center gap-1.5">
+        <div className="p-2 rounded-full bg-hydra-info/20">
+          <ArrowDownToLine className="h-5 w-5 text-hydra-info" />
         </div>
-        <div className="flex-1 min-w-0">
-          <div className="text-sm font-medium truncate text-hydra-info">{data.label || 'Вход'}</div>
-          {data.description && (
-            <div className="text-xs text-muted-foreground truncate">{data.description}</div>
-          )}
-        </div>
+        <div className="text-sm font-medium text-hydra-info">{data.label || 'Вход'}</div>
       </div>
       <Handle
         type="source"

@@ -61,6 +61,7 @@
     --hydra-info: 210 80% 55%; /* blue for input nodes */
     --hydra-surface: 45 15% 90%;
     --hydra-surface-elevated: 45 10% 95%;
+    --node-bg: 45 15% 92%; /* light theme node background */
 
     --sidebar-background: 220 20% 10%;
     --sidebar-foreground: 190 30% 90%;
@@ -124,6 +125,7 @@
     --hydra-info: 210 90% 65%; /* bright blue for input nodes */
     --hydra-surface: 225 30% 14%;
     --hydra-surface-elevated: 225 28% 18%;
+    --node-bg: 225 30% 12%; /* dark theme node background */
 
     --sidebar-background: 225 35% 6%;
     --sidebar-foreground: 190 30% 90%;
