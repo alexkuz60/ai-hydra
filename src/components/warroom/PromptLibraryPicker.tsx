@@ -3,7 +3,6 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -23,7 +22,8 @@ import { Search, Library, Trash2, Loader2, User, Users } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
-import type { AgentRole } from './PerModelSettings';
+import { AgentRole, getRoleBadgeColor } from '@/config/roles';
+import { RoleSelectOptions } from '@/components/ui/RoleSelectItem';
 
 interface PromptItem {
   id: string;
@@ -136,13 +136,9 @@ export function PromptLibraryPicker({ open, onOpenChange, onSelect, currentRole 
     return matchesSearch && matchesRole;
   });
 
-  const getRoleBadgeColor = (role: string) => {
-    switch (role) {
-      case 'assistant': return 'bg-primary/20 text-primary';
-      case 'critic': return 'bg-orange-500/20 text-orange-400';
-      case 'arbiter': return 'bg-purple-500/20 text-purple-400';
-      default: return 'bg-muted text-muted-foreground';
-    }
+  const getRoleBadge = (role: string) => {
+    const colorClass = getRoleBadgeColor(role);
+    return colorClass;
   };
 
   return (
@@ -167,15 +163,12 @@ export function PromptLibraryPicker({ open, onOpenChange, onSelect, currentRole 
             />
           </div>
           <Select value={roleFilter} onValueChange={setRoleFilter}>
-            <SelectTrigger className="w-[140px] h-9">
+            <SelectTrigger className="w-[160px] h-9">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">{t('promptLibrary.allRoles')}</SelectItem>
-              <SelectItem value="assistant">{t('role.assistant')}</SelectItem>
-              <SelectItem value="critic">{t('role.critic')}</SelectItem>
-              <SelectItem value="arbiter">{t('role.arbiter')}</SelectItem>
-              <SelectItem value="consultant">{t('role.consultant')}</SelectItem>
+              <RoleSelectOptions />
             </SelectContent>
           </Select>
         </div>
@@ -209,7 +202,7 @@ export function PromptLibraryPicker({ open, onOpenChange, onSelect, currentRole 
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
                         <span className="font-medium text-sm truncate">{prompt.name}</span>
-                        <Badge variant="secondary" className={cn('text-[10px] px-1.5 py-0', getRoleBadgeColor(prompt.role))}>
+                        <Badge variant="secondary" className={cn('text-[10px] px-1.5 py-0', getRoleBadge(prompt.role))}>
                           {t(`role.${prompt.role}`)}
                         </Badge>
                         {prompt.is_shared && (

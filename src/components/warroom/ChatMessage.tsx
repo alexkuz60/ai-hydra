@@ -8,15 +8,12 @@ import { format } from 'date-fns';
 import { ru, enUS } from 'date-fns/locale';
 import { ToolCallDisplay } from './ToolCallDisplay';
 import { 
-  Brain, 
-  Shield, 
-  Scale, 
   User,
   Crown,
   ChevronDown, 
   ChevronUp, 
   Trash2,
-  Lightbulb
+  Brain
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -33,6 +30,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Message, MessageRole, MessageMetadata } from '@/types/messages';
 import { ToolCall, ToolResult } from '@/types/tools';
+import { ROLE_CONFIG, getRoleConfig } from '@/config/roles';
 
 // User display info passed from parent
 export interface UserDisplayInfo {
@@ -40,38 +38,18 @@ export interface UserDisplayInfo {
   isSupervisor: boolean;
 }
 
-const roleConfig = {
-  user: {
-    icon: User,
-    label: 'role.user',
-    variant: 'user' as const,
-    supervisorVariant: 'supervisor' as const,
-    color: 'text-hydra-user',
-  },
-  assistant: {
-    icon: Brain,
-    label: 'role.assistant',
-    variant: 'expert' as const,
-    color: 'text-hydra-expert',
-  },
-  critic: {
-    icon: Shield,
-    label: 'role.critic',
-    variant: 'critic' as const,
-    color: 'text-hydra-critical',
-  },
-  arbiter: {
-    icon: Scale,
-    label: 'role.arbiter',
-    variant: 'arbiter' as const,
-    color: 'text-hydra-arbiter',
-  },
-  consultant: {
-    icon: Lightbulb,
-    label: 'role.consultant',
-    variant: 'glass' as const,
-    color: 'text-hydra-consultant',
-  },
+// Card variant mapping for roles
+const roleCardVariants: Record<string, 'default' | 'expert' | 'critic' | 'arbiter' | 'user' | 'supervisor' | 'glass' | 'advisor' | 'archivist' | 'analyst' | 'webhunter' | 'moderator'> = {
+  user: 'user',
+  assistant: 'expert',
+  critic: 'critic',
+  arbiter: 'arbiter',
+  consultant: 'glass',
+  moderator: 'moderator',
+  advisor: 'advisor',
+  archivist: 'archivist',
+  analyst: 'analyst',
+  webhunter: 'webhunter',
 };
 
 interface BrainRatingProps {
@@ -135,7 +113,7 @@ export function ChatMessage({ message, userDisplayInfo, onDelete, onRatingChange
     }
   };
   
-  const config = roleConfig[message.role];
+  const config = getRoleConfig(message.role);
   
   // For user messages, show custom display based on role
   const isUserMessage = message.role === 'user';
@@ -162,9 +140,9 @@ export function ChatMessage({ message, userDisplayInfo, onDelete, onRatingChange
   const isAiMessage = message.role !== 'user';
 
   // Determine card variant - use supervisor variant for supervisor users
-  const cardVariant = isUserMessage && userDisplayInfo?.isSupervisor && 'supervisorVariant' in config
-    ? config.supervisorVariant
-    : config.variant;
+  const cardVariant = isUserMessage && userDisplayInfo?.isSupervisor 
+    ? 'supervisor' 
+    : roleCardVariants[message.role] || 'default';
 
   return (
     <HydraCard 

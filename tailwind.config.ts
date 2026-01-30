@@ -74,6 +74,11 @@ export default {
           moderator: "hsl(var(--hydra-moderator))",
           user: "hsl(var(--hydra-user))",
           admin: "hsl(var(--hydra-admin))",
+          // New AI roles
+          advisor: "hsl(var(--hydra-advisor))",
+          archivist: "hsl(var(--hydra-archivist))",
+          analyst: "hsl(var(--hydra-analyst))",
+          webhunter: "hsl(var(--hydra-webhunter))",
           surface: "hsl(var(--hydra-surface))",
           "surface-elevated": "hsl(var(--hydra-surface-elevated))",
         },
