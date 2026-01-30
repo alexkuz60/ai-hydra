@@ -82,6 +82,11 @@ const translations: Translations = {
   'flowEditor.properties.loadingPrompts': { ru: 'Загрузка промптов...', en: 'Loading prompts...' },
   'flowEditor.properties.noPromptsAvailable': { ru: 'Нет доступных промптов', en: 'No prompts available' },
   'flowEditor.properties.orWriteCustom': { ru: 'или напишите свой:', en: 'or write custom:' },
+  'flowEditor.properties.selectFromToolLibrary': { ru: 'Выбрать из библиотеки инструментов', en: 'Select from tool library' },
+  'flowEditor.properties.loadingTools': { ru: 'Загрузка инструментов...', en: 'Loading tools...' },
+  'flowEditor.properties.noToolsAvailable': { ru: 'Нет доступных инструментов', en: 'No tools available' },
+  'flowEditor.properties.noToolSelected': { ru: 'Выберите инструмент', en: 'Select a tool' },
+  'flowEditor.properties.orConfigureManually': { ru: 'или настройте вручную', en: 'or configure manually' },
   
   // Auth
   'auth.email': { ru: 'Email', en: 'Email' },

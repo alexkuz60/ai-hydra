@@ -14,6 +14,7 @@ import { FlowNodeType } from '@/types/flow';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { Badge } from '@/components/ui/badge';
 
 interface PromptLibraryItem {
   id: string;
@@ -21,6 +22,15 @@ interface PromptLibraryItem {
   content: string;
   role: string;
   description: string | null;
+}
+
+interface CustomToolItem {
+  id: string;
+  name: string;
+  display_name: string;
+  description: string;
+  tool_type: string;
+  parameters: unknown;
 }
 
 interface NodePropertiesPanelProps {
@@ -58,6 +68,8 @@ export function NodePropertiesPanel({
   const { user } = useAuth();
   const [prompts, setPrompts] = useState<PromptLibraryItem[]>([]);
   const [loadingPrompts, setLoadingPrompts] = useState(false);
+  const [tools, setTools] = useState<CustomToolItem[]>([]);
+  const [loadingTools, setLoadingTools] = useState(false);
 
   // Load prompts from library when component mounts or user changes
   useEffect(() => {
@@ -84,6 +96,31 @@ export function NodePropertiesPanel({
     loadPrompts();
   }, [user]);
 
+  // Load tools from library when component mounts or user changes
+  useEffect(() => {
+    if (!user) return;
+    
+    const loadTools = async () => {
+      setLoadingTools(true);
+      try {
+        const { data, error } = await supabase
+          .from('custom_tools')
+          .select('id, name, display_name, description, tool_type, parameters')
+          .or(`user_id.eq.${user.id},is_shared.eq.true`)
+          .order('display_name');
+        
+        if (error) throw error;
+        setTools(data || []);
+      } catch (error) {
+        console.error('Failed to load tools:', error);
+      } finally {
+        setLoadingTools(false);
+      }
+    };
+    
+    loadTools();
+  }, [user]);
+
   if (!selectedNode) return null;
 
   const nodeType = selectedNode.type as FlowNodeType;
@@ -106,6 +143,20 @@ export function NodePropertiesPanel({
         promptId: selectedPrompt.id,
         promptContent: selectedPrompt.content,
         promptRole: selectedPrompt.role,
+      });
+    }
+  };
+
+  const handleToolSelect = (toolId: string) => {
+    const selectedTool = tools.find(t => t.id === toolId);
+    if (selectedTool) {
+      onUpdateNode(selectedNode.id, {
+        ...selectedNode.data,
+        label: selectedTool.display_name,
+        toolId: selectedTool.id,
+        toolName: selectedTool.name,
+        toolType: selectedTool.tool_type,
+        toolConfig: selectedTool.parameters,
       });
     }
   };
@@ -361,7 +412,57 @@ export function NodePropertiesPanel({
                 placeholder={t('flowEditor.nodes.tool')}
               />
             </div>
+            
+            {/* Tool Library Selector */}
             <div className="space-y-2">
+              <Label className="flex items-center gap-2">
+                <Library className="h-4 w-4" />
+                {t('flowEditor.properties.selectFromToolLibrary')}
+              </Label>
+              <Select
+                value={(selectedNode.data.toolId as string) || ''}
+                onValueChange={handleToolSelect}
+                disabled={loadingTools}
+              >
+                <SelectTrigger className="bg-background">
+                  <SelectValue 
+                    placeholder={
+                      loadingTools 
+                        ? t('flowEditor.properties.loadingTools')
+                        : tools.length === 0
+                          ? t('flowEditor.properties.noToolsAvailable')
+                          : t('flowEditor.properties.noToolSelected')
+                    } 
+                  />
+                </SelectTrigger>
+                <SelectContent className="bg-popover border z-50 max-h-60">
+                  {tools.map((tool) => (
+                    <SelectItem key={tool.id} value={tool.id}>
+                      <div className="flex flex-col">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium">{tool.display_name}</span>
+                          <Badge variant="outline" className="text-xs">
+                            {tool.tool_type === 'http_api' ? 'HTTP' : 'Prompt'}
+                          </Badge>
+                        </div>
+                        {tool.description && (
+                          <span className="text-xs text-muted-foreground truncate max-w-[200px]">
+                            {tool.description}
+                          </span>
+                        )}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <Separator className="my-2" />
+            
+            <div className="space-y-2">
+              <Label htmlFor="toolName" className="text-muted-foreground text-xs">
+                {t('flowEditor.properties.orConfigureManually')}
+              </Label>
               <Label htmlFor="toolName">{t('flowEditor.properties.toolName')}</Label>
               <Input
                 id="toolName"
