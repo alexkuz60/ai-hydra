@@ -70,6 +70,7 @@ export default {
           expert: "hsl(var(--hydra-expert))",
           arbiter: "hsl(var(--hydra-arbiter))",
           consultant: "hsl(var(--hydra-consultant))",
+          supervisor: "hsl(var(--hydra-supervisor))",
           surface: "hsl(var(--hydra-surface))",
           "surface-elevated": "hsl(var(--hydra-surface-elevated))",
         },
