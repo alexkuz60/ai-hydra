@@ -45,6 +45,7 @@ const roleConfig = {
     icon: User,
     label: 'role.user',
     variant: 'user' as const,
+    supervisorVariant: 'supervisor' as const,
     color: 'text-hydra-user',
   },
   assistant: {
@@ -160,9 +161,14 @@ export function ChatMessage({ message, userDisplayInfo, onDelete, onRatingChange
 
   const isAiMessage = message.role !== 'user';
 
+  // Determine card variant - use supervisor variant for supervisor users
+  const cardVariant = isUserMessage && userDisplayInfo?.isSupervisor && 'supervisorVariant' in config
+    ? config.supervisorVariant
+    : config.variant;
+
   return (
     <HydraCard 
-      variant={config.variant}
+      variant={cardVariant}
       className="animate-slide-up group relative"
     >
       <HydraCardHeader>

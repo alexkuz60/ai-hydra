@@ -295,12 +295,13 @@ const SupervisorNode = memo(function SupervisorNode({
       {/* Supervisor node */}
       <Tooltip>
         <TooltipTrigger asChild>
-          <div
+        <div
             className={cn(
               "flex items-center gap-2 p-2 rounded-md cursor-pointer transition-colors",
-              activeParticipant === block.id && "bg-sidebar-accent",
+              "bg-hydra-supervisor/10",
+              activeParticipant === block.id && "bg-hydra-supervisor/20",
               filteredParticipant === block.id && "ring-2 ring-primary",
-              "hover:bg-sidebar-accent/50"
+              "hover:bg-hydra-supervisor/15"
             )}
             onClick={handleClick}
             onDoubleClick={handleDoubleClick}
@@ -586,7 +587,7 @@ export const ChatTreeNav = memo(function ChatTreeNav({
           role: role as MessageRole,
           icon: config.icon,
           color: config.color,
-          displayName: `${t(`role.${role}`)} ${getModelShortName(msg.model_name)}`,
+          displayName: t(`role.${role}`),
         };
 
         if (currentBlock) {
