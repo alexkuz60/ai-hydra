@@ -4,6 +4,7 @@ import { Layout } from '@/components/layout/Layout';
 import { FlowCanvas } from '@/components/flow/FlowCanvas';
 import { FlowSidebar } from '@/components/flow/FlowSidebar';
 import { FlowToolbar } from '@/components/flow/FlowToolbar';
+import { NodePropertiesPanel } from '@/components/flow/NodePropertiesPanel';
 import { useFlowDiagrams, exportToMermaid } from '@/hooks/useFlowDiagrams';
 import { FlowNodeType, FlowDiagram } from '@/types/flow';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -26,6 +27,7 @@ function FlowEditorContent() {
   const [diagramName, setDiagramName] = useState(t('flowEditor.newDiagram'));
   const [currentDiagramId, setCurrentDiagramId] = useState<string | null>(null);
   const [hasChanges, setHasChanges] = useState(false);
+  const [selectedNode, setSelectedNode] = useState<Node | null>(null);
   const reactFlowInstance = useRef<ReactFlowInstance | null>(null);
 
   // Track changes
@@ -65,7 +67,33 @@ function FlowEditorContent() {
     setDiagramName(t('flowEditor.newDiagram'));
     setCurrentDiagramId(null);
     setHasChanges(false);
+    setSelectedNode(null);
   }, [setNodes, setEdges, t]);
+
+  const handleNodeClick = useCallback((_event: React.MouseEvent, node: Node) => {
+    setSelectedNode(node);
+  }, []);
+
+  const handlePaneClick = useCallback(() => {
+    setSelectedNode(null);
+  }, []);
+
+  const handleUpdateNode = useCallback((nodeId: string, data: Record<string, unknown>) => {
+    setNodes((nds) =>
+      nds.map((node) =>
+        node.id === nodeId ? { ...node, data } : node
+      )
+    );
+    // Update selected node reference
+    setSelectedNode((prev) =>
+      prev?.id === nodeId ? { ...prev, data } : prev
+    );
+  }, [setNodes]);
+
+  const handleDeleteNode = useCallback((nodeId: string) => {
+    setNodes((nds) => nds.filter((node) => node.id !== nodeId));
+    setEdges((eds) => eds.filter((edge) => edge.source !== nodeId && edge.target !== nodeId));
+  }, [setNodes, setEdges]);
 
   const handleLoadDiagram = useCallback((diagram: FlowDiagram) => {
     setNodes(diagram.nodes as Node[]);
@@ -73,6 +101,7 @@ function FlowEditorContent() {
     setDiagramName(diagram.name);
     setCurrentDiagramId(diagram.id);
     setHasChanges(false);
+    setSelectedNode(null);
 
     if (diagram.viewport && reactFlowInstance.current) {
       reactFlowInstance.current.setViewport(diagram.viewport);
@@ -165,7 +194,17 @@ function FlowEditorContent() {
             setNodes={setNodes}
             setEdges={setEdges}
             onInit={onInit}
+            onNodeClick={handleNodeClick}
+            onPaneClick={handlePaneClick}
           />
+          {selectedNode && (
+            <NodePropertiesPanel
+              selectedNode={selectedNode}
+              onClose={() => setSelectedNode(null)}
+              onUpdateNode={handleUpdateNode}
+              onDeleteNode={handleDeleteNode}
+            />
+          )}
         </div>
       </div>
     </Layout>
