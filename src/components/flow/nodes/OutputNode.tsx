@@ -16,7 +16,8 @@ export const OutputNode = memo(({ data, selected }: OutputNodeProps) => {
   return (
     <div className={cn(
       "px-4 py-3 min-w-[140px] rounded-lg border-2 transition-all",
-      "bg-hydra-glow/10 border-hydra-glow",
+      "bg-card border-hydra-glow shadow-sm",
+      "dark:bg-[hsl(190_100%_55%/0.15)] dark:shadow-[0_0_10px_hsl(190_100%_55%/0.2)]",
       selected && "ring-2 ring-primary ring-offset-2 ring-offset-background"
     )}>
       <Handle
@@ -29,7 +30,7 @@ export const OutputNode = memo(({ data, selected }: OutputNodeProps) => {
           <ArrowUpFromLine className="h-4 w-4 text-hydra-glow" />
         </div>
         <div className="flex-1 min-w-0">
-          <div className="text-sm font-medium truncate">{data.label || 'Выход'}</div>
+          <div className="text-sm font-medium truncate text-hydra-glow">{data.label || 'Выход'}</div>
           {data.description && (
             <div className="text-xs text-muted-foreground truncate">{data.description}</div>
           )}

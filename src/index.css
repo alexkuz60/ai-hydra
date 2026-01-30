@@ -318,28 +318,32 @@
       opacity: 1;
     }
   }
+}
 
-  /* React Flow Controls styling for dark theme */
-  .react-flow__controls {
-    background: hsl(var(--card)) !important;
-    border: 1px solid hsl(var(--border)) !important;
-    box-shadow: 0 4px 12px hsl(0 0% 0% / 0.3) !important;
-  }
+/* React Flow Controls styling - outside of @layer for higher specificity */
+.dark .react-flow__controls {
+  background: hsl(var(--card)) !important;
+  border: 1px solid hsl(var(--border)) !important;
+  box-shadow: 0 4px 12px hsl(0 0% 0% / 0.4) !important;
+  border-radius: 8px !important;
+}
 
-  .react-flow__controls-button {
-    background: hsl(var(--card)) !important;
-    border-bottom: 1px solid hsl(var(--border)) !important;
-    fill: hsl(var(--foreground)) !important;
-    color: hsl(var(--foreground)) !important;
-  }
+.dark .react-flow__controls-button {
+  background: hsl(var(--card)) !important;
+  border: none !important;
+  border-bottom: 1px solid hsl(var(--border)) !important;
+}
 
-  .react-flow__controls-button:hover {
-    background: hsl(var(--muted)) !important;
-  }
+.dark .react-flow__controls-button:hover {
+  background: hsl(var(--muted)) !important;
+}
 
-  .react-flow__controls-button svg {
-    fill: hsl(var(--foreground)) !important;
-  }
+.dark .react-flow__controls-button svg {
+  fill: hsl(var(--foreground)) !important;
+}
+
+.dark .react-flow__controls-button svg path {
+  fill: hsl(var(--foreground)) !important;
 }
 
 @layer utilities {
