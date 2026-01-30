@@ -79,6 +79,7 @@ export default {
           archivist: "hsl(var(--hydra-archivist))",
           analyst: "hsl(var(--hydra-analyst))",
           webhunter: "hsl(var(--hydra-webhunter))",
+          info: "hsl(var(--hydra-info))",
           surface: "hsl(var(--hydra-surface))",
           "surface-elevated": "hsl(var(--hydra-surface-elevated))",
         },

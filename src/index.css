@@ -57,6 +57,8 @@
     --hydra-archivist: 30 60% 45%; /* bronze for archivist */
     --hydra-analyst: 240 70% 55%; /* indigo for analyst */
     --hydra-webhunter: 25 90% 55%; /* orange for web hunter */
+    /* Flow editor nodes */
+    --hydra-info: 210 80% 55%; /* blue for input nodes */
     --hydra-surface: 45 15% 90%;
     --hydra-surface-elevated: 45 10% 95%;
 
@@ -118,6 +120,8 @@
     --hydra-archivist: 30 65% 50%; /* bronze for archivist */
     --hydra-analyst: 240 75% 60%; /* indigo for analyst */
     --hydra-webhunter: 25 95% 60%; /* orange for web hunter */
+    /* Flow editor nodes - Dark */
+    --hydra-info: 210 90% 65%; /* bright blue for input nodes */
     --hydra-surface: 225 30% 14%;
     --hydra-surface-elevated: 225 28% 18%;
 
@@ -313,6 +317,28 @@
       box-shadow: 0 0 12px hsl(var(--hydra-glow));
       opacity: 1;
     }
+  }
+
+  /* React Flow Controls styling for dark theme */
+  .react-flow__controls {
+    background: hsl(var(--card)) !important;
+    border: 1px solid hsl(var(--border)) !important;
+    box-shadow: 0 4px 12px hsl(0 0% 0% / 0.3) !important;
+  }
+
+  .react-flow__controls-button {
+    background: hsl(var(--card)) !important;
+    border-bottom: 1px solid hsl(var(--border)) !important;
+    fill: hsl(var(--foreground)) !important;
+    color: hsl(var(--foreground)) !important;
+  }
+
+  .react-flow__controls-button:hover {
+    background: hsl(var(--muted)) !important;
+  }
+
+  .react-flow__controls-button svg {
+    fill: hsl(var(--foreground)) !important;
   }
 }
 
