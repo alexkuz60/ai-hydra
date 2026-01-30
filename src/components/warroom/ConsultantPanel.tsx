@@ -148,6 +148,23 @@ export function ConsultantPanel({
   if (isCollapsed) {
     return (
       <div className="h-full flex flex-col items-center py-4 gap-3 bg-sidebar border-l border-border">
+        {/* Expand button */}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onExpand}
+              className="text-muted-foreground hover:text-foreground"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="left">{t('dchat.expand')}</TooltipContent>
+        </Tooltip>
+
+        <div className="h-px w-6 bg-border" />
+
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
