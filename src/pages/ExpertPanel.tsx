@@ -12,6 +12,8 @@ import { ChatMessage, UserDisplayInfo } from '@/components/warroom/ChatMessage';
 import { ChatTreeNav } from '@/components/warroom/ChatTreeNav';
 import { FileUpload } from '@/components/warroom/FileUpload';
 import { ConsultantSelector } from '@/components/warroom/ConsultantSelector';
+import { DateSeparator } from '@/components/warroom/DateSeparator';
+import { isSameDay } from 'date-fns';
 import { useAvailableModels, ModelOption } from '@/hooks/useAvailableModels';
 import { usePasteHandler } from '@/hooks/usePasteHandler';
 import { useUserProfile } from '@/hooks/useUserProfile';
@@ -249,24 +251,33 @@ export default function ExpertPanel() {
                       </p>
                     </div>
                   ) : (
-                    displayedMessages.map((message) => (
-                      <div
-                        key={message.id}
-                        ref={(el) => {
-                          if (el) messageRefs.current.set(message.id, el);
-                          else messageRefs.current.delete(message.id);
-                        }}
-                      >
-                        <ChatMessage 
-                          message={message}
-                          userDisplayInfo={userDisplayInfo}
-                          onDelete={handleDeleteMessage}
-                          onRatingChange={handleRatingChange}
-                          isCollapsed={isCollapsed(message.id)}
-                          onToggleCollapse={toggleCollapsed}
-                        />
-                      </div>
-                    ))
+                    displayedMessages.map((message, index) => {
+                      const messageDate = new Date(message.created_at);
+                      const prevMessage = index > 0 ? displayedMessages[index - 1] : null;
+                      const showDateSeparator = !prevMessage || 
+                        !isSameDay(messageDate, new Date(prevMessage.created_at));
+
+                      return (
+                        <React.Fragment key={message.id}>
+                          {showDateSeparator && <DateSeparator date={messageDate} />}
+                          <div
+                            ref={(el) => {
+                              if (el) messageRefs.current.set(message.id, el);
+                              else messageRefs.current.delete(message.id);
+                            }}
+                          >
+                            <ChatMessage 
+                              message={message}
+                              userDisplayInfo={userDisplayInfo}
+                              onDelete={handleDeleteMessage}
+                              onRatingChange={handleRatingChange}
+                              isCollapsed={isCollapsed(message.id)}
+                              onToggleCollapse={toggleCollapsed}
+                            />
+                          </div>
+                        </React.Fragment>
+                      );
+                    })
                   )}
                   <div ref={messagesEndRef} />
                 </div>
