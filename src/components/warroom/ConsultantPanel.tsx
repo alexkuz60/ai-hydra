@@ -1,4 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { format } from 'date-fns';
+import { ru, enUS } from 'date-fns/locale';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -365,6 +367,11 @@ function ConsultantMessageItem({
           {isUser
             ? 'Вы'
             : message.model_name?.split('/').pop() || 'Консультант'}
+        </span>
+        <span className="ml-auto">
+          {format(new Date(message.created_at), 'HH:mm', { 
+            locale: t('common.locale') === 'ru' ? ru : enUS 
+          })}
         </span>
       </div>
 

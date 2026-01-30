@@ -4,6 +4,8 @@ import { Button } from '@/components/ui/button';
 import { MarkdownRenderer } from './MarkdownRenderer';
 import { AttachmentPreview, Attachment } from './AttachmentPreview';
 import { ThinkingBlock } from './ThinkingBlock';
+import { format } from 'date-fns';
+import { ru, enUS } from 'date-fns/locale';
 import { ToolCallDisplay } from './ToolCallDisplay';
 import { 
   Brain, 
@@ -176,11 +178,14 @@ export function ChatMessage({ message, userDisplayInfo, onDelete, onRatingChange
             </span>
           )}
         </HydraCardTitle>
-        {message.confidence_score && (
-          <span className="text-xs text-muted-foreground ml-auto">
-            Confidence: {(message.confidence_score * 100).toFixed(0)}%
-          </span>
-        )}
+        <span className="text-xs text-muted-foreground ml-auto flex items-center gap-2">
+          {format(new Date(message.created_at), 'dd MMM, HH:mm', { 
+            locale: t('common.locale') === 'ru' ? ru : enUS 
+          })}
+          {message.confidence_score && (
+            <span>• {(message.confidence_score * 100).toFixed(0)}%</span>
+          )}
+        </span>
       </HydraCardHeader>
       
       <HydraCardContent className="text-foreground/90">
