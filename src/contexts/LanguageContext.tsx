@@ -17,6 +17,8 @@ const translations: Translations = {
   'nav.expertPanel': { ru: 'Панель экспертов', en: 'Expert Panel' },
   'nav.tasks': { ru: 'Задачи', en: 'Tasks' },
   'nav.roleLibrary': { ru: 'Библиотека промптов', en: 'Prompt Library' },
+  'nav.toolsLibrary': { ru: 'Инструменты', en: 'Tools' },
+  'nav.flowEditor': { ru: 'Редактор Flow', en: 'Flow Editor' },
   'nav.profile': { ru: 'Профиль', en: 'Profile' },
   'nav.settings': { ru: 'Настройки', en: 'Settings' },
   'nav.logout': { ru: 'Выйти', en: 'Logout' },
@@ -25,6 +27,32 @@ const translations: Translations = {
   'nav.admin': { ru: 'Админ-панель', en: 'Admin Panel' },
   'nav.warRoom': { ru: 'Экспертный Совет', en: 'Expert Council' },
   'nav.modelRatings': { ru: 'Рейтинг моделей', en: 'Model Ratings' },
+  
+  // Mermaid
+  'mermaid.error': { ru: 'Ошибка рендеринга диаграммы', en: 'Diagram render error' },
+  'mermaid.copy': { ru: 'Копировать код', en: 'Copy code' },
+  
+  // Flow Editor
+  'flowEditor.title': { ru: 'Редактор Data-Flow', en: 'Data-Flow Editor' },
+  'flowEditor.description': { ru: 'Визуальное проектирование логики AI-промптов и цепочек обработки', en: 'Visual design for AI prompt logic and processing chains' },
+  'flowEditor.newDiagram': { ru: 'Новая диаграмма', en: 'New Diagram' },
+  'flowEditor.save': { ru: 'Сохранить', en: 'Save' },
+  'flowEditor.export': { ru: 'Экспорт', en: 'Export' },
+  'flowEditor.exportPng': { ru: 'Экспорт в PNG', en: 'Export as PNG' },
+  'flowEditor.exportSvg': { ru: 'Экспорт в SVG', en: 'Export as SVG' },
+  'flowEditor.exportJson': { ru: 'Экспорт в JSON', en: 'Export as JSON' },
+  'flowEditor.generateMermaid': { ru: 'Сгенерировать Mermaid', en: 'Generate Mermaid' },
+  'flowEditor.nodes.input': { ru: 'Вход', en: 'Input' },
+  'flowEditor.nodes.prompt': { ru: 'Промпт', en: 'Prompt' },
+  'flowEditor.nodes.model': { ru: 'AI Модель', en: 'AI Model' },
+  'flowEditor.nodes.condition': { ru: 'Условие', en: 'Condition' },
+  'flowEditor.nodes.tool': { ru: 'Инструмент', en: 'Tool' },
+  'flowEditor.nodes.output': { ru: 'Выход', en: 'Output' },
+  'flowEditor.sidebar.elements': { ru: 'Элементы', en: 'Elements' },
+  'flowEditor.sidebar.dragHint': { ru: 'Перетащите на холст', en: 'Drag to canvas' },
+  'flowEditor.empty': { ru: 'Перетащите элементы на холст для создания диаграммы', en: 'Drag elements to canvas to create a diagram' },
+  'flowEditor.saved': { ru: 'Диаграмма сохранена', en: 'Diagram saved' },
+  'flowEditor.deleted': { ru: 'Диаграмма удалена', en: 'Diagram deleted' },
   
   // Auth
   'auth.email': { ru: 'Email', en: 'Email' },

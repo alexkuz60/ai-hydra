@@ -8,6 +8,7 @@ import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { Button } from '@/components/ui/button';
 import { Copy, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { MermaidBlock } from './MermaidBlock';
 import 'katex/dist/katex.min.css';
 
 interface MarkdownRendererProps {
@@ -45,6 +46,11 @@ function CodeBlock({
         {children}
       </code>
     );
+  }
+
+  // Render Mermaid diagrams
+  if (language === 'mermaid') {
+    return <MermaidBlock content={codeString} />;
   }
 
   return (

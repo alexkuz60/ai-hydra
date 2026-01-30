@@ -38,7 +38,8 @@ import {
   ChevronUp,
   BarChart3,
   Library,
-  Wrench
+  Wrench,
+  GitBranch
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -63,7 +64,8 @@ export function AppSidebar() {
     { path: '/expert-panel', icon: Users, label: t('nav.expertPanel') },
     { path: '/tasks', icon: CheckSquare, label: t('nav.tasks') },
     { path: '/role-library', icon: Library, label: t('nav.roleLibrary') },
-    { path: '/tools-library', icon: Wrench, label: 'Инструменты' },
+    { path: '/tools-library', icon: Wrench, label: t('nav.toolsLibrary') },
+    { path: '/flow-editor', icon: GitBranch, label: t('nav.flowEditor') },
     { path: '/model-ratings', icon: BarChart3, label: t('nav.modelRatings') },
   ] : [
     { path: '/', icon: Home, label: t('nav.home') },
