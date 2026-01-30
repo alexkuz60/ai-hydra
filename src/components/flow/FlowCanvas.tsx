@@ -44,6 +44,8 @@ interface FlowCanvasProps {
   setNodes: React.Dispatch<React.SetStateAction<Node[]>>;
   setEdges: React.Dispatch<React.SetStateAction<Edge[]>>;
   onInit: (instance: ReactFlowInstance) => void;
+  onNodeClick?: (event: React.MouseEvent, node: Node) => void;
+  onPaneClick?: () => void;
 }
 
 export function FlowCanvas({
@@ -54,6 +56,8 @@ export function FlowCanvas({
   setNodes,
   setEdges,
   onInit,
+  onNodeClick,
+  onPaneClick,
 }: FlowCanvasProps) {
   const { theme } = useTheme();
   const { t } = useLanguage();
@@ -127,6 +131,8 @@ export function FlowCanvas({
         onDrop={onDrop}
         onDragOver={onDragOver}
         onInit={onInit}
+        onNodeClick={onNodeClick}
+        onPaneClick={onPaneClick}
         nodeTypes={nodeTypes}
         connectionMode={ConnectionMode.Loose}
         fitView
