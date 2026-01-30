@@ -1,8 +1,23 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 
+type HydraCardVariant = 
+  | 'default' 
+  | 'expert' 
+  | 'critic' 
+  | 'arbiter' 
+  | 'user' 
+  | 'supervisor' 
+  | 'glass'
+  // New AI role variants
+  | 'moderator'
+  | 'advisor'
+  | 'archivist'
+  | 'analyst'
+  | 'webhunter';
+
 interface HydraCardProps extends React.HTMLAttributes<HTMLDivElement> {
-  variant?: 'default' | 'expert' | 'critic' | 'arbiter' | 'user' | 'supervisor' | 'glass';
+  variant?: HydraCardVariant;
   glow?: boolean;
 }
 
@@ -24,6 +39,12 @@ export function HydraCard({
           'hydra-card-user': variant === 'user',
           'hydra-card-supervisor': variant === 'supervisor',
           'hydra-glass': variant === 'glass',
+          // New AI role card styles
+          'hydra-card-moderator': variant === 'moderator',
+          'hydra-card-advisor': variant === 'advisor',
+          'hydra-card-archivist': variant === 'archivist',
+          'hydra-card-analyst': variant === 'analyst',
+          'hydra-card-webhunter': variant === 'webhunter',
           'hydra-glow-sm hover:hydra-glow': glow,
         },
         className

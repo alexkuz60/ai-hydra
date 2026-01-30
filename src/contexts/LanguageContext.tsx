@@ -118,6 +118,11 @@ const translations: Translations = {
   'role.critic': { ru: 'Критик', en: 'Critic' },
   'role.arbiter': { ru: 'Арбитр', en: 'Arbiter' },
   'role.consultant': { ru: 'Консультант', en: 'Consultant' },
+  'role.moderator': { ru: 'Модератор', en: 'Moderator' },
+  'role.advisor': { ru: 'Советник', en: 'Advisor' },
+  'role.archivist': { ru: 'Архивариус', en: 'Archivist' },
+  'role.analyst': { ru: 'Аналитик', en: 'Analyst' },
+  'role.webhunter': { ru: 'Web-Охотник', en: 'Web Hunter' },
   
   // Consultant feature
   'consultant.select': { ru: 'Консультант', en: 'Consultant' },

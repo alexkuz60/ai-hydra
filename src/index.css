@@ -52,6 +52,11 @@
     --hydra-moderator: 200 80% 50%; /* blue for moderator */
     --hydra-user: 220 15% 50%; /* neutral for regular user */
     --hydra-admin: 0 85% 60%; /* red for admin */
+    /* New AI roles */
+    --hydra-advisor: 160 70% 45%; /* emerald for advisor */
+    --hydra-archivist: 30 60% 45%; /* bronze for archivist */
+    --hydra-analyst: 240 70% 55%; /* indigo for analyst */
+    --hydra-webhunter: 25 90% 55%; /* orange for web hunter */
     --hydra-surface: 45 15% 90%;
     --hydra-surface-elevated: 45 10% 95%;
 
@@ -108,6 +113,11 @@
     --hydra-moderator: 200 85% 55%; /* blue for moderator */
     --hydra-user: 220 20% 60%; /* neutral for regular user */
     --hydra-admin: 0 90% 60%; /* red for admin */
+    /* New AI roles - Dark */
+    --hydra-advisor: 160 75% 50%; /* emerald for advisor */
+    --hydra-archivist: 30 65% 50%; /* bronze for archivist */
+    --hydra-analyst: 240 75% 60%; /* indigo for analyst */
+    --hydra-webhunter: 25 95% 60%; /* orange for web hunter */
     --hydra-surface: 225 30% 14%;
     --hydra-surface-elevated: 225 28% 18%;
 
@@ -214,6 +224,32 @@
   .hydra-card-user {
     border-left: 3px solid hsl(var(--hydra-supervisor));
     background: linear-gradient(90deg, hsl(var(--hydra-supervisor) / 0.12), hsl(var(--hydra-supervisor) / 0.04));
+  }
+
+  /* New AI role card variants */
+  .hydra-card-moderator {
+    border-left: 3px solid hsl(var(--hydra-moderator));
+    background: linear-gradient(90deg, hsl(var(--hydra-moderator) / 0.08), transparent);
+  }
+
+  .hydra-card-advisor {
+    border-left: 3px solid hsl(var(--hydra-advisor));
+    background: linear-gradient(90deg, hsl(var(--hydra-advisor) / 0.08), transparent);
+  }
+
+  .hydra-card-archivist {
+    border-left: 3px solid hsl(var(--hydra-archivist));
+    background: linear-gradient(90deg, hsl(var(--hydra-archivist) / 0.08), transparent);
+  }
+
+  .hydra-card-analyst {
+    border-left: 3px solid hsl(var(--hydra-analyst));
+    background: linear-gradient(90deg, hsl(var(--hydra-analyst) / 0.08), transparent);
+  }
+
+  .hydra-card-webhunter {
+    border-left: 3px solid hsl(var(--hydra-webhunter));
+    background: linear-gradient(90deg, hsl(var(--hydra-webhunter) / 0.08), transparent);
   }
 
   /* Scrollbar styling */

@@ -20,10 +20,6 @@ import { UserDisplayInfo } from './ChatMessage';
 import { PerModelSettingsData } from './PerModelSettings';
 import { 
   Crown, 
-  Brain, 
-  Shield, 
-  Scale, 
-  Lightbulb, 
   Users, 
   Info,
   ChevronsUpDown,
@@ -31,9 +27,11 @@ import {
   ChevronRight,
   Filter,
   X,
-  Trash2
+  Trash2,
+  Lightbulb
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import { ROLE_CONFIG, getRoleConfig } from '@/config/roles';
 
 // ==================== Types ====================
 
@@ -78,14 +76,6 @@ interface ChatTreeNavProps {
 
 // ==================== Constants ====================
 
-const roleConfig: Record<string, { icon: LucideIcon; color: string; label: string }> = {
-  user: { icon: Crown, color: 'text-hydra-supervisor', label: 'supervisor' },
-  assistant: { icon: Brain, color: 'text-hydra-expert', label: 'assistant' },
-  critic: { icon: Shield, color: 'text-hydra-critical', label: 'critic' },
-  arbiter: { icon: Scale, color: 'text-hydra-arbiter', label: 'arbiter' },
-  consultant: { icon: Lightbulb, color: 'text-hydra-consultant', label: 'consultant' },
-};
-
 function getModelShortName(modelId: string | null): string {
   if (!modelId) return 'Unknown';
   const parts = modelId.split('/');
@@ -101,6 +91,11 @@ function getRoleLabelForModerator(role: string): string {
     critic: 'Критик',
     arbiter: 'Арбитр',
     consultant: 'Консультант',
+    moderator: 'Модератор',
+    advisor: 'Советник',
+    archivist: 'Архивариус',
+    analyst: 'Аналитик',
+    webhunter: 'Web-Охотник',
   };
   return labels[role] || role;
 }
@@ -579,7 +574,7 @@ export const ChatTreeNav = memo(function ChatTreeNav({
       } else {
         const settings = perModelSettings[msg.model_name || ''];
         const role = settings?.role || msg.role;
-        const config = roleConfig[role] || roleConfig.assistant;
+        const config = getRoleConfig(role);
 
         const aiResponse: AIResponse = {
           id: msg.id,

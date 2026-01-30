@@ -145,14 +145,14 @@ const DEFAULT_SYSTEM_PROMPTS: Record<AgentRole, string> = {
 
 ## Порядок реализации
 
-1. Добавить CSS и Tailwind токены для новых ролей
-2. Обновить типы `MessageRole` и `AgentRole`
-3. Добавить переводы в `LanguageContext.tsx`
-4. Создать централизованную конфигурацию ролей
-5. Обновить `ChatMessage.tsx` и `ChatTreeNav.tsx`
-6. Обновить все Select-компоненты с иконками
-7. Добавить дефолтные промпты для новых ролей
-8. Добавить варианты карточек в `hydra-card.tsx`
+1. ✅ Добавить CSS и Tailwind токены для новых ролей
+2. ✅ Обновить типы `MessageRole` и `AgentRole`
+3. ✅ Добавить переводы в `LanguageContext.tsx`
+4. ✅ Создать централизованную конфигурацию ролей (`src/config/roles.ts`)
+5. ✅ Обновить `ChatMessage.tsx` и `ChatTreeNav.tsx`
+6. ✅ Обновить все Select-компоненты с иконками (`RoleSelectItem.tsx`)
+7. ✅ Добавить дефолтные промпты для новых ролей
+8. ✅ Добавить варианты карточек в `hydra-card.tsx`
 
 ## Результат
 
@@ -161,4 +161,6 @@ const DEFAULT_SYSTEM_PROMPTS: Record<AgentRole, string> = {
 - Каждая роль имеет уникальную иконку и цвет
 - Унифицированный вид во всём приложении
 - Дефолтные системные промпты для каждой роли
+
+## Статус: ✅ ЗАВЕРШЕНО
 

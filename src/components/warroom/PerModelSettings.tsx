@@ -11,7 +11,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Select,
   SelectContent,
-  SelectItem,
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
@@ -34,6 +33,10 @@ import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useCustomTools, CustomTool } from '@/hooks/useCustomTools';
+import { RoleSelectOptions, RoleDisplay } from '@/components/ui/RoleSelectItem';
+import { AgentRole, DEFAULT_SYSTEM_PROMPTS } from '@/config/roles';
+
+export type { AgentRole };
 
 // Pricing per 1M tokens (input/output) in USD
 interface ModelPricing {
@@ -95,8 +98,6 @@ function calculateRequestCost(
   };
 }
 
-export type AgentRole = 'assistant' | 'critic' | 'arbiter' | 'consultant';
-
 // Available tools that can be toggled per model
 export const AVAILABLE_TOOL_IDS = ['calculator', 'current_datetime', 'web_search'] as const;
 export type ToolId = typeof AVAILABLE_TOOL_IDS[number];
@@ -128,13 +129,6 @@ interface PerModelSettingsProps {
   className?: string;
   currentMessage?: string; // Current message text for cost estimation
 }
-
-const DEFAULT_SYSTEM_PROMPTS: Record<AgentRole, string> = {
-  assistant: `Вы - эксперт в своей области. Предоставляйте четкие, хорошо обоснованные ответы. Будьте лаконичны, но основательны.`,
-  critic: `Вы - критик-аналитик. Ваша задача - находить слабые места, противоречия и потенциальные проблемы в рассуждениях. Будьте конструктивны, но строги.`,
-  arbiter: `Вы - арбитр дискуссии. Синтезируйте различные точки зрения, выделяйте консенсус и расхождения. Формируйте взвешенное финальное решение.`,
-  consultant: `Вы - консультант, привлечённый для разового экспертного запроса. Предоставьте глубокий, детальный ответ на конкретный вопрос. При необходимости проведите анализ, предложите решения и альтернативы.`,
-};
 
 export const DEFAULT_MODEL_SETTINGS: SingleModelSettings = {
   temperature: 0.7,
@@ -375,13 +369,12 @@ export function PerModelSettings({ selectedModels, settings, onChange, className
                         onValueChange={(v) => handleRoleChange(modelId, v as AgentRole)}
                       >
                         <SelectTrigger className="h-9">
-                          <SelectValue />
+                          <SelectValue>
+                            <RoleDisplay role={modelSettings.role} />
+                          </SelectValue>
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="assistant">{t('role.assistant')}</SelectItem>
-                          <SelectItem value="critic">{t('role.critic')}</SelectItem>
-                          <SelectItem value="arbiter">{t('role.arbiter')}</SelectItem>
-                          <SelectItem value="consultant">{t('role.consultant')}</SelectItem>
+                          <RoleSelectOptions />
                         </SelectContent>
                       </Select>
                     </div>

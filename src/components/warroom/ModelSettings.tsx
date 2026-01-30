@@ -9,7 +9,6 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Select,
   SelectContent,
-  SelectItem,
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
@@ -39,8 +38,10 @@ import { Settings, ChevronDown, RotateCcw, Save, Trash2, FolderOpen, Loader2 } f
 import { cn } from '@/lib/utils';
 import { useModelPresets, ModelPreset } from '@/hooks/useModelPresets';
 import { toast } from 'sonner';
+import { RoleSelectOptions, RoleDisplay } from '@/components/ui/RoleSelectItem';
+import { AgentRole, DEFAULT_SYSTEM_PROMPTS } from '@/config/roles';
 
-export type AgentRole = 'assistant' | 'critic' | 'arbiter' | 'consultant';
+export type { AgentRole };
 
 export interface ModelSettingsData {
   temperature: number;
@@ -54,13 +55,6 @@ interface ModelSettingsProps {
   onChange: (settings: ModelSettingsData) => void;
   className?: string;
 }
-
-const DEFAULT_SYSTEM_PROMPTS: Record<AgentRole, string> = {
-  assistant: `Вы - эксперт-ассистент. Предоставляйте четкие, хорошо обоснованные ответы. Будьте лаконичны, но основательны.`,
-  critic: `Вы - критик-аналитик. Ваша задача - находить слабые места, противоречия и потенциальные проблемы в рассуждениях. Будьте конструктивны, но строги.`,
-  arbiter: `Вы - арбитр дискуссии. Синтезируйте различные точки зрения, выделяйте консенсус и расхождения. Формируйте взвешенное финальное решение.`,
-  consultant: `Вы - консультант, привлечённый для разового экспертного запроса. Предоставьте глубокий, детальный ответ на конкретный вопрос. При необходимости проведите анализ, предложите решения и альтернативы.`,
-};
 
 const DEFAULT_SETTINGS: ModelSettingsData = {
   temperature: 0.7,
@@ -200,13 +194,12 @@ export function ModelSettings({ settings, onChange, className }: ModelSettingsPr
                 <Label className="text-xs text-muted-foreground">{t('settings.role')}</Label>
                 <Select value={settings.role} onValueChange={(v) => handleRoleChange(v as AgentRole)}>
                   <SelectTrigger className="h-9">
-                    <SelectValue />
+                    <SelectValue>
+                      <RoleDisplay role={settings.role} />
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="assistant">{t('role.assistant')}</SelectItem>
-                    <SelectItem value="critic">{t('role.critic')}</SelectItem>
-                    <SelectItem value="arbiter">{t('role.arbiter')}</SelectItem>
-                    <SelectItem value="consultant">{t('role.consultant')}</SelectItem>
+                    <RoleSelectOptions />
                   </SelectContent>
                 </Select>
               </div>
@@ -328,4 +321,4 @@ export function ModelSettings({ settings, onChange, className }: ModelSettingsPr
   );
 }
 
-export { DEFAULT_SETTINGS, DEFAULT_SYSTEM_PROMPTS };
+export { DEFAULT_SETTINGS };

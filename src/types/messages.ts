@@ -2,7 +2,7 @@
 
 import { ToolCall, ToolResult } from './tools';
 
-export type MessageRole = 'user' | 'assistant' | 'critic' | 'arbiter' | 'consultant';
+export type MessageRole = 'user' | 'assistant' | 'critic' | 'arbiter' | 'consultant' | 'moderator' | 'advisor' | 'archivist' | 'analyst' | 'webhunter';
 
 export interface Attachment {
   name: string;

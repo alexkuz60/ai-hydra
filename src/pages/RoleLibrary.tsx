@@ -48,8 +48,9 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { AgentRole, AGENT_ROLES, getRoleBadgeColor } from '@/config/roles';
+import { RoleSelectOptions, RoleDisplay } from '@/components/ui/RoleSelectItem';
 
-type AgentRole = 'assistant' | 'critic' | 'arbiter' | 'consultant';
 type OwnerFilter = 'all' | 'own' | 'shared';
 
 interface RolePrompt {
@@ -65,13 +66,6 @@ interface RolePrompt {
   created_at: string;
   updated_at: string;
 }
-
-const ROLE_BADGE_COLORS: Record<string, string> = {
-  assistant: 'bg-primary/20 text-primary border-primary/30',
-  critic: 'bg-orange-500/20 text-orange-400 border-orange-500/30',
-  arbiter: 'bg-purple-500/20 text-purple-400 border-purple-500/30',
-  consultant: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
-};
 
 export default function RoleLibrary() {
   const { user, loading: authLoading } = useAuth();
@@ -263,10 +257,6 @@ export default function RoleLibrary() {
     return matchesSearch && matchesRole && matchesOwner;
   });
 
-  const getRoleBadgeColor = (role: string) => {
-    return ROLE_BADGE_COLORS[role] || ROLE_BADGE_COLORS.assistant;
-  };
-
   if (authLoading || loading) {
     return (
       <Layout>
@@ -301,14 +291,13 @@ export default function RoleLibrary() {
                   className="flex-1"
                 />
                 <Select value={newRole} onValueChange={(v) => setNewRole(v as AgentRole)}>
-                  <SelectTrigger className="w-[140px]">
-                    <SelectValue />
+                  <SelectTrigger className="w-[160px]">
+                    <SelectValue>
+                      <RoleDisplay role={newRole} />
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent className="bg-popover border border-border z-50">
-                    <SelectItem value="assistant">{t('role.assistant')}</SelectItem>
-                    <SelectItem value="critic">{t('role.critic')}</SelectItem>
-                    <SelectItem value="arbiter">{t('role.arbiter')}</SelectItem>
-                    <SelectItem value="consultant">{t('role.consultant')}</SelectItem>
+                    <RoleSelectOptions />
                   </SelectContent>
                 </Select>
               </div>
@@ -366,16 +355,13 @@ export default function RoleLibrary() {
           </div>
           
           <Select value={roleFilter} onValueChange={setRoleFilter}>
-            <SelectTrigger className="w-[140px]">
+            <SelectTrigger className="w-[160px]">
               <Filter className="h-4 w-4 mr-2" />
               <SelectValue />
             </SelectTrigger>
             <SelectContent className="bg-popover border border-border z-50">
               <SelectItem value="all">{t('roleLibrary.filterAll')}</SelectItem>
-              <SelectItem value="assistant">{t('role.assistant')}</SelectItem>
-              <SelectItem value="critic">{t('role.critic')}</SelectItem>
-              <SelectItem value="arbiter">{t('role.arbiter')}</SelectItem>
-              <SelectItem value="consultant">{t('role.consultant')}</SelectItem>
+              <RoleSelectOptions />
             </SelectContent>
           </Select>
 
@@ -491,13 +477,12 @@ export default function RoleLibrary() {
                   <Label>{t('roleLibrary.role')}</Label>
                   <Select value={editRole} onValueChange={(v) => setEditRole(v as AgentRole)}>
                     <SelectTrigger>
-                      <SelectValue />
+                      <SelectValue>
+                        <RoleDisplay role={editRole} />
+                      </SelectValue>
                     </SelectTrigger>
                     <SelectContent className="bg-popover border border-border z-50">
-                      <SelectItem value="assistant">{t('role.assistant')}</SelectItem>
-                      <SelectItem value="critic">{t('role.critic')}</SelectItem>
-                      <SelectItem value="arbiter">{t('role.arbiter')}</SelectItem>
-                      <SelectItem value="consultant">{t('role.consultant')}</SelectItem>
+                      <RoleSelectOptions />
                     </SelectContent>
                   </Select>
                 </div>
