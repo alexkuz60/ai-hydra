@@ -291,7 +291,8 @@ const translations: Translations = {
 
   // Role Library
   'roleLibrary.title': { ru: 'Библиотека промптов', en: 'Prompt Library' },
-  'roleLibrary.new': { ru: 'Новая роль', en: 'New Role' },
+  'roleLibrary.pageDescription': { ru: 'Создавайте и управляйте системными промптами для ИИ-ролей. Сохранённые промпты можно использовать в настройках моделей на панели экспертов.', en: 'Create and manage system prompts for AI roles. Saved prompts can be used in model settings on the Expert Panel.' },
+  'roleLibrary.new': { ru: 'Новый промпт', en: 'New Prompt' },
   'roleLibrary.empty': { ru: 'Библиотека пуста', en: 'Library is empty' },
   'roleLibrary.name': { ru: 'Название', en: 'Name' },
   'roleLibrary.namePlaceholder': { ru: 'Название роли...', en: 'Role name...' },
