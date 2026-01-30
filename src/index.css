@@ -211,11 +211,6 @@
     background: linear-gradient(90deg, hsl(var(--hydra-glow) / 0.08), transparent);
   }
 
-  .hydra-card-supervisor {
-    border-left: 3px solid hsl(var(--hydra-supervisor));
-    background: linear-gradient(90deg, hsl(var(--hydra-supervisor) / 0.15), hsl(var(--hydra-supervisor) / 0.05));
-  }
-
   /* Scrollbar styling */
   .hydra-scrollbar::-webkit-scrollbar {
     width: 6px;
