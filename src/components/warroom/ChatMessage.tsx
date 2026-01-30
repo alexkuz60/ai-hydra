@@ -45,7 +45,7 @@ const roleConfig = {
     icon: User,
     label: 'role.user',
     variant: 'user' as const,
-    color: 'text-primary',
+    color: 'text-hydra-user',
   },
   assistant: {
     icon: Brain,
@@ -69,7 +69,7 @@ const roleConfig = {
     icon: Lightbulb,
     label: 'role.consultant',
     variant: 'glass' as const,
-    color: 'text-amber-400',
+    color: 'text-hydra-consultant',
   },
 };
 
@@ -166,8 +166,8 @@ export function ChatMessage({ message, userDisplayInfo, onDelete, onRatingChange
       className="animate-slide-up group relative"
     >
       <HydraCardHeader>
-        <Icon className={cn('h-5 w-5', isUserMessage && userDisplayInfo?.isSupervisor ? 'text-amber-500' : config.color)} />
-        <HydraCardTitle className={isUserMessage && userDisplayInfo?.isSupervisor ? 'text-amber-500' : config.color}>
+        <Icon className={cn('h-5 w-5', isUserMessage && userDisplayInfo?.isSupervisor ? 'text-hydra-supervisor' : config.color)} />
+        <HydraCardTitle className={isUserMessage && userDisplayInfo?.isSupervisor ? 'text-hydra-supervisor' : config.color}>
           {isUserMessage && userDisplayInfo?.isSupervisor 
             ? `${t('role.supervisor')}${userDisplayInfo.displayName ? ` (${userDisplayInfo.displayName})` : ''}`
             : t(config.label)
