@@ -2,7 +2,7 @@ import React from 'react';
 import { cn } from '@/lib/utils';
 
 interface HydraCardProps extends React.HTMLAttributes<HTMLDivElement> {
-  variant?: 'default' | 'expert' | 'critic' | 'arbiter' | 'user' | 'glass';
+  variant?: 'default' | 'expert' | 'critic' | 'arbiter' | 'user' | 'supervisor' | 'glass';
   glow?: boolean;
 }
 
@@ -22,6 +22,7 @@ export function HydraCard({
           'hydra-card-critic': variant === 'critic',
           'hydra-card-arbiter': variant === 'arbiter',
           'hydra-card-user': variant === 'user',
+          'hydra-card-supervisor': variant === 'supervisor',
           'hydra-glass': variant === 'glass',
           'hydra-glow-sm hover:hydra-glow': glow,
         },

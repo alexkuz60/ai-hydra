@@ -206,9 +206,14 @@
     background: linear-gradient(90deg, hsl(var(--hydra-arbiter) / 0.08), transparent);
   }
 
+  .hydra-card-supervisor {
+    border-left: 3px solid hsl(var(--hydra-supervisor));
+    background: linear-gradient(90deg, hsl(var(--hydra-supervisor) / 0.12), hsl(var(--hydra-supervisor) / 0.04));
+  }
+
   .hydra-card-user {
-    border-left: 3px solid hsl(var(--hydra-glow));
-    background: linear-gradient(90deg, hsl(var(--hydra-glow) / 0.08), transparent);
+    border-left: 3px solid hsl(var(--hydra-supervisor));
+    background: linear-gradient(90deg, hsl(var(--hydra-supervisor) / 0.12), hsl(var(--hydra-supervisor) / 0.04));
   }
 
   /* Scrollbar styling */
