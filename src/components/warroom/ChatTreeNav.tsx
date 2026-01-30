@@ -1,7 +1,8 @@
-import React, { useMemo, useState, memo, useCallback } from 'react';
+import React, { useMemo, useState, memo, useCallback, useEffect } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -27,6 +28,7 @@ import {
   Info,
   ChevronsUpDown,
   ChevronDown,
+  ChevronRight,
   Filter,
   X,
   Trash2
@@ -234,6 +236,8 @@ interface SupervisorNodeProps {
   onSendToDChat?: (messageId: string, aggregatedContent: string, sourceMessages: SourceMessage[]) => void;
   canDelete: boolean;
   messages: Message[];
+  isTreeCollapsed: boolean;
+  onToggleTreeCollapse: (blockId: string) => void;
 }
 
 const SupervisorNode = memo(function SupervisorNode({
@@ -247,12 +251,18 @@ const SupervisorNode = memo(function SupervisorNode({
   onSendToDChat,
   canDelete,
   messages,
+  isTreeCollapsed,
+  onToggleTreeCollapse,
 }: SupervisorNodeProps) {
   const { t } = useLanguage();
   
   const handleClick = useCallback(() => onMessageClick(block.id), [onMessageClick, block.id]);
   const handleDoubleClick = useCallback(() => onMessageDoubleClick?.(block.id), [onMessageDoubleClick, block.id]);
   const handleDelete = useCallback((e: React.MouseEvent) => onDeleteClick(e, block), [onDeleteClick, block]);
+  const handleToggleTree = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    onToggleTreeCollapse(block.id);
+  }, [onToggleTreeCollapse, block.id]);
   
   // Collect full context: supervisor message + all AI responses
   const handleSendToDChat = useCallback((e: React.MouseEvent) => {
@@ -278,6 +288,8 @@ const SupervisorNode = memo(function SupervisorNode({
     onSendToDChat?.(block.id, aggregatedContent, sourceMessages);
   }, [onSendToDChat, block, messages]);
   
+  const hasResponses = block.aiResponses.length > 0;
+  
   return (
     <div className="space-y-0.5 group/block">
       {/* Supervisor node */}
@@ -293,11 +305,26 @@ const SupervisorNode = memo(function SupervisorNode({
             onClick={handleClick}
             onDoubleClick={handleDoubleClick}
           >
-            <Crown className="h-4 w-4 text-amber-500 shrink-0" />
+            {/* Collapse toggle for AI responses */}
+            {hasResponses ? (
+              <button
+                onClick={handleToggleTree}
+                className="p-0.5 -ml-1 rounded hover:bg-sidebar-accent/50 transition-colors"
+              >
+                {isTreeCollapsed ? (
+                  <ChevronRight className="h-3 w-3 text-muted-foreground" />
+                ) : (
+                  <ChevronDown className="h-3 w-3 text-muted-foreground" />
+                )}
+              </button>
+            ) : (
+              <div className="w-4" />
+            )}
+            <Crown className="h-4 w-4 text-hydra-supervisor shrink-0" />
             <span className="flex-1 text-sm truncate text-sidebar-foreground">
               {t('role.supervisor')} #{index}
             </span>
-            {block.responseCount > 0 && (
+            {block.responseCount > 0 && isTreeCollapsed && (
               <span className="text-xs text-muted-foreground">
                 +{block.responseCount}
               </span>
@@ -335,8 +362,8 @@ const SupervisorNode = memo(function SupervisorNode({
         </TooltipContent>
       </Tooltip>
 
-      {/* AI responses under this supervisor */}
-      {block.aiResponses.map((ai) => (
+      {/* AI responses under this supervisor - collapsible */}
+      {!isTreeCollapsed && block.aiResponses.map((ai) => (
         <AIResponseNode
           key={ai.id}
           ai={ai}
@@ -366,12 +393,18 @@ const StandaloneAINode = memo(function StandaloneAINode({
   onMessageDoubleClick,
 }: StandaloneAINodeProps) {
   const ai = block.aiResponses[0];
+  
+  const handleClick = useCallback(() => {
+    if (ai) onMessageClick(ai.id);
+  }, [onMessageClick, ai?.id]);
+  
+  const handleDoubleClick = useCallback(() => {
+    if (ai) onMessageDoubleClick?.(ai.id);
+  }, [onMessageDoubleClick, ai?.id]);
+
   if (!ai) return null;
   
   const Icon = ai.icon;
-  
-  const handleClick = useCallback(() => onMessageClick(ai.id), [onMessageClick, ai.id]);
-  const handleDoubleClick = useCallback(() => onMessageDoubleClick?.(ai.id), [onMessageDoubleClick, ai.id]);
 
   return (
     <Tooltip>
@@ -468,6 +501,25 @@ export const ChatTreeNav = memo(function ChatTreeNav({
   const { t } = useLanguage();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [blockToDelete, setBlockToDelete] = useState<DialogBlock | null>(null);
+  
+  // Local state for tree collapse (which supervisor blocks have AI responses hidden)
+  const [treeCollapsedBlocks, setTreeCollapsedBlocks] = useState<Set<string>>(new Set());
+
+  // Sync tree collapse state with allCollapsed prop
+  useEffect(() => {
+    if (allCollapsed !== undefined) {
+      // When allCollapsed changes, sync tree state
+      setTreeCollapsedBlocks(prev => {
+        if (allCollapsed && prev.size === 0) {
+          // Collapse all - we'll populate this when dialogBlocks are available
+          return new Set(['__all__']); // marker to collapse all
+        } else if (!allCollapsed && prev.size > 0) {
+          return new Set();
+        }
+        return prev;
+      });
+    }
+  }, [allCollapsed]);
 
   // Callbacks - must be before any early returns
   const handleDeleteClick = useCallback((e: React.MouseEvent, block: DialogBlock) => {
@@ -487,6 +539,23 @@ export const ChatTreeNav = memo(function ChatTreeNav({
   const handleClearFilter = useCallback(() => {
     onMessageDoubleClick?.('');
   }, [onMessageDoubleClick]);
+  
+  const toggleTreeCollapse = useCallback((blockId: string) => {
+    setTreeCollapsedBlocks(prev => {
+      const next = new Set(prev);
+      next.delete('__all__'); // Clear the marker if present
+      if (next.has(blockId)) {
+        next.delete(blockId);
+      } else {
+        next.add(blockId);
+      }
+      return next;
+    });
+  }, []);
+  
+  const isTreeBlockCollapsed = useCallback((blockId: string) => {
+    return treeCollapsedBlocks.has('__all__') || treeCollapsedBlocks.has(blockId);
+  }, [treeCollapsedBlocks]);
 
   // Memoized dialog blocks computation
   const dialogBlocks = useMemo(() => {
@@ -590,6 +659,8 @@ export const ChatTreeNav = memo(function ChatTreeNav({
                   onSendToDChat={onSendToDChat}
                   canDelete={!!onDeleteMessageGroup}
                   messages={messages}
+                  isTreeCollapsed={isTreeBlockCollapsed(block.id)}
+                  onToggleTreeCollapse={toggleTreeCollapse}
                 />
               );
             } else {
