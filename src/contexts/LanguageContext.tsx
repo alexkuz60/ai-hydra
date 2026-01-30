@@ -77,6 +77,11 @@ const translations: Translations = {
   'flowEditor.properties.toolNamePlaceholder': { ru: 'Выберите или введите инструмент...', en: 'Select or enter tool...' },
   'flowEditor.properties.toolConfig': { ru: 'Конфигурация (JSON)', en: 'Configuration (JSON)' },
   'flowEditor.properties.deleteNode': { ru: 'Удалить узел', en: 'Delete Node' },
+  'flowEditor.properties.selectFromLibrary': { ru: 'Выбрать из библиотеки', en: 'Select from Library' },
+  'flowEditor.properties.noPromptSelected': { ru: 'Не выбран', en: 'Not selected' },
+  'flowEditor.properties.loadingPrompts': { ru: 'Загрузка промптов...', en: 'Loading prompts...' },
+  'flowEditor.properties.noPromptsAvailable': { ru: 'Нет доступных промптов', en: 'No prompts available' },
+  'flowEditor.properties.orWriteCustom': { ru: 'или напишите свой:', en: 'or write custom:' },
   
   // Auth
   'auth.email': { ru: 'Email', en: 'Email' },

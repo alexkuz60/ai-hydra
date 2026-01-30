@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Node } from '@xyflow/react';
-import { X, ArrowDownToLine, ArrowUpFromLine, FileText, Brain, GitBranch, Wrench } from 'lucide-react';
+import { X, ArrowDownToLine, ArrowUpFromLine, FileText, Brain, GitBranch, Wrench, Library } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -8,9 +8,20 @@ import { Textarea } from '@/components/ui/textarea';
 import { Slider } from '@/components/ui/slider';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { FlowNodeType } from '@/types/flow';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+
+interface PromptLibraryItem {
+  id: string;
+  name: string;
+  content: string;
+  role: string;
+  description: string | null;
+}
 
 interface NodePropertiesPanelProps {
   selectedNode: Node | null;
@@ -44,6 +55,34 @@ export function NodePropertiesPanel({
   onDeleteNode,
 }: NodePropertiesPanelProps) {
   const { t } = useLanguage();
+  const { user } = useAuth();
+  const [prompts, setPrompts] = useState<PromptLibraryItem[]>([]);
+  const [loadingPrompts, setLoadingPrompts] = useState(false);
+
+  // Load prompts from library when component mounts or user changes
+  useEffect(() => {
+    if (!user) return;
+    
+    const loadPrompts = async () => {
+      setLoadingPrompts(true);
+      try {
+        const { data, error } = await supabase
+          .from('prompt_library')
+          .select('id, name, content, role, description')
+          .or(`user_id.eq.${user.id},is_shared.eq.true`)
+          .order('name');
+        
+        if (error) throw error;
+        setPrompts(data || []);
+      } catch (error) {
+        console.error('Failed to load prompts:', error);
+      } finally {
+        setLoadingPrompts(false);
+      }
+    };
+    
+    loadPrompts();
+  }, [user]);
 
   if (!selectedNode) return null;
 
@@ -56,6 +95,19 @@ export function NodePropertiesPanel({
       ...selectedNode.data,
       [key]: value,
     });
+  };
+
+  const handlePromptSelect = (promptId: string) => {
+    const selectedPrompt = prompts.find(p => p.id === promptId);
+    if (selectedPrompt) {
+      onUpdateNode(selectedNode.id, {
+        ...selectedNode.data,
+        label: selectedPrompt.name,
+        promptId: selectedPrompt.id,
+        promptContent: selectedPrompt.content,
+        promptRole: selectedPrompt.role,
+      });
+    }
   };
 
   const renderInputFields = () => {
@@ -140,14 +192,59 @@ export function NodePropertiesPanel({
                 placeholder={t('flowEditor.nodes.prompt')}
               />
             </div>
+            
+            {/* Prompt Library Selector */}
             <div className="space-y-2">
+              <Label className="flex items-center gap-2">
+                <Library className="h-4 w-4" />
+                {t('flowEditor.properties.selectFromLibrary')}
+              </Label>
+              <Select
+                value={(selectedNode.data.promptId as string) || ''}
+                onValueChange={handlePromptSelect}
+                disabled={loadingPrompts}
+              >
+                <SelectTrigger className="bg-background">
+                  <SelectValue 
+                    placeholder={
+                      loadingPrompts 
+                        ? t('flowEditor.properties.loadingPrompts')
+                        : prompts.length === 0
+                          ? t('flowEditor.properties.noPromptsAvailable')
+                          : t('flowEditor.properties.noPromptSelected')
+                    } 
+                  />
+                </SelectTrigger>
+                <SelectContent className="bg-popover border z-50 max-h-60">
+                  {prompts.map((prompt) => (
+                    <SelectItem key={prompt.id} value={prompt.id}>
+                      <div className="flex flex-col">
+                        <span className="font-medium">{prompt.name}</span>
+                        {prompt.description && (
+                          <span className="text-xs text-muted-foreground truncate max-w-[200px]">
+                            {prompt.description}
+                          </span>
+                        )}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <Separator className="my-2" />
+            
+            <div className="space-y-2">
+              <Label htmlFor="promptContent" className="text-muted-foreground text-xs">
+                {t('flowEditor.properties.orWriteCustom')}
+              </Label>
               <Label htmlFor="promptContent">{t('flowEditor.properties.promptContent')}</Label>
               <Textarea
                 id="promptContent"
                 value={(selectedNode.data.promptContent as string) || ''}
                 onChange={(e) => handleDataChange('promptContent', e.target.value)}
                 placeholder={t('flowEditor.properties.promptPlaceholder')}
-                rows={6}
+                rows={8}
                 className="font-mono text-sm"
               />
             </div>
