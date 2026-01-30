@@ -16,7 +16,7 @@ const translations: Translations = {
   'nav.home': { ru: 'Главная', en: 'Home' },
   'nav.expertPanel': { ru: 'Панель экспертов', en: 'Expert Panel' },
   'nav.tasks': { ru: 'Задачи', en: 'Tasks' },
-  'nav.roleLibrary': { ru: 'Библиотека ролей', en: 'Role Library' },
+  'nav.roleLibrary': { ru: 'Библиотека промптов', en: 'Prompt Library' },
   'nav.profile': { ru: 'Профиль', en: 'Profile' },
   'nav.settings': { ru: 'Настройки', en: 'Settings' },
   'nav.logout': { ru: 'Выйти', en: 'Logout' },
@@ -290,7 +290,7 @@ const translations: Translations = {
   'dchat.contextAggregated': { ru: 'Анализ {count} ответов', en: 'Analyzing {count} responses' },
 
   // Role Library
-  'roleLibrary.title': { ru: 'Библиотека ИИ-ролей', en: 'AI Role Library' },
+  'roleLibrary.title': { ru: 'Библиотека промптов', en: 'Prompt Library' },
   'roleLibrary.new': { ru: 'Новая роль', en: 'New Role' },
   'roleLibrary.empty': { ru: 'Библиотека пуста', en: 'Library is empty' },
   'roleLibrary.name': { ru: 'Название', en: 'Name' },
