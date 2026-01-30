@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
+import type { ImperativePanelHandle } from 'react-resizable-panels';
 import { cn } from '@/lib/utils';
 import { ConsultantPanel } from '@/components/warroom/ConsultantPanel';
 import { ChatMessage, UserDisplayInfo } from '@/components/warroom/ChatMessage';
@@ -39,6 +40,7 @@ export default function ExpertPanel() {
   const { profile } = useUserProfile();
   const { isSupervisor } = useUserRoles();
   const messageRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+  const dChatPanelRef = useRef<ImperativePanelHandle>(null);
   const [input, setInput] = useState('');
   const [selectedConsultant, setSelectedConsultant] = useState<string | null>(null);
   const [dChatContext, setDChatContext] = useState<{
@@ -53,6 +55,17 @@ export default function ExpertPanel() {
   
   // D-Chat panel width persistence
   const { width: consultantPanelWidth, saveWidth: saveConsultantPanelWidth, isCollapsed: isDChatCollapsed } = useConsultantPanelWidth();
+
+  // D-Chat expand/collapse handlers using imperative API
+  const handleDChatExpand = useCallback(() => {
+    dChatPanelRef.current?.resize(20);
+    saveConsultantPanelWidth(20);
+  }, [saveConsultantPanelWidth]);
+
+  const handleDChatCollapse = useCallback(() => {
+    dChatPanelRef.current?.resize(3);
+    saveConsultantPanelWidth(3);
+  }, [saveConsultantPanelWidth]);
 
   // User display info for chat messages
   const userDisplayInfo: UserDisplayInfo = {
@@ -167,8 +180,8 @@ export default function ExpertPanel() {
     sourceMessages: Array<{ role: string; model_name: string | null; content: string }>
   ) => {
     setDChatContext({ messageId, content: aggregatedContent, sourceMessages });
-    saveConsultantPanelWidth(20); // Expand D-Chat
-  }, [saveConsultantPanelWidth]);
+    handleDChatExpand(); // Expand D-Chat using imperative API
+  }, [handleDChatExpand]);
 
   // D-Chat: Copy response to main chat
   const handleCopyToMainChat = useCallback(async (content: string, sourceMessageId: string | null) => {
@@ -408,6 +421,7 @@ export default function ExpertPanel() {
 
           {/* D-Chat Panel */}
           <ResizablePanel
+            ref={dChatPanelRef}
             defaultSize={consultantPanelWidth}
             minSize={3}
             maxSize={30}
@@ -417,8 +431,8 @@ export default function ExpertPanel() {
               sessionId={currentTask?.id || null}
               availableModels={allAvailableModels}
               isCollapsed={isDChatCollapsed}
-              onExpand={() => saveConsultantPanelWidth(20)}
-              onCollapse={() => saveConsultantPanelWidth(3)}
+              onExpand={handleDChatExpand}
+              onCollapse={handleDChatCollapse}
               initialQuery={dChatContext}
               onClearInitialQuery={handleClearDChatContext}
               onCopyToMainChat={handleCopyToMainChat}
