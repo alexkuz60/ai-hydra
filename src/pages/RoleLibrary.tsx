@@ -20,7 +20,8 @@ import {
   Pencil, 
   Users, 
   BookOpen,
-  Filter
+  Filter,
+  Library
 } from 'lucide-react';
 import { format } from 'date-fns';
 import {
@@ -270,8 +271,15 @@ export default function RoleLibrary() {
   return (
     <Layout>
       <div className="container max-w-4xl px-4 py-8">
-        <div className="flex items-center justify-between mb-8">
-          <h1 className="text-3xl font-bold">{t('roleLibrary.title')}</h1>
+        {/* Header with icon and description */}
+        <div className="mb-8">
+          <div className="flex items-center gap-3 mb-3">
+            <Library className="h-8 w-8 text-primary" />
+            <h1 className="text-3xl font-bold">{t('roleLibrary.title')}</h1>
+          </div>
+          <p className="text-muted-foreground">
+            {t('roleLibrary.pageDescription')}
+          </p>
         </div>
 
         {/* Create New Prompt */}
