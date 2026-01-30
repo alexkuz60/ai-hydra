@@ -16,7 +16,8 @@ export const InputNode = memo(({ data, selected }: InputNodeProps) => {
   return (
     <div className={cn(
       "px-4 py-3 min-w-[140px] rounded-lg border-2 transition-all",
-      "bg-hydra-info/10 border-hydra-info",
+      "bg-card border-hydra-info shadow-sm",
+      "dark:bg-[hsl(210_90%_65%/0.15)] dark:shadow-[0_0_10px_hsl(210_90%_65%/0.2)]",
       selected && "ring-2 ring-primary ring-offset-2 ring-offset-background"
     )}>
       <div className="flex items-center gap-2">
@@ -24,7 +25,7 @@ export const InputNode = memo(({ data, selected }: InputNodeProps) => {
           <ArrowDownToLine className="h-4 w-4 text-hydra-info" />
         </div>
         <div className="flex-1 min-w-0">
-          <div className="text-sm font-medium truncate">{data.label || 'Вход'}</div>
+          <div className="text-sm font-medium truncate text-hydra-info">{data.label || 'Вход'}</div>
           {data.description && (
             <div className="text-xs text-muted-foreground truncate">{data.description}</div>
           )}
