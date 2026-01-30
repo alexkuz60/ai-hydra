@@ -15,9 +15,9 @@ interface InputNodeProps {
 export const InputNode = memo(({ data, selected }: InputNodeProps) => {
   return (
     <div className={cn(
-      "px-4 py-3 min-w-[140px] rounded-lg border-2 transition-all",
-      "bg-card border-hydra-info shadow-sm",
-      "dark:bg-[hsl(210_90%_65%/0.15)] dark:shadow-[0_0_10px_hsl(210_90%_65%/0.2)]",
+      "px-4 py-3 min-w-[140px] rounded-lg border-2 transition-all shadow-sm",
+      "bg-[hsl(45_15%_92%)] border-hydra-info",
+      "dark:!bg-[hsl(225_30%_12%)] dark:border-hydra-info dark:shadow-[0_0_10px_hsl(210_90%_65%/0.3)]",
       selected && "ring-2 ring-primary ring-offset-2 ring-offset-background"
     )}>
       <div className="flex items-center gap-2">
