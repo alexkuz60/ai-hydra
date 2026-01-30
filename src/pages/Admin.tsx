@@ -60,10 +60,10 @@ const roleIcons: Record<AppRole, React.ElementType> = {
 };
 
 const roleColors: Record<AppRole, string> = {
-  supervisor: 'bg-hydra-arbiter/20 text-hydra-arbiter border-hydra-arbiter/50',
-  admin: 'bg-hydra-critical/20 text-hydra-critical border-hydra-critical/50',
-  moderator: 'bg-hydra-expert/20 text-hydra-expert border-hydra-expert/50',
-  user: 'bg-muted text-muted-foreground border-border',
+  supervisor: 'bg-hydra-supervisor/20 text-hydra-supervisor border-hydra-supervisor/50',
+  admin: 'bg-hydra-admin/20 text-hydra-admin border-hydra-admin/50',
+  moderator: 'bg-hydra-moderator/20 text-hydra-moderator border-hydra-moderator/50',
+  user: 'bg-hydra-user/20 text-hydra-user border-hydra-user/50',
 };
 
 export default function Admin() {

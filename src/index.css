@@ -49,6 +49,9 @@
     --hydra-arbiter: 45 85% 55%;
     --hydra-consultant: 38 92% 50%;
     --hydra-supervisor: 38 92% 50%; /* amber/gold for supervisor */
+    --hydra-moderator: 200 80% 50%; /* blue for moderator */
+    --hydra-user: 220 15% 50%; /* neutral for regular user */
+    --hydra-admin: 0 85% 60%; /* red for admin */
     --hydra-surface: 45 15% 90%;
     --hydra-surface-elevated: 45 10% 95%;
 
@@ -102,6 +105,9 @@
     --hydra-arbiter: 45 90% 60%;
     --hydra-consultant: 38 92% 55%;
     --hydra-supervisor: 38 92% 55%; /* amber/gold for supervisor */
+    --hydra-moderator: 200 85% 55%; /* blue for moderator */
+    --hydra-user: 220 20% 60%; /* neutral for regular user */
+    --hydra-admin: 0 90% 60%; /* red for admin */
     --hydra-surface: 225 30% 14%;
     --hydra-surface-elevated: 225 28% 18%;
 

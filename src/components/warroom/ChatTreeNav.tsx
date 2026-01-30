@@ -79,11 +79,11 @@ interface ChatTreeNavProps {
 // ==================== Constants ====================
 
 const roleConfig: Record<string, { icon: LucideIcon; color: string; label: string }> = {
-  user: { icon: Crown, color: 'text-amber-500', label: 'supervisor' },
+  user: { icon: Crown, color: 'text-hydra-supervisor', label: 'supervisor' },
   assistant: { icon: Brain, color: 'text-hydra-expert', label: 'assistant' },
   critic: { icon: Shield, color: 'text-hydra-critical', label: 'critic' },
   arbiter: { icon: Scale, color: 'text-hydra-arbiter', label: 'arbiter' },
-  consultant: { icon: Lightbulb, color: 'text-amber-400', label: 'consultant' },
+  consultant: { icon: Lightbulb, color: 'text-hydra-consultant', label: 'consultant' },
 };
 
 function getModelShortName(modelId: string | null): string {
