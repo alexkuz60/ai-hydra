@@ -45,6 +45,7 @@ const roleConfig = {
     icon: User,
     label: 'role.user',
     variant: 'user' as const,
+    supervisorVariant: 'supervisor' as const,
     color: 'text-hydra-user',
   },
   assistant: {
@@ -160,9 +161,14 @@ export function ChatMessage({ message, userDisplayInfo, onDelete, onRatingChange
 
   const isAiMessage = message.role !== 'user';
 
+  // Determine card variant based on role and supervisor status
+  const cardVariant = isUserMessage && userDisplayInfo?.isSupervisor 
+    ? 'supervisor' as const
+    : config.variant;
+
   return (
     <HydraCard 
-      variant={config.variant}
+      variant={cardVariant}
       className="animate-slide-up group relative"
     >
       <HydraCardHeader>
@@ -172,11 +178,6 @@ export function ChatMessage({ message, userDisplayInfo, onDelete, onRatingChange
             ? `${t('role.supervisor')}${userDisplayInfo.displayName ? ` (${userDisplayInfo.displayName})` : ''}`
             : t(config.label)
           }
-          {message.model_name && (
-            <span className="text-muted-foreground font-normal ml-2">
-              ({message.model_name})
-            </span>
-          )}
         </HydraCardTitle>
         <span className="text-xs text-muted-foreground ml-auto flex items-center gap-2">
           {format(new Date(message.created_at), 'dd MMM, HH:mm', { 
