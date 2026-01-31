@@ -12,6 +12,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
 import { toPng, toSvg } from 'html-to-image';
 import { useToast } from '@/hooks/use-toast';
+import yaml from 'js-yaml';
+import { jsPDF } from 'jspdf';
 
 const initialNodes: Node[] = [];
 const initialEdges: Edge[] = [];
@@ -159,6 +161,85 @@ function FlowEditorContent() {
     URL.revokeObjectURL(url);
   }, [diagramName, nodes, edges]);
 
+  const handleExportYaml = useCallback(() => {
+    const data = {
+      name: diagramName,
+      nodes,
+      edges,
+      viewport: reactFlowInstance.current?.getViewport(),
+    };
+    const yamlStr = yaml.dump(data, { indent: 2, lineWidth: -1 });
+    const blob = new Blob([yamlStr], { type: 'text/yaml' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.download = `${diagramName}.yaml`;
+    link.href = url;
+    link.click();
+    URL.revokeObjectURL(url);
+  }, [diagramName, nodes, edges]);
+
+  const handleExportPdf = useCallback(async () => {
+    const viewport = document.querySelector('.react-flow__viewport') as HTMLElement;
+    if (!viewport) return;
+
+    try {
+      const dataUrl = await toPng(viewport, {
+        backgroundColor: '#ffffff',
+        quality: 1,
+      });
+      
+      const pdf = new jsPDF({
+        orientation: 'landscape',
+        unit: 'px',
+      });
+      
+      const img = new Image();
+      img.src = dataUrl;
+      await new Promise((resolve) => { img.onload = resolve; });
+      
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const imgRatio = img.width / img.height;
+      const pageRatio = pageWidth / pageHeight;
+      
+      let imgWidth, imgHeight;
+      if (imgRatio > pageRatio) {
+        imgWidth = pageWidth - 40;
+        imgHeight = imgWidth / imgRatio;
+      } else {
+        imgHeight = pageHeight - 40;
+        imgWidth = imgHeight * imgRatio;
+      }
+      
+      const x = (pageWidth - imgWidth) / 2;
+      const y = (pageHeight - imgHeight) / 2;
+      
+      pdf.setFontSize(16);
+      pdf.text(diagramName, 20, 25);
+      pdf.addImage(dataUrl, 'PNG', x, y + 10, imgWidth, imgHeight - 20);
+      pdf.save(`${diagramName}.pdf`);
+      
+      toast({ description: 'PDF экспортирован успешно' });
+    } catch (error) {
+      toast({ variant: 'destructive', description: 'Ошибка экспорта PDF' });
+    }
+  }, [diagramName, toast]);
+
+  const handleCopyToClipboard = useCallback(async () => {
+    const data = {
+      name: diagramName,
+      nodes,
+      edges,
+      viewport: reactFlowInstance.current?.getViewport(),
+    };
+    try {
+      await navigator.clipboard.writeText(JSON.stringify(data, null, 2));
+      toast({ description: 'Скопировано в буфер обмена' });
+    } catch (error) {
+      toast({ variant: 'destructive', description: 'Ошибка копирования' });
+    }
+  }, [diagramName, nodes, edges, toast]);
+
   const handleGenerateMermaid = useCallback(() => {
     return exportToMermaid(nodes, edges);
   }, [nodes, edges]);
@@ -178,6 +259,9 @@ function FlowEditorContent() {
           onExportPng={handleExportPng}
           onExportSvg={handleExportSvg}
           onExportJson={handleExportJson}
+          onExportYaml={handleExportYaml}
+          onExportPdf={handleExportPdf}
+          onCopyToClipboard={handleCopyToClipboard}
           onGenerateMermaid={handleGenerateMermaid}
           savedDiagrams={diagrams}
           onLoadDiagram={handleLoadDiagram}
