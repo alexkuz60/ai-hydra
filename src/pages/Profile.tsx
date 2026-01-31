@@ -31,6 +31,7 @@ interface ApiKeys {
   anthropic_api_key: string | null;
   xai_api_key: string | null;
   openrouter_api_key: string | null;
+  groq_api_key: string | null;
 }
 
 export default function Profile() {
@@ -49,6 +50,7 @@ export default function Profile() {
     anthropic: false,
     xai: false,
     openrouter: false,
+    groq: false,
   });
 
   // Form states
@@ -59,6 +61,7 @@ export default function Profile() {
   const [anthropicKey, setAnthropicKey] = useState('');
   const [xaiKey, setXaiKey] = useState('');
   const [openrouterKey, setOpenrouterKey] = useState('');
+  const [groqKey, setGroqKey] = useState('');
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -96,11 +99,20 @@ export default function Profile() {
         .rpc('get_my_api_keys');
 
       if (apiKeysData && apiKeysData.length > 0) {
-        setOpenaiKey(apiKeysData[0].openai_api_key || '');
-        setGeminiKey(apiKeysData[0].google_gemini_api_key || '');
-        setAnthropicKey(apiKeysData[0].anthropic_api_key || '');
-        setXaiKey(apiKeysData[0].xai_api_key || '');
-        setOpenrouterKey((apiKeysData[0] as { openrouter_api_key?: string }).openrouter_api_key || '');
+        const keys = apiKeysData[0] as { 
+          openai_api_key?: string; 
+          google_gemini_api_key?: string;
+          anthropic_api_key?: string;
+          xai_api_key?: string;
+          openrouter_api_key?: string;
+          groq_api_key?: string;
+        };
+        setOpenaiKey(keys.openai_api_key || '');
+        setGeminiKey(keys.google_gemini_api_key || '');
+        setAnthropicKey(keys.anthropic_api_key || '');
+        setXaiKey(keys.xai_api_key || '');
+        setOpenrouterKey(keys.openrouter_api_key || '');
+        setGroqKey(keys.groq_api_key || '');
       }
     } catch (error: any) {
       toast.error(error.message);
@@ -145,6 +157,7 @@ export default function Profile() {
         supabase.rpc('save_api_key', { p_provider: 'gemini', p_api_key: geminiKey || '' }),
         supabase.rpc('save_api_key', { p_provider: 'xai', p_api_key: xaiKey || '' }),
         supabase.rpc('save_api_key', { p_provider: 'openrouter', p_api_key: openrouterKey || '' }),
+        supabase.rpc('save_api_key', { p_provider: 'groq', p_api_key: groqKey || '' }),
       ];
 
       const results = await Promise.all(savePromises);
@@ -433,6 +446,33 @@ export default function Profile() {
                   </div>
                   <p className="text-xs text-muted-foreground">
                     Получите ключ на <a href="https://openrouter.ai/keys" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">openrouter.ai/keys</a> — доступны бесплатные модели Llama, Gemma, Mistral, Qwen
+                  </p>
+                </div>
+
+                {/* Groq */}
+                <div className="space-y-2">
+                  <Label htmlFor="groq">Groq (Ultra-Fast Inference)</Label>
+                  <div className="relative">
+                    <Input
+                      id="groq"
+                      type={showKeys.groq ? 'text' : 'password'}
+                      value={groqKey}
+                      onChange={(e) => setGroqKey(e.target.value)}
+                      placeholder="gsk_..."
+                      className="pr-10"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="absolute right-0 top-0 h-full px-3"
+                      onClick={() => setShowKeys({ ...showKeys, groq: !showKeys.groq })}
+                    >
+                      {showKeys.groq ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Получите ключ на <a href="https://console.groq.com/keys" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">console.groq.com/keys</a> — сверхбыстрый инференс Llama 3.3, Mixtral, Gemma
                   </p>
                 </div>
 

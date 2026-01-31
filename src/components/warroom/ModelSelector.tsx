@@ -29,6 +29,7 @@ const PROVIDER_CONFIG: Record<string, { icon: React.ElementType; color: string; 
   gemini: { icon: Cpu, color: 'text-blue-400', label: 'Google Gemini' },
   xai: { icon: Zap, color: 'text-purple-400', label: 'xAI (Grok)' },
   openrouter: { icon: Sparkles, color: 'text-pink-400', label: 'OpenRouter (Free)' },
+  groq: { icon: Zap, color: 'text-yellow-400', label: 'Groq (Fast)' },
 };
 
 interface GroupedModels {
@@ -60,7 +61,7 @@ export function ModelSelector({ value, onChange, className }: ModelSelectorProps
     });
     
     // Add in specific order
-    ['openai', 'anthropic', 'gemini', 'xai', 'openrouter'].forEach(provider => {
+    ['openai', 'anthropic', 'gemini', 'xai', 'groq', 'openrouter'].forEach(provider => {
       const models = providerMap.get(provider);
       if (models && models.length > 0) {
         groups.push({ provider, models });
