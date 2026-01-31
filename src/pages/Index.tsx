@@ -46,21 +46,21 @@ const Index = () => {
           <div className="container px-4 relative z-10">
             <div className="max-w-4xl mx-auto text-center">
               {/* Logo with brand name */}
-              <h1 className="inline-flex items-center justify-center gap-3 md:gap-5 mb-8 group font-rounded">
-                <span className="text-6xl md:text-8xl font-bold bg-gradient-to-r from-primary via-hydra-expert to-hydra-arbiter bg-clip-text text-transparent hydra-text-glow">
+              <h1 className="inline-flex items-baseline justify-center gap-[0.15em] mb-8 group font-rounded">
+                <span className="text-[7rem] md:text-[12rem] font-bold bg-gradient-to-r from-primary via-hydra-expert to-hydra-arbiter bg-clip-text text-transparent hydra-text-glow leading-none">
                   ai
                 </span>
                 
-                <div className="relative">
+                <div className="relative self-center">
                   <img 
                     src="/favicon.png" 
                     alt="" 
-                    className="h-14 md:h-20 w-14 md:w-20 transition-transform duration-500 group-hover:animate-[spin-slow_0.6s_ease-in-out]" 
+                    className="h-[4.5rem] md:h-[7.5rem] w-[4.5rem] md:w-[7.5rem] transition-transform duration-500 group-hover:animate-[spin-slow_0.6s_ease-in-out]" 
                   />
                   <div className="absolute inset-0 bg-primary/30 blur-2xl rounded-full animate-pulse-glow" />
                 </div>
                 
-                <span className="text-6xl md:text-8xl font-bold bg-gradient-to-r from-hydra-expert via-hydra-arbiter to-primary bg-clip-text text-transparent hydra-text-glow">
+                <span className="text-[7rem] md:text-[12rem] font-bold bg-gradient-to-r from-hydra-expert via-hydra-arbiter to-primary bg-clip-text text-transparent hydra-text-glow leading-none">
                   hydra
                 </span>
               </h1>
