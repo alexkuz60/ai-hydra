@@ -164,6 +164,7 @@ export function ModelSelector({ value, onChange, className }: ModelSelectorProps
                   <div className="pl-2 pb-1">
                     {group.models.map((model) => {
                       const isFree = model.id.endsWith(':free');
+                      const isFast = model.provider === 'groq';
                       return (
                         <button
                           key={model.id}
@@ -179,6 +180,12 @@ export function ModelSelector({ value, onChange, className }: ModelSelectorProps
                             value === model.id ? 'opacity-100' : 'opacity-0'
                           )} />
                           <span className="truncate">{model.name}</span>
+                          {isFast && (
+                            <span className="ml-auto shrink-0 flex items-center gap-0.5 rounded bg-hydra-warning/20 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-hydra-warning">
+                              <Zap className="h-3 w-3" />
+                              Fast
+                            </span>
+                          )}
                           {isFree && (
                             <span className="ml-auto shrink-0 rounded bg-hydra-success/20 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-hydra-success">
                               Free
