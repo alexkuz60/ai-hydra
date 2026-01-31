@@ -238,6 +238,7 @@ const translations: Translations = {
   'models.modelsSelected': { ru: 'Выбрано: {count}', en: '{count} selected' },
   'models.personalKeys': { ru: 'Персональные ключи', en: 'Personal Keys' },
   'models.noModelsSelected': { ru: 'Модели не выбраны', en: 'No models selected' },
+  'models.resetCache': { ru: 'Сбросить кэш недоступных', en: 'Reset unavailable cache' },
   
   // Tasks (formerly Sessions)
   'tasks.title': { ru: 'Задачи', en: 'Tasks' },
