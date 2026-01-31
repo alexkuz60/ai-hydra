@@ -9,7 +9,20 @@ import {
   GitBranch, 
   Wrench, 
   ArrowUpFromLine,
-  GripVertical
+  GripVertical,
+  Shuffle,
+  Filter,
+  Combine,
+  Split,
+  Database,
+  Globe,
+  HardDrive,
+  Repeat,
+  Clock,
+  LayoutList,
+  Sparkles,
+  MemoryStick,
+  Tags
 } from 'lucide-react';
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -19,6 +32,19 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   GitBranch,
   Wrench,
   ArrowUpFromLine,
+  Shuffle,
+  Filter,
+  Combine,
+  Split,
+  Database,
+  Globe,
+  HardDrive,
+  Repeat,
+  Clock,
+  LayoutList,
+  Sparkles,
+  MemoryStick,
+  Tags,
 };
 
 const colorMap: Record<string, string> = {
@@ -28,6 +54,12 @@ const colorMap: Record<string, string> = {
   'hydra-warning': 'bg-hydra-warning/20 text-hydra-warning',
   'hydra-expert': 'bg-hydra-expert/20 text-hydra-expert',
   'hydra-glow': 'bg-hydra-glow/20 text-hydra-glow',
+  'hydra-analyst': 'bg-hydra-analyst/20 text-hydra-analyst',
+  'hydra-advisor': 'bg-hydra-advisor/20 text-hydra-advisor',
+  'hydra-archivist': 'bg-hydra-archivist/20 text-hydra-archivist',
+  'hydra-webhunter': 'bg-hydra-webhunter/20 text-hydra-webhunter',
+  'hydra-moderator': 'bg-hydra-moderator/20 text-hydra-moderator',
+  'muted': 'bg-muted text-muted-foreground',
 };
 
 interface FlowSidebarProps {

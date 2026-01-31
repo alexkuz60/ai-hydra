@@ -1,6 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { Node } from '@xyflow/react';
-import { X, ArrowDownToLine, ArrowUpFromLine, FileText, Brain, GitBranch, Wrench, Library } from 'lucide-react';
+import { 
+  X, ArrowDownToLine, ArrowUpFromLine, FileText, Brain, GitBranch, Wrench, Library,
+  Shuffle, Filter, Combine, Split, Database, Globe, HardDrive, Repeat, Clock, LayoutList,
+  Sparkles, MemoryStick, Tags
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -47,6 +51,19 @@ const nodeIcons: Record<FlowNodeType, React.ElementType> = {
   model: Brain,
   condition: GitBranch,
   tool: Wrench,
+  transform: Shuffle,
+  filter: Filter,
+  merge: Combine,
+  split: Split,
+  database: Database,
+  api: Globe,
+  storage: HardDrive,
+  loop: Repeat,
+  delay: Clock,
+  switch: LayoutList,
+  embedding: Sparkles,
+  memory: MemoryStick,
+  classifier: Tags,
 };
 
 const nodeColors: Record<FlowNodeType, string> = {
@@ -56,6 +73,19 @@ const nodeColors: Record<FlowNodeType, string> = {
   model: 'text-hydra-success',
   condition: 'text-hydra-warning',
   tool: 'text-hydra-expert',
+  transform: 'text-hydra-analyst',
+  filter: 'text-hydra-warning',
+  merge: 'text-hydra-advisor',
+  split: 'text-hydra-archivist',
+  database: 'text-hydra-analyst',
+  api: 'text-hydra-webhunter',
+  storage: 'text-hydra-archivist',
+  loop: 'text-hydra-moderator',
+  delay: 'text-muted-foreground',
+  switch: 'text-hydra-warning',
+  embedding: 'text-hydra-expert',
+  memory: 'text-hydra-advisor',
+  classifier: 'text-hydra-success',
 };
 
 export function NodePropertiesPanel({
