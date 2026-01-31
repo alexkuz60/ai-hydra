@@ -52,7 +52,7 @@ const Index = () => {
                 </span>
                 
                 <img 
-                  src="/favicon.png?v=3" 
+                  src="/logo.svg" 
                   alt="" 
                   className="h-[4.5rem] md:h-[7.5rem] w-[4.5rem] md:w-[7.5rem] self-center transition-transform duration-500 group-hover:animate-[spin-slow_0.6s_ease-in-out]" 
                 />

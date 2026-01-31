@@ -1,0 +1,48 @@
+<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="purple" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#5B4B9E"/>
+      <stop offset="100%" stop-color="#3D3270"/>
+    </linearGradient>
+    <linearGradient id="orange" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F5A623"/>
+      <stop offset="100%" stop-color="#E8930C"/>
+    </linearGradient>
+    <linearGradient id="red" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#8B2942"/>
+      <stop offset="100%" stop-color="#C13A52"/>
+    </linearGradient>
+  </defs>
+  
+  <!-- Purple swoosh (left) -->
+  <path d="M 35 25 
+           Q 20 35, 22 55 
+           Q 24 70, 40 75 
+           Q 30 65, 32 50 
+           Q 34 38, 50 35 
+           Q 42 28, 35 25 Z" 
+        fill="url(#purple)"/>
+  
+  <!-- Orange swoosh (top right) -->
+  <path d="M 55 20 
+           Q 70 18, 80 30 
+           Q 88 42, 82 55 
+           Q 78 45, 70 40 
+           Q 62 36, 55 38 
+           Q 60 30, 55 20 Z
+           M 62 42 
+           Q 72 44, 76 52 
+           Q 70 48, 62 47 Z
+           M 58 50 
+           Q 68 52, 72 58 
+           Q 66 55, 58 54 Z" 
+        fill="url(#orange)"/>
+  
+  <!-- Red swoosh (bottom) -->
+  <path d="M 75 60 
+           Q 78 75, 65 82 
+           Q 50 88, 38 80 
+           Q 48 78, 55 72 
+           Q 65 64, 75 60 Z" 
+        fill="url(#red)"/>
+</svg>
