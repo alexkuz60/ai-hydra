@@ -1,104 +1,76 @@
 
+# План: Фильтрация устаревших моделей
 
-# План: Обновление логотипа на главной странице
+## Проблема
+Модель `phi-3-mini` была удалена из актуального списка `PERSONAL_KEY_MODELS`, но её ID остался в сохранённой конфигурации задачи (`session_config.selectedModels`) в базе данных. При отображении задачи и открытии селектора моделей эти устаревшие ID не фильтруются, что приводит к:
+- Отображению несуществующих моделей в списке выбранных
+- Невозможности удалить их через UI (нет чекбокса в списке)
+- Ошибкам при попытке использовать эти модели в чате
 
-## Что будет сделано
+## Решение
+Добавить автоматическую фильтрацию устаревших моделей при загрузке данных из базы.
 
-Переработка заголовка главной страницы — текст "AI-Hydra" будет преобразован в "ai hydra" с логотипом между словами.
+---
 
-## Визуальные изменения
+## Изменения
 
-### Было
+### 1. `src/pages/Tasks.tsx`
+
+**Добавить функцию фильтрации:**
+```typescript
+// Filter out deprecated/unavailable model IDs
+const filterValidModels = (modelIds: string[]) => {
+  const allModelIds = [...LOVABLE_AI_MODELS, ...PERSONAL_KEY_MODELS].map(m => m.id);
+  return modelIds.filter(id => allModelIds.includes(id));
+};
 ```
-     [логотип]
-     
-    AI-Hydra
-```
 
-### Станет
-```
-   ai  [логотип]  hydra
-```
+**Применить фильтрацию в двух местах:**
 
-- Текст в нижнем регистре без дефиса
-- Логотип расположен между словами "ai" и "hydra"
-- Шрифт — округлый (Quicksand или Nunito)
-- Размер текста увеличен для баланса с логотипом
+1. При открытии задачи (`handleOpenTask`):
+   - Фильтровать `savedModels` перед передачей в `navigate()`
+
+2. При открытии Sheet для редактирования (`handleStartEditModels`):
+   - Фильтровать `editingModels` при загрузке из `task.session_config`
+
+3. При отображении моделей в списке задач:
+   - Фильтровать `task.session_config.selectedModels` перед рендерингом
+
+### 2. `src/components/warroom/MultiModelSelector.tsx`
+
+**Добавить автоматическую очистку при монтировании:**
+- При инициализации компонента проверять `value` на наличие устаревших ID
+- Вызывать `onChange()` с отфильтрованным списком, если найдены невалидные ID
 
 ---
 
 ## Технические детали
 
-### 1. Подключение округлого шрифта
-
-**Файл:** `src/index.css`
-
-Добавление Google Font с округлым начертанием (например, Quicksand):
-
-```css
-@import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@600;700&...');
+```text
+┌─────────────────────────────────────────────────────────────┐
+│  База данных (session_config)                                │
+│  selectedModels: ['phi-3-mini-1', 'llama-3.2-3b', ...]      │
+└─────────────────────────────────────────────────────────────┘
+                            │
+                            ▼
+┌─────────────────────────────────────────────────────────────┐
+│  filterValidModels()                                         │
+│  - Сравнивает с LOVABLE_AI_MODELS + PERSONAL_KEY_MODELS     │
+│  - Удаляет ID которых нет в актуальном списке               │
+└─────────────────────────────────────────────────────────────┘
+                            │
+                            ▼
+┌─────────────────────────────────────────────────────────────┐
+│  UI получает только валидные модели                          │
+│  selectedModels: ['llama-3.2-3b', ...]                       │
+└─────────────────────────────────────────────────────────────┘
 ```
-
-### 2. Обновление Tailwind конфигурации
-
-**Файл:** `tailwind.config.ts`
-
-Добавление нового шрифта в `fontFamily`:
-
-```typescript
-fontFamily: {
-  sans: ["Inter", "sans-serif"],
-  mono: ["JetBrains Mono", "monospace"],
-  rounded: ["Quicksand", "sans-serif"], // новый
-}
-```
-
-### 3. Переработка Hero-секции
-
-**Файл:** `src/pages/Index.tsx`
-
-Замена текущей структуры (отдельный логотип + заголовок) на inline-конструкцию:
-
-```tsx
-<div className="inline-flex items-center justify-center gap-4 mb-8 group">
-  <span className="text-6xl md:text-8xl font-bold font-rounded 
-    bg-gradient-to-r from-primary via-hydra-expert to-hydra-arbiter 
-    bg-clip-text text-transparent">
-    ai
-  </span>
-  
-  <div className="relative">
-    <img 
-      src="/favicon.png" 
-      alt="" 
-      className="h-16 md:h-24 w-16 md:w-24 transition-transform 
-        duration-500 group-hover:animate-[spin-slow_0.6s_ease-in-out]" 
-    />
-    <div className="absolute inset-0 bg-primary/30 blur-2xl 
-      rounded-full animate-pulse-glow" />
-  </div>
-  
-  <span className="text-6xl md:text-8xl font-bold font-rounded 
-    bg-gradient-to-r from-hydra-expert via-hydra-arbiter to-primary 
-    bg-clip-text text-transparent">
-    hydra
-  </span>
-</div>
-```
-
-### 4. Обновление переводов
-
-**Файл:** `src/contexts/LanguageContext.tsx`
-
-Заголовок теперь не используется как текстовая строка — он собирается из компонентов, поэтому перевод `hero.title` можно оставить как есть или удалить за ненадобностью.
 
 ---
 
-## Изменяемые файлы
+## Файлы для изменения
 
 | Файл | Изменение |
 |------|-----------|
-| `src/index.css` | Подключение шрифта Quicksand |
-| `tailwind.config.ts` | Добавление `font-rounded` |
-| `src/pages/Index.tsx` | Новая структура Hero-секции |
-
+| `src/pages/Tasks.tsx` | Добавить `filterValidModels()` и применить в 3 местах |
+| `src/components/warroom/MultiModelSelector.tsx` | Добавить `useEffect` для автоочистки невалидных ID |
