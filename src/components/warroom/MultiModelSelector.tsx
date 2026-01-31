@@ -6,8 +6,9 @@ import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Sparkles, Key, AlertCircle, ChevronDown, Users, Gift, Zap } from 'lucide-react';
+import { Sparkles, Key, AlertCircle, ChevronDown, Users, Gift, Zap, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { getUnavailableModelIds, clearModelCache } from '@/lib/modelAvailabilityCache';
 
 // All valid model IDs for filtering deprecated models
 const ALL_VALID_MODEL_IDS = [...LOVABLE_AI_MODELS, ...PERSONAL_KEY_MODELS].map(m => m.id);
@@ -34,26 +35,45 @@ const PAID_MODELS = PERSONAL_KEY_MODELS.filter(
 export function MultiModelSelector({ value, onChange, className }: MultiModelSelectorProps) {
   const { t } = useLanguage();
   const { isAdmin, lovableModels, personalModels, hasAnyModels, loading } = useAvailableModels();
+  
+  // Get list of temporarily unavailable models (cached from errors)
+  const unavailableModelIds = useMemo(() => getUnavailableModelIds(), []);
 
   const allModels = [...lovableModels, ...personalModels];
 
-  // Get available models by category
-  const availableFreeModels = FREE_OPENROUTER_MODELS.filter(m => personalModels.some(p => p.id === m.id));
-  const availableGroqModels = GROQ_MODELS.filter(m => personalModels.some(p => p.id === m.id));
-  const availablePaidModels = PAID_MODELS.filter(m => personalModels.some(p => p.id === m.id));
+  // Get available models by category, filtering out unavailable ones
+  const availableFreeModels = FREE_OPENROUTER_MODELS
+    .filter(m => personalModels.some(p => p.id === m.id))
+    .filter(m => !unavailableModelIds.includes(m.id));
+  const availableGroqModels = GROQ_MODELS
+    .filter(m => personalModels.some(p => p.id === m.id))
+    .filter(m => !unavailableModelIds.includes(m.id));
+  const availablePaidModels = PAID_MODELS
+    .filter(m => personalModels.some(p => p.id === m.id))
+    .filter(m => !unavailableModelIds.includes(m.id));
 
   // Auto-cleanup deprecated/unavailable model IDs from value
   useEffect(() => {
     if (value.length === 0) return;
     
-    const validValues = value.filter(id => ALL_VALID_MODEL_IDS.includes(id));
+    // Filter out both deprecated AND temporarily unavailable models
+    const validValues = value.filter(id => 
+      ALL_VALID_MODEL_IDS.includes(id) && !unavailableModelIds.includes(id)
+    );
     if (validValues.length !== value.length) {
-      console.log('[MultiModelSelector] Cleaning up deprecated model IDs:', 
-        value.filter(id => !ALL_VALID_MODEL_IDS.includes(id))
-      );
+      const removedIds = value.filter(id => !validValues.includes(id));
+      console.log('[MultiModelSelector] Cleaning up unavailable model IDs:', removedIds);
       onChange(validValues);
     }
-  }, []);
+  }, [unavailableModelIds]);
+  
+  // Handler to clear the cache and refresh
+  const handleClearCache = () => {
+    clearModelCache();
+    // Force re-render by updating with same value
+    onChange([...value]);
+    window.location.reload();
+  };
 
   const toggleModel = (modelId: string) => {
     if (value.includes(modelId)) {
@@ -260,9 +280,23 @@ export function MultiModelSelector({ value, onChange, className }: MultiModelSel
           </div>
         </ScrollArea>
 
-        {/* Selected Models Summary */}
-        {selectedCount > 0 && (
-          <div className="border-t p-2">
+        {/* Footer with cache reset and selected models summary */}
+        <div className="border-t p-2 space-y-2">
+          {/* Reset cache button if there are unavailable models */}
+          {unavailableModelIds.length > 0 && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="w-full text-xs text-muted-foreground hover:text-foreground"
+              onClick={handleClearCache}
+            >
+              <RefreshCw className="h-3 w-3 mr-1.5" />
+              {t('models.resetCache')} ({unavailableModelIds.length})
+            </Button>
+          )}
+          
+          {/* Selected Models Summary */}
+          {selectedCount > 0 && (
             <div className="flex flex-wrap gap-1">
               {selectedModels.slice(0, 3).map(model => (
                 <Badge key={model.id} variant="secondary" className="text-xs">
@@ -275,8 +309,8 @@ export function MultiModelSelector({ value, onChange, className }: MultiModelSel
                 </Badge>
               )}
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </PopoverContent>
     </Popover>
   );

@@ -544,7 +544,37 @@ async function callPersonalModel(
 
     if (!response.ok) {
       const errorText = await response.text();
-      throw new Error(`OpenRouter error: ${errorText}`);
+      
+      // Parse error to detect unavailable models
+      let errorCode = response.status;
+      let isModelUnavailable = false;
+      
+      try {
+        const errorJson = JSON.parse(errorText);
+        if (errorJson.error?.code) {
+          errorCode = errorJson.error.code;
+        }
+        // Check for 404 "No endpoints found"
+        if (errorCode === 404 || errorJson.error?.message?.includes('No endpoints found')) {
+          isModelUnavailable = true;
+        }
+        // Check for 402 payment/limit errors
+        if (errorCode === 402 || errorJson.error?.message?.includes('spend limit')) {
+          isModelUnavailable = true;
+        }
+      } catch {
+        // Error text is not JSON
+      }
+      
+      // Throw structured error for client to handle
+      throw {
+        provider: "openrouter",
+        model,
+        status: response.status,
+        code: errorCode,
+        message: errorText,
+        isModelUnavailable,
+      };
     }
     const data = await response.json();
     return { 
