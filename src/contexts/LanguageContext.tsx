@@ -102,6 +102,80 @@ const translations: Translations = {
   'flowEditor.properties.noToolSelected': { ru: 'Выберите инструмент', en: 'Select a tool' },
   'flowEditor.properties.orConfigureManually': { ru: 'или настройте вручную', en: 'or configure manually' },
   
+  // Transform node properties
+  'flowEditor.properties.transformType': { ru: 'Тип трансформации', en: 'Transform Type' },
+  'flowEditor.properties.selectTransformType': { ru: 'Выберите тип', en: 'Select type' },
+  'flowEditor.properties.text': { ru: 'Текст', en: 'Text' },
+  'flowEditor.properties.format': { ru: 'Форматирование', en: 'Format' },
+  'flowEditor.properties.transformExpression': { ru: 'Выражение', en: 'Expression' },
+  'flowEditor.properties.transformExpressionPlaceholder': { ru: '$.data.items | map(...)...', en: '$.data.items | map(...)...' },
+  
+  // Filter node properties
+  'flowEditor.properties.filterCondition': { ru: 'Условие фильтрации', en: 'Filter Condition' },
+  'flowEditor.properties.filterConditionPlaceholder': { ru: 'item.status === "active"', en: 'item.status === "active"' },
+  
+  // Merge node properties
+  'flowEditor.properties.mergeStrategy': { ru: 'Стратегия слияния', en: 'Merge Strategy' },
+  'flowEditor.properties.selectMergeStrategy': { ru: 'Выберите стратегию', en: 'Select strategy' },
+  'flowEditor.properties.mergeConcat': { ru: 'Конкатенация', en: 'Concatenate' },
+  'flowEditor.properties.mergeObject': { ru: 'Объединение объектов', en: 'Merge objects' },
+  'flowEditor.properties.mergeArray': { ru: 'Массив', en: 'Array' },
+  
+  // Split node properties
+  'flowEditor.properties.splitKey': { ru: 'Ключ разделения', en: 'Split Key' },
+  'flowEditor.properties.splitKeyPlaceholder': { ru: 'data.items', en: 'data.items' },
+  
+  // Database node properties
+  'flowEditor.properties.dbOperation': { ru: 'Операция', en: 'Operation' },
+  'flowEditor.properties.selectDbOperation': { ru: 'Выберите операцию', en: 'Select operation' },
+  'flowEditor.properties.dbRead': { ru: 'Чтение', en: 'Read' },
+  'flowEditor.properties.dbWrite': { ru: 'Запись', en: 'Write' },
+  'flowEditor.properties.dbUpdate': { ru: 'Обновление', en: 'Update' },
+  'flowEditor.properties.dbDelete': { ru: 'Удаление', en: 'Delete' },
+  'flowEditor.properties.tableName': { ru: 'Таблица', en: 'Table' },
+  'flowEditor.properties.tableNamePlaceholder': { ru: 'users, messages...', en: 'users, messages...' },
+  
+  // API node properties
+  'flowEditor.properties.apiMethod': { ru: 'HTTP метод', en: 'HTTP Method' },
+  'flowEditor.properties.selectApiMethod': { ru: 'Выберите метод', en: 'Select method' },
+  'flowEditor.properties.apiUrl': { ru: 'URL', en: 'URL' },
+  
+  // Storage node properties
+  'flowEditor.properties.storageOperation': { ru: 'Операция', en: 'Operation' },
+  'flowEditor.properties.selectStorageOperation': { ru: 'Выберите операцию', en: 'Select operation' },
+  'flowEditor.properties.storageRead': { ru: 'Чтение', en: 'Read' },
+  'flowEditor.properties.storageWrite': { ru: 'Запись', en: 'Write' },
+  'flowEditor.properties.storagePath': { ru: 'Путь к файлу', en: 'File Path' },
+  
+  // Loop node properties
+  'flowEditor.properties.loopVariable': { ru: 'Переменная итерации', en: 'Loop Variable' },
+  'flowEditor.properties.loopVariablePlaceholder': { ru: 'item, index', en: 'item, index' },
+  'flowEditor.properties.maxIterations': { ru: 'Макс. итераций', en: 'Max Iterations' },
+  
+  // Delay node properties
+  'flowEditor.properties.delayMs': { ru: 'Задержка (мс)', en: 'Delay (ms)' },
+  'flowEditor.properties.delayMsHint': { ru: '1000 мс = 1 секунда', en: '1000 ms = 1 second' },
+  
+  // Switch node properties
+  'flowEditor.properties.switchCases': { ru: 'Варианты (JSON)', en: 'Cases (JSON)' },
+  'flowEditor.properties.switchCasesHint': { ru: 'Массив объектов с label и condition', en: 'Array of objects with label and condition' },
+  
+  // Embedding node properties
+  'flowEditor.properties.embeddingModel': { ru: 'Модель эмбеддинга', en: 'Embedding Model' },
+  'flowEditor.properties.selectEmbeddingModel': { ru: 'Выберите модель', en: 'Select model' },
+  
+  // Memory node properties
+  'flowEditor.properties.memoryType': { ru: 'Тип памяти', en: 'Memory Type' },
+  'flowEditor.properties.selectMemoryType': { ru: 'Выберите тип', en: 'Select type' },
+  'flowEditor.properties.memoryShort': { ru: 'Краткосрочная', en: 'Short-term' },
+  'flowEditor.properties.memoryLong': { ru: 'Долгосрочная', en: 'Long-term' },
+  'flowEditor.properties.memoryRag': { ru: 'RAG (поиск)', en: 'RAG (retrieval)' },
+  
+  // Classifier node properties
+  'flowEditor.properties.classifierLabels': { ru: 'Метки классификации', en: 'Classification Labels' },
+  'flowEditor.properties.classifierLabelsPlaceholder': { ru: 'positive\nnegative\nneutral', en: 'positive\nnegative\nneutral' },
+  'flowEditor.properties.classifierLabelsHint': { ru: 'По одной метке на строку', en: 'One label per line' },
+  
   // Auth
   'auth.email': { ru: 'Email', en: 'Email' },
   'auth.password': { ru: 'Пароль', en: 'Password' },

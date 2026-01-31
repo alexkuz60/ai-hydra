@@ -526,6 +526,454 @@ export function NodePropertiesPanel({
           </>
         );
 
+      // ===== DATA PROCESSING NODES =====
+      case 'transform':
+        return (
+          <>
+            <div className="space-y-2">
+              <Label htmlFor="label">{t('flowEditor.properties.label')}</Label>
+              <Input
+                id="label"
+                value={(selectedNode.data.label as string) || ''}
+                onChange={(e) => handleDataChange('label', e.target.value)}
+                placeholder={t('flowEditor.nodes.transform')}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="transformType">{t('flowEditor.properties.transformType')}</Label>
+              <Select
+                value={(selectedNode.data.transformType as string) || 'json'}
+                onValueChange={(value) => handleDataChange('transformType', value)}
+              >
+                <SelectTrigger className="bg-background">
+                  <SelectValue placeholder={t('flowEditor.properties.selectTransformType')} />
+                </SelectTrigger>
+                <SelectContent className="bg-popover border z-50">
+                  <SelectItem value="json">JSON</SelectItem>
+                  <SelectItem value="text">{t('flowEditor.properties.text')}</SelectItem>
+                  <SelectItem value="format">{t('flowEditor.properties.format')}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="transformExpression">{t('flowEditor.properties.transformExpression')}</Label>
+              <Textarea
+                id="transformExpression"
+                value={(selectedNode.data.transformExpression as string) || ''}
+                onChange={(e) => handleDataChange('transformExpression', e.target.value)}
+                placeholder={t('flowEditor.properties.transformExpressionPlaceholder')}
+                rows={4}
+                className="font-mono text-sm"
+              />
+            </div>
+          </>
+        );
+
+      case 'filter':
+        return (
+          <>
+            <div className="space-y-2">
+              <Label htmlFor="label">{t('flowEditor.properties.label')}</Label>
+              <Input
+                id="label"
+                value={(selectedNode.data.label as string) || ''}
+                onChange={(e) => handleDataChange('label', e.target.value)}
+                placeholder={t('flowEditor.nodes.filter')}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="filterCondition">{t('flowEditor.properties.filterCondition')}</Label>
+              <Textarea
+                id="filterCondition"
+                value={(selectedNode.data.filterCondition as string) || ''}
+                onChange={(e) => handleDataChange('filterCondition', e.target.value)}
+                placeholder={t('flowEditor.properties.filterConditionPlaceholder')}
+                rows={4}
+                className="font-mono text-sm"
+              />
+            </div>
+          </>
+        );
+
+      case 'merge':
+        return (
+          <>
+            <div className="space-y-2">
+              <Label htmlFor="label">{t('flowEditor.properties.label')}</Label>
+              <Input
+                id="label"
+                value={(selectedNode.data.label as string) || ''}
+                onChange={(e) => handleDataChange('label', e.target.value)}
+                placeholder={t('flowEditor.nodes.merge')}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="mergeStrategy">{t('flowEditor.properties.mergeStrategy')}</Label>
+              <Select
+                value={(selectedNode.data.mergeStrategy as string) || 'concat'}
+                onValueChange={(value) => handleDataChange('mergeStrategy', value)}
+              >
+                <SelectTrigger className="bg-background">
+                  <SelectValue placeholder={t('flowEditor.properties.selectMergeStrategy')} />
+                </SelectTrigger>
+                <SelectContent className="bg-popover border z-50">
+                  <SelectItem value="concat">{t('flowEditor.properties.mergeConcat')}</SelectItem>
+                  <SelectItem value="object">{t('flowEditor.properties.mergeObject')}</SelectItem>
+                  <SelectItem value="array">{t('flowEditor.properties.mergeArray')}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </>
+        );
+
+      case 'split':
+        return (
+          <>
+            <div className="space-y-2">
+              <Label htmlFor="label">{t('flowEditor.properties.label')}</Label>
+              <Input
+                id="label"
+                value={(selectedNode.data.label as string) || ''}
+                onChange={(e) => handleDataChange('label', e.target.value)}
+                placeholder={t('flowEditor.nodes.split')}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="splitKey">{t('flowEditor.properties.splitKey')}</Label>
+              <Input
+                id="splitKey"
+                value={(selectedNode.data.splitKey as string) || ''}
+                onChange={(e) => handleDataChange('splitKey', e.target.value)}
+                placeholder={t('flowEditor.properties.splitKeyPlaceholder')}
+              />
+            </div>
+          </>
+        );
+
+      // ===== INTEGRATION NODES =====
+      case 'database':
+        return (
+          <>
+            <div className="space-y-2">
+              <Label htmlFor="label">{t('flowEditor.properties.label')}</Label>
+              <Input
+                id="label"
+                value={(selectedNode.data.label as string) || ''}
+                onChange={(e) => handleDataChange('label', e.target.value)}
+                placeholder={t('flowEditor.nodes.database')}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="dbOperation">{t('flowEditor.properties.dbOperation')}</Label>
+              <Select
+                value={(selectedNode.data.dbOperation as string) || 'read'}
+                onValueChange={(value) => handleDataChange('dbOperation', value)}
+              >
+                <SelectTrigger className="bg-background">
+                  <SelectValue placeholder={t('flowEditor.properties.selectDbOperation')} />
+                </SelectTrigger>
+                <SelectContent className="bg-popover border z-50">
+                  <SelectItem value="read">{t('flowEditor.properties.dbRead')}</SelectItem>
+                  <SelectItem value="write">{t('flowEditor.properties.dbWrite')}</SelectItem>
+                  <SelectItem value="update">{t('flowEditor.properties.dbUpdate')}</SelectItem>
+                  <SelectItem value="delete">{t('flowEditor.properties.dbDelete')}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="tableName">{t('flowEditor.properties.tableName')}</Label>
+              <Input
+                id="tableName"
+                value={(selectedNode.data.tableName as string) || ''}
+                onChange={(e) => handleDataChange('tableName', e.target.value)}
+                placeholder={t('flowEditor.properties.tableNamePlaceholder')}
+              />
+            </div>
+          </>
+        );
+
+      case 'api':
+        return (
+          <>
+            <div className="space-y-2">
+              <Label htmlFor="label">{t('flowEditor.properties.label')}</Label>
+              <Input
+                id="label"
+                value={(selectedNode.data.label as string) || ''}
+                onChange={(e) => handleDataChange('label', e.target.value)}
+                placeholder={t('flowEditor.nodes.api')}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="apiMethod">{t('flowEditor.properties.apiMethod')}</Label>
+              <Select
+                value={(selectedNode.data.apiMethod as string) || 'GET'}
+                onValueChange={(value) => handleDataChange('apiMethod', value)}
+              >
+                <SelectTrigger className="bg-background">
+                  <SelectValue placeholder={t('flowEditor.properties.selectApiMethod')} />
+                </SelectTrigger>
+                <SelectContent className="bg-popover border z-50">
+                  <SelectItem value="GET">GET</SelectItem>
+                  <SelectItem value="POST">POST</SelectItem>
+                  <SelectItem value="PUT">PUT</SelectItem>
+                  <SelectItem value="DELETE">DELETE</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="apiUrl">{t('flowEditor.properties.apiUrl')}</Label>
+              <Input
+                id="apiUrl"
+                value={(selectedNode.data.apiUrl as string) || ''}
+                onChange={(e) => handleDataChange('apiUrl', e.target.value)}
+                placeholder="https://api.example.com/endpoint"
+              />
+            </div>
+          </>
+        );
+
+      case 'storage':
+        return (
+          <>
+            <div className="space-y-2">
+              <Label htmlFor="label">{t('flowEditor.properties.label')}</Label>
+              <Input
+                id="label"
+                value={(selectedNode.data.label as string) || ''}
+                onChange={(e) => handleDataChange('label', e.target.value)}
+                placeholder={t('flowEditor.nodes.storage')}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="storageOperation">{t('flowEditor.properties.storageOperation')}</Label>
+              <Select
+                value={(selectedNode.data.storageOperation as string) || 'read'}
+                onValueChange={(value) => handleDataChange('storageOperation', value)}
+              >
+                <SelectTrigger className="bg-background">
+                  <SelectValue placeholder={t('flowEditor.properties.selectStorageOperation')} />
+                </SelectTrigger>
+                <SelectContent className="bg-popover border z-50">
+                  <SelectItem value="read">{t('flowEditor.properties.storageRead')}</SelectItem>
+                  <SelectItem value="write">{t('flowEditor.properties.storageWrite')}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="storagePath">{t('flowEditor.properties.storagePath')}</Label>
+              <Input
+                id="storagePath"
+                value={(selectedNode.data.storagePath as string) || ''}
+                onChange={(e) => handleDataChange('storagePath', e.target.value)}
+                placeholder="/bucket/path/to/file"
+              />
+            </div>
+          </>
+        );
+
+      // ===== LOGIC & CONTROL NODES =====
+      case 'loop':
+        return (
+          <>
+            <div className="space-y-2">
+              <Label htmlFor="label">{t('flowEditor.properties.label')}</Label>
+              <Input
+                id="label"
+                value={(selectedNode.data.label as string) || ''}
+                onChange={(e) => handleDataChange('label', e.target.value)}
+                placeholder={t('flowEditor.nodes.loop')}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="loopVariable">{t('flowEditor.properties.loopVariable')}</Label>
+              <Input
+                id="loopVariable"
+                value={(selectedNode.data.loopVariable as string) || ''}
+                onChange={(e) => handleDataChange('loopVariable', e.target.value)}
+                placeholder={t('flowEditor.properties.loopVariablePlaceholder')}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="maxIterations">{t('flowEditor.properties.maxIterations')}</Label>
+              <Input
+                id="maxIterations"
+                type="number"
+                value={(selectedNode.data.maxIterations as number) || 10}
+                onChange={(e) => handleDataChange('maxIterations', parseInt(e.target.value) || 10)}
+                min={1}
+                max={1000}
+              />
+            </div>
+          </>
+        );
+
+      case 'delay':
+        return (
+          <>
+            <div className="space-y-2">
+              <Label htmlFor="label">{t('flowEditor.properties.label')}</Label>
+              <Input
+                id="label"
+                value={(selectedNode.data.label as string) || ''}
+                onChange={(e) => handleDataChange('label', e.target.value)}
+                placeholder={t('flowEditor.nodes.delay')}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="delayMs">{t('flowEditor.properties.delayMs')}</Label>
+              <Input
+                id="delayMs"
+                type="number"
+                value={(selectedNode.data.delayMs as number) || 1000}
+                onChange={(e) => handleDataChange('delayMs', parseInt(e.target.value) || 1000)}
+                min={0}
+                max={300000}
+              />
+              <p className="text-xs text-muted-foreground">
+                {t('flowEditor.properties.delayMsHint')}
+              </p>
+            </div>
+          </>
+        );
+
+      case 'switch':
+        return (
+          <>
+            <div className="space-y-2">
+              <Label htmlFor="label">{t('flowEditor.properties.label')}</Label>
+              <Input
+                id="label"
+                value={(selectedNode.data.label as string) || ''}
+                onChange={(e) => handleDataChange('label', e.target.value)}
+                placeholder={t('flowEditor.nodes.switch')}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>{t('flowEditor.properties.switchCases')}</Label>
+              <Textarea
+                value={
+                  Array.isArray(selectedNode.data.switchCases)
+                    ? JSON.stringify(selectedNode.data.switchCases, null, 2)
+                    : '[{"label": "Case 1", "condition": "value == 1"}]'
+                }
+                onChange={(e) => {
+                  try {
+                    const cases = JSON.parse(e.target.value);
+                    handleDataChange('switchCases', cases);
+                  } catch {
+                    // Invalid JSON
+                  }
+                }}
+                placeholder='[{"label": "Case 1", "condition": "..."}]'
+                rows={5}
+                className="font-mono text-sm"
+              />
+              <p className="text-xs text-muted-foreground">
+                {t('flowEditor.properties.switchCasesHint')}
+              </p>
+            </div>
+          </>
+        );
+
+      // ===== AI-SPECIFIC NODES =====
+      case 'embedding':
+        return (
+          <>
+            <div className="space-y-2">
+              <Label htmlFor="label">{t('flowEditor.properties.label')}</Label>
+              <Input
+                id="label"
+                value={(selectedNode.data.label as string) || ''}
+                onChange={(e) => handleDataChange('label', e.target.value)}
+                placeholder={t('flowEditor.nodes.embedding')}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="embeddingModel">{t('flowEditor.properties.embeddingModel')}</Label>
+              <Select
+                value={(selectedNode.data.embeddingModel as string) || 'text-embedding-3-small'}
+                onValueChange={(value) => handleDataChange('embeddingModel', value)}
+              >
+                <SelectTrigger className="bg-background">
+                  <SelectValue placeholder={t('flowEditor.properties.selectEmbeddingModel')} />
+                </SelectTrigger>
+                <SelectContent className="bg-popover border z-50">
+                  <SelectItem value="text-embedding-3-small">text-embedding-3-small</SelectItem>
+                  <SelectItem value="text-embedding-3-large">text-embedding-3-large</SelectItem>
+                  <SelectItem value="text-embedding-ada-002">text-embedding-ada-002</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </>
+        );
+
+      case 'memory':
+        return (
+          <>
+            <div className="space-y-2">
+              <Label htmlFor="label">{t('flowEditor.properties.label')}</Label>
+              <Input
+                id="label"
+                value={(selectedNode.data.label as string) || ''}
+                onChange={(e) => handleDataChange('label', e.target.value)}
+                placeholder={t('flowEditor.nodes.memory')}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="memoryType">{t('flowEditor.properties.memoryType')}</Label>
+              <Select
+                value={(selectedNode.data.memoryType as string) || 'short'}
+                onValueChange={(value) => handleDataChange('memoryType', value)}
+              >
+                <SelectTrigger className="bg-background">
+                  <SelectValue placeholder={t('flowEditor.properties.selectMemoryType')} />
+                </SelectTrigger>
+                <SelectContent className="bg-popover border z-50">
+                  <SelectItem value="short">{t('flowEditor.properties.memoryShort')}</SelectItem>
+                  <SelectItem value="long">{t('flowEditor.properties.memoryLong')}</SelectItem>
+                  <SelectItem value="rag">{t('flowEditor.properties.memoryRag')}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </>
+        );
+
+      case 'classifier':
+        return (
+          <>
+            <div className="space-y-2">
+              <Label htmlFor="label">{t('flowEditor.properties.label')}</Label>
+              <Input
+                id="label"
+                value={(selectedNode.data.label as string) || ''}
+                onChange={(e) => handleDataChange('label', e.target.value)}
+                placeholder={t('flowEditor.nodes.classifier')}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="classifierLabels">{t('flowEditor.properties.classifierLabels')}</Label>
+              <Textarea
+                id="classifierLabels"
+                value={
+                  Array.isArray(selectedNode.data.classifierLabels)
+                    ? selectedNode.data.classifierLabels.join('\n')
+                    : ''
+                }
+                onChange={(e) => {
+                  const labels = e.target.value.split('\n').filter(l => l.trim());
+                  handleDataChange('classifierLabels', labels);
+                }}
+                placeholder={t('flowEditor.properties.classifierLabelsPlaceholder')}
+                rows={5}
+              />
+              <p className="text-xs text-muted-foreground">
+                {t('flowEditor.properties.classifierLabelsHint')}
+              </p>
+            </div>
+          </>
+        );
+
       default:
         return (
           <div className="space-y-2">
