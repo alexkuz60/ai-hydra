@@ -1,123 +1,104 @@
 
 
-# План: Расширение палитры узлов редактора Data-Flow
+# План: Обновление логотипа на главной странице
 
-## Анализ текущей архитектуры
+## Что будет сделано
 
-Сейчас редактор Flow поддерживает 6 типов узлов:
-- **Input** (Вход) - круглый, голубой
-- **Output** (Выход) - круглый, бирюзовый  
-- **Prompt** (Промпт) - прямоугольный
-- **Model** (AI Модель) - прямоугольный
-- **Condition** (Условие) - прямоугольный с двумя выходами
-- **Tool** (Инструмент) - прямоугольный
+Переработка заголовка главной страницы — текст "AI-Hydra" будет преобразован в "ai hydra" с логотипом между словами.
 
-## Предлагаемые новые узлы
+## Визуальные изменения
 
-### Группа 1: Обработка данных
-| Узел | Описание | Иконка | Цвет |
-|------|----------|--------|------|
-| **Transform** | Преобразование данных (JSON, текст, форматирование) | Shuffle | hydra-analyst (индиго) |
-| **Filter** | Фильтрация/валидация данных | Filter | hydra-warning (жёлтый) |
-| **Merge** | Объединение нескольких входов | Combine | hydra-advisor (изумрудный) |
-| **Split** | Разделение данных на несколько выходов | Split | hydra-archivist (бронзовый) |
-
-### Группа 2: Интеграции
-| Узел | Описание | Иконка | Цвет |
-|------|----------|--------|------|
-| **Database** | Чтение/запись в базу данных | Database | hydra-analyst (индиго) |
-| **API** | Вызов внешнего HTTP API | Globe | hydra-webhunter (оранжевый) |
-| **Storage** | Работа с файловым хранилищем | HardDrive | hydra-archivist (бронзовый) |
-
-### Группа 3: Логика и контроль
-| Узел | Описание | Иконка | Цвет |
-|------|----------|--------|------|
-| **Loop** | Цикл/итерация по массиву | Repeat | hydra-moderator (синий) |
-| **Delay** | Задержка выполнения | Clock | muted |
-| **Switch** | Множественное ветвление (case) | LayoutList | hydra-warning |
-
-### Группа 4: AI-специфичные
-| Узел | Описание | Иконка | Цвет |
-|------|----------|--------|------|
-| **Embedding** | Векторизация текста | Sparkles | hydra-expert (фиолетовый) |
-| **Memory** | Контекстная память/RAG | MemoryStick | hydra-advisor (изумрудный) |
-| **Classifier** | Классификация контента | Tags | hydra-success (зелёный) |
-
----
-
-## Технические изменения
-
-### 1. Обновить тип и палитру узлов
-**Файл:** `src/types/flow.ts`
-- Расширить `FlowNodeType` новыми типами
-- Добавить новые элементы в `NODE_PALETTE` с иконками и цветами
-- Расширить `FlowNodeData` свойствами для новых узлов
-
-### 2. Создать компоненты узлов
-**Папка:** `src/components/flow/nodes/`
-- Создать по одному React-компоненту для каждого нового типа узла
-- Следовать существующему паттерну (memo, Handle, иконка, label)
-- Специальные формы для некоторых узлов (Loop - скруглённый, Switch - шестиугольник)
-
-### 3. Зарегистрировать узлы в Canvas
-**Файл:** `src/components/flow/FlowCanvas.tsx`
-- Импортировать все новые компоненты
-- Добавить их в объект `nodeTypes`
-- Обновить функцию `nodeColor` в MiniMap для новых типов
-
-### 4. Обновить боковую панель
-**Файл:** `src/components/flow/FlowSidebar.tsx`
-- Добавить новые иконки из Lucide в `iconMap`
-- Добавить новые цвета в `colorMap`
-- Организовать узлы в группы с разделителями (опционально)
-
-### 5. Расширить панель свойств
-**Файл:** `src/components/flow/NodePropertiesPanel.tsx`
-- Добавить иконки и цвета для новых типов в маппинги
-- Создать секции редактирования свойств для каждого нового узла
-
-### 6. Добавить переводы
-**Файл:** `src/contexts/LanguageContext.tsx`
-- Добавить ключи `flowEditor.nodes.*` для всех новых узлов (RU/EN)
-
----
-
-## Примерная структура нового узла (Transform)
-
+### Было
 ```
-// TransformNode.tsx
-import { memo } from 'react';
-import { Handle, Position } from '@xyflow/react';
-import { Shuffle } from 'lucide-react';
+     [логотип]
+     
+    AI-Hydra
+```
 
-export const TransformNode = memo(({ data, selected }) => (
-  <div className="px-4 py-3 min-w-[160px] rounded-lg border-2 
-                  bg-hydra-analyst/10 border-hydra-analyst ...">
-    <Handle type="target" position={Position.Top} />
-    <div className="flex items-center gap-2">
-      <Shuffle className="text-hydra-analyst" />
-      <span>{data.label || 'Трансформация'}</span>
-    </div>
-    <Handle type="source" position={Position.Bottom} />
+### Станет
+```
+   ai  [логотип]  hydra
+```
+
+- Текст в нижнем регистре без дефиса
+- Логотип расположен между словами "ai" и "hydra"
+- Шрифт — округлый (Quicksand или Nunito)
+- Размер текста увеличен для баланса с логотипом
+
+---
+
+## Технические детали
+
+### 1. Подключение округлого шрифта
+
+**Файл:** `src/index.css`
+
+Добавление Google Font с округлым начертанием (например, Quicksand):
+
+```css
+@import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@600;700&...');
+```
+
+### 2. Обновление Tailwind конфигурации
+
+**Файл:** `tailwind.config.ts`
+
+Добавление нового шрифта в `fontFamily`:
+
+```typescript
+fontFamily: {
+  sans: ["Inter", "sans-serif"],
+  mono: ["JetBrains Mono", "monospace"],
+  rounded: ["Quicksand", "sans-serif"], // новый
+}
+```
+
+### 3. Переработка Hero-секции
+
+**Файл:** `src/pages/Index.tsx`
+
+Замена текущей структуры (отдельный логотип + заголовок) на inline-конструкцию:
+
+```tsx
+<div className="inline-flex items-center justify-center gap-4 mb-8 group">
+  <span className="text-6xl md:text-8xl font-bold font-rounded 
+    bg-gradient-to-r from-primary via-hydra-expert to-hydra-arbiter 
+    bg-clip-text text-transparent">
+    ai
+  </span>
+  
+  <div className="relative">
+    <img 
+      src="/favicon.png" 
+      alt="" 
+      className="h-16 md:h-24 w-16 md:w-24 transition-transform 
+        duration-500 group-hover:animate-[spin-slow_0.6s_ease-in-out]" 
+    />
+    <div className="absolute inset-0 bg-primary/30 blur-2xl 
+      rounded-full animate-pulse-glow" />
   </div>
-));
+  
+  <span className="text-6xl md:text-8xl font-bold font-rounded 
+    bg-gradient-to-r from-hydra-expert via-hydra-arbiter to-primary 
+    bg-clip-text text-transparent">
+    hydra
+  </span>
+</div>
 ```
+
+### 4. Обновление переводов
+
+**Файл:** `src/contexts/LanguageContext.tsx`
+
+Заголовок теперь не используется как текстовая строка — он собирается из компонентов, поэтому перевод `hero.title` можно оставить как есть или удалить за ненадобностью.
 
 ---
 
-## Порядок реализации
+## Изменяемые файлы
 
-1. Сначала добавить все 12 новых типов в `flow.ts` и переводы
-2. Создать базовые компоненты узлов (без сложной логики свойств)
-3. Зарегистрировать в Canvas и Sidebar
-4. Добавить базовые поля в панели свойств
-5. Протестировать drag-and-drop и сохранение
-
-## Ожидаемый результат
-
-Палитра расширится с 6 до 18 узлов, охватывая:
-- Полный цикл обработки данных
-- Интеграции с внешними сервисами
-- Расширенную логику управления потоком
-- AI-специфичные операции
+| Файл | Изменение |
+|------|-----------|
+| `src/index.css` | Подключение шрифта Quicksand |
+| `tailwind.config.ts` | Добавление `font-rounded` |
+| `src/pages/Index.tsx` | Новая структура Hero-секции |
 
