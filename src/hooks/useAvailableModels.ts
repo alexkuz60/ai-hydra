@@ -5,7 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 export interface ModelOption {
   id: string;
   name: string;
-  provider: 'lovable' | 'openai' | 'gemini' | 'anthropic' | 'xai';
+  provider: 'lovable' | 'openai' | 'gemini' | 'anthropic' | 'xai' | 'openrouter';
   requiresApiKey: boolean;
 }
 
@@ -48,6 +48,16 @@ export const PERSONAL_KEY_MODELS: ModelOption[] = [
   { id: 'grok-3-fast', name: 'Grok 3 Fast', provider: 'xai', requiresApiKey: true },
   { id: 'grok-3-mini', name: 'Grok 3 Mini', provider: 'xai', requiresApiKey: true },
   { id: 'grok-3-mini-fast', name: 'Grok 3 Mini Fast', provider: 'xai', requiresApiKey: true },
+  
+  // OpenRouter models (free tier)
+  { id: 'google/gemma-2-9b-it:free', name: 'Gemma 2 9B (Free)', provider: 'openrouter', requiresApiKey: true },
+  { id: 'meta-llama/llama-3.2-3b-instruct:free', name: 'Llama 3.2 3B (Free)', provider: 'openrouter', requiresApiKey: true },
+  { id: 'meta-llama/llama-3.1-8b-instruct:free', name: 'Llama 3.1 8B (Free)', provider: 'openrouter', requiresApiKey: true },
+  { id: 'mistralai/mistral-7b-instruct:free', name: 'Mistral 7B (Free)', provider: 'openrouter', requiresApiKey: true },
+  { id: 'qwen/qwen-2.5-72b-instruct:free', name: 'Qwen 2.5 72B (Free)', provider: 'openrouter', requiresApiKey: true },
+  { id: 'qwen/qwen-2.5-coder-32b-instruct:free', name: 'Qwen 2.5 Coder 32B (Free)', provider: 'openrouter', requiresApiKey: true },
+  { id: 'deepseek/deepseek-r1-distill-llama-70b:free', name: 'DeepSeek R1 Distill 70B (Free)', provider: 'openrouter', requiresApiKey: true },
+  { id: 'microsoft/phi-3-mini-128k-instruct:free', name: 'Phi-3 Mini 128K (Free)', provider: 'openrouter', requiresApiKey: true },
 ];
 
 interface UserApiKeys {
@@ -55,6 +65,7 @@ interface UserApiKeys {
   gemini: boolean;
   anthropic: boolean;
   xai: boolean;
+  openrouter: boolean;
 }
 
 export function useAvailableModels() {
@@ -65,6 +76,7 @@ export function useAvailableModels() {
     gemini: false,
     anthropic: false,
     xai: false,
+    openrouter: false,
   });
   const [loading, setLoading] = useState(true);
 
@@ -97,6 +109,7 @@ export function useAvailableModels() {
             gemini: keyStatus[0].has_gemini || false,
             anthropic: keyStatus[0].has_anthropic || false,
             xai: keyStatus[0].has_xai || false,
+            openrouter: (keyStatus[0] as { has_openrouter?: boolean }).has_openrouter || false,
           });
         }
       } catch (error) {
@@ -115,6 +128,7 @@ export function useAvailableModels() {
     if (model.provider === 'gemini') return userApiKeys.gemini;
     if (model.provider === 'anthropic') return userApiKeys.anthropic;
     if (model.provider === 'xai') return userApiKeys.xai;
+    if (model.provider === 'openrouter') return userApiKeys.openrouter;
     return false;
   });
 

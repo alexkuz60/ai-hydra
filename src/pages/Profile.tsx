@@ -30,6 +30,7 @@ interface ApiKeys {
   google_gemini_api_key: string | null;
   anthropic_api_key: string | null;
   xai_api_key: string | null;
+  openrouter_api_key: string | null;
 }
 
 export default function Profile() {
@@ -47,6 +48,7 @@ export default function Profile() {
     gemini: false,
     anthropic: false,
     xai: false,
+    openrouter: false,
   });
 
   // Form states
@@ -56,6 +58,7 @@ export default function Profile() {
   const [geminiKey, setGeminiKey] = useState('');
   const [anthropicKey, setAnthropicKey] = useState('');
   const [xaiKey, setXaiKey] = useState('');
+  const [openrouterKey, setOpenrouterKey] = useState('');
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -97,6 +100,7 @@ export default function Profile() {
         setGeminiKey(apiKeysData[0].google_gemini_api_key || '');
         setAnthropicKey(apiKeysData[0].anthropic_api_key || '');
         setXaiKey(apiKeysData[0].xai_api_key || '');
+        setOpenrouterKey((apiKeysData[0] as { openrouter_api_key?: string }).openrouter_api_key || '');
       }
     } catch (error: any) {
       toast.error(error.message);
@@ -140,6 +144,7 @@ export default function Profile() {
         supabase.rpc('save_api_key', { p_provider: 'anthropic', p_api_key: anthropicKey || '' }),
         supabase.rpc('save_api_key', { p_provider: 'gemini', p_api_key: geminiKey || '' }),
         supabase.rpc('save_api_key', { p_provider: 'xai', p_api_key: xaiKey || '' }),
+        supabase.rpc('save_api_key', { p_provider: 'openrouter', p_api_key: openrouterKey || '' }),
       ];
 
       const results = await Promise.all(savePromises);
@@ -402,6 +407,33 @@ export default function Profile() {
                       {showKeys.xai ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </Button>
                   </div>
+                </div>
+
+                {/* OpenRouter */}
+                <div className="space-y-2">
+                  <Label htmlFor="openrouter">OpenRouter (Free Models)</Label>
+                  <div className="relative">
+                    <Input
+                      id="openrouter"
+                      type={showKeys.openrouter ? 'text' : 'password'}
+                      value={openrouterKey}
+                      onChange={(e) => setOpenrouterKey(e.target.value)}
+                      placeholder="sk-or-..."
+                      className="pr-10"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="absolute right-0 top-0 h-full px-3"
+                      onClick={() => setShowKeys({ ...showKeys, openrouter: !showKeys.openrouter })}
+                    >
+                      {showKeys.openrouter ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Получите ключ на <a href="https://openrouter.ai/keys" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">openrouter.ai/keys</a> — доступны бесплатные модели Llama, Gemma, Mistral, Qwen
+                  </p>
                 </div>
 
                 <Button onClick={handleSaveApiKeys} disabled={saving} className="hydra-glow-sm">
