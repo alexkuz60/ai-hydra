@@ -1,0 +1,83 @@
+import React from 'react';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { ChatMessage, UserDisplayInfo } from '@/components/warroom/ChatMessage';
+import { DateSeparator } from '@/components/warroom/DateSeparator';
+import { Message } from '@/types/messages';
+import { isSameDay } from 'date-fns';
+import { Sparkles } from 'lucide-react';
+
+interface ChatMessagesListProps {
+  messages: Message[];
+  filteredParticipant: string | null;
+  userDisplayInfo: UserDisplayInfo;
+  messagesEndRef: React.RefObject<HTMLDivElement>;
+  messageRefs: React.MutableRefObject<Map<string, HTMLDivElement>>;
+  // Collapse state
+  isCollapsed: (id: string) => boolean;
+  onToggleCollapse: (id: string) => void;
+  // Actions
+  onDelete: (id: string) => void;
+  onRatingChange: (id: string, rating: number) => void;
+}
+
+export function ChatMessagesList({
+  messages,
+  filteredParticipant,
+  userDisplayInfo,
+  messagesEndRef,
+  messageRefs,
+  isCollapsed,
+  onToggleCollapse,
+  onDelete,
+  onRatingChange,
+}: ChatMessagesListProps) {
+  if (messages.length === 0) {
+    return (
+      <ScrollArea className="flex-1 p-4 hydra-scrollbar">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center py-16">
+            <Sparkles className="h-12 w-12 text-primary mx-auto mb-4 animate-pulse-glow" />
+            <p className="text-muted-foreground">
+              {filteredParticipant ? 'Нет сообщений по фильтру' : 'Начните диалог с AI-Hydra'}
+            </p>
+          </div>
+        </div>
+      </ScrollArea>
+    );
+  }
+
+  return (
+    <ScrollArea className="flex-1 p-4 hydra-scrollbar">
+      <div className="max-w-4xl mx-auto space-y-4">
+        {messages.map((message, index) => {
+          const messageDate = new Date(message.created_at);
+          const prevMessage = index > 0 ? messages[index - 1] : null;
+          const showDateSeparator = !prevMessage || 
+            !isSameDay(messageDate, new Date(prevMessage.created_at));
+
+          return (
+            <React.Fragment key={message.id}>
+              {showDateSeparator && <DateSeparator date={messageDate} />}
+              <div
+                ref={(el) => {
+                  if (el) messageRefs.current.set(message.id, el);
+                  else messageRefs.current.delete(message.id);
+                }}
+              >
+                <ChatMessage 
+                  message={message}
+                  userDisplayInfo={userDisplayInfo}
+                  onDelete={onDelete}
+                  onRatingChange={onRatingChange}
+                  isCollapsed={isCollapsed(message.id)}
+                  onToggleCollapse={onToggleCollapse}
+                />
+              </div>
+            </React.Fragment>
+          );
+        })}
+        <div ref={messagesEndRef} />
+      </div>
+    </ScrollArea>
+  );
+}
