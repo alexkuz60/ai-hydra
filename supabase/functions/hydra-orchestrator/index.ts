@@ -1,99 +1,45 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { AVAILABLE_TOOLS, executeToolCalls, ToolCall, ToolResult, registerCustomTools } from "./tools.ts";
-// Note: PDF/DOCX extraction temporarily disabled due to esm.sh issues
-// import { getDocument } from "https://esm.sh/pdfjs-serverless";
-// import mammoth from "https://esm.sh/mammoth@1.6.0";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+// Local module imports
+import {
+  AVAILABLE_TOOLS,
+  executeToolCalls,
+  registerCustomTools,
+  testHttpTool,
+} from "./tools.ts";
 
-// Maximum iterations for tool calling loop (prevent infinite loops)
-const MAX_TOOL_ITERATIONS = 5;
+import type {
+  ToolCall,
+  ToolResult,
+  ModelRequest,
+  Attachment,
+  RequestBody,
+  DocumentText,
+  ProcessedAttachments,
+  CustomToolDefinition,
+  LovableAIResponse,
+  ContentPart,
+  MessageItem,
+  UsageData,
+  SuccessResult,
+} from "./types.ts";
 
-interface ModelRequest {
-  model_id: string;
-  use_lovable_ai: boolean;
-  provider?: string | null;
-  temperature?: number;
-  max_tokens?: number;
-  system_prompt?: string;
-  role?: 'assistant' | 'critic' | 'arbiter';
-  enable_tools?: boolean;
-  enabled_tools?: string[]; // Built-in tools enabled for this model
-  enabled_custom_tools?: string[]; // Custom tool IDs enabled for this model
-}
+import {
+  CORS_HEADERS,
+  MAX_TOOL_ITERATIONS,
+  MAX_DOCUMENT_TEXT_LENGTH,
+  FETCH_TIMEOUT_MS,
+  DOCUMENT_MIME_TYPES,
+  THINKING_MODELS,
+  THINKING_MODEL_TOKEN_MULTIPLIER,
+  DEFAULT_PROMPTS,
+  ANTHROPIC_MODEL_MAP,
+} from "./constants.ts";
 
-interface CustomToolDef {
-  id: string;
-  name: string;
-  display_name: string;
-  description: string;
-  prompt_template: string;
-  parameters: Array<{
-    name: string;
-    type: 'string' | 'number' | 'boolean';
-    description: string;
-    required: boolean;
-  }>;
-  tool_type: 'prompt' | 'http_api';
-  http_config: {
-    url: string;
-    method: 'GET' | 'POST' | 'PUT' | 'DELETE';
-    headers?: Record<string, string>;
-    body_template?: string;
-    response_path?: string;
-  } | null;
-}
-
-interface Attachment {
-  name: string;
-  url: string;
-  type: string;
-}
-
-interface RequestBody {
-  session_id: string;
-  message: string;
-  attachments?: Attachment[];
-  models: ModelRequest[];
-}
-
-interface DocumentText {
-  name: string;
-  text: string;
-}
-
-interface ProcessedAttachments {
-  images: Attachment[];
-  documentTexts: DocumentText[];
-  errors: { name: string; error: string }[];
-}
-
-// Constants for document processing
-const MAX_DOCUMENT_TEXT_LENGTH = 50000;
-const FETCH_TIMEOUT_MS = 30000;
-
-const DOCUMENT_MIME_TYPES: Record<string, string> = {
-  'application/pdf': 'pdf',
-  'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'docx',
-};
-
-// Thinking models that use reasoning tokens (need higher limits)
-const THINKING_MODELS = [
-  'google/gemini-2.5-pro',
-  'google/gemini-3-pro-preview',
-  'openai/gpt-5',
-  'openai/gpt-5.2',
-];
-
-// Multiplier for thinking models (reasoning consumes ~80-90% of tokens)
-const THINKING_MODEL_TOKEN_MULTIPLIER = 4;
-
-// Helper to build multimodal content for OpenAI-compatible APIs
-type ContentPart = { type: "text"; text: string } | { type: "image_url"; image_url: { url: string } };
+// ============================================
+// Multimodal Content Builder
+// ============================================
 
 function buildMultimodalContent(message: string, attachments: Attachment[]): ContentPart[] {
   const content: ContentPart[] = [];
@@ -114,7 +60,10 @@ function buildMultimodalContent(message: string, attachments: Attachment[]): Con
   return content;
 }
 
-// Fetch file from URL with timeout
+// ============================================
+// Document Processing
+// ============================================
+
 async function fetchFileAsArrayBuffer(url: string): Promise<ArrayBuffer> {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
@@ -130,34 +79,28 @@ async function fetchFileAsArrayBuffer(url: string): Promise<ArrayBuffer> {
   }
 }
 
-// Extract text from PDF - temporarily disabled
+// PDF/DOCX extraction temporarily disabled
 async function extractTextFromPDF(_buffer: ArrayBuffer): Promise<string> {
-  // PDF extraction temporarily disabled due to esm.sh import issues
   console.warn("PDF extraction is temporarily disabled");
   return "[PDF extraction temporarily unavailable]";
 }
 
-// Extract text from DOCX - temporarily disabled
 async function extractTextFromDOCX(_buffer: ArrayBuffer): Promise<string> {
-  // DOCX extraction temporarily disabled due to esm.sh import issues
   console.warn("DOCX extraction is temporarily disabled");
   return "[DOCX extraction temporarily unavailable]";
 }
 
-// Process all attachments: separate images and extract text from documents
 async function processDocumentAttachments(attachments: Attachment[]): Promise<ProcessedAttachments> {
   const images: Attachment[] = [];
   const documentTexts: DocumentText[] = [];
   const errors: { name: string; error: string }[] = [];
   
   for (const att of attachments) {
-    // Handle images as-is for multimodal
     if (att.type.startsWith('image/')) {
       images.push(att);
       continue;
     }
     
-    // Check if it's a supported document type
     const docType = DOCUMENT_MIME_TYPES[att.type];
     if (!docType) {
       console.log(`Skipping unsupported file type: ${att.type} (${att.name})`);
@@ -166,11 +109,8 @@ async function processDocumentAttachments(attachments: Attachment[]): Promise<Pr
     
     try {
       console.log(`Extracting text from ${docType}: ${att.name}`);
-      
-      // Fetch the file
       const buffer = await fetchFileAsArrayBuffer(att.url);
       
-      // Extract text based on type
       let text: string;
       if (docType === 'pdf') {
         text = await extractTextFromPDF(buffer);
@@ -180,7 +120,6 @@ async function processDocumentAttachments(attachments: Attachment[]): Promise<Pr
         continue;
       }
       
-      // Truncate if too long
       if (text.length > MAX_DOCUMENT_TEXT_LENGTH) {
         text = text.substring(0, MAX_DOCUMENT_TEXT_LENGTH) + '\n\n[... текст обрезан из-за превышения лимита ...]';
       }
@@ -201,11 +140,7 @@ async function processDocumentAttachments(attachments: Attachment[]): Promise<Pr
   return { images, documentTexts, errors };
 }
 
-// Build enhanced message with document texts prepended
-function buildEnhancedMessage(
-  originalMessage: string,
-  documentTexts: DocumentText[]
-): string {
+function buildEnhancedMessage(originalMessage: string, documentTexts: DocumentText[]): string {
   if (documentTexts.length === 0) {
     return originalMessage;
   }
@@ -217,6 +152,10 @@ function buildEnhancedMessage(
   return `Пользователь приложил следующие документы к своему запросу:\n\n${documentSections}\n\n=== Вопрос пользователя ===\n${originalMessage}`;
 }
 
+// ============================================
+// Lovable AI API
+// ============================================
+
 async function callLovableAI(
   apiKey: string,
   model: string,
@@ -226,56 +165,35 @@ async function callLovableAI(
   temperature: number,
   maxTokens: number,
   enableTools: boolean = true,
-  enabledTools?: string[], // Built-in tools enabled for this model
-  customTools?: CustomToolDef[] // Custom tools enabled for this model
-): Promise<{
-  model: string;
-  provider: string;
-  content: string;
-  reasoning: string | null;
-  usage: { prompt_tokens?: number; completion_tokens?: number; total_tokens?: number } | null;
-  tool_calls?: ToolCall[];
-  tool_results?: ToolResult[];
-}> {
-  // OpenAI models use max_completion_tokens, others use max_tokens
+  enabledTools?: string[],
+  customTools?: CustomToolDefinition[]
+): Promise<LovableAIResponse> {
   const isOpenAI = model.startsWith("openai/");
   const tokenParam = isOpenAI 
     ? { max_completion_tokens: maxTokens }
     : { max_tokens: maxTokens };
-
-  // OpenAI models via Lovable AI don't support custom temperature
   const tempParam = isOpenAI ? {} : { temperature };
 
-  // Build user content: multimodal if images, plain text otherwise
   const imageAttachments = attachments.filter(a => a.type.startsWith('image/'));
   const userContent = imageAttachments.length > 0 
     ? buildMultimodalContent(message, attachments)
     : message;
-
-  // Prepare messages array for the conversation
-  type MessageItem = 
-    | { role: "system"; content: string }
-    | { role: "user"; content: string | ContentPart[] }
-    | { role: "assistant"; content: string | null; tool_calls?: ToolCall[] }
-    | { role: "tool"; tool_call_id: string; content: string };
 
   const messages: MessageItem[] = [
     { role: "system", content: systemPrompt },
     { role: "user", content: userContent },
   ];
 
-  // Register custom tools for this request
   if (customTools && customTools.length > 0) {
     registerCustomTools(customTools);
   }
 
-  // Track all tool calls and results across iterations
   const allToolCalls: ToolCall[] = [];
   const allToolResults: ToolResult[] = [];
   let iteration = 0;
   let finalContent = "";
   let finalReasoning: string | null = null;
-  let finalUsage: { prompt_tokens?: number; completion_tokens?: number; total_tokens?: number } | null = null;
+  let finalUsage: UsageData | null = null;
 
   while (iteration < MAX_TOOL_ITERATIONS) {
     iteration++;
@@ -288,11 +206,9 @@ async function callLovableAI(
       ...tokenParam,
     };
 
-    // Add tools only if enabled (filter by enabledTools if provided)
     if (enableTools) {
       const allTools: typeof AVAILABLE_TOOLS = [];
       
-      // Add built-in tools
       if (AVAILABLE_TOOLS.length > 0) {
         const filteredBuiltIn = enabledTools && enabledTools.length > 0
           ? AVAILABLE_TOOLS.filter(t => enabledTools.includes(t.function.name))
@@ -300,7 +216,6 @@ async function callLovableAI(
         allTools.push(...filteredBuiltIn);
       }
       
-      // Add custom tools (convert to OpenAI tool format)
       if (customTools && customTools.length > 0) {
         for (const ct of customTools) {
           const properties: Record<string, { type: string; description?: string }> = {};
@@ -358,8 +273,6 @@ async function callLovableAI(
     }
 
     const data = await response.json();
-    
-    // Log full response for debugging
     console.log(`[${model}] Full API response (iteration ${iteration}):`, JSON.stringify(data, null, 2));
     
     const choice = data.choices?.[0];
@@ -369,36 +282,23 @@ async function callLovableAI(
     const usage = data.usage || null;
     const toolCalls = messageResponse?.tool_calls as ToolCall[] | undefined;
 
-    // Update final values
-    if (content) {
-      finalContent = content;
-    }
-    if (reasoning) {
-      finalReasoning = reasoning;
-    }
-    if (usage) {
-      finalUsage = usage;
-    }
+    if (content) finalContent = content;
+    if (reasoning) finalReasoning = reasoning;
+    if (usage) finalUsage = usage;
 
-    // Check if model wants to call tools
     if (toolCalls && toolCalls.length > 0) {
       console.log(`[${model}] Model requested ${toolCalls.length} tool calls`);
       
-      // Execute all tool calls
       const results = await executeToolCalls(toolCalls);
-      
-      // Store for metadata
       allToolCalls.push(...toolCalls);
       allToolResults.push(...results);
       
-      // Add assistant message with tool calls to conversation
       messages.push({
         role: "assistant",
         content: content || null,
         tool_calls: toolCalls,
       });
       
-      // Add tool results to conversation
       for (const result of results) {
         messages.push({
           role: "tool",
@@ -407,11 +307,9 @@ async function callLovableAI(
         });
       }
       
-      // Continue loop to get final response
       continue;
     }
     
-    // No tool calls - we have the final response
     break;
   }
 
@@ -442,6 +340,10 @@ async function callLovableAI(
   };
 }
 
+// ============================================
+// Personal Model APIs
+// ============================================
+
 async function callPersonalModel(
   provider: string,
   apiKey: string,
@@ -455,7 +357,6 @@ async function callPersonalModel(
   const imageAttachments = attachments.filter(a => a.type.startsWith('image/'));
   
   if (provider === "openai") {
-    // OpenAI uses image_url format
     const userContent = imageAttachments.length > 0 
       ? buildMultimodalContent(message, attachments)
       : message;
@@ -488,10 +389,7 @@ async function callPersonalModel(
   }
 
   if (provider === "gemini") {
-    // Gemini uses inline_data for images (requires base64) or fileData
-    // For URLs, we'll pass them as file_data with uri
     const parts: Array<{ text?: string; file_data?: { mime_type: string; file_uri: string } }> = [];
-    
     parts.push({ text: `${systemPrompt}\n\nUser: ${message}` });
     
     for (const att of imageAttachments) {
@@ -517,7 +415,6 @@ async function callPersonalModel(
 
     if (!response.ok) throw new Error(`Gemini error: ${await response.text()}`);
     const data = await response.json();
-    // Gemini returns usageMetadata instead of usage
     const usageMetadata = data.usageMetadata;
     return { 
       model: "gemini-1.5-pro", 
@@ -532,7 +429,6 @@ async function callPersonalModel(
   }
 
   if (provider === "anthropic") {
-    // Anthropic uses source.url for images
     type AnthropicContent = 
       | string 
       | Array<{ type: "text"; text: string } | { type: "image"; source: { type: "url"; url: string } }>;
@@ -558,14 +454,7 @@ async function callPersonalModel(
       userContent = message;
     }
     
-    // Map model IDs to actual Anthropic model names
-    const anthropicModelMap: Record<string, string> = {
-      'claude-3-5-sonnet': 'claude-3-5-sonnet-20241022',
-      'claude-3-5-haiku': 'claude-3-5-haiku-20241022',
-      'claude-3-opus': 'claude-3-opus-20240229',
-      'claude-3-haiku': 'claude-3-haiku-20240307',
-    };
-    const actualModel = anthropicModelMap[model] || 'claude-3-5-sonnet-20241022';
+    const actualModel = ANTHROPIC_MODEL_MAP[model] || 'claude-3-5-sonnet-20241022';
     
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
@@ -585,7 +474,6 @@ async function callPersonalModel(
 
     if (!response.ok) throw new Error(`Anthropic error: ${await response.text()}`);
     const data = await response.json();
-    // Anthropic returns usage in a similar format
     return { 
       model, 
       provider: "anthropic", 
@@ -599,7 +487,6 @@ async function callPersonalModel(
   }
 
   if (provider === "xai") {
-    // xAI Grok uses OpenAI-compatible API
     const userContent = imageAttachments.length > 0 
       ? buildMultimodalContent(message, attachments)
       : message;
@@ -634,16 +521,20 @@ async function callPersonalModel(
   throw new Error(`Unknown provider: ${provider}`);
 }
 
+// ============================================
+// Main Server Handler
+// ============================================
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { headers: CORS_HEADERS });
   }
 
   try {
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 401, headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
       });
     }
 
@@ -656,12 +547,11 @@ serve(async (req) => {
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     if (userError || !user) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 401, headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
       });
     }
 
-    // Parse request body
-    const requestBody = await req.json();
+    const requestBody: RequestBody = await req.json();
     
     // Handle HTTP tool testing action
     if (requestBody.action === 'test_http_tool') {
@@ -669,89 +559,52 @@ serve(async (req) => {
       
       if (!http_config || !http_config.url) {
         return new Response(JSON.stringify({ success: false, error: 'http_config with url is required' }), {
-          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 400, headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
         });
       }
       
       console.log(`[Test HTTP Tool] Testing tool: ${tool_name || 'unnamed'}`);
-      
-      // Import and use the HTTP execution function
-      const { testHttpTool } = await import("./tools.ts");
       const result = await testHttpTool(http_config, test_args || {});
       
       return new Response(JSON.stringify(result), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
       });
     }
     
-    const { session_id, message, attachments, models }: RequestBody = requestBody;
+    const { session_id, message, attachments, models } = requestBody;
 
     if (!session_id || !message || !models || models.length === 0) {
       return new Response(JSON.stringify({ error: "session_id, message, and models are required" }), {
-        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400, headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
       });
     }
     
-    // Default to empty array if no attachments provided
     const messageAttachments = attachments || [];
 
-    // Process document attachments: extract text from PDF/DOCX, keep images for multimodal
+    // Process document attachments
     console.log(`Processing ${messageAttachments.length} attachments...`);
     const { images, documentTexts, errors: docErrors } = await processDocumentAttachments(messageAttachments);
     console.log(`Processed: ${images.length} images, ${documentTexts.length} document texts, ${docErrors.length} errors`);
     
-    // Build enhanced message with document texts
     const enhancedMessage = buildEnhancedMessage(message, documentTexts);
     if (documentTexts.length > 0) {
       console.log(`Enhanced message length: ${enhancedMessage.length} chars`);
     }
 
-    // Fetch username from profiles
+    // Fetch user profile and API keys
     const { data: profile } = await supabase
       .from("profiles")
       .select("username")
       .eq("user_id", user.id)
       .single();
 
-    // Fetch decrypted API keys from Vault via RPC
     const { data: apiKeysResult } = await supabase.rpc('get_my_api_keys');
     const apiKeys = apiKeysResult?.[0] || null;
-
-    // Default system prompts for each role
-    const defaultPrompts: Record<string, string> = {
-      assistant: `You are an expert participating in a multi-agent discussion. Provide clear, well-reasoned responses. Be concise but thorough. Your perspective may differ from other AI models in this conversation.`,
-      critic: `You are a critical analyst. Your task is to find weaknesses, contradictions, and potential problems in reasoning. Be constructive but rigorous. Challenge assumptions and identify logical flaws.`,
-      arbiter: `You are a discussion arbiter. Synthesize different viewpoints, highlight consensus and disagreements. Form a balanced final decision based on the merits of each argument.`,
-      moderator: `Ты — Модератор дискуссии между несколькими ИИ-экспертами.
-
-Твоя задача:
-1. Проанализировать запрос пользователя и все ответы экспертов
-2. Выделить ключевые тезисы каждого эксперта
-3. Удалить смысловые повторы и информационный шум
-4. Структурировать информацию по темам
-5. Отметить точки консенсуса и расхождения
-
-Формат ответа:
-## Краткое резюме
-[1-2 предложения: суть вопроса и общий вывод]
-
-## Ключевые тезисы
-- [Тезис 1] — поддержано: [какими экспертами]
-- [Тезис 2] — поддержано: [какими экспертами]
-
-## Расхождения (если есть)
-- [Точка расхождения]: [позиция А] vs [позиция Б]
-
-## Рекомендация
-[Финальный вывод на основе анализа]
-
-Будь лаконичен. Не добавляй информацию, которой нет в ответах экспертов.`,
-    };
 
     const lovableKey = Deno.env.get("LOVABLE_API_KEY");
     const isAdmin = profile?.username === "AlexKuz";
 
-    // Collect all custom tool IDs needed across all models
+    // Collect all custom tool IDs
     const allCustomToolIds = new Set<string>();
     for (const m of models) {
       if (m.enabled_custom_tools) {
@@ -761,8 +614,8 @@ serve(async (req) => {
       }
     }
 
-    // Fetch custom tools from database if any are enabled
-    let customToolsMap: Map<string, CustomToolDef> = new Map();
+    // Fetch custom tools from database
+    let customToolsMap: Map<string, CustomToolDefinition> = new Map();
     if (allCustomToolIds.size > 0) {
       console.log(`Fetching ${allCustomToolIds.size} custom tools...`);
       const { data: customToolsData, error: customToolsError } = await supabase
@@ -780,9 +633,9 @@ serve(async (req) => {
             display_name: ct.display_name,
             description: ct.description,
             prompt_template: ct.prompt_template,
-            parameters: (ct.parameters as CustomToolDef['parameters']) || [],
+            parameters: (ct.parameters as CustomToolDefinition['parameters']) || [],
             tool_type: (ct.tool_type || 'prompt') as 'prompt' | 'http_api',
-            http_config: ct.http_config as CustomToolDef['http_config'],
+            http_config: ct.http_config as CustomToolDefinition['http_config'],
           });
         }
         console.log(`Loaded ${customToolsMap.size} custom tools`);
@@ -790,17 +643,14 @@ serve(async (req) => {
     }
 
     const errors: { model: string; error: string }[] = [];
-
     console.log(`Processing ${models.length} models:`, models.map(m => m.model_id));
 
-    // Process all models in parallel with individual settings
-    const modelPromises = models.map(async (modelReq) => {
-      // Use per-model settings or defaults
+    // Process all models in parallel
+    const modelPromises = models.map(async (modelReq: ModelRequest) => {
       const temperature = modelReq.temperature ?? 0.7;
       const role = modelReq.role ?? 'assistant';
-      const systemPrompt = modelReq.system_prompt || defaultPrompts[role] || defaultPrompts.assistant;
+      const systemPrompt = modelReq.system_prompt || DEFAULT_PROMPTS[role] || DEFAULT_PROMPTS.assistant;
 
-      // Check if this is a thinking model that needs more tokens
       const isThinkingModel = THINKING_MODELS.some(tm => modelReq.model_id.includes(tm));
       const baseMaxTokens = modelReq.max_tokens ?? 2048;
       const maxTokens = isThinkingModel 
@@ -810,22 +660,20 @@ serve(async (req) => {
       console.log(`Starting request for model: ${modelReq.model_id}, role: ${role}, temp: ${temperature}, maxTokens: ${maxTokens}${isThinkingModel ? ' (thinking model x4)' : ''}`);
       
       try {
-        let result: { model: string; provider: string; content: string };
+        let result: { model: string; provider: string; content: string; reasoning?: string | null; usage?: UsageData | null; tool_calls?: ToolCall[]; tool_results?: ToolResult[] };
         
         if (modelReq.use_lovable_ai) {
-          // Check if user is admin
           if (!isAdmin) {
             throw new Error("Lovable AI access restricted to admin only");
           }
           if (!lovableKey) {
             throw new Error("Lovable AI not configured");
           }
-          // Use enhanced message (with document texts) and images for multimodal
-          const enableTools = modelReq.enable_tools !== false; // Default to true
+          
+          const enableTools = modelReq.enable_tools !== false;
           const enabledTools = modelReq.enabled_tools;
           
-          // Get custom tools for this model
-          const modelCustomTools: CustomToolDef[] = [];
+          const modelCustomTools: CustomToolDefinition[] = [];
           if (modelReq.enabled_custom_tools) {
             for (const ctId of modelReq.enabled_custom_tools) {
               const ct = customToolsMap.get(ctId);
@@ -837,7 +685,6 @@ serve(async (req) => {
           
           result = await callLovableAI(lovableKey, modelReq.model_id, enhancedMessage, images, systemPrompt, temperature, maxTokens, enableTools, enabledTools, modelCustomTools);
         } else {
-          // Use personal API key
           let apiKey: string | null = null;
           if (modelReq.provider === "openai") apiKey = apiKeys?.openai_api_key;
           if (modelReq.provider === "gemini") apiKey = apiKeys?.google_gemini_api_key;
@@ -848,12 +695,11 @@ serve(async (req) => {
             throw new Error(`No API key configured for ${modelReq.provider}`);
           }
 
-          // Use enhanced message (with document texts) and images for multimodal
           result = await callPersonalModel(modelReq.provider!, apiKey, modelReq.model_id, enhancedMessage, images, systemPrompt, temperature, maxTokens);
         }
         
         console.log(`Success for model: ${modelReq.model_id}`);
-        return { ...result, role }; // Include role in result for DB insert
+        return { ...result, role };
       } catch (error: unknown) {
         const errorMessage = error instanceof Error ? error.message : (error as { message?: string })?.message || "Unknown error";
         console.error(`Error for model ${modelReq.model_id}:`, errorMessage);
@@ -865,23 +711,6 @@ serve(async (req) => {
     console.log(`All results received: ${allResults.length}`);
 
     // Separate successes and errors
-    interface UsageData {
-      prompt_tokens?: number;
-      completion_tokens?: number;
-      total_tokens?: number;
-    }
-    
-    interface SuccessResult {
-      model: string;
-      provider: string;
-      content: string;
-      role: string;
-      reasoning?: string | null;
-      usage?: UsageData | null;
-      tool_calls?: ToolCall[];
-      tool_results?: ToolResult[];
-    }
-    
     const successResults: SuccessResult[] = [];
     for (const result of allResults) {
       if ('error' in result && result.error === true) {
@@ -893,7 +722,7 @@ serve(async (req) => {
     
     console.log(`Results: ${successResults.length} successes, ${errors.length} errors`);
 
-    // Save all successful responses to database with individual roles, usage data, and tool calls
+    // Save all successful responses to database
     if (successResults.length > 0) {
       const messagesToInsert = successResults.map(result => ({
         session_id,
@@ -907,7 +736,6 @@ serve(async (req) => {
           prompt_tokens: result.usage?.prompt_tokens || 0,
           completion_tokens: result.usage?.completion_tokens || 0,
           total_tokens: result.usage?.total_tokens || 0,
-          // Tool calling data
           tool_calls: result.tool_calls || undefined,
           tool_results: result.tool_results || undefined,
         },
@@ -928,14 +756,14 @@ serve(async (req) => {
       documentTextsExtracted: documentTexts.length,
       errors: allErrors.length > 0 ? allErrors : undefined 
     }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
     });
   } catch (error: unknown) {
     console.error("Orchestrator error:", error);
     const status = (error as { status?: number })?.status || 500;
     const message = error instanceof Error ? error.message : "Unknown error";
     return new Response(JSON.stringify({ error: message }), {
-      status, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status, headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
     });
   }
 });
