@@ -8,6 +8,7 @@ import { LOVABLE_AI_MODELS, PERSONAL_KEY_MODELS } from '@/hooks/useAvailableMode
 import { AttachedFile } from '@/components/warroom/FileUpload';
 import { useLanguage } from '@/contexts/LanguageContext';
 import type { Json } from '@/integrations/supabase/types';
+import { markModelUnavailable, parseModelError } from '@/lib/modelAvailabilityCache';
 
 interface AttachmentUrl {
   name: string;
@@ -132,7 +133,14 @@ export function useSendMessage({
 
     if (data.errors && data.errors.length > 0) {
       data.errors.forEach((err: { model: string; error: string }) => {
-        toast.error(`${err.model}: ${err.error}`);
+        // Check if this error indicates the model is unavailable
+        const { isUnavailable, errorCode } = parseModelError(err.model, err.error);
+        if (isUnavailable) {
+          markModelUnavailable(err.model, errorCode, err.error);
+          toast.error(`${err.model}: Модель недоступна (${errorCode}). Она будет скрыта.`);
+        } else {
+          toast.error(`${err.model}: ${err.error}`);
+        }
       });
     }
   }, [sessionId]);
