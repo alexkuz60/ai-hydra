@@ -45,22 +45,23 @@ const Index = () => {
 
           <div className="container px-4 relative z-10">
             <div className="max-w-4xl mx-auto text-center">
-              {/* Logo */}
-              <div className="inline-flex items-center justify-center mb-8">
-                <div className="relative group">
+              {/* Logo with brand name */}
+              <h1 className="inline-flex items-center justify-center gap-3 md:gap-5 mb-8 group font-rounded">
+                <span className="text-6xl md:text-8xl font-bold bg-gradient-to-r from-primary via-hydra-expert to-hydra-arbiter bg-clip-text text-transparent hydra-text-glow">
+                  ai
+                </span>
+                
+                <div className="relative">
                   <img 
                     src="/favicon.png" 
-                    alt="AI-Hydra" 
-                    className="h-20 w-20 transition-transform duration-500 group-hover:animate-[spin-slow_0.6s_ease-in-out]" 
+                    alt="" 
+                    className="h-14 md:h-20 w-14 md:w-20 transition-transform duration-500 group-hover:animate-[spin-slow_0.6s_ease-in-out]" 
                   />
                   <div className="absolute inset-0 bg-primary/30 blur-2xl rounded-full animate-pulse-glow" />
                 </div>
-              </div>
-
-              {/* Title */}
-              <h1 className="text-5xl md:text-7xl font-bold mb-6">
-                <span className="bg-gradient-to-r from-primary via-hydra-expert to-hydra-arbiter bg-clip-text text-transparent hydra-text-glow">
-                  {t('hero.title')}
+                
+                <span className="text-6xl md:text-8xl font-bold bg-gradient-to-r from-hydra-expert via-hydra-arbiter to-primary bg-clip-text text-transparent hydra-text-glow">
+                  hydra
                 </span>
               </h1>
 
