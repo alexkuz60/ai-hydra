@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { useAvailableModels, ModelOption, PERSONAL_KEY_MODELS } from '@/hooks/useAvailableModels';
+import { useAvailableModels, ModelOption, PERSONAL_KEY_MODELS, LOVABLE_AI_MODELS } from '@/hooks/useAvailableModels';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -8,6 +8,9 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Sparkles, Key, AlertCircle, ChevronDown, Users, Gift, Zap } from 'lucide-react';
 import { cn } from '@/lib/utils';
+
+// All valid model IDs for filtering deprecated models
+const ALL_VALID_MODEL_IDS = [...LOVABLE_AI_MODELS, ...PERSONAL_KEY_MODELS].map(m => m.id);
 
 interface MultiModelSelectorProps {
   value: string[];
@@ -38,6 +41,19 @@ export function MultiModelSelector({ value, onChange, className }: MultiModelSel
   const availableFreeModels = FREE_OPENROUTER_MODELS.filter(m => personalModels.some(p => p.id === m.id));
   const availableGroqModels = GROQ_MODELS.filter(m => personalModels.some(p => p.id === m.id));
   const availablePaidModels = PAID_MODELS.filter(m => personalModels.some(p => p.id === m.id));
+
+  // Auto-cleanup deprecated/unavailable model IDs from value
+  useEffect(() => {
+    if (value.length === 0) return;
+    
+    const validValues = value.filter(id => ALL_VALID_MODEL_IDS.includes(id));
+    if (validValues.length !== value.length) {
+      console.log('[MultiModelSelector] Cleaning up deprecated model IDs:', 
+        value.filter(id => !ALL_VALID_MODEL_IDS.includes(id))
+      );
+      onChange(validValues);
+    }
+  }, []);
 
   const toggleModel = (modelId: string) => {
     if (value.includes(modelId)) {
