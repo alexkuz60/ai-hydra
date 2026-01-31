@@ -1,5 +1,5 @@
-import React from 'react';
-import { NODE_PALETTE, FlowNodeType } from '@/types/flow';
+import React, { useMemo } from 'react';
+import { NODE_PALETTE, FlowNodeType, NodePaletteItem } from '@/types/flow';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
 import { 
@@ -24,6 +24,7 @@ import {
   MemoryStick,
   Tags
 } from 'lucide-react';
+import { Separator } from '@/components/ui/separator';
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   ArrowDownToLine,
@@ -62,16 +63,68 @@ const colorMap: Record<string, string> = {
   'muted': 'bg-muted text-muted-foreground',
 };
 
+const categoryLabels: Record<string, { ru: string; en: string }> = {
+  basic: { ru: 'Базовые', en: 'Basic' },
+  data: { ru: 'Данные', en: 'Data' },
+  integration: { ru: 'Интеграции', en: 'Integrations' },
+  logic: { ru: 'Логика', en: 'Logic' },
+  ai: { ru: 'AI', en: 'AI' },
+};
+
 interface FlowSidebarProps {
   onDragStart: (event: React.DragEvent, nodeType: FlowNodeType) => void;
 }
 
 export function FlowSidebar({ onDragStart }: FlowSidebarProps) {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
 
   const getNodeLabel = (type: FlowNodeType): string => {
     const key = `flowEditor.nodes.${type}`;
     return t(key);
+  };
+
+  const groupedNodes = useMemo(() => {
+    const groups: Record<string, NodePaletteItem[]> = {
+      basic: [],
+      data: [],
+      integration: [],
+      logic: [],
+      ai: [],
+    };
+    
+    NODE_PALETTE.forEach((item) => {
+      if (groups[item.category]) {
+        groups[item.category].push(item);
+      }
+    });
+    
+    return groups;
+  }, []);
+
+  const renderNodeItem = (item: NodePaletteItem) => {
+    const Icon = iconMap[item.icon];
+    const colorClasses = colorMap[item.color] || 'bg-muted text-muted-foreground';
+    
+    return (
+      <div
+        key={item.type}
+        draggable
+        onDragStart={(e) => onDragStart(e, item.type)}
+        className={cn(
+          "flex items-center gap-2 p-2 rounded-lg border cursor-grab transition-all",
+          "bg-background hover:bg-accent/50 border-border",
+          "active:cursor-grabbing active:scale-95"
+        )}
+      >
+        <GripVertical className="h-3 w-3 text-muted-foreground/50" />
+        <div className={cn("p-1.5 rounded", colorClasses.split(' ')[0])}>
+          {Icon && <Icon className={cn("h-4 w-4", colorClasses.split(' ')[1])} />}
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="text-sm font-medium truncate">{getNodeLabel(item.type)}</div>
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -83,35 +136,22 @@ export function FlowSidebar({ onDragStart }: FlowSidebarProps) {
         </p>
       </div>
       
-      <div className="flex-1 overflow-auto p-2 space-y-1.5">
-        {NODE_PALETTE.map((item) => {
-          const Icon = iconMap[item.icon];
-          const colorClasses = colorMap[item.color] || 'bg-muted text-muted-foreground';
-          
-          return (
-            <div
-              key={item.type}
-              draggable
-              onDragStart={(e) => onDragStart(e, item.type)}
-              className={cn(
-                "flex items-center gap-2 p-2.5 rounded-lg border cursor-grab transition-all",
-                "bg-background hover:bg-accent/50 border-border",
-                "active:cursor-grabbing active:scale-95"
-              )}
-            >
-              <GripVertical className="h-3.5 w-3.5 text-muted-foreground/50" />
-              <div className={cn("p-1.5 rounded", colorClasses.split(' ')[0])}>
-                {Icon && <Icon className={cn("h-4 w-4", colorClasses.split(' ')[1])} />}
+      <div className="flex-1 overflow-auto p-2 space-y-3">
+        {Object.entries(groupedNodes).map(([category, nodes], index) => (
+          nodes.length > 0 && (
+            <div key={category}>
+              {index > 0 && <Separator className="mb-3" />}
+              <div className="mb-2">
+                <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                  {categoryLabels[category]?.[language] || category}
+                </span>
               </div>
-              <div className="flex-1 min-w-0">
-                <div className="text-sm font-medium">{getNodeLabel(item.type)}</div>
-                <div className="text-[10px] text-muted-foreground truncate">
-                  {item.description}
-                </div>
+              <div className="space-y-1.5">
+                {nodes.map(renderNodeItem)}
               </div>
             </div>
-          );
-        })}
+          )
+        ))}
       </div>
     </div>
   );
