@@ -87,7 +87,7 @@ export function AppSidebar() {
                   <img 
                     src="/favicon.png" 
                     alt="AI-Hydra" 
-                    className="h-7 w-7 transition-transform group-hover:scale-110" 
+                    className="h-7 w-7 transition-transform duration-500 group-hover:animate-[spin-slow_0.6s_ease-in-out]" 
                   />
                 </div>
                 <span className={cn(
