@@ -322,7 +322,14 @@
   }
 }
 
-/* React Flow Controls styling - outside of @layer for higher specificity */
+/* React Flow styling - outside of @layer for higher specificity */
+
+/* Remove default node wrapper background */
+.react-flow__node {
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
 .dark .react-flow__controls {
   background: hsl(var(--card)) !important;
   border: 1px solid hsl(var(--border)) !important;
