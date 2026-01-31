@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { NODE_PALETTE, FlowNodeType, NodePaletteItem } from '@/types/flow';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
@@ -22,9 +22,11 @@ import {
   LayoutList,
   Sparkles,
   MemoryStick,
-  Tags
+  Tags,
+  ChevronDown,
+  ChevronRight
 } from 'lucide-react';
-import { Separator } from '@/components/ui/separator';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   ArrowDownToLine,
@@ -71,12 +73,30 @@ const categoryLabels: Record<string, { ru: string; en: string }> = {
   ai: { ru: 'AI', en: 'AI' },
 };
 
+const categoryOrder = ['basic', 'data', 'integration', 'logic', 'ai'];
+
 interface FlowSidebarProps {
   onDragStart: (event: React.DragEvent, nodeType: FlowNodeType) => void;
 }
 
 export function FlowSidebar({ onDragStart }: FlowSidebarProps) {
   const { t, language } = useLanguage();
+  
+  // By default, 'basic' is open
+  const [openCategories, setOpenCategories] = useState<Record<string, boolean>>({
+    basic: true,
+    data: false,
+    integration: false,
+    logic: false,
+    ai: false,
+  });
+
+  const toggleCategory = (category: string) => {
+    setOpenCategories(prev => ({
+      ...prev,
+      [category]: !prev[category],
+    }));
+  };
 
   const getNodeLabel = (type: FlowNodeType): string => {
     const key = `flowEditor.nodes.${type}`;
@@ -136,22 +156,40 @@ export function FlowSidebar({ onDragStart }: FlowSidebarProps) {
         </p>
       </div>
       
-      <div className="flex-1 overflow-auto p-2 space-y-3">
-        {Object.entries(groupedNodes).map(([category, nodes], index) => (
-          nodes.length > 0 && (
-            <div key={category}>
-              {index > 0 && <Separator className="mb-3" />}
-              <div className="mb-2">
-                <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+      <div className="flex-1 overflow-auto p-2 space-y-1">
+        {categoryOrder.map((category) => {
+          const nodes = groupedNodes[category];
+          if (!nodes || nodes.length === 0) return null;
+          
+          const isOpen = openCategories[category];
+          
+          return (
+            <Collapsible
+              key={category}
+              open={isOpen}
+              onOpenChange={() => toggleCategory(category)}
+            >
+              <CollapsibleTrigger className="flex items-center justify-between w-full px-2 py-1.5 rounded-md hover:bg-accent/50 transition-colors group">
+                <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider group-hover:text-foreground transition-colors">
                   {categoryLabels[category]?.[language] || category}
                 </span>
-              </div>
-              <div className="space-y-1.5">
+                <div className="flex items-center gap-1">
+                  <span className="text-[10px] text-muted-foreground/70">
+                    {nodes.length}
+                  </span>
+                  {isOpen ? (
+                    <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+                  ) : (
+                    <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
+                  )}
+                </div>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="space-y-1.5 pt-1.5 pb-2">
                 {nodes.map(renderNodeItem)}
-              </div>
-            </div>
-          )
-        ))}
+              </CollapsibleContent>
+            </Collapsible>
+          );
+        })}
       </div>
     </div>
   );
