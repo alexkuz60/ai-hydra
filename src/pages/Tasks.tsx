@@ -45,6 +45,14 @@ interface Task {
   } | null;
 }
 
+// All valid model IDs for filtering deprecated models
+const ALL_VALID_MODEL_IDS = [...LOVABLE_AI_MODELS, ...PERSONAL_KEY_MODELS].map(m => m.id);
+
+// Filter out deprecated/unavailable model IDs
+const filterValidModels = (modelIds: string[]): string[] => {
+  return modelIds.filter(id => ALL_VALID_MODEL_IDS.includes(id));
+};
+
 // Get model icon based on provider
 const getModelIcon = (modelId: string) => {
   const allModels = [...LOVABLE_AI_MODELS, ...PERSONAL_KEY_MODELS];
@@ -194,8 +202,8 @@ export default function Tasks() {
   };
 
   const handleOpenTask = (task: Task) => {
-    // Load saved configuration from task
-    const savedModels = task.session_config?.selectedModels || [];
+    // Load saved configuration from task, filtering out deprecated models
+    const savedModels = filterValidModels(task.session_config?.selectedModels || []);
     const savedSettings = task.session_config?.perModelSettings || {};
     
     navigate(`/expert-panel?task=${task.id}`, {
@@ -260,7 +268,8 @@ export default function Tasks() {
   const handleStartEditModels = (task: Task, e: React.MouseEvent) => {
     e.stopPropagation();
     setEditingTask(task);
-    setEditingModels(task.session_config?.selectedModels || []);
+    // Filter out deprecated models when loading for editing
+    setEditingModels(filterValidModels(task.session_config?.selectedModels || []));
     setEditingModelSettings(task.session_config?.perModelSettings || {});
   };
 
@@ -505,10 +514,10 @@ export default function Tasks() {
                       <span>{format(new Date(task.updated_at), 'dd.MM.yyyy HH:mm')}</span>
                     </div>
                     
-                    {/* Saved models preview */}
+                    {/* Saved models preview - filter out deprecated models */}
                     {task.session_config?.selectedModels && task.session_config.selectedModels.length > 0 && (
                       <div className="flex flex-wrap gap-1.5 mt-2">
-                        {task.session_config.selectedModels.map((modelId) => (
+                        {filterValidModels(task.session_config.selectedModels).map((modelId) => (
                           <div 
                             key={modelId}
                             className="flex items-center gap-1.5 text-xs py-0.5 px-2 rounded-full bg-muted/50"
