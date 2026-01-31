@@ -5,10 +5,11 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { Layout } from '@/components/layout/Layout';
 import { supabase } from '@/integrations/supabase/client';
 import { HydraCard, HydraCardHeader, HydraCardTitle, HydraCardContent } from '@/components/ui/hydra-card';
-import { Brain, BarChart3, Loader2, Shield, Scale, Sparkles } from 'lucide-react';
+import { Brain, BarChart3, Loader2, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-
+import { AGENT_ROLES, ROLE_CONFIG, type AgentRole } from '@/config/roles';
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 interface ModelRoleStat {
   model_name: string;
   role: string;
@@ -31,17 +32,7 @@ interface AggregatedModelStat {
   };
 }
 
-const roleIcons: Record<string, React.ElementType> = {
-  assistant: Brain,
-  critic: Shield,
-  arbiter: Scale,
-};
-
-const roleColors: Record<string, string> = {
-  assistant: 'text-hydra-expert',
-  critic: 'text-hydra-critical',
-  arbiter: 'text-hydra-arbiter',
-};
+// Use centralized role config for icons and colors
 
 export default function ModelRatings() {
   const { user, loading: authLoading } = useAuth();
@@ -149,8 +140,6 @@ export default function ModelRatings() {
     );
   }
 
-  const roles = ['assistant', 'critic', 'arbiter'];
-
   return (
     <Layout>
       <div className="container max-w-4xl mx-auto py-8 px-4">
@@ -168,12 +157,22 @@ export default function ModelRatings() {
           </HydraCard>
         ) : (
           <Tabs defaultValue="overall" className="space-y-6">
-            <TabsList className="grid grid-cols-4 w-full">
-              <TabsTrigger value="overall">{t('ratings.overall')}</TabsTrigger>
-              <TabsTrigger value="assistant">{t('role.assistant')}</TabsTrigger>
-              <TabsTrigger value="critic">{t('role.critic')}</TabsTrigger>
-              <TabsTrigger value="arbiter">{t('role.arbiter')}</TabsTrigger>
-            </TabsList>
+            <ScrollArea className="w-full whitespace-nowrap">
+              <TabsList className="inline-flex w-max">
+                <TabsTrigger value="overall">{t('ratings.overall')}</TabsTrigger>
+                {AGENT_ROLES.map(role => {
+                  const config = ROLE_CONFIG[role];
+                  const Icon = config.icon;
+                  return (
+                    <TabsTrigger key={role} value={role} className="flex items-center gap-1.5">
+                      <Icon className={cn("h-3.5 w-3.5", config.color)} />
+                      <span>{t(config.label)}</span>
+                    </TabsTrigger>
+                  );
+                })}
+              </TabsList>
+              <ScrollBar orientation="horizontal" />
+            </ScrollArea>
 
             {/* Overall Tab */}
             <TabsContent value="overall">
@@ -198,8 +197,9 @@ export default function ModelRatings() {
             </TabsContent>
 
             {/* Role-specific Tabs */}
-            {roles.map(role => {
-              const RoleIcon = roleIcons[role] || Brain;
+            {AGENT_ROLES.map(role => {
+              const config = ROLE_CONFIG[role];
+              const RoleIcon = config.icon;
               const roleStats = stats
                 .filter(s => s.by_role[role])
                 .map(s => ({
@@ -212,9 +212,9 @@ export default function ModelRatings() {
                 <TabsContent key={role} value={role}>
                   <HydraCard variant="default">
                     <HydraCardHeader>
-                      <RoleIcon className={cn("h-5 w-5", roleColors[role])} />
-                      <HydraCardTitle className={roleColors[role]}>
-                        {t(`role.${role}`)}
+                      <RoleIcon className={cn("h-5 w-5", config.color)} />
+                      <HydraCardTitle className={config.color}>
+                        {t(config.label)}
                       </HydraCardTitle>
                     </HydraCardHeader>
                     <HydraCardContent>
@@ -253,7 +253,7 @@ interface ModelStatRowProps {
 }
 
 function ModelStatRow({ stat, index, t }: ModelStatRowProps) {
-  const roles = Object.keys(stat.by_role);
+  const rolesInStat = Object.keys(stat.by_role);
 
   return (
     <div
@@ -287,16 +287,17 @@ function ModelStatRow({ stat, index, t }: ModelStatRowProps) {
 
       {/* Role breakdown */}
       <div className="flex flex-wrap gap-3 mt-2 pt-2 border-t border-border/50">
-        {roles.map(role => {
-          const RoleIcon = roleIcons[role] || Brain;
+        {Object.keys(stat.by_role).map(role => {
+          const config = ROLE_CONFIG[role as AgentRole] || ROLE_CONFIG.assistant;
+          const RoleIcon = config.icon;
           const roleData = stat.by_role[role];
           return (
             <div
               key={role}
               className="flex items-center gap-1.5 text-xs text-muted-foreground"
-              title={t(`role.${role}`)}
+              title={t(config.label)}
             >
-              <RoleIcon className={cn("h-3 w-3", roleColors[role])} />
+              <RoleIcon className={cn("h-3 w-3", config.color)} />
               <span>{roleData.total_brains}</span>
               <span className="opacity-50">
                 (ø{roleData.average_rating.toFixed(1)})
