@@ -5,7 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 export interface ModelOption {
   id: string;
   name: string;
-  provider: 'lovable' | 'openai' | 'gemini' | 'anthropic' | 'xai' | 'openrouter';
+  provider: 'lovable' | 'openai' | 'gemini' | 'anthropic' | 'xai' | 'openrouter' | 'groq';
   requiresApiKey: boolean;
 }
 
@@ -58,6 +58,13 @@ export const PERSONAL_KEY_MODELS: ModelOption[] = [
   { id: 'qwen/qwen-2.5-coder-32b-instruct:free', name: 'Qwen 2.5 Coder 32B (Free)', provider: 'openrouter', requiresApiKey: true },
   { id: 'deepseek/deepseek-r1-distill-llama-70b:free', name: 'DeepSeek R1 Distill 70B (Free)', provider: 'openrouter', requiresApiKey: true },
   { id: 'microsoft/phi-3-mini-128k-instruct:free', name: 'Phi-3 Mini 128K (Free)', provider: 'openrouter', requiresApiKey: true },
+  
+  // Groq models (ultra-fast inference)
+  { id: 'llama-3.3-70b-versatile', name: 'Llama 3.3 70B Versatile', provider: 'groq', requiresApiKey: true },
+  { id: 'llama-3.1-8b-instant', name: 'Llama 3.1 8B Instant', provider: 'groq', requiresApiKey: true },
+  { id: 'llama-3.2-90b-vision-preview', name: 'Llama 3.2 90B Vision', provider: 'groq', requiresApiKey: true },
+  { id: 'mixtral-8x7b-32768', name: 'Mixtral 8x7B', provider: 'groq', requiresApiKey: true },
+  { id: 'gemma2-9b-it', name: 'Gemma 2 9B', provider: 'groq', requiresApiKey: true },
 ];
 
 interface UserApiKeys {
@@ -66,6 +73,7 @@ interface UserApiKeys {
   anthropic: boolean;
   xai: boolean;
   openrouter: boolean;
+  groq: boolean;
 }
 
 export function useAvailableModels() {
@@ -77,6 +85,7 @@ export function useAvailableModels() {
     anthropic: false,
     xai: false,
     openrouter: false,
+    groq: false,
   });
   const [loading, setLoading] = useState(true);
 
@@ -104,12 +113,21 @@ export function useAvailableModels() {
           .rpc('get_my_api_key_status');
 
         if (keyStatus && keyStatus.length > 0) {
+          const status = keyStatus[0] as { 
+            has_openai?: boolean; 
+            has_gemini?: boolean; 
+            has_anthropic?: boolean; 
+            has_xai?: boolean; 
+            has_openrouter?: boolean;
+            has_groq?: boolean;
+          };
           setUserApiKeys({
-            openai: keyStatus[0].has_openai || false,
-            gemini: keyStatus[0].has_gemini || false,
-            anthropic: keyStatus[0].has_anthropic || false,
-            xai: keyStatus[0].has_xai || false,
-            openrouter: (keyStatus[0] as { has_openrouter?: boolean }).has_openrouter || false,
+            openai: status.has_openai || false,
+            gemini: status.has_gemini || false,
+            anthropic: status.has_anthropic || false,
+            xai: status.has_xai || false,
+            openrouter: status.has_openrouter || false,
+            groq: status.has_groq || false,
           });
         }
       } catch (error) {
@@ -129,6 +147,7 @@ export function useAvailableModels() {
     if (model.provider === 'anthropic') return userApiKeys.anthropic;
     if (model.provider === 'xai') return userApiKeys.xai;
     if (model.provider === 'openrouter') return userApiKeys.openrouter;
+    if (model.provider === 'groq') return userApiKeys.groq;
     return false;
   });
 

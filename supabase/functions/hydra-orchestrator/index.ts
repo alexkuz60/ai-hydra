@@ -555,6 +555,41 @@ async function callPersonalModel(
     };
   }
 
+  if (provider === "groq") {
+    const userContent = imageAttachments.length > 0 
+      ? buildMultimodalContent(message, attachments)
+      : message;
+      
+    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model,
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userContent },
+        ],
+        temperature,
+        max_tokens: maxTokens,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Groq error: ${errorText}`);
+    }
+    const data = await response.json();
+    return { 
+      model, 
+      provider: "groq", 
+      content: data.choices?.[0]?.message?.content || "",
+      usage: data.usage || null,
+    };
+  }
+
   throw new Error(`Unknown provider: ${provider}`);
 }
 
