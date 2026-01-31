@@ -84,7 +84,11 @@ export function AppSidebar() {
             >
               <Link to="/" className="flex items-center gap-3 group">
                 <div className="relative flex items-center justify-center w-8 h-8">
-                  <Zap className="h-6 w-6 text-sidebar-primary hydra-text-glow transition-transform group-hover:scale-110" />
+                  <img 
+                    src="/favicon.png" 
+                    alt="AI-Hydra" 
+                    className="h-7 w-7 transition-transform group-hover:scale-110" 
+                  />
                 </div>
                 <span className={cn(
                   "text-lg font-bold bg-gradient-to-r from-sidebar-primary to-hydra-expert bg-clip-text text-transparent",
