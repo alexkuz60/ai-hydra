@@ -157,21 +157,21 @@ export default function ModelRatings() {
           </HydraCard>
         ) : (
           <Tabs defaultValue="overall" className="space-y-6">
-            <ScrollArea className="w-full whitespace-nowrap">
-              <TabsList className="inline-flex w-max">
-                <TabsTrigger value="overall">{t('ratings.overall')}</TabsTrigger>
+            <ScrollArea className="w-full whitespace-nowrap pb-2">
+              <TabsList className="inline-flex w-max gap-1">
+                <TabsTrigger value="overall" className="px-4">{t('ratings.overall')}</TabsTrigger>
                 {AGENT_ROLES.map(role => {
                   const config = ROLE_CONFIG[role];
                   const Icon = config.icon;
                   return (
-                    <TabsTrigger key={role} value={role} className="flex items-center gap-1.5">
-                      <Icon className={cn("h-3.5 w-3.5", config.color)} />
-                      <span>{t(config.label)}</span>
+                    <TabsTrigger key={role} value={role} className="flex items-center gap-1.5 px-3">
+                      <Icon className={cn("h-3.5 w-3.5 shrink-0", config.color)} />
+                      <span className="whitespace-nowrap">{t(config.label)}</span>
                     </TabsTrigger>
                   );
                 })}
               </TabsList>
-              <ScrollBar orientation="horizontal" />
+              <ScrollBar orientation="horizontal" className="h-2" />
             </ScrollArea>
 
             {/* Overall Tab */}
