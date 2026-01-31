@@ -6,6 +6,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
@@ -26,7 +27,9 @@ import {
   FolderOpen,
   ChevronDown,
   Copy,
-  Check
+  Check,
+  FileText,
+  Clipboard
 } from 'lucide-react';
 import { FlowDiagram } from '@/types/flow';
 
@@ -38,6 +41,9 @@ interface FlowToolbarProps {
   onExportPng: () => void;
   onExportSvg: () => void;
   onExportJson: () => void;
+  onExportYaml: () => void;
+  onExportPdf: () => void;
+  onCopyToClipboard: () => void;
   onGenerateMermaid: () => string;
   savedDiagrams: FlowDiagram[];
   onLoadDiagram: (diagram: FlowDiagram) => void;
@@ -53,6 +59,9 @@ export function FlowToolbar({
   onExportPng,
   onExportSvg,
   onExportJson,
+  onExportYaml,
+  onExportPdf,
+  onCopyToClipboard,
   onGenerateMermaid,
   savedDiagrams,
   onLoadDiagram,
@@ -152,9 +161,23 @@ export function FlowToolbar({
             <FileCode className="h-4 w-4 mr-2" />
             {t('flowEditor.exportSvg')}
           </DropdownMenuItem>
+          <DropdownMenuSeparator />
           <DropdownMenuItem onClick={onExportJson}>
             <FileJson className="h-4 w-4 mr-2" />
             {t('flowEditor.exportJson')}
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={onExportYaml}>
+            <FileText className="h-4 w-4 mr-2" />
+            {t('flowEditor.exportYaml')}
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={onExportPdf}>
+            <FileText className="h-4 w-4 mr-2" />
+            {t('flowEditor.exportPdf')}
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={onCopyToClipboard}>
+            <Clipboard className="h-4 w-4 mr-2" />
+            {t('flowEditor.copyToClipboard')}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
