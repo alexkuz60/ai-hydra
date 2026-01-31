@@ -49,15 +49,15 @@ export const PERSONAL_KEY_MODELS: ModelOption[] = [
   { id: 'grok-3-mini', name: 'Grok 3 Mini', provider: 'xai', requiresApiKey: true },
   { id: 'grok-3-mini-fast', name: 'Grok 3 Mini Fast', provider: 'xai', requiresApiKey: true },
   
-  // OpenRouter models (free tier)
+  // OpenRouter models (free tier) - updated list
   { id: 'google/gemma-2-9b-it:free', name: 'Gemma 2 9B (Free)', provider: 'openrouter', requiresApiKey: true },
-  { id: 'meta-llama/llama-3.2-3b-instruct:free', name: 'Llama 3.2 3B (Free)', provider: 'openrouter', requiresApiKey: true },
+  { id: 'meta-llama/llama-3.2-11b-vision-instruct:free', name: 'Llama 3.2 11B Vision (Free)', provider: 'openrouter', requiresApiKey: true },
   { id: 'meta-llama/llama-3.1-8b-instruct:free', name: 'Llama 3.1 8B (Free)', provider: 'openrouter', requiresApiKey: true },
   { id: 'mistralai/mistral-7b-instruct:free', name: 'Mistral 7B (Free)', provider: 'openrouter', requiresApiKey: true },
-  { id: 'qwen/qwen-2.5-72b-instruct:free', name: 'Qwen 2.5 72B (Free)', provider: 'openrouter', requiresApiKey: true },
+  { id: 'qwen/qwen-2-7b-instruct:free', name: 'Qwen 2 7B (Free)', provider: 'openrouter', requiresApiKey: true },
   { id: 'qwen/qwen-2.5-coder-32b-instruct:free', name: 'Qwen 2.5 Coder 32B (Free)', provider: 'openrouter', requiresApiKey: true },
   { id: 'deepseek/deepseek-r1-distill-llama-70b:free', name: 'DeepSeek R1 Distill 70B (Free)', provider: 'openrouter', requiresApiKey: true },
-  { id: 'microsoft/phi-3-mini-128k-instruct:free', name: 'Phi-3 Mini 128K (Free)', provider: 'openrouter', requiresApiKey: true },
+  { id: 'nousresearch/hermes-3-llama-3.1-405b:free', name: 'Hermes 3 405B (Free)', provider: 'openrouter', requiresApiKey: true },
   
   // Groq models (ultra-fast inference)
   { id: 'llama-3.3-70b-versatile', name: 'Llama 3.3 70B Versatile', provider: 'groq', requiresApiKey: true },
