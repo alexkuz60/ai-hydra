@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import { NODE_PALETTE, FlowNodeType, NodePaletteItem } from '@/types/flow';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
@@ -75,6 +75,28 @@ const categoryLabels: Record<string, { ru: string; en: string }> = {
 
 const categoryOrder = ['basic', 'data', 'integration', 'logic', 'ai'];
 
+const STORAGE_KEY = 'flow-sidebar-categories';
+
+const defaultOpenState: Record<string, boolean> = {
+  basic: true,
+  data: false,
+  integration: false,
+  logic: false,
+  ai: false,
+};
+
+const loadCategoryState = (): Record<string, boolean> => {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) {
+      return JSON.parse(stored);
+    }
+  } catch (e) {
+    console.warn('Failed to load category state from localStorage:', e);
+  }
+  return defaultOpenState;
+};
+
 interface FlowSidebarProps {
   onDragStart: (event: React.DragEvent, nodeType: FlowNodeType) => void;
 }
@@ -82,21 +104,23 @@ interface FlowSidebarProps {
 export function FlowSidebar({ onDragStart }: FlowSidebarProps) {
   const { t, language } = useLanguage();
   
-  // By default, 'basic' is open
-  const [openCategories, setOpenCategories] = useState<Record<string, boolean>>({
-    basic: true,
-    data: false,
-    integration: false,
-    logic: false,
-    ai: false,
-  });
+  const [openCategories, setOpenCategories] = useState<Record<string, boolean>>(loadCategoryState);
 
-  const toggleCategory = (category: string) => {
+  // Save to localStorage when state changes
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(openCategories));
+    } catch (e) {
+      console.warn('Failed to save category state to localStorage:', e);
+    }
+  }, [openCategories]);
+
+  const toggleCategory = useCallback((category: string) => {
     setOpenCategories(prev => ({
       ...prev,
       [category]: !prev[category],
     }));
-  };
+  }, []);
 
   const getNodeLabel = (type: FlowNodeType): string => {
     const key = `flowEditor.nodes.${type}`;
