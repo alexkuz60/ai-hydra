@@ -23,6 +23,19 @@ import { PromptNode } from './nodes/PromptNode';
 import { ModelNode } from './nodes/ModelNode';
 import { ConditionNode } from './nodes/ConditionNode';
 import { ToolNode } from './nodes/ToolNode';
+import { TransformNode } from './nodes/TransformNode';
+import { FilterNode } from './nodes/FilterNode';
+import { MergeNode } from './nodes/MergeNode';
+import { SplitNode } from './nodes/SplitNode';
+import { DatabaseNode } from './nodes/DatabaseNode';
+import { ApiNode } from './nodes/ApiNode';
+import { StorageNode } from './nodes/StorageNode';
+import { LoopNode } from './nodes/LoopNode';
+import { DelayNode } from './nodes/DelayNode';
+import { SwitchNode } from './nodes/SwitchNode';
+import { EmbeddingNode } from './nodes/EmbeddingNode';
+import { MemoryNode } from './nodes/MemoryNode';
+import { ClassifierNode } from './nodes/ClassifierNode';
 import { FlowNodeType } from '@/types/flow';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -34,6 +47,19 @@ const nodeTypes = {
   model: ModelNode,
   condition: ConditionNode,
   tool: ToolNode,
+  transform: TransformNode,
+  filter: FilterNode,
+  merge: MergeNode,
+  split: SplitNode,
+  database: DatabaseNode,
+  api: ApiNode,
+  storage: StorageNode,
+  loop: LoopNode,
+  delay: DelayNode,
+  switch: SwitchNode,
+  embedding: EmbeddingNode,
+  memory: MemoryNode,
+  classifier: ClassifierNode,
 } as const;
 
 interface FlowCanvasProps {
@@ -159,6 +185,19 @@ export function FlowCanvas({
               case 'model': return 'hsl(var(--hydra-success))';
               case 'condition': return 'hsl(var(--hydra-warning))';
               case 'tool': return 'hsl(var(--hydra-expert))';
+              case 'transform': return 'hsl(var(--hydra-analyst))';
+              case 'filter': return 'hsl(var(--hydra-warning))';
+              case 'merge': return 'hsl(var(--hydra-advisor))';
+              case 'split': return 'hsl(var(--hydra-archivist))';
+              case 'database': return 'hsl(var(--hydra-analyst))';
+              case 'api': return 'hsl(var(--hydra-webhunter))';
+              case 'storage': return 'hsl(var(--hydra-archivist))';
+              case 'loop': return 'hsl(var(--hydra-moderator))';
+              case 'delay': return 'hsl(var(--muted-foreground))';
+              case 'switch': return 'hsl(var(--hydra-warning))';
+              case 'embedding': return 'hsl(var(--hydra-expert))';
+              case 'memory': return 'hsl(var(--hydra-advisor))';
+              case 'classifier': return 'hsl(var(--hydra-success))';
               default: return 'hsl(var(--muted))';
             }
           }}
