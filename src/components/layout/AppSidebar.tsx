@@ -82,19 +82,23 @@ export function AppSidebar() {
               size="lg"
               tooltip="AI-Hydra"
             >
-              <Link to="/" className="flex items-center gap-3 group">
-                <div className="relative flex items-center justify-center w-8 h-8">
-                  <img 
-                    src="/favicon.png" 
-                    alt="AI-Hydra" 
-                    className="h-7 w-7 transition-transform duration-500 group-hover:animate-[spin-slow_0.6s_ease-in-out]" 
-                  />
-                </div>
+              <Link to="/" className="flex items-center gap-1 group font-rounded">
                 <span className={cn(
-                  "text-lg font-bold bg-gradient-to-r from-sidebar-primary to-hydra-expert bg-clip-text text-transparent",
+                  "text-xl font-bold bg-gradient-to-r from-sidebar-primary to-hydra-expert bg-clip-text text-transparent",
                   isCollapsed && "hidden"
                 )}>
-                  AI-Hydra
+                  ai
+                </span>
+                <img 
+                  src="/logo.svg" 
+                  alt="" 
+                  className="h-7 w-7 transition-transform duration-500 group-hover:animate-[spin-slow_0.6s_ease-in-out]" 
+                />
+                <span className={cn(
+                  "text-xl font-bold bg-gradient-to-r from-hydra-expert to-hydra-arbiter bg-clip-text text-transparent",
+                  isCollapsed && "hidden"
+                )}>
+                  hydra
                 </span>
               </Link>
             </SidebarMenuButton>
