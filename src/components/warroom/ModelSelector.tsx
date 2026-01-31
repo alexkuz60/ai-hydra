@@ -161,23 +161,31 @@ export function ModelSelector({ value, onChange, className }: ModelSelectorProps
                 </CollapsibleTrigger>
                 <CollapsibleContent>
                   <div className="pl-2 pb-1">
-                    {group.models.map((model) => (
-                      <button
-                        key={model.id}
-                        onClick={() => handleSelect(model.id)}
-                        className={cn(
-                          'flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors',
-                          'hover:bg-accent hover:text-accent-foreground',
-                          value === model.id && 'bg-accent text-accent-foreground'
-                        )}
-                      >
-                        <Check className={cn(
-                          'h-4 w-4 shrink-0',
-                          value === model.id ? 'opacity-100' : 'opacity-0'
-                        )} />
-                        <span className="truncate">{model.name}</span>
-                      </button>
-                    ))}
+                    {group.models.map((model) => {
+                      const isFree = model.id.endsWith(':free');
+                      return (
+                        <button
+                          key={model.id}
+                          onClick={() => handleSelect(model.id)}
+                          className={cn(
+                            'flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors',
+                            'hover:bg-accent hover:text-accent-foreground',
+                            value === model.id && 'bg-accent text-accent-foreground'
+                          )}
+                        >
+                          <Check className={cn(
+                            'h-4 w-4 shrink-0',
+                            value === model.id ? 'opacity-100' : 'opacity-0'
+                          )} />
+                          <span className="truncate">{model.name}</span>
+                          {isFree && (
+                            <span className="ml-auto shrink-0 rounded bg-hydra-success/20 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-hydra-success">
+                              Free
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
                   </div>
                 </CollapsibleContent>
               </Collapsible>
