@@ -311,6 +311,7 @@ export type Database = {
           gemini_vault_id: string | null
           id: string
           openai_vault_id: string | null
+          openrouter_vault_id: string | null
           updated_at: string
           user_id: string
           xai_vault_id: string | null
@@ -321,6 +322,7 @@ export type Database = {
           gemini_vault_id?: string | null
           id?: string
           openai_vault_id?: string | null
+          openrouter_vault_id?: string | null
           updated_at?: string
           user_id: string
           xai_vault_id?: string | null
@@ -331,6 +333,7 @@ export type Database = {
           gemini_vault_id?: string | null
           id?: string
           openai_vault_id?: string | null
+          openrouter_vault_id?: string | null
           updated_at?: string
           user_id?: string
           xai_vault_id?: string | null
@@ -371,6 +374,7 @@ export type Database = {
           has_anthropic: boolean
           has_gemini: boolean
           has_openai: boolean
+          has_openrouter: boolean
           has_xai: boolean
         }[]
       }
@@ -380,6 +384,7 @@ export type Database = {
           anthropic_api_key: string
           google_gemini_api_key: string
           openai_api_key: string
+          openrouter_api_key: string
           xai_api_key: string
         }[]
       }
