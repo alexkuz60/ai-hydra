@@ -49,13 +49,10 @@ export const PERSONAL_KEY_MODELS: ModelOption[] = [
   { id: 'grok-3-mini', name: 'Grok 3 Mini', provider: 'xai', requiresApiKey: true },
   { id: 'grok-3-mini-fast', name: 'Grok 3 Mini Fast', provider: 'xai', requiresApiKey: true },
   
-  // OpenRouter models (free tier) - updated January 2025
+  // OpenRouter models (free tier) - verified January 2025
   { id: 'qwen/qwen3-0.6b-04-28:free', name: 'Qwen3 0.6B (Free)', provider: 'openrouter', requiresApiKey: true },
-  { id: 'qwen/qwen3-4b-04-28:free', name: 'Qwen3 4B (Free)', provider: 'openrouter', requiresApiKey: true },
   { id: 'z-ai/glm-4.5-air:free', name: 'GLM 4.5 Air (Free)', provider: 'openrouter', requiresApiKey: true },
-  { id: 'featherless/qwerky-72b:free', name: 'Qwerky 72B (Free)', provider: 'openrouter', requiresApiKey: true },
   { id: 'tngtech/tng-r1t-chimera:free', name: 'R1T Chimera (Free)', provider: 'openrouter', requiresApiKey: true },
-  { id: 'deepseek/deepseek-chat-v3-0324:free', name: 'DeepSeek V3 (Free)', provider: 'openrouter', requiresApiKey: true },
   
   // Groq models (ultra-fast inference)
   { id: 'llama-3.3-70b-versatile', name: 'Llama 3.3 70B Versatile', provider: 'groq', requiresApiKey: true },
