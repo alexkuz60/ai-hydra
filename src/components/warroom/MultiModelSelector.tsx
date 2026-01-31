@@ -1,12 +1,12 @@
 import React from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { useAvailableModels, ModelOption } from '@/hooks/useAvailableModels';
+import { useAvailableModels, ModelOption, PERSONAL_KEY_MODELS } from '@/hooks/useAvailableModels';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Sparkles, Key, AlertCircle, ChevronDown, Users } from 'lucide-react';
+import { Sparkles, Key, AlertCircle, ChevronDown, Users, Gift, Zap } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface MultiModelSelectorProps {
@@ -15,11 +15,29 @@ interface MultiModelSelectorProps {
   className?: string;
 }
 
+// Get free OpenRouter models
+const FREE_OPENROUTER_MODELS = PERSONAL_KEY_MODELS.filter(
+  m => m.provider === 'openrouter' && m.id.includes(':free')
+);
+
+// Get Groq models
+const GROQ_MODELS = PERSONAL_KEY_MODELS.filter(m => m.provider === 'groq');
+
+// Get paid models (excluding free OpenRouter and Groq)
+const PAID_MODELS = PERSONAL_KEY_MODELS.filter(
+  m => m.provider !== 'openrouter' && m.provider !== 'groq'
+);
+
 export function MultiModelSelector({ value, onChange, className }: MultiModelSelectorProps) {
   const { t } = useLanguage();
   const { isAdmin, lovableModels, personalModels, hasAnyModels, loading } = useAvailableModels();
 
   const allModels = [...lovableModels, ...personalModels];
+
+  // Get available models by category
+  const availableFreeModels = FREE_OPENROUTER_MODELS.filter(m => personalModels.some(p => p.id === m.id));
+  const availableGroqModels = GROQ_MODELS.filter(m => personalModels.some(p => p.id === m.id));
+  const availablePaidModels = PAID_MODELS.filter(m => personalModels.some(p => p.id === m.id));
 
   const toggleModel = (modelId: string) => {
     if (value.includes(modelId)) {
@@ -79,8 +97,8 @@ export function MultiModelSelector({ value, onChange, className }: MultiModelSel
           <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[300px] p-0" align="end">
-        <ScrollArea className="max-h-[400px]">
+      <PopoverContent className="w-[340px] p-0" align="end">
+        <ScrollArea className="h-[60vh] max-h-[500px]">
           <div className="p-2">
             {/* Lovable AI Models (Admin only) */}
             {lovableModels.length > 0 && (
@@ -116,8 +134,82 @@ export function MultiModelSelector({ value, onChange, className }: MultiModelSel
               </div>
             )}
 
-            {/* Personal API Key Models */}
-            {personalModels.length > 0 && (
+            {/* Free OpenRouter Models - Individual Selection */}
+            {availableFreeModels.length > 0 && (
+              <div className="mb-3">
+                <div className="flex items-center justify-between px-2 py-1.5">
+                  <div className="flex items-center gap-2 text-sm font-medium text-hydra-success">
+                    <Gift className="h-3 w-3" />
+                    Free Models
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 text-xs"
+                    onClick={() => selectAll(availableFreeModels)}
+                  >
+                    {availableFreeModels.every(m => value.includes(m.id)) ? t('common.deselectAll') : t('common.selectAll')}
+                  </Button>
+                </div>
+                <div className="space-y-1">
+                  {availableFreeModels.map((model) => (
+                    <label
+                      key={model.id}
+                      className="flex items-center gap-3 px-2 py-1.5 rounded-md hover:bg-accent cursor-pointer"
+                    >
+                      <Checkbox
+                        checked={value.includes(model.id)}
+                        onCheckedChange={() => toggleModel(model.id)}
+                      />
+                      <span className="text-sm truncate flex-1">{model.name}</span>
+                      <Badge variant="outline" className="text-[10px] bg-hydra-success/10 text-hydra-success border-hydra-success/30">
+                        FREE
+                      </Badge>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Groq Models - Ultra Fast */}
+            {availableGroqModels.length > 0 && (
+              <div className="mb-3">
+                <div className="flex items-center justify-between px-2 py-1.5">
+                  <div className="flex items-center gap-2 text-sm font-medium text-hydra-warning">
+                    <Zap className="h-3 w-3" />
+                    Groq (Fast)
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 text-xs"
+                    onClick={() => selectAll(availableGroqModels)}
+                  >
+                    {availableGroqModels.every(m => value.includes(m.id)) ? t('common.deselectAll') : t('common.selectAll')}
+                  </Button>
+                </div>
+                <div className="space-y-1">
+                  {availableGroqModels.map((model) => (
+                    <label
+                      key={model.id}
+                      className="flex items-center gap-3 px-2 py-1.5 rounded-md hover:bg-accent cursor-pointer"
+                    >
+                      <Checkbox
+                        checked={value.includes(model.id)}
+                        onCheckedChange={() => toggleModel(model.id)}
+                      />
+                      <span className="text-sm truncate flex-1">{model.name}</span>
+                      <Badge variant="outline" className="text-[10px] bg-hydra-warning/10 text-hydra-warning border-hydra-warning/30">
+                        ⚡ Fast
+                      </Badge>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Paid Personal API Key Models */}
+            {availablePaidModels.length > 0 && (
               <div>
                 <div className="flex items-center justify-between px-2 py-1.5">
                   <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
@@ -128,13 +220,13 @@ export function MultiModelSelector({ value, onChange, className }: MultiModelSel
                     variant="ghost"
                     size="sm"
                     className="h-6 text-xs"
-                    onClick={() => selectAll(personalModels)}
+                    onClick={() => selectAll(availablePaidModels)}
                   >
-                    {personalModels.every(m => value.includes(m.id)) ? t('common.deselectAll') : t('common.selectAll')}
+                    {availablePaidModels.every(m => value.includes(m.id)) ? t('common.deselectAll') : t('common.selectAll')}
                   </Button>
                 </div>
                 <div className="space-y-1">
-                  {personalModels.map((model) => (
+                  {availablePaidModels.map((model) => (
                     <label
                       key={model.id}
                       className="flex items-center gap-3 px-2 py-1.5 rounded-md hover:bg-accent cursor-pointer"
