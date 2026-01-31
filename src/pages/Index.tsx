@@ -47,8 +47,12 @@ const Index = () => {
             <div className="max-w-4xl mx-auto text-center">
               {/* Logo */}
               <div className="inline-flex items-center justify-center mb-8">
-                <div className="relative">
-                  <Zap className="h-20 w-20 text-primary hydra-text-glow" />
+                <div className="relative group">
+                  <img 
+                    src="/favicon.png" 
+                    alt="AI-Hydra" 
+                    className="h-20 w-20 transition-transform duration-500 group-hover:animate-[spin-slow_0.6s_ease-in-out]" 
+                  />
                   <div className="absolute inset-0 bg-primary/30 blur-2xl rounded-full animate-pulse-glow" />
                 </div>
               </div>
