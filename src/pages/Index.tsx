@@ -51,14 +51,11 @@ const Index = () => {
                   ai
                 </span>
                 
-                <div className="relative self-center">
-                  <img 
-                    src="/favicon.png" 
-                    alt="" 
-                    className="h-[4.5rem] md:h-[7.5rem] w-[4.5rem] md:w-[7.5rem] transition-transform duration-500 group-hover:animate-[spin-slow_0.6s_ease-in-out]" 
-                  />
-                  <div className="absolute inset-0 bg-primary/30 blur-2xl rounded-full animate-pulse-glow" />
-                </div>
+                <img 
+                  src="/favicon.png" 
+                  alt="" 
+                  className="h-[4.5rem] md:h-[7.5rem] w-[4.5rem] md:w-[7.5rem] self-center transition-transform duration-500 group-hover:animate-[spin-slow_0.6s_ease-in-out]" 
+                />
                 
                 <span className="text-[7rem] md:text-[12rem] font-bold bg-gradient-to-r from-hydra-expert via-hydra-arbiter to-primary bg-clip-text text-transparent hydra-text-glow leading-none">
                   hydra
