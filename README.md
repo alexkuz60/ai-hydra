@@ -1,4 +1,4 @@
-# 🐙 Hydra AI Platform — Итоговое резюме
+# 🐙 Hydra AI Platform
 
 ## 📋 Обзор проекта
 
@@ -157,34 +157,8 @@ Supabase
 | **Team collaboration** | Shared workspaces, real-time cursors |
 | **Plugin ecosystem** | Расширяемая архитектура инструментов |
 | **Voice I/O** | Speech-to-text / text-to-speech |
-| **Mobile PWA** | Оптимизация для мобильных устройств |
 
 ---
 
-## 📁 Структура проекта
-
-```
-src/
-├── components/
-│   ├── flow/          # Flow Editor компоненты
-│   ├── layout/        # Layout, Sidebar
-│   ├── ui/            # shadcn/ui компоненты
-│   └── warroom/       # Chat компоненты
-├── config/
-│   └── roles.ts       # Unified role configuration
-├── contexts/          # React contexts (Auth, Theme, Language)
-├── hooks/             # Custom hooks
-├── pages/             # Route pages
-├── types/             # TypeScript definitions
-└── lib/               # Utilities
-
-supabase/
-├── functions/
-│   ├── hydra-orchestrator/  # Main AI orchestration
-│   └── translate-text/      # Translation service
-└── config.toml
-```
-
----
 
 *Последнее обновление: Январь 2025*
