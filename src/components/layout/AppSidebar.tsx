@@ -59,8 +59,8 @@ export function AppSidebar() {
   const isActive = (path: string) => location.pathname === path;
 
   const navItems = user ? [
-    { path: '/expert-panel', icon: Users, label: t('nav.expertPanel') },
     { path: '/tasks', icon: CheckSquare, label: t('nav.tasks') },
+    { path: '/expert-panel', icon: Users, label: t('nav.expertPanel') },
     { path: '/role-library', icon: Library, label: t('nav.roleLibrary') },
     { path: '/tools-library', icon: Wrench, label: t('nav.toolsLibrary') },
     { path: '/flow-editor', icon: GitBranch, label: t('nav.flowEditor') },
