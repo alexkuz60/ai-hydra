@@ -477,6 +477,7 @@ const translations: Translations = {
   'skeleton.retryRequest': { ru: 'Персональный запрос', en: 'Personal request' },
   'skeleton.dismiss': { ru: 'Забыть', en: 'Dismiss' },
   'skeleton.removeModel': { ru: 'Уволить', en: 'Remove' },
+  'skeleton.timeRemaining': { ru: 'До таймаута', en: 'Time remaining' },
 };
 
 interface LanguageContextType {

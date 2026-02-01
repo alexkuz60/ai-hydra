@@ -2,11 +2,14 @@ import React from 'react';
 import { Loader2, Send, CheckCircle, Clock, Coffee, RefreshCw, X, UserMinus } from 'lucide-react';
 import { HydraCard, HydraCardHeader, HydraCardTitle, HydraCardContent } from '@/components/ui/hydra-card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import { getRoleConfig, type AgentRole } from '@/config/roles';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
 import { PendingResponseState } from '@/types/pending';
+
+const TIMEOUT_SECONDS = 120;
 
 interface MessageSkeletonProps {
   pending: PendingResponseState;
@@ -35,6 +38,10 @@ export function MessageSkeleton({ pending, onRetry, onDismiss, onRemoveModel }: 
   const roleConfig = getRoleConfig(pending.role);
   const RoleIcon = roleConfig.icon;
   const cardVariant = getCardVariant(pending.role);
+
+  // Calculate progress percentage (0-100)
+  const progressPercent = Math.min((pending.elapsedSeconds / TIMEOUT_SECONDS) * 100, 100);
+  const remainingSeconds = Math.max(TIMEOUT_SECONDS - pending.elapsedSeconds, 0);
 
   // Timedout state - show action dialog
   if (pending.status === 'timedout') {
@@ -112,6 +119,13 @@ export function MessageSkeleton({ pending, onRetry, onDismiss, onRemoveModel }: 
 
   const statusDisplay = getStatusDisplay();
 
+  // Determine progress bar color based on time remaining
+  const getProgressColor = () => {
+    if (progressPercent >= 75) return 'bg-destructive';
+    if (progressPercent >= 50) return 'bg-amber-500';
+    return 'bg-primary';
+  };
+
   return (
     <HydraCard 
       variant={cardVariant} 
@@ -135,11 +149,36 @@ export function MessageSkeleton({ pending, onRetry, onDismiss, onRemoveModel }: 
         </div>
       </HydraCardHeader>
       
-      <HydraCardContent className="space-y-2">
-        <Skeleton className="h-4 w-[90%]" />
-        <Skeleton className="h-4 w-[75%]" />
-        <Skeleton className="h-4 w-[60%]" />
-        <Skeleton className="h-4 w-[85%]" />
+      <HydraCardContent className="space-y-3">
+        {/* Progress bar with remaining time */}
+        <div className="space-y-1">
+          <div className="flex items-center justify-between text-xs text-muted-foreground">
+            <span>{t('skeleton.timeRemaining')}</span>
+            <span className={cn(
+              'font-mono',
+              progressPercent >= 75 && 'text-destructive',
+              progressPercent >= 50 && progressPercent < 75 && 'text-amber-500'
+            )}>
+              {Math.floor(remainingSeconds / 60)}:{String(remainingSeconds % 60).padStart(2, '0')}
+            </span>
+          </div>
+          <div className="relative h-1.5 w-full overflow-hidden rounded-full bg-muted">
+            <div 
+              className={cn(
+                "h-full transition-all duration-1000 ease-linear rounded-full",
+                getProgressColor()
+              )}
+              style={{ width: `${100 - progressPercent}%` }}
+            />
+          </div>
+        </div>
+        
+        {/* Skeleton lines */}
+        <div className="space-y-2">
+          <Skeleton className="h-4 w-[90%]" />
+          <Skeleton className="h-4 w-[75%]" />
+          <Skeleton className="h-4 w-[60%]" />
+        </div>
       </HydraCardContent>
     </HydraCard>
   );
