@@ -2,7 +2,9 @@ import React from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { ChatMessage, UserDisplayInfo } from '@/components/warroom/ChatMessage';
 import { DateSeparator } from '@/components/warroom/DateSeparator';
+import { MessageSkeleton } from '@/components/warroom/MessageSkeleton';
 import { Message } from '@/types/messages';
+import { PendingResponseState } from '@/types/pending';
 import { isSameDay } from 'date-fns';
 import { Sparkles } from 'lucide-react';
 
@@ -19,6 +21,8 @@ interface ChatMessagesListProps {
   onDelete: (id: string) => void;
   onRatingChange: (id: string, rating: number) => void;
   onClarifyWithSpecialist?: (selectedText: string, messageId: string) => void;
+  // Pending responses for skeleton indicators
+  pendingResponses?: Map<string, PendingResponseState>;
 }
 
 export function ChatMessagesList({
@@ -32,6 +36,7 @@ export function ChatMessagesList({
   onDelete,
   onRatingChange,
   onClarifyWithSpecialist,
+  pendingResponses,
 }: ChatMessagesListProps) {
   if (messages.length === 0) {
     return (
@@ -79,6 +84,16 @@ export function ChatMessagesList({
             </React.Fragment>
           );
         })}
+        
+        {/* Skeleton indicators for pending responses */}
+        {pendingResponses && pendingResponses.size > 0 && (
+          <div className="space-y-4">
+            {Array.from(pendingResponses.values()).map(pending => (
+              <MessageSkeleton key={pending.modelId} pending={pending} />
+            ))}
+          </div>
+        )}
+        
         <div ref={messagesEndRef} />
       </div>
     </ScrollArea>

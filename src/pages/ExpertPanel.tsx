@@ -18,6 +18,7 @@ import { useSession } from '@/hooks/useSession';
 import { useMessages } from '@/hooks/useMessages';
 import { useSendMessage } from '@/hooks/useSendMessage';
 import { useConsultantPanelWidth } from '@/hooks/useConsultantPanelWidth';
+import { PendingResponseState, RequestStartInfo } from '@/types/pending';
 import { Loader2, Target } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -41,6 +42,9 @@ export default function ExpertPanel() {
       content: string;
     }>;
   } | null>(null);
+  
+  // Pending responses for skeleton indicators
+  const [pendingResponses, setPendingResponses] = useState<Map<string, PendingResponseState>>(new Map());
   
   // D-Chat panel width persistence
   const { width: consultantPanelWidth, saveWidth: saveConsultantPanelWidth, isCollapsed: isDChatCollapsed } = useConsultantPanelWidth();
@@ -85,6 +89,23 @@ export default function ExpertPanel() {
     handleRatingChange,
   } = useMessages({ sessionId: currentTask?.id || null });
 
+  // Callback for when request starts - initialize skeleton indicators
+  const handleRequestStart = useCallback((models: RequestStartInfo[]) => {
+    const now = Date.now();
+    const newPending = new Map<string, PendingResponseState>();
+    models.forEach(m => {
+      newPending.set(m.modelId, {
+        modelId: m.modelId,
+        modelName: m.modelName,
+        role: m.role,
+        status: 'sent',
+        startTime: now,
+        elapsedSeconds: 0,
+      });
+    });
+    setPendingResponses(newPending);
+  }, []);
+
   // Send message hook
   const {
     sending,
@@ -99,6 +120,7 @@ export default function ExpertPanel() {
     sessionId: currentTask?.id || null,
     selectedModels,
     perModelSettings,
+    onRequestStart: handleRequestStart,
   });
 
   // Persistent collapse state per message
@@ -120,6 +142,60 @@ export default function ExpertPanel() {
     }
     prevMessagesLengthRef.current = messages.length;
   }, [messages.length]);
+
+  // Timer to update elapsed time for pending responses
+  useEffect(() => {
+    if (pendingResponses.size === 0) return;
+    
+    const interval = setInterval(() => {
+      setPendingResponses(prev => {
+        const updated = new Map(prev);
+        const now = Date.now();
+        
+        for (const [key, value] of updated) {
+          const elapsed = Math.floor((now - value.startTime) / 1000);
+          let status: 'sent' | 'confirmed' | 'waiting' = 'sent';
+          if (elapsed >= 5) status = 'waiting';
+          else if (elapsed >= 2) status = 'confirmed';
+          
+          updated.set(key, { ...value, elapsedSeconds: elapsed, status });
+        }
+        return updated;
+      });
+    }, 1000);
+    
+    return () => clearInterval(interval);
+  }, [pendingResponses.size]);
+
+  // Remove pending response when a new AI message arrives
+  useEffect(() => {
+    if (pendingResponses.size === 0 || messages.length === 0) return;
+    
+    // Check last few messages for AI responses that match pending models
+    const recentMessages = messages.slice(-pendingResponses.size * 2);
+    
+    setPendingResponses(prev => {
+      const updated = new Map(prev);
+      let changed = false;
+      
+      for (const msg of recentMessages) {
+        if (msg.role !== 'user' && msg.model_name) {
+          // Find matching pending by model name
+          for (const [key, value] of updated) {
+            if (value.modelName === msg.model_name || 
+                key.includes(msg.model_name) ||
+                msg.model_name.includes(value.modelName)) {
+              updated.delete(key);
+              changed = true;
+              break;
+            }
+          }
+        }
+      }
+      
+      return changed ? updated : prev;
+    });
+  }, [messages, pendingResponses.size]);
 
   // Get all available models for consultant selection
   const allAvailableModels: ModelOption[] = [...lovableModels, ...personalModels];
@@ -272,6 +348,7 @@ export default function ExpertPanel() {
                 onDelete={handleDeleteMessage}
                 onRatingChange={handleRatingChange}
                 onClarifyWithSpecialist={handleClarifyWithSpecialist}
+                pendingResponses={pendingResponses}
               />
 
               {/* Input Area */}
