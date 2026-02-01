@@ -23,6 +23,8 @@ interface ChatMessagesListProps {
   onClarifyWithSpecialist?: (selectedText: string, messageId: string) => void;
   // Pending responses for skeleton indicators
   pendingResponses?: Map<string, PendingResponseState>;
+  // Timeout settings
+  timeoutSeconds?: number;
   // Timeout action handlers
   onRetryRequest?: (modelId: string) => void;
   onDismissTimeout?: (modelId: string) => void;
@@ -41,6 +43,7 @@ export function ChatMessagesList({
   onRatingChange,
   onClarifyWithSpecialist,
   pendingResponses,
+  timeoutSeconds = 120,
   onRetryRequest,
   onDismissTimeout,
   onRemoveModel,
@@ -99,6 +102,7 @@ export function ChatMessagesList({
               <MessageSkeleton 
                 key={pending.modelId} 
                 pending={pending}
+                timeoutSeconds={timeoutSeconds}
                 onRetry={onRetryRequest}
                 onDismiss={onDismissTimeout}
                 onRemoveModel={onRemoveModel}

@@ -1,11 +1,11 @@
 import React from 'react';
-import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { FileUpload } from '@/components/warroom/FileUpload';
-import { ConsultantSelector } from '@/components/warroom/ConsultantSelector';
+import { TimeoutSlider } from '@/components/warroom/TimeoutSlider';
+import { UnifiedSendButton } from '@/components/warroom/UnifiedSendButton';
 import { ModelOption } from '@/hooks/useAvailableModels';
 import { cn } from '@/lib/utils';
-import { Send, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 export interface AttachedFile {
@@ -35,6 +35,11 @@ interface ChatInputAreaProps {
   selectedConsultant: string | null;
   onSelectConsultant: (id: string | null) => void;
   onSendToConsultant: () => void;
+  // Timeout
+  timeoutSeconds: number;
+  onTimeoutChange: (value: number) => void;
+  // Model count for send button
+  selectedModelsCount: number;
 }
 
 export function ChatInputArea({
@@ -51,6 +56,9 @@ export function ChatInputArea({
   selectedConsultant,
   onSelectConsultant,
   onSendToConsultant,
+  timeoutSeconds,
+  onTimeoutChange,
+  selectedModelsCount,
 }: ChatInputAreaProps) {
   const { t } = useLanguage();
 
@@ -132,6 +140,13 @@ export function ChatInputArea({
             disabled={sending}
           />
 
+          {/* Timeout setting */}
+          <TimeoutSlider
+            value={timeoutSeconds}
+            onChange={onTimeoutChange}
+            disabled={sending}
+          />
+
           <Textarea
             value={input}
             onChange={(e) => onInputChange(e.target.value)}
@@ -146,29 +161,18 @@ export function ChatInputArea({
             onPaste={onPaste}
           />
 
-          {/* Consultant selector */}
-          <ConsultantSelector
+          {/* Unified send button */}
+          <UnifiedSendButton
+            onSendToAll={onSend}
+            onSendToConsultant={onSendToConsultant}
+            sending={sending}
+            disabled={disabled}
+            hasMessage={!!input.trim()}
+            selectedModelsCount={selectedModelsCount}
             availableModels={availableModels}
             selectedConsultant={selectedConsultant}
             onSelectConsultant={onSelectConsultant}
-            onSendToConsultant={onSendToConsultant}
-            disabled={sending}
-            sending={sending}
-            hasMessage={!!input.trim()}
           />
-
-          <Button
-            onClick={onSend}
-            disabled={disabled}
-            className="hydra-glow-sm"
-            size="lg"
-          >
-            {sending ? (
-              <Loader2 className="h-5 w-5 animate-spin" />
-            ) : (
-              <Send className="h-5 w-5" />
-            )}
-          </Button>
         </div>
       </div>
     </div>
