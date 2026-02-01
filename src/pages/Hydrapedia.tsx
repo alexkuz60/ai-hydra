@@ -693,6 +693,24 @@ export default function Hydrapedia() {
             />
           )}
         </div>
+
+        {/* Keyboard shortcuts footer */}
+        <div className="hidden md:flex items-center justify-center gap-6 px-4 py-2 border-t border-border bg-card/30 text-xs text-muted-foreground">
+          <div className="flex items-center gap-1.5">
+            <kbd className="inline-flex h-5 items-center rounded border border-border bg-muted px-1.5 font-mono text-[10px]">←</kbd>
+            <kbd className="inline-flex h-5 items-center rounded border border-border bg-muted px-1.5 font-mono text-[10px]">→</kbd>
+            <span>{language === 'ru' ? 'Навигация' : 'Navigate'}</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <kbd className="inline-flex h-5 items-center rounded border border-border bg-muted px-1.5 font-mono text-[10px]">⌘</kbd>
+            <kbd className="inline-flex h-5 items-center rounded border border-border bg-muted px-1.5 font-mono text-[10px]">K</kbd>
+            <span>{language === 'ru' ? 'Поиск' : 'Search'}</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <kbd className="inline-flex h-5 items-center rounded border border-border bg-muted px-1.5 font-mono text-[10px]">Esc</kbd>
+            <span>{language === 'ru' ? 'Закрыть' : 'Close'}</span>
+          </div>
+        </div>
       </div>
     </Layout>
   );
