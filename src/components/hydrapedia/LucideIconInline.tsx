@@ -1,20 +1,27 @@
 import React from 'react';
-import { icons, LucideIcon } from 'lucide-react';
+import * as LucideIcons from 'lucide-react';
 import { cn } from '@/lib/utils';
-
-// Map of icon names to their actual Lucide components
-const iconMap: Record<string, LucideIcon> = icons;
 
 interface LucideIconInlineProps {
   name: string;
   className?: string;
 }
 
+// Function to check if something is a valid React component
+function isValidIconComponent(component: unknown): component is React.ComponentType<{ className?: string }> {
+  return (
+    component !== null &&
+    component !== undefined &&
+    typeof component === 'object' &&
+    '$$typeof' in component
+  );
+}
+
 export function LucideIconInline({ name, className }: LucideIconInlineProps) {
-  // Try to find the icon by name
-  const IconComponent = iconMap[name];
+  // Try to find the icon by name in the lucide-react exports
+  const IconComponent = (LucideIcons as Record<string, unknown>)[name];
   
-  if (IconComponent) {
+  if (isValidIconComponent(IconComponent)) {
     return (
       <span className={cn(
         "inline-flex items-center gap-1.5 px-1.5 py-0.5 rounded bg-muted/80 border border-border/50",
