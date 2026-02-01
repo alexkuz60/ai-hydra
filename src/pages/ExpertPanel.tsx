@@ -183,6 +183,24 @@ export default function ExpertPanel() {
     setDChatContext(null);
   }, []);
 
+  // Text selection: Clarify with Specialist
+  const handleClarifyWithSpecialist = useCallback((selectedText: string, messageId: string) => {
+    // Find the source message for context
+    const sourceMessage = messages.find(m => m.id === messageId);
+    const contextMessages = sourceMessage ? [{
+      role: sourceMessage.role,
+      model_name: sourceMessage.model_name,
+      content: sourceMessage.content
+    }] : undefined;
+    
+    setDChatContext({
+      messageId,
+      content: selectedText,
+      sourceMessages: contextMessages
+    });
+    handleDChatExpand();
+  }, [messages, handleDChatExpand]);
+
   if (authLoading || loading) {
     return (
       <Layout>
@@ -253,6 +271,7 @@ export default function ExpertPanel() {
                 onToggleCollapse={toggleCollapsed}
                 onDelete={handleDeleteMessage}
                 onRatingChange={handleRatingChange}
+                onClarifyWithSpecialist={handleClarifyWithSpecialist}
               />
 
               {/* Input Area */}

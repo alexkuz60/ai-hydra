@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import { HydraCard, HydraCardHeader, HydraCardTitle, HydraCardContent } from '@/components/ui/hydra-card';
 import { Button } from '@/components/ui/button';
 import { MarkdownRenderer } from './MarkdownRenderer';
 import { AttachmentPreview, Attachment } from './AttachmentPreview';
 import { ThinkingBlock } from './ThinkingBlock';
+import { TextSelectionPopup } from './TextSelectionPopup';
 import { format } from 'date-fns';
 import { ru, enUS } from 'date-fns/locale';
 import { ToolCallDisplay } from './ToolCallDisplay';
@@ -95,12 +96,15 @@ interface ChatMessageProps {
   onRatingChange: (messageId: string, rating: number) => void;
   isCollapsed?: boolean;
   onToggleCollapse?: (messageId: string) => void;
+  onClarifyWithSpecialist?: (selectedText: string, messageId: string) => void;
 }
 
 const MAX_COLLAPSED_LINES = 3;
 
-export function ChatMessage({ message, userDisplayInfo, onDelete, onRatingChange, isCollapsed, onToggleCollapse }: ChatMessageProps) {
+export function ChatMessage({ message, userDisplayInfo, onDelete, onRatingChange, isCollapsed, onToggleCollapse, onClarifyWithSpecialist }: ChatMessageProps) {
   const { t } = useLanguage();
+  const contentRef = useRef<HTMLDivElement>(null);
+  
   // Use controlled state from parent if provided, otherwise local state
   const [localExpanded, setLocalExpanded] = useState(true);
   const isExpanded = isCollapsed !== undefined ? !isCollapsed : localExpanded;
@@ -112,6 +116,12 @@ export function ChatMessage({ message, userDisplayInfo, onDelete, onRatingChange
       setLocalExpanded(!localExpanded);
     }
   };
+  
+  const handleClarify = useCallback((text: string) => {
+    if (onClarifyWithSpecialist) {
+      onClarifyWithSpecialist(text, message.id);
+    }
+  }, [onClarifyWithSpecialist, message.id]);
   
   const config = getRoleConfig(message.role);
   
@@ -190,10 +200,21 @@ export function ChatMessage({ message, userDisplayInfo, onDelete, onRatingChange
           />
         )}
         
-        {message.role === 'user' ? (
-          <p className="whitespace-pre-wrap">{truncatedContent}</p>
-        ) : (
-          <MarkdownRenderer content={truncatedContent} className="text-sm" />
+        {/* Content with text selection popup for AI messages */}
+        <div ref={contentRef}>
+          {message.role === 'user' ? (
+            <p className="whitespace-pre-wrap">{truncatedContent}</p>
+          ) : (
+            <MarkdownRenderer content={truncatedContent} className="text-sm" />
+          )}
+        </div>
+        
+        {/* Text selection popup for AI messages */}
+        {isAiMessage && onClarifyWithSpecialist && (
+          <TextSelectionPopup
+            containerRef={contentRef}
+            onClarify={handleClarify}
+          />
         )}
         
         {/* Attachments */}
