@@ -845,6 +845,46 @@ serve(async (req) => {
       }));
 
       await supabase.from("messages").insert(messagesToInsert);
+
+      // Update model statistics - increment response count for each model
+      for (const result of successResults) {
+        try {
+          // Try to find existing stats for this user+model+session
+          const { data: existingStats } = await supabase
+            .from('model_statistics')
+            .select('id, response_count')
+            .eq('user_id', user.id)
+            .eq('model_id', result.model)
+            .eq('session_id', session_id)
+            .maybeSingle();
+
+          if (existingStats) {
+            // Update existing record
+            await supabase
+              .from('model_statistics')
+              .update({
+                response_count: existingStats.response_count + 1,
+                last_used_at: new Date().toISOString(),
+              })
+              .eq('id', existingStats.id);
+          } else {
+            // Insert new record
+            await supabase
+              .from('model_statistics')
+              .insert({
+                user_id: user.id,
+                model_id: result.model,
+                session_id: session_id,
+                response_count: 1,
+                first_used_at: new Date().toISOString(),
+                last_used_at: new Date().toISOString(),
+              });
+          }
+          console.log(`[Stats] Incremented response_count for ${result.model}`);
+        } catch (statsError) {
+          console.error(`[Stats] Error updating stats for ${result.model}:`, statsError);
+        }
+      }
     }
 
     // Combine document processing errors with model errors
