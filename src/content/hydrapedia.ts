@@ -26,15 +26,15 @@ export const hydrapediaSections: HydrapediaSection[] = [
 ### Синергия моделей
 Разные модели имеют разные сильные стороны:
 - **GPT-4** отлично справляется с рассуждениями и творческими задачами
-- **Claude** хорош в анализе документов и следовании инструкциям
+- **Claude** хорош в анализе документов и следовании инструкциям  
 - **Gemini** силён в мультимодальных задачах и работе с большим контекстом
 
 ### Ролевая специализация
 Каждому ответу модели может быть назначена роль:
-- 🟢 **Эксперт** (Assistant) — основной ответ
-- 🔴 **Критик** (Critic) — критический анализ
-- 🟡 **Арбитр** (Arbiter) — финальный синтез
-- 🟠 **Консультант** (Consultant) — дополнительная экспертиза
+- **Эксперт** (Assistant) — основной ответ
+- **Критик** (Critic) — критический анализ
+- **Арбитр** (Arbiter) — финальный синтез
+- **Консультант** (Consultant) — дополнительная экспертиза
 
 ## Архитектура платформы
 
@@ -56,9 +56,9 @@ graph TD
 
 | Элемент | Иконка | Описание |
 |---------|--------|----------|
-| **Логотип ai hydra** | 🐙 | Клик возвращает на главную страницу |
-| **Переключатель темы** | ☀️ / 🌙 | Переключение между светлой и тёмной темой |
-| **Выбор языка** | 🌐 | Переключение интерфейса RU / EN |`,
+| **Логотип ai hydra** | \`logo.svg\` | Клик возвращает на главную страницу |
+| **Переключатель темы** | \`Sun\` / \`Moon\` | Переключение между светлой и тёмной темой |
+| **Выбор языка** | \`Globe\` | Переключение интерфейса RU / EN |`,
 
       en: `# What is AI-Hydra?
 
@@ -77,10 +77,10 @@ Different models have different strengths:
 
 ### Role Specialization
 Each model response can be assigned a role:
-- 🟢 **Expert** (Assistant) — primary response
-- 🔴 **Critic** — critical analysis
-- 🟡 **Arbiter** — final synthesis
-- 🟠 **Consultant** — additional expertise
+- **Expert** (Assistant) — primary response
+- **Critic** — critical analysis
+- **Arbiter** — final synthesis
+- **Consultant** — additional expertise
 
 ## Platform Architecture
 
@@ -102,9 +102,9 @@ The platform sends your request to selected models, collects their responses, an
 
 | Element | Icon | Description |
 |---------|------|-------------|
-| **ai hydra Logo** | 🐙 | Click to return to home page |
-| **Theme Toggle** | ☀️ / 🌙 | Switch between light and dark theme |
-| **Language Selector** | 🌐 | Switch interface RU / EN |`
+| **ai hydra Logo** | \`logo.svg\` | Click to return to home page |
+| **Theme Toggle** | \`Sun\` / \`Moon\` | Switch between light and dark theme |
+| **Language Selector** | \`Globe\` | Switch interface RU / EN |`
     }
   },
   {
@@ -135,7 +135,7 @@ The platform sends your request to selected models, collects their responses, an
 
 ## API-ключи
 
-Для работы с AI-моделями вам понадобятся API-ключи провайдеров. Поддерживаемые провайдеры:
+Для работы с AI-моделями вам понадобятся API-ключи провайдеров:
 
 | Провайдер | Модели | Где получить |
 |-----------|--------|--------------|
@@ -152,17 +152,17 @@ The platform sends your request to selected models, collects their responses, an
 2. Введите ключ в соответствующее поле
 3. Нажмите **Сохранить**
 
-> 💡 **Совет**: Начните с OpenRouter — один ключ даёт доступ к сотням моделей разных провайдеров.
+> **Совет**: Начните с OpenRouter — один ключ даёт доступ к сотням моделей.
 
 ## Элементы страницы Профиль
 
 | Элемент | Иконка | Описание |
 |---------|--------|----------|
-| **Вкладка «Профиль»** | 👤 User | Редактирование имени и аватара |
-| **Вкладка «API Ключи»** | 🔑 Key | Управление ключами провайдеров |
-| **Вкладка «Использование»** | 📊 BarChart3 | Статистика использования моделей |
-| **Сохранить** | 💾 Save | Сохранение изменений |
-| **Показать/Скрыть ключ** | 👁️ Eye / EyeOff | Переключение видимости API-ключа |`,
+| **Вкладка «Профиль»** | \`User\` | Редактирование имени и аватара |
+| **Вкладка «API Ключи»** | \`Key\` | Управление ключами провайдеров |
+| **Вкладка «Использование»** | \`BarChart3\` | Статистика использования моделей |
+| **Сохранить** | \`Save\` | Сохранение изменений |
+| **Показать/Скрыть ключ** | \`Eye\` / \`EyeOff\` | Переключение видимости API-ключа |`,
 
       en: `# Getting Started
 
@@ -187,7 +187,7 @@ After logging in, go to **Profile** for settings:
 
 ## API Keys
 
-To work with AI models, you'll need API keys from providers. Supported providers:
+To work with AI models, you'll need API keys from providers:
 
 | Provider | Models | Where to get |
 |----------|--------|--------------|
@@ -204,17 +204,17 @@ To work with AI models, you'll need API keys from providers. Supported providers
 2. Enter the key in the corresponding field
 3. Click **Save**
 
-> 💡 **Tip**: Start with OpenRouter — one key gives you access to hundreds of models from different providers.
+> **Tip**: Start with OpenRouter — one key gives you access to hundreds of models.
 
 ## Profile Page Controls
 
 | Element | Icon | Description |
 |---------|------|-------------|
-| **Profile Tab** | 👤 User | Edit name and avatar |
-| **API Keys Tab** | 🔑 Key | Manage provider keys |
-| **Usage Tab** | 📊 BarChart3 | Model usage statistics |
-| **Save** | 💾 Save | Save changes |
-| **Show/Hide Key** | 👁️ Eye / EyeOff | Toggle API key visibility |`
+| **Profile Tab** | \`User\` | Edit name and avatar |
+| **API Keys Tab** | \`Key\` | Manage provider keys |
+| **Usage Tab** | \`BarChart3\` | Model usage statistics |
+| **Save** | \`Save\` | Save changes |
+| **Show/Hide Key** | \`Eye\` / \`EyeOff\` | Toggle API key visibility |`
     }
   },
   {
@@ -232,21 +232,21 @@ To work with AI models, you'll need API keys from providers. Supported providers
 
 | Элемент | Иконка | Описание |
 |---------|--------|----------|
-| **Селектор моделей** | 🤖 Bot | Выбор нескольких моделей для запроса |
-| **Селектор промптов** | 📚 BookOpen | Быстрый выбор системного промпта |
-| **Настройки модели** | ⚙️ Settings | Температура, max tokens и другие параметры |
-| **Таймаут** | ⏱️ Clock | Время ожидания ответа (30с – 4м) |
-| **Новый чат** | ➕ Plus | Создание новой сессии |
+| **Селектор моделей** | \`Bot\` | Выбор нескольких моделей для запроса |
+| **Селектор промптов** | \`BookOpen\` | Быстрый выбор системного промпта |
+| **Настройки модели** | \`Settings\` | Температура, max tokens и другие параметры |
+| **Таймаут** | \`Clock\` | Время ожидания ответа (30с – 4м) |
+| **Новый чат** | \`Plus\` | Создание новой сессии |
 
 ### Селектор моделей
 
 1. Нажмите на селектор **«Выберите модели»**
-2. Отметьте нужные модели галочками ☑️
+2. Отметьте нужные модели галочками
 3. Выбранные модели отобразятся как чипы
 
-> ⚡ **Важно**: Модели без настроенного API-ключа будут недоступны (серые).
+> **Важно**: Модели без настроенного API-ключа будут недоступны (серые).
 
-### Параметры модели (шестерёнка ⚙️)
+### Параметры модели (шестерёнка)
 
 | Параметр | Описание | Диапазон |
 |----------|----------|----------|
@@ -262,31 +262,31 @@ To work with AI models, you'll need API keys from providers. Supported providers
 
 | Элемент | Иконка | Описание |
 |---------|--------|----------|
-| **Аватар** | 👑 Crown | Золотая иконка супервизора |
+| **Аватар** | \`Crown\` | Золотая иконка супервизора |
 | **Время** | — | Время отправки сообщения |
-| **Вложения** | 📎 Paperclip | Прикреплённые файлы/изображения |
+| **Вложения** | \`Paperclip\` | Прикреплённые файлы/изображения |
 
 ### Сообщение модели
 
 | Элемент | Иконка | Описание |
 |---------|--------|----------|
-| **Аватар роли** | 🎭 | Цветная иконка роли (зелёная/красная/золотая) |
+| **Аватар роли** | \`CheckCircle\` / \`AlertTriangle\` / \`Scale\` | Цветная иконка роли |
 | **Имя модели** | — | Название модели (GPT-4, Claude и т.д.) |
-| **Брейн** | 🧠 Brain | Награда за полезный ответ (+1 рейтинг) |
-| **Отклонить** | ❌ X | Отклонение неудачного ответа |
-| **Копировать** | 📋 Copy | Копирование текста в буфер |
-| **Консультант** | 💬 MessageSquare | Открыть D-Chat с этой моделью |
-| **Развернуть** | 📖 BookOpen | Развернуть/свернуть длинный ответ |
-| **Thinking** | ✨ Sparkles | Раскрыть цепочку рассуждений |
+| **Брейн** | \`Brain\` | Награда за полезный ответ (+1 рейтинг) |
+| **Отклонить** | \`X\` | Отклонение неудачного ответа |
+| **Копировать** | \`Copy\` | Копирование текста в буфер |
+| **Консультант** | \`MessageSquare\` | Открыть D-Chat с этой моделью |
+| **Развернуть** | \`BookOpen\` | Развернуть/свернуть длинный ответ |
+| **Thinking** | \`Sparkles\` | Раскрыть цепочку рассуждений |
 
 ## Нижняя панель ввода
 
 | Элемент | Иконка | Описание |
 |---------|--------|----------|
 | **Поле ввода** | — | Текстовое поле для запроса |
-| **Прикрепить файл** | 📎 Paperclip | Загрузка изображений (до 5 шт) |
-| **Отправить** | ➡️ SendHorizontal | Отправка сообщения |
-| **Стоп** | ⏹️ Square | Остановка генерации (во время ответа) |
+| **Прикрепить файл** | \`Paperclip\` | Загрузка изображений (до 5 шт) |
+| **Отправить** | \`SendHorizontal\` | Отправка сообщения |
+| **Стоп** | \`Square\` | Остановка генерации (во время ответа) |
 
 ## D-Chat консультант
 
@@ -296,19 +296,19 @@ To work with AI models, you'll need API keys from providers. Supported providers
 
 | Элемент | Иконка | Описание |
 |---------|--------|----------|
-| **Заголовок** | 💬 MessageSquare | Название модели-консультанта |
-| **Закрыть** | ✖️ X | Закрытие панели |
-| **Изменить ширину** | ↔️ | Перетаскивание левого края |
-| **Выделение текста** | 💡 Lightbulb | При выделении — кнопка «Уточнить» |
+| **Заголовок** | \`MessageSquare\` | Название модели-консультанта |
+| **Закрыть** | \`X\` | Закрытие панели |
+| **Изменить ширину** | \`GripVertical\` | Перетаскивание левого края |
+| **Выделение текста** | \`Lightbulb\` | При выделении — кнопка «Уточнить» |
 
 ### Как использовать
 
-1. Нажмите на иконку консультанта 💬 в ответе модели
+1. Нажмите на иконку консультанта \`MessageSquare\` в ответе модели
 2. Откроется боковой чат
 3. Задавайте уточняющие вопросы
-4. Выделите текст в ответе → нажмите 💡 для уточнения
+4. Выделите текст в ответе → нажмите \`Lightbulb\` для уточнения
 
-> 💡 **Совет**: Используйте консультанта для углублённого анализа конкретного ответа.`,
+> **Совет**: Используйте консультанта для углублённого анализа конкретного ответа.`,
 
       en: `# Expert Panel
 
@@ -320,21 +320,21 @@ The Expert Panel is the main tool for working with multiple models simultaneousl
 
 | Element | Icon | Description |
 |---------|------|-------------|
-| **Model Selector** | 🤖 Bot | Select multiple models for query |
-| **Prompt Selector** | 📚 BookOpen | Quick system prompt selection |
-| **Model Settings** | ⚙️ Settings | Temperature, max tokens and other params |
-| **Timeout** | ⏱️ Clock | Response wait time (30s – 4m) |
-| **New Chat** | ➕ Plus | Create new session |
+| **Model Selector** | \`Bot\` | Select multiple models for query |
+| **Prompt Selector** | \`BookOpen\` | Quick system prompt selection |
+| **Model Settings** | \`Settings\` | Temperature, max tokens and other params |
+| **Timeout** | \`Clock\` | Response wait time (30s – 4m) |
+| **New Chat** | \`Plus\` | Create new session |
 
 ### Model Selector
 
 1. Click on the **"Select models"** selector
-2. Check the desired models ☑️
+2. Check the desired models
 3. Selected models will appear as chips
 
-> ⚡ **Important**: Models without configured API key will be unavailable (grayed out).
+> **Important**: Models without configured API key will be unavailable (grayed out).
 
-### Model Parameters (gear ⚙️)
+### Model Parameters (gear icon)
 
 | Parameter | Description | Range |
 |-----------|-------------|-------|
@@ -350,31 +350,31 @@ The Expert Panel is the main tool for working with multiple models simultaneousl
 
 | Element | Icon | Description |
 |---------|------|-------------|
-| **Avatar** | 👑 Crown | Gold supervisor icon |
+| **Avatar** | \`Crown\` | Gold supervisor icon |
 | **Time** | — | Message send time |
-| **Attachments** | 📎 Paperclip | Attached files/images |
+| **Attachments** | \`Paperclip\` | Attached files/images |
 
 ### Model Message
 
 | Element | Icon | Description |
 |---------|------|-------------|
-| **Role Avatar** | 🎭 | Colored role icon (green/red/gold) |
+| **Role Avatar** | \`CheckCircle\` / \`AlertTriangle\` / \`Scale\` | Colored role icon |
 | **Model Name** | — | Model name (GPT-4, Claude, etc.) |
-| **Brain** | 🧠 Brain | Reward for useful response (+1 rating) |
-| **Dismiss** | ❌ X | Reject unsuccessful response |
-| **Copy** | 📋 Copy | Copy text to clipboard |
-| **Consultant** | 💬 MessageSquare | Open D-Chat with this model |
-| **Expand** | 📖 BookOpen | Expand/collapse long response |
-| **Thinking** | ✨ Sparkles | Reveal reasoning chain |
+| **Brain** | \`Brain\` | Reward for useful response (+1 rating) |
+| **Dismiss** | \`X\` | Reject unsuccessful response |
+| **Copy** | \`Copy\` | Copy text to clipboard |
+| **Consultant** | \`MessageSquare\` | Open D-Chat with this model |
+| **Expand** | \`BookOpen\` | Expand/collapse long response |
+| **Thinking** | \`Sparkles\` | Reveal reasoning chain |
 
 ## Bottom Input Panel
 
 | Element | Icon | Description |
 |---------|------|-------------|
 | **Input Field** | — | Text field for query |
-| **Attach File** | 📎 Paperclip | Upload images (up to 5) |
-| **Send** | ➡️ SendHorizontal | Send message |
-| **Stop** | ⏹️ Square | Stop generation (while responding) |
+| **Attach File** | \`Paperclip\` | Upload images (up to 5) |
+| **Send** | \`SendHorizontal\` | Send message |
+| **Stop** | \`Square\` | Stop generation (while responding) |
 
 ## D-Chat Consultant
 
@@ -384,19 +384,19 @@ Side panel for deep analysis with selected model.
 
 | Element | Icon | Description |
 |---------|------|-------------|
-| **Header** | 💬 MessageSquare | Consultant model name |
-| **Close** | ✖️ X | Close panel |
-| **Resize** | ↔️ | Drag left edge |
-| **Text Selection** | 💡 Lightbulb | When selecting — "Clarify" button |
+| **Header** | \`MessageSquare\` | Consultant model name |
+| **Close** | \`X\` | Close panel |
+| **Resize** | \`GripVertical\` | Drag left edge |
+| **Text Selection** | \`Lightbulb\` | When selecting — "Clarify" button |
 
 ### How to Use
 
-1. Click on the consultant icon 💬 in model response
+1. Click on the consultant icon \`MessageSquare\` in model response
 2. A side chat will open
 3. Ask follow-up questions
-4. Select text in response → click 💡 to clarify
+4. Select text in response → click \`Lightbulb\` to clarify
 
-> 💡 **Tip**: Use the consultant for in-depth analysis of a specific response.`
+> **Tip**: Use the consultant for in-depth analysis of a specific response.`
     }
   },
   {
@@ -410,8 +410,9 @@ Side panel for deep analysis with selected model.
 
 ## Основные роли
 
-### 🟢 Assistant (Эксперт)
-**Цвет**: зелёный | **Иконка**: ✔️ CheckCircle
+### Assistant (Эксперт)
+
+**Цвет**: зелёный | **Иконка**: \`CheckCircle\`
 
 Основная роль для ответов. Эксперт даёт прямой, информативный ответ на запрос пользователя.
 
@@ -421,10 +422,11 @@ Side panel for deep analysis with selected model.
 - Написание кода
 - Объяснение концепций
 
-### 🔴 Critic (Критик)
-**Цвет**: красный | **Иконка**: 🔍 AlertTriangle
+### Critic (Критик)
 
-Критик анализирует ответы других моделей, находит слабые места, логические ошибки и предлагает улучшения.
+**Цвет**: красный | **Иконка**: \`AlertTriangle\`
+
+Критик анализирует ответы других моделей, находит слабые места и предлагает улучшения.
 
 **Когда использовать:**
 - Проверка кода на ошибки
@@ -432,10 +434,11 @@ Side panel for deep analysis with selected model.
 - Поиск уязвимостей
 - Редактура текста
 
-### 🟡 Arbiter (Арбитр)
-**Цвет**: золотой | **Иконка**: ⚖️ Scale
+### Arbiter (Арбитр)
 
-Арбитр синтезирует ответы всех экспертов и критиков, формируя финальный, сбалансированный ответ.
+**Цвет**: золотой | **Иконка**: \`Scale\`
+
+Арбитр синтезирует ответы всех экспертов и критиков, формируя финальный ответ.
 
 **Когда использовать:**
 - Принятие решений
@@ -443,10 +446,11 @@ Side panel for deep analysis with selected model.
 - Синтез нескольких точек зрения
 - Итоговые выводы
 
-### 🟠 Consultant (Консультант)
-**Цвет**: янтарный | **Иконка**: 💬 MessageSquare
+### Consultant (Консультант)
 
-Консультант работает в боковой панели D-Chat, помогая углубиться в конкретную тему или ответ.
+**Цвет**: янтарный | **Иконка**: \`MessageSquare\`
+
+Консультант работает в боковой панели D-Chat, помогая углубиться в тему.
 
 **Когда использовать:**
 - Уточняющие вопросы
@@ -458,11 +462,11 @@ Side panel for deep analysis with selected model.
 
 | Роль | Цвет | Иконка | Назначение |
 |------|------|--------|------------|
-| **Moderator** | 🔵 Синий | 🛡️ Shield | Модерация контента |
-| **Advisor** | 💎 Изумрудный | 💡 Lightbulb | Стратегические советы |
-| **Archivist** | 🟤 Бронзовый | 📚 Archive | Работа с историей и документами |
-| **Analyst** | 🟣 Индиго | 📊 BarChart | Глубокий анализ данных |
-| **Webhunter** | 🟠 Оранжевый | 🌐 Globe | Поиск информации в сети |
+| **Moderator** | Синий | \`Shield\` | Модерация контента |
+| **Advisor** | Изумрудный | \`Lightbulb\` | Стратегические советы |
+| **Archivist** | Бронзовый | \`Archive\` | Работа с историей и документами |
+| **Analyst** | Индиго | \`BarChart\` | Глубокий анализ данных |
+| **Webhunter** | Оранжевый | \`Globe\` | Поиск информации в сети |
 
 ## Индикаторы ролей в интерфейсе
 
@@ -483,7 +487,7 @@ Side panel for deep analysis with selected model.
 - Контекста запроса
 - Настроек по умолчанию
 
-> 💡 **Совет**: Создайте промпты для каждой роли в библиотеке и быстро переключайтесь между ними.`,
+> **Совет**: Создайте промпты для каждой роли в библиотеке и быстро переключайтесь между ними.`,
 
       en: `# Agent Roles
 
@@ -491,10 +495,11 @@ In AI-Hydra, each model response can have a specific role. This helps structure 
 
 ## Main Roles
 
-### 🟢 Assistant (Expert)
-**Color**: green | **Icon**: ✔️ CheckCircle
+### Assistant (Expert)
 
-The main role for responses. The expert provides a direct, informative answer to the user's request.
+**Color**: green | **Icon**: \`CheckCircle\`
+
+The main role for responses. The expert provides a direct, informative answer.
 
 **When to use:**
 - Content generation
@@ -502,10 +507,11 @@ The main role for responses. The expert provides a direct, informative answer to
 - Code writing
 - Concept explanation
 
-### 🔴 Critic
-**Color**: red | **Icon**: 🔍 AlertTriangle
+### Critic
 
-The critic analyzes responses from other models, finds weaknesses, logical errors, and suggests improvements.
+**Color**: red | **Icon**: \`AlertTriangle\`
+
+The critic analyzes responses from other models, finds weaknesses and suggests improvements.
 
 **When to use:**
 - Code error checking
@@ -513,10 +519,11 @@ The critic analyzes responses from other models, finds weaknesses, logical error
 - Vulnerability search
 - Text editing
 
-### 🟡 Arbiter
-**Color**: gold | **Icon**: ⚖️ Scale
+### Arbiter
 
-The arbiter synthesizes responses from all experts and critics, forming a final, balanced response.
+**Color**: gold | **Icon**: \`Scale\`
+
+The arbiter synthesizes responses from all experts and critics, forming a final response.
 
 **When to use:**
 - Decision making
@@ -524,10 +531,11 @@ The arbiter synthesizes responses from all experts and critics, forming a final,
 - Multiple viewpoint synthesis
 - Final conclusions
 
-### 🟠 Consultant
-**Color**: amber | **Icon**: 💬 MessageSquare
+### Consultant
 
-The consultant works in the D-Chat side panel, helping to dive deeper into a specific topic or response.
+**Color**: amber | **Icon**: \`MessageSquare\`
+
+The consultant works in the D-Chat side panel, helping to dive deeper into topics.
 
 **When to use:**
 - Follow-up questions
@@ -539,11 +547,11 @@ The consultant works in the D-Chat side panel, helping to dive deeper into a spe
 
 | Role | Color | Icon | Purpose |
 |------|-------|------|---------|
-| **Moderator** | 🔵 Blue | 🛡️ Shield | Content moderation |
-| **Advisor** | 💎 Emerald | 💡 Lightbulb | Strategic advice |
-| **Archivist** | 🟤 Bronze | 📚 Archive | History and documents |
-| **Analyst** | 🟣 Indigo | 📊 BarChart | Deep data analysis |
-| **Webhunter** | 🟠 Orange | 🌐 Globe | Web information search |
+| **Moderator** | Blue | \`Shield\` | Content moderation |
+| **Advisor** | Emerald | \`Lightbulb\` | Strategic advice |
+| **Archivist** | Bronze | \`Archive\` | History and documents |
+| **Analyst** | Indigo | \`BarChart\` | Deep data analysis |
+| **Webhunter** | Orange | \`Globe\` | Web information search |
 
 ## Role Indicators in Interface
 
@@ -564,7 +572,7 @@ Roles are assigned based on:
 - Request context
 - Default settings
 
-> 💡 **Tip**: Create prompts for each role in the library and quickly switch between them.`
+> **Tip**: Create prompts for each role in the library and quickly switch between them.`
     }
   },
   {
@@ -574,7 +582,7 @@ Roles are assigned based on:
     content: {
       ru: `# Библиотека промптов
 
-Библиотека промптов позволяет сохранять, организовывать и переиспользовать системные промпты для разных задач.
+Библиотека промптов позволяет сохранять, организовывать и переиспользовать системные промпты.
 
 ## Интерфейс библиотеки
 
@@ -582,22 +590,22 @@ Roles are assigned based on:
 
 | Элемент | Иконка | Описание |
 |---------|--------|----------|
-| **Новый промпт** | ➕ Plus | Создание нового промпта |
-| **Поиск** | 🔍 Search | Поиск по названию и тегам |
-| **Фильтр по роли** | 🎭 | Фильтрация по типу роли |
-| **Сортировка** | ↕️ ArrowUpDown | По имени / дате / популярности |
+| **Новый промпт** | \`Plus\` | Создание нового промпта |
+| **Поиск** | \`Search\` | Поиск по названию и тегам |
+| **Фильтр по роли** | \`Filter\` | Фильтрация по типу роли |
+| **Сортировка** | \`ArrowUpDown\` | По имени / дате / популярности |
 
 ### Карточка промпта
 
 | Элемент | Иконка | Описание |
 |---------|--------|----------|
 | **Название** | — | Краткое описание промпта |
-| **Роль** | 🎭 | Цветной бейдж роли |
-| **Теги** | 🏷️ Tag | Ключевые слова для поиска |
-| **Счётчик** | 📊 BarChart | Количество использований |
-| **Редактировать** | ✏️ Pencil | Открыть редактор |
-| **Удалить** | 🗑️ Trash | Удаление промпта |
-| **Публичный** | 👁️ Eye | Переключатель видимости |
+| **Роль** | Цветной бейдж | Тип роли |
+| **Теги** | \`Tag\` | Ключевые слова для поиска |
+| **Счётчик** | \`BarChart\` | Количество использований |
+| **Редактировать** | \`Pencil\` | Открыть редактор |
+| **Удалить** | \`Trash\` | Удаление промпта |
+| **Публичный** | \`Eye\` | Переключатель видимости |
 
 ## Создание промпта
 
@@ -607,7 +615,7 @@ Roles are assigned based on:
 |------|----------|
 | **Название** | Краткое описание (до 50 символов) |
 | **Описание** | Подробное описание назначения |
-| **Роль** | Выбор из списка: Assistant, Critic, Arbiter... |
+| **Роль** | Выбор: Assistant, Critic, Arbiter... |
 | **Содержание** | Текст системного промпта |
 | **Теги** | Ключевые слова через запятую |
 | **Публичный** | Делает промпт доступным другим |
@@ -636,32 +644,23 @@ Roles are assigned based on:
 
 ## Быстрый выбор в чате
 
-В панели экспертов нажмите на иконку 📚 рядом с селектором моделей:
+В панели экспертов нажмите на иконку \`BookOpen\` рядом с селектором моделей:
 
 1. Откроется выпадающий список промптов
 2. Нажмите на нужный промпт
 3. Он автоматически применится к следующему запросу
 
-## Назначение ролей
-
-| Роль | Когда использовать |
-|------|-------------------|
-| Assistant | Общие задачи, генерация контента |
-| Critic | Ревью кода, проверка логики |
-| Arbiter | Синтез и принятие решений |
-| Consultant | Узкоспециализированные вопросы |
-
 ## Шаринг промптов
 
-1. Откройте промпт на редактирование ✏️
-2. Включите переключатель **«Публичный»** 👁️
+1. Откройте промпт на редактирование \`Pencil\`
+2. Включите переключатель **«Публичный»** \`Eye\`
 3. Промпт станет доступен другим пользователям
 
-> 💡 **Совет**: Используйте теги для быстрого поиска промптов по тематике.`,
+> **Совет**: Используйте теги для быстрого поиска промптов по тематике.`,
 
       en: `# Prompt Library
 
-The prompt library allows you to save, organize, and reuse system prompts for different tasks.
+The prompt library allows you to save, organize, and reuse system prompts.
 
 ## Library Interface
 
@@ -669,22 +668,22 @@ The prompt library allows you to save, organize, and reuse system prompts for di
 
 | Element | Icon | Description |
 |---------|------|-------------|
-| **New Prompt** | ➕ Plus | Create new prompt |
-| **Search** | 🔍 Search | Search by name and tags |
-| **Filter by Role** | 🎭 | Filter by role type |
-| **Sort** | ↕️ ArrowUpDown | By name / date / popularity |
+| **New Prompt** | \`Plus\` | Create new prompt |
+| **Search** | \`Search\` | Search by name and tags |
+| **Filter by Role** | \`Filter\` | Filter by role type |
+| **Sort** | \`ArrowUpDown\` | By name / date / popularity |
 
 ### Prompt Card
 
 | Element | Icon | Description |
 |---------|------|-------------|
 | **Name** | — | Brief prompt description |
-| **Role** | 🎭 | Colored role badge |
-| **Tags** | 🏷️ Tag | Keywords for search |
-| **Counter** | 📊 BarChart | Usage count |
-| **Edit** | ✏️ Pencil | Open editor |
-| **Delete** | 🗑️ Trash | Delete prompt |
-| **Public** | 👁️ Eye | Visibility toggle |
+| **Role** | Colored badge | Role type |
+| **Tags** | \`Tag\` | Keywords for search |
+| **Counter** | \`BarChart\` | Usage count |
+| **Edit** | \`Pencil\` | Open editor |
+| **Delete** | \`Trash\` | Delete prompt |
+| **Public** | \`Eye\` | Visibility toggle |
 
 ## Creating a Prompt
 
@@ -694,7 +693,7 @@ The prompt library allows you to save, organize, and reuse system prompts for di
 |-------|-------------|
 | **Name** | Brief description (up to 50 chars) |
 | **Description** | Detailed purpose description |
-| **Role** | Select from: Assistant, Critic, Arbiter... |
+| **Role** | Select: Assistant, Critic, Arbiter... |
 | **Content** | System prompt text |
 | **Tags** | Keywords separated by comma |
 | **Public** | Makes prompt available to others |
@@ -723,28 +722,19 @@ You are — [role and expertise description]
 
 ## Quick Selection in Chat
 
-In the Expert Panel, click the 📚 icon next to the model selector:
+In the Expert Panel, click the \`BookOpen\` icon next to the model selector:
 
 1. A dropdown list of prompts will open
 2. Click on the desired prompt
 3. It will automatically apply to the next request
 
-## Role Assignment
-
-| Role | When to Use |
-|------|-------------|
-| Assistant | General tasks, content generation |
-| Critic | Code review, logic verification |
-| Arbiter | Synthesis and decision making |
-| Consultant | Specialized questions |
-
 ## Sharing Prompts
 
-1. Open the prompt for editing ✏️
-2. Enable the **"Public"** toggle 👁️
+1. Open the prompt for editing \`Pencil\`
+2. Enable the **"Public"** toggle \`Eye\`
 3. The prompt will become available to other users
 
-> 💡 **Tip**: Use tags for quick prompt search by topic.`
+> **Tip**: Use tags for quick prompt search by topic.`
     }
   },
   {
@@ -754,7 +744,7 @@ In the Expert Panel, click the 📚 icon next to the model selector:
     content: {
       ru: `# Инструменты
 
-Инструменты расширяют возможности AI-моделей, позволяя им выполнять действия: поиск в интернете, работа с API, вычисления и многое другое.
+Инструменты расширяют возможности AI-моделей, позволяя им выполнять действия.
 
 ## Интерфейс библиотеки инструментов
 
@@ -762,25 +752,28 @@ In the Expert Panel, click the 📚 icon next to the model selector:
 
 | Элемент | Иконка | Описание |
 |---------|--------|----------|
-| **Новый инструмент** | ➕ Plus | Создание нового инструмента |
-| **Поиск** | 🔍 Search | Поиск по названию |
-| **Фильтр по типу** | 🔧 Wrench / 🌐 Globe | Промпт / HTTP |
+| **Новый инструмент** | \`Plus\` | Создание нового инструмента |
+| **Поиск** | \`Search\` | Поиск по названию |
+| **Фильтр по типу** | \`Filter\` | Промпт / HTTP |
 
 ### Карточка инструмента
 
 | Элемент | Иконка | Описание |
 |---------|--------|----------|
 | **Название** | — | Имя инструмента |
-| **Тип** | 📝 / 🌐 | Промпт или HTTP API |
+| **Тип** | \`FileText\` / \`Globe\` | Промпт или HTTP API |
 | **Описание** | — | Что делает инструмент |
-| **Счётчик** | 📊 | Количество вызовов |
-| **Тест** | ▶️ Play | Запустить тестирование |
-| **Редактировать** | ✏️ Pencil | Открыть редактор |
-| **Удалить** | 🗑️ Trash | Удаление инструмента |
+| **Счётчик** | \`BarChart\` | Количество вызовов |
+| **Тест** | \`Play\` | Запустить тестирование |
+| **Редактировать** | \`Pencil\` | Открыть редактор |
+| **Удалить** | \`Trash\` | Удаление инструмента |
 
 ## Типы инструментов
 
-### Промпт-инструменты (📝 FileText)
+### Промпт-инструменты
+
+**Иконка**: \`FileText\`
+
 Текстовые инструкции, которые модель интерпретирует и выполняет.
 
 **Подходят для:**
@@ -788,7 +781,10 @@ In the Expert Panel, click the 📚 icon next to the model selector:
 - Пошаговых инструкций
 - Специализированных задач
 
-### HTTP API инструменты (🌐 Globe)
+### HTTP API инструменты
+
+**Иконка**: \`Globe\`
+
 Реальные вызовы к внешним API.
 
 **Позволяют:**
@@ -828,33 +824,23 @@ In the Expert Panel, click the 📚 icon next to the model selector:
 }
 \`\`\`
 
-## Параметры инструментов
-
-Используйте двойные фигурные скобки для параметров:
-
-\`\`\`
-Поищи информацию о {{query}} и верни результаты в формате {{format}}
-\`\`\`
-
-При вызове модель заполнит параметры автоматически.
-
 ## Тестирование
 
 ### Панель тестирования
 
 | Элемент | Иконка | Описание |
 |---------|--------|----------|
-| **Параметры** | 📝 | Поля для ввода тестовых значений |
-| **Выполнить** | ▶️ Play | Запуск теста |
+| **Параметры** | \`FileText\` | Поля для ввода тестовых значений |
+| **Выполнить** | \`Play\` | Запуск теста |
 | **Результат** | — | Вывод ответа API |
-| **Статус** | ✅ / ❌ | Успех или ошибка |
-| **Время** | ⏱️ | Время выполнения |
+| **Статус** | \`CheckCircle\` / \`XCircle\` | Успех или ошибка |
+| **Время** | \`Clock\` | Время выполнения |
 
-> ⚠️ **Важно**: HTTP-инструменты требуют корректной настройки CORS на стороне API.`,
+> **Важно**: HTTP-инструменты требуют корректной настройки CORS.`,
 
       en: `# Tools
 
-Tools extend AI model capabilities, allowing them to perform actions: web search, API calls, calculations, and more.
+Tools extend AI model capabilities, allowing them to perform actions.
 
 ## Tools Library Interface
 
@@ -862,25 +848,28 @@ Tools extend AI model capabilities, allowing them to perform actions: web search
 
 | Element | Icon | Description |
 |---------|------|-------------|
-| **New Tool** | ➕ Plus | Create new tool |
-| **Search** | 🔍 Search | Search by name |
-| **Filter by Type** | 🔧 Wrench / 🌐 Globe | Prompt / HTTP |
+| **New Tool** | \`Plus\` | Create new tool |
+| **Search** | \`Search\` | Search by name |
+| **Filter by Type** | \`Filter\` | Prompt / HTTP |
 
 ### Tool Card
 
 | Element | Icon | Description |
 |---------|------|-------------|
 | **Name** | — | Tool name |
-| **Type** | 📝 / 🌐 | Prompt or HTTP API |
+| **Type** | \`FileText\` / \`Globe\` | Prompt or HTTP API |
 | **Description** | — | What the tool does |
-| **Counter** | 📊 | Call count |
-| **Test** | ▶️ Play | Run test |
-| **Edit** | ✏️ Pencil | Open editor |
-| **Delete** | 🗑️ Trash | Delete tool |
+| **Counter** | \`BarChart\` | Call count |
+| **Test** | \`Play\` | Run test |
+| **Edit** | \`Pencil\` | Open editor |
+| **Delete** | \`Trash\` | Delete tool |
 
 ## Tool Types
 
-### Prompt Tools (📝 FileText)
+### Prompt Tools
+
+**Icon**: \`FileText\`
+
 Text instructions that the model interprets and executes.
 
 **Suitable for:**
@@ -888,7 +877,10 @@ Text instructions that the model interprets and executes.
 - Step-by-step instructions
 - Specialized tasks
 
-### HTTP API Tools (🌐 Globe)
+### HTTP API Tools
+
+**Icon**: \`Globe\`
+
 Real calls to external APIs.
 
 **Allow you to:**
@@ -928,29 +920,19 @@ Real calls to external APIs.
 }
 \`\`\`
 
-## Tool Parameters
-
-Use double curly braces for parameters:
-
-\`\`\`
-Search for information about {{query}} and return results in {{format}} format
-\`\`\`
-
-When called, the model will fill in parameters automatically.
-
 ## Testing
 
 ### Testing Panel
 
 | Element | Icon | Description |
 |---------|------|-------------|
-| **Parameters** | 📝 | Fields for test values |
-| **Execute** | ▶️ Play | Run test |
+| **Parameters** | \`FileText\` | Fields for test values |
+| **Execute** | \`Play\` | Run test |
 | **Result** | — | API response output |
-| **Status** | ✅ / ❌ | Success or error |
-| **Time** | ⏱️ | Execution time |
+| **Status** | \`CheckCircle\` / \`XCircle\` | Success or error |
+| **Time** | \`Clock\` | Execution time |
 
-> ⚠️ **Important**: HTTP tools require proper CORS configuration on the API side.`
+> **Important**: HTTP tools require proper CORS configuration.`
     }
   },
   {
@@ -960,7 +942,7 @@ When called, the model will fill in parameters automatically.
     content: {
       ru: `# Редактор потоков мысли
 
-Визуальный инструмент для проектирования сложных цепочек обработки данных и AI-промптов.
+Визуальный инструмент для проектирования сложных цепочек обработки данных.
 
 ## Интерфейс редактора
 
@@ -968,20 +950,20 @@ When called, the model will fill in parameters automatically.
 
 | Элемент | Иконка | Описание |
 |---------|--------|----------|
-| **Название** | 📝 | Имя диаграммы (редактируемое) |
-| **Сохранить** | 💾 Save | Сохранение изменений |
-| **Экспорт** | 📤 Download | Экспорт в PNG/SVG/JSON/Mermaid |
-| **Назад** | ⬅️ ArrowLeft | Возврат к списку диаграмм |
+| **Название** | \`FileText\` | Имя диаграммы (редактируемое) |
+| **Сохранить** | \`Save\` | Сохранение изменений |
+| **Экспорт** | \`Download\` | Экспорт в PNG/SVG/JSON/Mermaid |
+| **Назад** | \`ArrowLeft\` | Возврат к списку диаграмм |
 
 ### Левая панель — Узлы
 
 | Категория | Иконка | Узлы |
 |-----------|--------|------|
-| **Базовые** | ⚡ | Input, Output, Prompt, Model |
-| **Логика** | 🔀 | Condition, Switch, Loop |
-| **Данные** | 🔄 | Transform, Filter, Merge, Split |
-| **Интеграции** | 🔌 | API, Database, Storage |
-| **AI** | 🧠 | Embedding, Classifier, Memory |
+| **Базовые** | \`Zap\` | Input, Output, Prompt, Model |
+| **Логика** | \`GitBranch\` | Condition, Switch, Loop |
+| **Данные** | \`RefreshCw\` | Transform, Filter, Merge, Split |
+| **Интеграции** | \`Plug\` | API, Database, Storage |
+| **AI** | \`Brain\` | Embedding, Classifier, Memory |
 
 ### Холст (Canvas)
 
@@ -1009,45 +991,45 @@ When called, the model will fill in parameters automatically.
 
 | Узел | Иконка | Назначение |
 |------|--------|------------|
-| **Input** | ➡️ ArrowRight | Точка входа данных |
-| **Output** | ⬅️ ArrowLeft | Точка вывода результата |
-| **Prompt** | 📝 FileText | Системный промпт |
-| **Model** | 🤖 Bot | Вызов языковой модели |
+| **Input** | \`ArrowRight\` | Точка входа данных |
+| **Output** | \`ArrowLeft\` | Точка вывода результата |
+| **Prompt** | \`FileText\` | Системный промпт |
+| **Model** | \`Bot\` | Вызов языковой модели |
 
 ### Логика
 
 | Узел | Иконка | Назначение |
 |------|--------|------------|
-| **Condition** | ❓ HelpCircle | Ветвление по условию (if/else) |
-| **Switch** | 🔀 GitBranch | Множественное ветвление |
-| **Loop** | 🔄 RefreshCw | Итерация по массиву |
-| **Delay** | ⏱️ Timer | Задержка выполнения |
+| **Condition** | \`HelpCircle\` | Ветвление (if/else) |
+| **Switch** | \`GitBranch\` | Множественное ветвление |
+| **Loop** | \`RefreshCw\` | Итерация по массиву |
+| **Delay** | \`Timer\` | Задержка выполнения |
 
 ### Данные
 
 | Узел | Иконка | Назначение |
 |------|--------|------------|
-| **Transform** | 🔧 Wrench | Преобразование данных |
-| **Filter** | 🔍 Filter | Фильтрация по условию |
-| **Merge** | ➕ Merge | Объединение потоков |
-| **Split** | ✂️ Scissors | Разделение на подпотоки |
+| **Transform** | \`Wrench\` | Преобразование данных |
+| **Filter** | \`Filter\` | Фильтрация по условию |
+| **Merge** | \`Merge\` | Объединение потоков |
+| **Split** | \`Scissors\` | Разделение на подпотоки |
 
 ### Интеграции
 
 | Узел | Иконка | Назначение |
 |------|--------|------------|
-| **API** | 🌐 Globe | HTTP-запросы |
-| **Database** | 🗄️ Database | CRUD-операции |
-| **Storage** | 📁 HardDrive | Файловые операции |
+| **API** | \`Globe\` | HTTP-запросы |
+| **Database** | \`Database\` | CRUD-операции |
+| **Storage** | \`HardDrive\` | Файловые операции |
 
 ### AI-специфичные
 
 | Узел | Иконка | Назначение |
 |------|--------|------------|
-| **Embedding** | 🧮 Hash | Векторные представления |
-| **Classifier** | 🏷️ Tag | Классификация текста |
-| **Memory** | 🧠 Brain | Долговременная память |
-| **Tool** | 🔧 Wrench | Вызов инструмента |
+| **Embedding** | \`Hash\` | Векторные представления |
+| **Classifier** | \`Tag\` | Классификация текста |
+| **Memory** | \`Brain\` | Долговременная память |
+| **Tool** | \`Wrench\` | Вызов инструмента |
 
 ## Пример: Цепочка с критиком
 
@@ -1066,14 +1048,14 @@ graph LR
 
 | Формат | Иконка | Назначение |
 |--------|--------|------------|
-| **PNG** | 🖼️ Image | Для документации |
-| **SVG** | 📐 FileCode | Для редактирования |
-| **JSON** | 📄 FileJson | Для программного использования |
-| **Mermaid** | 📊 GitBranch | Текстовый формат диаграмм |`,
+| **PNG** | \`Image\` | Для документации |
+| **SVG** | \`FileCode\` | Для редактирования |
+| **JSON** | \`FileJson\` | Для программного использования |
+| **Mermaid** | \`GitBranch\` | Текстовый формат диаграмм |`,
 
       en: `# Thought Flow Editor
 
-A visual tool for designing complex data processing chains and AI prompts.
+A visual tool for designing complex data processing chains.
 
 ## Editor Interface
 
@@ -1081,20 +1063,20 @@ A visual tool for designing complex data processing chains and AI prompts.
 
 | Element | Icon | Description |
 |---------|------|-------------|
-| **Name** | 📝 | Diagram name (editable) |
-| **Save** | 💾 Save | Save changes |
-| **Export** | 📤 Download | Export to PNG/SVG/JSON/Mermaid |
-| **Back** | ⬅️ ArrowLeft | Return to diagram list |
+| **Name** | \`FileText\` | Diagram name (editable) |
+| **Save** | \`Save\` | Save changes |
+| **Export** | \`Download\` | Export to PNG/SVG/JSON/Mermaid |
+| **Back** | \`ArrowLeft\` | Return to diagram list |
 
 ### Left Panel — Nodes
 
 | Category | Icon | Nodes |
 |----------|------|-------|
-| **Basic** | ⚡ | Input, Output, Prompt, Model |
-| **Logic** | 🔀 | Condition, Switch, Loop |
-| **Data** | 🔄 | Transform, Filter, Merge, Split |
-| **Integrations** | 🔌 | API, Database, Storage |
-| **AI** | 🧠 | Embedding, Classifier, Memory |
+| **Basic** | \`Zap\` | Input, Output, Prompt, Model |
+| **Logic** | \`GitBranch\` | Condition, Switch, Loop |
+| **Data** | \`RefreshCw\` | Transform, Filter, Merge, Split |
+| **Integrations** | \`Plug\` | API, Database, Storage |
+| **AI** | \`Brain\` | Embedding, Classifier, Memory |
 
 ### Canvas
 
@@ -1122,45 +1104,45 @@ A visual tool for designing complex data processing chains and AI prompts.
 
 | Node | Icon | Purpose |
 |------|------|---------|
-| **Input** | ➡️ ArrowRight | Data entry point |
-| **Output** | ⬅️ ArrowLeft | Result output point |
-| **Prompt** | 📝 FileText | System prompt |
-| **Model** | 🤖 Bot | Language model call |
+| **Input** | \`ArrowRight\` | Data entry point |
+| **Output** | \`ArrowLeft\` | Result output point |
+| **Prompt** | \`FileText\` | System prompt |
+| **Model** | \`Bot\` | Language model call |
 
 ### Logic
 
 | Node | Icon | Purpose |
 |------|------|---------|
-| **Condition** | ❓ HelpCircle | Conditional branching (if/else) |
-| **Switch** | 🔀 GitBranch | Multiple branching |
-| **Loop** | 🔄 RefreshCw | Array iteration |
-| **Delay** | ⏱️ Timer | Execution delay |
+| **Condition** | \`HelpCircle\` | Branching (if/else) |
+| **Switch** | \`GitBranch\` | Multiple branching |
+| **Loop** | \`RefreshCw\` | Array iteration |
+| **Delay** | \`Timer\` | Execution delay |
 
 ### Data
 
 | Node | Icon | Purpose |
 |------|------|---------|
-| **Transform** | 🔧 Wrench | Data transformation |
-| **Filter** | 🔍 Filter | Conditional filtering |
-| **Merge** | ➕ Merge | Stream merging |
-| **Split** | ✂️ Scissors | Splitting into substreams |
+| **Transform** | \`Wrench\` | Data transformation |
+| **Filter** | \`Filter\` | Conditional filtering |
+| **Merge** | \`Merge\` | Stream merging |
+| **Split** | \`Scissors\` | Splitting into substreams |
 
 ### Integrations
 
 | Node | Icon | Purpose |
 |------|------|---------|
-| **API** | 🌐 Globe | HTTP requests |
-| **Database** | 🗄️ Database | CRUD operations |
-| **Storage** | 📁 HardDrive | File operations |
+| **API** | \`Globe\` | HTTP requests |
+| **Database** | \`Database\` | CRUD operations |
+| **Storage** | \`HardDrive\` | File operations |
 
 ### AI-Specific
 
 | Node | Icon | Purpose |
 |------|------|---------|
-| **Embedding** | 🧮 Hash | Vector representations |
-| **Classifier** | 🏷️ Tag | Text classification |
-| **Memory** | 🧠 Brain | Long-term memory |
-| **Tool** | 🔧 Wrench | Tool invocation |
+| **Embedding** | \`Hash\` | Vector representations |
+| **Classifier** | \`Tag\` | Text classification |
+| **Memory** | \`Brain\` | Long-term memory |
+| **Tool** | \`Wrench\` | Tool invocation |
 
 ## Example: Chain with Critic
 
@@ -1179,10 +1161,10 @@ graph LR
 
 | Format | Icon | Purpose |
 |--------|------|---------|
-| **PNG** | 🖼️ Image | For documentation |
-| **SVG** | 📐 FileCode | For editing |
-| **JSON** | 📄 FileJson | For programmatic use |
-| **Mermaid** | 📊 GitBranch | Text diagram format |`
+| **PNG** | \`Image\` | For documentation |
+| **SVG** | \`FileCode\` | For editing |
+| **JSON** | \`FileJson\` | For programmatic use |
+| **Mermaid** | \`GitBranch\` | Text diagram format |`
     }
   },
   {
@@ -1192,7 +1174,7 @@ graph LR
     content: {
       ru: `# Рейтинг моделей
 
-Система отслеживания и оценки эффективности различных AI-моделей на основе вашего использования.
+Система отслеживания эффективности AI-моделей на основе вашего использования.
 
 ## Интерфейс страницы рейтинга
 
@@ -1200,9 +1182,9 @@ graph LR
 
 | Элемент | Иконка | Описание |
 |---------|--------|----------|
-| **Период** | 📅 Calendar | Выбор временного диапазона |
-| **Провайдер** | 🏢 Building | Фильтр по провайдеру |
-| **Сортировка** | ↕️ ArrowUpDown | По брейнам / использованию / эффективности |
+| **Период** | \`Calendar\` | Выбор временного диапазона |
+| **Провайдер** | \`Building\` | Фильтр по провайдеру |
+| **Сортировка** | \`ArrowUpDown\` | По брейнам / использованию |
 
 ### Таблица моделей
 
@@ -1210,16 +1192,16 @@ graph LR
 |---------|----------|
 | **Модель** | Название модели с иконкой провайдера |
 | **Запросов** | Общее количество вызовов |
-| **Брейны** 🧠 | Количество наград за полезные ответы |
-| **Отклонения** ❌ | Количество отклонённых ответов |
-| **Эффективность** | Процент брейнов от общего числа ответов |
-| **Тренд** | 📈 / 📉 Изменение за период |
+| **Брейны** | Количество наград за полезные ответы |
+| **Отклонения** | Количество отклонённых ответов |
+| **Эффективность** | Процент брейнов от общего числа |
+| **Тренд** | \`TrendingUp\` / \`TrendingDown\` |
 
 ### Детальная карточка модели
 
 | Элемент | Описание |
 |---------|----------|
-| **График использования** | 📊 Линейный график по дням |
+| **График использования** | Линейный график по дням |
 | **Средний размер ответа** | Количество токенов |
 | **Типичные задачи** | Категории запросов |
 | **Рекомендации** | Советы по использованию |
@@ -1228,22 +1210,22 @@ graph LR
 
 ### Использование
 - **Количество запросов** — сколько раз модель была вызвана
-- **Общие токены** — суммарное количество токенов (вход + выход)
-- **Средний размер ответа** — средняя длина ответов модели
+- **Общие токены** — суммарное количество токенов
+- **Средний размер ответа** — средняя длина ответов
 
 ### Оценки
 
 | Действие | Иконка | Эффект |
 |----------|--------|--------|
-| **Добавить брейн** | 🧠 Brain | +1 к рейтингу модели |
-| **Отклонить** | ❌ X | +1 к счётчику отклонений |
+| **Добавить брейн** | \`Brain\` | +1 к рейтингу модели |
+| **Отклонить** | \`X\` | +1 к счётчику отклонений |
 
 ## Как оценивать
 
 После получения ответа модели:
 
-1. Если ответ полезен — нажмите 🧠
-2. Если ответ не подошёл — нажмите ❌
+1. Если ответ полезен — нажмите \`Brain\`
+2. Если ответ не подошёл — нажмите \`X\`
 
 Эти оценки формируют персональный рейтинг моделей.
 
@@ -1256,18 +1238,11 @@ graph LR
 | Большие ответы | Модель детальна (или многословна) |
 | Стабильный тренд | Надёжная модель для данного типа задач |
 
-## Статистика по сессиям
-
-Каждая задача (сессия) сохраняет статистику:
-- Какие модели использовались
-- Сколько сообщений отправлено
-- Общая эффективность
-
-> 💡 **Совет**: Используйте рейтинг для выбора оптимальной модели под конкретную задачу.`,
+> **Совет**: Используйте рейтинг для выбора оптимальной модели.`,
 
       en: `# Model Ratings
 
-A system for tracking and evaluating the effectiveness of various AI models based on your usage.
+A system for tracking AI model effectiveness based on your usage.
 
 ## Ratings Page Interface
 
@@ -1275,9 +1250,9 @@ A system for tracking and evaluating the effectiveness of various AI models base
 
 | Element | Icon | Description |
 |---------|------|-------------|
-| **Period** | 📅 Calendar | Select time range |
-| **Provider** | 🏢 Building | Filter by provider |
-| **Sort** | ↕️ ArrowUpDown | By brains / usage / efficiency |
+| **Period** | \`Calendar\` | Select time range |
+| **Provider** | \`Building\` | Filter by provider |
+| **Sort** | \`ArrowUpDown\` | By brains / usage |
 
 ### Models Table
 
@@ -1285,16 +1260,16 @@ A system for tracking and evaluating the effectiveness of various AI models base
 |--------|-------------|
 | **Model** | Model name with provider icon |
 | **Requests** | Total call count |
-| **Brains** 🧠 | Reward count for useful responses |
-| **Dismissals** ❌ | Rejected response count |
-| **Efficiency** | Brain percentage of total responses |
-| **Trend** | 📈 / 📉 Change over period |
+| **Brains** | Reward count for useful responses |
+| **Dismissals** | Rejected response count |
+| **Efficiency** | Brain percentage of total |
+| **Trend** | \`TrendingUp\` / \`TrendingDown\` |
 
 ### Detailed Model Card
 
 | Element | Description |
 |---------|-------------|
-| **Usage Chart** | 📊 Line chart by day |
+| **Usage Chart** | Line chart by day |
 | **Average Response Size** | Token count |
 | **Typical Tasks** | Request categories |
 | **Recommendations** | Usage tips |
@@ -1303,22 +1278,22 @@ A system for tracking and evaluating the effectiveness of various AI models base
 
 ### Usage
 - **Request count** — how many times the model was called
-- **Total tokens** — total token count (input + output)
-- **Average response size** — average length of model responses
+- **Total tokens** — total token count
+- **Average response size** — average length of responses
 
 ### Ratings
 
 | Action | Icon | Effect |
 |--------|------|--------|
-| **Add brain** | 🧠 Brain | +1 to model rating |
-| **Dismiss** | ❌ X | +1 to dismissal counter |
+| **Add brain** | \`Brain\` | +1 to model rating |
+| **Dismiss** | \`X\` | +1 to dismissal counter |
 
 ## How to Rate
 
 After receiving a model response:
 
-1. If the response is useful — click 🧠
-2. If the response didn't fit — click ❌
+1. If the response is useful — click \`Brain\`
+2. If the response didn't fit — click \`X\`
 
 These ratings form a personal model ranking.
 
@@ -1331,14 +1306,7 @@ These ratings form a personal model ranking.
 | Large responses | Model is detailed (or verbose) |
 | Stable trend | Reliable model for this task type |
 
-## Session Statistics
-
-Each task (session) saves statistics:
-- Which models were used
-- How many messages were sent
-- Overall effectiveness
-
-> 💡 **Tip**: Use the rating to choose the optimal model for a specific task.`
+> **Tip**: Use the rating to choose the optimal model.`
     }
   },
   {
@@ -1362,23 +1330,23 @@ Each task (session) saves statistics:
 
 ### Примеры промптов
 
-**❌ Плохо:**
+**Плохо:**
 > Напиши код
 
-**✅ Хорошо:**
+**Хорошо:**
 > Ты — senior Python разработчик. Напиши функцию для парсинга JSON-файла с обработкой ошибок. Используй type hints. Добавь docstring.
 
 ## Работа с несколькими моделями
 
 ### Когда использовать ансамбль
 
-✅ **Используйте несколько моделей для:**
+**Используйте несколько моделей для:**
 - Сложных аналитических задач
 - Генерации креативного контента
 - Код-ревью и отладки
 - Принятия важных решений
 
-❌ **Одной модели достаточно для:**
+**Одной модели достаточно для:**
 - Простых вопросов
 - Форматирования текста
 - Быстрых переводов
@@ -1387,29 +1355,29 @@ Each task (session) saves statistics:
 
 | Задача | Рекомендуемый состав |
 |--------|---------------------|
-| 💻 Код | GPT-4 + Claude |
-| 📊 Анализ | Claude + Gemini |
-| 🎨 Креатив | GPT-4 + Claude + Gemini |
-| 🔍 Исследование | Любые с поиском |
+| Код | GPT-4 + Claude |
+| Анализ | Claude + Gemini |
+| Креатив | GPT-4 + Claude + Gemini |
+| Исследование | Любые с поиском |
 
 ## Когда использовать какую роль
 
-### 🟢 Эксперт (Assistant)
+### Эксперт (Assistant)
 - Основной ответ на запрос
 - Генерация контента
 - Первичный анализ
 
-### 🔴 Критик (Critic)
+### Критик (Critic)
 - Проверка кода на ошибки
 - Анализ аргументации
 - Поиск слабых мест
 
-### 🟡 Арбитр (Arbiter)
+### Арбитр (Arbiter)
 - Финальное решение
 - Синтез разных мнений
 - Разрешение противоречий
 
-### 🟠 Консультант (Consultant)
+### Консультант (Consultant)
 - Углублённые вопросы
 - Специализированная экспертиза
 - Пошаговое объяснение
@@ -1420,8 +1388,9 @@ Each task (session) saves statistics:
 |---------|----------|
 | **Enter** | Отправить сообщение |
 | **Shift + Enter** | Новая строка |
-| **Ctrl + V** | Вставить изображение из буфера |
+| **Ctrl/Cmd + V** | Вставить изображение из буфера |
 | **Escape** | Закрыть панель консультанта |
+| **Ctrl/Cmd + K** | Открыть поиск в Гидропедии |
 
 ## Экономия токенов
 
@@ -1434,12 +1403,12 @@ Each task (session) saves statistics:
 
 | Ошибка | Решение |
 |--------|---------|
-| Модель не отвечает | Увеличьте таймаут ⏱️ |
+| Модель не отвечает | Увеличьте таймаут \`Clock\` |
 | Ответ слишком короткий | Увеличьте max_tokens |
 | Ответ не по теме | Уточните системный промпт |
 | Нет доступа к модели | Проверьте API-ключ в профиле |
 
-> 💡 **Главный совет**: Экспериментируйте! Попробуйте разные модели и промпты, чтобы найти оптимальный подход для ваших задач.`,
+> **Главный совет**: Экспериментируйте! Попробуйте разные модели и промпты.`,
 
       en: `# Tips and Best Practices
 
@@ -1457,23 +1426,23 @@ Each task (session) saves statistics:
 
 ### Prompt Examples
 
-**❌ Bad:**
+**Bad:**
 > Write code
 
-**✅ Good:**
+**Good:**
 > You are a senior Python developer. Write a function for parsing a JSON file with error handling. Use type hints. Add docstring.
 
 ## Working with Multiple Models
 
 ### When to Use an Ensemble
 
-✅ **Use multiple models for:**
+**Use multiple models for:**
 - Complex analytical tasks
 - Creative content generation
 - Code review and debugging
 - Important decision making
 
-❌ **One model is enough for:**
+**One model is enough for:**
 - Simple questions
 - Text formatting
 - Quick translations
@@ -1482,29 +1451,29 @@ Each task (session) saves statistics:
 
 | Task | Recommended Setup |
 |------|------------------|
-| 💻 Code | GPT-4 + Claude |
-| 📊 Analysis | Claude + Gemini |
-| 🎨 Creative | GPT-4 + Claude + Gemini |
-| 🔍 Research | Any with search |
+| Code | GPT-4 + Claude |
+| Analysis | Claude + Gemini |
+| Creative | GPT-4 + Claude + Gemini |
+| Research | Any with search |
 
 ## When to Use Which Role
 
-### 🟢 Expert (Assistant)
+### Expert (Assistant)
 - Main response to request
 - Content generation
 - Initial analysis
 
-### 🔴 Critic
+### Critic
 - Code error checking
 - Argumentation analysis
 - Finding weaknesses
 
-### 🟡 Arbiter
+### Arbiter
 - Final decision
 - Synthesis of different opinions
 - Resolving contradictions
 
-### 🟠 Consultant
+### Consultant
 - In-depth questions
 - Specialized expertise
 - Step-by-step explanation
@@ -1515,8 +1484,9 @@ Each task (session) saves statistics:
 |-----|--------|
 | **Enter** | Send message |
 | **Shift + Enter** | New line |
-| **Ctrl + V** | Paste image from clipboard |
+| **Ctrl/Cmd + V** | Paste image from clipboard |
 | **Escape** | Close consultant panel |
+| **Ctrl/Cmd + K** | Open search in Hydrapedia |
 
 ## Token Economy
 
@@ -1529,12 +1499,12 @@ Each task (session) saves statistics:
 
 | Mistake | Solution |
 |---------|----------|
-| Model not responding | Increase timeout ⏱️ |
+| Model not responding | Increase timeout \`Clock\` |
 | Response too short | Increase max_tokens |
 | Response off-topic | Refine system prompt |
 | No model access | Check API key in profile |
 
-> 💡 **Main tip**: Experiment! Try different models and prompts to find the optimal approach for your tasks.`
+> **Main tip**: Experiment! Try different models and prompts.`
     }
   }
 ];
