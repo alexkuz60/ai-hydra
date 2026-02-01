@@ -1,9 +1,10 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { PerModelSettingsData } from '@/components/warroom/PerModelSettings';
 import { useAvailableModels } from '@/hooks/useAvailableModels';
+import type { Json } from '@/integrations/supabase/types';
 
 export interface Task {
   id: string;
@@ -46,6 +47,47 @@ export function useSession({ userId, authLoading }: UseSessionProps): UseSession
   const [selectedModels, setSelectedModels] = useState<string[]>(initialState?.selectedModels || []);
   const [perModelSettings, setPerModelSettings] = useState<PerModelSettingsData>(initialState?.perModelSettings || {});
   const [initialStateApplied, setInitialStateApplied] = useState(false);
+  
+  // Track if initial load is complete to prevent saving during load
+  const isInitialLoadComplete = useRef(false);
+  // Track last saved config to prevent unnecessary saves
+  const lastSavedConfig = useRef<string>('');
+
+  // Save session config to database
+  const saveSessionConfig = useCallback(async (
+    taskId: string,
+    models: string[],
+    settings: PerModelSettingsData
+  ) => {
+    const configJson = JSON.stringify({ selectedModels: models, perModelSettings: settings });
+    
+    // Skip if nothing changed
+    if (configJson === lastSavedConfig.current) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('sessions')
+        .update({
+          session_config: { 
+            selectedModels: models, 
+            perModelSettings: settings 
+          } as unknown as Json,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', taskId);
+
+      if (error) {
+        console.error('Failed to save session config:', error);
+      } else {
+        lastSavedConfig.current = configJson;
+        console.log('Session config saved successfully');
+      }
+    } catch (error) {
+      console.error('Failed to save session config:', error);
+    }
+  }, []);
 
   // Apply config from session data
   const applySessionConfig = useCallback((config: SessionConfig | null) => {
@@ -56,6 +98,8 @@ export function useSession({ userId, authLoading }: UseSessionProps): UseSession
     if (config.perModelSettings) {
       setPerModelSettings(config.perModelSettings);
     }
+    // Update lastSavedConfig to prevent immediate re-save
+    lastSavedConfig.current = JSON.stringify(config);
   }, []);
 
   // Fetch specific task by ID
@@ -83,6 +127,7 @@ export function useSession({ userId, authLoading }: UseSessionProps): UseSession
       navigate('/tasks');
     } finally {
       setLoading(false);
+      isInitialLoadComplete.current = true;
     }
   }, [userId, initialState, applySessionConfig, navigate]);
 
@@ -116,6 +161,7 @@ export function useSession({ userId, authLoading }: UseSessionProps): UseSession
         setCurrentTask(session);
         applySessionConfig(session.session_config as SessionConfig);
         setLoading(false);
+        isInitialLoadComplete.current = true;
         return;
       }
 
@@ -139,6 +185,7 @@ export function useSession({ userId, authLoading }: UseSessionProps): UseSession
       navigate('/tasks');
     } finally {
       setLoading(false);
+      isInitialLoadComplete.current = true;
     }
   }, [userId, applySessionConfig, navigate]);
 
@@ -174,6 +221,21 @@ export function useSession({ userId, authLoading }: UseSessionProps): UseSession
       }
     }
   }, [lovableModels, personalModels, selectedModels, initialState, initialStateApplied]);
+
+  // Auto-save session config when selectedModels or perModelSettings change
+  useEffect(() => {
+    // Skip during initial load
+    if (!isInitialLoadComplete.current || !currentTask?.id || loading) {
+      return;
+    }
+
+    // Debounce save
+    const timeout = setTimeout(() => {
+      saveSessionConfig(currentTask.id, selectedModels, perModelSettings);
+    }, 500);
+
+    return () => clearTimeout(timeout);
+  }, [selectedModels, perModelSettings, currentTask?.id, loading, saveSessionConfig]);
 
   return {
     currentTask,

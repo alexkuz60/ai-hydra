@@ -18,6 +18,7 @@ import { useSession } from '@/hooks/useSession';
 import { useMessages } from '@/hooks/useMessages';
 import { useSendMessage } from '@/hooks/useSendMessage';
 import { useConsultantPanelWidth } from '@/hooks/useConsultantPanelWidth';
+import { useModelStatistics } from '@/hooks/useModelStatistics';
 import { PendingResponseState, RequestStartInfo } from '@/types/pending';
 import { Loader2, Target } from 'lucide-react';
 import { toast } from 'sonner';
@@ -79,6 +80,9 @@ export default function ExpertPanel() {
     perModelSettings,
     setPerModelSettings,
   } = useSession({ userId: user?.id, authLoading });
+
+  // Model statistics hook for tracking dismissals
+  const { incrementDismissal } = useModelStatistics(user?.id);
 
   // Keep selectedModelsRef in sync for error filtering in useSendMessage
   useEffect(() => {
@@ -183,10 +187,16 @@ export default function ExpertPanel() {
       updated.delete(modelId);
       return updated;
     });
-    // Remove from selected models
+    // Remove from selected models (this will auto-save to DB via useSession)
     setSelectedModels(prev => prev.filter(id => id !== modelId));
+    
+    // Record dismissal in statistics
+    if (currentTask?.id) {
+      incrementDismissal(modelId, currentTask.id);
+    }
+    
     toast.warning(`Модель ${modelId.split('/').pop()} удалена из сессии`);
-  }, [setSelectedModels]);
+  }, [setSelectedModels, currentTask?.id, incrementDismissal]);
 
   // Persistent collapse state per message
   const { isCollapsed, toggleCollapsed, collapseAll, expandAll, collapsedCount } = useMessageCollapseState(currentTask?.id || null);
