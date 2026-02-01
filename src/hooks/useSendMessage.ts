@@ -284,6 +284,16 @@ export function useSendMessage({
         enabled_custom_tools: settings.enabledCustomTools ?? [],
       };
 
+      // Notify about request start for skeleton indicator
+      if (onRequestStart) {
+        const modelName = consultantId.split('/').pop() || consultantId;
+        onRequestStart([{
+          modelId: consultantId,
+          modelName,
+          role: 'consultant',
+        }]);
+      }
+
       await callOrchestrator(messageContent, attachmentUrls, [consultantModel]);
     } catch (error: any) {
       toast.error(error.message);

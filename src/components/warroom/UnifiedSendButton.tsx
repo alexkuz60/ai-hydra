@@ -50,6 +50,8 @@ export function UnifiedSendButton({
     if (selectedConsultant && hasMessage) {
       onSendToConsultant();
       setOpen(false);
+      // Reset consultant selection after sending
+      onSelectConsultant(null);
     }
   };
 
