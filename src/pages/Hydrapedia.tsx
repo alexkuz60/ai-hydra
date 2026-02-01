@@ -27,8 +27,17 @@ import {
   ChevronRight,
   Search,
   FileText,
-  Link2
+  Link2,
+  Home
 } from 'lucide-react';
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from '@/components/ui/breadcrumb';
 
 const iconMap: Record<string, React.ElementType> = {
   Lightbulb,
@@ -480,6 +489,63 @@ export default function Hydrapedia() {
           <main className="flex-1 overflow-hidden" ref={contentRef}>
             <ScrollArea className="h-full">
               <div className="max-w-4xl mx-auto p-6">
+                {/* Breadcrumbs */}
+                <Breadcrumb className="mb-4">
+                  <BreadcrumbList>
+                    <BreadcrumbItem>
+                      <BreadcrumbLink href="/" className="flex items-center gap-1 text-muted-foreground hover:text-foreground">
+                        <Home className="h-3.5 w-3.5" />
+                      </BreadcrumbLink>
+                    </BreadcrumbItem>
+                    <BreadcrumbSeparator />
+                    <BreadcrumbItem>
+                      <BreadcrumbLink 
+                        href="/hydrapedia" 
+                        className="text-muted-foreground hover:text-foreground"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          handleSectionClick(hydrapediaSections[0].id);
+                        }}
+                      >
+                        {t('hydrapedia.title')}
+                      </BreadcrumbLink>
+                    </BreadcrumbItem>
+                    <BreadcrumbSeparator />
+                    <BreadcrumbItem>
+                      {activeHeading ? (
+                        <BreadcrumbLink
+                          href="#"
+                          className="text-muted-foreground hover:text-foreground"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            setActiveHeading(null);
+                            if (contentRef.current) {
+                              const viewport = contentRef.current.querySelector('[data-radix-scroll-area-viewport]');
+                              if (viewport) viewport.scrollTop = 0;
+                            }
+                          }}
+                        >
+                          {currentSection ? t(currentSection.titleKey) : ''}
+                        </BreadcrumbLink>
+                      ) : (
+                        <BreadcrumbPage>
+                          {currentSection ? t(currentSection.titleKey) : ''}
+                        </BreadcrumbPage>
+                      )}
+                    </BreadcrumbItem>
+                    {activeHeading && (
+                      <>
+                        <BreadcrumbSeparator />
+                        <BreadcrumbItem>
+                          <BreadcrumbPage className="max-w-[200px] truncate">
+                            {headings.find(h => h.id === activeHeading)?.text || activeHeading}
+                          </BreadcrumbPage>
+                        </BreadcrumbItem>
+                      </>
+                    )}
+                  </BreadcrumbList>
+                </Breadcrumb>
+
                 <HydraCard variant="glass" className="p-6">
                   <HydrapediaMarkdown content={content} />
                 </HydraCard>
