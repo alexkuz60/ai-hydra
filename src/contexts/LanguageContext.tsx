@@ -18,7 +18,7 @@ const translations: Translations = {
   'nav.tasks': { ru: 'Задачи', en: 'Tasks' },
   'nav.roleLibrary': { ru: 'Библиотека промптов', en: 'Prompt Library' },
   'nav.toolsLibrary': { ru: 'Инструменты', en: 'Tools' },
-  'nav.flowEditor': { ru: 'Редактор Flow', en: 'Flow Editor' },
+  'nav.flowEditor': { ru: 'Редактор потоков мысли', en: 'Thought Flow Editor' },
   'nav.profile': { ru: 'Профиль', en: 'Profile' },
   'nav.settings': { ru: 'Настройки', en: 'Settings' },
   'nav.logout': { ru: 'Выйти', en: 'Logout' },
