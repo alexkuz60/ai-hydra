@@ -140,7 +140,7 @@ export function MessageSkeleton({ pending, timeoutSeconds = 120, onRetry, onDism
   return (
     <HydraCard 
       variant={cardVariant} 
-      className="animate-fade-in opacity-80"
+      className="opacity-90"
     >
       <HydraCardHeader className="flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -184,11 +184,11 @@ export function MessageSkeleton({ pending, timeoutSeconds = 120, onRetry, onDism
           </div>
         </div>
         
-        {/* Skeleton lines */}
+        {/* Skeleton lines - 20% brighter with enhanced visibility */}
         <div className="space-y-2">
-          <Skeleton className="h-4 w-[90%]" />
-          <Skeleton className="h-4 w-[75%]" />
-          <Skeleton className="h-4 w-[60%]" />
+          <Skeleton className="h-4 w-[90%] bg-muted-foreground/25" />
+          <Skeleton className="h-4 w-[75%] bg-muted-foreground/25" />
+          <Skeleton className="h-4 w-[60%] bg-muted-foreground/25" />
         </div>
       </HydraCardContent>
     </HydraCard>
