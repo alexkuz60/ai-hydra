@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Layout } from '@/components/layout/Layout';
-import { MarkdownRenderer } from '@/components/warroom/MarkdownRenderer';
+import { HydrapediaMarkdown } from '@/components/hydrapedia/HydrapediaMarkdown';
 import { HydraCard } from '@/components/ui/hydra-card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
@@ -390,10 +390,7 @@ export default function Hydrapedia() {
             <ScrollArea className="h-full">
               <div className="max-w-4xl mx-auto p-6">
                 <HydraCard variant="glass" className="p-6">
-                  <MarkdownRenderer 
-                    content={content} 
-                    className="hydrapedia-content"
-                  />
+                  <HydrapediaMarkdown content={content} />
                 </HydraCard>
               </div>
             </ScrollArea>
@@ -415,7 +412,7 @@ export default function Hydrapedia() {
                   <span>{language === 'ru' ? 'Содержание' : 'Contents'}</span>
                 </div>
                 
-                <nav className="space-y-0.5">
+                <nav className="space-y-1">
                   {headings.map((heading, index) => (
                     <button
                       key={`${heading.id}-${index}`}
@@ -423,18 +420,18 @@ export default function Hydrapedia() {
                       className={cn(
                         "w-full flex items-center gap-1.5 rounded text-left transition-all duration-200",
                         "hover:bg-muted/50 hover:text-foreground",
-                        // Depth-based sizing
-                        heading.level === 1 && "px-2 py-1.5 text-sm font-medium text-foreground",
-                        heading.level === 2 && "pl-4 pr-2 py-1 text-xs text-muted-foreground",
-                        heading.level === 3 && "pl-6 pr-2 py-0.5 text-[11px] text-muted-foreground/80",
+                        // Depth-based sizing - INCREASED FONT SIZES
+                        heading.level === 1 && "px-2 py-2 text-sm font-semibold text-foreground",
+                        heading.level === 2 && "pl-4 pr-2 py-1.5 text-sm text-muted-foreground font-medium",
+                        heading.level === 3 && "pl-6 pr-2 py-1 text-xs text-muted-foreground",
                         activeHeading === heading.id && "bg-primary/10 text-primary"
                       )}
                     >
                       {heading.level > 1 && (
                         <ChevronRight className={cn(
-                          "flex-shrink-0 opacity-50",
-                          heading.level === 2 && "h-3 w-3",
-                          heading.level === 3 && "h-2.5 w-2.5"
+                          "flex-shrink-0 opacity-60",
+                          heading.level === 2 && "h-3.5 w-3.5",
+                          heading.level === 3 && "h-3 w-3"
                         )} />
                       )}
                       <span className="truncate">{heading.text}</span>
