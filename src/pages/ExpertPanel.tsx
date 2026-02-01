@@ -269,18 +269,27 @@ export default function ExpertPanel() {
     });
   }, [messages, pendingResponses.size]);
 
-  // Auto-cleanup pending responses when models are removed from selectedModels
+  // Track previous selectedModels to detect which specific model was removed
+  const prevSelectedModelsRef = useRef<string[]>(selectedModels);
+  
+  // Auto-cleanup pending response ONLY for the specific model that was removed
   useEffect(() => {
+    const prevModels = prevSelectedModelsRef.current;
+    const removedModels = prevModels.filter(id => !selectedModels.includes(id));
+    
+    // Update ref for next comparison
+    prevSelectedModelsRef.current = selectedModels;
+    
+    // Only cleanup if a model was actually removed
+    if (removedModels.length === 0) return;
+    
     setPendingResponses(prev => {
       const updated = new Map(prev);
       let changed = false;
       
-      for (const modelId of updated.keys()) {
-        // Keep consultant models (D-Chat)
-        if (modelId.includes('consultant')) continue;
-        
-        if (!selectedModels.includes(modelId)) {
-          updated.delete(modelId);
+      for (const removedId of removedModels) {
+        if (updated.has(removedId)) {
+          updated.delete(removedId);
           changed = true;
         }
       }
