@@ -106,6 +106,17 @@ export default function ExpertPanel() {
     setPendingResponses(newPending);
   }, []);
 
+  // Callback for when request errors - clear failed model skeletons
+  const handleRequestError = useCallback((failedModelIds: string[]) => {
+    setPendingResponses(prev => {
+      const updated = new Map(prev);
+      failedModelIds.forEach(modelId => {
+        updated.delete(modelId);
+      });
+      return updated;
+    });
+  }, []);
+
   // Send message hook
   const {
     sending,
@@ -121,6 +132,7 @@ export default function ExpertPanel() {
     selectedModels,
     perModelSettings,
     onRequestStart: handleRequestStart,
+    onRequestError: handleRequestError,
   });
 
   // Persistent collapse state per message

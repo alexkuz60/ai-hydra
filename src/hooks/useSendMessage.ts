@@ -23,6 +23,7 @@ interface UseSendMessageProps {
   selectedModels: string[];
   perModelSettings: PerModelSettingsData;
   onRequestStart?: (models: RequestStartInfo[]) => void;
+  onRequestError?: (modelIds: string[]) => void;
 }
 
 interface UseSendMessageReturn {
@@ -41,6 +42,7 @@ export function useSendMessage({
   selectedModels,
   perModelSettings,
   onRequestStart,
+  onRequestError,
 }: UseSendMessageProps): UseSendMessageReturn {
   const { t } = useLanguage();
   const [sending, setSending] = useState(false);
@@ -135,7 +137,9 @@ export function useSendMessage({
     }
 
     if (data.errors && data.errors.length > 0) {
+      const failedModelIds: string[] = [];
       data.errors.forEach((err: { model: string; error: string }) => {
+        failedModelIds.push(err.model);
         // Check if this error indicates the model is unavailable
         const { isUnavailable, errorCode } = parseModelError(err.model, err.error);
         if (isUnavailable) {
@@ -145,8 +149,12 @@ export function useSendMessage({
           toast.error(`${err.model}: ${err.error}`);
         }
       });
+      // Notify about failed models to clear their skeletons
+      if (onRequestError && failedModelIds.length > 0) {
+        onRequestError(failedModelIds);
+      }
     }
-  }, [sessionId]);
+  }, [sessionId, onRequestError]);
 
   // Send message to selected models
   const sendMessage = useCallback(async (messageContent: string) => {
