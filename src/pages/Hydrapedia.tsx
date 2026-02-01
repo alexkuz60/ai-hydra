@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useSearchParams } from 'react-router-dom';
 import { Layout } from '@/components/layout/Layout';
 import { HydrapediaMarkdown } from '@/components/hydrapedia/HydrapediaMarkdown';
 import { HydraCard } from '@/components/ui/hydra-card';
@@ -8,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { hydrapediaSections } from '@/content/hydrapedia';
+import { toast } from 'sonner';
 import {
   Lightbulb,
   Rocket,
@@ -24,7 +26,8 @@ import {
   List,
   ChevronRight,
   Search,
-  FileText
+  FileText,
+  Link2
 } from 'lucide-react';
 
 const iconMap: Record<string, React.ElementType> = {
@@ -117,7 +120,11 @@ function searchContent(query: string, language: 'ru' | 'en'): SearchResult[] {
 
 export default function Hydrapedia() {
   const { t, language } = useLanguage();
-  const [activeSection, setActiveSection] = useState(hydrapediaSections[0].id);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [activeSection, setActiveSection] = useState(() => {
+    const sectionFromUrl = searchParams.get('section');
+    return hydrapediaSections.find(s => s.id === sectionFromUrl)?.id || hydrapediaSections[0].id;
+  });
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [tocOpen, setTocOpen] = useState(false);
   const [activeHeading, setActiveHeading] = useState<string | null>(null);
@@ -125,6 +132,7 @@ export default function Hydrapedia() {
   const [searchOpen, setSearchOpen] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const initialScrollDone = useRef(false);
 
   const currentSection = hydrapediaSections.find(s => s.id === activeSection);
   const content = currentSection?.content[language] || '';
@@ -136,8 +144,9 @@ export default function Hydrapedia() {
     [searchQuery, language]
   );
 
-  const handleSectionClick = (sectionId: string) => {
+  const handleSectionClick = useCallback((sectionId: string) => {
     setActiveSection(sectionId);
+    setSearchParams({ section: sectionId });
     setMobileNavOpen(false);
     setActiveHeading(null);
     setSearchQuery('');
@@ -149,12 +158,9 @@ export default function Hydrapedia() {
         viewport.scrollTop = 0;
       }
     }
-  };
+  }, [setSearchParams]);
 
-  const handleHeadingClick = (headingId: string) => {
-    setActiveHeading(headingId);
-    setTocOpen(false);
-    
+  const scrollToHeading = useCallback((headingId: string) => {
     const contentArea = contentRef.current;
     if (!contentArea) return;
     
@@ -171,10 +177,28 @@ export default function Hydrapedia() {
         break;
       }
     }
-  };
+  }, []);
 
-  const handleSearchResultClick = (result: SearchResult) => {
+  const handleHeadingClick = useCallback((headingId: string) => {
+    setActiveHeading(headingId);
+    setTocOpen(false);
+    setSearchParams({ section: activeSection, heading: headingId });
+    scrollToHeading(headingId);
+  }, [activeSection, setSearchParams, scrollToHeading]);
+
+  const copyLinkToHeading = useCallback((headingId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const url = new URL(window.location.href);
+    url.searchParams.set('section', activeSection);
+    url.searchParams.set('heading', headingId);
+    
+    navigator.clipboard.writeText(url.toString());
+    toast.success(language === 'ru' ? 'Ссылка скопирована!' : 'Link copied!');
+  }, [activeSection, language]);
+
+  const handleSearchResultClick = useCallback((result: SearchResult) => {
     setActiveSection(result.sectionId);
+    setSearchParams({ section: result.sectionId });
     setSearchQuery('');
     setSearchOpen(false);
     
@@ -184,10 +208,28 @@ export default function Hydrapedia() {
         viewport.scrollTop = 0;
       }
     }
-  };
+  }, [setSearchParams]);
+
+  // Handle initial scroll from URL
+  useEffect(() => {
+    if (initialScrollDone.current) return;
+    
+    const headingFromUrl = searchParams.get('heading');
+    if (headingFromUrl && headings.length > 0) {
+      // Small delay to ensure content is rendered
+      const timeoutId = setTimeout(() => {
+        scrollToHeading(headingFromUrl);
+        setActiveHeading(headingFromUrl);
+        initialScrollDone.current = true;
+      }, 200);
+      return () => clearTimeout(timeoutId);
+    }
+    initialScrollDone.current = true;
+  }, [searchParams, headings, scrollToHeading]);
 
   useEffect(() => {
     setActiveHeading(null);
+    initialScrollDone.current = false;
   }, [activeSection]);
 
   useEffect(() => {
@@ -463,28 +505,44 @@ export default function Hydrapedia() {
                 
                 <nav className="space-y-1">
                   {headings.map((heading, index) => (
-                    <button
+                    <div
                       key={`${heading.id}-${index}`}
-                      onClick={() => handleHeadingClick(heading.id)}
                       className={cn(
-                        "w-full flex items-center gap-1.5 rounded text-left transition-all duration-200",
-                        "hover:bg-muted/50 hover:text-foreground",
-                        // Depth-based sizing - INCREASED FONT SIZES
-                        heading.level === 1 && "px-2 py-2 text-sm font-semibold text-foreground",
-                        heading.level === 2 && "pl-4 pr-2 py-1.5 text-sm text-muted-foreground font-medium",
-                        heading.level === 3 && "pl-6 pr-2 py-1 text-xs text-muted-foreground",
-                        activeHeading === heading.id && "bg-primary/10 text-primary"
+                        "group flex items-center gap-1 rounded transition-all duration-200",
+                        "hover:bg-muted/50",
+                        activeHeading === heading.id && "bg-primary/10"
                       )}
                     >
-                      {heading.level > 1 && (
-                        <ChevronRight className={cn(
-                          "flex-shrink-0 opacity-60",
-                          heading.level === 2 && "h-3.5 w-3.5",
-                          heading.level === 3 && "h-3 w-3"
-                        )} />
-                      )}
-                      <span className="truncate">{heading.text}</span>
-                    </button>
+                      <button
+                        onClick={() => handleHeadingClick(heading.id)}
+                        className={cn(
+                          "flex-1 flex items-center gap-1.5 text-left",
+                          "hover:text-foreground",
+                          heading.level === 1 && "px-2 py-2 text-sm font-semibold text-foreground",
+                          heading.level === 2 && "pl-4 pr-1 py-1.5 text-sm text-muted-foreground font-medium",
+                          heading.level === 3 && "pl-6 pr-1 py-1 text-xs text-muted-foreground",
+                          activeHeading === heading.id && "text-primary"
+                        )}
+                      >
+                        {heading.level > 1 && (
+                          <ChevronRight className={cn(
+                            "flex-shrink-0 opacity-60",
+                            heading.level === 2 && "h-3.5 w-3.5",
+                            heading.level === 3 && "h-3 w-3"
+                          )} />
+                        )}
+                        <span className="truncate">{heading.text}</span>
+                      </button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 mr-1"
+                        onClick={(e) => copyLinkToHeading(heading.id, e)}
+                        title={language === 'ru' ? 'Скопировать ссылку' : 'Copy link'}
+                      >
+                        <Link2 className="h-3 w-3" />
+                      </Button>
+                    </div>
                   ))}
                 </nav>
               </div>
