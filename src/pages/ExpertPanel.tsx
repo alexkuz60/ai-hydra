@@ -126,6 +126,7 @@ export default function ExpertPanel() {
     sendMessage,
     sendToConsultant,
     copyConsultantResponse,
+    retrySingleModel,
   } = useSendMessage({
     userId: user?.id || null,
     sessionId: currentTask?.id || null,
@@ -134,6 +135,56 @@ export default function ExpertPanel() {
     onRequestStart: handleRequestStart,
     onRequestError: handleRequestError,
   });
+
+  // Timeout action handlers (after useSendMessage to access retrySingleModel)
+  const handleRetryRequest = useCallback((modelId: string) => {
+    // Find the last user message
+    const lastUserMessage = [...messages].reverse().find(m => m.role === 'user');
+    if (!lastUserMessage) {
+      toast.error('Не найдено последнее сообщение пользователя');
+      return;
+    }
+    
+    // Reset the pending state for this model
+    setPendingResponses(prev => {
+      const updated = new Map(prev);
+      const existing = updated.get(modelId);
+      if (existing) {
+        updated.set(modelId, {
+          ...existing,
+          status: 'sent',
+          startTime: Date.now(),
+          elapsedSeconds: 0,
+        });
+      }
+      return updated;
+    });
+    
+    // Trigger retry through the hook
+    retrySingleModel(modelId, lastUserMessage.content);
+    toast.success(`Повторный запрос отправлен: ${modelId.split('/').pop()}`);
+  }, [messages, retrySingleModel]);
+
+  const handleDismissTimeout = useCallback((modelId: string) => {
+    setPendingResponses(prev => {
+      const updated = new Map(prev);
+      updated.delete(modelId);
+      return updated;
+    });
+    toast.info('Ожидание отменено');
+  }, []);
+
+  const handleRemoveModel = useCallback((modelId: string) => {
+    // Remove from pending responses
+    setPendingResponses(prev => {
+      const updated = new Map(prev);
+      updated.delete(modelId);
+      return updated;
+    });
+    // Remove from selected models
+    setSelectedModels(prev => prev.filter(id => id !== modelId));
+    toast.warning(`Модель ${modelId.split('/').pop()} удалена из сессии`);
+  }, [setSelectedModels]);
 
   // Persistent collapse state per message
   const { isCollapsed, toggleCollapsed, collapseAll, expandAll, collapsedCount } = useMessageCollapseState(currentTask?.id || null);
@@ -166,8 +217,10 @@ export default function ExpertPanel() {
         
         for (const [key, value] of updated) {
           const elapsed = Math.floor((now - value.startTime) / 1000);
-          let status: 'sent' | 'confirmed' | 'waiting' = 'sent';
-          if (elapsed >= 5) status = 'waiting';
+          let status: PendingResponseState['status'] = 'sent';
+          
+          if (elapsed >= 120) status = 'timedout';
+          else if (elapsed >= 5) status = 'waiting';
           else if (elapsed >= 2) status = 'confirmed';
           
           updated.set(key, { ...value, elapsedSeconds: elapsed, status });
@@ -361,6 +414,9 @@ export default function ExpertPanel() {
                 onRatingChange={handleRatingChange}
                 onClarifyWithSpecialist={handleClarifyWithSpecialist}
                 pendingResponses={pendingResponses}
+                onRetryRequest={handleRetryRequest}
+                onDismissTimeout={handleDismissTimeout}
+                onRemoveModel={handleRemoveModel}
               />
 
               {/* Input Area */}

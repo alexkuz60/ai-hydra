@@ -473,6 +473,10 @@ const translations: Translations = {
   'skeleton.requestSent': { ru: 'Запрос отправлен...', en: 'Request sent...' },
   'skeleton.requestConfirmed': { ru: 'Получение подтверждено...', en: 'Request confirmed...' },
   'skeleton.waitingSeconds': { ru: 'Ждём {seconds} сек.', en: 'Waiting {seconds} sec.' },
+  'skeleton.timedout': { ru: 'Эксперт {model} убежал на перекур..', en: 'Expert {model} went for a break..' },
+  'skeleton.retryRequest': { ru: 'Персональный запрос', en: 'Personal request' },
+  'skeleton.dismiss': { ru: 'Забыть', en: 'Dismiss' },
+  'skeleton.removeModel': { ru: 'Уволить', en: 'Remove' },
 };
 
 interface LanguageContextType {

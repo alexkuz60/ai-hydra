@@ -4,7 +4,7 @@ export interface PendingResponseState {
   modelId: string;
   modelName: string;
   role: AgentRole;
-  status: 'sent' | 'confirmed' | 'waiting';
+  status: 'sent' | 'confirmed' | 'waiting' | 'timedout';
   startTime: number;
   elapsedSeconds: number;
 }
