@@ -213,6 +213,55 @@ export default function Hydrapedia() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
+  // IntersectionObserver for active heading on scroll
+  useEffect(() => {
+    const contentArea = contentRef.current;
+    if (!contentArea || headings.length === 0) return;
+
+    const viewport = contentArea.querySelector('[data-radix-scroll-area-viewport]');
+    if (!viewport) return;
+
+    // Small delay to ensure content is rendered
+    const timeoutId = setTimeout(() => {
+      const headingElements = contentArea.querySelectorAll('h1, h2, h3');
+      if (headingElements.length === 0) return;
+
+      const observer = new IntersectionObserver(
+        (entries) => {
+          // Find the first visible heading
+          const visibleEntries = entries.filter(entry => entry.isIntersecting);
+          
+          if (visibleEntries.length > 0) {
+            // Get the topmost visible heading
+            const topEntry = visibleEntries.reduce((prev, curr) => {
+              return prev.boundingClientRect.top < curr.boundingClientRect.top ? prev : curr;
+            });
+            
+            const headingText = topEntry.target.textContent || '';
+            const headingId = headingText
+              .toLowerCase()
+              .replace(/[^\wа-яё\s-]/gi, '')
+              .replace(/\s+/g, '-')
+              .replace(/-+/g, '-');
+            
+            setActiveHeading(headingId);
+          }
+        },
+        {
+          root: viewport,
+          rootMargin: '-10% 0px -70% 0px',
+          threshold: 0
+        }
+      );
+
+      headingElements.forEach(el => observer.observe(el));
+
+      return () => observer.disconnect();
+    }, 100);
+
+    return () => clearTimeout(timeoutId);
+  }, [headings, activeSection]);
+
   return (
     <Layout>
       <div className="flex flex-col h-[calc(100vh-4rem)]">
