@@ -382,12 +382,12 @@ export default function Hydrapedia() {
           <Button
             variant="outline"
             size="sm"
-            className="hidden sm:flex items-center gap-2 text-muted-foreground"
+            className="hidden sm:flex items-center gap-2 text-primary border-primary/50 hover:bg-primary/10 hover:border-primary"
             onClick={() => setSearchOpen(true)}
           >
             <Search className="h-4 w-4" />
             <span className="text-xs">{language === 'ru' ? 'Поиск' : 'Search'}</span>
-            <kbd className="hidden md:inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
+            <kbd className="hidden md:inline-flex h-5 select-none items-center gap-1 rounded border border-primary/30 bg-primary/10 px-1.5 font-mono text-[10px] font-medium text-primary">
               ⌘K
             </kbd>
           </Button>
@@ -396,7 +396,7 @@ export default function Hydrapedia() {
           <Button
             variant="ghost"
             size="icon"
-            className="sm:hidden"
+            className="sm:hidden text-primary"
             onClick={() => setSearchOpen(true)}
           >
             <Search className="h-5 w-5" />
