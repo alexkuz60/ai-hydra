@@ -439,6 +439,7 @@ const translations: Translations = {
   'dchat.moderator': { ru: 'Модератор', en: 'Moderator' },
   'dchat.moderating': { ru: 'Модератор анализирует...', en: 'Moderator analyzing...' },
   'dchat.contextAggregated': { ru: 'Анализ {count} ответов', en: 'Analyzing {count} responses' },
+  'dchat.clarifyWithSpecialist': { ru: 'Уточнить у Специалиста', en: 'Clarify with Specialist' },
 
   // Role Library
   'roleLibrary.title': { ru: 'Библиотека промптов', en: 'Prompt Library' },

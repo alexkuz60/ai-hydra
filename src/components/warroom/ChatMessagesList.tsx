@@ -18,6 +18,7 @@ interface ChatMessagesListProps {
   // Actions
   onDelete: (id: string) => void;
   onRatingChange: (id: string, rating: number) => void;
+  onClarifyWithSpecialist?: (selectedText: string, messageId: string) => void;
 }
 
 export function ChatMessagesList({
@@ -30,6 +31,7 @@ export function ChatMessagesList({
   onToggleCollapse,
   onDelete,
   onRatingChange,
+  onClarifyWithSpecialist,
 }: ChatMessagesListProps) {
   if (messages.length === 0) {
     return (
@@ -71,6 +73,7 @@ export function ChatMessagesList({
                   onRatingChange={onRatingChange}
                   isCollapsed={isCollapsed(message.id)}
                   onToggleCollapse={onToggleCollapse}
+                  onClarifyWithSpecialist={onClarifyWithSpecialist}
                 />
               </div>
             </React.Fragment>
