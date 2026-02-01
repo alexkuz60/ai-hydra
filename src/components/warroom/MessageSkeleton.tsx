@@ -9,10 +9,9 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
 import { PendingResponseState } from '@/types/pending';
 
-const TIMEOUT_SECONDS = 120;
-
 interface MessageSkeletonProps {
   pending: PendingResponseState;
+  timeoutSeconds?: number;
   onRetry?: (modelId: string) => void;
   onDismiss?: (modelId: string) => void;
   onRemoveModel?: (modelId: string) => void;
@@ -33,15 +32,15 @@ function getCardVariant(role: AgentRole): 'expert' | 'critic' | 'arbiter' | 'adv
   }
 }
 
-export function MessageSkeleton({ pending, onRetry, onDismiss, onRemoveModel }: MessageSkeletonProps) {
+export function MessageSkeleton({ pending, timeoutSeconds = 120, onRetry, onDismiss, onRemoveModel }: MessageSkeletonProps) {
   const { t } = useLanguage();
   const roleConfig = getRoleConfig(pending.role);
   const RoleIcon = roleConfig.icon;
   const cardVariant = getCardVariant(pending.role);
 
   // Calculate progress percentage (0-100)
-  const progressPercent = Math.min((pending.elapsedSeconds / TIMEOUT_SECONDS) * 100, 100);
-  const remainingSeconds = Math.max(TIMEOUT_SECONDS - pending.elapsedSeconds, 0);
+  const progressPercent = Math.min((pending.elapsedSeconds / timeoutSeconds) * 100, 100);
+  const remainingSeconds = Math.max(timeoutSeconds - pending.elapsedSeconds, 0);
 
   // Timedout state - show action dialog
   if (pending.status === 'timedout') {

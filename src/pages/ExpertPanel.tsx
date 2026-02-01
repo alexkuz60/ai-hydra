@@ -46,6 +46,9 @@ export default function ExpertPanel() {
   // Pending responses for skeleton indicators
   const [pendingResponses, setPendingResponses] = useState<Map<string, PendingResponseState>>(new Map());
   
+  // Timeout setting (10-240 seconds, default 120)
+  const [timeoutSeconds, setTimeoutSeconds] = useState(120);
+  
   // D-Chat panel width persistence
   const { width: consultantPanelWidth, saveWidth: saveConsultantPanelWidth, isCollapsed: isDChatCollapsed } = useConsultantPanelWidth();
 
@@ -219,7 +222,7 @@ export default function ExpertPanel() {
           const elapsed = Math.floor((now - value.startTime) / 1000);
           let status: PendingResponseState['status'] = 'sent';
           
-          if (elapsed >= 120) status = 'timedout';
+          if (elapsed >= timeoutSeconds) status = 'timedout';
           else if (elapsed >= 5) status = 'waiting';
           else if (elapsed >= 2) status = 'confirmed';
           
@@ -414,6 +417,7 @@ export default function ExpertPanel() {
                 onRatingChange={handleRatingChange}
                 onClarifyWithSpecialist={handleClarifyWithSpecialist}
                 pendingResponses={pendingResponses}
+                timeoutSeconds={timeoutSeconds}
                 onRetryRequest={handleRetryRequest}
                 onDismissTimeout={handleDismissTimeout}
                 onRemoveModel={handleRemoveModel}
@@ -434,6 +438,9 @@ export default function ExpertPanel() {
                 selectedConsultant={selectedConsultant}
                 onSelectConsultant={setSelectedConsultant}
                 onSendToConsultant={handleSendToConsultant}
+                timeoutSeconds={timeoutSeconds}
+                onTimeoutChange={setTimeoutSeconds}
+                selectedModelsCount={selectedModels.length}
               />
             </div>
           </ResizablePanel>

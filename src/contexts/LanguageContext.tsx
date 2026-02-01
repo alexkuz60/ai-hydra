@@ -478,6 +478,12 @@ const translations: Translations = {
   'skeleton.dismiss': { ru: 'Забыть', en: 'Dismiss' },
   'skeleton.removeModel': { ru: 'Уволить', en: 'Remove' },
   'skeleton.timeRemaining': { ru: 'До таймаута', en: 'Time remaining' },
+  // Settings
+  'settings.timeout': { ru: 'Таймаут ожидания', en: 'Response timeout' },
+  'settings.timeoutDescription': { ru: 'Время ожидания ответа от эксперта до показа диалога действий', en: 'Time to wait for expert response before showing action dialog' },
+  // Send button
+  'send.toAllExperts': { ru: 'Всем экспертам', en: 'Send to all experts' },
+  'consultant.deselect': { ru: 'Снять выбор консультанта', en: 'Deselect consultant' },
 };
 
 interface LanguageContextType {
