@@ -59,18 +59,37 @@ export function TimeoutSlider({
             <span className="text-sm font-mono text-primary">{formatTime(value)}</span>
           </div>
           
-          <Slider
-            value={[value]}
-            onValueChange={([val]) => onChange(val)}
-            min={min}
-            max={max}
-            step={30}
-            className="w-full"
-          />
+          <div className="relative">
+            <Slider
+              value={[value]}
+              onValueChange={([val]) => onChange(val)}
+              min={min}
+              max={max}
+              step={30}
+              className="w-full"
+            />
+            
+            {/* Tick marks */}
+            <div className="absolute top-4 left-0 right-0 flex justify-between px-[6px] pointer-events-none">
+              {[30, 60, 90, 120, 150, 180, 210, 240].map((tick) => (
+                <div
+                  key={tick}
+                  className={cn(
+                    "w-0.5 rounded-full",
+                    tick % 60 === 0 ? "h-2 bg-muted-foreground/60" : "h-1.5 bg-muted-foreground/30"
+                  )}
+                />
+              ))}
+            </div>
+          </div>
           
-          <div className="flex justify-between text-xs text-muted-foreground">
-            <span>{formatTime(min)}</span>
-            <span>{formatTime(max)}</span>
+          {/* Labels for key values */}
+          <div className="relative h-4 text-[10px] text-muted-foreground">
+            <span className="absolute left-0">{formatTime(min)}</span>
+            <span className="absolute left-[14.3%] -translate-x-1/2">1м</span>
+            <span className="absolute left-[42.8%] -translate-x-1/2">2м</span>
+            <span className="absolute left-[71.4%] -translate-x-1/2">3м</span>
+            <span className="absolute right-0">{formatTime(max)}</span>
           </div>
           
           <p className="text-xs text-muted-foreground">
