@@ -370,7 +370,7 @@ export default function Hydrapedia() {
         <div className="flex items-center gap-3 p-4 border-b border-border bg-card/50">
           <BookOpen className="h-6 w-6 text-primary" />
           <div className="flex-1 min-w-0">
-            <h1 className="text-xl font-bold font-rounded bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+            <h1 className="text-xl font-bold font-rounded bg-gradient-to-r from-primary to-hydra-expert bg-clip-text text-transparent">
               {t('hydrapedia.title')}
             </h1>
             <p className="text-sm text-muted-foreground truncate">
@@ -382,11 +382,11 @@ export default function Hydrapedia() {
           <Button
             variant="outline"
             size="sm"
-            className="hidden sm:flex items-center gap-2 text-muted-foreground min-w-[180px] md:min-w-[240px]"
+            className="hidden sm:flex items-center gap-2 text-muted-foreground"
             onClick={() => setSearchOpen(true)}
           >
             <Search className="h-4 w-4" />
-            <span className="text-xs flex-1 text-left">{language === 'ru' ? 'Поиск по документации...' : 'Search docs...'}</span>
+            <span className="text-xs">{language === 'ru' ? 'Поиск' : 'Search'}</span>
             <kbd className="hidden md:inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
               ⌘K
             </kbd>
@@ -426,7 +426,7 @@ export default function Hydrapedia() {
         {/* Search overlay */}
         {searchOpen && (
           <div className="absolute inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-start justify-center pt-20">
-            <div className="w-full max-w-2xl mx-4 bg-card border border-primary/20 rounded-lg shadow-2xl overflow-hidden">
+            <div className="w-full max-w-lg mx-4 bg-card border border-border rounded-lg shadow-2xl overflow-hidden">
               <div className="flex items-center gap-2 p-3 border-b border-border">
                 <Search className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                 <Input
