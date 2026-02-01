@@ -32,6 +32,9 @@ function CodeBlock({
   const language = match ? match[1] : '';
   const codeString = String(children).replace(/\n$/, '');
 
+  // Determine if this is truly inline code (no language, short, no newlines)
+  const isInlineCode = inline || (!className && !codeString.includes('\n') && codeString.length < 100);
+
   const handleCopy = async () => {
     await navigator.clipboard.writeText(codeString);
     setCopied(true);
@@ -39,13 +42,15 @@ function CodeBlock({
   };
 
   // Check if inline code is a Lucide icon name
-  if (inline) {
-    // Check if it looks like a Lucide icon name (PascalCase or contains common icon suffixes)
+  if (isInlineCode) {
+    // Check if it looks like a Lucide icon name (PascalCase)
     const iconPattern = /^[A-Z][a-zA-Z0-9]*$/;
+    const excludedNames = ['GET', 'POST', 'PUT', 'DELETE', 'JSON', 'API', 'HTTP', 'CORS', 'RU', 'EN', 'URL', 'HTML', 'CSS', 'SQL', 'UUID', 'ID'];
     const isLikelyIcon = iconPattern.test(codeString) && 
-      !['GET', 'POST', 'PUT', 'DELETE', 'JSON', 'API', 'HTTP', 'CORS', 'RU', 'EN', 'URL'].includes(codeString) &&
+      !excludedNames.includes(codeString) &&
       !codeString.includes('.') &&
-      codeString.length > 1;
+      codeString.length > 1 &&
+      codeString.length < 30;
     
     if (isLikelyIcon) {
       return <LucideIconInline name={codeString} />;
@@ -66,17 +71,18 @@ function CodeBlock({
     return <MermaidBlock content={codeString} />;
   }
 
+  // Block code with syntax highlighting - wrapped in span to avoid div-in-p issues
   return (
-    <div className="relative group my-3">
+    <span className="block relative group my-3">
       {language && (
-        <div className="absolute top-0 left-0 px-2 py-1 text-[10px] text-muted-foreground bg-muted/80 rounded-tl rounded-br font-mono">
+        <span className="absolute top-0 left-0 px-2 py-1 text-[10px] text-muted-foreground bg-muted/80 rounded-tl rounded-br font-mono z-10">
           {language}
-        </div>
+        </span>
       )}
       <Button
         variant="ghost"
         size="icon"
-        className="absolute top-1 right-1 h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
+        className="absolute top-1 right-1 h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity z-10"
         onClick={handleCopy}
       >
         {copied ? (
@@ -88,19 +94,20 @@ function CodeBlock({
       <SyntaxHighlighter
         style={oneDark}
         language={language || 'text'}
-        PreTag="div"
+        PreTag="span"
         customStyle={{
           margin: 0,
           borderRadius: '0.5rem',
           fontSize: '0.75rem',
           padding: '1rem',
           paddingTop: language ? '1.75rem' : '1rem',
+          display: 'block',
         }}
         {...props}
       >
         {codeString}
       </SyntaxHighlighter>
-    </div>
+    </span>
   );
 }
 
