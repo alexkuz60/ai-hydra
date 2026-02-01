@@ -9,6 +9,7 @@ import { AttachedFile } from '@/components/warroom/FileUpload';
 import { useLanguage } from '@/contexts/LanguageContext';
 import type { Json } from '@/integrations/supabase/types';
 import { markModelUnavailable, parseModelError } from '@/lib/modelAvailabilityCache';
+import type { RequestStartInfo } from '@/types/pending';
 
 interface AttachmentUrl {
   name: string;
@@ -21,6 +22,7 @@ interface UseSendMessageProps {
   sessionId: string | null;
   selectedModels: string[];
   perModelSettings: PerModelSettingsData;
+  onRequestStart?: (models: RequestStartInfo[]) => void;
 }
 
 interface UseSendMessageReturn {
@@ -38,6 +40,7 @@ export function useSendMessage({
   sessionId,
   selectedModels,
   perModelSettings,
+  onRequestStart,
 }: UseSendMessageProps): UseSendMessageReturn {
   const { t } = useLanguage();
   const [sending, setSending] = useState(false);
@@ -198,13 +201,27 @@ export function useSendMessage({
         };
       });
 
+      // Notify about request start for skeleton indicators
+      if (onRequestStart) {
+        const requestInfo: RequestStartInfo[] = modelsToCall.map(m => {
+          // Extract short model name from full ID
+          const modelName = m.model_id.split('/').pop() || m.model_id;
+          return {
+            modelId: m.model_id,
+            modelName,
+            role: (m.role || 'assistant') as RequestStartInfo['role'],
+          };
+        });
+        onRequestStart(requestInfo);
+      }
+
       await callOrchestrator(messageContent, attachmentUrls, modelsToCall);
     } catch (error: any) {
       toast.error(error.message);
     } finally {
       setSending(false);
     }
-  }, [userId, sessionId, selectedModels, perModelSettings, attachedFiles, uploadFiles, callOrchestrator]);
+  }, [userId, sessionId, selectedModels, perModelSettings, attachedFiles, uploadFiles, callOrchestrator, onRequestStart]);
 
   // Send message to a specific consultant
   const sendToConsultant = useCallback(async (messageContent: string, consultantId: string) => {

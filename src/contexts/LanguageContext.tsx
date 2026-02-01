@@ -468,6 +468,11 @@ const translations: Translations = {
   'roleLibrary.usedCount': { ru: 'Использований: {count}', en: 'Used: {count} times' },
   'roleLibrary.noResults': { ru: 'Ничего не найдено', en: 'No results found' },
   'common.save': { ru: 'Сохранить', en: 'Save' },
+  
+  // Skeleton indicators for pending responses
+  'skeleton.requestSent': { ru: 'Запрос отправлен...', en: 'Request sent...' },
+  'skeleton.requestConfirmed': { ru: 'Получение подтверждено...', en: 'Request confirmed...' },
+  'skeleton.waitingSeconds': { ru: 'Ждём {seconds} сек.', en: 'Waiting {seconds} sec.' },
 };
 
 interface LanguageContextType {
