@@ -27,6 +27,20 @@ const translations: Translations = {
   'nav.admin': { ru: 'Админ-панель', en: 'Admin Panel' },
   'nav.warRoom': { ru: 'Экспертный Совет', en: 'Expert Council' },
   'nav.modelRatings': { ru: 'Рейтинг моделей', en: 'Model Ratings' },
+  'nav.hydrapedia': { ru: 'Гидропедия', en: 'Hydrapedia' },
+  
+  // Hydrapedia
+  'hydrapedia.title': { ru: 'Гидропедия', en: 'Hydrapedia' },
+  'hydrapedia.subtitle': { ru: 'Руководство пользователя AI-Hydra', en: 'AI-Hydra User Guide' },
+  'hydrapedia.sections.intro': { ru: 'Введение', en: 'Introduction' },
+  'hydrapedia.sections.gettingStarted': { ru: 'Начало работы', en: 'Getting Started' },
+  'hydrapedia.sections.expertPanel': { ru: 'Панель экспертов', en: 'Expert Panel' },
+  'hydrapedia.sections.roles': { ru: 'Роли агентов', en: 'Agent Roles' },
+  'hydrapedia.sections.promptLibrary': { ru: 'Библиотека промптов', en: 'Prompt Library' },
+  'hydrapedia.sections.tools': { ru: 'Инструменты', en: 'Tools' },
+  'hydrapedia.sections.flowEditor': { ru: 'Редактор потоков', en: 'Flow Editor' },
+  'hydrapedia.sections.modelRatings': { ru: 'Рейтинг моделей', en: 'Model Ratings' },
+  'hydrapedia.sections.bestPractices': { ru: 'Лучшие практики', en: 'Best Practices' },
   
   // Mermaid
   'mermaid.error': { ru: 'Ошибка рендеринга диаграммы', en: 'Diagram render error' },

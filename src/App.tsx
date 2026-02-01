@@ -19,6 +19,7 @@ const ModelRatings = lazy(() => import("./pages/ModelRatings"));
 const RoleLibrary = lazy(() => import("./pages/RoleLibrary"));
 const ToolsLibrary = lazy(() => import("./pages/ToolsLibrary"));
 const FlowEditor = lazy(() => import("./pages/FlowEditor"));
+const Hydrapedia = lazy(() => import("./pages/Hydrapedia"));
 const Admin = lazy(() => import("./pages/Admin"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
@@ -52,6 +53,7 @@ const App = () => (
                   <Route path="/role-library" element={<RoleLibrary />} />
                   <Route path="/tools-library" element={<ToolsLibrary />} />
                   <Route path="/flow-editor" element={<FlowEditor />} />
+                  <Route path="/hydrapedia" element={<Hydrapedia />} />
                   <Route path="/war-room" element={<Navigate to="/expert-panel" replace />} />
                   <Route path="/admin" element={<Admin />} />
                   <Route path="*" element={<NotFound />} />
