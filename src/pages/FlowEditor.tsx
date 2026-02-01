@@ -18,7 +18,7 @@ const initialEdges: Edge[] = [];
 function FlowEditorContent() {
   const { t } = useLanguage();
   const { user } = useAuth();
-  const { diagrams, saveDiagram, isSaving } = useFlowDiagrams();
+  const { diagrams, saveDiagram, isSaving, isLoading } = useFlowDiagrams();
 
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
@@ -42,6 +42,16 @@ function FlowEditorContent() {
     edges,
     getViewport: () => reactFlowInstance.current?.getViewport(),
   });
+
+  // Load last saved diagram on mount
+  const hasLoadedRef = useRef(false);
+  useEffect(() => {
+    if (!isLoading && diagrams.length > 0 && !hasLoadedRef.current) {
+      hasLoadedRef.current = true;
+      const lastDiagram = diagrams[0]; // Already sorted by updated_at desc
+      handleLoadDiagram(lastDiagram);
+    }
+  }, [isLoading, diagrams]);
 
   // Track changes
   useEffect(() => {
