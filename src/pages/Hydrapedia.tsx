@@ -28,7 +28,8 @@ import {
   Search,
   FileText,
   Link2,
-  Home
+  Home,
+  ArrowUp
 } from 'lucide-react';
 import {
   Breadcrumb,
@@ -142,6 +143,7 @@ export default function Hydrapedia() {
   const contentRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const initialScrollDone = useRef(false);
+  const [showScrollTop, setShowScrollTop] = useState(false);
 
   const currentSection = hydrapediaSections.find(s => s.id === activeSection);
   const content = currentSection?.content[language] || '';
@@ -164,7 +166,7 @@ export default function Hydrapedia() {
     if (contentRef.current) {
       const viewport = contentRef.current.querySelector('[data-radix-scroll-area-viewport]');
       if (viewport) {
-        viewport.scrollTop = 0;
+        viewport.scrollTo({ top: 0, behavior: 'smooth' });
       }
     }
   }, [setSearchParams]);
@@ -218,14 +220,33 @@ export default function Hydrapedia() {
     setSearchParams({ section: result.sectionId });
     setSearchQuery('');
     setSearchOpen(false);
-    
+    scrollToTop();
+  }, [setSearchParams]);
+
+  const scrollToTop = useCallback(() => {
     if (contentRef.current) {
       const viewport = contentRef.current.querySelector('[data-radix-scroll-area-viewport]');
       if (viewport) {
-        viewport.scrollTop = 0;
+        viewport.scrollTo({ top: 0, behavior: 'smooth' });
       }
     }
-  }, [setSearchParams]);
+  }, []);
+
+  // Track scroll position for "scroll to top" button
+  useEffect(() => {
+    const contentArea = contentRef.current;
+    if (!contentArea) return;
+
+    const viewport = contentArea.querySelector('[data-radix-scroll-area-viewport]');
+    if (!viewport) return;
+
+    const handleScroll = () => {
+      setShowScrollTop(viewport.scrollTop > 300);
+    };
+
+    viewport.addEventListener('scroll', handleScroll, { passive: true });
+    return () => viewport.removeEventListener('scroll', handleScroll);
+  }, [activeSection]);
 
   // Handle initial scroll from URL
   useEffect(() => {
@@ -558,6 +579,24 @@ export default function Hydrapedia() {
                   <HydrapediaMarkdown content={content} />
                 </HydraCard>
               </div>
+
+              {/* Scroll to top button */}
+              <Button
+                variant="secondary"
+                size="icon"
+                className={cn(
+                  "fixed bottom-6 right-6 lg:right-[calc(14rem+1.5rem)] z-30 rounded-full shadow-lg",
+                  "bg-primary text-primary-foreground hover:bg-primary/90",
+                  "transition-all duration-300",
+                  showScrollTop 
+                    ? "opacity-100 translate-y-0" 
+                    : "opacity-0 translate-y-4 pointer-events-none"
+                )}
+                onClick={scrollToTop}
+                aria-label={language === 'ru' ? 'Наверх' : 'Scroll to top'}
+              >
+                <ArrowUp className="h-5 w-5" />
+              </Button>
             </ScrollArea>
           </main>
 
