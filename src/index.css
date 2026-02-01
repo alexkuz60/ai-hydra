@@ -398,3 +398,60 @@
     animation: spin-slow 3s linear infinite;
   }
 }
+
+/* Hydrapedia content typography */
+.hydrapedia-content h1 {
+  @apply text-2xl md:text-3xl font-bold mt-0 mb-4 text-foreground font-rounded;
+  @apply bg-gradient-to-r from-primary to-hydra-expert bg-clip-text text-transparent;
+}
+
+.hydrapedia-content h2 {
+  @apply text-xl md:text-2xl font-semibold mt-8 mb-3 text-foreground;
+  @apply border-b border-border/50 pb-2;
+}
+
+.hydrapedia-content h3 {
+  @apply text-lg md:text-xl font-medium mt-6 mb-2 text-foreground;
+}
+
+.hydrapedia-content p {
+  @apply my-3 leading-relaxed text-sm md:text-base;
+}
+
+.hydrapedia-content ul,
+.hydrapedia-content ol {
+  @apply my-3 space-y-1.5 text-sm md:text-base;
+}
+
+.hydrapedia-content li {
+  @apply ml-4;
+}
+
+.hydrapedia-content blockquote {
+  @apply border-l-4 border-primary/50 pl-4 my-4 py-2;
+  @apply bg-primary/5 rounded-r-lg italic;
+}
+
+.hydrapedia-content table {
+  @apply text-sm;
+}
+
+.hydrapedia-content th {
+  @apply bg-muted/70 font-semibold;
+}
+
+.hydrapedia-content td {
+  @apply py-2.5;
+}
+
+.hydrapedia-content code:not(pre code) {
+  @apply bg-muted px-1.5 py-0.5 rounded text-xs font-mono text-primary;
+}
+
+.hydrapedia-content strong {
+  @apply font-semibold text-foreground;
+}
+
+.hydrapedia-content a {
+  @apply text-primary hover:text-primary/80 underline-offset-2;
+}
