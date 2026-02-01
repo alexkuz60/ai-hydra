@@ -1,22 +1,18 @@
 import React from 'react';
-import { Loader2, Send, CheckCircle, Clock } from 'lucide-react';
+import { Loader2, Send, CheckCircle, Clock, Coffee, RefreshCw, X, UserMinus } from 'lucide-react';
 import { HydraCard, HydraCardHeader, HydraCardTitle, HydraCardContent } from '@/components/ui/hydra-card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Button } from '@/components/ui/button';
 import { getRoleConfig, type AgentRole } from '@/config/roles';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
-
-export interface PendingResponseState {
-  modelId: string;
-  modelName: string;
-  role: AgentRole;
-  status: 'sent' | 'confirmed' | 'waiting';
-  startTime: number;
-  elapsedSeconds: number;
-}
+import { PendingResponseState } from '@/types/pending';
 
 interface MessageSkeletonProps {
   pending: PendingResponseState;
+  onRetry?: (modelId: string) => void;
+  onDismiss?: (modelId: string) => void;
+  onRemoveModel?: (modelId: string) => void;
 }
 
 // Map AgentRole to HydraCard variant
@@ -34,13 +30,66 @@ function getCardVariant(role: AgentRole): 'expert' | 'critic' | 'arbiter' | 'adv
   }
 }
 
-export function MessageSkeleton({ pending }: MessageSkeletonProps) {
+export function MessageSkeleton({ pending, onRetry, onDismiss, onRemoveModel }: MessageSkeletonProps) {
   const { t } = useLanguage();
   const roleConfig = getRoleConfig(pending.role);
   const RoleIcon = roleConfig.icon;
   const cardVariant = getCardVariant(pending.role);
 
-  // Get status text and icon
+  // Timedout state - show action dialog
+  if (pending.status === 'timedout') {
+    return (
+      <HydraCard 
+        variant={cardVariant} 
+        className="animate-fade-in border-amber-500/50 bg-amber-500/5"
+      >
+        <HydraCardHeader className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Coffee className="h-4 w-4 text-amber-500" />
+            <HydraCardTitle className="text-amber-500">
+              {t('skeleton.timedout').replace('{model}', pending.modelName)}
+            </HydraCardTitle>
+          </div>
+        </HydraCardHeader>
+        
+        <HydraCardContent className="pt-2">
+          <div className="flex flex-wrap gap-2">
+            <Button
+              variant="default"
+              size="sm"
+              onClick={() => onRetry?.(pending.modelId)}
+              className="gap-1.5"
+            >
+              <RefreshCw className="h-3.5 w-3.5" />
+              {t('skeleton.retryRequest')}
+            </Button>
+            
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onDismiss?.(pending.modelId)}
+              className="gap-1.5"
+            >
+              <X className="h-3.5 w-3.5" />
+              {t('skeleton.dismiss')}
+            </Button>
+            
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onRemoveModel?.(pending.modelId)}
+              className="gap-1.5 text-destructive border-destructive/50 hover:bg-destructive/10"
+            >
+              <UserMinus className="h-3.5 w-3.5" />
+              {t('skeleton.removeModel')}
+            </Button>
+          </div>
+        </HydraCardContent>
+      </HydraCard>
+    );
+  }
+
+  // Get status text and icon for normal states
   const getStatusDisplay = () => {
     switch (pending.status) {
       case 'sent':
@@ -81,8 +130,8 @@ export function MessageSkeleton({ pending }: MessageSkeletonProps) {
         
         <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
           <Loader2 className="h-3.5 w-3.5 animate-spin" />
-          {statusDisplay.icon}
-          <span>{statusDisplay.text}</span>
+          {statusDisplay?.icon}
+          <span>{statusDisplay?.text}</span>
         </div>
       </HydraCardHeader>
       

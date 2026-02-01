@@ -34,6 +34,7 @@ interface UseSendMessageReturn {
   sendMessage: (messageContent: string) => Promise<void>;
   sendToConsultant: (messageContent: string, consultantId: string) => Promise<void>;
   copyConsultantResponse: (content: string, sourceMessageId: string | null) => Promise<void>;
+  retrySingleModel: (modelId: string, messageContent: string) => Promise<void>;
 }
 
 export function useSendMessage({
@@ -359,6 +360,37 @@ export function useSendMessage({
     }
   }, [userId, sessionId]);
 
+  // Retry a single model with the given message content
+  const retrySingleModel = useCallback(async (
+    modelId: string,
+    messageContent: string
+  ) => {
+    if (!userId || !sessionId || !messageContent.trim()) return;
+
+    try {
+      const isLovable = LOVABLE_AI_MODELS.some(m => m.id === modelId);
+      const personalModel = PERSONAL_KEY_MODELS.find(m => m.id === modelId);
+      const settings = perModelSettings[modelId] || DEFAULT_MODEL_SETTINGS;
+
+      const singleModel = {
+        model_id: modelId,
+        use_lovable_ai: isLovable,
+        provider: personalModel?.provider || null,
+        temperature: settings.temperature,
+        max_tokens: settings.maxTokens,
+        system_prompt: settings.systemPrompt,
+        role: settings.role,
+        enable_tools: settings.enableTools ?? true,
+        enabled_tools: settings.enabledTools ?? ['calculator', 'current_datetime', 'web_search'],
+        enabled_custom_tools: settings.enabledCustomTools ?? [],
+      };
+
+      await callOrchestrator(messageContent, [], [singleModel]);
+    } catch (error: any) {
+      toast.error(error.message);
+    }
+  }, [userId, sessionId, perModelSettings, callOrchestrator]);
+
   return {
     sending,
     uploadProgress,
@@ -367,5 +399,6 @@ export function useSendMessage({
     sendMessage,
     sendToConsultant,
     copyConsultantResponse,
+    retrySingleModel,
   };
 }
