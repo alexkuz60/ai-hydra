@@ -257,6 +257,33 @@ export default function ExpertPanel() {
     });
   }, [messages, pendingResponses.size]);
 
+  // Auto-cleanup pending responses when models are removed from selectedModels
+  useEffect(() => {
+    setPendingResponses(prev => {
+      const updated = new Map(prev);
+      let changed = false;
+      
+      for (const modelId of updated.keys()) {
+        // Keep consultant models (D-Chat)
+        if (modelId.includes('consultant')) continue;
+        
+        if (!selectedModels.includes(modelId)) {
+          updated.delete(modelId);
+          changed = true;
+        }
+      }
+      
+      return changed ? updated : prev;
+    });
+  }, [selectedModels]);
+
+  // Filter pending responses to only show models in current task (or consultants)
+  const filteredPendingResponses = new Map(
+    [...pendingResponses].filter(([modelId]) => 
+      selectedModels.includes(modelId) || modelId.includes('consultant')
+    )
+  );
+
   // Get all available models for consultant selection
   const allAvailableModels: ModelOption[] = [...lovableModels, ...personalModels];
 
@@ -408,7 +435,7 @@ export default function ExpertPanel() {
                 onDelete={handleDeleteMessage}
                 onRatingChange={handleRatingChange}
                 onClarifyWithSpecialist={handleClarifyWithSpecialist}
-                pendingResponses={pendingResponses}
+                pendingResponses={filteredPendingResponses}
                 timeoutSeconds={timeoutSeconds}
                 onRetryRequest={handleRetryRequest}
                 onDismissTimeout={handleDismissTimeout}
