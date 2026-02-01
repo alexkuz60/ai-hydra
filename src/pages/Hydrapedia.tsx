@@ -169,7 +169,7 @@ export default function Hydrapedia() {
     }
   }, [setSearchParams]);
 
-  const scrollToHeading = useCallback((headingId: string) => {
+  const scrollToHeading = useCallback((headingId: string, shouldHighlight = false) => {
     const contentArea = contentRef.current;
     if (!contentArea) return;
     
@@ -183,6 +183,14 @@ export default function Hydrapedia() {
       
       if (elId === headingId) {
         el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        
+        // Apply highlight animation
+        if (shouldHighlight) {
+          el.classList.add('heading-highlight');
+          setTimeout(() => {
+            el.classList.remove('heading-highlight');
+          }, 2000);
+        }
         break;
       }
     }
@@ -192,7 +200,7 @@ export default function Hydrapedia() {
     setActiveHeading(headingId);
     setTocOpen(false);
     setSearchParams({ section: activeSection, heading: headingId });
-    scrollToHeading(headingId);
+    scrollToHeading(headingId, true);
   }, [activeSection, setSearchParams, scrollToHeading]);
 
   const copyLinkToHeading = useCallback((headingId: string, e: React.MouseEvent) => {
@@ -227,7 +235,7 @@ export default function Hydrapedia() {
     if (headingFromUrl && headings.length > 0) {
       // Small delay to ensure content is rendered
       const timeoutId = setTimeout(() => {
-        scrollToHeading(headingFromUrl);
+        scrollToHeading(headingFromUrl, true);
         setActiveHeading(headingFromUrl);
         initialScrollDone.current = true;
       }, 200);

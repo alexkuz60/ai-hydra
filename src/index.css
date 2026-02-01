@@ -455,3 +455,28 @@
 .hydrapedia-content a {
   @apply text-primary hover:text-primary/80 underline-offset-2;
 }
+
+/* Heading highlight animation for anchor navigation */
+@keyframes heading-highlight-pulse {
+  0% {
+    background-color: hsl(var(--primary) / 0);
+    box-shadow: 0 0 0 0 hsl(var(--primary) / 0);
+  }
+  15% {
+    background-color: hsl(var(--primary) / 0.15);
+    box-shadow: 0 0 20px 4px hsl(var(--primary) / 0.3);
+  }
+  100% {
+    background-color: hsl(var(--primary) / 0);
+    box-shadow: 0 0 0 0 hsl(var(--primary) / 0);
+  }
+}
+
+.heading-highlight {
+  animation: heading-highlight-pulse 2s ease-out forwards;
+  border-radius: 0.375rem;
+  margin-left: -0.5rem;
+  margin-right: -0.5rem;
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+}
