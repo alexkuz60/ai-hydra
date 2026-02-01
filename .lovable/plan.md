@@ -1,51 +1,112 @@
 
-# План: Удаление пункта "Главная" из меню
+# План: Кнопка "Уточнить у Специалиста" при выделении текста
 
 ## Задача
-Убрать пункт навигации "Главная" (Home) из бокового меню приложения.
+При завершении выделения текста в ответах чата над выделенным фрагментом появляется кнопка-иконка "Уточнить у Специалиста", которая отправляет выделенный текст в D-Chat панель.
 
-## Текущее состояние
-В файле `src/components/layout/AppSidebar.tsx` пункт "Главная" присутствует в двух местах:
-- Строка 63: для авторизованных пользователей
-- Строка 71: для неавторизованных пользователей
+## Архитектура решения
 
-## Изменения
+**Новый компонент:** `TextSelectionPopup` — всплывающая кнопка, появляющаяся над выделенным текстом.
 
-### Файл: `src/components/layout/AppSidebar.tsx`
+**Поток данных:**
+1. Пользователь выделяет текст в AI-сообщении
+2. Появляется кнопка "Уточнить у Специалиста"
+3. Клик по кнопке → текст передается в D-Chat панель
 
-**1. Удалить пункт Home из меню авторизованных пользователей (строка 63):**
+## Файлы для изменения
+
+### 1. Новый файл: `src/components/warroom/TextSelectionPopup.tsx`
+
 ```typescript
-// Было:
-const navItems = user ? [
-  { path: '/', icon: Home, label: t('nav.home') },
-  { path: '/expert-panel', icon: Users, label: t('nav.expertPanel') },
-  ...
-]
-
-// Станет:
-const navItems = user ? [
-  { path: '/expert-panel', icon: Users, label: t('nav.expertPanel') },
-  ...
-]
+// Компонент всплывающей кнопки при выделении текста
+// - Слушает событие mouseup для определения выделенного текста
+// - Позиционируется над выделением через getBoundingClientRect()
+// - Кнопка с иконкой Lightbulb и tooltip "Уточнить у Специалиста"
+// - При клике вызывает callback с выделенным текстом
 ```
 
-**2. Удалить пункт Home из меню неавторизованных пользователей (строки 70-72):**
-```typescript
-// Было:
-] : [
-  { path: '/', icon: Home, label: t('nav.home') },
-];
+**Логика работы:**
+- Отслеживает `mouseup` событие внутри контейнера
+- Проверяет `window.getSelection()` на наличие выделенного текста
+- Вычисляет позицию через `Range.getBoundingClientRect()`
+- Показывает кнопку над выделением
+- Скрывает при клике вне или изменении выделения
 
-// Станет:
-] : [];
+### 2. Изменить: `src/components/warroom/ChatMessage.tsx`
+
+**Добавить:**
+- Новый prop `onClarifyWithSpecialist?: (selectedText: string, messageId: string) => void`
+- Обернуть контент AI-сообщения в контейнер с `TextSelectionPopup`
+- Передавать callback при выделении текста
+
+### 3. Изменить: `src/components/warroom/ChatMessagesList.tsx`
+
+**Добавить:**
+- Новый prop `onClarifyWithSpecialist?: (selectedText: string, messageId: string) => void`
+- Передавать prop в каждый `ChatMessage`
+
+### 4. Изменить: `src/pages/ExpertPanel.tsx`
+
+**Добавить:**
+- Новый handler `handleClarifyWithSpecialist` — формирует контекст и отправляет в D-Chat
+- Передавать handler в `ChatMessagesList`
+
+### 5. Изменить: `src/contexts/LanguageContext.tsx`
+
+**Добавить переводы:**
+```typescript
+'dchat.clarifyWithSpecialist': { 
+  ru: 'Уточнить у Специалиста', 
+  en: 'Clarify with Specialist' 
+}
 ```
 
-**3. Удалить неиспользуемый импорт `Home` (строка 37):**
+## Техническая реализация
+
+### TextSelectionPopup — ключевая логика:
+
 ```typescript
-// Убрать Home из импорта lucide-react
+interface TextSelectionPopupProps {
+  containerRef: React.RefObject<HTMLElement>;
+  onClarify: (text: string) => void;
+}
+
+// Состояние:
+// - selectedText: string
+// - popupPosition: { x: number, y: number } | null
+
+// Эффект для отслеживания выделения:
+useEffect(() => {
+  const handleMouseUp = (e: MouseEvent) => {
+    const selection = window.getSelection();
+    const text = selection?.toString().trim();
+    
+    if (text && text.length > 0) {
+      const range = selection?.getRangeAt(0);
+      const rect = range?.getBoundingClientRect();
+      
+      setSelectedText(text);
+      setPopupPosition({ 
+        x: rect.left + rect.width / 2, 
+        y: rect.top - 8 
+      });
+    } else {
+      setPopupPosition(null);
+    }
+  };
+  
+  container?.addEventListener('mouseup', handleMouseUp);
+  return () => container?.removeEventListener('mouseup', handleMouseUp);
+}, [containerRef]);
 ```
+
+### Стилизация popup:
+- Абсолютное позиционирование относительно viewport (fixed)
+- Анимация появления (fade-in + slide-up)
+- Иконка Lightbulb с amber цветом (text-hydra-consultant)
+- Tooltip с текстом "Уточнить у Специалиста"
 
 ## Результат
-- Пункт "Главная" будет удален из навигационного меню
-- Логотип в шапке сайдбара по-прежнему ведет на главную страницу (/)
-- Меню для неавторизованных пользователей станет пустым (они видят только логотип и кнопки входа/регистрации)
+- При выделении текста в любом AI-ответе появляется кнопка
+- Клик отправляет выделенный фрагмент в D-Chat с контекстом исходного сообщения
+- D-Chat разворачивается и готов к уточняющему вопросу
