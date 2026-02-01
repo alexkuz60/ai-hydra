@@ -1,193 +1,113 @@
 
 
-# План: Синхронизация состава экспертов + "Трудовая книжка" моделей
+# План: Экономия токенов при повторе + защита от случайного увольнения
 
-## Часть 1: Исправление рассинхронизации
+## Суть изменений
 
-### Проблема
-Функция `handleRemoveModel` в ExpertPanel удаляет модель только из локального состояния. База данных не обновляется, поэтому:
-- В панели Задач "уволенная" модель по-прежнему отображается
-- При перезагрузке страницы модель возвращается
-- Логи об ошибках продолжают появляться при оркестрации
+### 1. Экономия токенов при повторном запросе
+Кнопка "Персональный запрос" уже отправляет запрос **только** одной модели — это реализовано в функции `retrySingleModel`. Система работает корректно и экономит токены.
 
-### Решение
-Добавить автоматическое сохранение `session_config` в БД при изменении `selectedModels`.
-
-### Технические изменения
-
-**Файл: `src/hooks/useSession.ts`**
-
-Добавить функцию для сохранения конфигурации в БД:
-
-```typescript
-// Функция сохранения config в БД
-const saveSessionConfig = useCallback(async (
-  taskId: string,
-  models: string[],
-  settings: PerModelSettingsData
-) => {
-  try {
-    await supabase
-      .from('sessions')
-      .update({
-        session_config: { selectedModels: models, perModelSettings: settings },
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', taskId);
-  } catch (error) {
-    console.error('Failed to save session config:', error);
-  }
-}, []);
-```
-
-Добавить `useEffect` для авто-сохранения при изменении `selectedModels`:
-
-```typescript
-// Сохранять в БД при изменении selectedModels (с debounce)
-useEffect(() => {
-  if (!currentTask?.id || loading) return;
-  
-  const timeout = setTimeout(() => {
-    saveSessionConfig(currentTask.id, selectedModels, perModelSettings);
-  }, 500); // debounce 500ms
-  
-  return () => clearTimeout(timeout);
-}, [selectedModels, perModelSettings, currentTask?.id, loading, saveSessionConfig]);
-```
+### 2. Защита кнопки "Уволить" чек-боксом
+Добавить чек-бокс подтверждения перед активацией кнопки "Уволить" для предотвращения случайных нажатий.
 
 ---
 
-## Часть 2: "Трудовая книжка" модели
+## Текущее поведение (1: Повторный запрос)
 
-### Концепция
-Создать таблицу `model_statistics` для отслеживания истории работы каждой модели.
+Проверка кода показала:
+- Функция `handleRetryRequest` в `ExpertPanel.tsx` вызывает `retrySingleModel(modelId, lastUserMessage.content)`
+- `retrySingleModel` в `useSendMessage.ts` отправляет запрос **только** указанной модели:
+  ```typescript
+  await callOrchestrator(messageContent, [], [singleModel]); // ← один элемент в массиве
+  ```
 
-### Структура данных
+**Вывод**: Повторный запрос уже экономит токены — отправляется только "провинившемуся" эксперту.
+
+---
+
+## Техническое изменение (2: Защита увольнения)
+
+### Файл: `src/components/warroom/MessageSkeleton.tsx`
+
+**Добавить локальный state для чек-бокса:**
+
+```typescript
+const [dismissConfirmed, setDismissConfirmed] = useState(false);
+```
+
+**Добавить чек-бокс и сделать кнопку неактивной без подтверждения:**
+
+```tsx
+// В блоке timedout
+<div className="flex flex-wrap items-center gap-2">
+  {/* Кнопка повтора */}
+  <Button variant="default" size="sm" onClick={() => onRetry?.(pending.modelId)}>
+    <RefreshCw className="h-3.5 w-3.5" />
+    {t('skeleton.retryRequest')}
+  </Button>
+  
+  {/* Кнопка "Забыть" */}
+  <Button variant="ghost" size="sm" onClick={() => onDismiss?.(pending.modelId)}>
+    <X className="h-3.5 w-3.5" />
+    {t('skeleton.dismiss')}
+  </Button>
+  
+  {/* Разделитель */}
+  <div className="flex items-center gap-1.5 ml-2">
+    {/* Чек-бокс подтверждения */}
+    <Checkbox
+      id={`dismiss-confirm-${pending.modelId}`}
+      checked={dismissConfirmed}
+      onCheckedChange={(checked) => setDismissConfirmed(checked === true)}
+      className="h-3.5 w-3.5"
+    />
+    
+    {/* Кнопка "Уволить" — активна только с чек-боксом */}
+    <Button
+      variant="outline"
+      size="sm"
+      onClick={() => onRemoveModel?.(pending.modelId)}
+      disabled={!dismissConfirmed}
+      className="gap-1.5 text-destructive border-destructive/50 hover:bg-destructive/10 disabled:opacity-40"
+    >
+      <UserMinus className="h-3.5 w-3.5" />
+      {t('skeleton.removeModel')}
+    </Button>
+  </div>
+</div>
+```
+
+**Визуализация:**
 
 ```text
-┌─────────────────────────────────────────────────────────────────┐
-│                       model_statistics                          │
-├───────────────┬─────────────────────────────────────────────────┤
-│ id            │ UUID (PK)                                       │
-│ user_id       │ UUID (FK → auth.users, owner)                   │
-│ model_id      │ TEXT (e.g., "openai/gpt-4o")                    │
-│ session_id    │ UUID (FK → sessions)                            │
-│ response_count│ INTEGER (количество ответов)                    │
-│ total_brains  │ INTEGER (набранные "мозги")                     │
-│ dismissal_count│ INTEGER (количество увольнений)                │
-│ first_used_at │ TIMESTAMP                                       │
-│ last_used_at  │ TIMESTAMP                                       │
-│ created_at    │ TIMESTAMP                                       │
-│ updated_at    │ TIMESTAMP                                       │
-└───────────────┴─────────────────────────────────────────────────┘
-```
-
-### Логика обновления статистики
-
-1. **При ответе модели** (`hydra-orchestrator`):
-   - Инкремент `response_count`
-   - Обновление `last_used_at`
-
-2. **При увольнении** (`handleRemoveModel`):
-   - Инкремент `dismissal_count`
-
-3. **При добавлении "мозга"** (будущая фича):
-   - Инкремент `total_brains`
-
-### Миграция базы данных
-
-```sql
--- Создание таблицы статистики моделей
-CREATE TABLE public.model_statistics (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  model_id TEXT NOT NULL,
-  session_id UUID REFERENCES public.sessions(id) ON DELETE SET NULL,
-  response_count INTEGER NOT NULL DEFAULT 0,
-  total_brains INTEGER NOT NULL DEFAULT 0,
-  dismissal_count INTEGER NOT NULL DEFAULT 0,
-  first_used_at TIMESTAMPTZ DEFAULT now(),
-  last_used_at TIMESTAMPTZ DEFAULT now(),
-  created_at TIMESTAMPTZ DEFAULT now(),
-  updated_at TIMESTAMPTZ DEFAULT now(),
-  
-  UNIQUE(user_id, model_id, session_id)
-);
-
--- Индексы для быстрого доступа
-CREATE INDEX idx_model_stats_user ON model_statistics(user_id);
-CREATE INDEX idx_model_stats_model ON model_statistics(model_id);
-
--- RLS политики
-ALTER TABLE model_statistics ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "Users can view own statistics"
-  ON model_statistics FOR SELECT
-  USING (auth.uid() = user_id);
-
-CREATE POLICY "Users can insert own statistics"
-  ON model_statistics FOR INSERT
-  WITH CHECK (auth.uid() = user_id);
-
-CREATE POLICY "Users can update own statistics"
-  ON model_statistics FOR UPDATE
-  USING (auth.uid() = user_id);
-
--- Trigger для updated_at
-CREATE TRIGGER update_model_statistics_updated_at
-  BEFORE UPDATE ON model_statistics
-  FOR EACH ROW
-  EXECUTE FUNCTION update_updated_at_column();
-```
-
-### API для обновления статистики
-
-**Файл: `src/hooks/useModelStatistics.ts`**
-
-```typescript
-export function useModelStatistics(userId: string | undefined) {
-  const incrementResponse = async (modelId: string, sessionId: string) => {
-    // upsert: создать запись или увеличить счётчик
-  };
-  
-  const incrementDismissal = async (modelId: string, sessionId: string) => {
-    // увеличить dismissal_count
-  };
-  
-  const addBrains = async (modelId: string, sessionId: string, count: number) => {
-    // увеличить total_brains
-  };
-  
-  const getModelStats = async (modelId: string) => {
-    // получить агрегированную статистику по модели
-  };
-  
-  const getLeaderboard = async () => {
-    // топ моделей по brains/responses
-  };
-}
+┌────────────────────────────────────────────────────────────────────┐
+│ ☕ Эксперт claude-3-5-sonnet убежал на перекур..                   │
+├────────────────────────────────────────────────────────────────────┤
+│ [🔄 Персональный запрос]  [✕ Забыть]    ☐ [🚪 Уволить]           │
+│                                          ↑              ↑          │
+│                                      чек-бокс     неактивна        │
+│                                                                    │
+│ После клика на чек-бокс:                                          │
+│ [🔄 Персональный запрос]  [✕ Забыть]    ☑ [🚪 Уволить]           │
+│                                          ↑              ↑          │
+│                                      отмечен       АКТИВНА         │
+└────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## Порядок реализации
+## Импорты
 
-1. **Сначала исправить синхронизацию** (Часть 1)
-   - Добавить auto-save в `useSession`
-   - Проверить, что увольнение сохраняется в БД
-
-2. **Затем создать таблицу статистики** (Часть 2)
-   - Выполнить миграцию
-   - Создать хук `useModelStatistics`
-   - Интегрировать с `handleRemoveModel` для учёта увольнений
-   - Интегрировать с оркестратором для учёта ответов
+Добавить в `MessageSkeleton.tsx`:
+```typescript
+import { Checkbox } from '@/components/ui/checkbox';
+```
 
 ---
 
 ## Результат
 
-После реализации:
-1. Увольнение модели сразу синхронизируется с БД
-2. В панели Задач отображается актуальный состав экспертов
-3. Ведётся "трудовая книжка" каждой модели с историей участия
+1. **Экономия токенов**: Подтверждено — повторный запрос отправляется только одной модели (уже работает)
+2. **Защита от случайного увольнения**: Кнопка "Уволить" неактивна до отметки чек-бокса
+3. **UX**: Чек-бокс визуально связан с кнопкой, интуитивно понятно, что это подтверждение
 
