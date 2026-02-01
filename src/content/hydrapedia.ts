@@ -288,7 +288,30 @@ To work with AI models, you'll need API keys from providers:
 | **Отправить** | \`SendHorizontal\` | Отправка сообщения |
 | **Стоп** | \`Square\` | Остановка генерации (во время ответа) |
 
-## D-Chat консультант
+## Левый сайдбар — Навигатор чата
+
+Древовидная визуализация диалога, показывающая все сообщения и их связи.
+
+### Элементы навигатора
+
+| Элемент | Иконка | Описание |
+|---------|--------|----------|
+| **Кнопка показа** | \`PanelLeft\` | Показать/скрыть панель навигатора |
+| **Узел пользователя** | \`Crown\` | Сообщение пользователя (золотой фон) |
+| **Узел ассистента** | \`CheckCircle\` | Ответ эксперта (зелёный фон) |
+| **Узел критика** | \`AlertTriangle\` | Ответ критика (красный фон) |
+| **Узел арбитра** | \`Scale\` | Ответ арбитра (жёлтый фон) |
+| **Узел консультанта** | \`MessageSquare\` | Ответ консультанта (янтарный фон) |
+| **Связь между узлами** | — | Линия показывает порядок сообщений |
+
+### Как использовать навигатор
+
+1. Нажмите \`PanelLeft\` в левой части экрана
+2. Кликните на любой узел для прокрутки к сообщению
+3. Наведите на узел для просмотра информации о модели
+4. Цвета узлов соответствуют ролям агентов
+
+## Правый сайдбар — D-Chat консультант
 
 Боковая панель для глубокого анализа с выбранной моделью.
 
@@ -296,15 +319,17 @@ To work with AI models, you'll need API keys from providers:
 
 | Элемент | Иконка | Описание |
 |---------|--------|----------|
-| **Заголовок** | \`MessageSquare\` | Название модели-консультанта |
-| **Закрыть** | \`X\` | Закрытие панели |
-| **Изменить ширину** | \`GripVertical\` | Перетаскивание левого края |
+| **Заголовок панели** | \`MessageSquare\` | Название модели-консультанта |
+| **Закрыть панель** | \`X\` | Закрытие панели консультанта |
+| **Изменить ширину** | \`GripVertical\` | Перетаскивание левого края панели |
+| **Поле ввода** | — | Текстовое поле для вопросов |
+| **Отправить** | \`SendHorizontal\` | Отправка вопроса консультанту |
 | **Выделение текста** | \`Lightbulb\` | При выделении — кнопка «Уточнить» |
 
 ### Как использовать
 
 1. Нажмите на иконку консультанта \`MessageSquare\` в ответе модели
-2. Откроется боковой чат
+2. Откроется боковой чат справа
 3. Задавайте уточняющие вопросы
 4. Выделите текст в ответе → нажмите \`Lightbulb\` для уточнения
 
@@ -376,7 +401,30 @@ The Expert Panel is the main tool for working with multiple models simultaneousl
 | **Send** | \`SendHorizontal\` | Send message |
 | **Stop** | \`Square\` | Stop generation (while responding) |
 
-## D-Chat Consultant
+## Left Sidebar — Chat Navigator
+
+Tree visualization of the dialogue, showing all messages and their connections.
+
+### Navigator Elements
+
+| Element | Icon | Description |
+|---------|------|-------------|
+| **Toggle Button** | \`PanelLeft\` | Show/hide navigator panel |
+| **User Node** | \`Crown\` | User message (gold background) |
+| **Assistant Node** | \`CheckCircle\` | Expert response (green background) |
+| **Critic Node** | \`AlertTriangle\` | Critic response (red background) |
+| **Arbiter Node** | \`Scale\` | Arbiter response (yellow background) |
+| **Consultant Node** | \`MessageSquare\` | Consultant response (amber background) |
+| **Connection Line** | — | Line shows message order |
+
+### How to Use Navigator
+
+1. Click \`PanelLeft\` on the left side of the screen
+2. Click on any node to scroll to that message
+3. Hover over a node to view model info
+4. Node colors correspond to agent roles
+
+## Right Sidebar — D-Chat Consultant
 
 Side panel for deep analysis with selected model.
 
@@ -384,15 +432,17 @@ Side panel for deep analysis with selected model.
 
 | Element | Icon | Description |
 |---------|------|-------------|
-| **Header** | \`MessageSquare\` | Consultant model name |
-| **Close** | \`X\` | Close panel |
-| **Resize** | \`GripVertical\` | Drag left edge |
+| **Panel Header** | \`MessageSquare\` | Consultant model name |
+| **Close Panel** | \`X\` | Close consultant panel |
+| **Resize** | \`GripVertical\` | Drag left edge of panel |
+| **Input Field** | — | Text field for questions |
+| **Send** | \`SendHorizontal\` | Send question to consultant |
 | **Text Selection** | \`Lightbulb\` | When selecting — "Clarify" button |
 
 ### How to Use
 
 1. Click on the consultant icon \`MessageSquare\` in model response
-2. A side chat will open
+2. A side chat will open on the right
 3. Ask follow-up questions
 4. Select text in response → click \`Lightbulb\` to clarify
 
@@ -955,35 +1005,45 @@ Real calls to external APIs.
 | **Экспорт** | \`Download\` | Экспорт в PNG/SVG/JSON/Mermaid |
 | **Назад** | \`ArrowLeft\` | Возврат к списку диаграмм |
 
-### Левая панель — Узлы
+### Левая панель — Библиотека узлов
 
-| Категория | Иконка | Узлы |
-|-----------|--------|------|
-| **Базовые** | \`Zap\` | Input, Output, Prompt, Model |
-| **Логика** | \`GitBranch\` | Condition, Switch, Loop |
-| **Данные** | \`RefreshCw\` | Transform, Filter, Merge, Split |
-| **Интеграции** | \`Plug\` | API, Database, Storage |
-| **AI** | \`Brain\` | Embedding, Classifier, Memory |
+Панель содержит все доступные типы узлов, сгруппированные по категориям.
+
+| Элемент | Иконка | Описание |
+|---------|--------|----------|
+| **Категория «Базовые»** | \`Zap\` | Input, Output, Prompt, Model |
+| **Категория «Логика»** | \`GitBranch\` | Condition, Switch, Loop, Delay |
+| **Категория «Данные»** | \`RefreshCw\` | Transform, Filter, Merge, Split |
+| **Категория «Интеграции»** | \`Plug\` | API, Database, Storage |
+| **Категория «AI»** | \`Brain\` | Embedding, Classifier, Memory, Tool |
+| **Узел (перетаскивание)** | — | Перетащите узел на холст для добавления |
 
 ### Холст (Canvas)
 
-| Действие | Описание |
-|----------|----------|
-| **Перетаскивание** | Добавление узла на холст |
-| **Клик на узел** | Выбор узла для редактирования |
-| **Перетаскивание точки** | Создание связи между узлами |
-| **Scroll** | Масштабирование (zoom) |
-| **Перетаскивание пустого места** | Панорамирование |
-| **Delete** | Удаление выбранного узла |
+Центральная рабочая область для создания потоков.
 
-### Правая панель — Свойства
+| Действие | Клавиша/Жест | Описание |
+|----------|--------------|----------|
+| **Добавить узел** | Перетаскивание | Перетащите из левой панели |
+| **Выбрать узел** | Клик | Открывает панель свойств справа |
+| **Соединить узлы** | Перетаскивание точки | Тяните от выхода к входу |
+| **Масштаб** | Scroll / Pinch | Увеличение и уменьшение |
+| **Панорама** | Перетаскивание холста | Перемещение области просмотра |
+| **Удалить** | \`Delete\` / \`Backspace\` | Удаление выбранного элемента |
+| **Множественный выбор** | \`Shift\` + клик | Выбор нескольких узлов |
 
-| Элемент | Описание |
-|---------|----------|
-| **Тип узла** | Название типа узла |
-| **Имя** | Уникальное имя узла |
-| **Параметры** | Настройки в зависимости от типа |
-| **Входы/Выходы** | Список точек подключения |
+### Правая панель — Свойства узла
+
+Панель редактирования параметров выбранного узла.
+
+| Элемент | Иконка | Описание |
+|---------|--------|----------|
+| **Заголовок** | \`Settings\` | Тип выбранного узла |
+| **Поле «Имя»** | \`Type\` | Уникальное имя узла |
+| **Параметры** | — | Настройки в зависимости от типа узла |
+| **Входы** | \`ArrowRight\` | Точки подключения для входных данных |
+| **Выходы** | \`ArrowLeft\` | Точки подключения для выходных данных |
+| **Удалить узел** | \`Trash\` | Удаление текущего узла |
 
 ## Типы узлов
 
@@ -1068,35 +1128,45 @@ A visual tool for designing complex data processing chains.
 | **Export** | \`Download\` | Export to PNG/SVG/JSON/Mermaid |
 | **Back** | \`ArrowLeft\` | Return to diagram list |
 
-### Left Panel — Nodes
+### Left Panel — Node Library
 
-| Category | Icon | Nodes |
-|----------|------|-------|
-| **Basic** | \`Zap\` | Input, Output, Prompt, Model |
-| **Logic** | \`GitBranch\` | Condition, Switch, Loop |
-| **Data** | \`RefreshCw\` | Transform, Filter, Merge, Split |
-| **Integrations** | \`Plug\` | API, Database, Storage |
-| **AI** | \`Brain\` | Embedding, Classifier, Memory |
+The panel contains all available node types, grouped by category.
+
+| Element | Icon | Description |
+|---------|------|-------------|
+| **"Basic" Category** | \`Zap\` | Input, Output, Prompt, Model |
+| **"Logic" Category** | \`GitBranch\` | Condition, Switch, Loop, Delay |
+| **"Data" Category** | \`RefreshCw\` | Transform, Filter, Merge, Split |
+| **"Integrations" Category** | \`Plug\` | API, Database, Storage |
+| **"AI" Category** | \`Brain\` | Embedding, Classifier, Memory, Tool |
+| **Node (drag)** | — | Drag node to canvas to add |
 
 ### Canvas
 
-| Action | Description |
-|--------|-------------|
-| **Drag** | Add node to canvas |
-| **Click node** | Select node for editing |
-| **Drag handle** | Create connection between nodes |
-| **Scroll** | Zoom in/out |
-| **Drag empty space** | Pan view |
-| **Delete** | Remove selected node |
+Central workspace for creating flows.
 
-### Right Panel — Properties
+| Action | Key/Gesture | Description |
+|--------|-------------|-------------|
+| **Add node** | Drag | Drag from left panel |
+| **Select node** | Click | Opens properties panel on right |
+| **Connect nodes** | Drag handle | Drag from output to input |
+| **Zoom** | Scroll / Pinch | Zoom in and out |
+| **Pan** | Drag canvas | Move viewport |
+| **Delete** | \`Delete\` / \`Backspace\` | Delete selected element |
+| **Multi-select** | \`Shift\` + click | Select multiple nodes |
 
-| Element | Description |
-|---------|-------------|
-| **Node Type** | Type name |
-| **Name** | Unique node name |
-| **Parameters** | Settings depending on type |
-| **Inputs/Outputs** | Connection point list |
+### Right Panel — Node Properties
+
+Panel for editing parameters of the selected node.
+
+| Element | Icon | Description |
+|---------|------|-------------|
+| **Header** | \`Settings\` | Type of selected node |
+| **Name Field** | \`Type\` | Unique node name |
+| **Parameters** | — | Settings depending on node type |
+| **Inputs** | \`ArrowRight\` | Connection points for input data |
+| **Outputs** | \`ArrowLeft\` | Connection points for output data |
+| **Delete Node** | \`Trash\` | Delete current node |
 
 ## Node Types
 
