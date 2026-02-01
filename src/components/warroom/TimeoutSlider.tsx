@@ -21,7 +21,7 @@ interface TimeoutSliderProps {
 export function TimeoutSlider({
   value,
   onChange,
-  min = 10,
+  min = 30,
   max = 240,
   disabled = false,
 }: TimeoutSliderProps) {
@@ -64,7 +64,7 @@ export function TimeoutSlider({
             onValueChange={([val]) => onChange(val)}
             min={min}
             max={max}
-            step={10}
+            step={30}
             className="w-full"
           />
           
