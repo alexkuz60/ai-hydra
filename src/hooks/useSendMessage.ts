@@ -24,6 +24,8 @@ interface UseSendMessageProps {
   perModelSettings: PerModelSettingsData;
   onRequestStart?: (models: RequestStartInfo[]) => void;
   onRequestError?: (modelIds: string[]) => void;
+  // Reference to current selectedModels for filtering errors from dismissed models
+  selectedModelsRef?: React.MutableRefObject<string[]>;
 }
 
 interface UseSendMessageReturn {
@@ -44,6 +46,7 @@ export function useSendMessage({
   perModelSettings,
   onRequestStart,
   onRequestError,
+  selectedModelsRef,
 }: UseSendMessageProps): UseSendMessageReturn {
   const { t } = useLanguage();
   const [sending, setSending] = useState(false);
@@ -139,8 +142,20 @@ export function useSendMessage({
 
     if (data.errors && data.errors.length > 0) {
       const failedModelIds: string[] = [];
+      // Get current selected models to filter out dismissed ones
+      const currentSelectedModels = selectedModelsRef?.current || selectedModels;
+      
       data.errors.forEach((err: { model: string; error: string }) => {
         failedModelIds.push(err.model);
+        
+        // Skip showing errors for models that have been dismissed/removed from task
+        const isModelStillSelected = currentSelectedModels.includes(err.model) || 
+                                     err.model.includes('consultant');
+        if (!isModelStillSelected) {
+          console.log(`Skipping error toast for dismissed model: ${err.model}`);
+          return;
+        }
+        
         // Check if this error indicates the model is unavailable
         const { isUnavailable, errorCode } = parseModelError(err.model, err.error);
         if (isUnavailable) {
