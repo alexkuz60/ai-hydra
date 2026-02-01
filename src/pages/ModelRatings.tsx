@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, forwardRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -321,34 +321,37 @@ interface RoleStatRowProps {
   t: (key: string) => string;
 }
 
-function RoleStatRow({ stat, index, t }: RoleStatRowProps) {
-  return (
-    <div
-      className={cn(
-        "flex items-center justify-between p-3 rounded-lg",
-        index === 0 && "bg-primary/10 border border-primary/20"
-      )}
-    >
-      <div className="flex items-center gap-2 min-w-0 flex-1">
-        {index === 0 && <span className="text-lg">🏆</span>}
-        <span className="font-medium truncate">{stat.model_name}</span>
+const RoleStatRow = forwardRef<HTMLDivElement, RoleStatRowProps>(
+  function RoleStatRow({ stat, index, t }, ref) {
+    return (
+      <div
+        ref={ref}
+        className={cn(
+          "flex items-center justify-between p-3 rounded-lg",
+          index === 0 && "bg-primary/10 border border-primary/20"
+        )}
+      >
+        <div className="flex items-center gap-2 min-w-0 flex-1">
+          {index === 0 && <span className="text-lg">🏆</span>}
+          <span className="font-medium truncate">{stat.model_name}</span>
+        </div>
+
+        <div className="flex items-center gap-4 text-sm">
+          <div className="flex items-center gap-1" title={t('stats.totalBrains')}>
+            <Brain className="h-4 w-4 text-primary" />
+            <span className="font-bold text-primary">{stat.total_brains}</span>
+          </div>
+
+          <div className="flex items-center gap-1 text-muted-foreground" title={t('stats.avgRating')}>
+            <span className="text-xs">ø</span>
+            <span>{stat.average_rating.toFixed(1)}</span>
+          </div>
+
+          <div className="text-muted-foreground text-xs" title={t('stats.responseCount')}>
+            ({stat.response_count})
+          </div>
+        </div>
       </div>
-
-      <div className="flex items-center gap-4 text-sm">
-        <div className="flex items-center gap-1" title={t('stats.totalBrains')}>
-          <Brain className="h-4 w-4 text-primary" />
-          <span className="font-bold text-primary">{stat.total_brains}</span>
-        </div>
-
-        <div className="flex items-center gap-1 text-muted-foreground" title={t('stats.avgRating')}>
-          <span className="text-xs">ø</span>
-          <span>{stat.average_rating.toFixed(1)}</span>
-        </div>
-
-        <div className="text-muted-foreground text-xs" title={t('stats.responseCount')}>
-          ({stat.response_count})
-        </div>
-      </div>
-    </div>
-  );
-}
+    );
+  }
+);
