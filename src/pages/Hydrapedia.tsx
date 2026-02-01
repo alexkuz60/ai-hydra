@@ -276,22 +276,43 @@ export default function Hydrapedia() {
     }
   }, [searchOpen]);
 
-  // Keyboard shortcut for search
+  // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Search shortcut
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
         e.preventDefault();
         setSearchOpen(true);
+        return;
       }
       if (e.key === 'Escape') {
         setSearchOpen(false);
         setSearchQuery('');
+        return;
+      }
+      
+      // Arrow navigation between sections (only when not in input/textarea)
+      const target = e.target as HTMLElement;
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return;
+      
+      const currentIndex = hydrapediaSections.findIndex(s => s.id === activeSection);
+      
+      if (e.key === 'ArrowLeft' || (e.key === 'ArrowUp' && !e.shiftKey)) {
+        e.preventDefault();
+        if (currentIndex > 0) {
+          handleSectionClick(hydrapediaSections[currentIndex - 1].id);
+        }
+      } else if (e.key === 'ArrowRight' || (e.key === 'ArrowDown' && !e.shiftKey)) {
+        e.preventDefault();
+        if (currentIndex < hydrapediaSections.length - 1) {
+          handleSectionClick(hydrapediaSections[currentIndex + 1].id);
+        }
       }
     };
     
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  }, [activeSection, handleSectionClick]);
 
   // IntersectionObserver for active heading on scroll
   useEffect(() => {
