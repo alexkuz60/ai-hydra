@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Loader2, Send, CheckCircle, Clock, Coffee, RefreshCw, X, UserMinus } from 'lucide-react';
 import { HydraCard, HydraCardHeader, HydraCardTitle, HydraCardContent } from '@/components/ui/hydra-card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { getRoleConfig, type AgentRole } from '@/config/roles';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
@@ -34,6 +35,7 @@ function getCardVariant(role: AgentRole): 'expert' | 'critic' | 'arbiter' | 'adv
 
 export function MessageSkeleton({ pending, timeoutSeconds = 120, onRetry, onDismiss, onRemoveModel }: MessageSkeletonProps) {
   const { t } = useLanguage();
+  const [dismissConfirmed, setDismissConfirmed] = useState(false);
   const roleConfig = getRoleConfig(pending.role);
   const RoleIcon = roleConfig.icon;
   const cardVariant = getCardVariant(pending.role);
@@ -59,7 +61,7 @@ export function MessageSkeleton({ pending, timeoutSeconds = 120, onRetry, onDism
         </HydraCardHeader>
         
         <HydraCardContent className="pt-2">
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Button
               variant="default"
               size="sm"
@@ -80,15 +82,25 @@ export function MessageSkeleton({ pending, timeoutSeconds = 120, onRetry, onDism
               {t('skeleton.dismiss')}
             </Button>
             
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onRemoveModel?.(pending.modelId)}
-              className="gap-1.5 text-destructive border-destructive/50 hover:bg-destructive/10"
-            >
-              <UserMinus className="h-3.5 w-3.5" />
-              {t('skeleton.removeModel')}
-            </Button>
+            <div className="flex items-center gap-1.5 ml-2">
+              <Checkbox
+                id={`dismiss-confirm-${pending.modelId}`}
+                checked={dismissConfirmed}
+                onCheckedChange={(checked) => setDismissConfirmed(checked === true)}
+                className="h-3.5 w-3.5"
+              />
+              
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onRemoveModel?.(pending.modelId)}
+                disabled={!dismissConfirmed}
+                className="gap-1.5 text-destructive border-destructive/50 hover:bg-destructive/10 disabled:opacity-40"
+              >
+                <UserMinus className="h-3.5 w-3.5" />
+                {t('skeleton.removeModel')}
+              </Button>
+            </div>
           </div>
         </HydraCardContent>
       </HydraCard>
