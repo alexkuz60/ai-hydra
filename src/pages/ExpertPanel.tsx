@@ -31,6 +31,7 @@ export default function ExpertPanel() {
   const { isSupervisor } = useUserRoles();
   const messageRefs = useRef<Map<string, HTMLDivElement>>(new Map());
   const dChatPanelRef = useRef<ImperativePanelHandle>(null);
+  const selectedModelsRef = useRef<string[]>([]);
   const [input, setInput] = useState('');
   const [selectedConsultant, setSelectedConsultant] = useState<string | null>(null);
   const [dChatContext, setDChatContext] = useState<{
@@ -78,6 +79,11 @@ export default function ExpertPanel() {
     perModelSettings,
     setPerModelSettings,
   } = useSession({ userId: user?.id, authLoading });
+
+  // Keep selectedModelsRef in sync for error filtering in useSendMessage
+  useEffect(() => {
+    selectedModelsRef.current = selectedModels;
+  }, [selectedModels]);
 
   // Messages management hook
   const {
@@ -137,6 +143,7 @@ export default function ExpertPanel() {
     perModelSettings,
     onRequestStart: handleRequestStart,
     onRequestError: handleRequestError,
+    selectedModelsRef,
   });
 
   // Timeout action handlers (after useSendMessage to access retrySingleModel)
