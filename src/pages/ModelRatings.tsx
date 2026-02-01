@@ -120,7 +120,7 @@ export default function ModelRatings() {
             by_role,
           };
         })
-        .sort((a, b) => b.total_brains - a.total_brains);
+        .sort((a, b) => b.average_rating - a.average_rating);
 
       setStats(statsArray);
     } catch (error) {
@@ -206,7 +206,7 @@ export default function ModelRatings() {
                   model_name: s.model_name,
                   ...s.by_role[role],
                 }))
-                .sort((a, b) => b.total_brains - a.total_brains);
+                .sort((a, b) => b.average_rating - a.average_rating);
 
               return (
                 <TabsContent key={role} value={role}>
