@@ -1,112 +1,237 @@
 
-# План: Кнопка "Уточнить у Специалиста" при выделении текста
+# План: Скелетон-индикаторы ожидания ответов экспертов
 
 ## Задача
-При завершении выделения текста в ответах чата над выделенным фрагментом появляется кнопка-иконка "Уточнить у Специалиста", которая отправляет выделенный текст в D-Chat панель.
+При отправке запроса нескольким экспертам отображать анимированные скелетоны-индикаторы для каждого ожидаемого ответа с контрольными сообщениями:
+- "Запрос отправлен"
+- "Получение запроса подтверждено"  
+- "Ждём [time] сек."
+
+При получении ответа индикаторы заменяются реальным сообщением.
 
 ## Архитектура решения
 
-**Новый компонент:** `TextSelectionPopup` — всплывающая кнопка, появляющаяся над выделенным текстом.
+```text
+┌─────────────────────────────────────────────────────────────────┐
+│                    ExpertPanel.tsx                              │
+│  ┌─────────────────────────────────────────────────────────────┐│
+│  │ pendingResponses: Map<modelId, PendingResponseState>        ││
+│  │ - status: 'sent' | 'confirmed' | 'waiting'                  ││
+│  │ - startTime: number                                         ││
+│  │ - elapsedSeconds: number                                    ││
+│  └─────────────────────────────────────────────────────────────┘│
+│                           │                                     │
+│                           ▼                                     │
+│  ┌─────────────────────────────────────────────────────────────┐│
+│  │            ChatMessagesList.tsx                             ││
+│  │  - Получает pendingResponses как prop                       ││
+│  │  - После последнего user message рендерит скелетоны         ││
+│  └─────────────────────────────────────────────────────────────┘│
+│                           │                                     │
+│                           ▼                                     │
+│  ┌─────────────────────────────────────────────────────────────┐│
+│  │       MessageSkeleton.tsx (новый компонент)                 ││
+│  │  - Стилизованная карточка с анимацией                       ││
+│  │  - Иконка и цвет по роли модели                             ││
+│  │  - Статус: "Запрос отправлен" → "Ждём N сек."               ││
+│  │  - Скелетон-линии контента                                  ││
+│  └─────────────────────────────────────────────────────────────┘│
+└─────────────────────────────────────────────────────────────────┘
+```
 
-**Поток данных:**
-1. Пользователь выделяет текст в AI-сообщении
-2. Появляется кнопка "Уточнить у Специалиста"
-3. Клик по кнопке → текст передается в D-Chat панель
+## Поток данных
+
+1. Пользователь нажимает "Отправить"
+2. `useSendMessage` устанавливает `sending=true` и вызывает callback с списком моделей
+3. `ExpertPanel` создает `pendingResponses` Map с начальным статусом 'sent'
+4. Таймер каждую секунду обновляет `elapsedSeconds` и статус
+5. При получении нового сообщения через realtime - удаляем соответствующий pending из Map
+6. Когда Map пуст - все ответы получены
 
 ## Файлы для изменения
 
-### 1. Новый файл: `src/components/warroom/TextSelectionPopup.tsx`
+### 1. Новый файл: `src/components/warroom/MessageSkeleton.tsx`
+
+Компонент скелетона ожидающего ответа:
 
 ```typescript
-// Компонент всплывающей кнопки при выделении текста
-// - Слушает событие mouseup для определения выделенного текста
-// - Позиционируется над выделением через getBoundingClientRect()
-// - Кнопка с иконкой Lightbulb и tooltip "Уточнить у Специалиста"
-// - При клике вызывает callback с выделенным текстом
+interface PendingResponseState {
+  modelId: string;
+  modelName: string;
+  role: AgentRole;
+  status: 'sent' | 'confirmed' | 'waiting';
+  startTime: number;
+  elapsedSeconds: number;
+}
+
+interface MessageSkeletonProps {
+  pending: PendingResponseState;
+}
 ```
 
-**Логика работы:**
-- Отслеживает `mouseup` событие внутри контейнера
-- Проверяет `window.getSelection()` на наличие выделенного текста
-- Вычисляет позицию через `Range.getBoundingClientRect()`
-- Показывает кнопку над выделением
-- Скрывает при клике вне или изменении выделения
+Визуальное оформление:
+- Использует `HydraCard` с variant по роли (expert, critic, arbiter и т.д.)
+- Заголовок с иконкой роли и названием модели
+- Индикатор статуса с анимированной иконкой
+- 3-4 скелетон-линии разной длины (animate-pulse)
+- Плавная анимация появления (animate-fade-in)
 
-### 2. Изменить: `src/components/warroom/ChatMessage.tsx`
+Статусы:
+- 'sent': "Запрос отправлен..." (0-2 сек)
+- 'confirmed': "Получение подтверждено..." (2-5 сек, симуляция)
+- 'waiting': "Ждём N сек." (после 5 сек, счетчик)
 
-**Добавить:**
-- Новый prop `onClarifyWithSpecialist?: (selectedText: string, messageId: string) => void`
-- Обернуть контент AI-сообщения в контейнер с `TextSelectionPopup`
-- Передавать callback при выделении текста
+### 2. Изменить: `src/hooks/useSendMessage.ts`
 
-### 3. Изменить: `src/components/warroom/ChatMessagesList.tsx`
+Добавить callback для уведомления о начале запроса:
 
-**Добавить:**
-- Новый prop `onClarifyWithSpecialist?: (selectedText: string, messageId: string) => void`
-- Передавать prop в каждый `ChatMessage`
+```typescript
+interface UseSendMessageProps {
+  // ... existing props
+  onRequestStart?: (models: Array<{ modelId: string; role: AgentRole }>) => void;
+}
+```
 
-### 4. Изменить: `src/pages/ExpertPanel.tsx`
+В `sendMessage`:
+- Перед вызовом `callOrchestrator` вызвать `onRequestStart` с информацией о моделях
 
-**Добавить:**
-- Новый handler `handleClarifyWithSpecialist` — формирует контекст и отправляет в D-Chat
-- Передавать handler в `ChatMessagesList`
+### 3. Изменить: `src/pages/ExpertPanel.tsx`
+
+Добавить состояние и логику для pending responses:
+
+```typescript
+// Новое состояние
+const [pendingResponses, setPendingResponses] = useState<Map<string, PendingResponseState>>(new Map());
+
+// Callback для начала запроса
+const handleRequestStart = useCallback((models) => {
+  const now = Date.now();
+  const newPending = new Map();
+  models.forEach(m => {
+    newPending.set(m.modelId, {
+      modelId: m.modelId,
+      modelName: getModelShortName(m.modelId),
+      role: m.role,
+      status: 'sent',
+      startTime: now,
+      elapsedSeconds: 0,
+    });
+  });
+  setPendingResponses(newPending);
+}, []);
+
+// Таймер для обновления elapsed time
+useEffect(() => {
+  if (pendingResponses.size === 0) return;
+  
+  const interval = setInterval(() => {
+    setPendingResponses(prev => {
+      const updated = new Map(prev);
+      const now = Date.now();
+      
+      for (const [key, value] of updated) {
+        const elapsed = Math.floor((now - value.startTime) / 1000);
+        let status: 'sent' | 'confirmed' | 'waiting' = 'sent';
+        if (elapsed >= 5) status = 'waiting';
+        else if (elapsed >= 2) status = 'confirmed';
+        
+        updated.set(key, { ...value, elapsedSeconds: elapsed, status });
+      }
+      return updated;
+    });
+  }, 1000);
+  
+  return () => clearInterval(interval);
+}, [pendingResponses.size]);
+
+// Удаление pending при получении ответа
+useEffect(() => {
+  // При добавлении нового AI-сообщения удаляем соответствующий pending
+  const lastMessage = messages[messages.length - 1];
+  if (lastMessage && lastMessage.role !== 'user' && lastMessage.model_name) {
+    setPendingResponses(prev => {
+      const updated = new Map(prev);
+      // Найти modelId по model_name
+      for (const [key, value] of updated) {
+        if (value.modelName === lastMessage.model_name || 
+            key.includes(lastMessage.model_name)) {
+          updated.delete(key);
+        }
+      }
+      return updated;
+    });
+  }
+}, [messages]);
+```
+
+Передать в `useSendMessage`:
+```typescript
+const { ... } = useSendMessage({
+  // ... existing props
+  onRequestStart: handleRequestStart,
+});
+```
+
+Передать в `ChatMessagesList`:
+```typescript
+<ChatMessagesList
+  // ... existing props
+  pendingResponses={pendingResponses}
+/>
+```
+
+### 4. Изменить: `src/components/warroom/ChatMessagesList.tsx`
+
+Добавить отображение скелетонов:
+
+```typescript
+interface ChatMessagesListProps {
+  // ... existing props
+  pendingResponses?: Map<string, PendingResponseState>;
+}
+
+// В рендере, после последнего user-сообщения:
+{pendingResponses && pendingResponses.size > 0 && (
+  <div className="space-y-4">
+    {Array.from(pendingResponses.values()).map(pending => (
+      <MessageSkeleton key={pending.modelId} pending={pending} />
+    ))}
+  </div>
+)}
+```
 
 ### 5. Изменить: `src/contexts/LanguageContext.tsx`
 
-**Добавить переводы:**
-```typescript
-'dchat.clarifyWithSpecialist': { 
-  ru: 'Уточнить у Специалиста', 
-  en: 'Clarify with Specialist' 
-}
-```
-
-## Техническая реализация
-
-### TextSelectionPopup — ключевая логика:
+Добавить переводы:
 
 ```typescript
-interface TextSelectionPopupProps {
-  containerRef: React.RefObject<HTMLElement>;
-  onClarify: (text: string) => void;
-}
-
-// Состояние:
-// - selectedText: string
-// - popupPosition: { x: number, y: number } | null
-
-// Эффект для отслеживания выделения:
-useEffect(() => {
-  const handleMouseUp = (e: MouseEvent) => {
-    const selection = window.getSelection();
-    const text = selection?.toString().trim();
-    
-    if (text && text.length > 0) {
-      const range = selection?.getRangeAt(0);
-      const rect = range?.getBoundingClientRect();
-      
-      setSelectedText(text);
-      setPopupPosition({ 
-        x: rect.left + rect.width / 2, 
-        y: rect.top - 8 
-      });
-    } else {
-      setPopupPosition(null);
-    }
-  };
-  
-  container?.addEventListener('mouseup', handleMouseUp);
-  return () => container?.removeEventListener('mouseup', handleMouseUp);
-}, [containerRef]);
+'skeleton.requestSent': { ru: 'Запрос отправлен...', en: 'Request sent...' },
+'skeleton.requestConfirmed': { ru: 'Получение подтверждено...', en: 'Request confirmed...' },
+'skeleton.waitingSeconds': { ru: 'Ждём {seconds} сек.', en: 'Waiting {seconds} sec.' },
 ```
 
-### Стилизация popup:
-- Абсолютное позиционирование относительно viewport (fixed)
-- Анимация появления (fade-in + slide-up)
-- Иконка Lightbulb с amber цветом (text-hydra-consultant)
-- Tooltip с текстом "Уточнить у Специалиста"
+## Дизайн MessageSkeleton
+
+```text
+┌─────────────────────────────────────────────────────────────────┐
+│  🧠 Эксперт (GPT-5)                           ⏳ Ждём 12 сек.  │
+│─────────────────────────────────────────────────────────────────│
+│  ████████████████████████████████████░░░░░░░░░░░░░░░░░░░░░░░░  │
+│  ██████████████████████████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░  │
+│  █████████████████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░  │
+│  ████████████████████████████████████████░░░░░░░░░░░░░░░░░░░░  │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+- Карточка использует стили `HydraCard` с вариантом по роли
+- Иконка роли с соответствующим цветом
+- Статус справа с анимированной иконкой (Loader2 с spin)
+- 4 скелетон-полосы с animate-pulse, разной длины (90%, 75%, 60%, 85%)
+- Плавное появление через animate-fade-in
 
 ## Результат
-- При выделении текста в любом AI-ответе появляется кнопка
-- Клик отправляет выделенный фрагмент в D-Chat с контекстом исходного сообщения
-- D-Chat разворачивается и готов к уточняющему вопросу
+
+- Пользователь видит прогресс ожидания для каждой модели
+- Понятно какие ответы ещё ожидаются
+- Скелетоны плавно заменяются реальными сообщениями при получении
+- Улучшенный UX при долгом ожидании ответов
