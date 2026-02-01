@@ -233,7 +233,7 @@ export default function ExpertPanel() {
     }, 1000);
     
     return () => clearInterval(interval);
-  }, [pendingResponses.size]);
+  }, [pendingResponses.size, timeoutSeconds]);
 
   // Remove pending response when a new AI message arrives
   useEffect(() => {
