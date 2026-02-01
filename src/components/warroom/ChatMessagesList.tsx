@@ -7,7 +7,7 @@ import { Message } from '@/types/messages';
 import { PendingResponseState } from '@/types/pending';
 import { isSameDay } from 'date-fns';
 import { Sparkles } from 'lucide-react';
-
+import { AnimatePresence, motion } from 'framer-motion';
 interface ChatMessagesListProps {
   messages: Message[];
   filteredParticipant: string | null;
@@ -95,21 +95,30 @@ export function ChatMessagesList({
           );
         })}
         
-        {/* Skeleton indicators for pending responses */}
-        {pendingResponses && pendingResponses.size > 0 && (
-          <div className="space-y-4">
-            {Array.from(pendingResponses.values()).map(pending => (
+        {/* Skeleton indicators for pending responses with smooth enter/exit animations */}
+        <AnimatePresence mode="popLayout">
+          {pendingResponses && Array.from(pendingResponses.values()).map(pending => (
+            <motion.div
+              key={pending.modelId}
+              initial={{ opacity: 0, y: 20, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -10, scale: 0.95 }}
+              transition={{ 
+                duration: 0.3, 
+                ease: [0.4, 0, 0.2, 1]
+              }}
+              layout
+            >
               <MessageSkeleton 
-                key={pending.modelId} 
                 pending={pending}
                 timeoutSeconds={timeoutSeconds}
                 onRetry={onRetryRequest}
                 onDismiss={onDismissTimeout}
                 onRemoveModel={onRemoveModel}
               />
-            ))}
-          </div>
-        )}
+            </motion.div>
+          ))}
+        </AnimatePresence>
         
         <div ref={messagesEndRef} />
       </div>
