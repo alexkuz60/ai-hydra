@@ -181,13 +181,8 @@ export default function ExpertPanel() {
   }, []);
 
   const handleRemoveModel = useCallback((modelId: string) => {
-    // Remove from pending responses
-    setPendingResponses(prev => {
-      const updated = new Map(prev);
-      updated.delete(modelId);
-      return updated;
-    });
-    // Remove from selected models (this will auto-save to DB via useSession)
+    // Remove from selected models - useEffect[selectedModels] will auto-cleanup pendingResponses
+    // This avoids race condition between two setState calls
     setSelectedModels(prev => prev.filter(id => id !== modelId));
     
     // Record dismissal in statistics
