@@ -515,11 +515,11 @@ export default function Hydrapedia() {
           )}
 
           {/* Content Area */}
-          <main className="flex-1 overflow-hidden" ref={contentRef}>
-            <ScrollArea className="h-full">
-              <div className="max-w-4xl mx-auto p-6">
-                {/* Breadcrumbs */}
-                <Breadcrumb className="mb-4">
+          <main className="flex-1 overflow-hidden flex flex-col" ref={contentRef}>
+            {/* Fixed Breadcrumbs */}
+            <div className="flex-shrink-0 px-6 pt-4 pb-2 border-b border-border/50 bg-background/80 backdrop-blur-sm">
+              <div className="max-w-4xl mx-auto">
+                <Breadcrumb>
                   <BreadcrumbList>
                     <BreadcrumbItem>
                       <BreadcrumbLink href="/" className="flex items-center gap-1 text-muted-foreground hover:text-foreground">
@@ -548,10 +548,7 @@ export default function Hydrapedia() {
                           onClick={(e) => {
                             e.preventDefault();
                             setActiveHeading(null);
-                            if (contentRef.current) {
-                              const viewport = contentRef.current.querySelector('[data-radix-scroll-area-viewport]');
-                              if (viewport) viewport.scrollTop = 0;
-                            }
+                            scrollToTop();
                           }}
                         >
                           {currentSection ? t(currentSection.titleKey) : ''}
@@ -574,7 +571,12 @@ export default function Hydrapedia() {
                     )}
                   </BreadcrumbList>
                 </Breadcrumb>
+              </div>
+            </div>
 
+            {/* Scrollable Content */}
+            <ScrollArea className="flex-1">
+              <div className="max-w-4xl mx-auto p-6">
                 <HydraCard variant="glass" className="p-6">
                   <HydrapediaMarkdown content={content} />
                 </HydraCard>
