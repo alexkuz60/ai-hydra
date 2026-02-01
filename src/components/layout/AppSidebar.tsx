@@ -38,7 +38,8 @@ import {
   BarChart3,
   Library,
   Wrench,
-  GitBranch
+  GitBranch,
+  BookOpen
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -65,6 +66,7 @@ export function AppSidebar() {
     { path: '/tools-library', icon: Wrench, label: t('nav.toolsLibrary') },
     { path: '/flow-editor', icon: GitBranch, label: t('nav.flowEditor') },
     { path: '/model-ratings', icon: BarChart3, label: t('nav.modelRatings') },
+    { path: '/hydrapedia', icon: BookOpen, label: t('nav.hydrapedia') },
   ] : [];
 
   return (
