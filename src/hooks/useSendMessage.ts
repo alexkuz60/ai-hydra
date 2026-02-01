@@ -382,6 +382,16 @@ export function useSendMessage({
       const personalModel = PERSONAL_KEY_MODELS.find(m => m.id === modelId);
       const settings = perModelSettings[modelId] || DEFAULT_MODEL_SETTINGS;
 
+      // Notify about request start for skeleton indicator
+      if (onRequestStart) {
+        const modelName = modelId.split('/').pop() || modelId;
+        onRequestStart([{
+          modelId,
+          modelName,
+          role: settings.role,
+        }]);
+      }
+
       const singleModel = {
         model_id: modelId,
         use_lovable_ai: isLovable,
@@ -398,8 +408,12 @@ export function useSendMessage({
       await callOrchestrator(messageContent, [], [singleModel]);
     } catch (error: any) {
       toast.error(error.message);
+      // Notify about error to remove skeleton
+      if (onRequestError) {
+        onRequestError([modelId]);
+      }
     }
-  }, [userId, sessionId, perModelSettings, callOrchestrator]);
+  }, [userId, sessionId, perModelSettings, callOrchestrator, onRequestStart, onRequestError]);
 
   return {
     sending,

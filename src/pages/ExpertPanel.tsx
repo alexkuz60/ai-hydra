@@ -148,22 +148,14 @@ export default function ExpertPanel() {
       return;
     }
     
-    // Reset the pending state for this model
+    // Remove the timedout pending state - retrySingleModel will create a fresh one via onRequestStart
     setPendingResponses(prev => {
       const updated = new Map(prev);
-      const existing = updated.get(modelId);
-      if (existing) {
-        updated.set(modelId, {
-          ...existing,
-          status: 'sent',
-          startTime: Date.now(),
-          elapsedSeconds: 0,
-        });
-      }
+      updated.delete(modelId);
       return updated;
     });
     
-    // Trigger retry through the hook
+    // Trigger retry through the hook - it will call onRequestStart to create fresh skeleton
     retrySingleModel(modelId, lastUserMessage.content);
     toast.success(`Повторный запрос отправлен: ${modelId.split('/').pop()}`);
   }, [messages, retrySingleModel]);
