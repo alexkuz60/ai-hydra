@@ -187,6 +187,56 @@ export type Database = {
         }
         Relationships: []
       }
+      model_statistics: {
+        Row: {
+          created_at: string | null
+          dismissal_count: number
+          first_used_at: string | null
+          id: string
+          last_used_at: string | null
+          model_id: string
+          response_count: number
+          session_id: string | null
+          total_brains: number
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          dismissal_count?: number
+          first_used_at?: string | null
+          id?: string
+          last_used_at?: string | null
+          model_id: string
+          response_count?: number
+          session_id?: string | null
+          total_brains?: number
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          dismissal_count?: number
+          first_used_at?: string | null
+          id?: string
+          last_used_at?: string | null
+          model_id?: string
+          response_count?: number
+          session_id?: string | null
+          total_brains?: number
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "model_statistics_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
