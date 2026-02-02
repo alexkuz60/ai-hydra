@@ -77,6 +77,12 @@ const translations: Translations = {
   'hydrapedia.sections.modelRatings': { ru: 'Рейтинг моделей', en: 'Model Ratings' },
   'hydrapedia.sections.bestPractices': { ru: 'Лучшие практики', en: 'Best Practices' },
   'hydrapedia.sections.streamingMode': { ru: 'Режим стриминга', en: 'Streaming Mode' },
+  'hydrapedia.sections.tasks': { ru: 'Задачи', en: 'Tasks' },
+  'hydrapedia.sections.rolesCatalog': { ru: 'Каталог ролей', en: 'Roles Catalog' },
+  'hydrapedia.sections.dChatModerator': { ru: 'D-Chat Модератор', en: 'D-Chat Moderator' },
+  'hydrapedia.sections.webSearch': { ru: 'Веб-поиск', en: 'Web Search' },
+  'hydrapedia.sections.localization': { ru: 'Локализация', en: 'Localization' },
+  'hydrapedia.sections.security': { ru: 'Безопасность', en: 'Security' },
   
   // Mermaid
   'mermaid.error': { ru: 'Ошибка рендеринга диаграммы', en: 'Diagram render error' },
