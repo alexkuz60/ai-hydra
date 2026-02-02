@@ -280,14 +280,16 @@ export function RolePlayground({ className }: RolePlaygroundProps) {
                 {MODEL_ID.split('/')[1]}
               </span>
             </HydraCardHeader>
-            <HydraCardContent>
-              {response ? (
-                <MarkdownRenderer content={response} streaming={isStreaming} />
-              ) : (
-                <span className="text-muted-foreground animate-pulse">
-                  {language === 'ru' ? 'Генерация...' : 'Generating...'}
-                </span>
-              )}
+            <HydraCardContent className="text-sm">
+              <div className="prose-compact break-words overflow-wrap-anywhere">
+                {response ? (
+                  <MarkdownRenderer content={response} streaming={isStreaming} />
+                ) : (
+                  <span className="text-muted-foreground animate-pulse">
+                    {language === 'ru' ? 'Генерация...' : 'Generating...'}
+                  </span>
+                )}
+              </div>
             </HydraCardContent>
           </HydraCard>
         )}
