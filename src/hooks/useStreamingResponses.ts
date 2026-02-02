@@ -17,8 +17,10 @@ export interface StreamingResponse {
 
 interface UseStreamingResponsesProps {
   sessionId: string | null;
+  userId?: string | null;
   onStreamComplete?: (modelId: string, content: string) => void;
   onFallbackToOrchestrator?: (modelId: string, message: string) => void;
+  onMessageSaved?: () => void;
 }
 
 interface UseStreamingResponsesReturn {
@@ -28,8 +30,9 @@ interface UseStreamingResponsesReturn {
     models: RequestStartInfo[],
     message: string,
     timeoutSeconds: number,
-    perModelSettings?: Record<string, { temperature?: number; maxTokens?: number; systemPrompt?: string }>
-  ) => void;
+    perModelSettings?: Record<string, { temperature?: number; maxTokens?: number; systemPrompt?: string }>,
+    userMessageContent?: string
+  ) => Promise<void>;
   stopStreaming: (modelId: string) => void;
   stopAllStreaming: () => void;
   clearCompleted: () => void;
@@ -56,8 +59,10 @@ function isStreamingSupported(modelId: string): boolean {
 
 export function useStreamingResponses({
   sessionId,
+  userId,
   onStreamComplete,
   onFallbackToOrchestrator,
+  onMessageSaved,
 }: UseStreamingResponsesProps): UseStreamingResponsesReturn {
   const [streamingResponses, setStreamingResponses] = useState<Map<string, StreamingResponse>>(new Map());
   const [pendingResponses, setPendingResponses] = useState<Map<string, PendingResponseState>>(new Map());
@@ -241,11 +246,12 @@ export function useStreamingResponses({
   }, [sessionId, onFallbackToOrchestrator]);
 
   // Start parallel streaming for multiple models
-  const startStreaming = useCallback((
+  const startStreaming = useCallback(async (
     models: RequestStartInfo[],
     message: string,
     timeoutSeconds: number,
-    perModelSettings?: Record<string, { temperature?: number; maxTokens?: number; systemPrompt?: string }>
+    perModelSettings?: Record<string, { temperature?: number; maxTokens?: number; systemPrompt?: string }>,
+    userMessageContent?: string
   ) => {
     const now = Date.now();
 
@@ -323,6 +329,40 @@ export function useStreamingResponses({
         }
       }, delay);
     });
+
+    // Helper function to save AI response to database
+    async function saveAIResponseToDb(
+      modelId: string,
+      modelName: string,
+      role: string,
+      content: string
+    ) {
+      if (!sessionId || !userId || !content.trim()) {
+        console.log('[Streaming] Cannot save: missing sessionId, userId, or content');
+        return;
+      }
+
+      try {
+        const { error } = await supabase.from('messages').insert({
+          session_id: sessionId,
+          user_id: userId,
+          role: (role === 'assistant' ? 'assistant' : role) as 'user' | 'assistant' | 'critic' | 'arbiter' | 'consultant',
+          content: content.trim(),
+          model_name: modelName,
+        });
+
+        if (error) {
+          console.error(`[Streaming] Failed to save message for ${modelId}:`, error);
+          toast.error(`Не удалось сохранить ответ ${modelName}`);
+        } else {
+          console.log(`[Streaming] Saved message for ${modelId}`);
+          // Trigger refetch in parent
+          onMessageSaved?.();
+        }
+      } catch (err) {
+        console.error(`[Streaming] Error saving message for ${modelId}:`, err);
+      }
+    }
 
     async function streamModel(
       model: RequestStartInfo,
@@ -478,6 +518,16 @@ export function useStreamingResponses({
           return updated;
         });
 
+        // Save AI response to database immediately
+        if (accumulatedContent.trim()) {
+          await saveAIResponseToDb(
+            model.modelId,
+            model.modelName,
+            model.role,
+            accumulatedContent
+          );
+        }
+
         // Notify completion
         onStreamComplete?.(model.modelId, accumulatedContent);
 
@@ -518,7 +568,7 @@ export function useStreamingResponses({
       timersRef.current.delete(modelId);
       abortControllersRef.current.delete(modelId);
     }
-  }, [onStreamComplete, fallbackToOrchestrator]);
+  }, [sessionId, userId, onStreamComplete, onMessageSaved, fallbackToOrchestrator]);
 
   return {
     streamingResponses,

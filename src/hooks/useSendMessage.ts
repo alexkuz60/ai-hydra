@@ -57,6 +57,7 @@ interface UseSendMessageReturn {
   attachedFiles: AttachedFile[];
   setAttachedFiles: React.Dispatch<React.SetStateAction<AttachedFile[]>>;
   sendMessage: (messageContent: string) => Promise<void>;
+  sendUserMessageOnly: (messageContent: string) => Promise<void>;
   sendToConsultant: (messageContent: string, consultantId: string) => Promise<void>;
   copyConsultantResponse: (content: string, sourceMessageId: string | null) => Promise<void>;
   retrySingleModel: (modelId: string, messageContent: string) => Promise<void>;
@@ -254,6 +255,43 @@ export function useSendMessage({
     }
   }, [userId, sessionId, selectedModels, perModelSettings, attachedFiles, uploadFiles, callOrchestrator, onRequestStart]);
 
+  // Send ONLY user message to DB (for hybrid streaming - AI responses handled by streaming hook)
+  const sendUserMessageOnly = useCallback(async (messageContent: string) => {
+    if (!userId || !sessionId || !messageContent.trim()) return;
+    
+    const currentSessionId = sessionId;
+    const currentUserId = userId;
+    
+    setSending(true);
+    const filesToUpload = [...attachedFiles];
+    setAttachedFiles([]);
+
+    try {
+      const attachmentUrls = await uploadFiles(filesToUpload);
+
+      // Insert user message only - NO orchestrator call
+      const messageMetadata: Json | undefined = attachmentUrls.length > 0 
+        ? { attachments: attachmentUrls as unknown as Json } 
+        : undefined;
+
+      const { error } = await supabase
+        .from('messages')
+        .insert([{
+          session_id: currentSessionId,
+          user_id: currentUserId,
+          role: 'user' as const,
+          content: messageContent,
+          metadata: messageMetadata,
+        }]);
+
+      if (error) throw error;
+    } catch (error: any) {
+      toast.error(error.message);
+    } finally {
+      setSending(false);
+    }
+  }, [userId, sessionId, attachedFiles, uploadFiles]);
+
   // Send message to a specific consultant
   const sendToConsultant = useCallback(async (messageContent: string, consultantId: string) => {
     if (!userId || !sessionId || !messageContent.trim() || !consultantId) return;
@@ -415,6 +453,7 @@ export function useSendMessage({
     attachedFiles,
     setAttachedFiles,
     sendMessage,
+    sendUserMessageOnly,
     sendToConsultant,
     copyConsultantResponse,
     retrySingleModel,
