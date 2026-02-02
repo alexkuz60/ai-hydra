@@ -1,200 +1,152 @@
 
 
-## План: Mermaid-диаграммы как вложения с превью
+## План: Обновление Гидропедии с новой функциональностью Mermaid-диаграмм
 
-### Описание проблемы
-Сейчас Mermaid-диаграммы вставляются прямо в текстовое поле запроса. Это приводит к тому, что AI-модели начинают объяснять что такое Mermaid-код, вместо того чтобы работать с диаграммой по существу.
+### Что добавляем
 
-### Решение
-Прикреплять Mermaid-диаграммы как специальный тип вложения с визуальным превью (аналогично изображениям), а не вставлять код в текст.
+Документация о новой системе вложения Mermaid-диаграмм, которая была реализована:
 
-### Новый пользовательский сценарий
-
-```text
-1. Пользователь нажимает скрепку → Диаграмма Mermaid → выбирает способ
-2. Диаграмма появляется как карточка-вложение с превью (не в текстовом поле)
-3. Пользователь пишет свой запрос в текстовом поле, ссылаясь на диаграмму
-4. При отправке Mermaid-код передаётся как attachment в metadata
-5. В истории сообщений диаграмма отображается с интерактивным превью
-```
+1. **Прикрепление диаграмм** — не вставка в текст, а специальный тип вложения
+2. **Визуальное превью** — карточки с миниатюрой диаграммы
+3. **Увеличение по клику** — полноэкранный просмотр
+4. **Кэширование** — оптимизация рендеринга уже просмотренных диаграмм
+5. **Три способа добавления**: пустой шаблон, из файла (.mmd), из библиотеки потоков
 
 ---
 
 ### Технические изменения
 
-#### 1. Расширение типов вложений
+#### Файл: `src/content/hydrapedia.ts`
 
-**Файл: `src/types/messages.ts`**
+##### 1. Обновление секции "expert-panel" (строки ~282-290)
 
-Добавить новый тип вложения для Mermaid:
-```typescript
-export interface Attachment {
-  name: string;
-  url: string;
-  type: string;
-  // Новое поле для inline-контента (Mermaid не загружается в storage)
-  content?: string;
-}
+Расширить таблицу нижней панели ввода, добавив детали о Mermaid:
+
+**Русская версия:**
+```markdown
+### Система вложений
+
+AI-Hydra поддерживает три типа вложений:
+
+| Тип | Иконка | Описание |
+|-----|--------|----------|
+| **Изображения** | `Image` | PNG, JPG, GIF, WebP (до 5 шт × 10 МБ) |
+| **Документы** | `FileText` | PDF, TXT, MD и другие (до 10 МБ) |
+| **Mermaid-диаграммы** | `GitBranch` | Визуальные диаграммы потоков |
+
+### Прикрепление Mermaid-диаграмм
+
+Mermaid-диаграммы прикрепляются как специальные вложения с визуальным превью (не вставляются в текст!). Это позволяет AI-модели анализировать диаграмму, а не объяснять синтаксис Mermaid.
+
+| Элемент | Иконка | Описание |
+|---------|--------|----------|
+| **Скрепка → Диаграмма Mermaid** | `Paperclip` | Открывает подменю |
+| **Пустой шаблон** | `Plus` | Добавляет базовый flowchart |
+| **Из файла** | `Upload` | Загрузка .mmd / .mermaid файла |
+| **Из библиотеки потоков** | `Folder` | Выбор из сохранённых диаграмм |
+| **Карточка-превью** | `GitBranch` | Миниатюра диаграммы |
+| **Увеличить** | Клик | Полноэкранный просмотр |
+| **Удалить** | `X` | Открепить диаграмму |
+
+> **Важно**: Диаграммы передаются как metadata вложения, поэтому AI видит их структуру, а не сырой код.
 ```
 
-#### 2. Новый тип прикреплённого файла с поддержкой Mermaid
+**Английская версия:**
+```markdown
+### Attachment System
 
-**Файл: `src/components/warroom/ChatInputArea.tsx`**
+AI-Hydra supports three types of attachments:
 
-Расширить интерфейс `AttachedFile`:
-```typescript
-export interface AttachedFile {
-  id: string;
-  file?: File;           // Обычные файлы
-  preview?: string;
-  // Для Mermaid-диаграмм (без реального файла)
-  mermaidContent?: string;
-  mermaidName?: string;
-}
+| Type | Icon | Description |
+|------|------|-------------|
+| **Images** | `Image` | PNG, JPG, GIF, WebP (up to 5 × 10 MB) |
+| **Documents** | `FileText` | PDF, TXT, MD and others (up to 10 MB) |
+| **Mermaid Diagrams** | `GitBranch` | Visual flow diagrams |
+
+### Attaching Mermaid Diagrams
+
+Mermaid diagrams attach as special attachments with visual preview (not pasted into text!). This allows the AI model to analyze the diagram rather than explain Mermaid syntax.
+
+| Element | Icon | Description |
+|---------|------|-------------|
+| **Paperclip → Mermaid Diagram** | `Paperclip` | Opens submenu |
+| **Empty Template** | `Plus` | Adds basic flowchart |
+| **From File** | `Upload` | Upload .mmd / .mermaid file |
+| **From Flow Library** | `Folder` | Select from saved diagrams |
+| **Preview Card** | `GitBranch` | Diagram thumbnail |
+| **Enlarge** | Click | Full-screen view |
+| **Remove** | `X` | Detach diagram |
+
+> **Important**: Diagrams are passed as attachment metadata, so AI sees their structure, not raw code.
 ```
 
-Изменить зону превью файлов:
-- Для обычных файлов — текущее поведение (миниатюра/имя файла)
-- Для Mermaid — компонент `MermaidPreview` с названием диаграммы
+##### 2. Обновление секции "flow-editor" (строки ~1107-1114)
 
-#### 3. Обновление FileUpload
+Добавить информацию об интеграции с чатом после раздела "Экспорт":
 
-**Файл: `src/components/warroom/FileUpload.tsx`**
+**Русская версия:**
+```markdown
+## Интеграция с чатом
 
-Изменить callbacks:
-- `onInsertMermaid` → `onAttachMermaid(content: string, name?: string)`
-- Вместо вставки в текст, добавлять в `attachedFiles`
+Диаграммы из редактора потоков можно прикреплять к запросам в Панели экспертов:
 
-Обработчики:
-- **Пустой шаблон**: добавляет шаблон как Mermaid-вложение
-- **Из файла**: читает файл и добавляет как Mermaid-вложение
-- **Из библиотеки потоков**: конвертирует и добавляет как Mermaid-вложение
+1. Нажмите \`Paperclip\` в поле ввода
+2. Выберите **Диаграмма Mermaid** → **Из библиотеки потоков**
+3. Наведите на диаграмму для просмотра превью
+4. Кликните для прикрепления к сообщению
 
-#### 4. Обновление ChatInputArea
+Диаграмма появится как карточка-превью рядом с полем ввода. AI-модели получат её структуру для анализа.
 
-**Файл: `src/components/warroom/ChatInputArea.tsx`**
-
-Новый callback:
-```typescript
-const handleAttachMermaid = useCallback((content: string, name?: string) => {
-  const newAttachment: AttachedFile = {
-    id: `mermaid-${Date.now()}`,
-    mermaidContent: content,
-    mermaidName: name || 'Diagram',
-  };
-  onFilesChange(files => [...files, newAttachment]);
-}, [onFilesChange]);
+> **Совет**: Используйте эту функцию для обсуждения архитектуры потоков с AI.
 ```
 
-Обновить рендеринг зоны превью:
-```typescript
-{attachedFiles.map((attached) => {
-  // Mermaid attachment
-  if (attached.mermaidContent) {
-    return (
-      <div key={attached.id} className="relative group">
-        <MermaidPreview 
-          content={attached.mermaidContent} 
-          maxHeight={80} 
-          className="w-24"
-        />
-        <span className="text-[10px] truncate">{attached.mermaidName}</span>
-        <button onClick={() => remove(attached.id)}>×</button>
-      </div>
-    );
-  }
-  // Regular file attachment
-  return <ExistingPreview ... />;
-})}
+**Английская версия:**
+```markdown
+## Chat Integration
+
+Diagrams from the flow editor can be attached to requests in the Expert Panel:
+
+1. Click \`Paperclip\` in the input field
+2. Select **Mermaid Diagram** → **From Flow Library**
+3. Hover over a diagram to see preview
+4. Click to attach to message
+
+The diagram will appear as a preview card next to the input field. AI models will receive its structure for analysis.
+
+> **Tip**: Use this feature to discuss flow architecture with AI.
 ```
 
-#### 5. Обновление useSendMessage
+##### 3. Добавить в секцию "best-practices" (строки ~1455-1463)
 
-**Файл: `src/hooks/useSendMessage.ts`**
+Обновить таблицу горячих клавиш:
 
-В функции `uploadFiles` добавить обработку Mermaid-вложений:
-```typescript
-// Mermaid attachments don't need upload - just include content
-if (attached.mermaidContent) {
-  attachmentUrls.push({
-    name: attached.mermaidName || 'Mermaid Diagram',
-    url: '', // No URL for inline content
-    type: 'text/x-mermaid',
-    content: attached.mermaidContent,
-  });
-  continue;
-}
+**Русская версия — добавить строку:**
+```markdown
+| **Клик на превью Mermaid** | Увеличить до полноэкранного просмотра |
 ```
 
-#### 6. Обновление AttachmentPreview
-
-**Файл: `src/components/warroom/AttachmentPreview.tsx`**
-
-Добавить рендеринг Mermaid-вложений в истории сообщений:
-```typescript
-function isMermaidType(type: string): boolean {
-  return type === 'text/x-mermaid' || type === 'application/x-mermaid';
-}
-
-export function AttachmentPreview({ attachment }: AttachmentPreviewProps) {
-  if (isMermaidType(attachment.type) && attachment.content) {
-    return (
-      <Dialog>
-        <DialogTrigger asChild>
-          <button className="w-24 cursor-pointer group">
-            <MermaidPreview content={attachment.content} maxHeight={80} />
-            <span className="text-xs">{attachment.name}</span>
-          </button>
-        </DialogTrigger>
-        <DialogContent className="max-w-4xl">
-          <MermaidBlock content={attachment.content} />
-        </DialogContent>
-      </Dialog>
-    );
-  }
-  // ... existing image and document handling
-}
-```
-
-#### 7. Обновление FlowDiagramPickerDialog
-
-**Файл: `src/components/warroom/FlowDiagramPickerDialog.tsx`**
-
-Изменить callback для передачи имени диаграммы:
-```typescript
-interface FlowDiagramPickerDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onSelect: (mermaidCode: string, diagramName: string) => void;
-}
-
-const handleSelect = (diagram) => {
-  const mermaidCode = exportToMermaid(diagram.nodes, diagram.edges);
-  onSelect(mermaidCode, diagram.name);
-  onOpenChange(false);
-};
+**Английская версия — добавить строку:**
+```markdown
+| **Click on Mermaid preview** | Enlarge to full-screen view |
 ```
 
 ---
 
 ### Файлы для изменения
 
-| Файл | Действие |
-|------|----------|
-| `src/types/messages.ts` | Добавить поле `content` в `Attachment` |
-| `src/components/warroom/ChatInputArea.tsx` | Расширить `AttachedFile`, добавить превью Mermaid |
-| `src/components/warroom/FileUpload.tsx` | Изменить callbacks на attach вместо insert |
-| `src/hooks/useSendMessage.ts` | Обработка Mermaid-вложений без upload |
-| `src/components/warroom/AttachmentPreview.tsx` | Рендеринг Mermaid в истории с превью |
-| `src/components/warroom/FlowDiagramPickerDialog.tsx` | Передавать имя диаграммы в callback |
+| Файл | Секция | Действие |
+|------|--------|----------|
+| `src/content/hydrapedia.ts` | `expert-panel` (строки ~282-290) | Добавить систему вложений и Mermaid |
+| `src/content/hydrapedia.ts` | `flow-editor` (строки ~1107-1114) | Добавить интеграцию с чатом |
+| `src/content/hydrapedia.ts` | `best-practices` (строки ~1455-1463) | Обновить горячие клавиши |
 
 ---
 
 ### Результат
 
-После реализации:
-- Mermaid-диаграммы прикрепляются как визуальные карточки с превью
-- Код диаграммы не засоряет текстовое поле запроса
-- Пользователь может написать свой контекстный запрос, ссылаясь на прикреплённую диаграмму
-- В истории сообщений диаграммы отображаются с интерактивным превью и возможностью увеличить
+После обновления пользователи смогут:
+- Узнать о системе вложений в Гидропедии
+- Понять, как прикреплять Mermaid-диаграммы тремя способами
+- Увидеть, что диаграммы из редактора потоков интегрированы с чатом
+- Найти информацию о полноэкранном просмотре превью
 
