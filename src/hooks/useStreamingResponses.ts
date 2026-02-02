@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef } from 'react';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 import type { AgentRole } from '@/config/roles';
 import type { PendingResponseState, RequestStartInfo } from '@/types/pending';
 
@@ -15,7 +16,9 @@ export interface StreamingResponse {
 }
 
 interface UseStreamingResponsesProps {
+  sessionId: string | null;
   onStreamComplete?: (modelId: string, content: string) => void;
+  onFallbackToOrchestrator?: (modelId: string, message: string) => void;
 }
 
 interface UseStreamingResponsesReturn {
@@ -24,16 +27,30 @@ interface UseStreamingResponsesReturn {
   startStreaming: (
     models: RequestStartInfo[],
     message: string,
-    timeoutSeconds: number
+    timeoutSeconds: number,
+    perModelSettings?: Record<string, { temperature?: number; maxTokens?: number; systemPrompt?: string }>
   ) => void;
   stopStreaming: (modelId: string) => void;
   stopAllStreaming: () => void;
   clearCompleted: () => void;
 }
 
+// Models known to NOT support streaming via Lovable AI gateway
+const NON_STREAMING_MODELS_PREFIXES = [
+  'openrouter/',
+  'qwen/',
+  'zhipu/',
+];
+
+function isStreamingSupported(modelId: string): boolean {
+  return !NON_STREAMING_MODELS_PREFIXES.some(prefix => modelId.startsWith(prefix));
+}
+
 export function useStreamingResponses({
+  sessionId,
   onStreamComplete,
-}: UseStreamingResponsesProps = {}): UseStreamingResponsesReturn {
+  onFallbackToOrchestrator,
+}: UseStreamingResponsesProps): UseStreamingResponsesReturn {
   const [streamingResponses, setStreamingResponses] = useState<Map<string, StreamingResponse>>(new Map());
   const [pendingResponses, setPendingResponses] = useState<Map<string, PendingResponseState>>(new Map());
   const abortControllersRef = useRef<Map<string, AbortController>>(new Map());
@@ -103,17 +120,114 @@ export function useStreamingResponses({
     });
   }, []);
 
+  // Fallback to orchestrator for a single model
+  const fallbackToOrchestrator = useCallback(async (
+    model: RequestStartInfo,
+    messageContent: string,
+    perModelSettings?: Record<string, { temperature?: number; maxTokens?: number; systemPrompt?: string }>
+  ) => {
+    if (!sessionId) {
+      console.error('[Streaming] Cannot fallback: no sessionId');
+      return;
+    }
+
+    console.log(`[Streaming] Fallback to orchestrator for ${model.modelId}`);
+
+    // Notify parent about fallback (optional callback)
+    onFallbackToOrchestrator?.(model.modelId, messageContent);
+
+    try {
+      const session = await supabase.auth.getSession();
+      const settings = perModelSettings?.[model.modelId] || {};
+      
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/hydra-orchestrator`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.data.session?.access_token}`,
+          },
+          body: JSON.stringify({
+            session_id: sessionId,
+            message: messageContent,
+            attachments: [],
+            models: [{
+              model_id: model.modelId,
+              use_lovable_ai: !model.modelId.startsWith('openrouter/'),
+              provider: model.modelId.split('/')[0],
+              temperature: settings.temperature ?? 0.7,
+              max_tokens: settings.maxTokens ?? 4096,
+              system_prompt: settings.systemPrompt,
+              role: model.role,
+              enable_tools: false, // Disable tools for fallback
+            }],
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error(`[Streaming] Orchestrator fallback failed:`, errorData);
+        
+        // Mark as failed
+        setPendingResponses(prev => {
+          const updated = new Map(prev);
+          const existing = updated.get(model.modelId);
+          if (existing) {
+            updated.set(model.modelId, { ...existing, status: 'timedout' });
+          }
+          return updated;
+        });
+      } else {
+        // Success - orchestrator will save to DB, remove from pending
+        setPendingResponses(prev => {
+          const updated = new Map(prev);
+          updated.delete(model.modelId);
+          return updated;
+        });
+      }
+    } catch (error) {
+      console.error(`[Streaming] Orchestrator fallback error:`, error);
+      
+      setPendingResponses(prev => {
+        const updated = new Map(prev);
+        const existing = updated.get(model.modelId);
+        if (existing) {
+          updated.set(model.modelId, { ...existing, status: 'timedout' });
+        }
+        return updated;
+      });
+    }
+
+    // Cleanup timers
+    clearInterval(timersRef.current.get(model.modelId));
+    timersRef.current.delete(model.modelId);
+    abortControllersRef.current.delete(model.modelId);
+  }, [sessionId, onFallbackToOrchestrator]);
+
   // Start parallel streaming for multiple models
   const startStreaming = useCallback((
     models: RequestStartInfo[],
     message: string,
-    timeoutSeconds: number
+    timeoutSeconds: number,
+    perModelSettings?: Record<string, { temperature?: number; maxTokens?: number; systemPrompt?: string }>
   ) => {
     const now = Date.now();
 
-    // Initialize pending responses for skeleton display
+    // Separate models: streamable vs non-streamable
+    const streamableModels = models.filter(m => isStreamingSupported(m.modelId));
+    const nonStreamableModels = models.filter(m => !isStreamingSupported(m.modelId));
+
+    // Immediately fallback non-streaming models to orchestrator
+    nonStreamableModels.forEach(model => {
+      console.log(`[Streaming] Model ${model.modelId} doesn't support streaming, using orchestrator`);
+      fallbackToOrchestrator(model, message, perModelSettings);
+    });
+
+    // Initialize pending responses for skeleton display (only streamable)
     const newPending = new Map<string, PendingResponseState>();
-    models.forEach(m => {
+    streamableModels.forEach(m => {
       newPending.set(m.modelId, {
         modelId: m.modelId,
         modelName: m.modelName,
@@ -123,10 +237,16 @@ export function useStreamingResponses({
         elapsedSeconds: 0,
       });
     });
-    setPendingResponses(newPending);
+    setPendingResponses(prev => {
+      const updated = new Map(prev);
+      for (const [key, value] of newPending) {
+        updated.set(key, value);
+      }
+      return updated;
+    });
 
-    // Start a stream for each model
-    models.forEach(model => {
+    // Start a stream for each streamable model
+    streamableModels.forEach(model => {
       const controller = new AbortController();
       abortControllersRef.current.set(model.modelId, controller);
 
@@ -160,15 +280,18 @@ export function useStreamingResponses({
       timersRef.current.set(model.modelId, timer);
 
       // Start the SSE stream
-      streamModel(model, message, controller, now);
+      streamModel(model, message, controller, now, perModelSettings);
     });
 
     async function streamModel(
       model: RequestStartInfo,
       messageContent: string,
       controller: AbortController,
-      startTime: number
+      startTime: number,
+      modelSettings?: Record<string, { temperature?: number; maxTokens?: number; systemPrompt?: string }>
     ) {
+      const settings = modelSettings?.[model.modelId] || {};
+      
       try {
         const response = await fetch(
           `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/hydra-stream`,
@@ -182,13 +305,22 @@ export function useStreamingResponses({
               message: messageContent,
               model_id: model.modelId,
               role: model.role,
+              temperature: settings.temperature,
+              max_tokens: settings.maxTokens,
+              system_prompt: settings.systemPrompt,
             }),
             signal: controller.signal,
           }
         );
 
-        // Handle error responses
+        // Handle error responses - FALLBACK TO ORCHESTRATOR on 500
         if (!response.ok) {
+          if (response.status === 500 || response.status === 400 || response.status === 401) {
+            console.log(`[Streaming] Error ${response.status} for ${model.modelId}, falling back to orchestrator`);
+            await fallbackToOrchestrator(model, messageContent, modelSettings);
+            return;
+          }
+          
           handleStreamError(model.modelId, response.status);
           return;
         }
@@ -306,36 +438,9 @@ export function useStreamingResponses({
         
         console.error(`[Streaming] Error for ${model.modelId}:`, error);
         
-        // Keep skeleton on error, mark as timedout for retry options
-        setPendingResponses(prev => {
-          const updated = new Map(prev);
-          const existing = updated.get(model.modelId);
-          if (existing) {
-            updated.set(model.modelId, { ...existing, status: 'timedout' });
-          } else {
-            // Re-add to pending if it was removed
-            updated.set(model.modelId, {
-              modelId: model.modelId,
-              modelName: model.modelName,
-              role: model.role,
-              status: 'timedout',
-              startTime: Date.now(),
-              elapsedSeconds: 0,
-            });
-          }
-          return updated;
-        });
-
-        // Remove from streaming
-        setStreamingResponses(prev => {
-          const updated = new Map(prev);
-          updated.delete(model.modelId);
-          return updated;
-        });
-
-        clearInterval(timersRef.current.get(model.modelId));
-        timersRef.current.delete(model.modelId);
-        abortControllersRef.current.delete(model.modelId);
+        // FALLBACK TO ORCHESTRATOR on any error
+        console.log(`[Streaming] Error for ${model.modelId}, falling back to orchestrator`);
+        await fallbackToOrchestrator(model, messageContent, modelSettings);
       }
     }
 
@@ -362,7 +467,7 @@ export function useStreamingResponses({
       timersRef.current.delete(modelId);
       abortControllersRef.current.delete(modelId);
     }
-  }, [onStreamComplete]);
+  }, [onStreamComplete, fallbackToOrchestrator]);
 
   return {
     streamingResponses,
