@@ -36,9 +36,13 @@ import { SwitchNode } from './nodes/SwitchNode';
 import { EmbeddingNode } from './nodes/EmbeddingNode';
 import { MemoryNode } from './nodes/MemoryNode';
 import { ClassifierNode } from './nodes/ClassifierNode';
+import { CustomEdge } from './edges/CustomEdge';
 import { FlowNodeType } from '@/types/flow';
+import { EdgeStyleSettings, FlowEdgeData } from '@/types/edgeTypes';
+import { validateConnection, getSuggestedDataType } from './connectionRules';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { toast } from 'sonner';
 
 const nodeTypes = {
   input: InputNode,
@@ -62,6 +66,10 @@ const nodeTypes = {
   classifier: ClassifierNode,
 } as const;
 
+const edgeTypes = {
+  custom: CustomEdge,
+} as const;
+
 interface FlowCanvasProps {
   nodes: Node[];
   edges: Edge[];
@@ -71,7 +79,9 @@ interface FlowCanvasProps {
   setEdges: React.Dispatch<React.SetStateAction<Edge[]>>;
   onInit: (instance: ReactFlowInstance) => void;
   onNodeClick?: (event: React.MouseEvent, node: Node) => void;
+  onEdgeClick?: (event: React.MouseEvent, edge: Edge) => void;
   onPaneClick?: () => void;
+  edgeSettings: EdgeStyleSettings;
 }
 
 export function FlowCanvas({
@@ -83,31 +93,71 @@ export function FlowCanvas({
   setEdges,
   onInit,
   onNodeClick,
+  onEdgeClick,
   onPaneClick,
+  edgeSettings,
 }: FlowCanvasProps) {
   const { theme } = useTheme();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
 
   const onConnect = useCallback(
     (params: Connection) => {
+      if (!params.source || !params.target) return;
+
+      // Find source and target nodes to get their types
+      const sourceNode = nodes.find(n => n.id === params.source);
+      const targetNode = nodes.find(n => n.id === params.target);
+
+      if (!sourceNode || !targetNode) return;
+
+      const sourceType = sourceNode.type as FlowNodeType;
+      const targetType = targetNode.type as FlowNodeType;
+
+      // Validate connection
+      const validation = validateConnection(sourceType, targetType);
+
+      if (!validation.isValid) {
+        toast.error(language === 'ru' ? validation.reasonRu : validation.reason);
+        return;
+      }
+
+      // Get suggested data type based on source
+      const suggestedDataType = getSuggestedDataType(sourceType);
+
+      // Build marker based on settings
+      const markerEnd = edgeSettings.defaultMarkerType !== 'none' 
+        ? {
+            type: edgeSettings.defaultMarkerType === 'arrowclosed' 
+              ? MarkerType.ArrowClosed 
+              : MarkerType.Arrow,
+            width: 20,
+            height: 20,
+          }
+        : undefined;
+
+      // Create edge with settings
+      const edgeData: FlowEdgeData = {
+        dataType: suggestedDataType,
+        animated: edgeSettings.defaultAnimated,
+        lineType: edgeSettings.defaultLineType,
+        strokeWidth: 2,
+      };
+
       setEdges((eds) =>
         addEdge(
           {
             ...params,
-            type: 'smoothstep',
-            animated: true,
-            markerEnd: {
-              type: MarkerType.ArrowClosed,
-              width: 20,
-              height: 20,
-            },
+            type: 'custom',
+            animated: edgeSettings.defaultAnimated,
+            markerEnd,
+            data: edgeData,
           },
           eds
         )
       );
     },
-    [setEdges]
+    [setEdges, nodes, edgeSettings, language]
   );
 
   const onDragOver = useCallback((event: React.DragEvent) => {
@@ -158,15 +208,17 @@ export function FlowCanvas({
         onDragOver={onDragOver}
         onInit={onInit}
         onNodeClick={onNodeClick}
+        onEdgeClick={onEdgeClick}
         onPaneClick={onPaneClick}
         nodeTypes={nodeTypes}
+        edgeTypes={edgeTypes}
         connectionMode={ConnectionMode.Loose}
         fitView
         snapToGrid
         snapGrid={[15, 15]}
         defaultEdgeOptions={{
-          type: 'smoothstep',
-          animated: true,
+          type: 'custom',
+          animated: edgeSettings.defaultAnimated,
         }}
         proOptions={{ hideAttribution: true }}
         className="bg-background"

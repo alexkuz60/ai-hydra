@@ -5,15 +5,39 @@ import { FlowCanvas } from '@/components/flow/FlowCanvas';
 import { FlowSidebar } from '@/components/flow/FlowSidebar';
 import { FlowToolbar } from '@/components/flow/FlowToolbar';
 import { NodePropertiesPanel } from '@/components/flow/NodePropertiesPanel';
+import { EdgePropertiesPanel } from '@/components/flow/EdgePropertiesPanel';
 import { useFlowDiagrams, exportToMermaid } from '@/hooks/useFlowDiagrams';
 import { useFlowExport } from '@/hooks/useFlowExport';
 import { FlowNodeType, FlowDiagram } from '@/types/flow';
+import { EdgeStyleSettings, FlowEdgeData, DEFAULT_EDGE_SETTINGS } from '@/types/edgeTypes';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
 
 const initialNodes: Node[] = [];
 const initialEdges: Edge[] = [];
+
+// Load edge settings from localStorage
+function loadEdgeSettings(): EdgeStyleSettings {
+  try {
+    const saved = localStorage.getItem('flowEditor.edgeSettings');
+    if (saved) {
+      return { ...DEFAULT_EDGE_SETTINGS, ...JSON.parse(saved) };
+    }
+  } catch (e) {
+    console.warn('Failed to load edge settings:', e);
+  }
+  return DEFAULT_EDGE_SETTINGS;
+}
+
+// Save edge settings to localStorage
+function saveEdgeSettings(settings: EdgeStyleSettings) {
+  try {
+    localStorage.setItem('flowEditor.edgeSettings', JSON.stringify(settings));
+  } catch (e) {
+    console.warn('Failed to save edge settings:', e);
+  }
+}
 
 function FlowEditorContent() {
   const { t } = useLanguage();
@@ -26,6 +50,8 @@ function FlowEditorContent() {
   const [currentDiagramId, setCurrentDiagramId] = useState<string | null>(null);
   const [hasChanges, setHasChanges] = useState(false);
   const [selectedNode, setSelectedNode] = useState<Node | null>(null);
+  const [selectedEdge, setSelectedEdge] = useState<Edge | null>(null);
+  const [edgeSettings, setEdgeSettings] = useState<EdgeStyleSettings>(loadEdgeSettings);
   const reactFlowInstance = useRef<ReactFlowInstance | null>(null);
 
   // Export hook
@@ -57,6 +83,12 @@ function FlowEditorContent() {
   useEffect(() => {
     setHasChanges(true);
   }, [nodes, edges]);
+
+  // Save edge settings when they change
+  const handleEdgeSettingsChange = useCallback((newSettings: EdgeStyleSettings) => {
+    setEdgeSettings(newSettings);
+    saveEdgeSettings(newSettings);
+  }, []);
 
   const onInit = useCallback((instance: ReactFlowInstance) => {
     reactFlowInstance.current = instance;
@@ -91,14 +123,22 @@ function FlowEditorContent() {
     setCurrentDiagramId(null);
     setHasChanges(false);
     setSelectedNode(null);
+    setSelectedEdge(null);
   }, [setNodes, setEdges, t]);
 
   const handleNodeClick = useCallback((_event: React.MouseEvent, node: Node) => {
     setSelectedNode(node);
+    setSelectedEdge(null);
+  }, []);
+
+  const handleEdgeClick = useCallback((_event: React.MouseEvent, edge: Edge) => {
+    setSelectedEdge(edge);
+    setSelectedNode(null);
   }, []);
 
   const handlePaneClick = useCallback(() => {
     setSelectedNode(null);
+    setSelectedEdge(null);
   }, []);
 
   const handleUpdateNode = useCallback((nodeId: string, data: Record<string, unknown>) => {
@@ -118,6 +158,23 @@ function FlowEditorContent() {
     setEdges((eds) => eds.filter((edge) => edge.source !== nodeId && edge.target !== nodeId));
   }, [setNodes, setEdges]);
 
+  const handleUpdateEdge = useCallback((edgeId: string, data: FlowEdgeData) => {
+    setEdges((eds) =>
+      eds.map((edge) =>
+        edge.id === edgeId ? { ...edge, data } : edge
+      )
+    );
+    // Update selected edge reference
+    setSelectedEdge((prev) =>
+      prev?.id === edgeId ? { ...prev, data } : prev
+    );
+  }, [setEdges]);
+
+  const handleDeleteEdge = useCallback((edgeId: string) => {
+    setEdges((eds) => eds.filter((edge) => edge.id !== edgeId));
+    setSelectedEdge(null);
+  }, [setEdges]);
+
   const handleLoadDiagram = useCallback((diagram: FlowDiagram) => {
     setNodes(diagram.nodes as Node[]);
     setEdges(diagram.edges);
@@ -125,6 +182,7 @@ function FlowEditorContent() {
     setCurrentDiagramId(diagram.id);
     setHasChanges(false);
     setSelectedNode(null);
+    setSelectedEdge(null);
 
     if (diagram.viewport && reactFlowInstance.current) {
       reactFlowInstance.current.setViewport(diagram.viewport);
@@ -158,6 +216,8 @@ function FlowEditorContent() {
           onLoadDiagram={handleLoadDiagram}
           isSaving={isSaving}
           hasChanges={hasChanges}
+          edgeSettings={edgeSettings}
+          onEdgeSettingsChange={handleEdgeSettingsChange}
         />
         <div className="flex flex-1 overflow-hidden">
           <FlowSidebar onDragStart={onDragStart} />
@@ -170,7 +230,9 @@ function FlowEditorContent() {
             setEdges={setEdges}
             onInit={onInit}
             onNodeClick={handleNodeClick}
+            onEdgeClick={handleEdgeClick}
             onPaneClick={handlePaneClick}
+            edgeSettings={edgeSettings}
           />
           {selectedNode && (
             <NodePropertiesPanel
@@ -178,6 +240,14 @@ function FlowEditorContent() {
               onClose={() => setSelectedNode(null)}
               onUpdateNode={handleUpdateNode}
               onDeleteNode={handleDeleteNode}
+            />
+          )}
+          {selectedEdge && (
+            <EdgePropertiesPanel
+              selectedEdge={selectedEdge}
+              onClose={() => setSelectedEdge(null)}
+              onUpdateEdge={handleUpdateEdge}
+              onDeleteEdge={handleDeleteEdge}
             />
           )}
         </div>
