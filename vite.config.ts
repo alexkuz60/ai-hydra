@@ -19,7 +19,7 @@ export default defineConfig(({ mode }) => ({
     },
   },
   optimizeDeps: {
-    include: ['@dagrejs/dagre'],
+    include: ['@dagrejs/dagre', '@dagrejs/graphlib'],
   },
   build: {
     commonjsOptions: {
