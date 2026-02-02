@@ -537,6 +537,11 @@ const translations: Translations = {
   // Streaming
   'streaming.generating': { ru: 'Генерирует...', en: 'Generating...' },
   'streaming.stop': { ru: 'Остановить генерацию', en: 'Stop generation' },
+  'streaming.enabledToast': { ru: 'Streaming-режим включён', en: 'Streaming mode enabled' },
+  'streaming.disabledToast': { ru: 'Streaming-режим выключен', en: 'Streaming mode disabled' },
+  'streaming.clickToToggle': { ru: 'Кликните для переключения режима', en: 'Click to toggle mode' },
+  'streaming.hybridEnabled': { ru: 'Ответы в реальном времени', en: 'Real-time responses' },
+  'streaming.hybridDisabled': { ru: 'Стандартный режим ответов', en: 'Standard response mode' },
   'message.copied': { ru: 'Скопировано', en: 'Copied' },
   'message.copy': { ru: 'Копировать', en: 'Copy' },
   
