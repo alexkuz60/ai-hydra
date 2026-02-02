@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useCallback, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Layout } from '@/components/layout/Layout';
+import { cn } from '@/lib/utils';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 import type { ImperativePanelHandle } from 'react-resizable-panels';
 import { ConsultantPanel } from '@/components/warroom/ConsultantPanel';
@@ -21,7 +22,7 @@ import { useConsultantPanelWidth } from '@/hooks/useConsultantPanelWidth';
 import { useModelStatistics } from '@/hooks/useModelStatistics';
 import { useStreamingResponses } from '@/hooks/useStreamingResponses';
 import { PendingResponseState, RequestStartInfo } from '@/types/pending';
-import { Loader2, Target, Zap, ZapOff } from 'lucide-react';
+import { Loader2, Target, Zap, ZapOff, Square, Circle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { toast } from 'sonner';
@@ -505,78 +506,131 @@ export default function ExpertPanel() {
                   <span className="font-medium truncate">{currentTask.title}</span>
                 </div>
                 
-                {/* Streaming Mode Toggle */}
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <motion.button
-                        onClick={() => {
-                          setUseHybridStreaming(!useHybridStreaming);
-                          toast.success(
-                            !useHybridStreaming 
-                              ? t('streaming.enabledToast') 
-                              : t('streaming.disabledToast')
-                          );
-                        }}
-                        className="focus:outline-none focus:ring-2 focus:ring-primary/50 rounded-full"
-                        whileTap={{ scale: 0.95 }}
-                        whileHover={{ scale: 1.05 }}
-                      >
-                        <AnimatePresence mode="wait">
-                          <motion.div
-                            key={useHybridStreaming ? 'streaming' : 'standard'}
-                            initial={{ opacity: 0, scale: 0.8, rotate: -10 }}
-                            animate={{ opacity: 1, scale: 1, rotate: 0 }}
-                            exit={{ opacity: 0, scale: 0.8, rotate: 10 }}
-                            transition={{ duration: 0.2, ease: 'easeOut' }}
-                          >
-                            <Badge 
-                              variant={useHybridStreaming ? 'default' : 'secondary'}
-                              className={`flex items-center gap-1.5 cursor-pointer ${
-                                useHybridStreaming 
-                                  ? 'bg-hydra-cyan/20 text-hydra-cyan border-hydra-cyan/30' 
-                                  : 'bg-muted text-muted-foreground'
-                              }`}
+                {/* Streaming Controls */}
+                <div className="flex items-center gap-2">
+                  {/* Stop All Streaming Button - player style */}
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <motion.button
+                          onClick={() => {
+                            if (streamingResponses.size > 0) {
+                              stopAllStreaming();
+                              toast.info(t('streaming.stoppedAll'));
+                            }
+                          }}
+                          disabled={streamingResponses.size === 0}
+                          className={cn(
+                            "h-7 w-7 rounded-md flex items-center justify-center transition-colors focus:outline-none focus:ring-2 focus:ring-primary/50",
+                            streamingResponses.size > 0 
+                              ? "bg-hydra-critical/20 text-hydra-critical hover:bg-hydra-critical/30 cursor-pointer" 
+                              : "bg-muted/50 text-muted-foreground/40 cursor-default"
+                          )}
+                          whileTap={streamingResponses.size > 0 ? { scale: 0.9 } : undefined}
+                        >
+                          <AnimatePresence mode="wait">
+                            <motion.span
+                              key={streamingResponses.size > 0 ? 'active' : 'idle'}
+                              initial={{ scale: 0.5, opacity: 0 }}
+                              animate={{ 
+                                scale: 1, 
+                                opacity: 1,
+                              }}
+                              exit={{ scale: 0.5, opacity: 0 }}
+                              transition={{ duration: 0.15 }}
                             >
-                              <motion.span
-                                key={useHybridStreaming ? 'zap' : 'zap-off'}
-                                initial={{ rotate: -180, opacity: 0 }}
-                                animate={{ 
-                                  rotate: 0, 
-                                  opacity: 1,
-                                  scale: useHybridStreaming ? [1, 1.2, 1] : 1,
-                                }}
-                                transition={{ 
-                                  duration: 0.3, 
-                                  ease: 'easeOut',
-                                  scale: useHybridStreaming ? {
-                                    duration: 1.5,
-                                    repeat: Infinity,
-                                    ease: 'easeInOut',
-                                  } : undefined,
-                                }}
+                              {streamingResponses.size > 0 ? (
+                                <Square className="h-3.5 w-3.5 fill-current" />
+                              ) : (
+                                <Circle className="h-3.5 w-3.5" />
+                              )}
+                            </motion.span>
+                          </AnimatePresence>
+                        </motion.button>
+                      </TooltipTrigger>
+                      <TooltipContent side="bottom">
+                        <p className="text-xs">
+                          {streamingResponses.size > 0 
+                            ? t('streaming.stopAll') 
+                            : t('streaming.noActiveStreams')}
+                        </p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                  
+                  {/* Streaming Mode Toggle */}
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <motion.button
+                          onClick={() => {
+                            setUseHybridStreaming(!useHybridStreaming);
+                            toast.success(
+                              !useHybridStreaming 
+                                ? t('streaming.enabledToast') 
+                                : t('streaming.disabledToast')
+                            );
+                          }}
+                          className="focus:outline-none focus:ring-2 focus:ring-primary/50 rounded-full"
+                          whileTap={{ scale: 0.95 }}
+                          whileHover={{ scale: 1.05 }}
+                        >
+                          <AnimatePresence mode="wait">
+                            <motion.div
+                              key={useHybridStreaming ? 'streaming' : 'standard'}
+                              initial={{ opacity: 0, scale: 0.8, rotate: -10 }}
+                              animate={{ opacity: 1, scale: 1, rotate: 0 }}
+                              exit={{ opacity: 0, scale: 0.8, rotate: 10 }}
+                              transition={{ duration: 0.2, ease: 'easeOut' }}
+                            >
+                              <Badge 
+                                variant={useHybridStreaming ? 'default' : 'secondary'}
+                                className={`flex items-center gap-1.5 cursor-pointer ${
+                                  useHybridStreaming 
+                                    ? 'bg-hydra-cyan/20 text-hydra-cyan border-hydra-cyan/30' 
+                                    : 'bg-muted text-muted-foreground'
+                                }`}
                               >
-                                {useHybridStreaming ? (
-                                  <Zap className="h-3 w-3 drop-shadow-[0_0_4px_hsl(var(--hydra-cyan))]" />
-                                ) : (
-                                  <ZapOff className="h-3 w-3" />
-                                )}
-                              </motion.span>
-                              <span className="text-xs">
-                                {useHybridStreaming ? 'Streaming' : 'Standard'}
-                              </span>
-                            </Badge>
-                          </motion.div>
-                        </AnimatePresence>
-                      </motion.button>
-                    </TooltipTrigger>
-                    <TooltipContent side="bottom">
-                      <p className="text-xs">
-                        {t('streaming.clickToToggle')}
-                      </p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
+                                <motion.span
+                                  key={useHybridStreaming ? 'zap' : 'zap-off'}
+                                  initial={{ rotate: -180, opacity: 0 }}
+                                  animate={{ 
+                                    rotate: 0, 
+                                    opacity: 1,
+                                    scale: useHybridStreaming ? [1, 1.2, 1] : 1,
+                                  }}
+                                  transition={{ 
+                                    duration: 0.3, 
+                                    ease: 'easeOut',
+                                    scale: useHybridStreaming ? {
+                                      duration: 1.5,
+                                      repeat: Infinity,
+                                      ease: 'easeInOut',
+                                    } : undefined,
+                                  }}
+                                >
+                                  {useHybridStreaming ? (
+                                    <Zap className="h-3 w-3 drop-shadow-[0_0_4px_hsl(var(--hydra-cyan))]" />
+                                  ) : (
+                                    <ZapOff className="h-3 w-3" />
+                                  )}
+                                </motion.span>
+                                <span className="text-xs">
+                                  {useHybridStreaming ? 'Streaming' : 'Standard'}
+                                </span>
+                              </Badge>
+                            </motion.div>
+                          </AnimatePresence>
+                        </motion.button>
+                      </TooltipTrigger>
+                      <TooltipContent side="bottom">
+                        <p className="text-xs">
+                          {t('streaming.clickToToggle')}
+                        </p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
               </div>
 
               {/* Messages Area */}
