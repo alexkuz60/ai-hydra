@@ -15,7 +15,7 @@ import {
   ResizableHandle,
 } from '@/components/ui/resizable';
 import { Badge } from '@/components/ui/badge';
-import { Wrench, Users, Settings } from 'lucide-react';
+import { Wrench, Users, Settings, ChevronDown, ChevronRight } from 'lucide-react';
 import { ROLE_CONFIG, AGENT_ROLES, type AgentRole } from '@/config/roles';
 import { cn } from '@/lib/utils';
 import RoleDetailsPanel from '@/components/staff/RoleDetailsPanel';
@@ -23,6 +23,8 @@ import RoleDetailsPanel from '@/components/staff/RoleDetailsPanel';
 const StaffRoles = () => {
   const { t } = useLanguage();
   const [selectedRole, setSelectedRole] = useState<AgentRole | null>(null);
+  const [expertsExpanded, setExpertsExpanded] = useState(true);
+  const [technicalExpanded, setTechnicalExpanded] = useState(true);
 
   // Группируем роли на экспертов и технический персонал
   const { expertRoles, technicalRoles } = useMemo(() => {
@@ -56,7 +58,7 @@ const StaffRoles = () => {
         )}
         onClick={() => setSelectedRole(role)}
       >
-        <TableCell>
+        <TableCell className="pl-8">
           <div className={cn(
             "w-10 h-10 rounded-lg flex items-center justify-center",
             `bg-${config.color.replace('text-', '')}/10`
@@ -105,9 +107,17 @@ const StaffRoles = () => {
                 </TableHeader>
                 <TableBody>
                   {/* Группа экспертов */}
-                  <TableRow className="bg-muted/30 hover:bg-muted/30">
+                  <TableRow 
+                    className="bg-muted/30 hover:bg-muted/40 cursor-pointer"
+                    onClick={() => setExpertsExpanded(!expertsExpanded)}
+                  >
                     <TableCell colSpan={2} className="py-2">
                       <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                        {expertsExpanded ? (
+                          <ChevronDown className="h-4 w-4" />
+                        ) : (
+                          <ChevronRight className="h-4 w-4" />
+                        )}
                         <Users className="h-4 w-4" />
                         {t('staffRoles.expertsGroup')}
                         <Badge variant="outline" className="ml-auto text-xs">
@@ -116,12 +126,20 @@ const StaffRoles = () => {
                       </div>
                     </TableCell>
                   </TableRow>
-                  {expertRoles.map(renderRoleRow)}
+                  {expertsExpanded && expertRoles.map(renderRoleRow)}
                   
                   {/* Группа технического персонала */}
-                  <TableRow className="bg-muted/30 hover:bg-muted/30">
+                  <TableRow 
+                    className="bg-muted/30 hover:bg-muted/40 cursor-pointer"
+                    onClick={() => setTechnicalExpanded(!technicalExpanded)}
+                  >
                     <TableCell colSpan={2} className="py-2">
                       <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                        {technicalExpanded ? (
+                          <ChevronDown className="h-4 w-4" />
+                        ) : (
+                          <ChevronRight className="h-4 w-4" />
+                        )}
                         <Settings className="h-4 w-4" />
                         {t('staffRoles.technicalGroup')}
                         <Badge variant="outline" className="ml-auto text-xs">
@@ -130,7 +148,7 @@ const StaffRoles = () => {
                       </div>
                     </TableCell>
                   </TableRow>
-                  {technicalRoles.map(renderRoleRow)}
+                  {technicalExpanded && technicalRoles.map(renderRoleRow)}
                 </TableBody>
               </Table>
             </div>

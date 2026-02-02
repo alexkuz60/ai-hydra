@@ -10,15 +10,32 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Wrench, Pencil, X, Save, Loader2 } from 'lucide-react';
+import { Wrench, Pencil, X, Save, Loader2, FolderOpen, Library } from 'lucide-react';
 import { 
   ROLE_CONFIG, 
   DEFAULT_SYSTEM_PROMPTS, 
   type AgentRole 
 } from '@/config/roles';
 import { cn } from '@/lib/utils';
+
+interface PromptLibraryItem {
+  id: string;
+  name: string;
+  content: string;
+  role: string;
+  is_shared: boolean;
+  user_id: string;
+}
 
 interface RoleDetailsPanelProps {
   selectedRole: AgentRole | null;
@@ -35,6 +52,11 @@ const RoleDetailsPanel = forwardRef<HTMLDivElement, RoleDetailsPanelProps>(
     const [promptName, setPromptName] = useState('');
     const [isShared, setIsShared] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
+    
+    // Library state
+    const [libraryPrompts, setLibraryPrompts] = useState<PromptLibraryItem[]>([]);
+    const [isLoadingLibrary, setIsLoadingLibrary] = useState(false);
+    const [selectedLibraryPrompt, setSelectedLibraryPrompt] = useState<string>('');
 
     // Reset edit state when role changes
     useEffect(() => {
@@ -42,7 +64,34 @@ const RoleDetailsPanel = forwardRef<HTMLDivElement, RoleDetailsPanelProps>(
       setEditedPrompt('');
       setPromptName('');
       setIsShared(false);
+      setSelectedLibraryPrompt('');
     }, [selectedRole]);
+
+    // Load prompts from library for selected role
+    useEffect(() => {
+      if (!selectedRole || !user) return;
+      
+      const loadLibraryPrompts = async () => {
+        setIsLoadingLibrary(true);
+        try {
+          const { data, error } = await supabase
+            .from('prompt_library')
+            .select('id, name, content, role, is_shared, user_id')
+            .or(`user_id.eq.${user.id},is_shared.eq.true`)
+            .eq('role', selectedRole)
+            .order('name');
+
+          if (error) throw error;
+          setLibraryPrompts(data || []);
+        } catch (error: any) {
+          console.error('Failed to load library prompts:', error);
+        } finally {
+          setIsLoadingLibrary(false);
+        }
+      };
+
+      loadLibraryPrompts();
+    }, [selectedRole, user]);
 
     const handleStartEdit = () => {
       if (!selectedRole) return;
@@ -57,6 +106,18 @@ const RoleDetailsPanel = forwardRef<HTMLDivElement, RoleDetailsPanelProps>(
       setEditedPrompt('');
       setPromptName('');
       setIsShared(false);
+    };
+
+    const handleLoadFromLibrary = (promptId: string) => {
+      const prompt = libraryPrompts.find(p => p.id === promptId);
+      if (prompt) {
+        setEditedPrompt(prompt.content);
+        setPromptName(prompt.name);
+        setIsShared(prompt.is_shared);
+        setSelectedLibraryPrompt(promptId);
+        setIsEditing(true);
+        toast.success(t('staffRoles.promptLoaded'));
+      }
     };
 
     const handleSaveToLibrary = async () => {
@@ -81,6 +142,17 @@ const RoleDetailsPanel = forwardRef<HTMLDivElement, RoleDetailsPanelProps>(
         if (error) throw error;
 
         toast.success(t('staffRoles.promptSaved'));
+        
+        // Refresh library prompts
+        const { data } = await supabase
+          .from('prompt_library')
+          .select('id, name, content, role, is_shared, user_id')
+          .or(`user_id.eq.${user.id},is_shared.eq.true`)
+          .eq('role', selectedRole)
+          .order('name');
+        
+        setLibraryPrompts(data || []);
+        
         setIsEditing(false);
         setEditedPrompt('');
         setPromptName('');
@@ -152,6 +224,45 @@ const RoleDetailsPanel = forwardRef<HTMLDivElement, RoleDetailsPanelProps>(
                 {t(config.description)}
               </p>
             </div>
+
+            {/* Prompt Library Access */}
+            {user && libraryPrompts.length > 0 && !isEditing && (
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <Library className="h-4 w-4 text-muted-foreground" />
+                  <h3 className="text-sm font-medium text-muted-foreground">
+                    {t('staffRoles.libraryPrompts')}
+                  </h3>
+                </div>
+                <Select onValueChange={handleLoadFromLibrary} value="">
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder={t('staffRoles.selectFromLibrary')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {isLoadingLibrary ? (
+                      <div className="flex items-center justify-center py-2">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      </div>
+                    ) : (
+                      libraryPrompts.map((prompt) => (
+                        <SelectItem key={prompt.id} value={prompt.id}>
+                          <div className="flex items-center gap-2">
+                            <span>{prompt.name}</span>
+                            {prompt.is_shared && prompt.user_id !== user?.id && (
+                              <Badge variant="outline" className="text-xs py-0">
+                                {t('roleLibrary.shared')}
+                              </Badge>
+                            )}
+                          </div>
+                        </SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            <Separator />
 
             {/* System Prompt */}
             <div className="space-y-3">
