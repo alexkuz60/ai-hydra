@@ -134,6 +134,10 @@ export function HydrapediaMarkdown({ content, className }: HydrapediaMarkdownPro
         remarkPlugins={[remarkGfm, remarkMath]}
         rehypePlugins={[rehypeKatex]}
         components={{
+          // Important: react-markdown wraps fenced code blocks in <pre>.
+          // Our CodeBlock already renders the full block UI (syntax highlighter, mermaid, playground),
+          // so keeping the outer <pre> causes whitespace/pre formatting + horizontal overflow.
+          pre: ({ children }) => <>{children}</>,
           code: CodeBlock as any,
           // Headings
           h1: ({ children }) => (
