@@ -14,6 +14,7 @@ export interface Task {
 interface SessionConfig {
   selectedModels?: string[];
   perModelSettings?: PerModelSettingsData;
+  useHybridStreaming?: boolean;
 }
 
 interface UseSessionProps {
@@ -28,6 +29,8 @@ interface UseSessionReturn {
   setSelectedModels: React.Dispatch<React.SetStateAction<string[]>>;
   perModelSettings: PerModelSettingsData;
   setPerModelSettings: React.Dispatch<React.SetStateAction<PerModelSettingsData>>;
+  useHybridStreaming: boolean;
+  setUseHybridStreaming: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 export function useSession({ userId, authLoading }: UseSessionProps): UseSessionReturn {
@@ -40,12 +43,14 @@ export function useSession({ userId, authLoading }: UseSessionProps): UseSession
   const initialState = location.state as {
     selectedModels?: string[];
     perModelSettings?: PerModelSettingsData;
+    useHybridStreaming?: boolean;
   } | null;
 
   const [currentTask, setCurrentTask] = useState<Task | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedModels, setSelectedModels] = useState<string[]>(initialState?.selectedModels || []);
   const [perModelSettings, setPerModelSettings] = useState<PerModelSettingsData>(initialState?.perModelSettings || {});
+  const [useHybridStreaming, setUseHybridStreaming] = useState<boolean>(initialState?.useHybridStreaming ?? true);
   const [initialStateApplied, setInitialStateApplied] = useState(false);
   
   // Track if initial load is complete to prevent saving during load
@@ -57,9 +62,14 @@ export function useSession({ userId, authLoading }: UseSessionProps): UseSession
   const saveSessionConfig = useCallback(async (
     taskId: string,
     models: string[],
-    settings: PerModelSettingsData
+    settings: PerModelSettingsData,
+    hybridStreaming: boolean
   ) => {
-    const configJson = JSON.stringify({ selectedModels: models, perModelSettings: settings });
+    const configJson = JSON.stringify({ 
+      selectedModels: models, 
+      perModelSettings: settings,
+      useHybridStreaming: hybridStreaming
+    });
     
     // Skip if nothing changed
     if (configJson === lastSavedConfig.current) {
@@ -72,7 +82,8 @@ export function useSession({ userId, authLoading }: UseSessionProps): UseSession
         .update({
           session_config: { 
             selectedModels: models, 
-            perModelSettings: settings 
+            perModelSettings: settings,
+            useHybridStreaming: hybridStreaming
           } as unknown as Json,
           updated_at: new Date().toISOString()
         })
@@ -97,6 +108,9 @@ export function useSession({ userId, authLoading }: UseSessionProps): UseSession
     }
     if (config.perModelSettings) {
       setPerModelSettings(config.perModelSettings);
+    }
+    if (typeof config.useHybridStreaming === 'boolean') {
+      setUseHybridStreaming(config.useHybridStreaming);
     }
     // Update lastSavedConfig to prevent immediate re-save
     lastSavedConfig.current = JSON.stringify(config);
@@ -231,11 +245,11 @@ export function useSession({ userId, authLoading }: UseSessionProps): UseSession
 
     // Debounce save
     const timeout = setTimeout(() => {
-      saveSessionConfig(currentTask.id, selectedModels, perModelSettings);
+      saveSessionConfig(currentTask.id, selectedModels, perModelSettings, useHybridStreaming);
     }, 500);
 
     return () => clearTimeout(timeout);
-  }, [selectedModels, perModelSettings, currentTask?.id, loading, saveSessionConfig]);
+  }, [selectedModels, perModelSettings, useHybridStreaming, currentTask?.id, loading, saveSessionConfig]);
 
   return {
     currentTask,
@@ -244,5 +258,7 @@ export function useSession({ userId, authLoading }: UseSessionProps): UseSession
     setSelectedModels,
     perModelSettings,
     setPerModelSettings,
+    useHybridStreaming,
+    setUseHybridStreaming,
   };
 }

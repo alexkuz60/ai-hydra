@@ -543,6 +543,9 @@ const translations: Translations = {
   // Settings
   'settings.timeout': { ru: 'Таймаут ожидания', en: 'Response timeout' },
   'settings.timeoutDescription': { ru: 'Время ожидания ответа от эксперта до показа диалога действий', en: 'Time to wait for expert response before showing action dialog' },
+  'settings.hybridStreaming': { ru: 'Streaming-режим', en: 'Streaming mode' },
+  'settings.hybridStreamingDescription': { ru: 'Показывать текст в реальном времени (снижает воспринимаемую задержку)', en: 'Show text in real-time (reduces perceived latency)' },
+  'settings.sessionSettings': { ru: 'Настройки сессии', en: 'Session settings' },
   // Send button
   'send.toAllExperts': { ru: 'Всем экспертам', en: 'Send to all experts' },
   'consultant.deselect': { ru: 'Снять выбор консультанта', en: 'Deselect consultant' },

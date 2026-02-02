@@ -46,9 +46,6 @@ export default function ExpertPanel() {
     }>;
   } | null>(null);
   
-  // Hybrid streaming: use streaming for real-time responses, fallback to orchestrator for persistence
-  const [useHybridStreaming, setUseHybridStreaming] = useState(true);
-  
   // Pending responses for skeleton indicators (used as fallback or before first token)
   const [pendingResponses, setPendingResponses] = useState<Map<string, PendingResponseState>>(new Map());
   
@@ -83,6 +80,8 @@ export default function ExpertPanel() {
     setSelectedModels,
     perModelSettings,
     setPerModelSettings,
+    useHybridStreaming,
+    setUseHybridStreaming,
   } = useSession({ userId: user?.id, authLoading });
 
   // Model statistics hook for tracking dismissals
