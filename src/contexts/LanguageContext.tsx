@@ -533,6 +533,13 @@ const translations: Translations = {
   'skeleton.dismiss': { ru: 'Забыть', en: 'Dismiss' },
   'skeleton.removeModel': { ru: 'Уволить', en: 'Remove' },
   'skeleton.timeRemaining': { ru: 'До таймаута', en: 'Time remaining' },
+  
+  // Streaming
+  'streaming.generating': { ru: 'Генерирует...', en: 'Generating...' },
+  'streaming.stop': { ru: 'Остановить генерацию', en: 'Stop generation' },
+  'message.copied': { ru: 'Скопировано', en: 'Copied' },
+  'message.copy': { ru: 'Копировать', en: 'Copy' },
+  
   // Settings
   'settings.timeout': { ru: 'Таймаут ожидания', en: 'Response timeout' },
   'settings.timeoutDescription': { ru: 'Время ожидания ответа от эксперта до показа диалога действий', en: 'Time to wait for expert response before showing action dialog' },

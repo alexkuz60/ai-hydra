@@ -9,7 +9,7 @@ import { UserDisplayInfo } from '@/components/warroom/ChatMessage';
 import { ChatTreeNav } from '@/components/warroom/ChatTreeNav';
 import { ChatInputArea } from '@/components/warroom/ChatInputArea';
 import { ChatMessagesList } from '@/components/warroom/ChatMessagesList';
-import { useAvailableModels, ModelOption } from '@/hooks/useAvailableModels';
+import { useAvailableModels, ModelOption, getModelInfo } from '@/hooks/useAvailableModels';
 import { usePasteHandler } from '@/hooks/usePasteHandler';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useUserRoles } from '@/hooks/useUserRoles';
@@ -19,6 +19,7 @@ import { useMessages } from '@/hooks/useMessages';
 import { useSendMessage } from '@/hooks/useSendMessage';
 import { useConsultantPanelWidth } from '@/hooks/useConsultantPanelWidth';
 import { useModelStatistics } from '@/hooks/useModelStatistics';
+import { useStreamingResponses } from '@/hooks/useStreamingResponses';
 import { PendingResponseState, RequestStartInfo } from '@/types/pending';
 import { Loader2, Target } from 'lucide-react';
 import { toast } from 'sonner';
@@ -45,7 +46,10 @@ export default function ExpertPanel() {
     }>;
   } | null>(null);
   
-  // Pending responses for skeleton indicators
+  // Hybrid streaming: use streaming for real-time responses, fallback to orchestrator for persistence
+  const [useHybridStreaming, setUseHybridStreaming] = useState(true);
+  
+  // Pending responses for skeleton indicators (used as fallback or before first token)
   const [pendingResponses, setPendingResponses] = useState<Map<string, PendingResponseState>>(new Map());
   
   // Timeout setting (10-240 seconds, default 120)
@@ -84,6 +88,22 @@ export default function ExpertPanel() {
   // Model statistics hook for tracking dismissals
   const { incrementDismissal } = useModelStatistics(user?.id);
 
+  // Hybrid streaming hook - manages parallel SSE streams for real-time responses
+  const {
+    streamingResponses,
+    pendingResponses: streamingPendingResponses,
+    startStreaming,
+    stopStreaming,
+    stopAllStreaming,
+    clearCompleted,
+  } = useStreamingResponses({
+    onStreamComplete: useCallback((modelId: string, content: string) => {
+      // When streaming completes, the message will appear via realtime subscription
+      // Clear completed streaming responses after a short delay
+      setTimeout(() => clearCompleted(), 500);
+    }, []),
+  });
+
   // Keep selectedModelsRef in sync for error filtering in useSendMessage
   useEffect(() => {
     selectedModelsRef.current = selectedModels;
@@ -102,8 +122,14 @@ export default function ExpertPanel() {
     handleRatingChange,
   } = useMessages({ sessionId: currentTask?.id || null });
 
-  // Callback for when request starts - initialize skeleton indicators
+  // Callback for when request starts - initialize skeleton indicators (fallback for non-streaming)
   const handleRequestStart = useCallback((models: RequestStartInfo[]) => {
+    if (useHybridStreaming) {
+      // Hybrid mode: streaming handles its own state
+      return;
+    }
+    
+    // Fallback: traditional skeleton approach
     const now = Date.now();
     const newPending = new Map<string, PendingResponseState>();
     models.forEach(m => {
@@ -117,7 +143,7 @@ export default function ExpertPanel() {
       });
     });
     setPendingResponses(newPending);
-  }, []);
+  }, [useHybridStreaming]);
 
   // Callback for when request errors - clear failed model skeletons
   const handleRequestError = useCallback((failedModelIds: string[]) => {
@@ -298,10 +324,23 @@ export default function ExpertPanel() {
     });
   }, [selectedModels]);
 
+  // Combine pending responses from both sources (hybrid streaming + fallback)
+  const combinedPendingResponses = new Map([
+    ...pendingResponses,
+    ...streamingPendingResponses,
+  ]);
+  
   // Filter pending responses to only show models in current task (or consultants)
   const filteredPendingResponses = new Map(
-    [...pendingResponses].filter(([modelId]) => 
+    [...combinedPendingResponses].filter(([modelId]) => 
       selectedModels.includes(modelId) || modelId.includes('consultant')
+    )
+  );
+
+  // Filter streaming responses to only show models in current task
+  const filteredStreamingResponses = new Map(
+    [...streamingResponses].filter(([modelId]) => 
+      selectedModels.includes(modelId)
     )
   );
 
@@ -312,8 +351,28 @@ export default function ExpertPanel() {
     if (!input.trim()) return;
     const messageContent = input.trim();
     setInput('');
-    await sendMessage(messageContent);
-  }, [input, sendMessage]);
+    
+    if (useHybridStreaming && selectedModels.length > 0) {
+      // Hybrid mode: start parallel SSE streams for real-time display
+      const requestInfo: RequestStartInfo[] = selectedModels.map(modelId => {
+        const { model } = getModelInfo(modelId);
+        const settings = perModelSettings[modelId];
+        return {
+          modelId,
+          modelName: model?.name || modelId.split('/').pop() || modelId,
+          role: (settings?.role || 'assistant') as RequestStartInfo['role'],
+        };
+      });
+      
+      startStreaming(requestInfo, messageContent, timeoutSeconds);
+      
+      // Also send to orchestrator for persistence
+      await sendMessage(messageContent);
+    } else {
+      // Fallback: traditional approach
+      await sendMessage(messageContent);
+    }
+  }, [input, sendMessage, useHybridStreaming, selectedModels, perModelSettings, startStreaming, timeoutSeconds]);
 
   const handleSendToConsultant = useCallback(async () => {
     if (!input.trim() || !selectedConsultant) return;
@@ -457,10 +516,12 @@ export default function ExpertPanel() {
                 onRatingChange={handleRatingChange}
                 onClarifyWithSpecialist={handleClarifyWithSpecialist}
                 pendingResponses={filteredPendingResponses}
+                streamingResponses={filteredStreamingResponses}
                 timeoutSeconds={timeoutSeconds}
                 onRetryRequest={handleRetryRequest}
                 onDismissTimeout={handleDismissTimeout}
                 onRemoveModel={handleRemoveModel}
+                onStopStreaming={stopStreaming}
               />
 
               {/* Input Area */}
