@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 // Lazy load pages to reduce initial bundle size and improve FID
 const Index = lazy(() => import("./pages/Index"));
@@ -41,24 +42,26 @@ const App = () => (
             <Toaster />
             <Sonner />
             <BrowserRouter>
-              <Suspense fallback={<PageLoader />}>
-                <Routes>
-                  <Route path="/" element={<Index />} />
-                  <Route path="/login" element={<Login />} />
-                  <Route path="/signup" element={<Signup />} />
-                  <Route path="/profile" element={<Profile />} />
-                  <Route path="/tasks" element={<Tasks />} />
-                  <Route path="/expert-panel" element={<ExpertPanel />} />
-                  <Route path="/model-ratings" element={<ModelRatings />} />
-                  <Route path="/role-library" element={<RoleLibrary />} />
-                  <Route path="/tools-library" element={<ToolsLibrary />} />
-                  <Route path="/flow-editor" element={<FlowEditor />} />
-                  <Route path="/hydrapedia" element={<Hydrapedia />} />
-                  <Route path="/war-room" element={<Navigate to="/expert-panel" replace />} />
-                  <Route path="/admin" element={<Admin />} />
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-              </Suspense>
+              <ErrorBoundary>
+                <Suspense fallback={<PageLoader />}>
+                  <Routes>
+                    <Route path="/" element={<Index />} />
+                    <Route path="/login" element={<Login />} />
+                    <Route path="/signup" element={<Signup />} />
+                    <Route path="/profile" element={<Profile />} />
+                    <Route path="/tasks" element={<Tasks />} />
+                    <Route path="/expert-panel" element={<ExpertPanel />} />
+                    <Route path="/model-ratings" element={<ModelRatings />} />
+                    <Route path="/role-library" element={<RoleLibrary />} />
+                    <Route path="/tools-library" element={<ToolsLibrary />} />
+                    <Route path="/flow-editor" element={<FlowEditor />} />
+                    <Route path="/hydrapedia" element={<Hydrapedia />} />
+                    <Route path="/war-room" element={<Navigate to="/expert-panel" replace />} />
+                    <Route path="/admin" element={<Admin />} />
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
+                </Suspense>
+              </ErrorBoundary>
             </BrowserRouter>
           </TooltipProvider>
         </AuthProvider>
