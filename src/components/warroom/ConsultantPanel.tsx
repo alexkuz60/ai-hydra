@@ -1,16 +1,13 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { format } from 'date-fns';
-import { ru, enUS } from 'date-fns/locale';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { MarkdownRenderer } from '@/components/warroom/MarkdownRenderer';
-import { ToolCallDisplay } from '@/components/warroom/ToolCallDisplay';
+import { StreamingMessage } from '@/components/warroom/StreamingMessage';
 import { ModelOption } from '@/hooks/useAvailableModels';
-import { ConsultantMessage, ConsultantMode, useConsultantChat } from '@/hooks/useConsultantChat';
+import { useStreamingChat, ConsultantMode } from '@/hooks/useStreamingChat';
 import { cn } from '@/lib/utils';
 import {
   Lightbulb,
@@ -23,7 +20,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Trash2,
-  Copy,
   Users,
 } from 'lucide-react';
 
@@ -86,7 +82,7 @@ export function ConsultantPanel({
   const [isModeratingContext, setIsModeratingContext] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const { messages, sending, sendQuery, clearMessages } = useConsultantChat({
+  const { messages, streaming, sendQuery, stopStreaming, clearMessages } = useStreamingChat({
     sessionId,
   });
 
@@ -129,7 +125,7 @@ export function ConsultantPanel({
   }, [messages]);
 
   const handleSend = async () => {
-    if (!input.trim() || !selectedModel || sending) return;
+    if (!input.trim() || !selectedModel || streaming) return;
     const messageContent = input.trim();
     const sourceId = currentSourceMessageId;
     setInput('');
@@ -289,10 +285,18 @@ export function ConsultantPanel({
             </div>
           ) : (
             messages.map((message) => (
-              <ConsultantMessageItem 
-                key={message.id} 
-                message={message} 
+              <StreamingMessage 
+                key={message.id}
+                id={message.id}
+                role={message.role}
+                content={message.content}
+                mode={message.mode}
+                modelName={message.model_name}
+                createdAt={message.created_at}
+                isStreaming={message.isStreaming}
+                sourceMessageId={message.sourceMessageId}
                 onCopyToMainChat={onCopyToMainChat}
+                onStopStreaming={message.isStreaming ? stopStreaming : undefined}
               />
             ))
           )}
@@ -330,15 +334,15 @@ export function ConsultantPanel({
                 handleSend();
               }
             }}
-            disabled={sending}
+            disabled={streaming}
           />
           <Button
             onClick={handleSend}
-            disabled={sending || !input.trim() || !selectedModel}
+            disabled={streaming || !input.trim() || !selectedModel}
             size="icon"
             className="self-end shrink-0"
           >
-            {sending ? (
+            {streaming ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
               <Send className="h-4 w-4" />
@@ -346,91 +350,6 @@ export function ConsultantPanel({
           </Button>
         </div>
       </div>
-    </div>
-  );
-}
-
-// Message item component
-function ConsultantMessageItem({ 
-  message, 
-  onCopyToMainChat 
-}: { 
-  message: ConsultantMessage;
-  onCopyToMainChat?: (content: string, sourceMessageId: string | null) => void;
-}) {
-  const { t } = useLanguage();
-  const isUser = message.role === 'user';
-  const modeConfig = MODES.find((m) => m.id === message.mode);
-
-  return (
-    <div
-      className={cn(
-        'rounded-lg p-2 text-sm',
-        isUser
-          ? 'bg-primary/10 border border-primary/20'
-          : 'bg-muted/50 border border-border'
-      )}
-    >
-      {/* Header */}
-      <div className="flex items-center gap-1.5 mb-1.5 text-xs text-muted-foreground">
-        {isUser ? (
-          <User className="h-3 w-3" />
-        ) : modeConfig ? (
-          <modeConfig.icon className={cn('h-3 w-3', modeConfig.color)} />
-        ) : (
-          <Lightbulb className="h-3 w-3 text-hydra-consultant" />
-        )}
-        <span>
-          {isUser
-            ? 'Вы'
-            : message.model_name?.split('/').pop() || 'Консультант'}
-        </span>
-        <span className="ml-auto">
-          {format(new Date(message.created_at), 'HH:mm', { 
-            locale: t('common.locale') === 'ru' ? ru : enUS 
-          })}
-        </span>
-      </div>
-
-      {/* Content */}
-      {message.isLoading ? (
-        <div className="flex items-center gap-2 text-muted-foreground">
-          <Loader2 className="h-3 w-3 animate-spin" />
-          <span>Думаю...</span>
-        </div>
-      ) : (
-        <>
-          {/* Tool calls */}
-          {message.tool_calls && message.tool_calls.length > 0 && (
-            <div className="mb-2">
-              <ToolCallDisplay
-                toolCalls={message.tool_calls}
-                toolResults={message.tool_results}
-              />
-            </div>
-          )}
-
-          {/* Message content */}
-          <div className="prose prose-sm dark:prose-invert max-w-none">
-            <MarkdownRenderer content={message.content} />
-          </div>
-
-          {/* Copy to chat button (only for consultant responses) */}
-          {!isUser && onCopyToMainChat && message.content && (
-            <div className="mt-2 pt-2 border-t border-border/50">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-6 text-xs"
-                onClick={() => onCopyToMainChat(message.content, message.sourceMessageId || null)}
-              >
-                <Copy className="h-3 w-3 mr-1" />
-                {t('dchat.copyToChat')}
-              </Button>
-            </div>
-          )}
-        </>
-      )}
     </div>
   );
 }

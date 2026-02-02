@@ -14,6 +14,8 @@ import 'katex/dist/katex.min.css';
 interface MarkdownRendererProps {
   content: string;
   className?: string;
+  /** When true, delays rendering of complex elements (tables, mermaid) until complete */
+  streaming?: boolean;
 }
 
 function CodeBlock({ 
@@ -48,8 +50,9 @@ function CodeBlock({
     );
   }
 
-  // Render Mermaid diagrams
+  // Render Mermaid diagrams (only when not streaming)
   if (language === 'mermaid') {
+    // Delay mermaid rendering during streaming to prevent flickering
     return <MermaidBlock content={codeString} />;
   }
 
@@ -91,7 +94,7 @@ function CodeBlock({
   );
 }
 
-export function MarkdownRenderer({ content, className }: MarkdownRendererProps) {
+export function MarkdownRenderer({ content, className, streaming = false }: MarkdownRendererProps) {
   return (
     <div className={cn('markdown-content', className)}>
       <ReactMarkdown

@@ -1,6 +1,17 @@
 
 # План реализации Streaming Responses для AI-Hydra
 
+## ✅ Статус: Этап 1 ЗАВЕРШЁН
+
+### Реализованные компоненты:
+- ✅ `supabase/functions/hydra-stream/index.ts` - SSE edge-функция
+- ✅ `src/hooks/useStreamingChat.ts` - клиентский хук
+- ✅ `src/components/warroom/StreamingMessage.tsx` - UI-компонент
+- ✅ `src/components/warroom/ConsultantPanel.tsx` - интеграция
+- ✅ `src/components/warroom/MarkdownRenderer.tsx` - добавлен streaming prop
+
+---
+
 ## Анализ текущей архитектуры
 
 ### Текущий flow без streaming:
