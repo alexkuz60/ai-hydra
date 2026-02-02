@@ -44,8 +44,11 @@ const translations: Translations = {
   'staffRoles.promptName': { ru: 'Название промпта', en: 'Prompt Name' },
   'staffRoles.saveToLibrary': { ru: 'Сохранить в библиотеку', en: 'Save to Library' },
   'staffRoles.promptSaved': { ru: 'Промпт сохранён в библиотеку', en: 'Prompt saved to library' },
+  'staffRoles.promptLoaded': { ru: 'Промпт загружен из библиотеки', en: 'Prompt loaded from library' },
   'staffRoles.expertsGroup': { ru: 'Эксперты', en: 'Experts' },
   'staffRoles.technicalGroup': { ru: 'Технический персонал', en: 'Technical Staff' },
+  'staffRoles.libraryPrompts': { ru: 'Промпты из библиотеки', en: 'Library Prompts' },
+  'staffRoles.selectFromLibrary': { ru: 'Загрузить из библиотеки...', en: 'Load from library...' },
   
   // Staff Roles - Role Descriptions
   'staffRoles.description.user': { ru: 'Человек-пользователь системы.', en: 'Human user of the system.' },
