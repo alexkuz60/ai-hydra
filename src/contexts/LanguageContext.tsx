@@ -292,6 +292,8 @@ const translations: Translations = {
   'role.archivist': { ru: 'Архивариус', en: 'Archivist' },
   'role.analyst': { ru: 'Аналитик', en: 'Analyst' },
   'role.webhunter': { ru: 'Web-Охотник', en: 'Web Hunter' },
+  'role.promptengineer': { ru: 'Промпт-Инженер', en: 'Prompt Engineer' },
+  'role.flowregulator': { ru: 'Регулировщик', en: 'Flow Regulator' },
   
   // Consultant feature
   'consultant.select': { ru: 'Консультант', en: 'Consultant' },

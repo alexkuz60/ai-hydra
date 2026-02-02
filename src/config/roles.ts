@@ -11,6 +11,8 @@ import {
   Globe,
   Crown,
   User,
+  Wand2,
+  Route,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -24,7 +26,9 @@ export type AgentRole =
   | 'advisor'
   | 'archivist'
   | 'analyst'
-  | 'webhunter';
+  | 'webhunter'
+  | 'promptengineer'
+  | 'flowregulator';
 
 // All possible message roles including user
 export type MessageRole = 'user' | AgentRole;
@@ -88,6 +92,16 @@ export const ROLE_CONFIG: Record<MessageRole, RoleConfigItem> = {
     color: 'text-hydra-webhunter',
     label: 'role.webhunter',
   },
+  promptengineer: {
+    icon: Wand2,
+    color: 'text-hydra-promptengineer',
+    label: 'role.promptengineer',
+  },
+  flowregulator: {
+    icon: Route,
+    color: 'text-hydra-flowregulator',
+    label: 'role.flowregulator',
+  },
 };
 
 // Supervisor icon (used for user with supervisor privileges)
@@ -105,6 +119,8 @@ export const AGENT_ROLES: AgentRole[] = [
   'archivist',
   'analyst',
   'webhunter',
+  'promptengineer',
+  'flowregulator',
 ];
 
 // Default system prompts for each agent role
@@ -118,6 +134,8 @@ export const DEFAULT_SYSTEM_PROMPTS: Record<AgentRole, string> = {
   archivist: `Вы - архивариус. Систематизируйте информацию, находите релевантные данные в предоставленном контексте. Создавайте структурированные сводки и ссылки на источники.`,
   analyst: `Вы - аналитик. Проводите глубокий анализ данных, выявляйте закономерности и тренды. Представляйте выводы в структурированном виде с обоснованием.`,
   webhunter: `Вы - web-охотник. Специализируетесь на поиске информации в интернете. Формулируйте эффективные поисковые запросы, анализируйте найденные источники и предоставляйте релевантную информацию.`,
+  promptengineer: `Вы - промпт-инженер. Специализируетесь на создании, оптимизации и анализе промптов для ИИ-систем. Помогаете формулировать эффективные инструкции, улучшаете существующие промпты, анализируете их структуру и предлагаете оптимизации для достижения лучших результатов.`,
+  flowregulator: `Вы - регулировщик потоков. Специализируетесь на проектировании и оптимизации data-flow диаграмм и логических цепочек обработки. Анализируете архитектуру потоков данных, выявляете узкие места, предлагаете оптимизации маршрутов и помогаете проектировать эффективные пайплайны обработки.`,
 };
 
 // Helper function to get role config with fallback
@@ -136,6 +154,8 @@ export const ROLE_BADGE_COLORS: Record<string, string> = {
   archivist: 'bg-hydra-archivist/20 text-hydra-archivist border-hydra-archivist/30',
   analyst: 'bg-hydra-analyst/20 text-hydra-analyst border-hydra-analyst/30',
   webhunter: 'bg-hydra-webhunter/20 text-hydra-webhunter border-hydra-webhunter/30',
+  promptengineer: 'bg-hydra-promptengineer/20 text-hydra-promptengineer border-hydra-promptengineer/30',
+  flowregulator: 'bg-hydra-flowregulator/20 text-hydra-flowregulator border-hydra-flowregulator/30',
 };
 
 export function getRoleBadgeColor(role: string): string {
