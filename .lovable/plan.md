@@ -1,14 +1,20 @@
 
 # План реализации Streaming Responses для AI-Hydra
 
-## ✅ Статус: Этап 1 ЗАВЕРШЁН
+## ✅ Статус: Этап 1 и 2 ЗАВЕРШЕНЫ
 
-### Реализованные компоненты:
+### Этап 1: D-Chat Streaming (ЗАВЕРШЁН)
 - ✅ `supabase/functions/hydra-stream/index.ts` - SSE edge-функция
-- ✅ `src/hooks/useStreamingChat.ts` - клиентский хук
-- ✅ `src/components/warroom/StreamingMessage.tsx` - UI-компонент
+- ✅ `src/hooks/useStreamingChat.ts` - клиентский хук для D-Chat
+- ✅ `src/components/warroom/StreamingMessage.tsx` - UI-компонент для D-Chat
 - ✅ `src/components/warroom/ConsultantPanel.tsx` - интеграция
 - ✅ `src/components/warroom/MarkdownRenderer.tsx` - добавлен streaming prop
+
+### Этап 2: Expert Panel Hybrid Streaming (ЗАВЕРШЁН)
+- ✅ `src/hooks/useStreamingResponses.ts` - хук для параллельных SSE-потоков
+- ✅ `src/components/warroom/StreamingMessageCard.tsx` - карточка streaming-сообщения
+- ✅ `src/components/warroom/ChatMessagesList.tsx` - интеграция streaming + pending
+- ✅ `src/pages/ExpertPanel.tsx` - hybrid streaming mode
 
 ---
 

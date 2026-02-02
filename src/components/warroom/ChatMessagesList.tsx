@@ -3,11 +3,14 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { ChatMessage, UserDisplayInfo } from '@/components/warroom/ChatMessage';
 import { DateSeparator } from '@/components/warroom/DateSeparator';
 import { MessageSkeleton } from '@/components/warroom/MessageSkeleton';
+import { StreamingMessageCard } from '@/components/warroom/StreamingMessageCard';
 import { Message } from '@/types/messages';
 import { PendingResponseState } from '@/types/pending';
+import type { StreamingResponse } from '@/hooks/useStreamingResponses';
 import { isSameDay } from 'date-fns';
 import { Sparkles } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
+
 interface ChatMessagesListProps {
   messages: Message[];
   filteredParticipant: string | null;
@@ -23,12 +26,16 @@ interface ChatMessagesListProps {
   onClarifyWithSpecialist?: (selectedText: string, messageId: string) => void;
   // Pending responses for skeleton indicators
   pendingResponses?: Map<string, PendingResponseState>;
+  // Streaming responses for real-time content
+  streamingResponses?: Map<string, StreamingResponse>;
   // Timeout settings
   timeoutSeconds?: number;
   // Timeout action handlers
   onRetryRequest?: (modelId: string) => void;
   onDismissTimeout?: (modelId: string) => void;
   onRemoveModel?: (modelId: string) => void;
+  // Streaming handlers
+  onStopStreaming?: (modelId: string) => void;
 }
 
 export function ChatMessagesList({
@@ -43,10 +50,12 @@ export function ChatMessagesList({
   onRatingChange,
   onClarifyWithSpecialist,
   pendingResponses,
+  streamingResponses,
   timeoutSeconds = 120,
   onRetryRequest,
   onDismissTimeout,
   onRemoveModel,
+  onStopStreaming,
 }: ChatMessagesListProps) {
   if (messages.length === 0) {
     return (
@@ -95,11 +104,22 @@ export function ChatMessagesList({
           );
         })}
         
-        {/* Skeleton indicators for pending responses with smooth enter/exit animations */}
+        {/* Streaming responses - real-time content from parallel SSE streams */}
+        <AnimatePresence mode="popLayout">
+          {streamingResponses && Array.from(streamingResponses.values()).map(response => (
+            <StreamingMessageCard
+              key={`streaming-${response.modelId}`}
+              response={response}
+              onStop={onStopStreaming}
+            />
+          ))}
+        </AnimatePresence>
+        
+        {/* Skeleton indicators for pending responses (before first token arrives) */}
         <AnimatePresence mode="popLayout">
           {pendingResponses && Array.from(pendingResponses.values()).map(pending => (
             <motion.div
-              key={pending.modelId}
+              key={`pending-${pending.modelId}`}
               initial={{ opacity: 0, y: 20, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -10, scale: 0.95 }}
