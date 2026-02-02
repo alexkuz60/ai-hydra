@@ -508,57 +508,7 @@ export default function ExpertPanel() {
                 
                 {/* Streaming Controls */}
                 <div className="flex items-center gap-2">
-                  {/* Stop All Streaming Button - player style */}
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <motion.button
-                          onClick={() => {
-                            if (streamingResponses.size > 0) {
-                              stopAllStreaming();
-                              toast.info(t('streaming.stoppedAll'));
-                            }
-                          }}
-                          disabled={streamingResponses.size === 0}
-                          className={cn(
-                            "h-7 w-7 rounded-md flex items-center justify-center transition-colors focus:outline-none focus:ring-2 focus:ring-primary/50",
-                            streamingResponses.size > 0 
-                              ? "bg-hydra-critical/20 text-hydra-critical hover:bg-hydra-critical/30 cursor-pointer" 
-                              : "bg-muted/50 text-muted-foreground/40 cursor-default"
-                          )}
-                          whileTap={streamingResponses.size > 0 ? { scale: 0.9 } : undefined}
-                        >
-                          <AnimatePresence mode="wait">
-                            <motion.span
-                              key={streamingResponses.size > 0 ? 'active' : 'idle'}
-                              initial={{ scale: 0.5, opacity: 0 }}
-                              animate={{ 
-                                scale: 1, 
-                                opacity: 1,
-                              }}
-                              exit={{ scale: 0.5, opacity: 0 }}
-                              transition={{ duration: 0.15 }}
-                            >
-                              {streamingResponses.size > 0 ? (
-                                <Square className="h-3.5 w-3.5 fill-current" />
-                              ) : (
-                                <Circle className="h-3.5 w-3.5" />
-                              )}
-                            </motion.span>
-                          </AnimatePresence>
-                        </motion.button>
-                      </TooltipTrigger>
-                      <TooltipContent side="bottom">
-                        <p className="text-xs">
-                          {streamingResponses.size > 0 
-                            ? t('streaming.stopAll') 
-                            : t('streaming.noActiveStreams')}
-                        </p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                  
-                  {/* Streaming Mode Toggle */}
+                  {/* Streaming Mode Toggle - first */}
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -626,6 +576,56 @@ export default function ExpertPanel() {
                       <TooltipContent side="bottom">
                         <p className="text-xs">
                           {t('streaming.clickToToggle')}
+                        </p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                  
+                  {/* Stop All Streaming Button - second */}
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <motion.button
+                          onClick={() => {
+                            if (streamingResponses.size > 0) {
+                              stopAllStreaming();
+                              toast.info(t('streaming.stoppedAll'));
+                            }
+                          }}
+                          disabled={streamingResponses.size === 0}
+                          className={cn(
+                            "h-7 w-7 rounded-md flex items-center justify-center transition-colors focus:outline-none focus:ring-2 focus:ring-primary/50",
+                            streamingResponses.size > 0 
+                              ? "bg-hydra-critical/20 text-hydra-critical hover:bg-hydra-critical/30 cursor-pointer" 
+                              : "bg-muted/50 text-muted-foreground/40 cursor-default"
+                          )}
+                          whileTap={streamingResponses.size > 0 ? { scale: 0.9 } : undefined}
+                        >
+                          <AnimatePresence mode="wait">
+                            <motion.span
+                              key={streamingResponses.size > 0 ? 'active' : 'idle'}
+                              initial={{ scale: 0.5, opacity: 0 }}
+                              animate={{ 
+                                scale: 1, 
+                                opacity: 1,
+                              }}
+                              exit={{ scale: 0.5, opacity: 0 }}
+                              transition={{ duration: 0.15 }}
+                            >
+                              {streamingResponses.size > 0 ? (
+                                <Square className="h-3.5 w-3.5 fill-current" />
+                              ) : (
+                                <Circle className="h-3.5 w-3.5" />
+                              )}
+                            </motion.span>
+                          </AnimatePresence>
+                        </motion.button>
+                      </TooltipTrigger>
+                      <TooltipContent side="bottom">
+                        <p className="text-xs">
+                          {streamingResponses.size > 0 
+                            ? t('streaming.stopAll') 
+                            : t('streaming.noActiveStreams')}
                         </p>
                       </TooltipContent>
                     </Tooltip>
