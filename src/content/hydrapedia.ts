@@ -2285,7 +2285,16 @@ AI-Hydra включает 11 специализированных ролей, р
 | **Редактор** | Изменение системного промпта |
 | **Интеграция** | Сохранение в Библиотеку промптов |
 
-> **Совет**: Используйте страницу «Штат» для изучения ролей и создания кастомных промптов.`,
+> **Совет**: Используйте страницу «Штат» для изучения ролей и создания кастомных промптов.
+
+---
+
+## Попробуйте роли в действии
+
+\`\`\`
+:::playground:::
+\`\`\`
+`,
 
       en: `# AI Roles Catalog
 
@@ -2442,7 +2451,16 @@ Available at \`/staff-roles\`. Interface:
 | **Editor** | System prompt modification |
 | **Integration** | Save to Prompt Library |
 
-> **Tip**: Use the Staff page to study roles and create custom prompts.`
+> **Tip**: Use the Staff page to study roles and create custom prompts.
+
+---
+
+## Try Roles in Action
+
+\`\`\`
+:::playground:::
+\`\`\`
+`
     }
   },
   {

@@ -581,6 +581,19 @@ const translations: Translations = {
   'send.toAllExperts': { ru: 'Всем экспертам', en: 'Send to all experts' },
   'consultant.deselect': { ru: 'Снять выбор консультанта', en: 'Deselect consultant' },
   
+  // Hydrapedia Playground
+  'hydrapedia.playground.title': { ru: 'Попробовать роль', en: 'Try a Role' },
+  'hydrapedia.playground.systemPrompt': { ru: 'Системный промпт', en: 'System Prompt' },
+  'hydrapedia.playground.yourQuery': { ru: 'Ваш запрос', en: 'Your Query' },
+  'hydrapedia.playground.placeholder': { ru: 'Введите тестовый запрос для AI...', en: 'Enter a test query for AI...' },
+  'hydrapedia.playground.send': { ru: 'Отправить', en: 'Send' },
+  'hydrapedia.playground.stop': { ru: 'Остановить', en: 'Stop' },
+  'hydrapedia.playground.loginRequired': { ru: 'Для тестирования ролей необходимо войти в систему', en: 'Please log in to test roles' },
+  'hydrapedia.playground.charLimit': { ru: 'Максимум 500 символов', en: 'Maximum 500 characters' },
+  'hydrapedia.playground.rateLimitError': { ru: 'Превышен лимит запросов. Попробуйте позже.', en: 'Rate limit exceeded. Please try again later.' },
+  'hydrapedia.playground.paymentError': { ru: 'Требуется пополнение баланса Lovable AI.', en: 'Payment required. Please add funds to Lovable AI.' },
+  'hydrapedia.playground.genericError': { ru: 'Произошла ошибка. Попробуйте снова.', en: 'An error occurred. Please try again.' },
+  
   // Error Boundary
   'error.title': { ru: 'Что-то пошло не так', en: 'Something went wrong' },
   'error.description': { ru: 'Произошла непредвиденная ошибка. Попробуйте перезагрузить страницу.', en: 'An unexpected error occurred. Please try reloading the page.' },
