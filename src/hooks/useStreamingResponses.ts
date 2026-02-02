@@ -78,7 +78,11 @@ export function useStreamingResponses({
       timersRef.current.delete(modelId);
     }
 
-    // Mark as complete
+    // Get the current content before marking as complete
+    const currentResponse = streamingResponses.get(modelId);
+    const accumulatedContent = currentResponse?.content || '';
+
+    // Mark as complete (not streaming)
     setStreamingResponses(prev => {
       const updated = new Map(prev);
       const existing = updated.get(modelId);
@@ -94,7 +98,12 @@ export function useStreamingResponses({
       updated.delete(modelId);
       return updated;
     });
-  }, []);
+
+    // If there was content, notify completion so it gets saved to DB
+    if (accumulatedContent.trim().length > 0) {
+      onStreamComplete?.(modelId, accumulatedContent);
+    }
+  }, [streamingResponses, onStreamComplete]);
 
   // Stop all streaming
   const stopAllStreaming = useCallback(() => {
@@ -104,16 +113,27 @@ export function useStreamingResponses({
     timersRef.current.forEach(timer => clearInterval(timer));
     timersRef.current.clear();
 
+    // Collect all responses with content before marking as stopped
+    const responsesToSave: Array<{ modelId: string; content: string }> = [];
+    
     setStreamingResponses(prev => {
       const updated = new Map(prev);
       for (const [key, value] of updated) {
+        if (value.content?.trim().length > 0) {
+          responsesToSave.push({ modelId: key, content: value.content });
+        }
         updated.set(key, { ...value, isStreaming: false });
       }
       return updated;
     });
 
     setPendingResponses(new Map());
-  }, []);
+
+    // Notify completion for all responses that had content
+    responsesToSave.forEach(({ modelId, content }) => {
+      onStreamComplete?.(modelId, content);
+    });
+  }, [streamingResponses, onStreamComplete]);
 
   // Clear completed (non-streaming) responses
   const clearCompleted = useCallback(() => {

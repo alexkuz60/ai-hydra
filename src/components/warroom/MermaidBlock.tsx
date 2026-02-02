@@ -26,12 +26,18 @@ export function MermaidBlock({ content, className }: MermaidBlockProps) {
         return;
       }
 
+      // Clean up any orphaned mermaid elements from previous failed renders
+      const orphanedElements = document.querySelectorAll(`[id^="mermaid-${uniqueId}"], [id^="dmermaid-${uniqueId}"]`);
+      orphanedElements.forEach(el => el.remove());
+
       try {
         mermaid.initialize({
           startOnLoad: false,
           theme: theme === 'dark' ? 'dark' : 'default',
           securityLevel: 'strict',
           fontFamily: 'ui-sans-serif, system-ui, sans-serif',
+          // Suppress console output for cleaner UX
+          suppressErrorRendering: true,
           flowchart: {
             htmlLabels: true,
             curve: 'basis',
@@ -74,10 +80,30 @@ export function MermaidBlock({ content, className }: MermaidBlockProps) {
         console.error('Mermaid render error:', err);
         setError(err instanceof Error ? err.message : 'Failed to render diagram');
         setSvg('');
+        
+        // Clean up any error artifacts created by Mermaid in the DOM
+        // Mermaid sometimes creates orphaned elements on error
+        const errorElements = document.querySelectorAll(`[id^="mermaid-${uniqueId}"], [id*="d${uniqueId}"]`);
+        errorElements.forEach(el => el.remove());
+        
+        // Also clean up any dangling mermaid error divs that might be outside our container
+        const danglingErrors = document.querySelectorAll('.mermaid-error, #dmermaid, [id^="dmermaid"]');
+        danglingErrors.forEach(el => {
+          // Only remove if it's not inside our component
+          if (!containerRef.current?.contains(el)) {
+            el.remove();
+          }
+        });
       }
     };
 
     renderDiagram();
+    
+    // Cleanup on unmount
+    return () => {
+      const elementsToClean = document.querySelectorAll(`[id^="mermaid-${uniqueId}"], [id^="dmermaid-${uniqueId}"]`);
+      elementsToClean.forEach(el => el.remove());
+    };
   }, [content, theme, uniqueId]);
 
   const handleCopy = async () => {
