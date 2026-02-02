@@ -201,11 +201,13 @@ export default function Tasks() {
     // Load saved configuration from task, filtering out deprecated models
     const savedModels = filterValidModels(task.session_config?.selectedModels || []);
     const savedSettings = task.session_config?.perModelSettings || {};
+    const savedHybridStreaming = task.session_config?.useHybridStreaming ?? true;
     
     navigate(`/expert-panel?task=${task.id}`, {
       state: {
         selectedModels: savedModels,
         perModelSettings: savedSettings,
+        useHybridStreaming: savedHybridStreaming,
       }
     });
   };
@@ -267,6 +269,7 @@ export default function Tasks() {
     // Filter out deprecated models when loading for editing
     setEditingModels(filterValidModels(task.session_config?.selectedModels || []));
     setEditingModelSettings(task.session_config?.perModelSettings || {});
+    setEditingHybridStreaming(task.session_config?.useHybridStreaming ?? true);
   };
 
   // Save edited models for existing task
@@ -277,6 +280,7 @@ export default function Tasks() {
       const sessionConfig = {
         selectedModels: editingModels,
         perModelSettings: editingModelSettings,
+        useHybridStreaming: editingHybridStreaming,
       };
 
       const { error } = await supabase
