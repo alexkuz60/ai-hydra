@@ -504,34 +504,43 @@ export default function ExpertPanel() {
                   <span className="font-medium truncate">{currentTask.title}</span>
                 </div>
                 
-                {/* Streaming Mode Indicator */}
+                {/* Streaming Mode Toggle */}
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <Badge 
-                        variant={useHybridStreaming ? 'default' : 'secondary'}
-                        className={`flex items-center gap-1.5 cursor-default ${
-                          useHybridStreaming 
-                            ? 'bg-hydra-cyan/20 text-hydra-cyan border-hydra-cyan/30 hover:bg-hydra-cyan/30' 
-                            : 'bg-muted text-muted-foreground'
-                        }`}
+                      <button
+                        onClick={() => {
+                          setUseHybridStreaming(!useHybridStreaming);
+                          toast.success(
+                            !useHybridStreaming 
+                              ? t('streaming.enabledToast') 
+                              : t('streaming.disabledToast')
+                          );
+                        }}
+                        className="focus:outline-none focus:ring-2 focus:ring-primary/50 rounded-full"
                       >
-                        {useHybridStreaming ? (
-                          <Zap className="h-3 w-3" />
-                        ) : (
-                          <ZapOff className="h-3 w-3" />
-                        )}
-                        <span className="text-xs">
-                          {useHybridStreaming ? 'Streaming' : 'Standard'}
-                        </span>
-                      </Badge>
+                        <Badge 
+                          variant={useHybridStreaming ? 'default' : 'secondary'}
+                          className={`flex items-center gap-1.5 cursor-pointer transition-all ${
+                            useHybridStreaming 
+                              ? 'bg-hydra-cyan/20 text-hydra-cyan border-hydra-cyan/30 hover:bg-hydra-cyan/40' 
+                              : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                          }`}
+                        >
+                          {useHybridStreaming ? (
+                            <Zap className="h-3 w-3" />
+                          ) : (
+                            <ZapOff className="h-3 w-3" />
+                          )}
+                          <span className="text-xs">
+                            {useHybridStreaming ? 'Streaming' : 'Standard'}
+                          </span>
+                        </Badge>
+                      </button>
                     </TooltipTrigger>
                     <TooltipContent side="bottom">
                       <p className="text-xs">
-                        {useHybridStreaming 
-                          ? t('streaming.hybridEnabled') 
-                          : t('streaming.hybridDisabled')
-                        }
+                        {t('streaming.clickToToggle')}
                       </p>
                     </TooltipContent>
                   </Tooltip>
