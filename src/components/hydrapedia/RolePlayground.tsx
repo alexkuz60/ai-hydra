@@ -1,17 +1,17 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { HydraCard, HydraCardHeader, HydraCardTitle, HydraCardContent } from '@/components/ui/hydra-card';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
-import { MarkdownRenderer } from '@/components/warroom/MarkdownRenderer';
+import { StreamingMessageCard } from '@/components/warroom/StreamingMessageCard';
 import { 
   ROLE_CONFIG, 
   AGENT_ROLES, 
   DEFAULT_SYSTEM_PROMPTS,
   type AgentRole 
 } from '@/config/roles';
+import type { StreamingResponse } from '@/hooks/useStreamingResponses';
 import { cn } from '@/lib/utils';
 import { 
   ChevronDown, 
@@ -45,6 +45,18 @@ export function RolePlayground({ className }: RolePlaygroundProps) {
 
   const roleConfig = ROLE_CONFIG[selectedRole];
   const systemPrompt = DEFAULT_SYSTEM_PROMPTS[selectedRole];
+
+  // Create StreamingResponse object for StreamingMessageCard
+  const streamingResponse: StreamingResponse = useMemo(() => ({
+    modelId: MODEL_ID,
+    modelName: MODEL_ID.split('/')[1],
+    role: selectedRole,
+    content: response,
+    isStreaming,
+    startTime: Date.now(),
+    elapsedSeconds: 0,
+    status: 'confirmed' as const, // Use valid status from PendingResponseState
+  }), [selectedRole, response, isStreaming]);
 
   const handleSend = useCallback(async () => {
     if (!userInput.trim() || isStreaming || !user) return;
@@ -265,33 +277,12 @@ export function RolePlayground({ className }: RolePlaygroundProps) {
           </div>
         )}
         
-        {/* Response Area */}
+        {/* Response Area - using StreamingMessageCard from chat */}
         {(response || isStreaming) && (
-          <HydraCard 
-            variant={roleConfig.cardVariant || 'default'} 
-            className="animate-in fade-in slide-in-from-bottom-2"
-          >
-            <HydraCardHeader>
-              <roleConfig.icon className={cn('h-5 w-5', roleConfig.color)} />
-              <HydraCardTitle className={roleConfig.color}>
-                {t(roleConfig.label)}
-              </HydraCardTitle>
-              <span className="text-xs text-muted-foreground ml-auto">
-                {MODEL_ID.split('/')[1]}
-              </span>
-            </HydraCardHeader>
-            <HydraCardContent className="text-sm">
-              <div className="prose-compact break-words min-w-0" style={{ overflowWrap: 'anywhere' }}>
-                {response ? (
-                  <MarkdownRenderer content={response} streaming={isStreaming} />
-                ) : (
-                  <span className="text-muted-foreground animate-pulse">
-                    {language === 'ru' ? 'Генерация...' : 'Generating...'}
-                  </span>
-                )}
-              </div>
-            </HydraCardContent>
-          </HydraCard>
+          <StreamingMessageCard
+            response={streamingResponse}
+            onStop={handleStop ? () => handleStop() : undefined}
+          />
         )}
       </div>
     </div>
