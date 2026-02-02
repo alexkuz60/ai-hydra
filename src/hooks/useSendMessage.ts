@@ -38,6 +38,7 @@ interface AttachmentUrl {
   name: string;
   url: string;
   type: string;
+  content?: string; // For inline Mermaid diagrams
 }
 
 interface UseSendMessageProps {
@@ -84,15 +85,32 @@ export function useSendMessage({
     if (!userId || !sessionId) return [];
 
     const attachmentUrls: AttachmentUrl[] = [];
-    const totalFiles = files.length;
+    // Count only files that need upload (not Mermaid)
+    const filesToUpload = files.filter(f => f.file && !f.mermaidContent);
+    const totalFiles = filesToUpload.length;
 
     if (totalFiles > 0) {
       setUploadProgress({ current: 0, total: totalFiles });
     }
 
-    for (let i = 0; i < files.length; i++) {
-      const attached = files[i];
-      setUploadProgress({ current: i, total: totalFiles });
+    let uploadedCount = 0;
+
+    for (const attached of files) {
+      // Handle Mermaid attachments (no upload needed)
+      if (attached.mermaidContent) {
+        attachmentUrls.push({
+          name: attached.mermaidName || 'Mermaid Diagram',
+          url: '', // No URL for inline content
+          type: 'text/x-mermaid',
+          content: attached.mermaidContent,
+        });
+        continue;
+      }
+
+      // Handle regular file uploads
+      if (!attached.file) continue;
+
+      setUploadProgress({ current: uploadedCount, total: totalFiles });
 
       const fileToUpload = await compressImage(attached.file);
       const safeName = sanitizeFileName(attached.file.name);
@@ -120,7 +138,8 @@ export function useSendMessage({
         URL.revokeObjectURL(attached.preview);
       }
 
-      setUploadProgress({ current: i + 1, total: totalFiles });
+      uploadedCount++;
+      setUploadProgress({ current: uploadedCount, total: totalFiles });
     }
 
     setUploadProgress(null);

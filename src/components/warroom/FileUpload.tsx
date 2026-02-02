@@ -31,16 +31,18 @@ import {
 } from '@/lib/fileUtils';
 
 export interface AttachedFile {
-  file: File;
-  preview?: string;
   id: string;
+  file?: File;
+  preview?: string;
+  // For Mermaid diagrams (no real file)
+  mermaidContent?: string;
+  mermaidName?: string;
 }
 
 interface FileUploadProps {
   files: AttachedFile[];
   onFilesChange: (files: AttachedFile[]) => void;
-  onInsertMermaid?: () => void;
-  onInsertMermaidContent?: (content: string) => void;
+  onAttachMermaid?: (content: string, name?: string) => void;
   onSelectFlowDiagram?: () => void;
   disabled?: boolean;
   maxFiles?: number;
@@ -98,8 +100,7 @@ function getFileIcon(type: string) {
 export function FileUpload({
   files,
   onFilesChange,
-  onInsertMermaid,
-  onInsertMermaidContent,
+  onAttachMermaid,
   onSelectFlowDiagram,
   disabled = false,
   maxFiles = MAX_FILES,
@@ -151,8 +152,8 @@ export function FileUpload({
       }
 
       const attachedFile: AttachedFile = {
-        file,
         id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        file,
       };
 
       // Create preview for images
@@ -179,11 +180,13 @@ export function FileUpload({
     }
   }, []);
 
-  const handleMermaidInsert = useCallback(() => {
-    if (onInsertMermaid) {
-      onInsertMermaid();
+  const handleMermaidTemplateAttach = useCallback(() => {
+    if (onAttachMermaid) {
+      // Extract raw mermaid content without code block wrapper
+      const rawMermaid = MERMAID_TEMPLATE.replace(/```mermaid\n?|\n?```/g, '').trim();
+      onAttachMermaid(rawMermaid, t('files.mermaidTemplate'));
     }
-  }, [onInsertMermaid]);
+  }, [onAttachMermaid, t]);
 
   const handleMermaidFileLoad = useCallback((fileList: FileList | null) => {
     if (!fileList?.[0]) return;
@@ -191,16 +194,15 @@ export function FileUpload({
     const reader = new FileReader();
     reader.onload = (e) => {
       const content = e.target?.result as string;
-      if (content && onInsertMermaidContent) {
-        // Wrap content in mermaid code block if not already wrapped
-        const mermaidCode = content.includes('```mermaid') 
-          ? content 
-          : `\`\`\`mermaid\n${content.trim()}\n\`\`\``;
-        onInsertMermaidContent(mermaidCode);
+      if (content && onAttachMermaid) {
+        // Extract raw mermaid content, remove code block wrapper if present
+        const rawMermaid = content.replace(/```mermaid\n?|\n?```/g, '').trim();
+        const fileName = file.name.replace(/\.(mmd|mermaid|md|txt)$/i, '');
+        onAttachMermaid(rawMermaid, fileName || 'Diagram');
       }
     };
     reader.readAsText(file);
-  }, [onInsertMermaidContent]);
+  }, [onAttachMermaid]);
 
   const handleMermaidFromFile = useCallback(() => {
     mermaidInputRef.current?.click();
@@ -264,7 +266,7 @@ export function FileUpload({
             <DropdownMenuSubContent className="w-52">
               {/* Empty template */}
               <DropdownMenuItem
-                onClick={handleMermaidInsert}
+                onClick={handleMermaidTemplateAttach}
                 className="flex items-start gap-2 cursor-pointer py-2"
               >
                 <FileEdit className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
