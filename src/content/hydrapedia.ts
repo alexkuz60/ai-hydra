@@ -502,6 +502,214 @@ Side panel for deep analysis with selected model.
     }
   },
   {
+    id: 'streaming-mode',
+    titleKey: 'hydrapedia.sections.streamingMode',
+    icon: 'Zap',
+    content: {
+      ru: `# Режим стриминга
+
+Режим стриминга (Hybrid Streaming) — продвинутый способ получения ответов от AI-моделей в реальном времени. Вместо ожидания полного ответа вы видите текст по мере его генерации.
+
+## Зачем нужен стриминг?
+
+### Скорость восприятия
+Вы начинаете читать ответ сразу, не дожидаясь завершения генерации. Это особенно ценно для длинных ответов — пока модель дописывает конец, вы уже изучаете начало.
+
+### Раннее обнаружение ошибок
+Если модель пошла не в том направлении, вы увидите это в первых же предложениях и сможете остановить генерацию, не тратя время и токены.
+
+### Параллельная работа
+В мультимодельном режиме стриминг позволяет видеть ответы всех моделей одновременно. Вы можете сравнивать подходы в реальном времени.
+
+## Эффективность
+
+| Аспект | Без стриминга | Со стримингом |
+|--------|---------------|---------------|
+| **Время до первого токена** | 5–30 сек | < 1 сек |
+| **Восприятие скорости** | Долгое ожидание | Мгновенный отклик |
+| **Контроль процесса** | Только после завершения | В любой момент |
+| **Расход токенов при ошибке** | Полный | Минимальный |
+
+### Экономия ресурсов
+
+При стриминге вы можете остановить генерацию в любой момент:
+- Если ответ уже достаточен — экономите токены
+- Если направление неверное — не тратите лимит зря
+- Если нужна только часть — получаете её быстрее
+
+## Самоконтроль моделей
+
+Стриминг открывает уникальную возможность — **наблюдать за процессом рассуждения** модели.
+
+### Блок "Thinking"
+
+Многие современные модели (GPT-4, Claude, Gemini 2.5 Pro) поддерживают «расширенное мышление» — они показывают внутренний ход рассуждений перед финальным ответом.
+
+| Элемент | Иконка | Описание |
+|---------|--------|----------|
+| **Блок Thinking** | \`Sparkles\` | Раскрываемая секция с цепочкой рассуждений |
+| **Статус** | \`Loader\` | Анимация во время активного размышления |
+| **Развернуть** | \`ChevronDown\` | Показать полный текст рассуждений |
+
+### Что даёт просмотр Thinking?
+
+1. **Прозрачность** — понимаете, как модель пришла к выводу
+2. **Диагностика** — видите, где рассуждения пошли не так
+3. **Обучение** — учитесь формулировать лучшие промпты
+4. **Доверие** — проверяете логику, а не только результат
+
+## Элементы управления стримингом
+
+| Элемент | Иконка | Описание |
+|---------|--------|----------|
+| **Индикатор режима** | \`Zap\` | Пульсирующий значок в заголовке панели |
+| **Остановить все** | \`Square\` | Останавливает все активные генерации |
+| **Счётчик** | — | Число активных стримов рядом с кнопкой |
+| **Стоп на карточке** | \`Square\` | Остановка конкретной модели |
+| **Fallback-индикатор** | Янтарный | Модель работает в стандартном режиме |
+
+## Советы по работе со стримингом
+
+### Оптимальное использование
+
+1. **Читайте по мере генерации** — не ждите завершения
+2. **Останавливайте рано** — если ответ не тот, жмите стоп
+3. **Сравнивайте параллельно** — запускайте несколько моделей
+4. **Используйте Thinking** — раскрывайте блок рассуждений для сложных задач
+
+### Когда стриминг особенно полезен
+
+| Сценарий | Почему стриминг помогает |
+|----------|-------------------------|
+| **Длинные ответы** | Читаете сразу, не ждёте минуты |
+| **Итеративная работа** | Быстро корректируете направление |
+| **Сравнение моделей** | Видите разницу в реальном времени |
+| **Отладка промптов** | Понимаете, что модель «думает» |
+| **Ограниченный бюджет** | Экономите токены при остановке |
+
+### Чего избегать
+
+- **Не закрывайте вкладку** во время активного стриминга
+- **Не отправляйте новые запросы**, пока идёт генерация
+- **Не игнорируйте Thinking** — там часто ключ к улучшению промпта
+
+## Fallback-режим
+
+Некоторые модели или ситуации не поддерживают стриминг. В этих случаях система автоматически переключается на стандартный режим.
+
+### Причины fallback
+
+| Причина | Индикатор | Описание |
+|---------|-----------|----------|
+| **Модель не поддерживает** | Янтарный бейдж | Некоторые модели работают только синхронно |
+| **Rate Limit (429)** | Янтарное сообщение | Превышен лимит запросов |
+| **Ошибка сервера (500)** | Красный индикатор | Временная проблема провайдера |
+
+> **Совет**: При fallback модель всё равно даст ответ, просто вы увидите его целиком после завершения генерации.`,
+
+      en: `# Streaming Mode
+
+Streaming Mode (Hybrid Streaming) is an advanced way to receive AI model responses in real-time. Instead of waiting for the complete response, you see text as it's being generated.
+
+## Why Use Streaming?
+
+### Perception Speed
+You start reading the response immediately, without waiting for generation to complete. This is especially valuable for long responses — while the model finishes the end, you're already studying the beginning.
+
+### Early Error Detection
+If the model goes in the wrong direction, you'll see it in the first sentences and can stop generation without wasting time and tokens.
+
+### Parallel Work
+In multi-model mode, streaming allows you to see responses from all models simultaneously. You can compare approaches in real-time.
+
+## Efficiency
+
+| Aspect | Without Streaming | With Streaming |
+|--------|-------------------|----------------|
+| **Time to first token** | 5–30 sec | < 1 sec |
+| **Perceived speed** | Long wait | Instant response |
+| **Process control** | Only after completion | At any moment |
+| **Token cost on error** | Full | Minimal |
+
+### Resource Savings
+
+With streaming, you can stop generation at any moment:
+- If the response is sufficient — save tokens
+- If the direction is wrong — don't waste your limit
+- If you only need part — get it faster
+
+## Model Self-Control
+
+Streaming opens a unique opportunity — **observing the model's reasoning process**.
+
+### Thinking Block
+
+Many modern models (GPT-4, Claude, Gemini 2.5 Pro) support "extended thinking" — they show internal reasoning before the final response.
+
+| Element | Icon | Description |
+|---------|------|-------------|
+| **Thinking Block** | \`Sparkles\` | Expandable section with reasoning chain |
+| **Status** | \`Loader\` | Animation during active thinking |
+| **Expand** | \`ChevronDown\` | Show full reasoning text |
+
+### What Does Viewing Thinking Provide?
+
+1. **Transparency** — understand how the model reached its conclusion
+2. **Diagnostics** — see where reasoning went wrong
+3. **Learning** — learn to formulate better prompts
+4. **Trust** — verify the logic, not just the result
+
+## Streaming Controls
+
+| Element | Icon | Description |
+|---------|------|-------------|
+| **Mode Indicator** | \`Zap\` | Pulsing icon in panel header |
+| **Stop All** | \`Square\` | Stops all active generations |
+| **Counter** | — | Number of active streams next to button |
+| **Card Stop** | \`Square\` | Stop specific model |
+| **Fallback Indicator** | Amber | Model working in standard mode |
+
+## Streaming Tips
+
+### Optimal Usage
+
+1. **Read as it generates** — don't wait for completion
+2. **Stop early** — if the response isn't right, hit stop
+3. **Compare in parallel** — run multiple models
+4. **Use Thinking** — expand the reasoning block for complex tasks
+
+### When Streaming is Especially Useful
+
+| Scenario | Why Streaming Helps |
+|----------|---------------------|
+| **Long responses** | Read immediately, don't wait minutes |
+| **Iterative work** | Quickly adjust direction |
+| **Model comparison** | See differences in real-time |
+| **Prompt debugging** | Understand what the model "thinks" |
+| **Limited budget** | Save tokens by stopping |
+
+### What to Avoid
+
+- **Don't close the tab** during active streaming
+- **Don't send new requests** while generation is in progress
+- **Don't ignore Thinking** — it often holds the key to improving your prompt
+
+## Fallback Mode
+
+Some models or situations don't support streaming. In these cases, the system automatically switches to standard mode.
+
+### Fallback Reasons
+
+| Reason | Indicator | Description |
+|--------|-----------|-------------|
+| **Model doesn't support** | Amber badge | Some models work only synchronously |
+| **Rate Limit (429)** | Amber message | Request limit exceeded |
+| **Server Error (500)** | Red indicator | Temporary provider issue |
+
+> **Tip**: With fallback, the model will still respond, you'll just see it all at once after generation completes.`
+    }
+  },
+  {
     id: 'roles',
     titleKey: 'hydrapedia.sections.roles',
     icon: 'Shield',
