@@ -284,9 +284,35 @@ To work with AI models, you'll need API keys from providers:
 | Элемент | Иконка | Описание |
 |---------|--------|----------|
 | **Поле ввода** | — | Текстовое поле для запроса |
-| **Прикрепить файл** | \`Paperclip\` | Загрузка изображений (до 5 шт) |
+| **Прикрепить файл** | \`Paperclip\` | Загрузка файлов и диаграмм |
 | **Отправить** | \`SendHorizontal\` | Отправка сообщения |
 | **Стоп** | \`Square\` | Остановка генерации (во время ответа) |
+
+### Система вложений
+
+AI-Hydra поддерживает три типа вложений:
+
+| Тип | Иконка | Описание |
+|-----|--------|----------|
+| **Изображения** | \`Image\` | PNG, JPG, GIF, WebP (до 5 шт × 10 МБ) |
+| **Документы** | \`FileText\` | PDF, TXT, MD и другие (до 10 МБ) |
+| **Mermaid-диаграммы** | \`GitBranch\` | Визуальные диаграммы потоков |
+
+### Прикрепление Mermaid-диаграмм
+
+Mermaid-диаграммы прикрепляются как специальные вложения с визуальным превью (не вставляются в текст!). Это позволяет AI-модели анализировать диаграмму, а не объяснять синтаксис Mermaid.
+
+| Элемент | Иконка | Описание |
+|---------|--------|----------|
+| **Скрепка → Диаграмма Mermaid** | \`Paperclip\` | Открывает подменю |
+| **Пустой шаблон** | \`Plus\` | Добавляет базовый flowchart |
+| **Из файла** | \`Upload\` | Загрузка .mmd / .mermaid файла |
+| **Из библиотеки потоков** | \`Folder\` | Выбор из сохранённых диаграмм |
+| **Карточка-превью** | \`GitBranch\` | Миниатюра диаграммы |
+| **Увеличить** | Клик | Полноэкранный просмотр |
+| **Удалить** | \`X\` | Открепить диаграмму |
+
+> **Важно**: Диаграммы передаются как metadata вложения, поэтому AI видит их структуру, а не сырой код.
 
 ## Левый сайдбар — Навигатор чата
 
@@ -397,9 +423,35 @@ The Expert Panel is the main tool for working with multiple models simultaneousl
 | Element | Icon | Description |
 |---------|------|-------------|
 | **Input Field** | — | Text field for query |
-| **Attach File** | \`Paperclip\` | Upload images (up to 5) |
+| **Attach File** | \`Paperclip\` | Upload files and diagrams |
 | **Send** | \`SendHorizontal\` | Send message |
 | **Stop** | \`Square\` | Stop generation (while responding) |
+
+### Attachment System
+
+AI-Hydra supports three types of attachments:
+
+| Type | Icon | Description |
+|------|------|-------------|
+| **Images** | \`Image\` | PNG, JPG, GIF, WebP (up to 5 × 10 MB) |
+| **Documents** | \`FileText\` | PDF, TXT, MD and others (up to 10 MB) |
+| **Mermaid Diagrams** | \`GitBranch\` | Visual flow diagrams |
+
+### Attaching Mermaid Diagrams
+
+Mermaid diagrams attach as special attachments with visual preview (not pasted into text!). This allows the AI model to analyze the diagram rather than explain Mermaid syntax.
+
+| Element | Icon | Description |
+|---------|------|-------------|
+| **Paperclip → Mermaid Diagram** | \`Paperclip\` | Opens submenu |
+| **Empty Template** | \`Plus\` | Adds basic flowchart |
+| **From File** | \`Upload\` | Upload .mmd / .mermaid file |
+| **From Flow Library** | \`Folder\` | Select from saved diagrams |
+| **Preview Card** | \`GitBranch\` | Diagram thumbnail |
+| **Enlarge** | Click | Full-screen view |
+| **Remove** | \`X\` | Detach diagram |
+
+> **Important**: Diagrams are passed as attachment metadata, so AI sees their structure, not raw code.
 
 ## Left Sidebar — Chat Navigator
 
@@ -1111,7 +1163,20 @@ graph LR
 | **PNG** | \`Image\` | Для документации |
 | **SVG** | \`FileCode\` | Для редактирования |
 | **JSON** | \`FileJson\` | Для программного использования |
-| **Mermaid** | \`GitBranch\` | Текстовый формат диаграмм |`,
+| **Mermaid** | \`GitBranch\` | Текстовый формат диаграмм |
+
+## Интеграция с чатом
+
+Диаграммы из редактора потоков можно прикреплять к запросам в Панели экспертов:
+
+1. Нажмите \`Paperclip\` в поле ввода
+2. Выберите **Диаграмма Mermaid** → **Из библиотеки потоков**
+3. Наведите на диаграмму для просмотра превью
+4. Кликните для прикрепления к сообщению
+
+Диаграмма появится как карточка-превью рядом с полем ввода. AI-модели получат её структуру для анализа.
+
+> **Совет**: Используйте эту функцию для обсуждения архитектуры потоков с AI.`,
 
       en: `# Thought Flow Editor
 
@@ -1234,7 +1299,20 @@ graph LR
 | **PNG** | \`Image\` | For documentation |
 | **SVG** | \`FileCode\` | For editing |
 | **JSON** | \`FileJson\` | For programmatic use |
-| **Mermaid** | \`GitBranch\` | Text diagram format |`
+| **Mermaid** | \`GitBranch\` | Text diagram format |
+
+## Chat Integration
+
+Diagrams from the flow editor can be attached to requests in the Expert Panel:
+
+1. Click \`Paperclip\` in the input field
+2. Select **Mermaid Diagram** → **From Flow Library**
+3. Hover over a diagram to see preview
+4. Click to attach to message
+
+The diagram will appear as a preview card next to the input field. AI models will receive its structure for analysis.
+
+> **Tip**: Use this feature to discuss flow architecture with AI.`
     }
   },
   {
@@ -1461,6 +1539,7 @@ These ratings form a personal model ranking.
 | **Ctrl/Cmd + V** | Вставить изображение из буфера |
 | **Escape** | Закрыть панель консультанта |
 | **Ctrl/Cmd + K** | Открыть поиск в Гидропедии |
+| **Клик на превью Mermaid** | Увеличить до полноэкранного просмотра |
 
 ## Экономия токенов
 
@@ -1557,6 +1636,7 @@ These ratings form a personal model ranking.
 | **Ctrl/Cmd + V** | Paste image from clipboard |
 | **Escape** | Close consultant panel |
 | **Ctrl/Cmd + K** | Open search in Hydrapedia |
+| **Click on Mermaid preview** | Enlarge to full-screen view |
 
 ## Token Economy
 
