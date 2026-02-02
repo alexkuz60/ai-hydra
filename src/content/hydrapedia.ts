@@ -31,10 +31,10 @@ export const hydrapediaSections: HydrapediaSection[] = [
 
 ### Ролевая специализация
 Каждому ответу модели может быть назначена роль:
-- **Эксперт** (Assistant) — основной ответ
-- **Критик** (Critic) — критический анализ
-- **Арбитр** (Arbiter) — финальный синтез
-- **Консультант** (Consultant) — дополнительная экспертиза
+- \`@assistant\` — основной ответ
+- \`@critic\` — критический анализ
+- \`@arbiter\` — финальный синтез
+- \`@consultant\` — дополнительная экспертиза
 
 ## Архитектура платформы
 
@@ -77,10 +77,10 @@ Different models have different strengths:
 
 ### Role Specialization
 Each model response can be assigned a role:
-- **Expert** (Assistant) — primary response
-- **Critic** — critical analysis
-- **Arbiter** — final synthesis
-- **Consultant** — additional expertise
+- \`@assistant\` — primary response
+- \`@critic\` — critical analysis
+- \`@arbiter\` — final synthesis
+- \`@consultant\` — additional expertise
 
 ## Platform Architecture
 
@@ -320,15 +320,15 @@ Mermaid-диаграммы прикрепляются как специальн�
 
 ### Элементы навигатора
 
-| Элемент | Иконка | Описание |
-|---------|--------|----------|
-| **Кнопка показа** | \`PanelLeft\` | Показать/скрыть панель навигатора |
-| **Узел пользователя** | \`Crown\` | Сообщение пользователя (золотой фон) |
-| **Узел ассистента** | \`CheckCircle\` | Ответ эксперта (зелёный фон) |
-| **Узел критика** | \`AlertTriangle\` | Ответ критика (красный фон) |
-| **Узел арбитра** | \`Scale\` | Ответ арбитра (жёлтый фон) |
-| **Узел консультанта** | \`MessageSquare\` | Ответ консультанта (янтарный фон) |
-| **Связь между узлами** | — | Линия показывает порядок сообщений |
+| Элемент | Описание |
+|---------|----------|
+| **Кнопка показа** \`PanelLeft\` | Показать/скрыть панель навигатора |
+| **Узел пользователя** \`Crown\` | Сообщение пользователя (золотой фон) |
+| **Узел** \`@assistant\` | Ответ эксперта |
+| **Узел** \`@critic\` | Ответ критика |
+| **Узел** \`@arbiter\` | Ответ арбитра |
+| **Узел** \`@consultant\` | Ответ консультанта |
+| **Связь между узлами** | Линия показывает порядок сообщений |
 
 ### Как использовать навигатор
 
@@ -459,15 +459,15 @@ Tree visualization of the dialogue, showing all messages and their connections.
 
 ### Navigator Elements
 
-| Element | Icon | Description |
-|---------|------|-------------|
-| **Toggle Button** | \`PanelLeft\` | Show/hide navigator panel |
-| **User Node** | \`Crown\` | User message (gold background) |
-| **Assistant Node** | \`CheckCircle\` | Expert response (green background) |
-| **Critic Node** | \`AlertTriangle\` | Critic response (red background) |
-| **Arbiter Node** | \`Scale\` | Arbiter response (yellow background) |
-| **Consultant Node** | \`MessageSquare\` | Consultant response (amber background) |
-| **Connection Line** | — | Line shows message order |
+| Element | Description |
+|---------|-------------|
+| **Toggle Button** \`PanelLeft\` | Show/hide navigator panel |
+| **User Node** \`Crown\` | User message (gold background) |
+| **Node** \`@assistant\` | Expert response |
+| **Node** \`@critic\` | Critic response |
+| **Node** \`@arbiter\` | Arbiter response |
+| **Node** \`@consultant\` | Consultant response |
+| **Connection Line** | Line shows message order |
 
 ### How to Use Navigator
 
@@ -720,9 +720,7 @@ Some models or situations don't support streaming. In these cases, the system au
 
 ## Основные роли
 
-### Assistant (Эксперт)
-
-**Цвет**: зелёный | **Иконка**: \`CheckCircle\`
+### \`@assistant\` Эксперт
 
 Основная роль для ответов. Эксперт даёт прямой, информативный ответ на запрос пользователя.
 
@@ -732,9 +730,7 @@ Some models or situations don't support streaming. In these cases, the system au
 - Написание кода
 - Объяснение концепций
 
-### Critic (Критик)
-
-**Цвет**: красный | **Иконка**: \`AlertTriangle\`
+### \`@critic\` Критик
 
 Критик анализирует ответы других моделей, находит слабые места и предлагает улучшения.
 
@@ -744,9 +740,7 @@ Some models or situations don't support streaming. In these cases, the system au
 - Поиск уязвимостей
 - Редактура текста
 
-### Arbiter (Арбитр)
-
-**Цвет**: золотой | **Иконка**: \`Scale\`
+### \`@arbiter\` Арбитр
 
 Арбитр синтезирует ответы всех экспертов и критиков, формируя финальный ответ.
 
@@ -756,9 +750,7 @@ Some models or situations don't support streaming. In these cases, the system au
 - Синтез нескольких точек зрения
 - Итоговые выводы
 
-### Consultant (Консультант)
-
-**Цвет**: янтарный | **Иконка**: \`MessageSquare\`
+### \`@consultant\` Консультант
 
 Консультант работает в боковой панели D-Chat, помогая углубиться в тему.
 
@@ -770,13 +762,11 @@ Some models or situations don't support streaming. In these cases, the system au
 
 ## Дополнительные роли
 
-| Роль | Цвет | Иконка | Назначение |
-|------|------|--------|------------|
-| **Moderator** | Синий | \`Shield\` | Модерация контента |
-| **Advisor** | Изумрудный | \`Lightbulb\` | Стратегические советы |
-| **Archivist** | Бронзовый | \`Archive\` | Работа с историей и документами |
-| **Analyst** | Индиго | \`BarChart\` | Глубокий анализ данных |
-| **Webhunter** | Оранжевый | \`Globe\` | Поиск информации в сети |
+- \`@moderator\` — Модерация контента
+- \`@advisor\` — Стратегические советы
+- \`@archivist\` — Работа с историей и документами
+- \`@analyst\` — Глубокий анализ данных
+- \`@webhunter\` — Поиск информации в сети
 
 ## Индикаторы ролей в интерфейсе
 
@@ -805,9 +795,7 @@ In AI-Hydra, each model response can have a specific role. This helps structure 
 
 ## Main Roles
 
-### Assistant (Expert)
-
-**Color**: green | **Icon**: \`CheckCircle\`
+### \`@assistant\` Expert
 
 The main role for responses. The expert provides a direct, informative answer.
 
@@ -817,9 +805,7 @@ The main role for responses. The expert provides a direct, informative answer.
 - Code writing
 - Concept explanation
 
-### Critic
-
-**Color**: red | **Icon**: \`AlertTriangle\`
+### \`@critic\` Critic
 
 The critic analyzes responses from other models, finds weaknesses and suggests improvements.
 
@@ -829,9 +815,7 @@ The critic analyzes responses from other models, finds weaknesses and suggests i
 - Vulnerability search
 - Text editing
 
-### Arbiter
-
-**Color**: gold | **Icon**: \`Scale\`
+### \`@arbiter\` Arbiter
 
 The arbiter synthesizes responses from all experts and critics, forming a final response.
 
@@ -841,9 +825,7 @@ The arbiter synthesizes responses from all experts and critics, forming a final 
 - Multiple viewpoint synthesis
 - Final conclusions
 
-### Consultant
-
-**Color**: amber | **Icon**: \`MessageSquare\`
+### \`@consultant\` Consultant
 
 The consultant works in the D-Chat side panel, helping to dive deeper into topics.
 
@@ -855,13 +837,11 @@ The consultant works in the D-Chat side panel, helping to dive deeper into topic
 
 ## Additional Roles
 
-| Role | Color | Icon | Purpose |
-|------|-------|------|---------|
-| **Moderator** | Blue | \`Shield\` | Content moderation |
-| **Advisor** | Emerald | \`Lightbulb\` | Strategic advice |
-| **Archivist** | Bronze | \`Archive\` | History and documents |
-| **Analyst** | Indigo | \`BarChart\` | Deep data analysis |
-| **Webhunter** | Orange | \`Globe\` | Web information search |
+- \`@moderator\` — Content moderation
+- \`@advisor\` — Strategic advice
+- \`@archivist\` — History and documents
+- \`@analyst\` — Deep data analysis
+- \`@webhunter\` — Web information search
 
 ## Role Indicators in Interface
 
@@ -925,7 +905,7 @@ Roles are assigned based on:
 |------|----------|
 | **Название** | Краткое описание (до 50 символов) |
 | **Описание** | Подробное описание назначения |
-| **Роль** | Выбор: Assistant, Critic, Arbiter... |
+| **Роль** | Выбор: \`@assistant\`, \`@critic\`, \`@arbiter\`... |
 | **Содержание** | Текст системного промпта |
 | **Теги** | Ключевые слова через запятую |
 | **Публичный** | Делает промпт доступным другим |
@@ -1003,7 +983,7 @@ The prompt library allows you to save, organize, and reuse system prompts.
 |-------|-------------|
 | **Name** | Brief description (up to 50 chars) |
 | **Description** | Detailed purpose description |
-| **Role** | Select: Assistant, Critic, Arbiter... |
+| **Role** | Select: \`@assistant\`, \`@critic\`, \`@arbiter\`... |
 | **Content** | System prompt text |
 | **Tags** | Keywords separated by comma |
 | **Public** | Makes prompt available to others |
@@ -2060,7 +2040,7 @@ These ratings form a personal model ranking.
 
 | Параметр | Описание |
 |----------|----------|
-| **Роль** | Expert, Critic, Arbiter... |
+| **Роль** | \`@assistant\`, \`@critic\`, \`@arbiter\`... |
 | **Температура** | 0.0–2.0 |
 | **Max Tokens** | 256–16384 |
 | **Системный промпт** | Кастомные инструкции |
@@ -2131,7 +2111,7 @@ For each selected model you can configure:
 
 | Parameter | Description |
 |-----------|-------------|
-| **Role** | Expert, Critic, Arbiter... |
+| **Role** | \`@assistant\`, \`@critic\`, \`@arbiter\`... |
 | **Temperature** | 0.0–2.0 |
 | **Max Tokens** | 256–16384 |
 | **System Prompt** | Custom instructions |
@@ -2158,13 +2138,9 @@ AI-Hydra включает 11 специализированных ролей, р
 
 Участвуют в коллегиальных обсуждениях и экспертных оценках.
 
-### Ассистент (Assistant)
+### \`@assistant\` Ассистент
 
-| Параметр | Значение |
-|----------|----------|
-| **Иконка** | \`Brain\` |
-| **Цвет** | Зелёный |
-| **Назначение** | Универсальный эксперт широкого профиля |
+Универсальный эксперт широкого профиля.
 
 **Когда использовать:**
 - Генерация контента
@@ -2174,13 +2150,9 @@ AI-Hydra включает 11 специализированных ролей, р
 
 ---
 
-### Критик (Critic)
+### \`@critic\` Критик
 
-| Параметр | Значение |
-|----------|----------|
-| **Иконка** | \`Shield\` |
-| **Цвет** | Красный |
-| **Назначение** | Поиск слабых мест и противоречий |
+Поиск слабых мест и противоречий.
 
 **Когда использовать:**
 - Code review
@@ -2190,13 +2162,9 @@ AI-Hydra включает 11 специализированных ролей, р
 
 ---
 
-### Арбитр (Arbiter)
+### \`@arbiter\` Арбитр
 
-| Параметр | Значение |
-|----------|----------|
-| **Иконка** | \`Scale\` |
-| **Цвет** | Золотой |
-| **Назначение** | Синтез и финальное решение |
+Синтез и финальное решение.
 
 **Когда использовать:**
 - Принятие решений
@@ -2206,13 +2174,9 @@ AI-Hydra включает 11 специализированных ролей, р
 
 ---
 
-### Консультант (Consultant)
+### \`@consultant\` Консультант
 
-| Параметр | Значение |
-|----------|----------|
-| **Иконка** | \`Lightbulb\` |
-| **Цвет** | Янтарный |
-| **Назначение** | Глубокая разовая экспертиза |
+Глубокая разовая экспертиза.
 
 **Когда использовать:**
 - D-Chat консультации
@@ -2222,13 +2186,9 @@ AI-Hydra включает 11 специализированных ролей, р
 
 ---
 
-### Модератор (Moderator)
+### \`@moderator\` Модератор
 
-| Параметр | Значение |
-|----------|----------|
-| **Иконка** | \`Gavel\` |
-| **Цвет** | Синий |
-| **Назначение** | Управление дискуссией |
+Управление дискуссией.
 
 **Когда использовать:**
 - Агрегация контекста в D-Chat
@@ -2238,13 +2198,9 @@ AI-Hydra включает 11 специализированных ролей, р
 
 ---
 
-### Советник (Advisor)
+### \`@advisor\` Советник
 
-| Параметр | Значение |
-|----------|----------|
-| **Иконка** | \`HandHelping\` |
-| **Цвет** | Изумрудный |
-| **Назначение** | Стратегические рекомендации |
+Стратегические рекомендации.
 
 **Когда использовать:**
 - Долгосрочное планирование
@@ -2254,13 +2210,9 @@ AI-Hydra включает 11 специализированных ролей, р
 
 ---
 
-### Аналитик (Analyst)
+### \`@analyst\` Аналитик
 
-| Параметр | Значение |
-|----------|----------|
-| **Иконка** | \`LineChart\` |
-| **Цвет** | Индиго |
-| **Назначение** | Глубокий анализ данных |
+Глубокий анализ данных.
 
 **Когда использовать:**
 - Выявление трендов
@@ -2270,13 +2222,9 @@ AI-Hydra включает 11 специализированных ролей, р
 
 ---
 
-### Веб-охотник (Webhunter)
+### \`@webhunter\` Веб-охотник
 
-| Параметр | Значение |
-|----------|----------|
-| **Иконка** | \`Globe\` |
-| **Цвет** | Оранжевый |
-| **Назначение** | Поиск информации в интернете |
+Поиск информации в интернете.
 
 **Когда использовать:**
 - Поиск актуальной информации
@@ -2290,13 +2238,9 @@ AI-Hydra включает 11 специализированных ролей, р
 
 Не участвуют в коллегиальных обсуждениях. Служат персональными помощниками пользователя.
 
-### Архивариус (Archivist)
+### \`@archivist\` Архивариус
 
-| Параметр | Значение |
-|----------|----------|
-| **Иконка** | \`Archive\` |
-| **Цвет** | Бронзовый |
-| **Назначение** | Систематизация и архивирование |
+Систематизация и архивирование.
 
 **Специализация:**
 - Управление библиотеками промптов
@@ -2306,13 +2250,9 @@ AI-Hydra включает 11 специализированных ролей, р
 
 ---
 
-### Промпт-инженер (Prompt Engineer)
+### \`@promptengineer\` Промпт-инженер
 
-| Параметр | Значение |
-|----------|----------|
-| **Иконка** | \`Wand2\` |
-| **Цвет** | Пурпурный |
-| **Назначение** | Оптимизация промптов |
+Оптимизация промптов.
 
 **Специализация:**
 - Создание эффективных инструкций
@@ -2322,13 +2262,9 @@ AI-Hydra включает 11 специализированных ролей, р
 
 ---
 
-### Регулировщик потоков (Flow Regulator)
+### \`@flowregulator\` Регулировщик потоков
 
-| Параметр | Значение |
-|----------|----------|
-| **Иконка** | \`Route\` |
-| **Цвет** | Бирюзовый |
-| **Назначение** | Проектирование data-flow |
+Проектирование data-flow.
 
 **Специализация:**
 - Архитектура потоков данных
@@ -2359,13 +2295,9 @@ AI-Hydra includes 11 specialized roles divided into two categories: **Experts** 
 
 Participate in collegial discussions and expert evaluations.
 
-### Assistant
+### \`@assistant\` Assistant
 
-| Parameter | Value |
-|-----------|-------|
-| **Icon** | \`Brain\` |
-| **Color** | Green |
-| **Purpose** | Versatile general-purpose expert |
+Versatile general-purpose expert.
 
 **When to use:**
 - Content generation
@@ -2375,13 +2307,9 @@ Participate in collegial discussions and expert evaluations.
 
 ---
 
-### Critic
+### \`@critic\` Critic
 
-| Parameter | Value |
-|-----------|-------|
-| **Icon** | \`Shield\` |
-| **Color** | Red |
-| **Purpose** | Finding weaknesses and contradictions |
+Finding weaknesses and contradictions.
 
 **When to use:**
 - Code review
@@ -2391,13 +2319,9 @@ Participate in collegial discussions and expert evaluations.
 
 ---
 
-### Arbiter
+### \`@arbiter\` Arbiter
 
-| Parameter | Value |
-|-----------|-------|
-| **Icon** | \`Scale\` |
-| **Color** | Gold |
-| **Purpose** | Synthesis and final decision |
+Synthesis and final decision.
 
 **When to use:**
 - Decision making
@@ -2407,13 +2331,9 @@ Participate in collegial discussions and expert evaluations.
 
 ---
 
-### Consultant
+### \`@consultant\` Consultant
 
-| Parameter | Value |
-|-----------|-------|
-| **Icon** | \`Lightbulb\` |
-| **Color** | Amber |
-| **Purpose** | Deep one-time expertise |
+Deep one-time expertise.
 
 **When to use:**
 - D-Chat consultations
@@ -2423,13 +2343,9 @@ Participate in collegial discussions and expert evaluations.
 
 ---
 
-### Moderator
+### \`@moderator\` Moderator
 
-| Parameter | Value |
-|-----------|-------|
-| **Icon** | \`Gavel\` |
-| **Color** | Blue |
-| **Purpose** | Discussion management |
+Discussion management.
 
 **When to use:**
 - Context aggregation in D-Chat
@@ -2439,13 +2355,9 @@ Participate in collegial discussions and expert evaluations.
 
 ---
 
-### Advisor
+### \`@advisor\` Advisor
 
-| Parameter | Value |
-|-----------|-------|
-| **Icon** | \`HandHelping\` |
-| **Color** | Emerald |
-| **Purpose** | Strategic recommendations |
+Strategic recommendations.
 
 **When to use:**
 - Long-term planning
@@ -2455,13 +2367,9 @@ Participate in collegial discussions and expert evaluations.
 
 ---
 
-### Analyst
+### \`@analyst\` Analyst
 
-| Parameter | Value |
-|-----------|-------|
-| **Icon** | \`LineChart\` |
-| **Color** | Indigo |
-| **Purpose** | Deep data analysis |
+Deep data analysis.
 
 **When to use:**
 - Trend identification
@@ -2471,13 +2379,9 @@ Participate in collegial discussions and expert evaluations.
 
 ---
 
-### Webhunter
+### \`@webhunter\` Webhunter
 
-| Parameter | Value |
-|-----------|-------|
-| **Icon** | \`Globe\` |
-| **Color** | Orange |
-| **Purpose** | Internet information search |
+Internet information search.
 
 **When to use:**
 - Finding current information
@@ -2491,13 +2395,9 @@ Participate in collegial discussions and expert evaluations.
 
 Do not participate in collegial discussions. Serve as personal user assistants.
 
-### Archivist
+### \`@archivist\` Archivist
 
-| Parameter | Value |
-|-----------|-------|
-| **Icon** | \`Archive\` |
-| **Color** | Bronze |
-| **Purpose** | Systematization and archiving |
+Systematization and archiving.
 
 **Specialization:**
 - Prompt library management
@@ -2507,13 +2407,9 @@ Do not participate in collegial discussions. Serve as personal user assistants.
 
 ---
 
-### Prompt Engineer
+### \`@promptengineer\` Prompt Engineer
 
-| Parameter | Value |
-|-----------|-------|
-| **Icon** | \`Wand2\` |
-| **Color** | Magenta |
-| **Purpose** | Prompt optimization |
+Prompt optimization.
 
 **Specialization:**
 - Creating effective instructions
@@ -2523,13 +2419,9 @@ Do not participate in collegial discussions. Serve as personal user assistants.
 
 ---
 
-### Flow Regulator
+### \`@flowregulator\` Flow Regulator
 
-| Parameter | Value |
-|-----------|-------|
-| **Icon** | \`Route\` |
-| **Color** | Teal |
-| **Purpose** | Data-flow design |
+Data-flow design.
 
 **Specialization:**
 - Data flow architecture
@@ -2564,7 +2456,7 @@ Available at \`/staff-roles\`. Interface:
 
 ## Концепция
 
-В отличие от режимов Специалист/Критик/Арбитр, которые отвечают на отдельный вопрос, **Модератор**:
+В отличие от режимов \`@assistant\`/\`@critic\`/\`@arbiter\`, которые отвечают на отдельный вопрос, **Модератор**:
 
 1. Собирает все ответы экспертов из текущего блока
 2. Анализирует их целостность
@@ -2646,7 +2538,7 @@ Available at \`/staff-roles\`. Interface:
 
 ## Concept
 
-Unlike Expert/Critic/Arbiter modes that answer individual questions, **Moderator**:
+Unlike \`@assistant\`/\`@critic\`/\`@arbiter\` modes that answer individual questions, **Moderator**:
 
 1. Collects all expert responses from the current block
 2. Analyzes their coherence
@@ -2764,7 +2656,7 @@ graph LR
 
 ### Через Webhunter
 
-1. Назначьте модели роль **Webhunter**
+1. Назначьте модели роль \`@webhunter\`
 2. Задайте вопрос, требующий актуальной информации
 3. Модель автоматически использует веб-поиск
 
@@ -2842,7 +2734,7 @@ graph LR
 
 ### Via Webhunter
 
-1. Assign the **Webhunter** role to a model
+1. Assign the \`@webhunter\` role to a model
 2. Ask a question requiring current information
 3. The model automatically uses web search
 
