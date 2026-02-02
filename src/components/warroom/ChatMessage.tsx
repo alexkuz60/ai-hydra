@@ -203,11 +203,11 @@ export function ChatMessage({ message, userDisplayInfo, onDelete, onRatingChange
           />
         )}
         
-        {/* Attachments */}
+        {/* Attachments - shown for messages with file attachments */}
         {attachments.length > 0 && (
-          <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-border/30">
+          <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-border/30 relative z-10">
             {attachments.map((att, idx) => (
-              <AttachmentPreview key={idx} attachment={att} />
+              <AttachmentPreview key={`${message.id}-att-${idx}`} attachment={att} />
             ))}
           </div>
         )}
