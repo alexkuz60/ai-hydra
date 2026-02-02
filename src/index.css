@@ -542,43 +542,52 @@
 .prose-compact {
   word-wrap: break-word;
   overflow-wrap: anywhere;
-  hyphens: auto;
+  word-break: break-word;
+  max-width: 100%;
+}
+
+.prose-compact .markdown-content {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .prose-compact .markdown-content p {
-  @apply my-1 leading-normal text-sm;
+  @apply my-0.5 text-sm;
+  line-height: 1.4;
 }
 
 .prose-compact .markdown-content h1 {
-  @apply text-base font-bold mt-2 mb-1;
+  @apply text-base font-bold mt-1.5 mb-0.5;
 }
 
 .prose-compact .markdown-content h2 {
-  @apply text-sm font-semibold mt-2 mb-1;
+  @apply text-sm font-semibold mt-1.5 mb-0.5;
 }
 
 .prose-compact .markdown-content h3 {
-  @apply text-sm font-medium mt-1.5 mb-0.5;
+  @apply text-sm font-medium mt-1 mb-0.5;
 }
 
 .prose-compact .markdown-content ul,
 .prose-compact .markdown-content ol {
-  @apply my-1 space-y-0.5 text-sm;
+  @apply my-0.5 space-y-0 text-sm;
 }
 
 .prose-compact .markdown-content li {
   @apply ml-3;
+  line-height: 1.4;
 }
 
 .prose-compact .markdown-content blockquote {
-  @apply my-1.5 py-1 pl-3;
+  @apply my-1 py-0.5 pl-3;
 }
 
 .prose-compact .markdown-content pre,
 .prose-compact .markdown-content .relative.group {
-  @apply my-2;
+  @apply my-1.5;
 }
 
 .prose-compact .markdown-content hr {
-  @apply my-2;
+  @apply my-1.5;
 }
