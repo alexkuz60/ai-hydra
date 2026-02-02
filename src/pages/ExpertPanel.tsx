@@ -96,6 +96,7 @@ export default function ExpertPanel() {
     stopAllStreaming,
     clearCompleted,
   } = useStreamingResponses({
+    sessionId: currentTask?.id || null,
     onStreamComplete: useCallback((modelId: string, content: string) => {
       // When streaming completes, the message will appear via realtime subscription
       // Clear completed streaming responses after a short delay
