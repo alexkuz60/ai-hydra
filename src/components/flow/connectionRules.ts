@@ -35,6 +35,9 @@ export const CONNECTION_RULES: Record<FlowNodeType, FlowNodeType[] | 'any'> = {
   embedding: ['memory', 'model', 'output', 'transform', 'filter'],
   memory: ['model', 'output', 'transform'],
   classifier: ['condition', 'switch', 'output', 'transform'],
+  
+  // Grouping (groups don't connect - they contain nodes)
+  group: [],
 };
 
 /**

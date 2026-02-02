@@ -9,11 +9,15 @@ export type FlowNodeType =
   // Logic & control
   | 'loop' | 'delay' | 'switch'
   // AI-specific
-  | 'embedding' | 'memory' | 'classifier';
+  | 'embedding' | 'memory' | 'classifier'
+  // Grouping
+  | 'group';
 
 export interface FlowNodeData {
   label: string;
   description?: string;
+  // Group node specific
+  color?: string;
   // Input node specific
   inputType?: 'user' | 'file' | 'api';
   // Prompt node specific
@@ -98,7 +102,7 @@ export interface NodePaletteItem {
   description: string;
   icon: string;
   color: string;
-  category: 'basic' | 'data' | 'integration' | 'logic' | 'ai';
+  category: 'basic' | 'data' | 'integration' | 'logic' | 'ai' | 'structure';
 }
 
 export const NODE_PALETTE: NodePaletteItem[] = [
@@ -258,5 +262,14 @@ export const NODE_PALETTE: NodePaletteItem[] = [
     icon: 'Tags',
     color: 'hydra-success',
     category: 'ai',
+  },
+  // Structure nodes
+  {
+    type: 'group',
+    label: 'Группа',
+    description: 'Контейнер для узлов',
+    icon: 'Group',
+    color: 'primary',
+    category: 'structure',
   },
 ];
