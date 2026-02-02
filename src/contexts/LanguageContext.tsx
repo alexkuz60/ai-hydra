@@ -35,6 +35,25 @@ const translations: Translations = {
   'staffRoles.icon': { ru: 'Иконка', en: 'Icon' },
   'staffRoles.role': { ru: 'Роль', en: 'Role' },
   'staffRoles.color': { ru: 'Цвет', en: 'Color' },
+  'staffRoles.selectRole': { ru: 'Выберите роль для просмотра деталей', en: 'Select a role to view details' },
+  'staffRoles.roleDescription': { ru: 'Описание', en: 'Description' },
+  'staffRoles.systemPrompt': { ru: 'Системный промпт по умолчанию', en: 'Default System Prompt' },
+  'staffRoles.technicalStaff': { ru: 'Технический персонал', en: 'Technical Staff' },
+  'staffRoles.technicalStaffHint': { ru: 'Не участвует в коллегиальных обсуждениях. Служит агентом-помощником пользователя.', en: 'Does not participate in collegiate discussions. Serves as a user assistant agent.' },
+  
+  // Staff Roles - Role Descriptions
+  'staffRoles.description.user': { ru: 'Человек-пользователь системы.', en: 'Human user of the system.' },
+  'staffRoles.description.assistant': { ru: 'Универсальный эксперт широкого профиля. Предоставляет чёткие, хорошо обоснованные ответы на вопросы из различных областей знаний.', en: 'Versatile general-purpose expert. Provides clear, well-reasoned answers to questions from various fields of knowledge.' },
+  'staffRoles.description.critic': { ru: 'Критик-аналитик. Находит слабые места, противоречия и потенциальные проблемы в рассуждениях. Конструктивен, но строг.', en: 'Critical analyst. Identifies weaknesses, contradictions, and potential problems in reasoning. Constructive but rigorous.' },
+  'staffRoles.description.arbiter': { ru: 'Арбитр дискуссии. Синтезирует различные точки зрения, выделяет консенсус и расхождения. Формирует взвешенное финальное решение.', en: 'Discussion arbiter. Synthesizes different viewpoints, highlights consensus and disagreements. Forms a balanced final decision.' },
+  'staffRoles.description.consultant': { ru: 'Консультант для разовых экспертных запросов. Предоставляет глубокие, детальные ответы с анализом, решениями и альтернативами.', en: 'Consultant for one-time expert queries. Provides deep, detailed answers with analysis, solutions, and alternatives.' },
+  'staffRoles.description.moderator': { ru: 'Модератор дискуссии. Следит за порядком обсуждения, направляет участников к конструктивному диалогу, подводит итоги.', en: 'Discussion moderator. Maintains discussion order, guides participants toward constructive dialogue, summarizes key points.' },
+  'staffRoles.description.advisor': { ru: 'Советник. Предоставляет рекомендации и стратегические советы, рассматривает долгосрочные последствия и оптимальные пути решения.', en: 'Advisor. Provides recommendations and strategic advice, considers long-term consequences and optimal solutions.' },
+  'staffRoles.description.archivist': { ru: 'Архивариус. Систематизирует информацию, управляет библиотеками, архивами и эмбеддинг-памятью. Создаёт структурированные сводки.', en: 'Archivist. Systematizes information, manages libraries, archives, and embedding memory. Creates structured summaries.' },
+  'staffRoles.description.analyst': { ru: 'Аналитик. Проводит глубокий анализ данных, выявляет закономерности и тренды. Представляет выводы структурированно с обоснованием.', en: 'Analyst. Conducts deep data analysis, identifies patterns and trends. Presents findings in a structured manner with justification.' },
+  'staffRoles.description.webhunter': { ru: 'Web-охотник. Специализируется на поиске информации в интернете. Формулирует эффективные запросы и анализирует найденные источники.', en: 'Web hunter. Specializes in searching for information on the internet. Formulates effective queries and analyzes found sources.' },
+  'staffRoles.description.promptengineer': { ru: 'Промпт-инженер. Создаёт, оптимизирует и анализирует промпты для ИИ-систем. Помогает формулировать эффективные инструкции.', en: 'Prompt engineer. Creates, optimizes, and analyzes prompts for AI systems. Helps formulate effective instructions.' },
+  'staffRoles.description.flowregulator': { ru: 'Регулировщик потоков. Проектирует и оптимизирует data-flow диаграммы и логические цепочки обработки. Анализирует архитектуру потоков данных.', en: 'Flow regulator. Designs and optimizes data-flow diagrams and processing logic chains. Analyzes data flow architecture.' },
   
   // Hydrapedia
   'hydrapedia.title': { ru: 'Гидропедия', en: 'Hydrapedia' },
