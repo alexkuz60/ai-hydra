@@ -32,6 +32,9 @@ import {
   Clipboard,
   Undo2,
   Redo2,
+  LayoutGrid,
+  ArrowRight,
+  ArrowDown,
 } from 'lucide-react';
 import {
   Tooltip,
@@ -64,6 +67,7 @@ interface FlowToolbarProps {
   canRedo: boolean;
   onUndo: () => void;
   onRedo: () => void;
+  onAutoLayout: (direction: 'LR' | 'TB') => void;
 }
 
 export function FlowToolbar({
@@ -88,6 +92,7 @@ export function FlowToolbar({
   canRedo,
   onUndo,
   onRedo,
+  onAutoLayout,
 }: FlowToolbarProps) {
   const { t } = useLanguage();
   const [mermaidCode, setMermaidCode] = useState('');
@@ -156,6 +161,27 @@ export function FlowToolbar({
           </TooltipContent>
         </Tooltip>
       </div>
+
+      {/* Auto Layout */}
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="outline" size="sm" className="gap-1">
+            <LayoutGrid className="h-4 w-4" />
+            {t('flowEditor.autoLayout')}
+            <ChevronDown className="h-3 w-3" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem onClick={() => onAutoLayout('LR')}>
+            <ArrowRight className="h-4 w-4 mr-2" />
+            {t('flowEditor.layoutHorizontal')}
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => onAutoLayout('TB')}>
+            <ArrowDown className="h-4 w-4 mr-2" />
+            {t('flowEditor.layoutVertical')}
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
 
       <div className="flex-1" />
 
