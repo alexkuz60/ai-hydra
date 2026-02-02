@@ -10,6 +10,7 @@ import { Copy, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { MermaidBlock } from '@/components/warroom/MermaidBlock';
 import { LucideIconInline } from './LucideIconInline';
+import { RoleIconInline, getRoleFromName } from './RoleIconInline';
 import 'katex/dist/katex.min.css';
 
 interface HydrapediaMarkdownProps {
@@ -41,8 +42,17 @@ function CodeBlock({
     setTimeout(() => setCopied(false), 2000);
   };
 
-  // Check if inline code is a Lucide icon name
+  // Check if inline code is a Lucide icon name or role
   if (isInlineCode) {
+    // Check if it's a role reference like @assistant or @арбитр
+    if (codeString.startsWith('@')) {
+      const roleName = codeString.slice(1);
+      const role = getRoleFromName(roleName);
+      if (role) {
+        return <RoleIconInline role={role} />;
+      }
+    }
+    
     // Check if it looks like a Lucide icon name (PascalCase)
     const iconPattern = /^[A-Z][a-zA-Z0-9]*$/;
     const excludedNames = ['GET', 'POST', 'PUT', 'DELETE', 'JSON', 'API', 'HTTP', 'CORS', 'RU', 'EN', 'URL', 'HTML', 'CSS', 'SQL', 'UUID', 'ID'];
