@@ -152,14 +152,15 @@ export function useStreamingResponses({
   const fallbackToOrchestrator = useCallback(async (
     model: RequestStartInfo,
     messageContent: string,
-    perModelSettings?: Record<string, { temperature?: number; maxTokens?: number; systemPrompt?: string }>
+    perModelSettings?: Record<string, { temperature?: number; maxTokens?: number; systemPrompt?: string }>,
+    fallbackReason?: 'rate_limit' | 'error' | 'unsupported'
   ) => {
     if (!sessionId) {
       console.error('[Streaming] Cannot fallback: no sessionId');
       return;
     }
 
-    console.log(`[Streaming] Fallback to orchestrator for ${model.modelId}`);
+    console.log(`[Streaming] Fallback to orchestrator for ${model.modelId} (reason: ${fallbackReason || 'unknown'})`);
 
     // Notify parent about fallback (optional callback)
     onFallbackToOrchestrator?.(model.modelId, messageContent);
@@ -189,6 +190,11 @@ export function useStreamingResponses({
               system_prompt: settings.systemPrompt,
               role: model.role,
               enable_tools: false, // Disable tools for fallback
+              // Pass fallback metadata to be stored with the message
+              fallback_metadata: fallbackReason ? {
+                used_fallback: true,
+                fallback_reason: fallbackReason,
+              } : undefined,
             }],
           }),
         }
@@ -250,7 +256,7 @@ export function useStreamingResponses({
     // Immediately fallback non-streaming models to orchestrator
     nonStreamableModels.forEach(model => {
       console.log(`[Streaming] Model ${model.modelId} doesn't support streaming, using orchestrator`);
-      fallbackToOrchestrator(model, message, perModelSettings);
+      fallbackToOrchestrator(model, message, perModelSettings, 'unsupported');
     });
 
     // Initialize pending responses for skeleton display (only streamable)
@@ -356,13 +362,13 @@ export function useStreamingResponses({
             toast.warning(`Превышен лимит. ${model.modelName} отправлен в очередь.`);
             // Add a small delay before orchestrator fallback to avoid overwhelming it too
             await new Promise(resolve => setTimeout(resolve, 500 + Math.random() * 1000));
-            await fallbackToOrchestrator(model, messageContent, modelSettings);
+            await fallbackToOrchestrator(model, messageContent, modelSettings, 'rate_limit');
             return;
           }
           
           if (response.status === 500 || response.status === 400 || response.status === 401) {
             console.log(`[Streaming] Error ${response.status} for ${model.modelId}, falling back to orchestrator`);
-            await fallbackToOrchestrator(model, messageContent, modelSettings);
+            await fallbackToOrchestrator(model, messageContent, modelSettings, 'error');
             return;
           }
           

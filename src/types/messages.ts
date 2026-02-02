@@ -19,6 +19,9 @@ export interface MessageMetadata {
   // Tool calling support
   tool_calls?: ToolCall[];
   tool_results?: ToolResult[];
+  // Fallback indicator - when model was rate-limited and used orchestrator
+  used_fallback?: boolean;
+  fallback_reason?: 'rate_limit' | 'error' | 'unsupported';
   [key: string]: unknown;
 }
 

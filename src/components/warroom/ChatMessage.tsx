@@ -14,8 +14,15 @@ import {
   ChevronDown, 
   ChevronUp, 
   Trash2,
-  Brain
+  Brain,
+  RefreshCw
 } from 'lucide-react';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { cn } from '@/lib/utils';
 import { useLanguage } from '@/contexts/LanguageContext';
 import {
@@ -115,7 +122,7 @@ export function ChatMessage({ message, userDisplayInfo, onDelete, onRatingChange
   const isUserMessage = message.role === 'user';
   const Icon = isUserMessage && userDisplayInfo?.isSupervisor ? Crown : config.icon;
 
-  // Get rating, attachments, and tool calls from metadata
+  // Get rating, attachments, tool calls, and fallback info from metadata
   const metadataObj = (typeof message.metadata === 'object' && message.metadata !== null) 
     ? message.metadata as MessageMetadata
     : {} as MessageMetadata;
@@ -123,6 +130,8 @@ export function ChatMessage({ message, userDisplayInfo, onDelete, onRatingChange
   const attachments = (Array.isArray(metadataObj.attachments) ? metadataObj.attachments : []) as Attachment[];
   const toolCalls = metadataObj.tool_calls as ToolCall[] | undefined;
   const toolResults = metadataObj.tool_results as ToolResult[] | undefined;
+  const usedFallback = metadataObj.used_fallback === true;
+  const fallbackReason = metadataObj.fallback_reason;
 
   // Check if content is long enough to be collapsible
   const lines = message.content.split('\n');
@@ -156,6 +165,28 @@ export function ChatMessage({ message, userDisplayInfo, onDelete, onRatingChange
             <span className="text-muted-foreground font-normal ml-2">
               ({message.model_name})
             </span>
+          )}
+          {/* Fallback indicator */}
+          {usedFallback && isAiMessage && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="ml-2 inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-500/20 text-amber-400 border border-amber-500/30">
+                    <RefreshCw className="h-3 w-3" />
+                    fallback
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="max-w-xs">
+                  <p className="text-xs">
+                    {fallbackReason === 'rate_limit' 
+                      ? 'Модель переключена на альтернативный режим из-за превышения лимита запросов'
+                      : fallbackReason === 'unsupported'
+                      ? 'Модель не поддерживает стриминг, использован стандартный режим'
+                      : 'Модель использовала резервный режим обработки'}
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           )}
         </HydraCardTitle>
         <span className="text-xs text-muted-foreground ml-auto flex items-center gap-2">
