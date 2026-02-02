@@ -280,8 +280,8 @@ export function RolePlayground({ className }: RolePlaygroundProps) {
                 {MODEL_ID.split('/')[1]}
               </span>
             </HydraCardHeader>
-            <HydraCardContent className="text-sm overflow-hidden">
-              <div className="prose-compact break-words min-w-0 max-w-full overflow-hidden">
+            <HydraCardContent className="text-sm">
+              <div className="prose-compact break-words min-w-0" style={{ overflowWrap: 'anywhere' }}>
                 {response ? (
                   <MarkdownRenderer content={response} streaming={isStreaming} />
                 ) : (
