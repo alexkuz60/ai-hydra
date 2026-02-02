@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { Textarea } from '@/components/ui/textarea';
-import { FileUpload } from '@/components/warroom/FileUpload';
+import { FileUpload, MERMAID_TEMPLATE } from '@/components/warroom/FileUpload';
 import { TimeoutSlider } from '@/components/warroom/TimeoutSlider';
 import { UnifiedSendButton } from '@/components/warroom/UnifiedSendButton';
 import { ModelOption } from '@/hooks/useAvailableModels';
@@ -61,6 +61,11 @@ export function ChatInputArea({
   selectedModelsCount,
 }: ChatInputAreaProps) {
   const { t } = useLanguage();
+
+  const handleInsertMermaid = useCallback(() => {
+    const prefix = input.trim() ? input + '\n\n' : '';
+    onInputChange(prefix + MERMAID_TEMPLATE);
+  }, [input, onInputChange]);
 
   return (
     <div className="border-t border-border p-4 bg-background/80 backdrop-blur-sm">
@@ -137,6 +142,7 @@ export function ChatInputArea({
           <FileUpload
             files={attachedFiles}
             onFilesChange={onFilesChange}
+            onInsertMermaid={handleInsertMermaid}
             disabled={sending}
           />
 
