@@ -25,6 +25,7 @@ import { Loader2, Target, Zap, ZapOff } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { toast } from 'sonner';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export default function ExpertPanel() {
   const { user, loading: authLoading } = useAuth();
@@ -508,7 +509,7 @@ export default function ExpertPanel() {
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <button
+                      <motion.button
                         onClick={() => {
                           setUseHybridStreaming(!useHybridStreaming);
                           toast.success(
@@ -518,25 +519,44 @@ export default function ExpertPanel() {
                           );
                         }}
                         className="focus:outline-none focus:ring-2 focus:ring-primary/50 rounded-full"
+                        whileTap={{ scale: 0.95 }}
+                        whileHover={{ scale: 1.05 }}
                       >
-                        <Badge 
-                          variant={useHybridStreaming ? 'default' : 'secondary'}
-                          className={`flex items-center gap-1.5 cursor-pointer transition-all ${
-                            useHybridStreaming 
-                              ? 'bg-hydra-cyan/20 text-hydra-cyan border-hydra-cyan/30 hover:bg-hydra-cyan/40' 
-                              : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                          }`}
-                        >
-                          {useHybridStreaming ? (
-                            <Zap className="h-3 w-3" />
-                          ) : (
-                            <ZapOff className="h-3 w-3" />
-                          )}
-                          <span className="text-xs">
-                            {useHybridStreaming ? 'Streaming' : 'Standard'}
-                          </span>
-                        </Badge>
-                      </button>
+                        <AnimatePresence mode="wait">
+                          <motion.div
+                            key={useHybridStreaming ? 'streaming' : 'standard'}
+                            initial={{ opacity: 0, scale: 0.8, rotate: -10 }}
+                            animate={{ opacity: 1, scale: 1, rotate: 0 }}
+                            exit={{ opacity: 0, scale: 0.8, rotate: 10 }}
+                            transition={{ duration: 0.2, ease: 'easeOut' }}
+                          >
+                            <Badge 
+                              variant={useHybridStreaming ? 'default' : 'secondary'}
+                              className={`flex items-center gap-1.5 cursor-pointer ${
+                                useHybridStreaming 
+                                  ? 'bg-hydra-cyan/20 text-hydra-cyan border-hydra-cyan/30' 
+                                  : 'bg-muted text-muted-foreground'
+                              }`}
+                            >
+                              <motion.span
+                                key={useHybridStreaming ? 'zap' : 'zap-off'}
+                                initial={{ rotate: -180, opacity: 0 }}
+                                animate={{ rotate: 0, opacity: 1 }}
+                                transition={{ duration: 0.3, ease: 'easeOut' }}
+                              >
+                                {useHybridStreaming ? (
+                                  <Zap className="h-3 w-3" />
+                                ) : (
+                                  <ZapOff className="h-3 w-3" />
+                                )}
+                              </motion.span>
+                              <span className="text-xs">
+                                {useHybridStreaming ? 'Streaming' : 'Standard'}
+                              </span>
+                            </Badge>
+                          </motion.div>
+                        </AnimatePresence>
+                      </motion.button>
                     </TooltipTrigger>
                     <TooltipContent side="bottom">
                       <p className="text-xs">
