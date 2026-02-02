@@ -504,6 +504,13 @@ const translations: Translations = {
   // Send button
   'send.toAllExperts': { ru: 'Всем экспертам', en: 'Send to all experts' },
   'consultant.deselect': { ru: 'Снять выбор консультанта', en: 'Deselect consultant' },
+  
+  // Error Boundary
+  'error.title': { ru: 'Что-то пошло не так', en: 'Something went wrong' },
+  'error.description': { ru: 'Произошла непредвиденная ошибка. Попробуйте перезагрузить страницу.', en: 'An unexpected error occurred. Please try reloading the page.' },
+  'error.technicalInfo': { ru: 'Техническая информация', en: 'Technical details' },
+  'error.tryAgain': { ru: 'Попробовать снова', en: 'Try again' },
+  'error.reload': { ru: 'Перезагрузить', en: 'Reload' },
 };
 
 interface LanguageContextType {
