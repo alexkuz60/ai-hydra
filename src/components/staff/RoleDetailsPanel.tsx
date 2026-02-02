@@ -1,10 +1,18 @@
-import React, { forwardRef } from 'react';
+import React, { forwardRef, useState, useEffect } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Switch } from '@/components/ui/switch';
+import { Textarea } from '@/components/ui/textarea';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Wrench } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+import { Wrench, Pencil, X, Save, Loader2 } from 'lucide-react';
 import { 
   ROLE_CONFIG, 
   DEFAULT_SYSTEM_PROMPTS, 
@@ -19,6 +27,70 @@ interface RoleDetailsPanelProps {
 const RoleDetailsPanel = forwardRef<HTMLDivElement, RoleDetailsPanelProps>(
   ({ selectedRole }, ref) => {
     const { t } = useLanguage();
+    const { user } = useAuth();
+    
+    // Edit mode state
+    const [isEditing, setIsEditing] = useState(false);
+    const [editedPrompt, setEditedPrompt] = useState('');
+    const [promptName, setPromptName] = useState('');
+    const [isShared, setIsShared] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
+
+    // Reset edit state when role changes
+    useEffect(() => {
+      setIsEditing(false);
+      setEditedPrompt('');
+      setPromptName('');
+      setIsShared(false);
+    }, [selectedRole]);
+
+    const handleStartEdit = () => {
+      if (!selectedRole) return;
+      const defaultPrompt = DEFAULT_SYSTEM_PROMPTS[selectedRole];
+      setEditedPrompt(defaultPrompt);
+      setPromptName(`${t(ROLE_CONFIG[selectedRole].label)} - Custom`);
+      setIsEditing(true);
+    };
+
+    const handleCancelEdit = () => {
+      setIsEditing(false);
+      setEditedPrompt('');
+      setPromptName('');
+      setIsShared(false);
+    };
+
+    const handleSaveToLibrary = async () => {
+      if (!user || !selectedRole || !promptName.trim() || !editedPrompt.trim()) {
+        toast.error(t('common.error'));
+        return;
+      }
+
+      setIsSaving(true);
+      try {
+        const { error } = await supabase
+          .from('prompt_library')
+          .insert([{
+            user_id: user.id,
+            name: promptName.trim(),
+            description: t(ROLE_CONFIG[selectedRole].description),
+            content: editedPrompt.trim(),
+            role: selectedRole,
+            is_shared: isShared,
+          }]);
+
+        if (error) throw error;
+
+        toast.success(t('staffRoles.promptSaved'));
+        setIsEditing(false);
+        setEditedPrompt('');
+        setPromptName('');
+        setIsShared(false);
+      } catch (error: any) {
+        toast.error(error.message);
+      } finally {
+        setIsSaving(false);
+      }
+    };
 
     if (!selectedRole) {
       return (
@@ -82,15 +154,87 @@ const RoleDetailsPanel = forwardRef<HTMLDivElement, RoleDetailsPanelProps>(
             </div>
 
             {/* System Prompt */}
-            <div className="space-y-2">
-              <h3 className="text-sm font-medium text-muted-foreground">
-                {t('staffRoles.systemPrompt')}
-              </h3>
-              <div className="rounded-lg border border-border bg-muted/30 p-4">
-                <pre className="text-sm whitespace-pre-wrap font-mono leading-relaxed">
-                  {systemPrompt}
-                </pre>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-medium text-muted-foreground">
+                  {t('staffRoles.systemPrompt')}
+                </h3>
+                {!isEditing && user && (
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={handleStartEdit}
+                    className="gap-1.5 h-7 text-xs"
+                  >
+                    <Pencil className="h-3 w-3" />
+                    {t('staffRoles.editAndSave')}
+                  </Button>
+                )}
               </div>
+
+              {isEditing ? (
+                <div className="space-y-4">
+                  {/* Prompt Name */}
+                  <div className="space-y-2">
+                    <Label className="text-xs">{t('staffRoles.promptName')}</Label>
+                    <Input
+                      value={promptName}
+                      onChange={(e) => setPromptName(e.target.value)}
+                      placeholder={t('roleLibrary.namePlaceholder')}
+                    />
+                  </div>
+
+                  {/* Editable Prompt */}
+                  <Textarea
+                    value={editedPrompt}
+                    onChange={(e) => setEditedPrompt(e.target.value)}
+                    className="min-h-[200px] font-mono text-sm"
+                    placeholder={t('roleLibrary.contentPlaceholder')}
+                  />
+
+                  {/* Shared toggle */}
+                  <div className="flex items-center gap-2">
+                    <Switch
+                      id="prompt-shared"
+                      checked={isShared}
+                      onCheckedChange={setIsShared}
+                    />
+                    <Label htmlFor="prompt-shared" className="text-sm cursor-pointer">
+                      {t('roleLibrary.isShared')}
+                    </Label>
+                  </div>
+
+                  {/* Action buttons */}
+                  <div className="flex items-center gap-2 pt-2">
+                    <Button
+                      onClick={handleSaveToLibrary}
+                      disabled={isSaving || !promptName.trim() || !editedPrompt.trim()}
+                      className="gap-1.5"
+                    >
+                      {isSaving ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Save className="h-4 w-4" />
+                      )}
+                      {t('staffRoles.saveToLibrary')}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      onClick={handleCancelEdit}
+                      className="gap-1.5"
+                    >
+                      <X className="h-4 w-4" />
+                      {t('common.cancel')}
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="rounded-lg border border-border bg-muted/30 p-4">
+                  <pre className="text-sm whitespace-pre-wrap font-mono leading-relaxed">
+                    {systemPrompt}
+                  </pre>
+                </div>
+              )}
             </div>
 
             {/* Technical Staff Checkbox */}
