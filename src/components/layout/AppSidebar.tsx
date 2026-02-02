@@ -39,7 +39,8 @@ import {
   Library,
   Wrench,
   GitBranch,
-  BookOpen
+  BookOpen,
+  UserCog
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -61,6 +62,7 @@ export function AppSidebar() {
 
   const navItems = user ? [
     { path: '/tasks', icon: CheckSquare, label: t('nav.tasks') },
+    { path: '/staff-roles', icon: UserCog, label: t('nav.staffRoles') },
     { path: '/expert-panel', icon: Users, label: t('nav.expertPanel') },
     { path: '/role-library', icon: Library, label: t('nav.roleLibrary') },
     { path: '/tools-library', icon: Wrench, label: t('nav.toolsLibrary') },

@@ -28,6 +28,13 @@ const translations: Translations = {
   'nav.warRoom': { ru: 'Экспертный Совет', en: 'Expert Council' },
   'nav.modelRatings': { ru: 'Рейтинг моделей', en: 'Model Ratings' },
   'nav.hydrapedia': { ru: 'Гидропедия', en: 'Hydrapedia' },
+  'nav.staffRoles': { ru: 'Штат специалистов', en: 'AI Staff' },
+  
+  // Staff Roles
+  'staffRoles.description': { ru: 'Каталог доступных AI-ролей и их характеристики', en: 'Catalog of available AI roles and their characteristics' },
+  'staffRoles.icon': { ru: 'Иконка', en: 'Icon' },
+  'staffRoles.role': { ru: 'Роль', en: 'Role' },
+  'staffRoles.color': { ru: 'Цвет', en: 'Color' },
   
   // Hydrapedia
   'hydrapedia.title': { ru: 'Гидропедия', en: 'Hydrapedia' },
