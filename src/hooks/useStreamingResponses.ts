@@ -273,8 +273,9 @@ export function useStreamingResponses({
       return updated;
     });
 
-    // Start a stream for each streamable model
-    streamableModels.forEach(model => {
+    // Start a stream for each streamable model with throttling
+    // Stagger requests by 150ms to avoid rate limiting
+    streamableModels.forEach((model, index) => {
       const controller = new AbortController();
       abortControllersRef.current.set(model.modelId, controller);
 
@@ -307,8 +308,14 @@ export function useStreamingResponses({
       }, 1000);
       timersRef.current.set(model.modelId, timer);
 
-      // Start the SSE stream
-      streamModel(model, message, controller, now, perModelSettings);
+      // Stagger the stream start to avoid rate limiting
+      const delay = index * 150; // 150ms between each model
+      setTimeout(() => {
+        // Check if not already aborted before starting
+        if (!controller.signal.aborted) {
+          streamModel(model, message, controller, now, perModelSettings);
+        }
+      }, delay);
     });
 
     async function streamModel(
@@ -341,8 +348,18 @@ export function useStreamingResponses({
           }
         );
 
-        // Handle error responses - FALLBACK TO ORCHESTRATOR on 500
+        // Handle error responses - FALLBACK TO ORCHESTRATOR on errors
         if (!response.ok) {
+          // Rate limit (429) - fallback to orchestrator with delay
+          if (response.status === 429) {
+            console.log(`[Streaming] Rate limit for ${model.modelId}, falling back to orchestrator with delay`);
+            toast.warning(`Превышен лимит. ${model.modelName} отправлен в очередь.`);
+            // Add a small delay before orchestrator fallback to avoid overwhelming it too
+            await new Promise(resolve => setTimeout(resolve, 500 + Math.random() * 1000));
+            await fallbackToOrchestrator(model, messageContent, modelSettings);
+            return;
+          }
+          
           if (response.status === 500 || response.status === 400 || response.status === 401) {
             console.log(`[Streaming] Error ${response.status} for ${model.modelId}, falling back to orchestrator`);
             await fallbackToOrchestrator(model, messageContent, modelSettings);
