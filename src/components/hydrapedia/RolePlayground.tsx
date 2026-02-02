@@ -5,6 +5,7 @@ import { HydraCard, HydraCardHeader, HydraCardTitle, HydraCardContent } from '@/
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { MarkdownRenderer } from '@/components/warroom/MarkdownRenderer';
 import { 
   ROLE_CONFIG, 
   AGENT_ROLES, 
@@ -280,14 +281,13 @@ export function RolePlayground({ className }: RolePlaygroundProps) {
               </span>
             </HydraCardHeader>
             <HydraCardContent>
-              <div className="prose prose-sm dark:prose-invert max-w-none">
-                {response || (
-                  <span className="text-muted-foreground animate-pulse">
-                    {language === 'ru' ? 'Генерация...' : 'Generating...'}
-                  </span>
-                )}
-                {isStreaming && <span className="inline-block w-2 h-4 bg-primary animate-pulse ml-0.5" />}
-              </div>
+              {response ? (
+                <MarkdownRenderer content={response} streaming={isStreaming} />
+              ) : (
+                <span className="text-muted-foreground animate-pulse">
+                  {language === 'ru' ? 'Генерация...' : 'Generating...'}
+                </span>
+              )}
             </HydraCardContent>
           </HydraCard>
         )}
