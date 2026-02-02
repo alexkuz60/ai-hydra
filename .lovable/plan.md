@@ -1,145 +1,178 @@
 
-## План: Подменю вставки Mermaid-диаграмм
 
-### Описание
-Расширение пункта меню "Диаграмма Mermaid" в выпадающем списке скрепки, преобразование его в подменю с двумя опциями:
-1. **Из файла** — загрузка `.mmd` / `.mermaid` файлов
-2. **Из библиотеки потоков** — выбор диаграммы, созданной в Редакторе потоков Гидры
+## План: Mermaid-диаграммы как вложения с превью
 
-### Структура меню
+### Описание проблемы
+Сейчас Mermaid-диаграммы вставляются прямо в текстовое поле запроса. Это приводит к тому, что AI-модели начинают объяснять что такое Mermaid-код, вместо того чтобы работать с диаграммой по существу.
+
+### Решение
+Прикреплять Mermaid-диаграммы как специальный тип вложения с визуальным превью (аналогично изображениям), а не вставлять код в текст.
+
+### Новый пользовательский сценарий
 
 ```text
-📎 Скрепка
-├── Все файлы (JPG, PNG, ...)
-├── ───────────
-├── Изображения (JPG, PNG, ...)
-├── Документы (PDF, DOCX, ...)
-├── ───────────
-└── 🔀 Диаграмма Mermaid  →
-    ├── 📝 Пустой шаблон (текущее поведение)
-    ├── 📄 Из файла (.mmd, .mermaid)
-    └── 📊 Из библиотеки потоков...
+1. Пользователь нажимает скрепку → Диаграмма Mermaid → выбирает способ
+2. Диаграмма появляется как карточка-вложение с превью (не в текстовом поле)
+3. Пользователь пишет свой запрос в текстовом поле, ссылаясь на диаграмму
+4. При отправке Mermaid-код передаётся как attachment в metadata
+5. В истории сообщений диаграмма отображается с интерактивным превью
 ```
 
 ---
 
 ### Технические изменения
 
-#### 1. Обновление `FileUpload.tsx`
+#### 1. Расширение типов вложений
 
-**Новые импорты:**
-- `DropdownMenuSub`, `DropdownMenuSubTrigger`, `DropdownMenuSubContent` из UI-компонентов
-- `ChevronRight`, `FileCode`, `Workflow`, `FileEdit` иконки из Lucide
+**Файл: `src/types/messages.ts`**
 
-**Изменение структуры меню:**
-- Заменить `DropdownMenuItem` для Mermaid на `DropdownMenuSub`
-- Добавить три подпункта:
-  - **Пустой шаблон** — вставляет текущий `MERMAID_TEMPLATE`
-  - **Из файла** — открывает file picker с `accept=".mmd,.mermaid"`
-  - **Из библиотеки потоков** — вызывает callback `onSelectFlowDiagram`
-
-**Новые пропсы:**
+Добавить новый тип вложения для Mermaid:
 ```typescript
-interface FileUploadProps {
-  // ...existing props
-  onSelectFlowDiagram?: () => void;  // Открытие диалога выбора диаграммы
+export interface Attachment {
+  name: string;
+  url: string;
+  type: string;
+  // Новое поле для inline-контента (Mermaid не загружается в storage)
+  content?: string;
 }
 ```
 
-**Новый ref для mermaid-файлов:**
+#### 2. Новый тип прикреплённого файла с поддержкой Mermaid
+
+**Файл: `src/components/warroom/ChatInputArea.tsx`**
+
+Расширить интерфейс `AttachedFile`:
 ```typescript
-const mermaidInputRef = useRef<HTMLInputElement>(null);
+export interface AttachedFile {
+  id: string;
+  file?: File;           // Обычные файлы
+  preview?: string;
+  // Для Mermaid-диаграмм (без реального файла)
+  mermaidContent?: string;
+  mermaidName?: string;
+}
 ```
 
-**Обработчик загрузки mermaid-файла:**
+Изменить зону превью файлов:
+- Для обычных файлов — текущее поведение (миниатюра/имя файла)
+- Для Mermaid — компонент `MermaidPreview` с названием диаграммы
+
+#### 3. Обновление FileUpload
+
+**Файл: `src/components/warroom/FileUpload.tsx`**
+
+Изменить callbacks:
+- `onInsertMermaid` → `onAttachMermaid(content: string, name?: string)`
+- Вместо вставки в текст, добавлять в `attachedFiles`
+
+Обработчики:
+- **Пустой шаблон**: добавляет шаблон как Mermaid-вложение
+- **Из файла**: читает файл и добавляет как Mermaid-вложение
+- **Из библиотеки потоков**: конвертирует и добавляет как Mermaid-вложение
+
+#### 4. Обновление ChatInputArea
+
+**Файл: `src/components/warroom/ChatInputArea.tsx`**
+
+Новый callback:
 ```typescript
-const handleMermaidFileLoad = useCallback((files: FileList | null) => {
-  if (!files?.[0]) return;
-  const file = files[0];
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    const content = e.target?.result as string;
-    if (content && onInsertMermaid) {
-      // Вставка содержимого файла как mermaid-блока
-      const mermaidCode = content.includes('```mermaid') 
-        ? content 
-        : `\`\`\`mermaid\n${content}\n\`\`\``;
-      onInsertMermaidContent?.(mermaidCode);
-    }
+const handleAttachMermaid = useCallback((content: string, name?: string) => {
+  const newAttachment: AttachedFile = {
+    id: `mermaid-${Date.now()}`,
+    mermaidContent: content,
+    mermaidName: name || 'Diagram',
   };
-  reader.readAsText(file);
-}, [onInsertMermaidContent]);
+  onFilesChange(files => [...files, newAttachment]);
+}, [onFilesChange]);
 ```
 
-#### 2. Новый компонент: `FlowDiagramPickerDialog.tsx`
+Обновить рендеринг зоны превью:
+```typescript
+{attachedFiles.map((attached) => {
+  // Mermaid attachment
+  if (attached.mermaidContent) {
+    return (
+      <div key={attached.id} className="relative group">
+        <MermaidPreview 
+          content={attached.mermaidContent} 
+          maxHeight={80} 
+          className="w-24"
+        />
+        <span className="text-[10px] truncate">{attached.mermaidName}</span>
+        <button onClick={() => remove(attached.id)}>×</button>
+      </div>
+    );
+  }
+  // Regular file attachment
+  return <ExistingPreview ... />;
+})}
+```
 
-Диалог для выбора диаграммы из библиотеки потоков:
+#### 5. Обновление useSendMessage
 
+**Файл: `src/hooks/useSendMessage.ts`**
+
+В функции `uploadFiles` добавить обработку Mermaid-вложений:
+```typescript
+// Mermaid attachments don't need upload - just include content
+if (attached.mermaidContent) {
+  attachmentUrls.push({
+    name: attached.mermaidName || 'Mermaid Diagram',
+    url: '', // No URL for inline content
+    type: 'text/x-mermaid',
+    content: attached.mermaidContent,
+  });
+  continue;
+}
+```
+
+#### 6. Обновление AttachmentPreview
+
+**Файл: `src/components/warroom/AttachmentPreview.tsx`**
+
+Добавить рендеринг Mermaid-вложений в истории сообщений:
+```typescript
+function isMermaidType(type: string): boolean {
+  return type === 'text/x-mermaid' || type === 'application/x-mermaid';
+}
+
+export function AttachmentPreview({ attachment }: AttachmentPreviewProps) {
+  if (isMermaidType(attachment.type) && attachment.content) {
+    return (
+      <Dialog>
+        <DialogTrigger asChild>
+          <button className="w-24 cursor-pointer group">
+            <MermaidPreview content={attachment.content} maxHeight={80} />
+            <span className="text-xs">{attachment.name}</span>
+          </button>
+        </DialogTrigger>
+        <DialogContent className="max-w-4xl">
+          <MermaidBlock content={attachment.content} />
+        </DialogContent>
+      </Dialog>
+    );
+  }
+  // ... existing image and document handling
+}
+```
+
+#### 7. Обновление FlowDiagramPickerDialog
+
+**Файл: `src/components/warroom/FlowDiagramPickerDialog.tsx`**
+
+Изменить callback для передачи имени диаграммы:
 ```typescript
 interface FlowDiagramPickerDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSelect: (mermaidCode: string) => void;
+  onSelect: (mermaidCode: string, diagramName: string) => void;
 }
-```
 
-**Функциональность:**
-- Использует `useFlowDiagrams()` для получения списка диаграмм
-- Отображает список с названием и датой обновления
-- При выборе вызывает `exportToMermaid(diagram.nodes, diagram.edges)`
-- Оборачивает результат в markdown-блок и передаёт в callback
-
-**UI:**
-- Dialog с заголовком "Выбор диаграммы"
-- Список карточек диаграмм с превью (название, описание, дата)
-- Кнопка закрытия
-- Состояние загрузки / пустой список
-
-#### 3. Обновление `ChatInputArea.tsx`
-
-**Новый state:**
-```typescript
-const [flowPickerOpen, setFlowPickerOpen] = useState(false);
-```
-
-**Новые callbacks:**
-```typescript
-const handleInsertMermaidContent = useCallback((content: string) => {
-  const prefix = input.trim() ? input + '\n\n' : '';
-  onInputChange(prefix + content);
-}, [input, onInputChange]);
-
-const handleFlowDiagramSelect = useCallback((mermaidCode: string) => {
-  handleInsertMermaidContent(mermaidCode);
-  setFlowPickerOpen(false);
-}, [handleInsertMermaidContent]);
-```
-
-**Добавление в JSX:**
-```jsx
-<FileUpload
-  // ...existing props
-  onInsertMermaidContent={handleInsertMermaidContent}
-  onSelectFlowDiagram={() => setFlowPickerOpen(true)}
-/>
-<FlowDiagramPickerDialog
-  open={flowPickerOpen}
-  onOpenChange={setFlowPickerOpen}
-  onSelect={handleFlowDiagramSelect}
-/>
-```
-
-#### 4. Обновление `LanguageContext.tsx`
-
-Новые ключи перевода:
-```typescript
-'files.mermaidTemplate': { ru: 'Пустой шаблон', en: 'Empty Template' },
-'files.mermaidFromFile': { ru: 'Из файла', en: 'From File' },
-'files.mermaidFromFlow': { ru: 'Из библиотеки потоков', en: 'From Flow Library' },
-'files.mermaidFileHint': { ru: '.mmd, .mermaid', en: '.mmd, .mermaid' },
-'flow.pickDiagram': { ru: 'Выбор диаграммы', en: 'Select Diagram' },
-'flow.noDiagrams': { ru: 'Нет сохранённых диаграмм', en: 'No saved diagrams' },
-'flow.createFirst': { ru: 'Создайте первую в Редакторе потоков', en: 'Create one in Flow Editor' },
+const handleSelect = (diagram) => {
+  const mermaidCode = exportToMermaid(diagram.nodes, diagram.edges);
+  onSelect(mermaidCode, diagram.name);
+  onOpenChange(false);
+};
 ```
 
 ---
@@ -148,16 +181,20 @@ const handleFlowDiagramSelect = useCallback((mermaidCode: string) => {
 
 | Файл | Действие |
 |------|----------|
-| `src/components/warroom/FileUpload.tsx` | Добавить подменю Mermaid, обработчик файлов |
-| `src/components/warroom/ChatInputArea.tsx` | Добавить state и callbacks для диалога |
-| `src/components/warroom/FlowDiagramPickerDialog.tsx` | **Создать** — диалог выбора диаграммы |
-| `src/contexts/LanguageContext.tsx` | Добавить ключи переводов |
+| `src/types/messages.ts` | Добавить поле `content` в `Attachment` |
+| `src/components/warroom/ChatInputArea.tsx` | Расширить `AttachedFile`, добавить превью Mermaid |
+| `src/components/warroom/FileUpload.tsx` | Изменить callbacks на attach вместо insert |
+| `src/hooks/useSendMessage.ts` | Обработка Mermaid-вложений без upload |
+| `src/components/warroom/AttachmentPreview.tsx` | Рендеринг Mermaid в истории с превью |
+| `src/components/warroom/FlowDiagramPickerDialog.tsx` | Передавать имя диаграммы в callback |
 
 ---
 
 ### Результат
 
-После реализации пользователь сможет:
-- Кликнуть на скрепку → Диаграмма Mermaid → выбрать один из трёх вариантов
-- Загрузить готовый `.mmd` файл и вставить его содержимое в поле ввода
-- Выбрать диаграмму из библиотеки потоков и автоматически сконвертировать её в Mermaid-синтаксис
+После реализации:
+- Mermaid-диаграммы прикрепляются как визуальные карточки с превью
+- Код диаграммы не засоряет текстовое поле запроса
+- Пользователь может написать свой контекстный запрос, ссылаясь на прикреплённую диаграмму
+- В истории сообщений диаграммы отображаются с интерактивным превью и возможностью увеличить
+
