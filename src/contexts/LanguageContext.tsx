@@ -81,6 +81,17 @@ const translations: Translations = {
   'mermaid.error': { ru: 'Ошибка рендеринга диаграммы', en: 'Diagram render error' },
   'mermaid.copy': { ru: 'Копировать код', en: 'Copy code' },
   
+  // Files - Mermaid submenu
+  'files.mermaidTemplate': { ru: 'Пустой шаблон', en: 'Empty Template' },
+  'files.mermaidFromFile': { ru: 'Из файла', en: 'From File' },
+  'files.mermaidFromFlow': { ru: 'Из библиотеки потоков', en: 'From Flow Library' },
+  'files.mermaidFileHint': { ru: '.mmd, .mermaid', en: '.mmd, .mermaid' },
+  
+  // Flow diagram picker
+  'flow.pickDiagram': { ru: 'Выбор диаграммы', en: 'Select Diagram' },
+  'flow.noDiagrams': { ru: 'Нет сохранённых диаграмм', en: 'No saved diagrams' },
+  'flow.createFirst': { ru: 'Создайте первую в Редакторе потоков', en: 'Create one in Flow Editor' },
+  
   // Flow Editor
   'flowEditor.title': { ru: 'Редактор Data-Flow', en: 'Data-Flow Editor' },
   'flowEditor.description': { ru: 'Визуальное проектирование логики AI-промптов и цепочек обработки', en: 'Visual design for AI prompt logic and processing chains' },

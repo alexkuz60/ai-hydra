@@ -1,6 +1,7 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 import { Textarea } from '@/components/ui/textarea';
 import { FileUpload, MERMAID_TEMPLATE } from '@/components/warroom/FileUpload';
+import { FlowDiagramPickerDialog } from '@/components/warroom/FlowDiagramPickerDialog';
 import { TimeoutSlider } from '@/components/warroom/TimeoutSlider';
 import { UnifiedSendButton } from '@/components/warroom/UnifiedSendButton';
 import { ModelOption } from '@/hooks/useAvailableModels';
@@ -61,11 +62,21 @@ export function ChatInputArea({
   selectedModelsCount,
 }: ChatInputAreaProps) {
   const { t } = useLanguage();
+  const [flowPickerOpen, setFlowPickerOpen] = useState(false);
 
   const handleInsertMermaid = useCallback(() => {
     const prefix = input.trim() ? input + '\n\n' : '';
     onInputChange(prefix + MERMAID_TEMPLATE);
   }, [input, onInputChange]);
+
+  const handleInsertMermaidContent = useCallback((content: string) => {
+    const prefix = input.trim() ? input + '\n\n' : '';
+    onInputChange(prefix + content);
+  }, [input, onInputChange]);
+
+  const handleFlowDiagramSelect = useCallback((mermaidCode: string) => {
+    handleInsertMermaidContent(mermaidCode);
+  }, [handleInsertMermaidContent]);
 
   return (
     <div className="border-t border-border p-4 bg-background/80 backdrop-blur-sm">
@@ -143,6 +154,8 @@ export function ChatInputArea({
             files={attachedFiles}
             onFilesChange={onFilesChange}
             onInsertMermaid={handleInsertMermaid}
+            onInsertMermaidContent={handleInsertMermaidContent}
+            onSelectFlowDiagram={() => setFlowPickerOpen(true)}
             disabled={sending}
           />
 
@@ -181,6 +194,13 @@ export function ChatInputArea({
           />
         </div>
       </div>
+
+      {/* Flow diagram picker dialog */}
+      <FlowDiagramPickerDialog
+        open={flowPickerOpen}
+        onOpenChange={setFlowPickerOpen}
+        onSelect={handleFlowDiagramSelect}
+      />
     </div>
   );
 }
