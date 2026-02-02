@@ -3,5 +3,8 @@ project_id = "hrgpnotiuiaioadrziuz"
 [functions.hydra-orchestrator]
 verify_jwt = false
 
+[functions.hydra-stream]
+verify_jwt = false
+
 [functions.translate-text]
 verify_jwt = false
