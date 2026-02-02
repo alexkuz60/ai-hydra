@@ -76,6 +76,7 @@ const translations: Translations = {
   'hydrapedia.sections.flowEditor': { ru: 'Редактор потоков', en: 'Flow Editor' },
   'hydrapedia.sections.modelRatings': { ru: 'Рейтинг моделей', en: 'Model Ratings' },
   'hydrapedia.sections.bestPractices': { ru: 'Лучшие практики', en: 'Best Practices' },
+  'hydrapedia.sections.streamingMode': { ru: 'Режим стриминга', en: 'Streaming Mode' },
   
   // Mermaid
   'mermaid.error': { ru: 'Ошибка рендеринга диаграммы', en: 'Diagram render error' },
