@@ -5,10 +5,10 @@ import { getRoleConfig, type AgentRole } from '@/config/roles';
 import { MarkdownRenderer } from '@/components/warroom/MarkdownRenderer';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
-import { Square, Copy, Check } from 'lucide-react';
+import { Square, Copy, Check, Circle } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import type { StreamingResponse } from '@/hooks/useStreamingResponses';
 
 interface StreamingMessageCardProps {
@@ -89,43 +89,78 @@ export function StreamingMessageCard({
           </div>
           
           <div className="flex items-center gap-1">
-            {response.isStreaming ? (
+            {/* Player-style stop button - always visible, changes state */}
+            <motion.div
+              initial={false}
+              animate={{ scale: response.isStreaming ? 1 : 0.95 }}
+            >
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-7 w-7"
-                onClick={() => onStop?.(response.modelId)}
-                title={t('streaming.stop')}
+                className={cn(
+                  "h-7 w-7 transition-colors",
+                  response.isStreaming 
+                    ? "text-hydra-critical hover:text-hydra-critical hover:bg-hydra-critical/10" 
+                    : "text-muted-foreground/40 cursor-default"
+                )}
+                onClick={() => response.isStreaming && onStop?.(response.modelId)}
+                disabled={!response.isStreaming}
+                title={response.isStreaming ? t('streaming.stop') : t('streaming.stopped')}
               >
-                <Square className="h-3.5 w-3.5 fill-current" />
+                <AnimatePresence mode="wait">
+                  <motion.span
+                    key={response.isStreaming ? 'streaming' : 'stopped'}
+                    initial={{ scale: 0.5, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    exit={{ scale: 0.5, opacity: 0 }}
+                    transition={{ duration: 0.15 }}
+                  >
+                    {response.isStreaming ? (
+                      <Square className="h-3.5 w-3.5 fill-current" />
+                    ) : (
+                      <Circle className="h-3.5 w-3.5" />
+                    )}
+                  </motion.span>
+                </AnimatePresence>
               </Button>
-            ) : (
-              <>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7"
-                  onClick={handleCopy}
-                  title={t('message.copy')}
+            </motion.div>
+            
+            {/* Copy buttons - only when not streaming */}
+            <AnimatePresence>
+              {!response.isStreaming && (
+                <motion.div 
+                  className="flex items-center gap-1"
+                  initial={{ opacity: 0, x: -8 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -8 }}
+                  transition={{ duration: 0.2 }}
                 >
-                  {copied ? (
-                    <Check className="h-3.5 w-3.5 text-hydra-success" />
-                  ) : (
-                    <Copy className="h-3.5 w-3.5" />
-                  )}
-                </Button>
-                {onCopyToMainChat && (
                   <Button
                     variant="ghost"
-                    size="sm"
-                    className="h-7 text-xs"
-                    onClick={handleCopyToChat}
+                    size="icon"
+                    className="h-7 w-7"
+                    onClick={handleCopy}
+                    title={t('message.copy')}
                   >
-                    {t('dchat.copyToChat')}
+                    {copied ? (
+                      <Check className="h-3.5 w-3.5 text-hydra-success" />
+                    ) : (
+                      <Copy className="h-3.5 w-3.5" />
+                    )}
                   </Button>
-                )}
-              </>
-            )}
+                  {onCopyToMainChat && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 text-xs"
+                      onClick={handleCopyToChat}
+                    >
+                      {t('dchat.copyToChat')}
+                    </Button>
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </HydraCardHeader>
         
