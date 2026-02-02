@@ -85,6 +85,11 @@ export interface ModelRequest {
   enable_tools?: boolean;
   enabled_tools?: string[];
   enabled_custom_tools?: string[];
+  // Fallback metadata - passed when model was rate-limited or used orchestrator fallback
+  fallback_metadata?: {
+    used_fallback: boolean;
+    fallback_reason: 'rate_limit' | 'error' | 'unsupported';
+  };
 }
 
 export interface Attachment {

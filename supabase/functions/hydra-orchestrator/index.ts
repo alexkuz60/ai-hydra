@@ -802,7 +802,11 @@ serve(async (req) => {
         }
         
         console.log(`Success for model: ${modelReq.model_id}`);
-        return { ...result, role };
+        return { 
+          ...result, 
+          role,
+          fallback_metadata: modelReq.fallback_metadata,
+        };
       } catch (error: unknown) {
         const errorMessage = error instanceof Error ? error.message : (error as { message?: string })?.message || "Unknown error";
         console.error(`Error for model ${modelReq.model_id}:`, errorMessage);
@@ -827,7 +831,7 @@ serve(async (req) => {
 
     // Save all successful responses to database
     if (successResults.length > 0) {
-      const messagesToInsert = successResults.map(result => ({
+      const messagesToInsert = successResults.map((result: SuccessResult & { fallback_metadata?: { used_fallback: boolean; fallback_reason: string } }) => ({
         session_id,
         user_id: user.id,
         role: result.role as 'assistant' | 'critic' | 'arbiter',
@@ -841,6 +845,9 @@ serve(async (req) => {
           total_tokens: result.usage?.total_tokens || 0,
           tool_calls: result.tool_calls || undefined,
           tool_results: result.tool_results || undefined,
+          // Include fallback information if present
+          used_fallback: result.fallback_metadata?.used_fallback || undefined,
+          fallback_reason: result.fallback_metadata?.fallback_reason || undefined,
         },
       }));
 
