@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import { Node, Edge } from '@xyflow/react';
-import dagre from '@dagrejs/dagre';
+import dagre from 'dagre';
 
 export type LayoutDirection = 'TB' | 'LR' | 'BT' | 'RL';
 
