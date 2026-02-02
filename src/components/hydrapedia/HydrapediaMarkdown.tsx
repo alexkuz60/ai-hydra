@@ -11,6 +11,7 @@ import { cn } from '@/lib/utils';
 import { MermaidBlock } from '@/components/warroom/MermaidBlock';
 import { LucideIconInline } from './LucideIconInline';
 import { RoleIconInline, getRoleFromName } from './RoleIconInline';
+import { RolePlayground } from './RolePlayground';
 import 'katex/dist/katex.min.css';
 
 interface HydrapediaMarkdownProps {
@@ -41,6 +42,11 @@ function CodeBlock({
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
+
+  // Check for playground marker
+  if (codeString === ':::playground:::') {
+    return <RolePlayground />;
+  }
 
   // Check if inline code is a Lucide icon name or role
   if (isInlineCode) {
