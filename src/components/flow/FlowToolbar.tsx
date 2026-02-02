@@ -29,8 +29,15 @@ import {
   Copy,
   Check,
   FileText,
-  Clipboard
+  Clipboard,
+  Undo2,
+  Redo2,
 } from 'lucide-react';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { FlowDiagram } from '@/types/flow';
 import { EdgeStyleSettings } from '@/types/edgeTypes';
 import { EdgeStyleSelector } from './EdgeStyleSelector';
@@ -53,6 +60,10 @@ interface FlowToolbarProps {
   hasChanges: boolean;
   edgeSettings: EdgeStyleSettings;
   onEdgeSettingsChange: (settings: EdgeStyleSettings) => void;
+  canUndo: boolean;
+  canRedo: boolean;
+  onUndo: () => void;
+  onRedo: () => void;
 }
 
 export function FlowToolbar({
@@ -73,6 +84,10 @@ export function FlowToolbar({
   hasChanges,
   edgeSettings,
   onEdgeSettingsChange,
+  canUndo,
+  canRedo,
+  onUndo,
+  onRedo,
 }: FlowToolbarProps) {
   const { t } = useLanguage();
   const [mermaidCode, setMermaidCode] = useState('');
@@ -104,6 +119,43 @@ export function FlowToolbar({
       {hasChanges && (
         <span className="text-xs text-muted-foreground">•</span>
       )}
+
+      {/* Undo/Redo buttons */}
+      <div className="flex items-center gap-1 border-r border-border pr-3">
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              onClick={onUndo}
+              disabled={!canUndo}
+            >
+              <Undo2 className="h-4 w-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="bottom">
+            <p>Отменить (Ctrl+Z)</p>
+          </TooltipContent>
+        </Tooltip>
+        
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              onClick={onRedo}
+              disabled={!canRedo}
+            >
+              <Redo2 className="h-4 w-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="bottom">
+            <p>Повторить (Ctrl+Shift+Z)</p>
+          </TooltipContent>
+        </Tooltip>
+      </div>
 
       <div className="flex-1" />
 

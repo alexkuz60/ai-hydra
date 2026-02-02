@@ -8,11 +8,13 @@ import { NodePropertiesPanel } from '@/components/flow/NodePropertiesPanel';
 import { EdgePropertiesPanel } from '@/components/flow/EdgePropertiesPanel';
 import { useFlowDiagrams, exportToMermaid } from '@/hooks/useFlowDiagrams';
 import { useFlowExport } from '@/hooks/useFlowExport';
+import { useFlowHistoryExtended, HistoryState } from '@/hooks/useFlowHistory';
 import { FlowNodeType, FlowDiagram } from '@/types/flow';
 import { EdgeStyleSettings, FlowEdgeData, DEFAULT_EDGE_SETTINGS } from '@/types/edgeTypes';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
+import { TooltipProvider } from '@/components/ui/tooltip';
 
 const initialNodes: Node[] = [];
 const initialEdges: Edge[] = [];
@@ -54,6 +56,11 @@ function FlowEditorContent() {
   const [edgeSettings, setEdgeSettings] = useState<EdgeStyleSettings>(loadEdgeSettings);
   const reactFlowInstance = useRef<ReactFlowInstance | null>(null);
 
+  // History for undo/redo
+  const history = useFlowHistoryExtended({ maxHistory: 50 });
+  const isUndoRedoAction = useRef(false);
+  const lastStateRef = useRef<string>('');
+
   // Export hook
   const {
     exportPng,
@@ -74,15 +81,90 @@ function FlowEditorContent() {
   useEffect(() => {
     if (!isLoading && diagrams.length > 0 && !hasLoadedRef.current) {
       hasLoadedRef.current = true;
-      const lastDiagram = diagrams[0]; // Already sorted by updated_at desc
+      const lastDiagram = diagrams[0];
       handleLoadDiagram(lastDiagram);
     }
   }, [isLoading, diagrams]);
 
-  // Track changes
+  // Track changes and push to history
   useEffect(() => {
-    setHasChanges(true);
+    if (isUndoRedoAction.current) {
+      isUndoRedoAction.current = false;
+      return;
+    }
+
+    // Create a state signature to detect actual changes
+    const stateSignature = JSON.stringify({ nodes, edges });
+    if (stateSignature === lastStateRef.current) {
+      return;
+    }
+
+    // Only push if we have a previous state (skip initial load)
+    if (lastStateRef.current) {
+      const previousState: HistoryState = JSON.parse(lastStateRef.current);
+      history.pushState(previousState);
+      setHasChanges(true);
+    }
+
+    lastStateRef.current = stateSignature;
+  }, [nodes, edges, history]);
+
+  // Keyboard shortcuts for undo/redo
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Skip if typing in an input field
+      if (
+        e.target instanceof HTMLInputElement ||
+        e.target instanceof HTMLTextAreaElement
+      ) {
+        return;
+      }
+
+      // Ctrl+Z = Undo
+      if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+        e.preventDefault();
+        handleUndo();
+      }
+      
+      // Ctrl+Shift+Z or Ctrl+Y = Redo
+      if (
+        ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'z') ||
+        ((e.ctrlKey || e.metaKey) && e.key === 'y')
+      ) {
+        e.preventDefault();
+        handleRedo();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
   }, [nodes, edges]);
+
+  const handleUndo = useCallback(() => {
+    const previousState = history.undo();
+    if (previousState) {
+      // Save current state to redo stack
+      history.pushToRedo({ nodes, edges });
+      
+      isUndoRedoAction.current = true;
+      setNodes(previousState.nodes);
+      setEdges(previousState.edges);
+      lastStateRef.current = JSON.stringify(previousState);
+    }
+  }, [history, nodes, edges, setNodes, setEdges]);
+
+  const handleRedo = useCallback(() => {
+    const nextState = history.redo();
+    if (nextState) {
+      // Save current state to undo stack
+      history.pushState({ nodes, edges });
+      
+      isUndoRedoAction.current = true;
+      setNodes(nextState.nodes);
+      setEdges(nextState.edges);
+      lastStateRef.current = JSON.stringify(nextState);
+    }
+  }, [history, nodes, edges, setNodes, setEdges]);
 
   // Save edge settings when they change
   const handleEdgeSettingsChange = useCallback((newSettings: EdgeStyleSettings) => {
@@ -124,7 +206,9 @@ function FlowEditorContent() {
     setHasChanges(false);
     setSelectedNode(null);
     setSelectedEdge(null);
-  }, [setNodes, setEdges, t]);
+    history.clear();
+    lastStateRef.current = JSON.stringify({ nodes: [], edges: [] });
+  }, [setNodes, setEdges, t, history]);
 
   const handleNodeClick = useCallback((_event: React.MouseEvent, node: Node) => {
     setSelectedNode(node);
@@ -147,7 +231,6 @@ function FlowEditorContent() {
         node.id === nodeId ? { ...node, data } : node
       )
     );
-    // Update selected node reference
     setSelectedNode((prev) =>
       prev?.id === nodeId ? { ...prev, data } : prev
     );
@@ -164,7 +247,6 @@ function FlowEditorContent() {
         edge.id === edgeId ? { ...edge, data } : edge
       )
     );
-    // Update selected edge reference
     setSelectedEdge((prev) =>
       prev?.id === edgeId ? { ...prev, data } : prev
     );
@@ -183,11 +265,13 @@ function FlowEditorContent() {
     setHasChanges(false);
     setSelectedNode(null);
     setSelectedEdge(null);
+    history.clear();
+    lastStateRef.current = JSON.stringify({ nodes: diagram.nodes, edges: diagram.edges });
 
     if (diagram.viewport && reactFlowInstance.current) {
       reactFlowInstance.current.setViewport(diagram.viewport);
     }
-  }, [setNodes, setEdges]);
+  }, [setNodes, setEdges, history]);
 
   const handleGenerateMermaid = useCallback(() => {
     return exportToMermaid(nodes, edges);
@@ -199,59 +283,65 @@ function FlowEditorContent() {
 
   return (
     <Layout>
-      <div className="flex flex-col h-[calc(100vh-4rem)]">
-        <FlowToolbar
-          diagramName={diagramName}
-          onNameChange={setDiagramName}
-          onSave={handleSave}
-          onNew={handleNew}
-          onExportPng={exportPng}
-          onExportSvg={exportSvg}
-          onExportJson={exportJson}
-          onExportYaml={exportYaml}
-          onExportPdf={exportPdf}
-          onCopyToClipboard={copyToClipboard}
-          onGenerateMermaid={handleGenerateMermaid}
-          savedDiagrams={diagrams}
-          onLoadDiagram={handleLoadDiagram}
-          isSaving={isSaving}
-          hasChanges={hasChanges}
-          edgeSettings={edgeSettings}
-          onEdgeSettingsChange={handleEdgeSettingsChange}
-        />
-        <div className="flex flex-1 overflow-hidden">
-          <FlowSidebar onDragStart={onDragStart} />
-          <FlowCanvas
-            nodes={nodes}
-            edges={edges}
-            onNodesChange={onNodesChange}
-            onEdgesChange={onEdgesChange}
-            setNodes={setNodes}
-            setEdges={setEdges}
-            onInit={onInit}
-            onNodeClick={handleNodeClick}
-            onEdgeClick={handleEdgeClick}
-            onPaneClick={handlePaneClick}
+      <TooltipProvider>
+        <div className="flex flex-col h-[calc(100vh-4rem)]">
+          <FlowToolbar
+            diagramName={diagramName}
+            onNameChange={setDiagramName}
+            onSave={handleSave}
+            onNew={handleNew}
+            onExportPng={exportPng}
+            onExportSvg={exportSvg}
+            onExportJson={exportJson}
+            onExportYaml={exportYaml}
+            onExportPdf={exportPdf}
+            onCopyToClipboard={copyToClipboard}
+            onGenerateMermaid={handleGenerateMermaid}
+            savedDiagrams={diagrams}
+            onLoadDiagram={handleLoadDiagram}
+            isSaving={isSaving}
+            hasChanges={hasChanges}
             edgeSettings={edgeSettings}
+            onEdgeSettingsChange={handleEdgeSettingsChange}
+            canUndo={history.canUndo}
+            canRedo={history.canRedo}
+            onUndo={handleUndo}
+            onRedo={handleRedo}
           />
-          {selectedNode && (
-            <NodePropertiesPanel
-              selectedNode={selectedNode}
-              onClose={() => setSelectedNode(null)}
-              onUpdateNode={handleUpdateNode}
-              onDeleteNode={handleDeleteNode}
+          <div className="flex flex-1 overflow-hidden">
+            <FlowSidebar onDragStart={onDragStart} />
+            <FlowCanvas
+              nodes={nodes}
+              edges={edges}
+              onNodesChange={onNodesChange}
+              onEdgesChange={onEdgesChange}
+              setNodes={setNodes}
+              setEdges={setEdges}
+              onInit={onInit}
+              onNodeClick={handleNodeClick}
+              onEdgeClick={handleEdgeClick}
+              onPaneClick={handlePaneClick}
+              edgeSettings={edgeSettings}
             />
-          )}
-          {selectedEdge && (
-            <EdgePropertiesPanel
-              selectedEdge={selectedEdge}
-              onClose={() => setSelectedEdge(null)}
-              onUpdateEdge={handleUpdateEdge}
-              onDeleteEdge={handleDeleteEdge}
-            />
-          )}
+            {selectedNode && (
+              <NodePropertiesPanel
+                selectedNode={selectedNode}
+                onClose={() => setSelectedNode(null)}
+                onUpdateNode={handleUpdateNode}
+                onDeleteNode={handleDeleteNode}
+              />
+            )}
+            {selectedEdge && (
+              <EdgePropertiesPanel
+                selectedEdge={selectedEdge}
+                onClose={() => setSelectedEdge(null)}
+                onUpdateEdge={handleUpdateEdge}
+                onDeleteEdge={handleDeleteEdge}
+              />
+            )}
+          </div>
         </div>
-      </div>
+      </TooltipProvider>
     </Layout>
   );
 }
