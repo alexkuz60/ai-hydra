@@ -16,6 +16,10 @@ export default defineConfig(({ mode }) => ({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+      "@dagrejs/dagre": path.resolve(
+        __dirname,
+        "./node_modules/@dagrejs/dagre/dist/dagre.cjs.js"
+      ),
     },
   },
   optimizeDeps: {
