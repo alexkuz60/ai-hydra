@@ -46,24 +46,28 @@ const FILE_CATEGORIES: {
   labelKey: string; 
   icon: React.ElementType; 
   accept: string[];
+  formats: string;
 }[] = [
   { 
     id: 'all', 
     labelKey: 'files.allTypes', 
     icon: Files, 
-    accept: [...ALLOWED_IMAGE_TYPES, ...ALLOWED_DOC_TYPES] 
+    accept: [...ALLOWED_IMAGE_TYPES, ...ALLOWED_DOC_TYPES],
+    formats: 'JPG, PNG, GIF, WEBP, PDF, DOCX, TXT, MD'
   },
   { 
     id: 'images', 
     labelKey: 'files.images', 
     icon: ImageIcon, 
-    accept: ALLOWED_IMAGE_TYPES 
+    accept: ALLOWED_IMAGE_TYPES,
+    formats: 'JPG, PNG, GIF, WEBP'
   },
   { 
     id: 'documents', 
     labelKey: 'files.documents', 
     icon: FileText, 
-    accept: ALLOWED_DOC_TYPES 
+    accept: ALLOWED_DOC_TYPES,
+    formats: 'PDF, DOCX, TXT, MD'
   },
 ];
 
@@ -185,7 +189,7 @@ export function FileUpload({
             <Paperclip className="h-5 w-5" />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" className="w-48">
+        <DropdownMenuContent align="start" className="w-56">
           {FILE_CATEGORIES.map((category, index) => {
             const Icon = category.icon;
             return (
@@ -193,10 +197,15 @@ export function FileUpload({
                 {index === 1 && <DropdownMenuSeparator />}
                 <DropdownMenuItem
                   onClick={() => handleCategorySelect(category.id)}
-                  className="flex items-center gap-2 cursor-pointer"
+                  className="flex items-start gap-2 cursor-pointer py-2"
                 >
-                  <Icon className="h-4 w-4 text-muted-foreground" />
-                  <span>{t(category.labelKey)}</span>
+                  <Icon className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+                  <div className="flex flex-col gap-0.5">
+                    <span className="text-sm">{t(category.labelKey)}</span>
+                    <span className="text-[10px] text-muted-foreground leading-tight">
+                      {category.formats}
+                    </span>
+                  </div>
                 </DropdownMenuItem>
               </React.Fragment>
             );
@@ -206,10 +215,15 @@ export function FileUpload({
           <DropdownMenuSeparator />
           <DropdownMenuItem
             onClick={handleMermaidInsert}
-            className="flex items-center gap-2 cursor-pointer"
+            className="flex items-start gap-2 cursor-pointer py-2"
           >
-            <GitBranch className="h-4 w-4 text-hydra-cyan" />
-            <span>{t('files.mermaidDiagram')}</span>
+            <GitBranch className="h-4 w-4 text-hydra-cyan mt-0.5 shrink-0" />
+            <div className="flex flex-col gap-0.5">
+              <span className="text-sm">{t('files.mermaidDiagram')}</span>
+              <span className="text-[10px] text-muted-foreground leading-tight">
+                Flowchart, Sequence, Mindmap
+              </span>
+            </div>
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
