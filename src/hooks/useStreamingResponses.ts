@@ -35,15 +35,23 @@ interface UseStreamingResponsesReturn {
   clearCompleted: () => void;
 }
 
-// Models known to NOT support streaming via Lovable AI gateway
-const NON_STREAMING_MODELS_PREFIXES = [
-  'openrouter/',
-  'qwen/',
-  'zhipu/',
+// Models supported by Lovable AI gateway for streaming
+const LOVABLE_AI_SUPPORTED_MODELS = [
+  'openai/gpt-5-mini',
+  'openai/gpt-5',
+  'openai/gpt-5-nano',
+  'openai/gpt-5.2',
+  'google/gemini-2.5-pro',
+  'google/gemini-2.5-flash',
+  'google/gemini-2.5-flash-lite',
+  'google/gemini-2.5-flash-image',
+  'google/gemini-3-pro-preview',
+  'google/gemini-3-flash-preview',
+  'google/gemini-3-pro-image-preview',
 ];
 
 function isStreamingSupported(modelId: string): boolean {
-  return !NON_STREAMING_MODELS_PREFIXES.some(prefix => modelId.startsWith(prefix));
+  return LOVABLE_AI_SUPPORTED_MODELS.includes(modelId);
 }
 
 export function useStreamingResponses({
