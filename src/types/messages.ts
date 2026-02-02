@@ -11,6 +11,8 @@ export interface Attachment {
   name: string;
   url: string;
   type: string;
+  // Inline content for Mermaid diagrams (not uploaded to storage)
+  content?: string;
 }
 
 export interface MessageMetadata {

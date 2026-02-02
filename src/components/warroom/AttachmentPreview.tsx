@@ -1,18 +1,17 @@
-import React, { useState } from 'react';
-import { FileText, Download, ExternalLink } from 'lucide-react';
+import React from 'react';
+import { FileText, Download, ExternalLink, GitBranch } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useLanguage } from '@/contexts/LanguageContext';
 import {
   Dialog,
   DialogContent,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import { MermaidPreview } from './MermaidPreview';
+import { MermaidBlock } from './MermaidBlock';
+import type { Attachment } from '@/types/messages';
 
-export interface Attachment {
-  name: string;
-  url: string;
-  type: string;
-}
+// Re-export for backward compatibility
+export type { Attachment };
 
 interface AttachmentPreviewProps {
   attachment: Attachment;
@@ -24,11 +23,42 @@ function isImageType(type: string): boolean {
   return IMAGE_TYPES.includes(type);
 }
 
-export function AttachmentPreview({ attachment }: AttachmentPreviewProps) {
-  const { t } = useLanguage();
-  const isImage = isImageType(attachment.type);
+function isMermaidType(type: string): boolean {
+  return type === 'text/x-mermaid' || type === 'application/x-mermaid';
+}
 
-  if (isImage) {
+export function AttachmentPreview({ attachment }: AttachmentPreviewProps) {
+  // Mermaid diagram preview
+  if (isMermaidType(attachment.type) && attachment.content) {
+    return (
+      <Dialog>
+        <DialogTrigger asChild>
+          <button
+            className={cn(
+              "relative group rounded-md overflow-hidden border border-border/50",
+              "w-24 cursor-pointer hover:border-hydra-cyan/50 transition-colors",
+              "bg-muted/30 p-1"
+            )}
+          >
+            <MermaidPreview content={attachment.content} maxHeight={72} />
+            <div className="flex items-center gap-1 mt-1 px-1">
+              <GitBranch className="h-3 w-3 text-hydra-cyan shrink-0" />
+              <span className="text-[10px] text-muted-foreground truncate">
+                {attachment.name}
+              </span>
+            </div>
+            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
+          </button>
+        </DialogTrigger>
+        <DialogContent className="max-w-4xl max-h-[90vh] p-4">
+          <MermaidBlock content={attachment.content} />
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  // Image preview
+  if (isImageType(attachment.type)) {
     return (
       <Dialog>
         <DialogTrigger asChild>

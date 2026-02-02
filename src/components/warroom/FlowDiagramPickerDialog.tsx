@@ -18,7 +18,7 @@ import { FlowDiagram } from '@/types/flow';
 interface FlowDiagramPickerDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSelect: (mermaidCode: string) => void;
+  onSelect: (mermaidCode: string, diagramName: string) => void;
 }
 
 export function FlowDiagramPickerDialog({
@@ -32,8 +32,7 @@ export function FlowDiagramPickerDialog({
 
   const handleSelect = (diagram: FlowDiagram) => {
     const mermaidCode = exportToMermaid(diagram.nodes, diagram.edges);
-    const wrappedCode = `\`\`\`mermaid\n${mermaidCode}\`\`\``;
-    onSelect(wrappedCode);
+    onSelect(mermaidCode, diagram.name);
     onOpenChange(false);
   };
 

@@ -1,19 +1,17 @@
 import React, { useCallback, useState } from 'react';
 import { Textarea } from '@/components/ui/textarea';
-import { FileUpload, MERMAID_TEMPLATE } from '@/components/warroom/FileUpload';
+import { FileUpload, MERMAID_TEMPLATE, AttachedFile } from '@/components/warroom/FileUpload';
 import { FlowDiagramPickerDialog } from '@/components/warroom/FlowDiagramPickerDialog';
 import { TimeoutSlider } from '@/components/warroom/TimeoutSlider';
 import { UnifiedSendButton } from '@/components/warroom/UnifiedSendButton';
+import { MermaidPreview } from '@/components/warroom/MermaidPreview';
 import { ModelOption } from '@/hooks/useAvailableModels';
 import { cn } from '@/lib/utils';
-import { Loader2 } from 'lucide-react';
+import { Loader2, GitBranch } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 
-export interface AttachedFile {
-  id: string;
-  file: File;
-  preview?: string;
-}
+// Re-export AttachedFile for external use
+export type { AttachedFile };
 
 export interface UploadProgress {
   current: number;
@@ -64,19 +62,26 @@ export function ChatInputArea({
   const { t } = useLanguage();
   const [flowPickerOpen, setFlowPickerOpen] = useState(false);
 
-  const handleInsertMermaid = useCallback(() => {
-    const prefix = input.trim() ? input + '\n\n' : '';
-    onInputChange(prefix + MERMAID_TEMPLATE);
-  }, [input, onInputChange]);
+  // Handler to attach Mermaid diagram (instead of inserting into text)
+  const handleAttachMermaid = useCallback((content: string, name?: string) => {
+    const newAttachment: AttachedFile = {
+      id: `mermaid-${Date.now()}`,
+      mermaidContent: content,
+      mermaidName: name || 'Diagram',
+    };
+    onFilesChange(files => [...files, newAttachment]);
+  }, [onFilesChange]);
 
-  const handleInsertMermaidContent = useCallback((content: string) => {
-    const prefix = input.trim() ? input + '\n\n' : '';
-    onInputChange(prefix + content);
-  }, [input, onInputChange]);
+  // Handler for flow diagram selection
+  const handleFlowDiagramSelect = useCallback((mermaidCode: string, diagramName: string) => {
+    handleAttachMermaid(mermaidCode, diagramName);
+  }, [handleAttachMermaid]);
 
-  const handleFlowDiagramSelect = useCallback((mermaidCode: string) => {
-    handleInsertMermaidContent(mermaidCode);
-  }, [handleInsertMermaidContent]);
+  // Remove attachment handler
+  const handleRemoveAttachment = useCallback((id: string, preview?: string) => {
+    if (preview) URL.revokeObjectURL(preview);
+    onFilesChange(files => files.filter(f => f.id !== id));
+  }, [onFilesChange]);
 
   return (
     <div className="border-t border-border p-4 bg-background/80 backdrop-blur-sm">
@@ -108,7 +113,44 @@ export function ChatInputArea({
         {attachedFiles.length > 0 && !uploadProgress && (
           <div className="mb-3 flex flex-wrap gap-2 p-2 rounded-lg border border-dashed border-border/50 bg-muted/30">
             {attachedFiles.map((attached) => {
-              const isImage = attached.file.type.startsWith('image/');
+              // Mermaid diagram attachment
+              if (attached.mermaidContent) {
+                return (
+                  <div
+                    key={attached.id}
+                    className={cn(
+                      "relative group rounded-md overflow-hidden border border-hydra-cyan/30",
+                      "bg-background/80 w-24"
+                    )}
+                  >
+                    <div className="p-1">
+                      <MermaidPreview 
+                        content={attached.mermaidContent} 
+                        maxHeight={64}
+                      />
+                    </div>
+                    <div className="flex items-center gap-1 px-1.5 pb-1">
+                      <GitBranch className="h-3 w-3 text-hydra-cyan shrink-0" />
+                      <span className="text-[10px] text-muted-foreground truncate">
+                        {attached.mermaidName}
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveAttachment(attached.id)}
+                      className="absolute top-0.5 right-0.5 bg-destructive text-destructive-foreground rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <span className="sr-only">Remove</span>
+                      <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M18 6L6 18M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                );
+              }
+
+              // Regular file attachment
+              const isImage = attached.file?.type.startsWith('image/');
               return (
                 <div
                   key={attached.id}
@@ -121,20 +163,17 @@ export function ChatInputArea({
                   {isImage && attached.preview ? (
                     <img
                       src={attached.preview}
-                      alt={attached.file.name}
+                      alt={attached.file?.name}
                       className="w-full h-full object-cover"
                     />
                   ) : (
                     <span className="text-xs truncate max-w-[100px]">
-                      {attached.file.name}
+                      {attached.file?.name}
                     </span>
                   )}
                   <button
                     type="button"
-                    onClick={() => {
-                      if (attached.preview) URL.revokeObjectURL(attached.preview);
-                      onFilesChange(files => files.filter(f => f.id !== attached.id));
-                    }}
+                    onClick={() => handleRemoveAttachment(attached.id, attached.preview)}
                     className="absolute top-0.5 right-0.5 bg-destructive text-destructive-foreground rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
                   >
                     <span className="sr-only">Remove</span>
@@ -153,8 +192,7 @@ export function ChatInputArea({
           <FileUpload
             files={attachedFiles}
             onFilesChange={onFilesChange}
-            onInsertMermaid={handleInsertMermaid}
-            onInsertMermaidContent={handleInsertMermaidContent}
+            onAttachMermaid={handleAttachMermaid}
             onSelectFlowDiagram={() => setFlowPickerOpen(true)}
             disabled={sending}
           />
@@ -186,7 +224,7 @@ export function ChatInputArea({
             onSendToConsultant={onSendToConsultant}
             sending={sending}
             disabled={disabled}
-            hasMessage={!!input.trim()}
+            hasMessage={!!input.trim() || attachedFiles.length > 0}
             selectedModelsCount={selectedModelsCount}
             availableModels={availableModels}
             selectedConsultant={selectedConsultant}
