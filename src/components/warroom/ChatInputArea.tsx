@@ -5,10 +5,16 @@ import { FlowDiagramPickerDialog } from '@/components/warroom/FlowDiagramPickerD
 import { TimeoutSlider } from '@/components/warroom/TimeoutSlider';
 import { UnifiedSendButton } from '@/components/warroom/UnifiedSendButton';
 import { MermaidPreview } from '@/components/warroom/MermaidPreview';
+import { MermaidBlock } from '@/components/warroom/MermaidBlock';
 import { ModelOption } from '@/hooks/useAvailableModels';
 import { cn } from '@/lib/utils';
 import { Loader2, GitBranch } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import {
+  Dialog,
+  DialogContent,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 
 // Re-export AttachedFile for external use
 export type { AttachedFile };
@@ -116,36 +122,49 @@ export function ChatInputArea({
               // Mermaid diagram attachment
               if (attached.mermaidContent) {
                 return (
-                  <div
-                    key={attached.id}
-                    className={cn(
-                      "relative group rounded-md overflow-hidden border border-hydra-cyan/30",
-                      "bg-background/80 w-24"
-                    )}
-                  >
-                    <div className="p-1">
-                      <MermaidPreview 
-                        content={attached.mermaidContent} 
-                        maxHeight={64}
-                      />
+                  <Dialog key={attached.id}>
+                    <div className="relative group">
+                      <DialogTrigger asChild>
+                        <button
+                          type="button"
+                          className={cn(
+                            "rounded-md overflow-hidden border border-hydra-cyan/30",
+                            "bg-background/80 w-24 cursor-pointer",
+                            "hover:border-hydra-cyan/60 transition-colors"
+                          )}
+                        >
+                          <div className="p-1">
+                            <MermaidPreview 
+                              content={attached.mermaidContent} 
+                              maxHeight={64}
+                            />
+                          </div>
+                          <div className="flex items-center gap-1 px-1.5 pb-1">
+                            <GitBranch className="h-3 w-3 text-hydra-cyan shrink-0" />
+                            <span className="text-[10px] text-muted-foreground truncate">
+                              {attached.mermaidName}
+                            </span>
+                          </div>
+                        </button>
+                      </DialogTrigger>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleRemoveAttachment(attached.id);
+                        }}
+                        className="absolute top-0.5 right-0.5 bg-destructive text-destructive-foreground rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                      >
+                        <span className="sr-only">Remove</span>
+                        <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M18 6L6 18M6 6l12 12" />
+                        </svg>
+                      </button>
                     </div>
-                    <div className="flex items-center gap-1 px-1.5 pb-1">
-                      <GitBranch className="h-3 w-3 text-hydra-cyan shrink-0" />
-                      <span className="text-[10px] text-muted-foreground truncate">
-                        {attached.mermaidName}
-                      </span>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveAttachment(attached.id)}
-                      className="absolute top-0.5 right-0.5 bg-destructive text-destructive-foreground rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
-                    >
-                      <span className="sr-only">Remove</span>
-                      <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M18 6L6 18M6 6l12 12" />
-                      </svg>
-                    </button>
-                  </div>
+                    <DialogContent className="max-w-4xl max-h-[85vh] p-4 overflow-auto">
+                      <MermaidBlock content={attached.mermaidContent} />
+                    </DialogContent>
+                  </Dialog>
                 );
               }
 
