@@ -5,7 +5,10 @@ import {
   FileText, 
   Image as ImageIcon,
   Files,
-  GitBranch
+  GitBranch,
+  FileCode,
+  Workflow,
+  FileEdit
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -13,6 +16,9 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
   DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuSubContent,
 } from '@/components/ui/dropdown-menu';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { toast } from '@/hooks/use-toast';
@@ -34,6 +40,8 @@ interface FileUploadProps {
   files: AttachedFile[];
   onFilesChange: (files: AttachedFile[]) => void;
   onInsertMermaid?: () => void;
+  onInsertMermaidContent?: (content: string) => void;
+  onSelectFlowDiagram?: () => void;
   disabled?: boolean;
   maxFiles?: number;
   maxSizeMB?: number;
@@ -91,12 +99,15 @@ export function FileUpload({
   files,
   onFilesChange,
   onInsertMermaid,
+  onInsertMermaidContent,
+  onSelectFlowDiagram,
   disabled = false,
   maxFiles = MAX_FILES,
   maxSizeMB = MAX_SIZE_MB,
 }: FileUploadProps) {
   const { t } = useLanguage();
   const inputRef = useRef<HTMLInputElement>(null);
+  const mermaidInputRef = useRef<HTMLInputElement>(null);
   const [currentAccept, setCurrentAccept] = useState<string[]>([...ALLOWED_IMAGE_TYPES, ...ALLOWED_DOC_TYPES]);
 
   const handleFiles = useCallback((newFiles: FileList | null) => {
@@ -174,6 +185,33 @@ export function FileUpload({
     }
   }, [onInsertMermaid]);
 
+  const handleMermaidFileLoad = useCallback((fileList: FileList | null) => {
+    if (!fileList?.[0]) return;
+    const file = fileList[0];
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const content = e.target?.result as string;
+      if (content && onInsertMermaidContent) {
+        // Wrap content in mermaid code block if not already wrapped
+        const mermaidCode = content.includes('```mermaid') 
+          ? content 
+          : `\`\`\`mermaid\n${content.trim()}\n\`\`\``;
+        onInsertMermaidContent(mermaidCode);
+      }
+    };
+    reader.readAsText(file);
+  }, [onInsertMermaidContent]);
+
+  const handleMermaidFromFile = useCallback(() => {
+    mermaidInputRef.current?.click();
+  }, []);
+
+  const handleFlowDiagramSelect = useCallback(() => {
+    if (onSelectFlowDiagram) {
+      onSelectFlowDiagram();
+    }
+  }, [onSelectFlowDiagram]);
+
   return (
     <>
       <DropdownMenu>
@@ -211,22 +249,67 @@ export function FileUpload({
             );
           })}
           
-          {/* Mermaid diagram option */}
+          {/* Mermaid diagram submenu */}
           <DropdownMenuSeparator />
-          <DropdownMenuItem
-            onClick={handleMermaidInsert}
-            className="flex items-start gap-2 cursor-pointer py-2"
-          >
-            <GitBranch className="h-4 w-4 text-hydra-cyan mt-0.5 shrink-0" />
-            <div className="flex flex-col gap-0.5">
-              <span className="text-sm">{t('files.mermaidDiagram')}</span>
-              <span className="text-[10px] text-muted-foreground leading-tight">
-                Flowchart, Sequence, Mindmap
-              </span>
-            </div>
-          </DropdownMenuItem>
+          <DropdownMenuSub>
+            <DropdownMenuSubTrigger className="flex items-start gap-2 cursor-pointer py-2">
+              <GitBranch className="h-4 w-4 text-hydra-cyan mt-0.5 shrink-0" />
+              <div className="flex flex-col gap-0.5">
+                <span className="text-sm">{t('files.mermaidDiagram')}</span>
+                <span className="text-[10px] text-muted-foreground leading-tight">
+                  Flowchart, Sequence, Mindmap
+                </span>
+              </div>
+            </DropdownMenuSubTrigger>
+            <DropdownMenuSubContent className="w-52">
+              {/* Empty template */}
+              <DropdownMenuItem
+                onClick={handleMermaidInsert}
+                className="flex items-start gap-2 cursor-pointer py-2"
+              >
+                <FileEdit className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+                <div className="flex flex-col gap-0.5">
+                  <span className="text-sm">{t('files.mermaidTemplate')}</span>
+                  <span className="text-[10px] text-muted-foreground leading-tight">
+                    Graph TD
+                  </span>
+                </div>
+              </DropdownMenuItem>
+              
+              {/* From file */}
+              <DropdownMenuItem
+                onClick={handleMermaidFromFile}
+                className="flex items-start gap-2 cursor-pointer py-2"
+              >
+                <FileCode className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+                <div className="flex flex-col gap-0.5">
+                  <span className="text-sm">{t('files.mermaidFromFile')}</span>
+                  <span className="text-[10px] text-muted-foreground leading-tight">
+                    {t('files.mermaidFileHint')}
+                  </span>
+                </div>
+              </DropdownMenuItem>
+              
+              {/* From flow library */}
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={handleFlowDiagramSelect}
+                className="flex items-start gap-2 cursor-pointer py-2"
+              >
+                <Workflow className="h-4 w-4 text-hydra-cyan mt-0.5 shrink-0" />
+                <div className="flex flex-col gap-0.5">
+                  <span className="text-sm">{t('files.mermaidFromFlow')}</span>
+                  <span className="text-[10px] text-muted-foreground leading-tight">
+                    Thought Flow Editor
+                  </span>
+                </div>
+              </DropdownMenuItem>
+            </DropdownMenuSubContent>
+          </DropdownMenuSub>
         </DropdownMenuContent>
       </DropdownMenu>
+      
+      {/* Hidden file input for regular files */}
       <input
         ref={inputRef}
         type="file"
@@ -235,6 +318,19 @@ export function FileUpload({
         className="hidden"
         onChange={(e) => {
           handleFiles(e.target.files);
+          e.target.value = '';
+        }}
+        disabled={disabled}
+      />
+      
+      {/* Hidden file input for mermaid files */}
+      <input
+        ref={mermaidInputRef}
+        type="file"
+        accept=".mmd,.mermaid,.md,.txt"
+        className="hidden"
+        onChange={(e) => {
+          handleMermaidFileLoad(e.target.files);
           e.target.value = '';
         }}
         disabled={disabled}
