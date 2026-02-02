@@ -594,7 +594,7 @@ export default function ExpertPanel() {
                           }}
                           disabled={streamingResponses.size === 0}
                           className={cn(
-                            "h-7 w-7 rounded-md flex items-center justify-center transition-colors focus:outline-none focus:ring-2 focus:ring-primary/50",
+                            "relative h-7 w-7 rounded-md flex items-center justify-center transition-colors focus:outline-none focus:ring-2 focus:ring-primary/50",
                             streamingResponses.size > 0 
                               ? "bg-hydra-critical/20 text-hydra-critical hover:bg-hydra-critical/30 cursor-pointer" 
                               : "bg-muted/50 text-muted-foreground/40 cursor-default"
@@ -618,6 +618,21 @@ export default function ExpertPanel() {
                                 <Circle className="h-3.5 w-3.5" />
                               )}
                             </motion.span>
+                          </AnimatePresence>
+                          
+                          {/* Active streams counter badge */}
+                          <AnimatePresence>
+                            {streamingResponses.size > 0 && (
+                              <motion.span
+                                initial={{ scale: 0, opacity: 0 }}
+                                animate={{ scale: 1, opacity: 1 }}
+                                exit={{ scale: 0, opacity: 0 }}
+                                transition={{ duration: 0.15, ease: 'easeOut' }}
+                                className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 px-1 rounded-full bg-hydra-critical text-[10px] font-bold text-white flex items-center justify-center shadow-sm"
+                              >
+                                {streamingResponses.size}
+                              </motion.span>
+                            )}
                           </AnimatePresence>
                         </motion.button>
                       </TooltipTrigger>
