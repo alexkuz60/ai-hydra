@@ -40,6 +40,10 @@ const translations: Translations = {
   'staffRoles.systemPrompt': { ru: 'Системный промпт по умолчанию', en: 'Default System Prompt' },
   'staffRoles.technicalStaff': { ru: 'Технический персонал', en: 'Technical Staff' },
   'staffRoles.technicalStaffHint': { ru: 'Не участвует в коллегиальных обсуждениях. Служит агентом-помощником пользователя.', en: 'Does not participate in collegiate discussions. Serves as a user assistant agent.' },
+  'staffRoles.editAndSave': { ru: 'Редактировать', en: 'Edit' },
+  'staffRoles.promptName': { ru: 'Название промпта', en: 'Prompt Name' },
+  'staffRoles.saveToLibrary': { ru: 'Сохранить в библиотеку', en: 'Save to Library' },
+  'staffRoles.promptSaved': { ru: 'Промпт сохранён в библиотеку', en: 'Prompt saved to library' },
   
   // Staff Roles - Role Descriptions
   'staffRoles.description.user': { ru: 'Человек-пользователь системы.', en: 'Human user of the system.' },
