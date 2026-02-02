@@ -29,7 +29,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Message, MessageRole, MessageMetadata } from '@/types/messages';
+import { Message, MessageMetadata } from '@/types/messages';
 import { ToolCall, ToolResult } from '@/types/tools';
 import { ROLE_CONFIG, getRoleConfig } from '@/config/roles';
 
@@ -38,20 +38,6 @@ export interface UserDisplayInfo {
   displayName: string | null;
   isSupervisor: boolean;
 }
-
-// Card variant mapping for roles
-const roleCardVariants: Record<string, 'default' | 'expert' | 'critic' | 'arbiter' | 'user' | 'supervisor' | 'glass' | 'advisor' | 'archivist' | 'analyst' | 'webhunter' | 'moderator'> = {
-  user: 'user',
-  assistant: 'expert',
-  critic: 'critic',
-  arbiter: 'arbiter',
-  consultant: 'glass',
-  moderator: 'moderator',
-  advisor: 'advisor',
-  archivist: 'archivist',
-  analyst: 'analyst',
-  webhunter: 'webhunter',
-};
 
 interface BrainRatingProps {
   value: number;
@@ -149,10 +135,10 @@ export function ChatMessage({ message, userDisplayInfo, onDelete, onRatingChange
 
   const isAiMessage = message.role !== 'user';
 
-  // Determine card variant - use supervisor variant for supervisor users
+  // Determine card variant - use supervisor variant for supervisor users, or get from role config
   const cardVariant = isUserMessage && userDisplayInfo?.isSupervisor 
     ? 'supervisor' 
-    : roleCardVariants[message.role] || 'default';
+    : config.cardVariant || 'default';
 
   return (
     <HydraCard 

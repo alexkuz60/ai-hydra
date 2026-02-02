@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { HydraCard, HydraCardHeader, HydraCardTitle, HydraCardContent } from '@/components/ui/hydra-card';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Plus, Trash2, MessageSquare, Loader2, Calendar, Settings, Bot, Sparkles, Cpu, Pencil, Check, X } from 'lucide-react';
+import { Plus, Trash2, MessageSquare, Loader2, Calendar, Settings, Pencil, Check, X } from 'lucide-react';
 import { format } from 'date-fns';
 import {
   AlertDialog,
@@ -30,7 +30,8 @@ import {
 import { MultiModelSelector } from '@/components/warroom/MultiModelSelector';
 import { PerModelSettings, PerModelSettingsData, DEFAULT_MODEL_SETTINGS } from '@/components/warroom/PerModelSettings';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { useAvailableModels, ModelOption, LOVABLE_AI_MODELS, PERSONAL_KEY_MODELS } from '@/hooks/useAvailableModels';
+import { useAvailableModels, ModelOption, LOVABLE_AI_MODELS, PERSONAL_KEY_MODELS, ALL_VALID_MODEL_IDS, getModelInfo, getModelDisplayName } from '@/hooks/useAvailableModels';
+import { Bot, Sparkles, Cpu } from 'lucide-react';
 
 interface Task {
   id: string;
@@ -45,9 +46,6 @@ interface Task {
   } | null;
 }
 
-// All valid model IDs for filtering deprecated models
-const ALL_VALID_MODEL_IDS = [...LOVABLE_AI_MODELS, ...PERSONAL_KEY_MODELS].map(m => m.id);
-
 // Filter out deprecated/unavailable model IDs
 const filterValidModels = (modelIds: string[]): string[] => {
   return modelIds.filter(id => ALL_VALID_MODEL_IDS.includes(id));
@@ -55,22 +53,14 @@ const filterValidModels = (modelIds: string[]): string[] => {
 
 // Get model icon based on provider
 const getModelIcon = (modelId: string) => {
-  const allModels = [...LOVABLE_AI_MODELS, ...PERSONAL_KEY_MODELS];
-  const model = allModels.find(m => m.id === modelId);
+  const { isLovable, model } = getModelInfo(modelId);
   
   if (!model) return <Bot className="h-4 w-4 text-muted-foreground" />;
   
-  if (model.provider === 'lovable') {
+  if (isLovable) {
     return <Sparkles className="h-4 w-4 text-primary" />;
   }
   return <Cpu className="h-4 w-4 text-accent-foreground" />;
-};
-
-// Get model display name
-const getModelName = (modelId: string) => {
-  const allModels = [...LOVABLE_AI_MODELS, ...PERSONAL_KEY_MODELS];
-  const model = allModels.find(m => m.id === modelId);
-  return model?.name || modelId;
 };
 
 export default function Tasks() {
@@ -383,7 +373,7 @@ export default function Tasks() {
                       className="flex items-center gap-3 text-sm py-1.5 px-2 rounded-md bg-muted/30"
                     >
                       {getModelIcon(modelId)}
-                      <span className="font-medium flex-1 truncate">{getModelName(modelId)}</span>
+                      <span className="font-medium flex-1 truncate">{getModelDisplayName(modelId)}</span>
                       <span className="text-xs text-muted-foreground px-2 py-0.5 rounded bg-background/50">
                         {getModelRole(modelId)}
                       </span>
@@ -523,7 +513,7 @@ export default function Tasks() {
                             className="flex items-center gap-1.5 text-xs py-0.5 px-2 rounded-full bg-muted/50"
                           >
                             {getModelIcon(modelId)}
-                            <span className="truncate max-w-[100px]">{getModelName(modelId)}</span>
+                            <span className="truncate max-w-[100px]">{getModelDisplayName(modelId)}</span>
                             <span className="text-muted-foreground">•</span>
                             <span className="text-muted-foreground">{getTaskModelRole(task, modelId)}</span>
                           </div>

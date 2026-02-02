@@ -4,12 +4,35 @@ import { toast } from 'sonner';
 import { compressImage } from '@/lib/imageCompression';
 import { sanitizeFileName } from '@/lib/fileUtils';
 import { PerModelSettingsData, DEFAULT_MODEL_SETTINGS } from '@/components/warroom/PerModelSettings';
-import { LOVABLE_AI_MODELS, PERSONAL_KEY_MODELS } from '@/hooks/useAvailableModels';
+import { getModelInfo } from '@/hooks/useAvailableModels';
 import { AttachedFile } from '@/components/warroom/FileUpload';
 import { useLanguage } from '@/contexts/LanguageContext';
 import type { Json } from '@/integrations/supabase/types';
 import { markModelUnavailable, parseModelError } from '@/lib/modelAvailabilityCache';
 import type { RequestStartInfo } from '@/types/pending';
+
+// Helper function to build model configuration - centralized to avoid duplication
+function buildModelConfig(
+  modelId: string, 
+  perModelSettings: PerModelSettingsData,
+  roleOverride?: string
+) {
+  const { isLovable, provider } = getModelInfo(modelId);
+  const settings = perModelSettings[modelId] || DEFAULT_MODEL_SETTINGS;
+  
+  return {
+    model_id: modelId,
+    use_lovable_ai: isLovable,
+    provider: provider,
+    temperature: settings.temperature,
+    max_tokens: settings.maxTokens,
+    system_prompt: settings.systemPrompt || (roleOverride === 'consultant' ? DEFAULT_MODEL_SETTINGS.systemPrompt : settings.systemPrompt),
+    role: roleOverride || settings.role,
+    enable_tools: settings.enableTools ?? true,
+    enabled_tools: settings.enabledTools ?? ['calculator', 'current_datetime', 'web_search'],
+    enabled_custom_tools: settings.enabledCustomTools ?? [],
+  };
+}
 
 interface AttachmentUrl {
   name: string;
@@ -206,24 +229,8 @@ export function useSendMessage({
 
       if (error) throw error;
 
-      // Prepare models with their settings
-      const modelsToCall = selectedModels.map(modelId => {
-        const isLovable = LOVABLE_AI_MODELS.some(m => m.id === modelId);
-        const personalModel = PERSONAL_KEY_MODELS.find(m => m.id === modelId);
-        const settings = perModelSettings[modelId] || DEFAULT_MODEL_SETTINGS;
-        return {
-          model_id: modelId,
-          use_lovable_ai: isLovable,
-          provider: personalModel?.provider || null,
-          temperature: settings.temperature,
-          max_tokens: settings.maxTokens,
-          system_prompt: settings.systemPrompt,
-          role: settings.role,
-          enable_tools: settings.enableTools ?? true,
-          enabled_tools: settings.enabledTools ?? ['calculator', 'current_datetime', 'web_search'],
-          enabled_custom_tools: settings.enabledCustomTools ?? [],
-        };
-      });
+      // Prepare models with their settings using centralized helper
+      const modelsToCall = selectedModels.map(modelId => buildModelConfig(modelId, perModelSettings));
 
       // Notify about request start for skeleton indicators
       if (onRequestStart) {
@@ -281,23 +288,8 @@ export function useSendMessage({
 
       if (error) throw error;
 
-      // Prepare consultant model
-      const isLovable = LOVABLE_AI_MODELS.some(m => m.id === consultantId);
-      const personalModel = PERSONAL_KEY_MODELS.find(m => m.id === consultantId);
-      const settings = perModelSettings[consultantId] || DEFAULT_MODEL_SETTINGS;
-
-      const consultantModel = {
-        model_id: consultantId,
-        use_lovable_ai: isLovable,
-        provider: personalModel?.provider || null,
-        temperature: settings.temperature,
-        max_tokens: settings.maxTokens,
-        system_prompt: settings.systemPrompt || DEFAULT_MODEL_SETTINGS.systemPrompt,
-        role: 'consultant' as const,
-        enable_tools: settings.enableTools ?? true,
-        enabled_tools: settings.enabledTools ?? ['calculator', 'current_datetime', 'web_search'],
-        enabled_custom_tools: settings.enabledCustomTools ?? [],
-      };
+      // Prepare consultant model using centralized helper
+      const consultantModel = buildModelConfig(consultantId, perModelSettings, 'consultant');
 
       // Notify about request start for skeleton indicator
       if (onRequestStart) {
@@ -393,32 +385,19 @@ export function useSendMessage({
     if (!userId || !sessionId || !messageContent.trim()) return;
 
     try {
-      const isLovable = LOVABLE_AI_MODELS.some(m => m.id === modelId);
-      const personalModel = PERSONAL_KEY_MODELS.find(m => m.id === modelId);
-      const settings = perModelSettings[modelId] || DEFAULT_MODEL_SETTINGS;
+      // Prepare model config using centralized helper
+      const singleModel = buildModelConfig(modelId, perModelSettings);
 
       // Notify about request start for skeleton indicator
       if (onRequestStart) {
         const modelName = modelId.split('/').pop() || modelId;
+        const settings = perModelSettings[modelId] || DEFAULT_MODEL_SETTINGS;
         onRequestStart([{
           modelId,
           modelName,
           role: settings.role,
         }]);
       }
-
-      const singleModel = {
-        model_id: modelId,
-        use_lovable_ai: isLovable,
-        provider: personalModel?.provider || null,
-        temperature: settings.temperature,
-        max_tokens: settings.maxTokens,
-        system_prompt: settings.systemPrompt,
-        role: settings.role,
-        enable_tools: settings.enableTools ?? true,
-        enabled_tools: settings.enabledTools ?? ['calculator', 'current_datetime', 'web_search'],
-        enabled_custom_tools: settings.enabledCustomTools ?? [],
-      };
 
       await callOrchestrator(messageContent, [], [singleModel]);
     } catch (error: any) {

@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { LOVABLE_AI_MODELS, PERSONAL_KEY_MODELS } from '@/hooks/useAvailableModels';
+import { getModelInfo } from '@/hooks/useAvailableModels';
 
 export type ConsultantMode = 'web_search' | 'expert' | 'critic' | 'arbiter' | 'moderator';
 
@@ -87,8 +87,7 @@ export function useConsultantChat({
 
       try {
         const session = await supabase.auth.getSession();
-        const isLovable = LOVABLE_AI_MODELS.some((m) => m.id === modelId);
-        const personalModel = PERSONAL_KEY_MODELS.find((m) => m.id === modelId);
+        const { isLovable, provider } = getModelInfo(modelId);
 
         // Determine role and enabled tools based on mode
         const role = modeToRole[mode];
@@ -99,7 +98,7 @@ export function useConsultantChat({
         const modelConfig = {
           model_id: modelId,
           use_lovable_ai: isLovable,
-          provider: personalModel?.provider || null,
+          provider: provider,
           temperature: 0.7,
           max_tokens: 4096,
           system_prompt: null, // Use default role prompt
