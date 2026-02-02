@@ -24,7 +24,8 @@ import {
   MemoryStick,
   Tags,
   ChevronDown,
-  ChevronRight
+  ChevronRight,
+  Group
 } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
@@ -48,6 +49,7 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   Sparkles,
   MemoryStick,
   Tags,
+  Group,
 };
 
 const colorMap: Record<string, string> = {
@@ -71,9 +73,10 @@ const categoryLabels: Record<string, { ru: string; en: string }> = {
   integration: { ru: 'Интеграции', en: 'Integrations' },
   logic: { ru: 'Логика', en: 'Logic' },
   ai: { ru: 'AI', en: 'AI' },
+  structure: { ru: 'Структура', en: 'Structure' },
 };
 
-const categoryOrder = ['basic', 'data', 'integration', 'logic', 'ai'];
+const categoryOrder = ['basic', 'data', 'integration', 'logic', 'ai', 'structure'];
 
 const STORAGE_KEY = 'flow-sidebar-categories';
 
@@ -83,6 +86,7 @@ const defaultOpenState: Record<string, boolean> = {
   integration: false,
   logic: false,
   ai: false,
+  structure: true,
 };
 
 const loadCategoryState = (): Record<string, boolean> => {
@@ -134,6 +138,7 @@ export function FlowSidebar({ onDragStart }: FlowSidebarProps) {
       integration: [],
       logic: [],
       ai: [],
+      structure: [],
     };
     
     NODE_PALETTE.forEach((item) => {

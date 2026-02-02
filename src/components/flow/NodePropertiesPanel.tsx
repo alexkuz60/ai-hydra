@@ -3,7 +3,7 @@ import { Node } from '@xyflow/react';
 import { 
   X, ArrowDownToLine, ArrowUpFromLine, FileText, Brain, GitBranch, Wrench, Library,
   Shuffle, Filter, Combine, Split, Database, Globe, HardDrive, Repeat, Clock, LayoutList,
-  Sparkles, MemoryStick, Tags
+  Sparkles, MemoryStick, Tags, Group
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -64,6 +64,7 @@ const nodeIcons: Record<FlowNodeType, React.ElementType> = {
   embedding: Sparkles,
   memory: MemoryStick,
   classifier: Tags,
+  group: Group,
 };
 
 const nodeColors: Record<FlowNodeType, string> = {
@@ -86,6 +87,7 @@ const nodeColors: Record<FlowNodeType, string> = {
   embedding: 'text-hydra-expert',
   memory: 'text-hydra-advisor',
   classifier: 'text-hydra-success',
+  group: 'text-primary',
 };
 
 export function NodePropertiesPanel({

@@ -79,6 +79,7 @@ const translations: Translations = {
   'flowEditor.nodes.embedding': { ru: 'Эмбеддинг', en: 'Embedding' },
   'flowEditor.nodes.memory': { ru: 'Память', en: 'Memory' },
   'flowEditor.nodes.classifier': { ru: 'Классификатор', en: 'Classifier' },
+  'flowEditor.nodes.group': { ru: 'Группа', en: 'Group' },
   'flowEditor.sidebar.elements': { ru: 'Элементы', en: 'Elements' },
   'flowEditor.sidebar.dragHint': { ru: 'Перетащите на холст', en: 'Drag to canvas' },
   'flowEditor.empty': { ru: 'Перетащите элементы на холст для создания диаграммы', en: 'Drag elements to canvas to create a diagram' },
