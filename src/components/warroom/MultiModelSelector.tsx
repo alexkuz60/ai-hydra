@@ -1,6 +1,6 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { useAvailableModels, ModelOption, PERSONAL_KEY_MODELS, LOVABLE_AI_MODELS } from '@/hooks/useAvailableModels';
+import { useAvailableModels, ModelOption, PERSONAL_KEY_MODELS, LOVABLE_AI_MODELS, ALL_VALID_MODEL_IDS } from '@/hooks/useAvailableModels';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -9,9 +9,6 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Sparkles, Key, AlertCircle, ChevronDown, Users, Gift, Zap, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getUnavailableModelIds, clearModelCache } from '@/lib/modelAvailabilityCache';
-
-// All valid model IDs for filtering deprecated models
-const ALL_VALID_MODEL_IDS = [...LOVABLE_AI_MODELS, ...PERSONAL_KEY_MODELS].map(m => m.id);
 
 interface MultiModelSelectorProps {
   value: string[];
@@ -36,8 +33,11 @@ export function MultiModelSelector({ value, onChange, className }: MultiModelSel
   const { t } = useLanguage();
   const { isAdmin, lovableModels, personalModels, hasAnyModels, loading } = useAvailableModels();
   
-  // Get list of temporarily unavailable models (cached from errors)
-  const unavailableModelIds = useMemo(() => getUnavailableModelIds(), []);
+  // Track cache version to trigger re-computation of unavailable models
+  const [cacheVersion, setCacheVersion] = useState(0);
+  
+  // Get list of temporarily unavailable models (cached from errors) - recompute on cache change
+  const unavailableModelIds = useMemo(() => getUnavailableModelIds(), [cacheVersion]);
 
   const allModels = [...lovableModels, ...personalModels];
 
@@ -67,13 +67,13 @@ export function MultiModelSelector({ value, onChange, className }: MultiModelSel
     }
   }, [unavailableModelIds]);
   
-  // Handler to clear the cache and refresh
-  const handleClearCache = () => {
+  // Handler to clear the cache and refresh - uses state update instead of page reload
+  const handleClearCache = useCallback(() => {
     clearModelCache();
+    setCacheVersion(v => v + 1);
     // Force re-render by updating with same value
     onChange([...value]);
-    window.location.reload();
-  };
+  }, [onChange, value]);
 
   const toggleModel = (modelId: string) => {
     if (value.includes(modelId)) {

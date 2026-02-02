@@ -62,6 +62,34 @@ export const PERSONAL_KEY_MODELS: ModelOption[] = [
   { id: 'gemma2-9b-it', name: 'Gemma 2 9B', provider: 'groq', requiresApiKey: true },
 ];
 
+// All valid model IDs for filtering deprecated models (centralized)
+export const ALL_VALID_MODEL_IDS = [...LOVABLE_AI_MODELS, ...PERSONAL_KEY_MODELS].map(m => m.id);
+
+// Get model info utility - single source of truth for model lookups
+export function getModelInfo(modelId: string): {
+  isLovable: boolean;
+  provider: ModelOption['provider'] | null;
+  model: ModelOption | undefined;
+} {
+  const lovableModel = LOVABLE_AI_MODELS.find(m => m.id === modelId);
+  if (lovableModel) {
+    return { isLovable: true, provider: 'lovable', model: lovableModel };
+  }
+  
+  const personalModel = PERSONAL_KEY_MODELS.find(m => m.id === modelId);
+  return {
+    isLovable: false,
+    provider: personalModel?.provider || null,
+    model: personalModel,
+  };
+}
+
+// Get model display name utility
+export function getModelDisplayName(modelId: string): string {
+  const { model } = getModelInfo(modelId);
+  return model?.name || modelId;
+}
+
 interface UserApiKeys {
   openai: boolean;
   gemini: boolean;

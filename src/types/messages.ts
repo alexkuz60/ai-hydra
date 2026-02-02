@@ -1,8 +1,11 @@
 // Common types for messages and attachments
+// Note: MessageRole is defined in src/config/roles.ts as the single source of truth
 
 import { ToolCall, ToolResult } from './tools';
+import type { MessageRole } from '@/config/roles';
 
-export type MessageRole = 'user' | 'assistant' | 'critic' | 'arbiter' | 'consultant' | 'moderator' | 'advisor' | 'archivist' | 'analyst' | 'webhunter';
+// Re-export MessageRole for backward compatibility
+export type { MessageRole };
 
 export interface Attachment {
   name: string;

@@ -31,6 +31,7 @@ export type AgentRole =
   | 'flowregulator';
 
 // All possible message roles including user
+// This is the SINGLE SOURCE OF TRUTH for MessageRole type
 export type MessageRole = 'user' | AgentRole;
 
 export interface RoleConfigItem {
@@ -40,6 +41,7 @@ export interface RoleConfigItem {
   description: string;
   isTechnicalStaff: boolean;
   bgClass?: string;
+  cardVariant?: 'default' | 'expert' | 'critic' | 'arbiter' | 'user' | 'supervisor' | 'glass' | 'advisor' | 'archivist' | 'analyst' | 'webhunter' | 'moderator';
 }
 
 // Unified role configuration with icons and colors
@@ -50,6 +52,7 @@ export const ROLE_CONFIG: Record<MessageRole, RoleConfigItem> = {
     label: 'role.user',
     description: 'staffRoles.description.user',
     isTechnicalStaff: false,
+    cardVariant: 'user',
   },
   assistant: {
     icon: Brain,
@@ -57,6 +60,7 @@ export const ROLE_CONFIG: Record<MessageRole, RoleConfigItem> = {
     label: 'role.assistant',
     description: 'staffRoles.description.assistant',
     isTechnicalStaff: false,
+    cardVariant: 'expert',
   },
   critic: {
     icon: Shield,
@@ -64,6 +68,7 @@ export const ROLE_CONFIG: Record<MessageRole, RoleConfigItem> = {
     label: 'role.critic',
     description: 'staffRoles.description.critic',
     isTechnicalStaff: false,
+    cardVariant: 'critic',
   },
   arbiter: {
     icon: Scale,
@@ -71,6 +76,7 @@ export const ROLE_CONFIG: Record<MessageRole, RoleConfigItem> = {
     label: 'role.arbiter',
     description: 'staffRoles.description.arbiter',
     isTechnicalStaff: false,
+    cardVariant: 'arbiter',
   },
   consultant: {
     icon: Lightbulb,
@@ -78,6 +84,7 @@ export const ROLE_CONFIG: Record<MessageRole, RoleConfigItem> = {
     label: 'role.consultant',
     description: 'staffRoles.description.consultant',
     isTechnicalStaff: false,
+    cardVariant: 'glass',
   },
   moderator: {
     icon: Gavel,
@@ -85,6 +92,7 @@ export const ROLE_CONFIG: Record<MessageRole, RoleConfigItem> = {
     label: 'role.moderator',
     description: 'staffRoles.description.moderator',
     isTechnicalStaff: false,
+    cardVariant: 'moderator',
   },
   advisor: {
     icon: HandHelping,
@@ -92,6 +100,7 @@ export const ROLE_CONFIG: Record<MessageRole, RoleConfigItem> = {
     label: 'role.advisor',
     description: 'staffRoles.description.advisor',
     isTechnicalStaff: false,
+    cardVariant: 'advisor',
   },
   archivist: {
     icon: Archive,
@@ -99,6 +108,7 @@ export const ROLE_CONFIG: Record<MessageRole, RoleConfigItem> = {
     label: 'role.archivist',
     description: 'staffRoles.description.archivist',
     isTechnicalStaff: true,
+    cardVariant: 'archivist',
   },
   analyst: {
     icon: LineChart,
@@ -106,6 +116,7 @@ export const ROLE_CONFIG: Record<MessageRole, RoleConfigItem> = {
     label: 'role.analyst',
     description: 'staffRoles.description.analyst',
     isTechnicalStaff: false,
+    cardVariant: 'analyst',
   },
   webhunter: {
     icon: Globe,
@@ -113,6 +124,7 @@ export const ROLE_CONFIG: Record<MessageRole, RoleConfigItem> = {
     label: 'role.webhunter',
     description: 'staffRoles.description.webhunter',
     isTechnicalStaff: false,
+    cardVariant: 'webhunter',
   },
   promptengineer: {
     icon: Wand2,
@@ -120,6 +132,7 @@ export const ROLE_CONFIG: Record<MessageRole, RoleConfigItem> = {
     label: 'role.promptengineer',
     description: 'staffRoles.description.promptengineer',
     isTechnicalStaff: true,
+    cardVariant: 'default',
   },
   flowregulator: {
     icon: Route,
@@ -127,6 +140,7 @@ export const ROLE_CONFIG: Record<MessageRole, RoleConfigItem> = {
     label: 'role.flowregulator',
     description: 'staffRoles.description.flowregulator',
     isTechnicalStaff: true,
+    cardVariant: 'default',
   },
 };
 
