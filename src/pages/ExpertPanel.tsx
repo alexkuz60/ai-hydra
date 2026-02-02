@@ -541,11 +541,23 @@ export default function ExpertPanel() {
                               <motion.span
                                 key={useHybridStreaming ? 'zap' : 'zap-off'}
                                 initial={{ rotate: -180, opacity: 0 }}
-                                animate={{ rotate: 0, opacity: 1 }}
-                                transition={{ duration: 0.3, ease: 'easeOut' }}
+                                animate={{ 
+                                  rotate: 0, 
+                                  opacity: 1,
+                                  scale: useHybridStreaming ? [1, 1.2, 1] : 1,
+                                }}
+                                transition={{ 
+                                  duration: 0.3, 
+                                  ease: 'easeOut',
+                                  scale: useHybridStreaming ? {
+                                    duration: 1.5,
+                                    repeat: Infinity,
+                                    ease: 'easeInOut',
+                                  } : undefined,
+                                }}
                               >
                                 {useHybridStreaming ? (
-                                  <Zap className="h-3 w-3" />
+                                  <Zap className="h-3 w-3 drop-shadow-[0_0_4px_hsl(var(--hydra-cyan))]" />
                                 ) : (
                                   <ZapOff className="h-3 w-3" />
                                 )}
