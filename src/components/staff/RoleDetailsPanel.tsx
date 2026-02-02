@@ -143,12 +143,12 @@ const RoleDetailsPanel = forwardRef<HTMLDivElement, RoleDetailsPanelProps>(
               )}
             </div>
 
-            {/* Description */}
+            {/* Description - 2 lines height */}
             <div className="space-y-2">
               <h3 className="text-sm font-medium text-muted-foreground">
                 {t('staffRoles.roleDescription')}
               </h3>
-              <p className="text-sm leading-relaxed">
+              <p className="text-sm leading-relaxed line-clamp-2 min-h-[2.5rem]">
                 {t(config.description)}
               </p>
             </div>
@@ -229,8 +229,8 @@ const RoleDetailsPanel = forwardRef<HTMLDivElement, RoleDetailsPanelProps>(
                   </div>
                 </div>
               ) : (
-                <div className="rounded-lg border border-border bg-muted/30 p-4">
-                  <pre className="text-sm whitespace-pre-wrap font-mono leading-relaxed">
+                <div className="rounded-lg border border-border bg-muted/30 p-4 max-h-[7.5rem] overflow-y-auto">
+                  <pre className="text-sm whitespace-pre-wrap font-mono leading-relaxed line-clamp-5">
                     {systemPrompt}
                   </pre>
                 </div>

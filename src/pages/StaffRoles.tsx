@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Layout } from '@/components/layout/Layout';
 import { useLanguage } from '@/contexts/LanguageContext';
 import {
@@ -15,7 +15,7 @@ import {
   ResizableHandle,
 } from '@/components/ui/resizable';
 import { Badge } from '@/components/ui/badge';
-import { Wrench } from 'lucide-react';
+import { Wrench, Users, Settings } from 'lucide-react';
 import { ROLE_CONFIG, AGENT_ROLES, type AgentRole } from '@/config/roles';
 import { cn } from '@/lib/utils';
 import RoleDetailsPanel from '@/components/staff/RoleDetailsPanel';
@@ -23,6 +23,67 @@ import RoleDetailsPanel from '@/components/staff/RoleDetailsPanel';
 const StaffRoles = () => {
   const { t } = useLanguage();
   const [selectedRole, setSelectedRole] = useState<AgentRole | null>(null);
+
+  // Группируем роли на экспертов и технический персонал
+  const { expertRoles, technicalRoles } = useMemo(() => {
+    const experts: AgentRole[] = [];
+    const technical: AgentRole[] = [];
+    
+    AGENT_ROLES.forEach((role) => {
+      if (ROLE_CONFIG[role].isTechnicalStaff) {
+        technical.push(role);
+      } else {
+        experts.push(role);
+      }
+    });
+    
+    return { expertRoles: experts, technicalRoles: technical };
+  }, []);
+
+  const renderRoleRow = (role: AgentRole) => {
+    const config = ROLE_CONFIG[role];
+    const IconComponent = config.icon;
+    const isSelected = selectedRole === role;
+    
+    return (
+      <TableRow 
+        key={role} 
+        className={cn(
+          "cursor-pointer transition-colors",
+          isSelected 
+            ? "bg-primary/10 hover:bg-primary/15" 
+            : "hover:bg-muted/30"
+        )}
+        onClick={() => setSelectedRole(role)}
+      >
+        <TableCell>
+          <div className={cn(
+            "w-10 h-10 rounded-lg flex items-center justify-center",
+            `bg-${config.color.replace('text-', '')}/10`
+          )}>
+            <IconComponent className={cn("h-5 w-5", config.color)} />
+          </div>
+        </TableCell>
+        <TableCell>
+          <div className="flex flex-col gap-1">
+            <div className="flex items-center gap-2">
+              <span className={cn("font-medium", config.color)}>
+                {t(config.label)}
+              </span>
+              {config.isTechnicalStaff && (
+                <Badge variant="secondary" className="gap-1 text-xs py-0">
+                  <Wrench className="h-3 w-3" />
+                </Badge>
+              )}
+            </div>
+            <span className="text-xs text-muted-foreground font-mono">
+              {role}
+            </span>
+          </div>
+        </TableCell>
+      </TableRow>
+    );
+  };
 
   return (
     <Layout>
@@ -43,50 +104,33 @@ const StaffRoles = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {AGENT_ROLES.map((role: AgentRole) => {
-                    const config = ROLE_CONFIG[role];
-                    const IconComponent = config.icon;
-                    const isSelected = selectedRole === role;
-                    
-                    return (
-                      <TableRow 
-                        key={role} 
-                        className={cn(
-                          "cursor-pointer transition-colors",
-                          isSelected 
-                            ? "bg-primary/10 hover:bg-primary/15" 
-                            : "hover:bg-muted/30"
-                        )}
-                        onClick={() => setSelectedRole(role)}
-                      >
-                        <TableCell>
-                          <div className={cn(
-                            "w-10 h-10 rounded-lg flex items-center justify-center",
-                            `bg-${config.color.replace('text-', '')}/10`
-                          )}>
-                            <IconComponent className={cn("h-5 w-5", config.color)} />
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex flex-col gap-1">
-                            <div className="flex items-center gap-2">
-                              <span className={cn("font-medium", config.color)}>
-                                {t(config.label)}
-                              </span>
-                              {config.isTechnicalStaff && (
-                                <Badge variant="secondary" className="gap-1 text-xs py-0">
-                                  <Wrench className="h-3 w-3" />
-                                </Badge>
-                              )}
-                            </div>
-                            <span className="text-xs text-muted-foreground font-mono">
-                              {role}
-                            </span>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
+                  {/* Группа экспертов */}
+                  <TableRow className="bg-muted/30 hover:bg-muted/30">
+                    <TableCell colSpan={2} className="py-2">
+                      <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                        <Users className="h-4 w-4" />
+                        {t('staffRoles.expertsGroup')}
+                        <Badge variant="outline" className="ml-auto text-xs">
+                          {expertRoles.length}
+                        </Badge>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                  {expertRoles.map(renderRoleRow)}
+                  
+                  {/* Группа технического персонала */}
+                  <TableRow className="bg-muted/30 hover:bg-muted/30">
+                    <TableCell colSpan={2} className="py-2">
+                      <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                        <Settings className="h-4 w-4" />
+                        {t('staffRoles.technicalGroup')}
+                        <Badge variant="outline" className="ml-auto text-xs">
+                          {technicalRoles.length}
+                        </Badge>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                  {technicalRoles.map(renderRoleRow)}
                 </TableBody>
               </Table>
             </div>
