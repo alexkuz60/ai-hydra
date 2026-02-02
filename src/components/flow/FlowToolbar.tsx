@@ -32,6 +32,8 @@ import {
   Clipboard
 } from 'lucide-react';
 import { FlowDiagram } from '@/types/flow';
+import { EdgeStyleSettings } from '@/types/edgeTypes';
+import { EdgeStyleSelector } from './EdgeStyleSelector';
 
 interface FlowToolbarProps {
   diagramName: string;
@@ -49,6 +51,8 @@ interface FlowToolbarProps {
   onLoadDiagram: (diagram: FlowDiagram) => void;
   isSaving: boolean;
   hasChanges: boolean;
+  edgeSettings: EdgeStyleSettings;
+  onEdgeSettingsChange: (settings: EdgeStyleSettings) => void;
 }
 
 export function FlowToolbar({
@@ -67,6 +71,8 @@ export function FlowToolbar({
   onLoadDiagram,
   isSaving,
   hasChanges,
+  edgeSettings,
+  onEdgeSettingsChange,
 }: FlowToolbarProps) {
   const { t } = useLanguage();
   const [mermaidCode, setMermaidCode] = useState('');
@@ -100,6 +106,12 @@ export function FlowToolbar({
       )}
 
       <div className="flex-1" />
+
+      {/* Edge Style Selector */}
+      <EdgeStyleSelector
+        settings={edgeSettings}
+        onSettingsChange={onEdgeSettingsChange}
+      />
 
       {/* Actions */}
       <Button variant="outline" size="sm" onClick={onNew}>
