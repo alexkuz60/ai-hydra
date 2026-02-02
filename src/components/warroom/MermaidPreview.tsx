@@ -10,9 +10,25 @@ interface MermaidPreviewProps {
   maxHeight?: number;
 }
 
+// Module-level cache for rendered SVGs
+// Key format: `${theme}-${contentHash}`
+const svgCache = new Map<string, string>();
+
+// Simple hash function for cache keys
+function hashContent(content: string): string {
+  let hash = 0;
+  for (let i = 0; i < content.length; i++) {
+    const char = content.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32-bit integer
+  }
+  return hash.toString(36);
+}
+
 /**
  * Compact Mermaid preview component for thumbnails/previews.
  * Simpler than MermaidBlock - no toolbar, zoom, or copy functionality.
+ * Includes caching to avoid re-rendering the same diagrams.
  */
 export function MermaidPreview({ content, className, maxHeight = 120 }: MermaidPreviewProps) {
   const { theme } = useTheme();
@@ -28,6 +44,17 @@ export function MermaidPreview({ content, className, maxHeight = 120 }: MermaidP
     const renderDiagram = async () => {
       if (!content.trim()) {
         setError(true);
+        setLoading(false);
+        return;
+      }
+
+      // Check cache first
+      const cacheKey = `${theme}-${hashContent(content)}`;
+      const cached = svgCache.get(cacheKey);
+      
+      if (cached) {
+        setSvg(cached);
+        setError(false);
         setLoading(false);
         return;
       }
@@ -80,6 +107,15 @@ export function MermaidPreview({ content, className, maxHeight = 120 }: MermaidP
         const { svg: renderedSvg } = await mermaid.render(`preview-${uniqueId}`, content);
         
         if (!cancelled) {
+          // Store in cache
+          svgCache.set(cacheKey, renderedSvg);
+          
+          // Limit cache size (keep last 50 entries)
+          if (svgCache.size > 50) {
+            const firstKey = svgCache.keys().next().value;
+            if (firstKey) svgCache.delete(firstKey);
+          }
+          
           setSvg(renderedSvg);
           setError(false);
         }
