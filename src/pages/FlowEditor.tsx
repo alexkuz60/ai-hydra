@@ -9,6 +9,7 @@ import { EdgePropertiesPanel } from '@/components/flow/EdgePropertiesPanel';
 import { useFlowDiagrams, exportToMermaid } from '@/hooks/useFlowDiagrams';
 import { useFlowExport } from '@/hooks/useFlowExport';
 import { useFlowHistoryExtended, HistoryState } from '@/hooks/useFlowHistory';
+import { useAutoLayout, LayoutDirection } from '@/hooks/useAutoLayout';
 import { FlowNodeType, FlowDiagram } from '@/types/flow';
 import { EdgeStyleSettings, FlowEdgeData, DEFAULT_EDGE_SETTINGS } from '@/types/edgeTypes';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -60,6 +61,9 @@ function FlowEditorContent() {
   const history = useFlowHistoryExtended({ maxHistory: 50 });
   const isUndoRedoAction = useRef(false);
   const lastStateRef = useRef<string>('');
+
+  // Auto layout
+  const { getLayoutedElements } = useAutoLayout();
 
   // Export hook
   const {
@@ -277,6 +281,21 @@ function FlowEditorContent() {
     return exportToMermaid(nodes, edges);
   }, [nodes, edges]);
 
+  const handleAutoLayout = useCallback((direction: LayoutDirection) => {
+    const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(
+      nodes,
+      edges,
+      direction
+    );
+    setNodes(layoutedNodes);
+    setEdges(layoutedEdges);
+
+    // Fit view after layout
+    setTimeout(() => {
+      reactFlowInstance.current?.fitView({ padding: 0.2 });
+    }, 50);
+  }, [nodes, edges, getLayoutedElements, setNodes, setEdges]);
+
   if (!user) {
     return <Navigate to="/login" replace />;
   }
@@ -307,6 +326,7 @@ function FlowEditorContent() {
             canRedo={history.canRedo}
             onUndo={handleUndo}
             onRedo={handleRedo}
+            onAutoLayout={handleAutoLayout}
           />
           <div className="flex flex-1 overflow-hidden">
             <FlowSidebar onDragStart={onDragStart} />
