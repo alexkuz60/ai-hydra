@@ -281,7 +281,7 @@ export function RolePlayground({ className }: RolePlaygroundProps) {
               </span>
             </HydraCardHeader>
             <HydraCardContent className="text-sm">
-              <div className="prose-compact break-words overflow-wrap-anywhere">
+              <div className="prose-compact break-words min-w-0">
                 {response ? (
                   <MarkdownRenderer content={response} streaming={isStreaming} />
                 ) : (
