@@ -537,6 +537,10 @@ const translations: Translations = {
   // Streaming
   'streaming.generating': { ru: 'Генерирует...', en: 'Generating...' },
   'streaming.stop': { ru: 'Остановить генерацию', en: 'Stop generation' },
+  'streaming.stopped': { ru: 'Генерация завершена', en: 'Generation complete' },
+  'streaming.stopAll': { ru: 'Остановить все генерации', en: 'Stop all generations' },
+  'streaming.stoppedAll': { ru: 'Все генерации остановлены', en: 'All generations stopped' },
+  'streaming.noActiveStreams': { ru: 'Нет активных генераций', en: 'No active generations' },
   'streaming.enabledToast': { ru: 'Streaming-режим включён', en: 'Streaming mode enabled' },
   'streaming.disabledToast': { ru: 'Streaming-режим выключен', en: 'Streaming mode disabled' },
   'streaming.clickToToggle': { ru: 'Кликните для переключения режима', en: 'Click to toggle mode' },
