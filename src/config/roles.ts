@@ -37,6 +37,8 @@ export interface RoleConfigItem {
   icon: LucideIcon;
   color: string;
   label: string;
+  description: string;
+  isTechnicalStaff: boolean;
   bgClass?: string;
 }
 
@@ -46,61 +48,85 @@ export const ROLE_CONFIG: Record<MessageRole, RoleConfigItem> = {
     icon: User,
     color: 'text-hydra-user',
     label: 'role.user',
+    description: 'staffRoles.description.user',
+    isTechnicalStaff: false,
   },
   assistant: {
     icon: Brain,
     color: 'text-hydra-expert',
     label: 'role.assistant',
+    description: 'staffRoles.description.assistant',
+    isTechnicalStaff: false,
   },
   critic: {
     icon: Shield,
     color: 'text-hydra-critical',
     label: 'role.critic',
+    description: 'staffRoles.description.critic',
+    isTechnicalStaff: false,
   },
   arbiter: {
     icon: Scale,
     color: 'text-hydra-arbiter',
     label: 'role.arbiter',
+    description: 'staffRoles.description.arbiter',
+    isTechnicalStaff: false,
   },
   consultant: {
     icon: Lightbulb,
     color: 'text-hydra-consultant',
     label: 'role.consultant',
+    description: 'staffRoles.description.consultant',
+    isTechnicalStaff: false,
   },
   moderator: {
     icon: Gavel,
     color: 'text-hydra-moderator',
     label: 'role.moderator',
+    description: 'staffRoles.description.moderator',
+    isTechnicalStaff: false,
   },
   advisor: {
     icon: HandHelping,
     color: 'text-hydra-advisor',
     label: 'role.advisor',
+    description: 'staffRoles.description.advisor',
+    isTechnicalStaff: false,
   },
   archivist: {
     icon: Archive,
     color: 'text-hydra-archivist',
     label: 'role.archivist',
+    description: 'staffRoles.description.archivist',
+    isTechnicalStaff: true,
   },
   analyst: {
     icon: LineChart,
     color: 'text-hydra-analyst',
     label: 'role.analyst',
+    description: 'staffRoles.description.analyst',
+    isTechnicalStaff: false,
   },
   webhunter: {
     icon: Globe,
     color: 'text-hydra-webhunter',
     label: 'role.webhunter',
+    description: 'staffRoles.description.webhunter',
+    isTechnicalStaff: false,
   },
   promptengineer: {
     icon: Wand2,
     color: 'text-hydra-promptengineer',
     label: 'role.promptengineer',
+    description: 'staffRoles.description.promptengineer',
+    isTechnicalStaff: true,
   },
   flowregulator: {
     icon: Route,
     color: 'text-hydra-flowregulator',
     label: 'role.flowregulator',
+    description: 'staffRoles.description.flowregulator',
+    isTechnicalStaff: true,
   },
 };
 
