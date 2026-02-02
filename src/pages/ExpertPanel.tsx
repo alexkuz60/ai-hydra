@@ -21,7 +21,9 @@ import { useConsultantPanelWidth } from '@/hooks/useConsultantPanelWidth';
 import { useModelStatistics } from '@/hooks/useModelStatistics';
 import { useStreamingResponses } from '@/hooks/useStreamingResponses';
 import { PendingResponseState, RequestStartInfo } from '@/types/pending';
-import { Loader2, Target } from 'lucide-react';
+import { Loader2, Target, Zap, ZapOff } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { toast } from 'sonner';
 
 export default function ExpertPanel() {
@@ -501,6 +503,39 @@ export default function ExpertPanel() {
                   <Target className="h-4 w-4 text-muted-foreground shrink-0" />
                   <span className="font-medium truncate">{currentTask.title}</span>
                 </div>
+                
+                {/* Streaming Mode Indicator */}
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Badge 
+                        variant={useHybridStreaming ? 'default' : 'secondary'}
+                        className={`flex items-center gap-1.5 cursor-default ${
+                          useHybridStreaming 
+                            ? 'bg-hydra-cyan/20 text-hydra-cyan border-hydra-cyan/30 hover:bg-hydra-cyan/30' 
+                            : 'bg-muted text-muted-foreground'
+                        }`}
+                      >
+                        {useHybridStreaming ? (
+                          <Zap className="h-3 w-3" />
+                        ) : (
+                          <ZapOff className="h-3 w-3" />
+                        )}
+                        <span className="text-xs">
+                          {useHybridStreaming ? 'Streaming' : 'Standard'}
+                        </span>
+                      </Badge>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom">
+                      <p className="text-xs">
+                        {useHybridStreaming 
+                          ? t('streaming.hybridEnabled') 
+                          : t('streaming.hybridDisabled')
+                        }
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               </div>
 
               {/* Messages Area */}
