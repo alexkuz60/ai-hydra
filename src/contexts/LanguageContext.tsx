@@ -369,6 +369,9 @@ const translations: Translations = {
   'files.download': { ru: 'Скачать', en: 'Download' },
   'files.invalidType': { ru: 'Неподдерживаемый тип файла', en: 'Unsupported file type' },
   'files.uploadError': { ru: 'Ошибка загрузки', en: 'Upload error' },
+  'files.allTypes': { ru: 'Все файлы', en: 'All files' },
+  'files.images': { ru: 'Изображения', en: 'Images' },
+  'files.documents': { ru: 'Документы', en: 'Documents' },
   
   // Stats
   'stats.modelRatings': { ru: 'Рейтинг моделей', en: 'Model Ratings' },
