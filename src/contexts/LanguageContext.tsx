@@ -372,6 +372,7 @@ const translations: Translations = {
   'files.allTypes': { ru: 'Все файлы', en: 'All files' },
   'files.images': { ru: 'Изображения', en: 'Images' },
   'files.documents': { ru: 'Документы', en: 'Documents' },
+  'files.mermaidDiagram': { ru: 'Диаграмма Mermaid', en: 'Mermaid Diagram' },
   
   // Stats
   'stats.modelRatings': { ru: 'Рейтинг моделей', en: 'Model Ratings' },

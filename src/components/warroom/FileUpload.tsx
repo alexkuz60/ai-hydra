@@ -4,8 +4,8 @@ import {
   Paperclip, 
   FileText, 
   Image as ImageIcon,
-  FileType,
-  Files
+  Files,
+  GitBranch
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -33,6 +33,7 @@ export interface AttachedFile {
 interface FileUploadProps {
   files: AttachedFile[];
   onFilesChange: (files: AttachedFile[]) => void;
+  onInsertMermaid?: () => void;
   disabled?: boolean;
   maxFiles?: number;
   maxSizeMB?: number;
@@ -66,6 +67,15 @@ const FILE_CATEGORIES: {
   },
 ];
 
+const MERMAID_TEMPLATE = `\`\`\`mermaid
+graph TD
+    A[Начало] --> B{Условие}
+    B -->|Да| C[Действие 1]
+    B -->|Нет| D[Действие 2]
+    C --> E[Конец]
+    D --> E
+\`\`\``;
+
 function getFileIcon(type: string) {
   if (isImageType(type)) {
     return ImageIcon;
@@ -76,6 +86,7 @@ function getFileIcon(type: string) {
 export function FileUpload({
   files,
   onFilesChange,
+  onInsertMermaid,
   disabled = false,
   maxFiles = MAX_FILES,
   maxSizeMB = MAX_SIZE_MB,
@@ -153,6 +164,12 @@ export function FileUpload({
     }
   }, []);
 
+  const handleMermaidInsert = useCallback(() => {
+    if (onInsertMermaid) {
+      onInsertMermaid();
+    }
+  }, [onInsertMermaid]);
+
   return (
     <>
       <DropdownMenu>
@@ -184,6 +201,16 @@ export function FileUpload({
               </React.Fragment>
             );
           })}
+          
+          {/* Mermaid diagram option */}
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            onClick={handleMermaidInsert}
+            className="flex items-center gap-2 cursor-pointer"
+          >
+            <GitBranch className="h-4 w-4 text-hydra-cyan" />
+            <span>{t('files.mermaidDiagram')}</span>
+          </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
       <input
@@ -201,3 +228,5 @@ export function FileUpload({
     </>
   );
 }
+
+export { MERMAID_TEMPLATE };
