@@ -29,6 +29,7 @@ import {
 } from '@/components/ui/sheet';
 import { MultiModelSelector } from '@/components/warroom/MultiModelSelector';
 import { PerModelSettings, PerModelSettingsData, DEFAULT_MODEL_SETTINGS } from '@/components/warroom/PerModelSettings';
+import { SessionSettings } from '@/components/warroom/SessionSettings';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useAvailableModels, ModelOption, LOVABLE_AI_MODELS, PERSONAL_KEY_MODELS, ALL_VALID_MODEL_IDS, getModelInfo, getModelDisplayName } from '@/hooks/useAvailableModels';
 import { Bot, Sparkles, Cpu } from 'lucide-react';
@@ -43,6 +44,7 @@ interface Task {
   session_config: {
     selectedModels?: string[];
     perModelSettings?: PerModelSettingsData;
+    useHybridStreaming?: boolean;
   } | null;
 }
 
@@ -82,12 +84,14 @@ export default function Tasks() {
   // Model configuration state for new task
   const [selectedModels, setSelectedModels] = useState<string[]>([]);
   const [perModelSettings, setPerModelSettings] = useState<PerModelSettingsData>({});
+  const [useHybridStreaming, setUseHybridStreaming] = useState(true);
   const [settingsOpen, setSettingsOpen] = useState(false);
   
   // Editing existing task's models
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [editingModels, setEditingModels] = useState<string[]>([]);
   const [editingModelSettings, setEditingModelSettings] = useState<PerModelSettingsData>({});
+  const [editingHybridStreaming, setEditingHybridStreaming] = useState(true);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -134,6 +138,7 @@ export default function Tasks() {
       const sessionConfig = {
         selectedModels,
         perModelSettings,
+        useHybridStreaming,
       };
 
       const { data, error } = await supabase
@@ -162,6 +167,7 @@ export default function Tasks() {
         state: {
           selectedModels,
           perModelSettings,
+          useHybridStreaming,
         }
       });
     } catch (error: any) {
@@ -398,6 +404,12 @@ export default function Tasks() {
               <SheetTitle>{t('tasks.modelConfig')}</SheetTitle>
             </SheetHeader>
             <ScrollArea className="flex-1">
+              {/* Session-level settings */}
+              <SessionSettings
+                useHybridStreaming={useHybridStreaming}
+                onHybridStreamingChange={setUseHybridStreaming}
+                className="p-4 border-b"
+              />
               <PerModelSettings
                 selectedModels={selectedModels}
                 settings={perModelSettings}
@@ -428,6 +440,12 @@ export default function Tasks() {
             </div>
             
             <ScrollArea className="flex-1">
+              {/* Session-level settings */}
+              <SessionSettings
+                useHybridStreaming={editingHybridStreaming}
+                onHybridStreamingChange={setEditingHybridStreaming}
+                className="p-4 border-b"
+              />
               <PerModelSettings
                 selectedModels={editingModels}
                 settings={editingModelSettings}
