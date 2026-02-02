@@ -91,29 +91,7 @@ export default function ExpertPanel() {
   // Model statistics hook for tracking dismissals
   const { incrementDismissal } = useModelStatistics(user?.id);
 
-  // Hybrid streaming hook - manages parallel SSE streams for real-time responses
-  const {
-    streamingResponses,
-    pendingResponses: streamingPendingResponses,
-    startStreaming,
-    stopStreaming,
-    stopAllStreaming,
-    clearCompleted,
-  } = useStreamingResponses({
-    sessionId: currentTask?.id || null,
-    onStreamComplete: useCallback((modelId: string, content: string) => {
-      // When streaming completes, the message will appear via realtime subscription
-      // Clear completed streaming responses after a short delay
-      setTimeout(() => clearCompleted(), 500);
-    }, []),
-  });
-
-  // Keep selectedModelsRef in sync for error filtering in useSendMessage
-  useEffect(() => {
-    selectedModelsRef.current = selectedModels;
-  }, [selectedModels]);
-
-  // Messages management hook
+  // Messages management hook - defined first so we can use fetchMessages in streaming hook
   const {
     messages,
     displayedMessages,
@@ -124,7 +102,42 @@ export default function ExpertPanel() {
     handleDeleteMessage,
     handleDeleteMessageGroup,
     handleRatingChange,
+    fetchMessages,
   } = useMessages({ sessionId: currentTask?.id || null });
+
+  // Hybrid streaming hook - manages parallel SSE streams for real-time responses
+  const {
+    streamingResponses,
+    pendingResponses: streamingPendingResponses,
+    startStreaming,
+    stopStreaming,
+    stopAllStreaming,
+    clearCompleted,
+  } = useStreamingResponses({
+    sessionId: currentTask?.id || null,
+    userId: user?.id || null,
+    onMessageSaved: useCallback(() => {
+      // Immediately refetch messages when AI response is saved
+      if (currentTask?.id) {
+        fetchMessages(currentTask.id);
+      }
+    }, [currentTask?.id, fetchMessages]),
+  });
+  
+  // Auto-clear completed streaming responses after a delay
+  useEffect(() => {
+    // Check if there are any completed (non-streaming) responses
+    const completedResponses = Array.from(streamingResponses.values()).filter(r => !r.isStreaming);
+    if (completedResponses.length > 0) {
+      const timer = setTimeout(() => clearCompleted(), 500);
+      return () => clearTimeout(timer);
+    }
+  }, [streamingResponses, clearCompleted]);
+
+  // Keep selectedModelsRef in sync for error filtering in useSendMessage
+  useEffect(() => {
+    selectedModelsRef.current = selectedModels;
+  }, [selectedModels]);
 
   // Callback for when request starts - initialize skeleton indicators (fallback for non-streaming)
   const handleRequestStart = useCallback((models: RequestStartInfo[]) => {
@@ -167,6 +180,7 @@ export default function ExpertPanel() {
     attachedFiles,
     setAttachedFiles,
     sendMessage,
+    sendUserMessageOnly,
     sendToConsultant,
     copyConsultantResponse,
     retrySingleModel,
@@ -357,7 +371,10 @@ export default function ExpertPanel() {
     setInput('');
     
     if (useHybridStreaming && selectedModels.length > 0) {
-      // Hybrid mode: start parallel SSE streams for real-time display
+      // Hybrid mode: save user message first, then start parallel SSE streams
+      // AI responses will be saved by streaming hook when they complete
+      await sendUserMessageOnly(messageContent);
+      
       const requestInfo: RequestStartInfo[] = selectedModels.map(modelId => {
         const { model } = getModelInfo(modelId);
         const settings = perModelSettings[modelId];
@@ -368,15 +385,13 @@ export default function ExpertPanel() {
         };
       });
       
-      startStreaming(requestInfo, messageContent, timeoutSeconds);
-      
-      // Also send to orchestrator for persistence
-      await sendMessage(messageContent);
+      // Start streaming - this will handle AI responses and save to DB
+      startStreaming(requestInfo, messageContent, timeoutSeconds, perModelSettings);
     } else {
-      // Fallback: traditional approach
+      // Fallback: traditional approach via orchestrator
       await sendMessage(messageContent);
     }
-  }, [input, sendMessage, useHybridStreaming, selectedModels, perModelSettings, startStreaming, timeoutSeconds]);
+  }, [input, sendMessage, sendUserMessageOnly, useHybridStreaming, selectedModels, perModelSettings, startStreaming, timeoutSeconds]);
 
   const handleSendToConsultant = useCallback(async () => {
     if (!input.trim() || !selectedConsultant) return;
