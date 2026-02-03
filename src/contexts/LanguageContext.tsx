@@ -153,6 +153,13 @@ const translations: Translations = {
   'staffRoles.hierarchy.loading': { ru: 'Загрузка настроек...', en: 'Loading settings...' },
   'staffRoles.hierarchy.saving': { ru: 'Сохранение...', en: 'Saving...' },
   'staffRoles.hierarchy.cancel': { ru: 'Отмена', en: 'Cancel' },
+  'staffRoles.hierarchy.conflicts': { ru: 'Обнаружены противоречия в иерархии', en: 'Hierarchy conflicts detected' },
+  'staffRoles.hierarchy.conflictsDescription': { ru: 'Установленные связи противоречат настройкам других ролей', en: 'The set relationships conflict with other role settings' },
+  'staffRoles.hierarchy.syncAll': { ru: 'Синхронизировать', en: 'Synchronize' },
+  'staffRoles.hierarchy.conflictExpects': { ru: 'ожидается', en: 'expected' },
+  'staffRoles.hierarchy.conflictHas': { ru: 'сейчас', en: 'currently' },
+  'staffRoles.hierarchy.syncing': { ru: 'Синхронизация...', en: 'Synchronizing...' },
+  'staffRoles.hierarchy.syncSuccess': { ru: 'Иерархия синхронизирована', en: 'Hierarchy synchronized' },
   'patterns.systemPattern': { ru: 'Системный паттерн', en: 'System pattern' },
   'patterns.publicPattern': { ru: 'Публичный паттерн', en: 'Public pattern' },
   

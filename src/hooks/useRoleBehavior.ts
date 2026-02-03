@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import type { AgentRole } from '@/config/roles';
 import type { RoleInteractions, CommunicationStyle, RoleReaction } from '@/types/patterns';
-import { ROLE_CONFIG } from '@/config/roles';
+import { ROLE_CONFIG, AGENT_ROLES } from '@/config/roles';
 import type { Json } from '@/integrations/supabase/types';
 
 export interface RoleBehaviorData {
@@ -25,6 +25,7 @@ interface UseRoleBehaviorResult {
   isSaving: boolean;
   saveInteractions: (interactions: RoleInteractions) => Promise<boolean>;
   refetch: () => Promise<void>;
+  fetchAllBehaviors: () => Promise<Map<AgentRole, RoleInteractions>>;
 }
 
 const DEFAULT_INTERACTIONS: RoleInteractions = {
@@ -185,11 +186,69 @@ export function useRoleBehavior(role: AgentRole | null): UseRoleBehaviorResult {
     }
   }, [role, user, fetchBehavior]);
 
+  /**
+   * Fetch all role behaviors to build a complete interactions map
+   * Used for conflict detection during hierarchy editing
+   */
+  const fetchAllBehaviors = useCallback(async (): Promise<Map<AgentRole, RoleInteractions>> => {
+    const behaviorsMap = new Map<AgentRole, RoleInteractions>();
+
+    try {
+      const { data, error } = await supabase
+        .from('role_behaviors')
+        .select('role, interactions, user_id, is_system')
+        .order('is_system', { ascending: true });
+
+      if (error) throw error;
+
+      if (data) {
+        // Group by role, prioritizing user's own behavior > shared > system
+        const roleGroups = new Map<string, typeof data>();
+        
+        for (const behavior of data) {
+          const existing = roleGroups.get(behavior.role) || [];
+          existing.push(behavior);
+          roleGroups.set(behavior.role, existing);
+        }
+
+        // For each role, pick the best behavior
+        for (const [roleKey, behaviors] of roleGroups) {
+          const sorted = behaviors.sort((a, b) => {
+            // User's own behavior first
+            if (user && a.user_id === user.id) return -1;
+            if (user && b.user_id === user.id) return 1;
+            // Then non-system (shared behaviors)
+            if (!a.is_system && b.is_system) return -1;
+            if (a.is_system && !b.is_system) return 1;
+            return 0;
+          });
+
+          const selected = sorted[0];
+          if (selected && AGENT_ROLES.includes(roleKey as AgentRole)) {
+            behaviorsMap.set(
+              roleKey as AgentRole,
+              (selected.interactions as unknown as RoleInteractions) || {
+                defers_to: [],
+                challenges: [],
+                collaborates: [],
+              }
+            );
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Failed to fetch all behaviors:', error);
+    }
+
+    return behaviorsMap;
+  }, [user]);
+
   return {
     behavior,
     isLoading,
     isSaving,
     saveInteractions,
     refetch: fetchBehavior,
+    fetchAllBehaviors,
   };
 }
