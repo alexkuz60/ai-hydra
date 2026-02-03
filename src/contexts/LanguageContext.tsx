@@ -719,6 +719,12 @@ const translations: Translations = {
   'memory.clearAll': { ru: 'Очистить всё', en: 'Clear all' },
   'memory.confirmClearAll': { ru: 'Подтвердить очистку', en: 'Confirm clear' },
   'memory.manageMemory': { ru: 'Управление памятью', en: 'Manage memory' },
+  'memory.searchPlaceholder': { ru: 'Поиск по содержимому...', en: 'Search content...' },
+  'memory.noSearchResults': { ru: 'Ничего не найдено', en: 'No results found' },
+  'memory.duplicates': { ru: 'Дубликаты', en: 'Duplicates' },
+  'memory.duplicate': { ru: 'Дубликат', en: 'Duplicate' },
+  'memory.duplicateTooltip': { ru: 'Этот фрагмент имеет дубликаты с идентичным содержимым', en: 'This fragment has duplicates with identical content' },
+  'memory.duplicateGroups': { ru: 'групп дубликатов', en: 'duplicate groups' },
   
   // Settings
   'settings.timeout': { ru: 'Таймаут ожидания', en: 'Response timeout' },
