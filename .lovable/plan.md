@@ -1,146 +1,139 @@
 
-# План: Интерактивные демо-примеры ролей в Гидропедии
+# План: Добавление Tavily и Perplexity в секцию API-ключей
 
-## Концепция
+## Обзор
+Добавляем подкатегорию "Web Search" (Веб-поиск) в раздел API-ключей профиля с поддержкой Tavily и Perplexity. Включаем предупреждение о режиме "по умолчанию" для Web-Hunter с рекомендацией добавить персональный ключ.
 
-Добавим интерактивный компонент **RolePlayground** в секцию «Каталог ролей», позволяющий пользователям опробовать каждую из 11 AI-ролей прямо в документации. Пользователь выбирает роль, вводит тестовый запрос и получает стриминговый ответ от AI с учётом системного промпта выбранной роли.
-
-## Интерфейс демо-песочницы
+## Визуальная структура
 
 ```text
-┌─────────────────────────────────────────────────────────────┐
-│  🎮 Попробовать роль                                        │
-├─────────────────────────────────────────────────────────────┤
-│  ┌─────────────────────────────────────────────────────────┐│
-│  │  [🧠 Assistant] [🛡️ Critic] [⚖️ Arbiter] [💡 Consultant]   ││
-│  │  [🔨 Moderator] [🤝 Advisor] [📊 Analyst] [🌐 Webhunter]   ││
-│  │  [📦 Archivist] [✨ Prompt Eng] [🔀 Flow Reg]             ││
-│  └─────────────────────────────────────────────────────────┘│
-│                                                             │
-│  Системный промпт: (свёрнут, можно развернуть)             │
-│  ┌─────────────────────────────────────────────────────────┐│
-│  │  "Вы - критик-аналитик. Ваша задача - находить..."     ││
-│  └─────────────────────────────────────────────────────────┘│
-│                                                             │
-│  Ваш запрос:                                                │
-│  ┌─────────────────────────────────────────────────────────┐│
-│  │  Проанализируй эту идею: автоматизация...               ││
-│  └─────────────────────────────────────────────────────────┘│
-│                                              [▶ Отправить]  │
-│                                                             │
-│  ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─│
-│                                                             │
-│  🛡️ Критик (Gemini 2.5 Flash)                      [⬛ Stop] │
-│  ┌─────────────────────────────────────────────────────────┐│
-│  │  > Анализируя вашу идею, я вижу несколько...▌          ││
-│  │  (стриминг в реальном времени)                         ││
-│  └─────────────────────────────────────────────────────────┘│
-└─────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────┐
+│  🔑 API-ключи                                           │
+├─────────────────────────────────────────────────────────┤
+│  Добавьте свои API ключи для использования LLM (BYOK)   │
+│                                                         │
+│  ▸ OpenAI          [sk-...              ] 👁            │
+│  ▸ Google Gemini   [AIza...             ] 👁            │
+│  ▸ Anthropic       [sk-ant-...          ] 👁            │
+│  ▸ xAI (Grok)      [xai-...             ] 👁            │
+│  ▸ OpenRouter      [sk-or-...           ] 👁            │
+│  ▸ Groq            [gsk_...             ] 👁            │
+│                                                         │
+│ ─────────────────────────────────────────────────────── │
+│                                                         │
+│  🔍 Web Search                                          │
+│  ┌─────────────────────────────────────────────────────┐│
+│  │ ⚠️ По умолчанию используется общий ключ Tavily с   ││
+│  │ ограничениями (1000 запросов/мес). Для полного     ││
+│  │ доступа добавьте персональный ключ ниже.           ││
+│  └─────────────────────────────────────────────────────┘│
+│                                                         │
+│  ▸ Tavily          [tvly-...            ] 👁            │
+│    ↳ tavily.com/app — бесплатный план: 1000 запр./мес  │
+│                                                         │
+│  ▸ Perplexity      [pplx-...            ] 👁            │
+│    ↳ perplexity.ai/settings/api — Sonar API            │
+│                                                         │
+│  [ 💾 Сохранить ]                                       │
+└─────────────────────────────────────────────────────────┘
 ```
 
-## Функциональность
+## Шаги реализации
 
-| Элемент | Описание |
-|---------|----------|
-| **Селектор ролей** | Кнопки-чипы для всех 11 ролей с цветными иконками |
-| **Промпт роли** | Сворачиваемый блок с системным промптом (из `DEFAULT_SYSTEM_PROMPTS`) |
-| **Поле ввода** | Textarea для тестового запроса пользователя |
-| **Кнопка отправки** | Запуск стриминга через edge function `hydra-stream` |
-| **Ответ AI** | HydraCard с цветовой схемой роли, стриминг контента |
-| **Stop-кнопка** | Прерывание генерации |
+### 1. Миграция базы данных
+Добавляем новые колонки в таблицу `user_api_keys`:
+- `tavily_vault_id UUID`
+- `perplexity_vault_id UUID`
 
-## Ограничения и UX
+Обновляем SQL-функции:
+- `get_my_api_key_status()` — добавляем `has_tavily`, `has_perplexity`
+- `get_my_api_keys()` — добавляем `tavily_api_key`, `perplexity_api_key`
+- `save_api_key()` — добавляем поддержку провайдеров `tavily`, `perplexity`
 
-- **Требуется авторизация**: Если пользователь не авторизован, показываем сообщение с кнопкой логина
-- **Лимит длины**: Максимум 500 символов для тестового запроса
-- **Модель**: Используем `google/gemini-2.5-flash` (быстрая и бесплатная)
-- **Timeout**: 60 секунд, после чего автоматическая остановка
+### 2. Обновление Profile.tsx
 
-## Технические изменения
-
-### 1. Новый компонент: `src/components/hydrapedia/RolePlayground.tsx`
-
+**Состояния:**
 ```typescript
-// Основная структура
-interface RolePlaygroundProps {
-  className?: string;
-}
+// Новые state-переменные
+const [tavilyKey, setTavilyKey] = useState('');
+const [perplexityKey, setPerplexityKey] = useState('');
 
-// Состояния:
-// - selectedRole: AgentRole
-// - userInput: string
-// - isStreaming: boolean
-// - response: string
-// - showPrompt: boolean (collapse toggle)
+// Расширение showKeys
+const [showKeys, setShowKeys] = useState({
+  // ...existing
+  tavily: false,
+  perplexity: false,
+});
 ```
 
-Использует:
-- `ROLE_CONFIG` и `DEFAULT_SYSTEM_PROMPTS` из `src/config/roles.ts`
-- Edge function `hydra-stream` для стриминга
-- `HydraCard` для стилизованного ответа
-- `MarkdownRenderer` для рендеринга ответа
+**UI структура:**
+- Разделитель `<Separator />` после секции Groq
+- Подзаголовок "🔍 Web Search" (локализованный)
+- Предупреждающий блок с `bg-amber-500/10 border-amber-500/30` стилями
+- Поля ввода для Tavily и Perplexity с описаниями
 
-### 2. Обновление: `src/components/hydrapedia/HydrapediaMarkdown.tsx`
+### 3. Обновление useAvailableModels.ts
 
-Добавим поддержку специального маркера `:::playground:::` в markdown-контенте, который будет рендериться как интерактивный компонент:
-
+Расширяем типы и состояния:
 ```typescript
-// В CodeBlock функции добавим проверку:
-if (codeString === ':::playground:::') {
-  return <RolePlayground />;
+interface UserApiKeys {
+  // ...existing
+  tavily: boolean;
+  perplexity: boolean;
 }
 ```
 
-### 3. Обновление контента: `src/content/hydrapedia.ts`
+### 4. Обновление оркестратора (опционально, фаза 2)
 
-Добавим маркер playground в конец секции `roles-catalog`:
+Логика приоритетов для web_search:
+1. Персональный ключ Tavily пользователя (если есть)
+2. Персональный ключ Perplexity (если есть, альтернативный провайдер)
+3. Общий TAVILY_API_KEY из env (fallback с ограничениями)
 
-```markdown
-## Попробуйте роли в действии
+### 5. Локализация
 
-\`\`\`
-:::playground:::
-\`\`\`
-```
-
-### 4. Переводы: `src/contexts/LanguageContext.tsx`
-
-Добавим ключи локализации:
-
+Добавляем ключи в `LanguageContext.tsx`:
 ```typescript
-'hydrapedia.playground.title': { ru: 'Попробовать роль', en: 'Try a Role' },
-'hydrapedia.playground.systemPrompt': { ru: 'Системный промпт', en: 'System Prompt' },
-'hydrapedia.playground.yourQuery': { ru: 'Ваш запрос', en: 'Your Query' },
-'hydrapedia.playground.placeholder': { ru: 'Введите тестовый запрос для AI...', en: 'Enter a test query for AI...' },
-'hydrapedia.playground.send': { ru: 'Отправить', en: 'Send' },
-'hydrapedia.playground.stop': { ru: 'Остановить', en: 'Stop' },
-'hydrapedia.playground.loginRequired': { ru: 'Для тестирования ролей необходимо войти в систему', en: 'Please log in to test roles' },
-'hydrapedia.playground.charLimit': { ru: 'Максимум 500 символов', en: 'Maximum 500 characters' },
+'profile.webSearch': { ru: 'Веб-поиск', en: 'Web Search' },
+'profile.webSearchWarning': { 
+  ru: 'По умолчанию используется общий ключ Tavily с ограничениями (1000 запросов/мес на всех пользователей). Для полноценной работы Web-Hunter добавьте персональный ключ.',
+  en: 'By default, a shared Tavily key with limitations (1000 requests/month for all users) is used. For full Web-Hunter functionality, add your personal key.'
+},
+'profile.tavily': { ru: 'Tavily (AI Search)', en: 'Tavily (AI Search)' },
+'profile.perplexity': { ru: 'Perplexity (Sonar API)', en: 'Perplexity (Sonar API)' },
 ```
 
-## Файлы для изменения
+---
 
-| Файл | Действие |
-|------|----------|
-| `src/components/hydrapedia/RolePlayground.tsx` | **Создать** — основной интерактивный компонент |
-| `src/components/hydrapedia/HydrapediaMarkdown.tsx` | Добавить рендеринг `:::playground:::` маркера |
-| `src/content/hydrapedia.ts` | Добавить маркер в секцию `roles-catalog` (RU + EN) |
-| `src/contexts/LanguageContext.tsx` | Добавить ключи локализации |
+## Технические детали
 
-## Безопасность
+### SQL миграция
+```sql
+-- Добавляем колонки
+ALTER TABLE public.user_api_keys 
+ADD COLUMN IF NOT EXISTS tavily_vault_id UUID,
+ADD COLUMN IF NOT EXISTS perplexity_vault_id UUID;
 
-- Используем существующую авторизацию через `useAuth`
-- Запросы идут через защищённый edge function
-- Rate limiting на уровне Supabase (существующий)
-- Короткий лимит ввода (500 символов) для предотвращения abuse
+-- Обновляем функции get_my_api_key_status, get_my_api_keys, save_api_key
+-- (полный SQL в миграции)
+```
+
+### Стили предупреждения
+```tsx
+<div className="p-4 rounded-lg bg-amber-500/10 border border-amber-500/30">
+  <div className="flex gap-3">
+    <AlertTriangle className="h-5 w-5 text-amber-500 flex-shrink-0 mt-0.5" />
+    <p className="text-sm text-amber-200">
+      {t('profile.webSearchWarning')}
+    </p>
+  </div>
+</div>
+```
+
+---
 
 ## Результат
-
-После реализации пользователи смогут:
-1. Выбрать любую из 11 AI-ролей
-2. Просмотреть её системный промпт
-3. Ввести тестовый запрос
-4. Получить стриминговый ответ в стиле выбранной роли
-5. Сравнить поведение разных ролей на одном запросе
-
-Это даст понимание специализации каждой роли без необходимости переходить в Панель экспертов.
+- Пользователи видят отдельную секцию "Web Search" с визуально выделенным предупреждением
+- Могут добавить собственные ключи Tavily/Perplexity
+- Веб-охотник работает "из коробки" с общим ключом, но с ограничениями
+- Чёткая рекомендация перейти на персональную подписку
