@@ -54,12 +54,14 @@ interface ModeConfig {
   color: string;
 }
 
+// Режимы D-чата — только экспертные роли (технический персонал исключён)
 const MODES: ModeConfig[] = [
   { id: 'web_search', icon: Search, labelKey: 'dchat.webSearch', color: 'text-hydra-glow' },
   { id: 'expert', icon: User, labelKey: 'dchat.expert', color: 'text-hydra-success' },
   { id: 'critic', icon: Shield, labelKey: 'dchat.critic', color: 'text-hydra-critical' },
   { id: 'arbiter', icon: Scale, labelKey: 'dchat.arbiter', color: 'text-hydra-expert' },
   { id: 'moderator', icon: Users, labelKey: 'dchat.moderator', color: 'text-hydra-consultant' },
+  // Технический персонал (archivist, analyst, promptengineer, flowregulator) намеренно исключён
 ];
 
 export function ConsultantPanel({
