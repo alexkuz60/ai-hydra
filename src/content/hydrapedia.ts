@@ -2294,7 +2294,7 @@ Prompt optimization.
 
 ---
 
-### \`@flowregulator\` Flow Regulator
+### \`@flowregulator\` Flow Logistician
 
 Data-flow design.
 
