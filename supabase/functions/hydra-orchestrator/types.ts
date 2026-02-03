@@ -212,4 +212,17 @@ export interface WebSearchArgs {
   search_depth?: "basic" | "advanced";
   include_domains?: string;
   exclude_domains?: string;
+  /** Search provider: tavily, perplexity, or both */
+  provider?: "tavily" | "perplexity" | "both";
 }
+
+// ============================================
+// Search Provider Configuration
+// ============================================
+
+export interface SearchProviderConfig {
+  tavilyKey: string | null;
+  perplexityKey: string | null;
+}
+
+export type AvailableSearchProvider = "tavily" | "perplexity" | "both" | "none";

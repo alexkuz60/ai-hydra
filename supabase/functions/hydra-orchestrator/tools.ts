@@ -10,6 +10,8 @@ import {
   CalculatorArgs,
   DatetimeArgs,
   WebSearchArgs,
+  SearchProviderConfig,
+  AvailableSearchProvider,
 } from "./types.ts";
 
 import {
@@ -18,7 +20,7 @@ import {
 } from "./http-executor.ts";
 
 // Re-export for external use
-export type { ToolDefinition, ToolCall, ToolResult, CustomToolDefinition };
+export type { ToolDefinition, ToolCall, ToolResult, CustomToolDefinition, SearchProviderConfig, AvailableSearchProvider };
 export { testHttpTool };
 
 // ============================================
@@ -89,6 +91,11 @@ export const AVAILABLE_TOOLS: ToolDefinition[] = [
           exclude_domains: {
             type: "string",
             description: "Домены для исключения (через запятую), например: 'pinterest.com'"
+          },
+          provider: {
+            type: "string",
+            description: "Провайдер поиска: 'tavily' (по умолчанию), 'perplexity' (требует ключ), или 'both' (два результата)",
+            enum: ["tavily", "perplexity", "both"]
           }
         },
         required: ["query"]
@@ -379,24 +386,35 @@ function executeCurrentDatetime(args: DatetimeArgs): string {
 // Web Search Implementation
 // ============================================
 
-/** User's personal Tavily API key (set per request) */
-let userTavilyApiKey: string | null = null;
+/** User's search provider API keys (set per request) */
+let searchProviderConfig: SearchProviderConfig = {
+  tavilyKey: null,
+  perplexityKey: null,
+};
 
-/** Set the user's personal Tavily API key for the current request */
-export function setUserTavilyKey(key: string | null): void {
-  userTavilyApiKey = key;
+/** Set the user's search provider API keys for the current request */
+export function setSearchProviderKeys(config: SearchProviderConfig): void {
+  searchProviderConfig = config;
 }
 
-async function executeWebSearch(args: WebSearchArgs): Promise<string> {
-  // Priority: 1. User's personal key, 2. System fallback key
-  const tavilyApiKey = userTavilyApiKey || Deno.env.get('TAVILY_API_KEY');
-  const isPersonalKey = !!userTavilyApiKey;
+/** Get available search providers based on configured keys */
+export function getAvailableSearchProviders(): AvailableSearchProvider {
+  const hasTavily = !!searchProviderConfig.tavilyKey || !!Deno.env.get('TAVILY_API_KEY');
+  const hasPerplexity = !!searchProviderConfig.perplexityKey;
+  
+  if (hasTavily && hasPerplexity) return "both";
+  if (hasTavily) return "tavily";
+  if (hasPerplexity) return "perplexity";
+  return "none";
+}
+
+/** Execute Tavily search */
+async function executeTavilySearch(args: WebSearchArgs): Promise<{ success: boolean; provider: string; answer?: string; results?: unknown[]; error?: string }> {
+  const tavilyApiKey = searchProviderConfig.tavilyKey || Deno.env.get('TAVILY_API_KEY');
+  const isPersonalKey = !!searchProviderConfig.tavilyKey;
   
   if (!tavilyApiKey) {
-    return JSON.stringify({
-      success: false,
-      error: "Веб-поиск недоступен. Добавьте ваш Tavily API-ключ в настройках профиля."
-    });
+    return { success: false, provider: "tavily", error: "Tavily API-ключ не настроен" };
   }
   
   try {
@@ -409,7 +427,6 @@ async function executeWebSearch(args: WebSearchArgs): Promise<string> {
       max_results: 5,
     };
     
-    // Add domain filters if provided
     if (args.include_domains) {
       requestBody.include_domains = args.include_domains.split(',').map(d => d.trim());
     }
@@ -417,7 +434,7 @@ async function executeWebSearch(args: WebSearchArgs): Promise<string> {
       requestBody.exclude_domains = args.exclude_domains.split(',').map(d => d.trim());
     }
     
-    console.log('[Tool] Web search request:', { 
+    console.log('[Tool] Tavily search request:', { 
       query: args.query, 
       search_depth: args.search_depth,
       using_personal_key: isPersonalKey 
@@ -425,24 +442,17 @@ async function executeWebSearch(args: WebSearchArgs): Promise<string> {
 
     const response = await fetch('https://api.tavily.com/search', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(requestBody),
     });
     
     if (!response.ok) {
       const errorText = await response.text();
       console.error('[Tool] Tavily API error:', response.status, errorText);
-      return JSON.stringify({
-        success: false,
-        error: `Ошибка поиска: ${response.status} - ${errorText}`
-      });
+      return { success: false, provider: "tavily", error: `Tavily ошибка: ${response.status}` };
     }
     
     const data = await response.json();
-    
-    // Format results for the model
     const results = (data.results || []).map((r: { title: string; url: string; content: string; score?: number }) => ({
       title: r.title,
       url: r.url,
@@ -450,21 +460,152 @@ async function executeWebSearch(args: WebSearchArgs): Promise<string> {
       relevance: r.score
     }));
     
+    return {
+      success: true,
+      provider: "tavily",
+      answer: data.answer || null,
+      results,
+    };
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    console.error('[Tool] Tavily search error:', message);
+    return { success: false, provider: "tavily", error: message };
+  }
+}
+
+/** Execute Perplexity search */
+async function executePerplexitySearch(args: WebSearchArgs): Promise<{ success: boolean; provider: string; answer?: string; results?: unknown[]; citations?: string[]; error?: string }> {
+  const perplexityApiKey = searchProviderConfig.perplexityKey;
+  
+  if (!perplexityApiKey) {
+    return { success: false, provider: "perplexity", error: "Perplexity API-ключ не настроен. Добавьте ключ в настройках профиля." };
+  }
+  
+  try {
+    console.log('[Tool] Perplexity search request:', { query: args.query });
+
+    const requestBody: Record<string, unknown> = {
+      model: 'sonar',
+      messages: [
+        { role: 'system', content: 'Отвечай кратко и по существу. Используй актуальные данные из поиска.' },
+        { role: 'user', content: args.query }
+      ],
+    };
+    
+    // Add domain filters if provided
+    if (args.include_domains) {
+      requestBody.search_domain_filter = args.include_domains.split(',').map(d => d.trim());
+    }
+
+    const response = await fetch('https://api.perplexity.ai/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${perplexityApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(requestBody),
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('[Tool] Perplexity API error:', response.status, errorText);
+      return { success: false, provider: "perplexity", error: `Perplexity ошибка: ${response.status}` };
+    }
+    
+    const data = await response.json();
+    const answer = data.choices?.[0]?.message?.content || null;
+    const citations = data.citations || [];
+    
+    // Convert citations to results format
+    const results = citations.map((url: string, index: number) => ({
+      title: `Источник ${index + 1}`,
+      url,
+      content: "",
+    }));
+    
+    return {
+      success: true,
+      provider: "perplexity",
+      answer,
+      results,
+      citations,
+    };
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    console.error('[Tool] Perplexity search error:', message);
+    return { success: false, provider: "perplexity", error: message };
+  }
+}
+
+/** Main web search executor with provider selection */
+async function executeWebSearch(args: WebSearchArgs): Promise<string> {
+  const availableProviders = getAvailableSearchProviders();
+  
+  if (availableProviders === "none") {
+    return JSON.stringify({
+      success: false,
+      error: "Веб-поиск недоступен. Добавьте Tavily или Perplexity API-ключ в настройках профиля."
+    });
+  }
+  
+  // Determine which provider(s) to use
+  let requestedProvider = args.provider || "tavily";
+  
+  // If user requested a specific provider but doesn't have the key, fallback
+  if (requestedProvider === "perplexity" && !searchProviderConfig.perplexityKey) {
+    console.log('[Tool] Perplexity requested but no key, falling back to Tavily');
+    requestedProvider = "tavily";
+  }
+  
+  if (requestedProvider === "both" && availableProviders !== "both") {
+    console.log('[Tool] Both providers requested but only one available, using:', availableProviders);
+    requestedProvider = availableProviders as "tavily" | "perplexity";
+  }
+  
+  console.log('[Tool] Web search with provider:', requestedProvider, 'available:', availableProviders);
+  
+  // Execute search based on provider selection
+  if (requestedProvider === "both") {
+    // Execute both searches in parallel
+    const [tavilyResult, perplexityResult] = await Promise.all([
+      executeTavilySearch(args),
+      executePerplexitySearch(args),
+    ]);
+    
     return JSON.stringify({
       success: true,
       query: args.query,
-      answer: data.answer || null,
-      results,
-      sources_count: results.length
-    });
-  } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : 'Unknown error';
-    console.error('[Tool] Web search error:', message);
-    return JSON.stringify({
-      success: false,
-      error: `Ошибка веб-поиска: ${message}`
+      providers_used: ["tavily", "perplexity"],
+      tavily: tavilyResult,
+      perplexity: perplexityResult,
+      combined_sources: (tavilyResult.results?.length || 0) + (perplexityResult.results?.length || 0),
     });
   }
+  
+  if (requestedProvider === "perplexity") {
+    const result = await executePerplexitySearch(args);
+    return JSON.stringify({
+      success: result.success,
+      query: args.query,
+      provider: "perplexity",
+      answer: result.answer,
+      results: result.results,
+      citations: result.citations,
+      error: result.error,
+    });
+  }
+  
+  // Default: Tavily
+  const result = await executeTavilySearch(args);
+  return JSON.stringify({
+    success: result.success,
+    query: args.query,
+    provider: "tavily",
+    answer: result.answer,
+    results: result.results,
+    sources_count: result.results?.length || 0,
+    error: result.error,
+  });
 }
 
 // ============================================
