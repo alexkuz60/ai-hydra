@@ -58,7 +58,7 @@
     --hydra-analyst: 240 70% 55%; /* indigo for analyst */
     --hydra-webhunter: 25 90% 55%; /* orange for web hunter */
     --hydra-promptengineer: 300 75% 55%; /* magenta for prompt engineer */
-    --hydra-flowregulator: 175 70% 45%; /* teal for flow regulator */
+    --hydra-flowregulator: 175 70% 45%; /* teal for flow logistician */
     /* Flow editor nodes */
     --hydra-info: 210 80% 55%; /* blue for input nodes */
     --hydra-surface: 45 15% 90%;
@@ -130,7 +130,7 @@
     --hydra-analyst: 240 75% 60%; /* indigo for analyst */
     --hydra-webhunter: 25 95% 60%; /* orange for web hunter */
     --hydra-promptengineer: 300 80% 60%; /* magenta for prompt engineer */
-    --hydra-flowregulator: 175 75% 50%; /* teal for flow regulator */
+    --hydra-flowregulator: 175 75% 50%; /* teal for flow logistician */
     /* Flow editor nodes - Dark */
     --hydra-info: 210 90% 65%; /* bright blue for input nodes */
     --hydra-surface: 225 30% 14%;
