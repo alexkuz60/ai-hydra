@@ -29,14 +29,18 @@ export function RoleSelectItem({ value, className }: RoleSelectItemProps) {
 // Helper component to render all role options
 interface RoleSelectOptionsProps {
   excludeRoles?: AgentRole[];
+  excludeTechnicalStaff?: boolean;
 }
 
-export function RoleSelectOptions({ excludeRoles = [] }: RoleSelectOptionsProps) {
+export function RoleSelectOptions({ excludeRoles = [], excludeTechnicalStaff = false }: RoleSelectOptionsProps) {
   return (
     <>
-      {AGENT_ROLES.filter(role => !excludeRoles.includes(role)).map((role) => (
-        <RoleSelectItem key={role} value={role} />
-      ))}
+      {AGENT_ROLES
+        .filter(role => !excludeRoles.includes(role))
+        .filter(role => !excludeTechnicalStaff || !ROLE_CONFIG[role].isTechnicalStaff)
+        .map((role) => (
+          <RoleSelectItem key={role} value={role} />
+        ))}
     </>
   );
 }

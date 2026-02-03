@@ -385,7 +385,7 @@ export function PerModelSettings({ selectedModels, settings, onChange, className
                           </SelectValue>
                         </SelectTrigger>
                         <SelectContent>
-                          <RoleSelectOptions />
+                          <RoleSelectOptions excludeTechnicalStaff />
                         </SelectContent>
                       </Select>
                     </div>
