@@ -22,6 +22,7 @@ const ToolsLibrary = lazy(() => import("./pages/ToolsLibrary"));
 const FlowEditor = lazy(() => import("./pages/FlowEditor"));
 const Hydrapedia = lazy(() => import("./pages/Hydrapedia"));
 const StaffRoles = lazy(() => import("./pages/StaffRoles"));
+const BehavioralPatterns = lazy(() => import("./pages/BehavioralPatterns"));
 const Admin = lazy(() => import("./pages/Admin"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
@@ -58,6 +59,7 @@ const App = () => (
                     <Route path="/flow-editor" element={<FlowEditor />} />
                     <Route path="/hydrapedia" element={<Hydrapedia />} />
                     <Route path="/staff-roles" element={<StaffRoles />} />
+                    <Route path="/behavioral-patterns" element={<BehavioralPatterns />} />
                     <Route path="/war-room" element={<Navigate to="/expert-panel" replace />} />
                     <Route path="/admin" element={<Admin />} />
                     <Route path="*" element={<NotFound />} />
