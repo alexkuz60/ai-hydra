@@ -212,6 +212,7 @@ const translations: Translations = {
   'flowEditor.autoLayout': { ru: 'Авто-раскладка', en: 'Auto Layout' },
   'flowEditor.layoutHorizontal': { ru: 'Горизонтальная', en: 'Horizontal' },
   'flowEditor.layoutVertical': { ru: 'Вертикальная', en: 'Vertical' },
+  'flowEditor.versionHistory': { ru: 'История версий', en: 'Version History' },
   'flowEditor.nodes.input': { ru: 'Вход', en: 'Input' },
   'flowEditor.nodes.prompt': { ru: 'Промпт', en: 'Prompt' },
   'flowEditor.nodes.model': { ru: 'AI Модель', en: 'AI Model' },

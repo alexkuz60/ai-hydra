@@ -47,7 +47,7 @@ function FlowEditorContent() {
   const { user } = useAuth();
   const [searchParams] = useSearchParams();
   const urlDiagramId = searchParams.get('id');
-  const { diagrams, saveDiagram, isSaving, isLoading } = useFlowDiagrams();
+  const { diagrams, saveDiagram, deleteDiagram, isSaving, isLoading } = useFlowDiagrams();
 
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
@@ -330,7 +330,9 @@ function FlowEditorContent() {
             onCopyToClipboard={copyToClipboard}
             onGenerateMermaid={handleGenerateMermaid}
             savedDiagrams={diagrams}
+            currentDiagramId={currentDiagramId}
             onLoadDiagram={handleLoadDiagram}
+            onDeleteDiagram={deleteDiagram}
             isSaving={isSaving}
             hasChanges={hasChanges}
             edgeSettings={edgeSettings}

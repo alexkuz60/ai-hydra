@@ -35,6 +35,7 @@ import {
   LayoutGrid,
   ArrowRight,
   ArrowDown,
+  History,
 } from 'lucide-react';
 import {
   Tooltip,
@@ -44,6 +45,7 @@ import {
 import { FlowDiagram } from '@/types/flow';
 import { EdgeStyleSettings } from '@/types/edgeTypes';
 import { EdgeStyleSelector } from './EdgeStyleSelector';
+import { DiagramHistoryDialog } from './DiagramHistoryDialog';
 
 interface FlowToolbarProps {
   diagramName: string;
@@ -58,7 +60,9 @@ interface FlowToolbarProps {
   onCopyToClipboard: () => void;
   onGenerateMermaid: () => string;
   savedDiagrams: FlowDiagram[];
+  currentDiagramId: string | null;
   onLoadDiagram: (diagram: FlowDiagram) => void;
+  onDeleteDiagram?: (id: string) => void;
   isSaving: boolean;
   hasChanges: boolean;
   edgeSettings: EdgeStyleSettings;
@@ -83,7 +87,9 @@ export function FlowToolbar({
   onCopyToClipboard,
   onGenerateMermaid,
   savedDiagrams,
+  currentDiagramId,
   onLoadDiagram,
+  onDeleteDiagram,
   isSaving,
   hasChanges,
   edgeSettings,
@@ -98,6 +104,7 @@ export function FlowToolbar({
   const [mermaidCode, setMermaidCode] = useState('');
   const [mermaidOpen, setMermaidOpen] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
 
   // Deduplicate diagrams by name, keeping only the most recent version
   const uniqueDiagrams = useMemo(() => {
@@ -110,6 +117,11 @@ export function FlowToolbar({
     }
     return Array.from(byName.values());
   }, [savedDiagrams]);
+
+  // Check if current diagram has multiple versions
+  const hasVersionHistory = useMemo(() => {
+    return savedDiagrams.filter(d => d.name === diagramName).length > 1;
+  }, [savedDiagrams, diagramName]);
 
   const handleGenerateMermaid = () => {
     const code = onGenerateMermaid();
@@ -235,6 +247,25 @@ export function FlowToolbar({
         </DropdownMenuContent>
       </DropdownMenu>
 
+      {/* History button */}
+      {hasVersionHistory && (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => setHistoryOpen(true)}
+            >
+              <History className="h-4 w-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>{t('flowEditor.versionHistory')}</p>
+          </TooltipContent>
+        </Tooltip>
+      )}
+
       <Button 
         variant="outline" 
         size="sm" 
@@ -317,6 +348,17 @@ export function FlowToolbar({
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* History dialog */}
+      <DiagramHistoryDialog
+        open={historyOpen}
+        onOpenChange={setHistoryOpen}
+        diagramName={diagramName}
+        allDiagrams={savedDiagrams}
+        currentDiagramId={currentDiagramId}
+        onLoadDiagram={onLoadDiagram}
+        onDeleteDiagram={onDeleteDiagram}
+      />
     </div>
   );
 }
