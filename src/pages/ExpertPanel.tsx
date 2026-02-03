@@ -24,7 +24,9 @@ import { useStreamingResponses } from '@/hooks/useStreamingResponses';
 import { useMemoryIntegration } from '@/hooks/useMemoryIntegration';
 import { useSessionMemory } from '@/hooks/useSessionMemory';
 import { PendingResponseState, RequestStartInfo } from '@/types/pending';
-import { Loader2, Target, Zap, ZapOff, Square, Circle, Brain } from 'lucide-react';
+import { Loader2, Target, Zap, ZapOff, Square, Circle, Brain, RefreshCw, Check, Settings2 } from 'lucide-react';
+import { SessionMemoryDialog } from '@/components/warroom/SessionMemoryDialog';
+import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { toast } from 'sonner';
@@ -93,8 +95,28 @@ export default function ExpertPanel() {
   // Model statistics hook for tracking dismissals
   const { incrementDismissal } = useModelStatistics(user?.id);
 
-  // Session memory hook - for getting deleteByMessageId before useMessages
-  const { deleteByMessageId } = useSessionMemory(currentTask?.id || null);
+// Session memory hook - full management capabilities
+  const { 
+    deleteByMessageId,
+    chunks: memoryChunks,
+    refetch: refetchMemory,
+    isLoading: memoryLoading,
+    deleteChunk,
+    clearSessionMemory,
+    isDeleting: memoryDeleting,
+    isClearing: memoryClearing,
+  } = useSessionMemory(currentTask?.id || null);
+  
+  // Memory management state
+  const [memoryRefreshed, setMemoryRefreshed] = useState(false);
+  const [memoryDialogOpen, setMemoryDialogOpen] = useState(false);
+  
+  // Handler for refreshing memory with animation feedback
+  const handleRefreshMemory = useCallback(async () => {
+    await refetchMemory();
+    setMemoryRefreshed(true);
+    setTimeout(() => setMemoryRefreshed(false), 2000);
+  }, [refetchMemory]);
 
   // Messages management hook
   const {
@@ -570,6 +592,64 @@ export default function ExpertPanel() {
                       </Tooltip>
                     </TooltipProvider>
                   )}
+                  
+                  {/* Memory Controls */}
+                  {memoryStats && memoryStats.total > 0 && (
+                    <div className="flex items-center gap-1">
+                      {/* Refresh Memory Button */}
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <motion.button
+                              onClick={handleRefreshMemory}
+                              className="h-6 w-6 rounded flex items-center justify-center text-hydra-memory/80 hover:text-hydra-memory hover:bg-hydra-memory/10 transition-colors focus:outline-none focus:ring-2 focus:ring-hydra-memory/50"
+                              whileTap={{ scale: 0.9 }}
+                            >
+                              <AnimatePresence mode="wait">
+                                <motion.span
+                                  key={memoryRefreshed ? 'check' : 'refresh'}
+                                  initial={{ opacity: 0, scale: 0.5, rotate: -90 }}
+                                  animate={{ opacity: 1, scale: 1, rotate: 0 }}
+                                  exit={{ opacity: 0, scale: 0.5, rotate: 90 }}
+                                  transition={{ duration: 0.2 }}
+                                >
+                                  {memoryRefreshed ? (
+                                    <Check className="h-3.5 w-3.5 text-hydra-success" />
+                                  ) : (
+                                    <RefreshCw className="h-3.5 w-3.5" />
+                                  )}
+                                </motion.span>
+                              </AnimatePresence>
+                            </motion.button>
+                          </TooltipTrigger>
+                          <TooltipContent side="bottom">
+                            <p className="text-xs">
+                              {memoryRefreshed ? t('memory.refreshed') : t('memory.refresh')}
+                            </p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                      
+                      {/* Manage Memory Button */}
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6 text-hydra-memory/80 hover:text-hydra-memory hover:bg-hydra-memory/10"
+                              onClick={() => setMemoryDialogOpen(true)}
+                            >
+                              <Settings2 className="h-3.5 w-3.5" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent side="bottom">
+                            <p className="text-xs">{t('memory.manageMemory')}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
+                  )}
                 </div>
                 
                 {/* Streaming Controls */}
@@ -783,6 +863,18 @@ export default function ExpertPanel() {
           </ResizablePanel>
         </ResizablePanelGroup>
       </div>
+      
+      {/* Session Memory Management Dialog */}
+      <SessionMemoryDialog
+        open={memoryDialogOpen}
+        onOpenChange={setMemoryDialogOpen}
+        chunks={memoryChunks}
+        isLoading={memoryLoading}
+        isDeleting={memoryDeleting}
+        onDeleteChunk={deleteChunk}
+        onClearAll={clearSessionMemory}
+        isClearing={memoryClearing}
+      />
     </Layout>
   );
 }
