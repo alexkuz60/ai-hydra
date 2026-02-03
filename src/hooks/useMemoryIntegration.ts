@@ -36,6 +36,10 @@ interface UseMemoryIntegrationReturn {
   saveDecision: (messageId: string, content: string) => Promise<void>;
   saveContext: (content: string) => Promise<void>;
   saveInstruction: (content: string) => Promise<void>;
+  // Check if message is saved
+  savedMessageIds: Set<string>;
+  // Delete memory by message ID
+  deleteMemoryByMessageId: (messageId: string) => Promise<void>;
   // Memory stats
   memoryStats: { total: number; byType: Record<ChunkType, number> } | null;
   // Search
@@ -55,8 +59,10 @@ export function useMemoryIntegration({
     isLoading,
     isCreating,
     createChunk,
+    deleteByMessageId,
     searchByText,
     getStats,
+    savedMessageIds,
   } = useSessionMemory(sessionId);
 
   // Track which messages have been processed to avoid duplicates
@@ -189,6 +195,8 @@ export function useMemoryIntegration({
     saveDecision,
     saveContext,
     saveInstruction,
+    savedMessageIds,
+    deleteMemoryByMessageId: deleteByMessageId,
     memoryStats: chunks.length > 0 ? getStats() : null,
     searchByText: handleSearchByText,
     isLoading,

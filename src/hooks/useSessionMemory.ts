@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -249,6 +249,38 @@ export function useSessionMemory(sessionId: string | null) {
     [chunks]
   );
 
+  // Get set of message IDs that are saved in memory
+  const savedMessageIds = useMemo(() => {
+    const ids = new Set<string>();
+    chunks.forEach(chunk => {
+      if (chunk.source_message_id) {
+        ids.add(chunk.source_message_id);
+      }
+    });
+    return ids;
+  }, [chunks]);
+
+  // Delete memory chunks by source message ID
+  const deleteByMessageIdMutation = useMutation({
+    mutationFn: async (messageId: string) => {
+      if (!user || !sessionId) throw new Error('Session not available');
+
+      const { error } = await supabase
+        .from('session_memory')
+        .delete()
+        .eq('session_id', sessionId)
+        .eq('source_message_id', messageId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey });
+    },
+    onError: (error) => {
+      console.error('Failed to delete memory by message ID:', error);
+    },
+  });
+
   // Get memory stats
   const getStats = useCallback(() => {
     const stats: Record<ChunkType, number> = {
@@ -302,11 +334,13 @@ export function useSessionMemory(sessionId: string | null) {
     isLoading,
     error,
     isSearching,
+    savedMessageIds,
 
     // CRUD operations
     createChunk: createChunkMutation.mutateAsync,
     updateChunk: updateChunkMutation.mutateAsync,
     deleteChunk: deleteChunkMutation.mutateAsync,
+    deleteByMessageId: deleteByMessageIdMutation.mutateAsync,
     clearSessionMemory: clearSessionMemoryMutation.mutateAsync,
     createChunksBatch,
 
@@ -314,6 +348,7 @@ export function useSessionMemory(sessionId: string | null) {
     isCreating: createChunkMutation.isPending,
     isUpdating: updateChunkMutation.isPending,
     isDeleting: deleteChunkMutation.isPending,
+    isDeletingByMessageId: deleteByMessageIdMutation.isPending,
     isClearing: clearSessionMemoryMutation.isPending,
 
     // Search

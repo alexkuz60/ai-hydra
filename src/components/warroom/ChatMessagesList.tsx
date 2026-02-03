@@ -27,6 +27,7 @@ interface ChatMessagesListProps {
   // Memory
   onSaveToMemory?: (messageId: string, content: string) => Promise<void>;
   isSavingToMemory?: boolean;
+  savedMessageIds?: Set<string>;
   // Pending responses for skeleton indicators
   pendingResponses?: Map<string, PendingResponseState>;
   // Streaming responses for real-time content
@@ -54,6 +55,7 @@ export function ChatMessagesList({
   onClarifyWithSpecialist,
   onSaveToMemory,
   isSavingToMemory,
+  savedMessageIds,
   pendingResponses,
   streamingResponses,
   timeoutSeconds = 120,
@@ -105,6 +107,7 @@ export function ChatMessagesList({
                   onClarifyWithSpecialist={onClarifyWithSpecialist}
                   onSaveToMemory={onSaveToMemory}
                   isSavingToMemory={isSavingToMemory}
+                  isAlreadySavedToMemory={savedMessageIds?.has(message.id)}
                 />
               </div>
             </React.Fragment>

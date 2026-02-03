@@ -95,14 +95,15 @@ interface ChatMessageProps {
   onClarifyWithSpecialist?: (selectedText: string, messageId: string) => void;
   onSaveToMemory?: (messageId: string, content: string) => Promise<void>;
   isSavingToMemory?: boolean;
+  isAlreadySavedToMemory?: boolean;
 }
 
 const MAX_COLLAPSED_LINES = 3;
 
-export function ChatMessage({ message, userDisplayInfo, onDelete, onRatingChange, isCollapsed, onToggleCollapse, onClarifyWithSpecialist, onSaveToMemory, isSavingToMemory }: ChatMessageProps) {
+export function ChatMessage({ message, userDisplayInfo, onDelete, onRatingChange, isCollapsed, onToggleCollapse, onClarifyWithSpecialist, onSaveToMemory, isSavingToMemory, isAlreadySavedToMemory }: ChatMessageProps) {
   const { t } = useLanguage();
   const contentRef = useRef<HTMLDivElement>(null);
-  const [savedToMemory, setSavedToMemory] = useState(false);
+  const [savedToMemory, setSavedToMemory] = useState(isAlreadySavedToMemory || false);
   
   // Use controlled state from parent if provided, otherwise local state
   const [localExpanded, setLocalExpanded] = useState(true);
@@ -123,17 +124,19 @@ export function ChatMessage({ message, userDisplayInfo, onDelete, onRatingChange
   }, [onClarifyWithSpecialist, message.id]);
 
   const handleSaveToMemory = useCallback(async () => {
-    if (onSaveToMemory && !savedToMemory && !isSavingToMemory) {
+    // Don't allow saving if already saved
+    if (isAlreadySavedToMemory || savedToMemory || isSavingToMemory) return;
+    
+    if (onSaveToMemory) {
       try {
         await onSaveToMemory(message.id, message.content);
         setSavedToMemory(true);
-        // Reset after 3 seconds
-        setTimeout(() => setSavedToMemory(false), 3000);
+        // Don't reset - it stays saved
       } catch (error) {
         // Error is handled by the hook
       }
     }
-  }, [onSaveToMemory, message.id, message.content, savedToMemory, isSavingToMemory]);
+  }, [onSaveToMemory, message.id, message.content, savedToMemory, isSavingToMemory, isAlreadySavedToMemory]);
   
   const config = getRoleConfig(message.role);
   
@@ -284,19 +287,19 @@ export function ChatMessage({ message, userDisplayInfo, onDelete, onRatingChange
                 <motion.button
                   className={cn(
                     "h-7 w-7 rounded-md flex items-center justify-center transition-colors",
-                    savedToMemory 
+                    (isAlreadySavedToMemory || savedToMemory)
                       ? "bg-hydra-success/20 text-hydra-success cursor-default"
                       : "hover:bg-hydra-archivist/10 text-hydra-archivist hover:text-hydra-archivist"
                   )}
                   onClick={handleSaveToMemory}
-                  disabled={isSavingToMemory || savedToMemory}
-                  whileTap={!savedToMemory && !isSavingToMemory ? { scale: 0.9 } : undefined}
+                  disabled={isSavingToMemory || savedToMemory || isAlreadySavedToMemory}
+                  whileTap={!(savedToMemory || isAlreadySavedToMemory) && !isSavingToMemory ? { scale: 0.9 } : undefined}
                 >
                   <AnimatePresence mode="wait">
-                    {savedToMemory ? (
+                    {(isAlreadySavedToMemory || savedToMemory) ? (
                       <motion.span
                         key="saved"
-                        initial={{ scale: 0, rotate: -180 }}
+                        initial={isAlreadySavedToMemory ? { scale: 1, rotate: 0 } : { scale: 0, rotate: -180 }}
                         animate={{ scale: 1, rotate: 0 }}
                         exit={{ scale: 0, opacity: 0 }}
                         transition={{ 
@@ -330,8 +333,8 @@ export function ChatMessage({ message, userDisplayInfo, onDelete, onRatingChange
               </TooltipTrigger>
               <TooltipContent side="top">
                 <p className="text-xs">
-                  {savedToMemory 
-                    ? t('memory.saved') 
+                  {(isAlreadySavedToMemory || savedToMemory)
+                    ? t('memory.alreadySaved') 
                     : isSavingToMemory 
                     ? t('memory.saving') 
                     : t('memory.saveToMemory')}

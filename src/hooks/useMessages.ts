@@ -6,6 +6,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 
 interface UseMessagesProps {
   sessionId: string | null;
+  onBeforeDeleteMessage?: (messageId: string) => Promise<void>;
 }
 
 interface UseMessagesReturn {
@@ -22,7 +23,7 @@ interface UseMessagesReturn {
   fetchMessages: (taskId: string) => Promise<void>;
 }
 
-export function useMessages({ sessionId }: UseMessagesProps): UseMessagesReturn {
+export function useMessages({ sessionId, onBeforeDeleteMessage }: UseMessagesProps): UseMessagesReturn {
   const { t } = useLanguage();
   const [messages, setMessages] = useState<Message[]>([]);
   const [filteredParticipant, setFilteredParticipant] = useState<string | null>(null);
@@ -96,6 +97,16 @@ export function useMessages({ sessionId }: UseMessagesProps): UseMessagesReturn 
   // Delete a single message
   const handleDeleteMessage = useCallback(async (messageId: string) => {
     try {
+      // Clean up related memory chunks before deleting the message
+      if (onBeforeDeleteMessage) {
+        try {
+          await onBeforeDeleteMessage(messageId);
+        } catch (memoryError) {
+          // Log but don't block message deletion
+          console.warn('[Messages] Failed to clean up memory for message:', messageId, memoryError);
+        }
+      }
+      
       const { error } = await supabase
         .from('messages')
         .delete()
@@ -108,7 +119,7 @@ export function useMessages({ sessionId }: UseMessagesProps): UseMessagesReturn 
     } catch (error: any) {
       toast.error(error.message);
     }
-  }, [t]);
+  }, [t, onBeforeDeleteMessage]);
 
   // Delete a user message and all AI responses until the next user message
   const handleDeleteMessageGroup = useCallback(async (userMessageId: string) => {
@@ -123,6 +134,17 @@ export function useMessages({ sessionId }: UseMessagesProps): UseMessagesReturn 
     }
 
     try {
+      // Clean up related memory chunks before deleting messages
+      if (onBeforeDeleteMessage) {
+        for (const id of idsToDelete) {
+          try {
+            await onBeforeDeleteMessage(id);
+          } catch (memoryError) {
+            console.warn('[Messages] Failed to clean up memory for message:', id, memoryError);
+          }
+        }
+      }
+      
       const { error } = await supabase
         .from('messages')
         .delete()
@@ -135,7 +157,7 @@ export function useMessages({ sessionId }: UseMessagesProps): UseMessagesReturn 
     } catch (error: any) {
       toast.error(error.message);
     }
-  }, [messages, t]);
+  }, [messages, t, onBeforeDeleteMessage]);
 
   // Update message rating
   const handleRatingChange = useCallback(async (messageId: string, rating: number) => {
