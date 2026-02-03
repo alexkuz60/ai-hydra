@@ -74,6 +74,7 @@ const RoleDetailsPanel = forwardRef<HTMLDivElement, RoleDetailsPanelProps>(
       challenges: [],
       collaborates: [],
     });
+    const [originalInteractions, setOriginalInteractions] = useState<RoleInteractions | null>(null);
     
     // Load behavior from database
     const { behavior, isLoading: isLoadingBehavior, isSaving, saveInteractions } = useRoleBehavior(selectedRole);
@@ -398,41 +399,65 @@ const RoleDetailsPanel = forwardRef<HTMLDivElement, RoleDetailsPanelProps>(
                   </h3>
                 </CollapsibleTrigger>
                 {user && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={async () => {
-                      if (isEditingHierarchy) {
-                        // Save to database
-                        const success = await saveInteractions(interactions);
-                        if (success) {
-                          toast.success(t('staffRoles.hierarchy.saved'));
+                  <div className="flex items-center gap-1">
+                    {isEditingHierarchy && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          // Restore original interactions
+                          if (originalInteractions) {
+                            setInteractions(originalInteractions);
+                          }
                           setIsEditingHierarchy(false);
-                        }
-                      } else {
-                        setIsEditingHierarchy(true);
-                      }
-                    }}
-                    disabled={isSaving}
-                    className="gap-1.5 h-7 text-xs"
-                  >
-                    {isSaving ? (
-                      <>
-                        <Loader2 className="h-3 w-3 animate-spin" />
-                        {t('staffRoles.hierarchy.saving')}
-                      </>
-                    ) : isEditingHierarchy ? (
-                      <>
-                        <Save className="h-3 w-3" />
-                        {t('staffRoles.hierarchy.save')}
-                      </>
-                    ) : (
-                      <>
-                        <Pencil className="h-3 w-3" />
-                        {t('staffRoles.hierarchy.edit')}
-                      </>
+                          setOriginalInteractions(null);
+                        }}
+                        disabled={isSaving}
+                        className="gap-1.5 h-7 text-xs"
+                      >
+                        <X className="h-3 w-3" />
+                        {t('staffRoles.hierarchy.cancel')}
+                      </Button>
                     )}
-                  </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={async () => {
+                        if (isEditingHierarchy) {
+                          // Save to database
+                          const success = await saveInteractions(interactions);
+                          if (success) {
+                            toast.success(t('staffRoles.hierarchy.saved'));
+                            setIsEditingHierarchy(false);
+                            setOriginalInteractions(null);
+                          }
+                        } else {
+                          // Store original values before editing
+                          setOriginalInteractions({ ...interactions });
+                          setIsEditingHierarchy(true);
+                        }
+                      }}
+                      disabled={isSaving}
+                      className="gap-1.5 h-7 text-xs"
+                    >
+                      {isSaving ? (
+                        <>
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                          {t('staffRoles.hierarchy.saving')}
+                        </>
+                      ) : isEditingHierarchy ? (
+                        <>
+                          <Save className="h-3 w-3" />
+                          {t('staffRoles.hierarchy.save')}
+                        </>
+                      ) : (
+                        <>
+                          <Pencil className="h-3 w-3" />
+                          {t('staffRoles.hierarchy.edit')}
+                        </>
+                      )}
+                    </Button>
+                  </div>
                 )}
               </div>
               <CollapsibleContent className="pt-3">

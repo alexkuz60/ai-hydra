@@ -152,6 +152,7 @@ const translations: Translations = {
   'staffRoles.hierarchy.saved': { ru: 'Иерархия сохранена', en: 'Hierarchy saved' },
   'staffRoles.hierarchy.loading': { ru: 'Загрузка настроек...', en: 'Loading settings...' },
   'staffRoles.hierarchy.saving': { ru: 'Сохранение...', en: 'Saving...' },
+  'staffRoles.hierarchy.cancel': { ru: 'Отмена', en: 'Cancel' },
   'patterns.systemPattern': { ru: 'Системный паттерн', en: 'System pattern' },
   'patterns.publicPattern': { ru: 'Публичный паттерн', en: 'Public pattern' },
   
