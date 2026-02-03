@@ -17,16 +17,23 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
 import { Separator } from '@/components/ui/separator';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Wrench, Pencil, X, Save, Loader2, FolderOpen, Library } from 'lucide-react';
+import { Wrench, Pencil, X, Save, Loader2, Library, ChevronDown, Network } from 'lucide-react';
 import { 
   ROLE_CONFIG, 
   DEFAULT_SYSTEM_PROMPTS, 
   type AgentRole 
 } from '@/config/roles';
 import { cn } from '@/lib/utils';
+import RoleHierarchyEditor from './RoleHierarchyEditor';
+import type { RoleInteractions } from '@/types/patterns';
 
 interface PromptLibraryItem {
   id: string;
@@ -57,6 +64,15 @@ const RoleDetailsPanel = forwardRef<HTMLDivElement, RoleDetailsPanelProps>(
     const [libraryPrompts, setLibraryPrompts] = useState<PromptLibraryItem[]>([]);
     const [isLoadingLibrary, setIsLoadingLibrary] = useState(false);
     const [selectedLibraryPrompt, setSelectedLibraryPrompt] = useState<string>('');
+    
+    // Hierarchy state
+    const [hierarchyOpen, setHierarchyOpen] = useState(true);
+    const [isEditingHierarchy, setIsEditingHierarchy] = useState(false);
+    const [interactions, setInteractions] = useState<RoleInteractions>({
+      defers_to: [],
+      challenges: [],
+      collaborates: [],
+    });
 
     // Reset edit state when role changes
     useEffect(() => {
@@ -65,6 +81,13 @@ const RoleDetailsPanel = forwardRef<HTMLDivElement, RoleDetailsPanelProps>(
       setPromptName('');
       setIsShared(false);
       setSelectedLibraryPrompt('');
+      setIsEditingHierarchy(false);
+      // Reset interactions - in a real app, load from behavior patterns
+      setInteractions({
+        defers_to: [],
+        challenges: [],
+        collaborates: [],
+      });
     }, [selectedRole]);
 
     // Load prompts from library for selected role
@@ -347,6 +370,54 @@ const RoleDetailsPanel = forwardRef<HTMLDivElement, RoleDetailsPanelProps>(
                 </div>
               )}
             </div>
+
+            <Separator />
+
+            {/* Role Hierarchy */}
+            <Collapsible open={hierarchyOpen} onOpenChange={setHierarchyOpen}>
+              <div className="flex items-center justify-between">
+                <CollapsibleTrigger className="flex items-center gap-2 hover:text-foreground transition-colors">
+                  <ChevronDown className={cn(
+                    "h-4 w-4 transition-transform",
+                    !hierarchyOpen && "-rotate-90"
+                  )} />
+                  <Network className="h-4 w-4 text-muted-foreground" />
+                  <h3 className="text-sm font-medium text-muted-foreground">
+                    {t('staffRoles.hierarchy.title')}
+                  </h3>
+                </CollapsibleTrigger>
+                {user && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setIsEditingHierarchy(!isEditingHierarchy)}
+                    className="gap-1.5 h-7 text-xs"
+                  >
+                    {isEditingHierarchy ? (
+                      <>
+                        <Save className="h-3 w-3" />
+                        {t('staffRoles.hierarchy.save')}
+                      </>
+                    ) : (
+                      <>
+                        <Pencil className="h-3 w-3" />
+                        {t('staffRoles.hierarchy.edit')}
+                      </>
+                    )}
+                  </Button>
+                )}
+              </div>
+              <CollapsibleContent className="pt-3">
+                <RoleHierarchyEditor
+                  selectedRole={selectedRole}
+                  interactions={interactions}
+                  onInteractionsChange={setInteractions}
+                  isEditing={isEditingHierarchy}
+                />
+              </CollapsibleContent>
+            </Collapsible>
+
+            <Separator />
 
             {/* Technical Staff Checkbox */}
             <div className="flex items-center gap-3 pt-2">

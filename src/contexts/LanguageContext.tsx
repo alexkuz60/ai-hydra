@@ -132,6 +132,23 @@ const translations: Translations = {
   'patterns.duplicateToEdit': { ru: 'Создать копию для редактирования', en: 'Duplicate to edit' },
   'patterns.deleteConfirmTitle': { ru: 'Удалить паттерн?', en: 'Delete pattern?' },
   'patterns.deleteConfirmDescription': { ru: 'Это действие необратимо. Будет удалён паттерн', en: 'This action cannot be undone. This will delete the pattern' },
+  
+  // Hierarchy
+  'staffRoles.hierarchy.title': { ru: 'Табель о рангах', en: 'Role Hierarchy' },
+  'staffRoles.hierarchy.superior': { ru: 'Начальник', en: 'Superior' },
+  'staffRoles.hierarchy.equal': { ru: 'Наравне', en: 'Equal' },
+  'staffRoles.hierarchy.subordinate': { ru: 'Подчинённый', en: 'Subordinate' },
+  'staffRoles.hierarchy.none': { ru: 'Нет связи', en: 'No relation' },
+  'staffRoles.hierarchy.superiorsTitle': { ru: 'Подчиняется', en: 'Reports to' },
+  'staffRoles.hierarchy.equalsTitle': { ru: 'Коллеги', en: 'Peers' },
+  'staffRoles.hierarchy.subordinatesTitle': { ru: 'Руководит', en: 'Manages' },
+  'staffRoles.hierarchy.noRelations': { ru: 'Связи не настроены', en: 'No relations configured' },
+  'staffRoles.hierarchy.defersTo': { ru: 'Уступает этой роли', en: 'Defers to this role' },
+  'staffRoles.hierarchy.collaborates': { ru: 'Сотрудничает на равных', en: 'Collaborates as equals' },
+  'staffRoles.hierarchy.challenges': { ru: 'Может оспаривать решения', en: 'Can challenge decisions' },
+  'staffRoles.hierarchy.editRelations': { ru: 'Настройка связей', en: 'Configure relations' },
+  'staffRoles.hierarchy.edit': { ru: 'Редактировать', en: 'Edit' },
+  'staffRoles.hierarchy.save': { ru: 'Сохранить', en: 'Save' },
   'patterns.systemPattern': { ru: 'Системный паттерн', en: 'System pattern' },
   'patterns.publicPattern': { ru: 'Публичный паттерн', en: 'Public pattern' },
   
