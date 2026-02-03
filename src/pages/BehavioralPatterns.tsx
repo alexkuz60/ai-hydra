@@ -15,27 +15,91 @@ import {
   ResizableHandle,
 } from '@/components/ui/resizable';
 import { Badge } from '@/components/ui/badge';
-import { Target, Sparkles, ChevronDown, ChevronRight } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Target, Sparkles, ChevronDown, ChevronRight, Plus, Pencil, Copy, Loader2, Lock } from 'lucide-react';
 import { ROLE_CONFIG } from '@/config/roles';
-import { TASK_BLUEPRINTS, ROLE_BEHAVIORS } from '@/config/patterns';
 import { cn } from '@/lib/utils';
 import PatternDetailsPanel from '@/components/patterns/PatternDetailsPanel';
+import { BlueprintEditorDialog } from '@/components/patterns/BlueprintEditorDialog';
+import { BehaviorEditorDialog } from '@/components/patterns/BehaviorEditorDialog';
+import { usePatterns, type TaskBlueprintWithMeta, type RoleBehaviorWithMeta } from '@/hooks/usePatterns';
 import type { TaskBlueprint, RoleBehavior } from '@/types/patterns';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 type SelectedPattern = TaskBlueprint | RoleBehavior | null;
 
 const BehavioralPatterns = () => {
   const { t } = useLanguage();
+  const { blueprints, behaviors, isLoading, isSaving, saveBlueprint, saveBehavior } = usePatterns();
+  
   const [selectedPattern, setSelectedPattern] = useState<SelectedPattern>(null);
   const [strategicExpanded, setStrategicExpanded] = useState(true);
   const [roleExpanded, setRoleExpanded] = useState(true);
+  
+  // Editor dialogs
+  const [blueprintDialogOpen, setBlueprintDialogOpen] = useState(false);
+  const [behaviorDialogOpen, setBehaviorDialogOpen] = useState(false);
+  const [editingBlueprint, setEditingBlueprint] = useState<TaskBlueprint | null>(null);
+  const [editingBehavior, setEditingBehavior] = useState<RoleBehavior | null>(null);
 
   const selectedId = useMemo(() => {
     if (!selectedPattern) return null;
     return selectedPattern.id;
   }, [selectedPattern]);
 
-  const renderBlueprintRow = (pattern: TaskBlueprint) => {
+  // Find meta for selected pattern
+  const selectedMeta = useMemo(() => {
+    if (!selectedPattern) return null;
+    const bp = blueprints.find(b => b.id === selectedPattern.id);
+    if (bp) return bp.meta;
+    const bh = behaviors.find(b => b.id === selectedPattern.id);
+    return bh?.meta || null;
+  }, [selectedPattern, blueprints, behaviors]);
+
+  const handleCreateBlueprint = () => {
+    setEditingBlueprint(null);
+    setBlueprintDialogOpen(true);
+  };
+
+  const handleEditBlueprint = (pattern: TaskBlueprintWithMeta, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (pattern.meta.isSystem) {
+      // Duplicate for editing
+      setEditingBlueprint({ ...pattern, id: undefined as unknown as string, name: `${pattern.name} (копия)` });
+    } else {
+      setEditingBlueprint(pattern);
+    }
+    setBlueprintDialogOpen(true);
+  };
+
+  const handleCreateBehavior = () => {
+    setEditingBehavior(null);
+    setBehaviorDialogOpen(true);
+  };
+
+  const handleEditBehavior = (pattern: RoleBehaviorWithMeta, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (pattern.meta.isSystem) {
+      setEditingBehavior({ ...pattern, id: undefined as unknown as string });
+    } else {
+      setEditingBehavior(pattern);
+    }
+    setBehaviorDialogOpen(true);
+  };
+
+  const handleSaveBlueprint = async (data: Omit<TaskBlueprint, 'id'> & { id?: string }, isShared: boolean) => {
+    await saveBlueprint(data, isShared);
+  };
+
+  const handleSaveBehavior = async (data: Omit<RoleBehavior, 'id'> & { id?: string }, isShared: boolean) => {
+    await saveBehavior(data, isShared);
+  };
+
+  const renderBlueprintRow = (pattern: TaskBlueprintWithMeta) => {
     const isSelected = selectedId === pattern.id;
 
     const categoryColors: Record<string, string> = {
@@ -49,7 +113,7 @@ const BehavioralPatterns = () => {
       <TableRow
         key={pattern.id}
         className={cn(
-          'cursor-pointer transition-colors',
+          'cursor-pointer transition-colors group',
           isSelected ? 'bg-primary/10 hover:bg-primary/15' : 'hover:bg-muted/30'
         )}
         onClick={() => setSelectedPattern(pattern)}
@@ -60,23 +124,49 @@ const BehavioralPatterns = () => {
           </div>
         </TableCell>
         <TableCell>
-          <div className="flex flex-col gap-1">
-            <span className="font-medium">{pattern.name}</span>
-            <div className="flex items-center gap-2">
-              <span className={cn('text-xs', categoryColors[pattern.category])}>
-                {t(`patterns.category.${pattern.category}`)}
-              </span>
-              <Badge variant="outline" className="text-xs py-0">
-                {pattern.stages.length} {t('patterns.stagesCount')}
-              </Badge>
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex flex-col gap-1 flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <span className="font-medium truncate">{pattern.name}</span>
+                {pattern.meta.isSystem && (
+                  <Lock className="h-3 w-3 text-muted-foreground shrink-0" />
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                <span className={cn('text-xs', categoryColors[pattern.category])}>
+                  {t(`patterns.category.${pattern.category}`)}
+                </span>
+                <Badge variant="outline" className="text-xs py-0">
+                  {pattern.stages.length} {t('patterns.stagesCount')}
+                </Badge>
+              </div>
             </div>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+                  onClick={(e) => handleEditBlueprint(pattern, e)}
+                >
+                  {pattern.meta.isSystem ? (
+                    <Copy className="h-4 w-4" />
+                  ) : (
+                    <Pencil className="h-4 w-4" />
+                  )}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                {pattern.meta.isSystem ? t('patterns.duplicateToEdit') : t('common.edit')}
+              </TooltipContent>
+            </Tooltip>
           </div>
         </TableCell>
       </TableRow>
     );
   };
 
-  const renderBehaviorRow = (pattern: RoleBehavior) => {
+  const renderBehaviorRow = (pattern: RoleBehaviorWithMeta) => {
     const isSelected = selectedId === pattern.id;
     const config = ROLE_CONFIG[pattern.role];
     const IconComponent = config?.icon;
@@ -85,7 +175,7 @@ const BehavioralPatterns = () => {
       <TableRow
         key={pattern.id}
         className={cn(
-          'cursor-pointer transition-colors',
+          'cursor-pointer transition-colors group',
           isSelected ? 'bg-primary/10 hover:bg-primary/15' : 'hover:bg-muted/30'
         )}
         onClick={() => setSelectedPattern(pattern)}
@@ -101,26 +191,64 @@ const BehavioralPatterns = () => {
           </div>
         </TableCell>
         <TableCell>
-          <div className="flex flex-col gap-1">
-            <span className={cn('font-medium', config?.color)}>
-              {t(config?.label || pattern.role)}
-            </span>
-            <span className="text-xs text-muted-foreground">
-              {t(`patterns.tone.${pattern.communication.tone}`)} •{' '}
-              {t(`patterns.verbosity.${pattern.communication.verbosity}`)}
-            </span>
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex flex-col gap-1 flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <span className={cn('font-medium', config?.color)}>
+                  {t(config?.label || pattern.role)}
+                </span>
+                {pattern.meta.isSystem && (
+                  <Lock className="h-3 w-3 text-muted-foreground" />
+                )}
+              </div>
+              <span className="text-xs text-muted-foreground">
+                {t(`patterns.tone.${pattern.communication.tone}`)} •{' '}
+                {t(`patterns.verbosity.${pattern.communication.verbosity}`)}
+              </span>
+            </div>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+                  onClick={(e) => handleEditBehavior(pattern, e)}
+                >
+                  {pattern.meta.isSystem ? (
+                    <Copy className="h-4 w-4" />
+                  ) : (
+                    <Pencil className="h-4 w-4" />
+                  )}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                {pattern.meta.isSystem ? t('patterns.duplicateToEdit') : t('common.edit')}
+              </TooltipContent>
+            </Tooltip>
           </div>
         </TableCell>
       </TableRow>
     );
   };
 
+  if (isLoading) {
+    return (
+      <Layout>
+        <div className="h-[calc(100vh-4rem)] flex items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      </Layout>
+    );
+  }
+
   return (
     <Layout>
       <div className="h-[calc(100vh-4rem)] flex flex-col">
-        <div className="px-4 py-4 border-b border-border">
-          <h1 className="text-2xl font-bold">{t('nav.behavioralPatterns')}</h1>
-          <p className="text-sm text-muted-foreground">{t('patterns.description')}</p>
+        <div className="px-4 py-4 border-b border-border flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold">{t('nav.behavioralPatterns')}</h1>
+            <p className="text-sm text-muted-foreground">{t('patterns.description')}</p>
+          </div>
         </div>
 
         <ResizablePanelGroup direction="horizontal" className="flex-1">
@@ -148,13 +276,25 @@ const BehavioralPatterns = () => {
                         )}
                         <Target className="h-4 w-4" />
                         {t('patterns.strategicGroup')}
-                        <Badge variant="outline" className="ml-auto text-xs">
-                          {TASK_BLUEPRINTS.length}
+                        <Badge variant="outline" className="ml-2 text-xs">
+                          {blueprints.length}
                         </Badge>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="ml-auto h-6 px-2"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleCreateBlueprint();
+                          }}
+                        >
+                          <Plus className="h-3 w-3 mr-1" />
+                          {t('patterns.createNew')}
+                        </Button>
                       </div>
                     </TableCell>
                   </TableRow>
-                  {strategicExpanded && TASK_BLUEPRINTS.map(renderBlueprintRow)}
+                  {strategicExpanded && blueprints.map(renderBlueprintRow)}
 
                   {/* Role Patterns Group */}
                   <TableRow
@@ -170,13 +310,25 @@ const BehavioralPatterns = () => {
                         )}
                         <Sparkles className="h-4 w-4" />
                         {t('patterns.roleGroup')}
-                        <Badge variant="outline" className="ml-auto text-xs">
-                          {ROLE_BEHAVIORS.length}
+                        <Badge variant="outline" className="ml-2 text-xs">
+                          {behaviors.length}
                         </Badge>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="ml-auto h-6 px-2"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleCreateBehavior();
+                          }}
+                        >
+                          <Plus className="h-3 w-3 mr-1" />
+                          {t('patterns.createNew')}
+                        </Button>
                       </div>
                     </TableCell>
                   </TableRow>
-                  {roleExpanded && ROLE_BEHAVIORS.map(renderBehaviorRow)}
+                  {roleExpanded && behaviors.map(renderBehaviorRow)}
                 </TableBody>
               </Table>
             </div>
@@ -186,11 +338,45 @@ const BehavioralPatterns = () => {
 
           <ResizablePanel defaultSize={65} minSize={50} maxSize={80}>
             <div className="h-full border-l border-border bg-card">
-              <PatternDetailsPanel selectedPattern={selectedPattern} />
+              <PatternDetailsPanel 
+                selectedPattern={selectedPattern} 
+                patternMeta={selectedMeta}
+                onEdit={() => {
+                  if (!selectedPattern) return;
+                  const bp = blueprints.find(b => b.id === selectedPattern.id);
+                  if (bp) {
+                    setEditingBlueprint(bp.meta.isSystem ? { ...bp, id: undefined as unknown as string, name: `${bp.name} (копия)` } : bp);
+                    setBlueprintDialogOpen(true);
+                  } else {
+                    const bh = behaviors.find(b => b.id === selectedPattern.id);
+                    if (bh) {
+                      setEditingBehavior(bh.meta.isSystem ? { ...bh, id: undefined as unknown as string } : bh);
+                      setBehaviorDialogOpen(true);
+                    }
+                  }
+                }}
+              />
             </div>
           </ResizablePanel>
         </ResizablePanelGroup>
       </div>
+
+      {/* Dialogs */}
+      <BlueprintEditorDialog
+        open={blueprintDialogOpen}
+        onOpenChange={setBlueprintDialogOpen}
+        blueprint={editingBlueprint}
+        onSave={handleSaveBlueprint}
+        isSaving={isSaving}
+      />
+
+      <BehaviorEditorDialog
+        open={behaviorDialogOpen}
+        onOpenChange={setBehaviorDialogOpen}
+        behavior={editingBehavior}
+        onSave={handleSaveBehavior}
+        isSaving={isSaving}
+      />
     </Layout>
   );
 };
