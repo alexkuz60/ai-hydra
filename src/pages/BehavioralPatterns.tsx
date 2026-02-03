@@ -14,9 +14,19 @@ import {
   ResizablePanel,
   ResizableHandle,
 } from '@/components/ui/resizable';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Target, Sparkles, ChevronDown, ChevronRight, Plus, Pencil, Copy, Loader2, Lock } from 'lucide-react';
+import { Target, Sparkles, ChevronDown, ChevronRight, Plus, Pencil, Copy, Loader2, Lock, Trash2 } from 'lucide-react';
 import { ROLE_CONFIG } from '@/config/roles';
 import { cn } from '@/lib/utils';
 import PatternDetailsPanel from '@/components/patterns/PatternDetailsPanel';
@@ -34,7 +44,7 @@ type SelectedPattern = TaskBlueprint | RoleBehavior | null;
 
 const BehavioralPatterns = () => {
   const { t } = useLanguage();
-  const { blueprints, behaviors, isLoading, isSaving, saveBlueprint, saveBehavior } = usePatterns();
+  const { blueprints, behaviors, isLoading, isSaving, saveBlueprint, saveBehavior, deleteBlueprint, deleteBehavior } = usePatterns();
   
   const [selectedPattern, setSelectedPattern] = useState<SelectedPattern>(null);
   const [strategicExpanded, setStrategicExpanded] = useState(true);
@@ -45,6 +55,10 @@ const BehavioralPatterns = () => {
   const [behaviorDialogOpen, setBehaviorDialogOpen] = useState(false);
   const [editingBlueprint, setEditingBlueprint] = useState<TaskBlueprint | null>(null);
   const [editingBehavior, setEditingBehavior] = useState<RoleBehavior | null>(null);
+  
+  // Delete confirmation
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [patternToDelete, setPatternToDelete] = useState<{ id: string; name: string; type: 'blueprint' | 'behavior' } | null>(null);
 
   const selectedId = useMemo(() => {
     if (!selectedPattern) return null;
@@ -99,6 +113,38 @@ const BehavioralPatterns = () => {
     await saveBehavior(data, isShared);
   };
 
+  const handleDeleteBlueprint = (pattern: TaskBlueprintWithMeta, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setPatternToDelete({ id: pattern.id, name: pattern.name, type: 'blueprint' });
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteBehavior = (pattern: RoleBehaviorWithMeta, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const config = ROLE_CONFIG[pattern.role];
+    setPatternToDelete({ id: pattern.id, name: t(config?.label || pattern.role), type: 'behavior' });
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!patternToDelete) return;
+    
+    if (patternToDelete.type === 'blueprint') {
+      await deleteBlueprint(patternToDelete.id);
+      if (selectedPattern?.id === patternToDelete.id) {
+        setSelectedPattern(null);
+      }
+    } else {
+      await deleteBehavior(patternToDelete.id);
+      if (selectedPattern?.id === patternToDelete.id) {
+        setSelectedPattern(null);
+      }
+    }
+    
+    setDeleteDialogOpen(false);
+    setPatternToDelete(null);
+  };
+
   const renderBlueprintRow = (pattern: TaskBlueprintWithMeta) => {
     const isSelected = selectedId === pattern.id;
 
@@ -141,25 +187,44 @@ const BehavioralPatterns = () => {
                 </Badge>
               </div>
             </div>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
-                  onClick={(e) => handleEditBlueprint(pattern, e)}
-                >
-                  {pattern.meta.isSystem ? (
-                    <Copy className="h-4 w-4" />
-                  ) : (
-                    <Pencil className="h-4 w-4" />
-                  )}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                {pattern.meta.isSystem ? t('patterns.duplicateToEdit') : t('common.edit')}
-              </TooltipContent>
-            </Tooltip>
+            <div className="flex items-center gap-1 shrink-0">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="opacity-0 group-hover:opacity-100 transition-opacity"
+                    onClick={(e) => handleEditBlueprint(pattern, e)}
+                  >
+                    {pattern.meta.isSystem ? (
+                      <Copy className="h-4 w-4" />
+                    ) : (
+                      <Pencil className="h-4 w-4" />
+                    )}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  {pattern.meta.isSystem ? t('patterns.duplicateToEdit') : t('common.edit')}
+                </TooltipContent>
+              </Tooltip>
+              {!pattern.meta.isSystem && pattern.meta.isOwned && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive"
+                      onClick={(e) => handleDeleteBlueprint(pattern, e)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    {t('common.delete')}
+                  </TooltipContent>
+                </Tooltip>
+              )}
+            </div>
           </div>
         </TableCell>
       </TableRow>
@@ -206,25 +271,44 @@ const BehavioralPatterns = () => {
                 {t(`patterns.verbosity.${pattern.communication.verbosity}`)}
               </span>
             </div>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
-                  onClick={(e) => handleEditBehavior(pattern, e)}
-                >
-                  {pattern.meta.isSystem ? (
-                    <Copy className="h-4 w-4" />
-                  ) : (
-                    <Pencil className="h-4 w-4" />
-                  )}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                {pattern.meta.isSystem ? t('patterns.duplicateToEdit') : t('common.edit')}
-              </TooltipContent>
-            </Tooltip>
+            <div className="flex items-center gap-1 shrink-0">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="opacity-0 group-hover:opacity-100 transition-opacity"
+                    onClick={(e) => handleEditBehavior(pattern, e)}
+                  >
+                    {pattern.meta.isSystem ? (
+                      <Copy className="h-4 w-4" />
+                    ) : (
+                      <Pencil className="h-4 w-4" />
+                    )}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  {pattern.meta.isSystem ? t('patterns.duplicateToEdit') : t('common.edit')}
+                </TooltipContent>
+              </Tooltip>
+              {!pattern.meta.isSystem && pattern.meta.isOwned && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive"
+                      onClick={(e) => handleDeleteBehavior(pattern, e)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    {t('common.delete')}
+                  </TooltipContent>
+                </Tooltip>
+              )}
+            </div>
           </div>
         </TableCell>
       </TableRow>
@@ -377,6 +461,28 @@ const BehavioralPatterns = () => {
         onSave={handleSaveBehavior}
         isSaving={isSaving}
       />
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('patterns.deleteConfirmTitle')}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t('patterns.deleteConfirmDescription')} <strong>{patternToDelete?.name}</strong>?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isSaving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              {t('common.delete')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Layout>
   );
 };
