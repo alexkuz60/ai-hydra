@@ -484,6 +484,7 @@ const translations: Translations = {
   'common.selectAll': { ru: 'Выбрать все', en: 'Select all' },
   'common.deselectAll': { ru: 'Снять все', en: 'Deselect all' },
   'common.delete': { ru: 'Удалить', en: 'Delete' },
+  'common.all': { ru: 'Все', en: 'All' },
   'common.collapse': { ru: 'Свернуть', en: 'Collapse' },
   'common.expand': { ru: 'Развернуть', en: 'Expand' },
   
@@ -709,6 +710,15 @@ const translations: Translations = {
   'memory.refresh': { ru: 'Освежить память', en: 'Refresh memory' },
   'memory.refreshed': { ru: 'Память обновлена!', en: 'Memory refreshed!' },
   'memory.alreadySaved': { ru: 'Уже сохранено в память', en: 'Already saved to memory' },
+  'memory.dialogTitle': { ru: 'Память сессии', en: 'Session Memory' },
+  'memory.dialogDescription': { ru: 'Управление сохранёнными фрагментами контекста', en: 'Manage saved context fragments' },
+  'memory.messages': { ru: 'Сообщения', en: 'Messages' },
+  'memory.summaries': { ru: 'Резюме', en: 'Summaries' },
+  'memory.empty': { ru: 'Память пуста', en: 'Memory is empty' },
+  'memory.totalChunks': { ru: 'Всего фрагментов', en: 'Total chunks' },
+  'memory.clearAll': { ru: 'Очистить всё', en: 'Clear all' },
+  'memory.confirmClearAll': { ru: 'Подтвердить очистку', en: 'Confirm clear' },
+  'memory.manageMemory': { ru: 'Управление памятью', en: 'Manage memory' },
   
   // Settings
   'settings.timeout': { ru: 'Таймаут ожидания', en: 'Response timeout' },

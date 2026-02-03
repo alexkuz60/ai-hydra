@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Badge } from '@/components/ui/badge';
 import { StreamingMessage } from '@/components/warroom/StreamingMessage';
+import { SessionMemoryDialog } from '@/components/warroom/SessionMemoryDialog';
 import { ModelOption } from '@/hooks/useAvailableModels';
 import { useStreamingChat, ConsultantMode } from '@/hooks/useStreamingChat';
 import { useSessionMemory } from '@/hooks/useSessionMemory';
@@ -27,6 +28,7 @@ import {
   Archive,
   RefreshCw,
   Check,
+  Settings2,
 } from 'lucide-react';
 
 // Source message structure for moderator context
@@ -95,8 +97,18 @@ export function ConsultantPanel({
   });
 
   // Memory integration
-  const { chunks, isLoading: memoryLoading, refetch: refetchMemory, getStats } = useSessionMemory(sessionId);
+  const { 
+    chunks, 
+    isLoading: memoryLoading, 
+    refetch: refetchMemory, 
+    getStats,
+    deleteChunk,
+    clearSessionMemory,
+    isDeleting: memoryDeleting,
+    isClearing: memoryClearing,
+  } = useSessionMemory(sessionId);
   const [memoryRefreshed, setMemoryRefreshed] = useState(false);
+  const [memoryDialogOpen, setMemoryDialogOpen] = useState(false);
   const memoryStats = getStats();
 
   // Handle memory refresh
@@ -317,6 +329,21 @@ export function ConsultantPanel({
             </TooltipContent>
           </Tooltip>
           
+          {/* Manage Memory Button */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-7 w-7 text-hydra-memory hover:text-hydra-memory/80"
+                onClick={() => setMemoryDialogOpen(true)}
+              >
+                <Settings2 className="h-3.5 w-3.5" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">{t('memory.manageMemory')}</TooltipContent>
+          </Tooltip>
+          
           {messages.length > 0 && (
             <Tooltip>
               <TooltipTrigger asChild>
@@ -461,6 +488,18 @@ export function ConsultantPanel({
           </Button>
         </div>
       </div>
+      
+      {/* Session Memory Dialog */}
+      <SessionMemoryDialog
+        open={memoryDialogOpen}
+        onOpenChange={setMemoryDialogOpen}
+        chunks={chunks}
+        isLoading={memoryLoading}
+        isDeleting={memoryDeleting}
+        onDeleteChunk={deleteChunk}
+        onClearAll={clearSessionMemory}
+        isClearing={memoryClearing}
+      />
     </div>
   );
 }
