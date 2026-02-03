@@ -149,6 +149,9 @@ const translations: Translations = {
   'staffRoles.hierarchy.editRelations': { ru: 'Настройка связей', en: 'Configure relations' },
   'staffRoles.hierarchy.edit': { ru: 'Редактировать', en: 'Edit' },
   'staffRoles.hierarchy.save': { ru: 'Сохранить', en: 'Save' },
+  'staffRoles.hierarchy.saved': { ru: 'Иерархия сохранена', en: 'Hierarchy saved' },
+  'staffRoles.hierarchy.loading': { ru: 'Загрузка настроек...', en: 'Loading settings...' },
+  'staffRoles.hierarchy.saving': { ru: 'Сохранение...', en: 'Saving...' },
   'patterns.systemPattern': { ru: 'Системный паттерн', en: 'System pattern' },
   'patterns.publicPattern': { ru: 'Публичный паттерн', en: 'Public pattern' },
   
