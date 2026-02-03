@@ -63,7 +63,7 @@ const translations: Translations = {
   'staffRoles.description.analyst': { ru: 'Аналитик. Проводит глубокий анализ данных, выявляет закономерности и тренды. Представляет выводы структурированно с обоснованием.', en: 'Analyst. Conducts deep data analysis, identifies patterns and trends. Presents findings in a structured manner with justification.' },
   'staffRoles.description.webhunter': { ru: 'Web-охотник. Специализируется на поиске информации в интернете. Формулирует эффективные запросы и анализирует найденные источники.', en: 'Web hunter. Specializes in searching for information on the internet. Formulates effective queries and analyzes found sources.' },
   'staffRoles.description.promptengineer': { ru: 'Промпт-инженер. Создаёт, оптимизирует и анализирует промпты для ИИ-систем. Помогает формулировать эффективные инструкции.', en: 'Prompt engineer. Creates, optimizes, and analyzes prompts for AI systems. Helps formulate effective instructions.' },
-  'staffRoles.description.flowregulator': { ru: 'Регулировщик потоков. Проектирует и оптимизирует data-flow диаграммы и логические цепочки обработки. Анализирует архитектуру потоков данных.', en: 'Flow regulator. Designs and optimizes data-flow diagrams and processing logic chains. Analyzes data flow architecture.' },
+  'staffRoles.description.flowregulator': { ru: 'Логистик потоков. Проектирует и оптимизирует data-flow диаграммы и логические цепочки обработки. Анализирует архитектуру потоков данных.', en: 'Flow regulator. Designs and optimizes data-flow diagrams and processing logic chains. Analyzes data flow architecture.' },
   
   // Behavioral Patterns
   'patterns.description': { ru: 'Шаблоны логики решения задач и поведенческие модели AI-ролей', en: 'Task-solving logic templates and AI role behavioral models' },
@@ -460,7 +460,7 @@ const translations: Translations = {
   'role.analyst': { ru: 'Аналитик', en: 'Analyst' },
   'role.webhunter': { ru: 'Web-Охотник', en: 'Web Hunter' },
   'role.promptengineer': { ru: 'Промпт-Инженер', en: 'Prompt Engineer' },
-  'role.flowregulator': { ru: 'Регулировщик', en: 'Flow Regulator' },
+  'role.flowregulator': { ru: 'Логистик', en: 'Flow Regulator' },
   
   // Consultant feature
   'consultant.select': { ru: 'Консультант', en: 'Consultant' },
