@@ -707,6 +707,7 @@ const translations: Translations = {
   'memory.saved': { ru: 'Сохранено!', en: 'Saved!' },
   'memory.saving': { ru: 'Сохранение...', en: 'Saving...' },
   'memory.refresh': { ru: 'Освежить память', en: 'Refresh memory' },
+  'memory.refreshed': { ru: 'Память обновлена!', en: 'Memory refreshed!' },
   
   // Settings
   'settings.timeout': { ru: 'Таймаут ожидания', en: 'Response timeout' },
