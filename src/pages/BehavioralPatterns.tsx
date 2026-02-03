@@ -26,7 +26,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Target, Sparkles, ChevronDown, ChevronRight, Plus, Pencil, Copy, Loader2, Lock, Trash2 } from 'lucide-react';
+import { Target, Sparkles, ChevronDown, ChevronRight, Plus, Pencil, Copy, Loader2, Lock, Trash2, Users } from 'lucide-react';
 import { ROLE_CONFIG } from '@/config/roles';
 import { cn } from '@/lib/utils';
 import PatternDetailsPanel from '@/components/patterns/PatternDetailsPanel';
@@ -177,6 +177,9 @@ const BehavioralPatterns = () => {
                 {pattern.meta.isSystem && (
                   <Lock className="h-3 w-3 text-muted-foreground shrink-0" />
                 )}
+                {pattern.meta.isShared && !pattern.meta.isSystem && (
+                  <Users className="h-3 w-3 text-muted-foreground shrink-0" />
+                )}
               </div>
               <div className="flex items-center gap-2">
                 <span className={cn('text-xs', categoryColors[pattern.category])}>
@@ -264,6 +267,9 @@ const BehavioralPatterns = () => {
                 </span>
                 {pattern.meta.isSystem && (
                   <Lock className="h-3 w-3 text-muted-foreground" />
+                )}
+                {pattern.meta.isShared && !pattern.meta.isSystem && (
+                  <Users className="h-3 w-3 text-muted-foreground" />
                 )}
               </div>
               <span className="text-xs text-muted-foreground">
