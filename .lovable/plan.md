@@ -320,6 +320,6 @@ async function invokePromptEngineer(sessionId: string, userRequest: string) {
 - [x] Фаза 1: Ограничение доступа (тех.персонал скрыт из К-чат и Д-чат)
 - [x] Фаза 2: UI кнопки ПИ (PromptEngineerButton в ChatInputArea)
 - [x] Фаза 3: Оркестрация Аналитик → ПИ (tool brief_prompt_engineer)
-- [ ] Фаза 4: Векторная память
+- [x] Фаза 4: Векторная память (session_memory + pgvector + HNSW + search_session_memory)
 - [ ] Фаза 5: Паттерны поведения
 - [ ] Фаза 6: Фоновые процессы
