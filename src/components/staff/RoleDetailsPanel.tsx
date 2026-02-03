@@ -49,10 +49,11 @@ interface PromptLibraryItem {
 
 interface RoleDetailsPanelProps {
   selectedRole: AgentRole | null;
+  onHasUnsavedChanges?: (hasChanges: boolean) => void;
 }
 
 const RoleDetailsPanel = forwardRef<HTMLDivElement, RoleDetailsPanelProps>(
-  ({ selectedRole }, ref) => {
+  ({ selectedRole, onHasUnsavedChanges }, ref) => {
     const { t } = useLanguage();
     const { user } = useAuth();
     
@@ -93,6 +94,11 @@ const RoleDetailsPanel = forwardRef<HTMLDivElement, RoleDetailsPanelProps>(
         unsavedChanges.setHasUnsavedChanges(hasChanges);
       }
     }, [isEditingHierarchy, originalInteractions, unsavedChanges]);
+
+    // Notify parent about unsaved changes state
+    useEffect(() => {
+      onHasUnsavedChanges?.(unsavedChanges.hasUnsavedChanges);
+    }, [unsavedChanges.hasUnsavedChanges, onHasUnsavedChanges]);
 
     // Reset edit state when role changes (with confirmation if unsaved)
     useEffect(() => {

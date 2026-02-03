@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { Layout } from '@/components/layout/Layout';
 import { useLanguage } from '@/contexts/LanguageContext';
 import {
@@ -19,12 +19,31 @@ import { Wrench, Users, Settings, ChevronDown, ChevronRight } from 'lucide-react
 import { ROLE_CONFIG, AGENT_ROLES, type AgentRole } from '@/config/roles';
 import { cn } from '@/lib/utils';
 import RoleDetailsPanel from '@/components/staff/RoleDetailsPanel';
+import { useUnsavedChanges } from '@/hooks/useUnsavedChanges';
+import { UnsavedChangesDialog } from '@/components/ui/unsaved-changes-dialog';
 
 const StaffRoles = () => {
   const { t } = useLanguage();
   const [selectedRole, setSelectedRole] = useState<AgentRole | null>(null);
   const [expertsExpanded, setExpertsExpanded] = useState(true);
   const [technicalExpanded, setTechnicalExpanded] = useState(true);
+  
+  // Track unsaved changes from RoleDetailsPanel
+  const unsavedChanges = useUnsavedChanges();
+  
+  const handleRoleSelect = useCallback((role: AgentRole) => {
+    if (role === selectedRole) return;
+    
+    if (unsavedChanges.hasUnsavedChanges) {
+      unsavedChanges.withConfirmation(() => setSelectedRole(role));
+    } else {
+      setSelectedRole(role);
+    }
+  }, [selectedRole, unsavedChanges]);
+  
+  const handleHasUnsavedChanges = useCallback((hasChanges: boolean) => {
+    unsavedChanges.setHasUnsavedChanges(hasChanges);
+  }, [unsavedChanges]);
 
   // Группируем роли на экспертов и технический персонал
   const { expertRoles, technicalRoles } = useMemo(() => {
@@ -56,7 +75,7 @@ const StaffRoles = () => {
             ? "bg-primary/10 hover:bg-primary/15" 
             : "hover:bg-muted/30"
         )}
-        onClick={() => setSelectedRole(role)}
+        onClick={() => handleRoleSelect(role)}
       >
         <TableCell className="pl-8">
           <div className={cn(
@@ -158,10 +177,20 @@ const StaffRoles = () => {
 
           <ResizablePanel defaultSize={65} minSize={50} maxSize={80}>
             <div className="h-full border-l border-border bg-card">
-              <RoleDetailsPanel selectedRole={selectedRole} />
+              <RoleDetailsPanel 
+                selectedRole={selectedRole} 
+                onHasUnsavedChanges={handleHasUnsavedChanges}
+              />
             </div>
           </ResizablePanel>
         </ResizablePanelGroup>
+        
+        {/* Unsaved changes confirmation dialog */}
+        <UnsavedChangesDialog
+          open={unsavedChanges.showConfirmDialog}
+          onConfirm={unsavedChanges.confirmAndProceed}
+          onCancel={unsavedChanges.cancelNavigation}
+        />
       </div>
     </Layout>
   );
