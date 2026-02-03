@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import {
   Dialog,
@@ -23,6 +23,8 @@ import { Plus, Trash2, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ROLE_CONFIG, AGENT_ROLES, type AgentRole } from '@/config/roles';
 import RoleHierarchyEditor from '@/components/staff/RoleHierarchyEditor';
+import { UnsavedChangesDialog } from '@/components/ui/unsaved-changes-dialog';
+import { useUnsavedChanges } from '@/hooks/useUnsavedChanges';
 import type { 
   RoleBehavior, 
   CommunicationTone, 
@@ -53,6 +55,7 @@ export function BehaviorEditorDialog({
 }: BehaviorEditorDialogProps) {
   const { t } = useLanguage();
   const isEditing = !!behavior?.id;
+  const unsavedChanges = useUnsavedChanges();
 
   const [role, setRole] = useState<AgentRole>('assistant');
   const [tone, setTone] = useState<CommunicationTone>('friendly');
@@ -65,6 +68,41 @@ export function BehaviorEditorDialog({
     collaborates: [],
   });
   const [isShared, setIsShared] = useState(false);
+
+  // Compute initial state hash for change detection
+  const initialStateHash = useMemo(() => {
+    if (!open) return '';
+    if (behavior) {
+      return JSON.stringify({
+        role: behavior.role,
+        tone: behavior.communication.tone,
+        verbosity: behavior.communication.verbosity,
+        formatPreference: behavior.communication.format_preference,
+        reactions: behavior.reactions,
+        interactions: behavior.interactions,
+      });
+    }
+    return JSON.stringify({
+      role: 'assistant',
+      tone: 'friendly',
+      verbosity: 'adaptive',
+      formatPreference: [],
+      reactions: [emptyReaction],
+      interactions: { defers_to: [], challenges: [], collaborates: [] },
+    });
+  }, [behavior, open]);
+
+  // Check for unsaved changes
+  const currentStateHash = useMemo(() => {
+    return JSON.stringify({ role, tone, verbosity, formatPreference, reactions, interactions });
+  }, [role, tone, verbosity, formatPreference, reactions, interactions]);
+
+  // Update unsaved changes state
+  useEffect(() => {
+    if (open && initialStateHash) {
+      unsavedChanges.setHasUnsavedChanges(currentStateHash !== initialStateHash);
+    }
+  }, [currentStateHash, initialStateHash, open]);
 
   // Reset form when behavior changes
   useEffect(() => {
@@ -84,6 +122,7 @@ export function BehaviorEditorDialog({
       setInteractions({ defers_to: [], challenges: [], collaborates: [] });
       setIsShared(false);
     }
+    unsavedChanges.markSaved();
   }, [behavior, open]);
 
   const addReaction = () => {
@@ -112,7 +151,19 @@ export function BehaviorEditorDialog({
       interactions,
     };
     await onSave(data, isShared);
+    unsavedChanges.markSaved();
     onOpenChange(false);
+  };
+
+  const handleClose = () => {
+    if (unsavedChanges.hasUnsavedChanges) {
+      unsavedChanges.withConfirmation(() => {
+        unsavedChanges.markSaved();
+        onOpenChange(false);
+      });
+    } else {
+      onOpenChange(false);
+    }
   };
 
   const isValid = reactions.some(r => r.trigger.trim() && r.behavior.trim());
@@ -120,7 +171,8 @@ export function BehaviorEditorDialog({
   const RoleIcon = roleConfig.icon;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <>
+    <Dialog open={open} onOpenChange={(isOpen) => !isOpen ? handleClose() : onOpenChange(true)}>
       <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>
@@ -270,7 +322,7 @@ export function BehaviorEditorDialog({
         </ScrollArea>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button variant="outline" onClick={handleClose}>
             {t('common.cancel')}
           </Button>
           <Button onClick={handleSave} disabled={!isValid || isSaving}>
@@ -280,5 +332,12 @@ export function BehaviorEditorDialog({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+    
+    <UnsavedChangesDialog
+      open={unsavedChanges.showConfirmDialog}
+      onConfirm={unsavedChanges.confirmAndProceed}
+      onCancel={unsavedChanges.cancelNavigation}
+    />
+    </>
   );
 }
