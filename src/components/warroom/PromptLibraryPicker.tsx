@@ -225,7 +225,7 @@ export function PromptLibraryPicker({ open, onOpenChange, onSelect, currentRole 
                         {prompt.content}
                       </p>
                     </div>
-                    {prompt.user_id === user?.id && (
+                    {prompt.user_id === user?.id && !prompt.is_default && (
                       <Button
                         variant="ghost"
                         size="icon"
