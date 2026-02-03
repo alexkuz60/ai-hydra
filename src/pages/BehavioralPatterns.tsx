@@ -175,10 +175,20 @@ const BehavioralPatterns = () => {
               <div className="flex items-center gap-2">
                 <span className="font-medium truncate">{pattern.name}</span>
                 {pattern.meta.isSystem && (
-                  <Lock className="h-3 w-3 text-muted-foreground shrink-0" />
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Lock className="h-3 w-3 text-muted-foreground shrink-0" />
+                    </TooltipTrigger>
+                    <TooltipContent>{t('patterns.systemPattern')}</TooltipContent>
+                  </Tooltip>
                 )}
                 {pattern.meta.isShared && !pattern.meta.isSystem && (
-                  <Users className="h-3 w-3 text-muted-foreground shrink-0" />
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Users className="h-3 w-3 text-muted-foreground shrink-0" />
+                    </TooltipTrigger>
+                    <TooltipContent>{t('patterns.publicPattern')}</TooltipContent>
+                  </Tooltip>
                 )}
               </div>
               <div className="flex items-center gap-2">
@@ -266,10 +276,20 @@ const BehavioralPatterns = () => {
                   {t(config?.label || pattern.role)}
                 </span>
                 {pattern.meta.isSystem && (
-                  <Lock className="h-3 w-3 text-muted-foreground" />
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Lock className="h-3 w-3 text-muted-foreground" />
+                    </TooltipTrigger>
+                    <TooltipContent>{t('patterns.systemPattern')}</TooltipContent>
+                  </Tooltip>
                 )}
                 {pattern.meta.isShared && !pattern.meta.isSystem && (
-                  <Users className="h-3 w-3 text-muted-foreground" />
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Users className="h-3 w-3 text-muted-foreground" />
+                    </TooltipTrigger>
+                    <TooltipContent>{t('patterns.publicPattern')}</TooltipContent>
+                  </Tooltip>
                 )}
               </div>
               <span className="text-xs text-muted-foreground">
