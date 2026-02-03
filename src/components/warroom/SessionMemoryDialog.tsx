@@ -208,7 +208,7 @@ export function SessionMemoryDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col min-h-0">
+      <DialogContent className="max-w-2xl h-[80vh] flex flex-col min-h-0 overflow-hidden">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Archive className="h-5 w-5 text-hydra-memory" />
@@ -387,12 +387,14 @@ export function SessionMemoryDialog({
                           )}
                           {isDuplicate && (
                             <Tooltip>
-                              <TooltipTrigger>
-                                <Badge variant="outline" className="text-[10px] h-5 text-amber-500 border-amber-500/50">
-                                  <Copy className="h-2.5 w-2.5 mr-0.5" />
-                                  {t('memory.duplicate')}
-                                </Badge>
-                              </TooltipTrigger>
+                               <TooltipTrigger asChild>
+                                 <span>
+                                   <Badge variant="outline" className="text-[10px] h-5 text-amber-500 border-amber-500/50">
+                                     <Copy className="h-2.5 w-2.5 mr-0.5" />
+                                     {t('memory.duplicate')}
+                                   </Badge>
+                                 </span>
+                               </TooltipTrigger>
                               <TooltipContent>{t('memory.duplicateTooltip')}</TooltipContent>
                             </Tooltip>
                           )}
