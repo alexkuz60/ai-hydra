@@ -334,21 +334,22 @@ export function SessionMemoryDialog({
         </div>
 
         {/* Chunks list */}
-        <ScrollArea className="flex-1 min-h-[200px] max-h-[50vh] border rounded-md pr-4">
-          {isLoading || isSearchingActive ? (
-            <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-              {isSearchingActive && useSemanticSearch && (
-                <span className="ml-2 text-sm text-muted-foreground">{t('memory.searching')}</span>
-              )}
-            </div>
-          ) : displayItems.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-              <Archive className="h-10 w-10 mb-2 opacity-50" />
-              <p className="text-sm">{searchQuery ? t('memory.noSearchResults') : t('memory.empty')}</p>
-            </div>
-          ) : (
-            <div className="divide-y divide-border">
+        <div className="flex-1 min-h-[200px] max-h-[50vh] border rounded-md overflow-hidden">
+          <ScrollArea className="h-full">
+            {isLoading || isSearchingActive ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                {isSearchingActive && useSemanticSearch && (
+                  <span className="ml-2 text-sm text-muted-foreground">{t('memory.searching')}</span>
+                )}
+              </div>
+            ) : displayItems.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+                <Archive className="h-10 w-10 mb-2 opacity-50" />
+                <p className="text-sm">{searchQuery ? t('memory.noSearchResults') : t('memory.empty')}</p>
+              </div>
+            ) : (
+              <div className="divide-y divide-border pr-3">
               {displayItems.map((item) => {
                 const config = CHUNK_TYPE_CONFIG[item.chunk_type as ChunkType] || CHUNK_TYPE_CONFIG.message;
                 const Icon = config.icon;
@@ -429,7 +430,8 @@ export function SessionMemoryDialog({
               })}
             </div>
           )}
-        </ScrollArea>
+          </ScrollArea>
+        </div>
 
         {/* Footer with Clear All */}
         {chunks.length > 0 && (
