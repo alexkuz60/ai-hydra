@@ -22,6 +22,7 @@ import { useConsultantPanelWidth } from '@/hooks/useConsultantPanelWidth';
 import { useModelStatistics } from '@/hooks/useModelStatistics';
 import { useStreamingResponses } from '@/hooks/useStreamingResponses';
 import { useMemoryIntegration } from '@/hooks/useMemoryIntegration';
+import { useSessionMemory } from '@/hooks/useSessionMemory';
 import { PendingResponseState, RequestStartInfo } from '@/types/pending';
 import { Loader2, Target, Zap, ZapOff, Square, Circle, Brain } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -92,7 +93,9 @@ export default function ExpertPanel() {
   // Model statistics hook for tracking dismissals
   const { incrementDismissal } = useModelStatistics(user?.id);
 
-  // Messages management hook - defined first so we can use fetchMessages in streaming hook
+  // Session memory hook - for getting deleteByMessageId before useMessages
+  const { deleteByMessageId } = useSessionMemory(currentTask?.id || null);
+
   // Messages management hook
   const {
     messages,
@@ -105,10 +108,18 @@ export default function ExpertPanel() {
     handleDeleteMessageGroup,
     handleRatingChange,
     fetchMessages,
-  } = useMessages({ sessionId: currentTask?.id || null });
+  } = useMessages({ 
+    sessionId: currentTask?.id || null,
+    onBeforeDeleteMessage: deleteByMessageId,
+  });
 
   // Memory integration hook - auto-saves high-rated decisions
-  const { memoryStats, saveDecision, isSaving: isMemorySaving } = useMemoryIntegration({
+  const { 
+    memoryStats, 
+    saveDecision, 
+    savedMessageIds, 
+    isSaving: isMemorySaving 
+  } = useMemoryIntegration({
     sessionId: currentTask?.id || null,
     messages,
     enabled: true,
@@ -717,6 +728,7 @@ export default function ExpertPanel() {
                 onClarifyWithSpecialist={handleClarifyWithSpecialist}
                 onSaveToMemory={saveDecision}
                 isSavingToMemory={isMemorySaving}
+                savedMessageIds={savedMessageIds}
                 pendingResponses={filteredPendingResponses}
                 streamingResponses={filteredStreamingResponses}
                 timeoutSeconds={timeoutSeconds}

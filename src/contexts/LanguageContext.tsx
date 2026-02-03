@@ -708,6 +708,7 @@ const translations: Translations = {
   'memory.saving': { ru: 'Сохранение...', en: 'Saving...' },
   'memory.refresh': { ru: 'Освежить память', en: 'Refresh memory' },
   'memory.refreshed': { ru: 'Память обновлена!', en: 'Memory refreshed!' },
+  'memory.alreadySaved': { ru: 'Уже сохранено в память', en: 'Already saved to memory' },
   
   // Settings
   'settings.timeout': { ru: 'Таймаут ожидания', en: 'Response timeout' },
