@@ -98,6 +98,9 @@ const translations: Translations = {
   'patterns.category.creative': { ru: 'Творчество', en: 'Creative' },
   'patterns.category.analysis': { ru: 'Анализ', en: 'Analysis' },
   'patterns.category.technical': { ru: 'Технический', en: 'Technical' },
+  'patterns.flowGenerated': { ru: 'Flow-диаграмма сгенерирована', en: 'Flow diagram generated' },
+  'patterns.flowGenerationError': { ru: 'Ошибка генерации диаграммы', en: 'Flow generation error' },
+  'patterns.generatingFlow': { ru: 'Генерация диаграммы...', en: 'Generating diagram...' },
   
   // Hydrapedia
   'hydrapedia.title': { ru: 'Гидропедия', en: 'Hydrapedia' },
