@@ -725,6 +725,11 @@ const translations: Translations = {
   'memory.duplicate': { ru: 'Дубликат', en: 'Duplicate' },
   'memory.duplicateTooltip': { ru: 'Этот фрагмент имеет дубликаты с идентичным содержимым', en: 'This fragment has duplicates with identical content' },
   'memory.duplicateGroups': { ru: 'групп дубликатов', en: 'duplicate groups' },
+  'memory.semanticSearchPlaceholder': { ru: 'Семантический поиск...', en: 'Semantic search...' },
+  'memory.switchToSemanticSearch': { ru: 'Переключить на семантический поиск (ИИ)', en: 'Switch to semantic search (AI)' },
+  'memory.switchToTextSearch': { ru: 'Переключить на текстовый поиск', en: 'Switch to text search' },
+  'memory.semanticSearchHint': { ru: 'Поиск по смыслу с использованием AI-эмбеддингов', en: 'Search by meaning using AI embeddings' },
+  'memory.searching': { ru: 'Ищем...', en: 'Searching...' },
   
   // Settings
   'settings.timeout': { ru: 'Таймаут ожидания', en: 'Response timeout' },

@@ -175,6 +175,23 @@ export function useSessionMemory(sessionId: string | null) {
     },
   });
 
+  // Generate embeddings via edge function
+  const generateEmbedding = useCallback(async (text: string): Promise<number[] | null> => {
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-embeddings', {
+        body: { texts: [text] },
+      });
+      
+      if (error) throw error;
+      if (!data?.embeddings?.[0]) throw new Error('No embedding returned');
+      
+      return data.embeddings[0] as number[];
+    } catch (error) {
+      console.error('Failed to generate embedding:', error);
+      return null;
+    }
+  }, []);
+
   // Semantic search in session memory (requires embedding)
   // Note: This requires generating embeddings on the backend
   const searchMemory = useCallback(
@@ -206,6 +223,36 @@ export function useSessionMemory(sessionId: string | null) {
       }
     },
     [sessionId, user]
+  );
+
+  // High-level semantic search: generates embedding, then searches
+  const semanticSearch = useCallback(
+    async (
+      query: string,
+      options?: { limit?: number; chunkTypes?: ChunkType[] }
+    ): Promise<SearchResult[]> => {
+      if (!query.trim() || !sessionId || !user) return [];
+      
+      setIsSearching(true);
+      try {
+        // Generate embedding for query
+        const embedding = await generateEmbedding(query);
+        if (!embedding) {
+          console.warn('Failed to generate embedding, falling back to text search');
+          return [];
+        }
+        
+        // Search using embedding
+        const results = await searchMemory(embedding, options);
+        return results;
+      } catch (error) {
+        console.error('Semantic search failed:', error);
+        return [];
+      } finally {
+        setIsSearching(false);
+      }
+    },
+    [sessionId, user, generateEmbedding, searchMemory]
   );
 
   // Text-based search (fallback without embeddings)
@@ -354,6 +401,8 @@ export function useSessionMemory(sessionId: string | null) {
     // Search
     searchMemory,
     searchByText,
+    semanticSearch,
+    generateEmbedding,
 
     // Helpers
     getChunksByType,

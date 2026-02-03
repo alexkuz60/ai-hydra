@@ -106,6 +106,8 @@ export function ConsultantPanel({
     clearSessionMemory,
     isDeleting: memoryDeleting,
     isClearing: memoryClearing,
+    semanticSearch,
+    isSearching: memorySearching,
   } = useSessionMemory(sessionId);
   const [memoryRefreshed, setMemoryRefreshed] = useState(false);
   const [memoryDialogOpen, setMemoryDialogOpen] = useState(false);
@@ -499,6 +501,8 @@ export function ConsultantPanel({
         onDeleteChunk={deleteChunk}
         onClearAll={clearSessionMemory}
         isClearing={memoryClearing}
+        onSemanticSearch={semanticSearch}
+        isSearching={memorySearching}
       />
     </div>
   );

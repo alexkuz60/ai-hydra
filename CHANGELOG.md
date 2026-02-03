@@ -4,6 +4,30 @@
 
 ---
 
+## [2025-02-03] Семантический поиск в памяти сессии
+
+### Новое
+- Функция `generateEmbedding()` в useSessionMemory — генерирует эмбеддинги через edge-функцию
+- Функция `semanticSearch()` — высокоуровневый поиск (генерация эмбеддинга → RPC search_session_memory)
+- Переключатель режима поиска в SessionMemoryDialog (текстовый ↔ семантический)
+- Отображение score релевантности (%) для результатов семантического поиска
+
+### Изменено
+- `src/hooks/useSessionMemory.ts` — добавлены generateEmbedding, semanticSearch
+- `src/components/warroom/SessionMemoryDialog.tsx` — интеграция AI-поиска с анимированным toggle (Sparkles/Text)
+- `src/components/warroom/ConsultantPanel.tsx` — передача onSemanticSearch в диалог
+- `src/pages/ExpertPanel.tsx` — передача onSemanticSearch в диалог
+- `src/contexts/LanguageContext.tsx` — переводы для семантического поиска
+
+### Как работает
+При активации семантического режима (кнопка Sparkles) запрос отправляется в edge-функцию generate-embeddings, которая возвращает вектор 1536 измерений. Вектор передаётся в RPC search_session_memory для поиска по косинусному расстоянию (pgvector). Результаты сортируются по similarity и отображаются с процентом релевантности.
+
+### Связанные разделы Гидропедии
+- Память сессии → Семантический поиск
+- Edge Functions → generate-embeddings
+
+---
+
 ## [2025-02-03] Управление памятью в основном чате
 
 ### Новое
