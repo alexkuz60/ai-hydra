@@ -61,6 +61,7 @@ export function AppSidebar() {
 
   const isActive = (path: string) => location.pathname === path;
 
+  // Navigation items - Hydrapedia is always available
   const navItems = user ? [
     { path: '/tasks', icon: CheckSquare, label: t('nav.tasks') },
     { path: '/staff-roles', icon: UserCog, label: t('nav.staffRoles') },
@@ -71,7 +72,10 @@ export function AppSidebar() {
     { path: '/flow-editor', icon: GitBranch, label: t('nav.flowEditor') },
     { path: '/model-ratings', icon: BarChart3, label: t('nav.modelRatings') },
     { path: '/hydrapedia', icon: BookOpen, label: t('nav.hydrapedia') },
-  ] : [];
+  ] : [
+    // Guest users only see Hydrapedia
+    { path: '/hydrapedia', icon: BookOpen, label: t('nav.hydrapedia') },
+  ];
 
   return (
     <Sidebar collapsible="icon">

@@ -17,12 +17,14 @@ const Index = () => {
   const { user } = useAuth();
   const { t } = useLanguage();
 
+  // Mapping modules to Hydrapedia sections for guest users
   const modules = [
     {
       icon: Users,
       title: 'Штат специалистов',
       description: '11 ИИ-ролей с уникальными когнитивными профилями',
       link: '/staff-roles',
+      hydrapediaSection: 'roles', // section id in Hydrapedia
       color: 'text-hydra-expert',
     },
     {
@@ -30,6 +32,7 @@ const Index = () => {
       title: 'Панель экспертов',
       description: 'Многомодельные дискуссии в реальном времени',
       link: '/expert-panel',
+      hydrapediaSection: 'expert-panel',
       color: 'text-primary',
     },
     {
@@ -37,6 +40,7 @@ const Index = () => {
       title: 'Редактор потоков',
       description: 'Визуальное проектирование цепочек рассуждений',
       link: '/flow-editor',
+      hydrapediaSection: 'flow-editor',
       color: 'text-hydra-arbiter',
     },
     {
@@ -44,6 +48,7 @@ const Index = () => {
       title: 'Библиотека промптов',
       description: 'Переиспользуемые системные инструкции',
       link: '/role-library',
+      hydrapediaSection: 'prompts',
       color: 'text-hydra-consultant',
     },
     {
@@ -51,6 +56,7 @@ const Index = () => {
       title: 'Свои инструменты',
       description: 'HTTP и промпт-инструменты для агентов',
       link: '/tools-library',
+      hydrapediaSection: 'tools',
       color: 'text-hydra-webhunter',
     },
     {
@@ -58,6 +64,7 @@ const Index = () => {
       title: 'Рейтинг моделей',
       description: 'Статистика эффективности и предпочтений',
       link: '/model-ratings',
+      hydrapediaSection: 'ratings',
       color: 'text-hydra-analyst',
     },
   ];
@@ -272,36 +279,48 @@ const Index = () => {
             </motion.div>
 
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 max-w-5xl mx-auto">
-              {modules.map((module, index) => (
-                <motion.div
-                  key={index}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: index * 0.08 }}
-                >
-                  <Link to={module.link}>
-                    <HydraCard 
-                      variant="default" 
-                      className="h-full p-5 hover:bg-accent/50 transition-all duration-300 group cursor-pointer"
-                    >
-                      <div className="flex items-start gap-4">
-                        <div className={`p-2.5 rounded-lg bg-muted/50 group-hover:bg-muted transition-colors`}>
-                          <module.icon className={`h-5 w-5 ${module.color}`} />
+              {modules.map((module, index) => {
+                // Guests go to Hydrapedia section, logged-in users go to actual page
+                const targetLink = user 
+                  ? module.link 
+                  : `/hydrapedia?section=${module.hydrapediaSection}`;
+                
+                return (
+                  <motion.div
+                    key={index}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: index * 0.08 }}
+                  >
+                    <Link to={targetLink}>
+                      <HydraCard 
+                        variant="default" 
+                        className="h-full p-5 hover:bg-accent/50 transition-all duration-300 group cursor-pointer"
+                      >
+                        <div className="flex items-start gap-4">
+                          <div className={`p-2.5 rounded-lg bg-muted/50 group-hover:bg-muted transition-colors`}>
+                            <module.icon className={`h-5 w-5 ${module.color}`} />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-semibold mb-1 group-hover:text-primary transition-colors">
+                              {module.title}
+                            </h3>
+                            <p className="text-sm text-muted-foreground">
+                              {module.description}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            {!user && (
+                              <BookOpen className="h-3.5 w-3.5 text-muted-foreground" />
+                            )}
+                            <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
+                          </div>
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <h3 className="font-semibold mb-1 group-hover:text-primary transition-colors">
-                            {module.title}
-                          </h3>
-                          <p className="text-sm text-muted-foreground">
-                            {module.description}
-                          </p>
-                        </div>
-                        <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
-                      </div>
-                    </HydraCard>
-                  </Link>
-                </motion.div>
-              ))}
+                      </HydraCard>
+                    </Link>
+                  </motion.div>
+                );
+              })}
             </div>
           </div>
         </section>
