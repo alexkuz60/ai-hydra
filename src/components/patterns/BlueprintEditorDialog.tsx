@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import {
   Dialog,
@@ -24,6 +24,8 @@ import {
 import { Plus, Trash2, GripVertical, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ROLE_CONFIG, AGENT_ROLES, type AgentRole } from '@/config/roles';
+import { UnsavedChangesDialog } from '@/components/ui/unsaved-changes-dialog';
+import { useUnsavedChanges } from '@/hooks/useUnsavedChanges';
 import type { TaskBlueprint, BlueprintStage, BlueprintCheckpoint, PatternCategory } from '@/types/patterns';
 
 interface BlueprintEditorDialogProps {
@@ -52,6 +54,7 @@ export function BlueprintEditorDialog({
 }: BlueprintEditorDialogProps) {
   const { t } = useLanguage();
   const isEditing = !!blueprint?.id;
+  const unsavedChanges = useUnsavedChanges();
 
   const [name, setName] = useState('');
   const [category, setCategory] = useState<PatternCategory>('planning');
@@ -59,6 +62,39 @@ export function BlueprintEditorDialog({
   const [stages, setStages] = useState<BlueprintStage[]>([{ ...emptyStage }]);
   const [checkpoints, setCheckpoints] = useState<BlueprintCheckpoint[]>([]);
   const [isShared, setIsShared] = useState(false);
+
+  // Compute initial state hash for change detection
+  const initialStateHash = useMemo(() => {
+    if (!open) return '';
+    if (blueprint) {
+      return JSON.stringify({
+        name: blueprint.name,
+        category: blueprint.category,
+        description: blueprint.description,
+        stages: blueprint.stages,
+        checkpoints: blueprint.checkpoints,
+      });
+    }
+    return JSON.stringify({
+      name: '',
+      category: 'planning',
+      description: '',
+      stages: [emptyStage],
+      checkpoints: [],
+    });
+  }, [blueprint, open]);
+
+  // Check for unsaved changes
+  const currentStateHash = useMemo(() => {
+    return JSON.stringify({ name, category, description, stages, checkpoints });
+  }, [name, category, description, stages, checkpoints]);
+
+  // Update unsaved changes state
+  useEffect(() => {
+    if (open && initialStateHash) {
+      unsavedChanges.setHasUnsavedChanges(currentStateHash !== initialStateHash);
+    }
+  }, [currentStateHash, initialStateHash, open]);
 
   // Reset form when blueprint changes
   useEffect(() => {
@@ -76,6 +112,7 @@ export function BlueprintEditorDialog({
       setCheckpoints([]);
       setIsShared(false);
     }
+    unsavedChanges.markSaved();
   }, [blueprint, open]);
 
   const addStage = () => {
@@ -130,13 +167,26 @@ export function BlueprintEditorDialog({
       checkpoints,
     };
     await onSave(data, isShared);
+    unsavedChanges.markSaved();
     onOpenChange(false);
+  };
+
+  const handleClose = () => {
+    if (unsavedChanges.hasUnsavedChanges) {
+      unsavedChanges.withConfirmation(() => {
+        unsavedChanges.markSaved();
+        onOpenChange(false);
+      });
+    } else {
+      onOpenChange(false);
+    }
   };
 
   const isValid = name.trim() && description.trim() && stages.length > 0 && stages.every(s => s.name.trim() && s.roles.length > 0);
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <>
+    <Dialog open={open} onOpenChange={(isOpen) => !isOpen ? handleClose() : onOpenChange(true)}>
       <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>
@@ -324,7 +374,7 @@ export function BlueprintEditorDialog({
         </ScrollArea>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button variant="outline" onClick={handleClose}>
             {t('common.cancel')}
           </Button>
           <Button onClick={handleSave} disabled={!isValid || isSaving}>
@@ -334,5 +384,12 @@ export function BlueprintEditorDialog({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+    
+    <UnsavedChangesDialog
+      open={unsavedChanges.showConfirmDialog}
+      onConfirm={unsavedChanges.confirmAndProceed}
+      onCancel={unsavedChanges.cancelNavigation}
+    />
+    </>
   );
 }

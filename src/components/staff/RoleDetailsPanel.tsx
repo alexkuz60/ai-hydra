@@ -1,4 +1,4 @@
-import React, { forwardRef, useState, useEffect } from 'react';
+import React, { forwardRef, useState, useEffect, useCallback } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { Badge } from '@/components/ui/badge';
@@ -34,6 +34,8 @@ import {
 import { cn } from '@/lib/utils';
 import RoleHierarchyEditor from './RoleHierarchyEditor';
 import { useRoleBehavior } from '@/hooks/useRoleBehavior';
+import { useUnsavedChanges } from '@/hooks/useUnsavedChanges';
+import { UnsavedChangesDialog } from '@/components/ui/unsaved-changes-dialog';
 import type { RoleInteractions } from '@/types/patterns';
 
 interface PromptLibraryItem {
@@ -53,6 +55,9 @@ const RoleDetailsPanel = forwardRef<HTMLDivElement, RoleDetailsPanelProps>(
   ({ selectedRole }, ref) => {
     const { t } = useLanguage();
     const { user } = useAuth();
+    
+    // Unsaved changes tracking for hierarchy
+    const unsavedChanges = useUnsavedChanges();
     
     // Edit mode state
     const [isEditing, setIsEditing] = useState(false);
@@ -79,15 +84,28 @@ const RoleDetailsPanel = forwardRef<HTMLDivElement, RoleDetailsPanelProps>(
     // Load behavior from database
     const { behavior, isLoading: isLoadingBehavior, isSaving, saveInteractions } = useRoleBehavior(selectedRole);
 
-    // Reset edit state when role changes
+    // Track changes to interactions when editing
+    const handleInteractionsChange = useCallback((newInteractions: RoleInteractions) => {
+      setInteractions(newInteractions);
+      if (isEditingHierarchy && originalInteractions) {
+        // Check if there are actual changes
+        const hasChanges = JSON.stringify(newInteractions) !== JSON.stringify(originalInteractions);
+        unsavedChanges.setHasUnsavedChanges(hasChanges);
+      }
+    }, [isEditingHierarchy, originalInteractions, unsavedChanges]);
+
+    // Reset edit state when role changes (with confirmation if unsaved)
     useEffect(() => {
+      if (unsavedChanges.hasUnsavedChanges) {
+        return; // Don't reset if there are unsaved changes - handled by confirmation
+      }
       setIsEditing(false);
       setEditedPrompt('');
       setPromptName('');
       setIsShared(false);
       setSelectedLibraryPrompt('');
       setIsEditingHierarchy(false);
-    }, [selectedRole]);
+    }, [selectedRole, unsavedChanges.hasUnsavedChanges]);
 
     // Sync interactions from loaded behavior
     useEffect(() => {
@@ -405,12 +423,21 @@ const RoleDetailsPanel = forwardRef<HTMLDivElement, RoleDetailsPanelProps>(
                         variant="ghost"
                         size="sm"
                         onClick={() => {
-                          // Restore original interactions
-                          if (originalInteractions) {
-                            setInteractions(originalInteractions);
+                          const handleCancel = () => {
+                            // Restore original interactions
+                            if (originalInteractions) {
+                              setInteractions(originalInteractions);
+                            }
+                            setIsEditingHierarchy(false);
+                            setOriginalInteractions(null);
+                            unsavedChanges.markSaved();
+                          };
+                          
+                          if (unsavedChanges.hasUnsavedChanges) {
+                            unsavedChanges.withConfirmation(handleCancel);
+                          } else {
+                            handleCancel();
                           }
-                          setIsEditingHierarchy(false);
-                          setOriginalInteractions(null);
                         }}
                         disabled={isSaving}
                         className="gap-1.5 h-7 text-xs"
@@ -430,6 +457,7 @@ const RoleDetailsPanel = forwardRef<HTMLDivElement, RoleDetailsPanelProps>(
                             toast.success(t('staffRoles.hierarchy.saved'));
                             setIsEditingHierarchy(false);
                             setOriginalInteractions(null);
+                            unsavedChanges.markSaved();
                           }
                         } else {
                           // Store original values before editing
@@ -472,7 +500,7 @@ const RoleDetailsPanel = forwardRef<HTMLDivElement, RoleDetailsPanelProps>(
                   <RoleHierarchyEditor
                     selectedRole={selectedRole}
                     interactions={interactions}
-                    onInteractionsChange={setInteractions}
+                    onInteractionsChange={handleInteractionsChange}
                     isEditing={isEditingHierarchy}
                   />
                 )}
@@ -497,6 +525,13 @@ const RoleDetailsPanel = forwardRef<HTMLDivElement, RoleDetailsPanelProps>(
             </div>
           </div>
         </ScrollArea>
+        
+        {/* Unsaved Changes Dialog */}
+        <UnsavedChangesDialog
+          open={unsavedChanges.showConfirmDialog}
+          onConfirm={unsavedChanges.confirmAndProceed}
+          onCancel={unsavedChanges.cancelNavigation}
+        />
       </div>
     );
   }

@@ -462,6 +462,12 @@ const translations: Translations = {
   'common.cancel': { ru: 'Отмена', en: 'Cancel' },
   'common.confirm': { ru: 'Подтвердить', en: 'Confirm' },
   'common.addLanguage': { ru: 'Добавить язык...', en: 'Add language...' },
+  
+  // Unsaved changes dialog
+  'common.unsavedChanges.title': { ru: 'Несохранённые изменения', en: 'Unsaved Changes' },
+  'common.unsavedChanges.description': { ru: 'У вас есть несохранённые изменения. Вы уверены, что хотите выйти? Все изменения будут потеряны.', en: 'You have unsaved changes. Are you sure you want to leave? All changes will be lost.' },
+  'common.unsavedChanges.cancel': { ru: 'Остаться', en: 'Stay' },
+  'common.unsavedChanges.discard': { ru: 'Отменить изменения', en: 'Discard Changes' },
   'common.selectAll': { ru: 'Выбрать все', en: 'Select all' },
   'common.deselectAll': { ru: 'Снять все', en: 'Deselect all' },
   'common.delete': { ru: 'Удалить', en: 'Delete' },
