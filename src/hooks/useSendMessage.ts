@@ -31,6 +31,7 @@ function buildModelConfig(
     enable_tools: settings.enableTools ?? true,
     enabled_tools: settings.enabledTools ?? ['calculator', 'current_datetime', 'web_search'],
     enabled_custom_tools: settings.enabledCustomTools ?? [],
+    search_provider: settings.searchProvider ?? 'tavily',
   };
 }
 

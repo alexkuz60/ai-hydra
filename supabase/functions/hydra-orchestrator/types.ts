@@ -85,6 +85,8 @@ export interface ModelRequest {
   enable_tools?: boolean;
   enabled_tools?: string[];
   enabled_custom_tools?: string[];
+  /** Search provider for web_search tool: tavily, perplexity, or both */
+  search_provider?: 'tavily' | 'perplexity' | 'both';
   // Fallback metadata - passed when model was rate-limited or used orchestrator fallback
   fallback_metadata?: {
     used_fallback: boolean;
@@ -223,6 +225,8 @@ export interface WebSearchArgs {
 export interface SearchProviderConfig {
   tavilyKey: string | null;
   perplexityKey: string | null;
+  /** Default provider from model settings */
+  defaultProvider?: 'tavily' | 'perplexity' | 'both';
 }
 
 export type AvailableSearchProvider = "tavily" | "perplexity" | "both" | "none";
