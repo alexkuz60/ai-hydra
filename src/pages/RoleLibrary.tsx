@@ -63,8 +63,7 @@ interface RolePrompt {
   is_shared: boolean;
   is_default: boolean;
   usage_count: number;
-  user_id: string | null; // null for shared prompts from other users (privacy protection)
-  is_owner: boolean; // from security view
+  is_owner: boolean; // computed server-side (privacy-safe)
   created_at: string;
   updated_at: string;
 }
@@ -119,12 +118,8 @@ export default function RoleLibrary() {
     if (!user) return;
 
     try {
-      // Use security view that masks user_id for non-owners
-      // This prevents user identity enumeration through shared prompts
-      const { data, error } = await supabase
-        .from('prompt_library_safe' as any)
-        .select('*')
-        .order('updated_at', { ascending: false });
+      // Read via backend RPC that never returns user_id for shared prompts
+      const { data, error } = await supabase.rpc('get_prompt_library_safe');
 
       if (error) throw error;
       setPrompts((data || []) as unknown as RolePrompt[]);
@@ -140,7 +135,7 @@ export default function RoleLibrary() {
     setCreating(true);
 
     try {
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('prompt_library')
         .insert([{
           user_id: user.id,
@@ -149,19 +144,12 @@ export default function RoleLibrary() {
           content: newContent.trim(),
           role: newRole,
           is_shared: newIsShared,
-        }])
-        .select()
-        .single();
+        }]);
 
       if (error) throw error;
 
-      // Add to list with is_owner = true since we just created it
-      const newPrompt: RolePrompt = {
-        ...data,
-        user_id: user.id,
-        is_owner: true
-      };
-      setPrompts([newPrompt, ...prompts]);
+      // Refresh from backend (direct SELECT on base table is intentionally blocked)
+      await fetchPrompts();
       setNewName('');
       setNewDescription('');
       setNewContent('');
@@ -203,19 +191,8 @@ export default function RoleLibrary() {
 
       if (error) throw error;
 
-      setPrompts(prompts.map(p => 
-        p.id === editingPrompt.id 
-          ? { 
-              ...p, 
-              name: editName.trim(),
-              description: editDescription.trim() || null,
-              content: editContent.trim(),
-              role: editRole,
-              is_shared: editIsShared,
-              updated_at: new Date().toISOString()
-            } 
-          : p
-      ));
+      // Refresh to keep ordering/derived flags consistent
+      await fetchPrompts();
       
       setEditSheet(false);
       setEditingPrompt(null);
