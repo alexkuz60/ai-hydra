@@ -785,6 +785,15 @@ serve(async (req) => {
           const enableTools = modelReq.enable_tools !== false;
           const enabledTools = modelReq.enabled_tools;
           
+          // Set model-specific search provider before calling
+          if (modelReq.search_provider) {
+            setSearchProviderKeys({
+              tavilyKey: userTavilyKey,
+              perplexityKey: userPerplexityKey,
+              defaultProvider: modelReq.search_provider,
+            });
+          }
+          
           const modelCustomTools: CustomToolDefinition[] = [];
           if (modelReq.enabled_custom_tools) {
             for (const ctId of modelReq.enabled_custom_tools) {

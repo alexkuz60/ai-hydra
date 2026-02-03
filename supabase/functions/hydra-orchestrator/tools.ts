@@ -548,8 +548,11 @@ async function executeWebSearch(args: WebSearchArgs): Promise<string> {
     });
   }
   
-  // Determine which provider(s) to use
-  let requestedProvider = args.provider || "tavily";
+  // Determine which provider(s) to use:
+  // 1. Explicit provider from tool call args (model specified in call)
+  // 2. Default provider from model settings (searchProviderConfig.defaultProvider)
+  // 3. Fallback to "tavily"
+  let requestedProvider = args.provider || searchProviderConfig.defaultProvider || "tavily";
   
   // If user requested a specific provider but doesn't have the key, fallback
   if (requestedProvider === "perplexity" && !searchProviderConfig.perplexityKey) {

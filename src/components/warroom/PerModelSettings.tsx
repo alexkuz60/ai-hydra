@@ -102,10 +102,19 @@ function calculateRequestCost(
 export const AVAILABLE_TOOL_IDS = ['calculator', 'current_datetime', 'web_search'] as const;
 export type ToolId = typeof AVAILABLE_TOOL_IDS[number];
 
+// Search provider options for web_search tool
+export type SearchProvider = 'tavily' | 'perplexity' | 'both';
+
 export const TOOL_INFO: Record<ToolId, { name: string; description: string; icon: string }> = {
   calculator: { name: 'Калькулятор', description: 'Математические вычисления', icon: '🧮' },
   current_datetime: { name: 'Дата/Время', description: 'Текущая дата и время', icon: '🕐' },
-  web_search: { name: 'Веб-поиск', description: 'Поиск в интернете (Tavily)', icon: '🔍' },
+  web_search: { name: 'Веб-поиск', description: 'Поиск в интернете', icon: '🔍' },
+};
+
+export const SEARCH_PROVIDER_INFO: Record<SearchProvider, { name: string; description: string }> = {
+  tavily: { name: 'Tavily', description: 'Бесплатный (1000 запросов/мес)' },
+  perplexity: { name: 'Perplexity', description: 'Требуется API-ключ' },
+  both: { name: 'Оба', description: 'Два результата в одном ответе' },
 };
 
 export interface SingleModelSettings {
@@ -116,6 +125,7 @@ export interface SingleModelSettings {
   enableTools: boolean;
   enabledTools?: ToolId[]; // Built-in tools enabled for this model
   enabledCustomTools?: string[]; // Custom tool IDs enabled for this model
+  searchProvider?: SearchProvider; // Provider for web_search tool
 }
 
 export interface PerModelSettingsData {
@@ -138,6 +148,7 @@ export const DEFAULT_MODEL_SETTINGS: SingleModelSettings = {
   enableTools: true,
   enabledTools: [...AVAILABLE_TOOL_IDS], // All built-in tools enabled by default
   enabledCustomTools: [], // No custom tools enabled by default
+  searchProvider: 'tavily', // Default to Tavily (free tier available)
 };
 
 // Get short display name for model
@@ -405,27 +416,61 @@ export function PerModelSettings({ selectedModels, settings, onChange, className
                             const isEnabled = enabledTools.includes(toolId);
                             
                             return (
-                              <div
-                                key={toolId}
-                                className="flex items-center justify-between py-1.5 px-2 rounded bg-background/50 border border-border/30"
-                              >
-                                <div className="flex items-center gap-2">
-                                  <span className="text-sm">{toolInfo.icon}</span>
-                                  <div>
-                                    <span className="text-xs font-medium">{toolInfo.name}</span>
-                                    <p className="text-[10px] text-muted-foreground">{toolInfo.description}</p>
+                              <div key={toolId} className="space-y-2">
+                                <div
+                                  className="flex items-center justify-between py-1.5 px-2 rounded bg-background/50 border border-border/30"
+                                >
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-sm">{toolInfo.icon}</span>
+                                    <div>
+                                      <span className="text-xs font-medium">{toolInfo.name}</span>
+                                      <p className="text-[10px] text-muted-foreground">{toolInfo.description}</p>
+                                    </div>
                                   </div>
+                                  <Switch
+                                    checked={isEnabled}
+                                    onCheckedChange={(checked) => {
+                                      const newEnabledTools = checked
+                                        ? [...enabledTools, toolId]
+                                        : enabledTools.filter(t => t !== toolId);
+                                      updateModelSettings(modelId, { enabledTools: newEnabledTools });
+                                    }}
+                                    className="scale-75"
+                                  />
                                 </div>
-                                <Switch
-                                  checked={isEnabled}
-                                  onCheckedChange={(checked) => {
-                                    const newEnabledTools = checked
-                                      ? [...enabledTools, toolId]
-                                      : enabledTools.filter(t => t !== toolId);
-                                    updateModelSettings(modelId, { enabledTools: newEnabledTools });
-                                  }}
-                                  className="scale-75"
-                                />
+                                
+                                {/* Search Provider Selector - only for web_search when enabled */}
+                                {toolId === 'web_search' && isEnabled && (
+                                  <div className="ml-6 pl-3 border-l-2 border-primary/30 space-y-1.5">
+                                    <Label className="text-[10px] text-muted-foreground">Провайдер поиска</Label>
+                                    <div className="flex flex-wrap gap-1.5">
+                                      {(Object.keys(SEARCH_PROVIDER_INFO) as SearchProvider[]).map((provider) => {
+                                        const info = SEARCH_PROVIDER_INFO[provider];
+                                        const isSelected = (modelSettings.searchProvider ?? 'tavily') === provider;
+                                        
+                                        return (
+                                          <button
+                                            key={provider}
+                                            type="button"
+                                            onClick={() => updateModelSettings(modelId, { searchProvider: provider })}
+                                            className={cn(
+                                              "px-2 py-1 rounded text-[10px] border transition-all",
+                                              isSelected
+                                                ? "bg-primary text-primary-foreground border-primary"
+                                                : "bg-background/50 text-muted-foreground border-border/50 hover:border-primary/50"
+                                            )}
+                                            title={info.description}
+                                          >
+                                            {info.name}
+                                          </button>
+                                        );
+                                      })}
+                                    </div>
+                                    <p className="text-[9px] text-muted-foreground">
+                                      {SEARCH_PROVIDER_INFO[modelSettings.searchProvider ?? 'tavily'].description}
+                                    </p>
+                                  </div>
+                                )}
                               </div>
                             );
                           })}
