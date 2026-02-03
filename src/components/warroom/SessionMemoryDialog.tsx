@@ -334,7 +334,7 @@ export function SessionMemoryDialog({
         </div>
 
         {/* Chunks list */}
-        <ScrollArea className="flex-1 min-h-[200px] max-h-[400px] border rounded-md">
+        <ScrollArea className="flex-1 min-h-[200px] max-h-[50vh] border rounded-md pr-4">
           {isLoading || isSearchingActive ? (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
