@@ -1,15 +1,18 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useNavigate } from 'react-router-dom';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Target, GitBranch, CheckCircle2, MessageSquare, Users, ArrowRight } from 'lucide-react';
+import { Target, GitBranch, CheckCircle2, MessageSquare, Users, ArrowRight, Loader2 } from 'lucide-react';
 import { ROLE_CONFIG } from '@/config/roles';
 import { cn } from '@/lib/utils';
 import type { TaskBlueprint, RoleBehavior } from '@/types/patterns';
 import { isTaskBlueprint } from '@/types/patterns';
+import { useFlowDiagrams } from '@/hooks/useFlowDiagrams';
+import { blueprintToFlow } from '@/lib/blueprintToFlow';
+import { useToast } from '@/hooks/use-toast';
 
 interface PatternDetailsPanelProps {
   selectedPattern: TaskBlueprint | RoleBehavior | null;
@@ -34,6 +37,41 @@ const CategoryBadge: React.FC<{ category: string }> = ({ category }) => {
 const TaskBlueprintDetails: React.FC<{ pattern: TaskBlueprint }> = ({ pattern }) => {
   const { t } = useLanguage();
   const navigate = useNavigate();
+  const { saveDiagram, isSaving } = useFlowDiagrams();
+  const { toast } = useToast();
+  const [isGenerating, setIsGenerating] = useState(false);
+
+  const handleOpenInFlowEditor = async () => {
+    setIsGenerating(true);
+    try {
+      // Generate flow from blueprint
+      const { nodes, edges } = blueprintToFlow(pattern);
+      
+      // Save as new diagram
+      const diagram = await saveDiagram({
+        name: `Flow: ${pattern.name}`,
+        description: `Автоматически сгенерировано из паттерна "${pattern.name}"`,
+        nodes,
+        edges,
+        viewport: { x: 0, y: 0, zoom: 0.8 },
+      });
+      
+      toast({
+        description: t('patterns.flowGenerated'),
+      });
+      
+      // Navigate to flow editor with the new diagram
+      navigate(`/flow-editor?id=${diagram.id}`);
+    } catch (error) {
+      console.error('Failed to generate flow:', error);
+      toast({
+        variant: 'destructive',
+        description: t('patterns.flowGenerationError'),
+      });
+    } finally {
+      setIsGenerating(false);
+    }
+  };
 
   return (
     <>
@@ -129,11 +167,16 @@ const TaskBlueprintDetails: React.FC<{ pattern: TaskBlueprint }> = ({ pattern })
       <Button
         variant="outline"
         className="w-full gap-2"
-        onClick={() => navigate('/flow-editor')}
+        onClick={handleOpenInFlowEditor}
+        disabled={isGenerating || isSaving}
       >
-        <GitBranch className="h-4 w-4" />
-        {t('patterns.openInFlowEditor')}
-        <ArrowRight className="h-4 w-4 ml-auto" />
+        {isGenerating || isSaving ? (
+          <Loader2 className="h-4 w-4 animate-spin" />
+        ) : (
+          <GitBranch className="h-4 w-4" />
+        )}
+        {isGenerating ? t('patterns.generatingFlow') : t('patterns.openInFlowEditor')}
+        {!isGenerating && <ArrowRight className="h-4 w-4 ml-auto" />}
       </Button>
     </>
   );

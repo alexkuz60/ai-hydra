@@ -14,7 +14,7 @@ import { FlowNodeType, FlowDiagram } from '@/types/flow';
 import { EdgeStyleSettings, FlowEdgeData, DEFAULT_EDGE_SETTINGS } from '@/types/edgeTypes';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useSearchParams } from 'react-router-dom';
 import { TooltipProvider } from '@/components/ui/tooltip';
 
 const initialNodes: Node[] = [];
@@ -45,6 +45,8 @@ function saveEdgeSettings(settings: EdgeStyleSettings) {
 function FlowEditorContent() {
   const { t } = useLanguage();
   const { user } = useAuth();
+  const [searchParams] = useSearchParams();
+  const urlDiagramId = searchParams.get('id');
   const { diagrams, saveDiagram, isSaving, isLoading } = useFlowDiagrams();
 
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
@@ -80,15 +82,26 @@ function FlowEditorContent() {
     getViewport: () => reactFlowInstance.current?.getViewport(),
   });
 
-  // Load last saved diagram on mount
+  // Load diagram on mount - either from URL param or last saved
   const hasLoadedRef = useRef(false);
   useEffect(() => {
     if (!isLoading && diagrams.length > 0 && !hasLoadedRef.current) {
       hasLoadedRef.current = true;
+      
+      // Check if we have a specific diagram ID from URL
+      if (urlDiagramId) {
+        const targetDiagram = diagrams.find(d => d.id === urlDiagramId);
+        if (targetDiagram) {
+          handleLoadDiagram(targetDiagram);
+          return;
+        }
+      }
+      
+      // Otherwise load the last saved diagram
       const lastDiagram = diagrams[0];
       handleLoadDiagram(lastDiagram);
     }
-  }, [isLoading, diagrams]);
+  }, [isLoading, diagrams, urlDiagramId]);
 
   // Track changes and push to history
   useEffect(() => {
