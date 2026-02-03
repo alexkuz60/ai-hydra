@@ -18,12 +18,26 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Search, Library, Trash2, Loader2, User, Users } from 'lucide-react';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
+import { Search, Library, Trash2, Loader2, User, Users, ChevronDown } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { AgentRole, getRoleBadgeColor } from '@/config/roles';
 import { RoleSelectOptions } from '@/components/ui/RoleSelectItem';
+
+// Detect if text is primarily Russian (Cyrillic)
+function detectLanguage(text: string): 'ru' | 'en' {
+  const cyrillicRegex = /[\u0400-\u04FF]/g;
+  const latinRegex = /[a-zA-Z]/g;
+  const cyrillicMatches = text.match(cyrillicRegex) || [];
+  const latinMatches = text.match(latinRegex) || [];
+  return cyrillicMatches.length > latinMatches.length ? 'ru' : 'en';
+}
 
 interface PromptItem {
   id: string;
@@ -53,6 +67,8 @@ export function PromptLibraryPicker({ open, onOpenChange, onSelect, currentRole 
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState<string>(currentRole || 'all');
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [ruOpen, setRuOpen] = useState(true);
+  const [enOpen, setEnOpen] = useState(true);
 
   useEffect(() => {
     if (open && user) {
@@ -157,9 +173,103 @@ export function PromptLibraryPicker({ open, onOpenChange, onSelect, currentRole 
     return matchesSearch && matchesRole;
   });
 
+  // Group prompts by detected language
+  const ruPrompts = filteredPrompts.filter(p => detectLanguage(p.content) === 'ru');
+  const enPrompts = filteredPrompts.filter(p => detectLanguage(p.content) === 'en');
+
   const getRoleBadge = (role: string) => {
     const colorClass = getRoleBadgeColor(role);
     return colorClass;
+  };
+
+  const renderPromptItem = (prompt: PromptItem) => (
+    <button
+      key={prompt.id}
+      onClick={() => handleSelectPrompt(prompt)}
+      className={cn(
+        'w-full text-left p-3 rounded-lg border border-border',
+        'hover:bg-accent hover:border-accent-foreground/20 transition-colors',
+        'focus:outline-none focus:ring-2 focus:ring-ring'
+      )}
+    >
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="font-medium text-sm truncate">{prompt.name}</span>
+            <Badge variant="secondary" className={cn('text-[10px] px-1.5 py-0', getRoleBadge(prompt.role))}>
+              {t(`role.${prompt.role}`)}
+            </Badge>
+            {prompt.is_shared && (
+              <span title={t('promptLibrary.shared')}>
+                <Users className="h-3 w-3 text-muted-foreground" />
+              </span>
+            )}
+            {prompt.isOwner && (
+              <span title={t('promptLibrary.own')}>
+                <User className="h-3 w-3 text-muted-foreground" />
+              </span>
+            )}
+          </div>
+          {prompt.description && (
+            <p className="text-xs text-muted-foreground mb-1 line-clamp-1">
+              {prompt.description}
+            </p>
+          )}
+          <p className="text-xs text-muted-foreground/70 line-clamp-2">
+            {prompt.content}
+          </p>
+        </div>
+        {prompt.isOwner && !prompt.is_default && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7 shrink-0 text-muted-foreground hover:text-destructive"
+            onClick={(e) => handleDeletePrompt(e, prompt.id)}
+            disabled={deletingId === prompt.id}
+          >
+            {deletingId === prompt.id ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <Trash2 className="h-3.5 w-3.5" />
+            )}
+          </Button>
+        )}
+      </div>
+      <div className="flex items-center gap-2 mt-2 text-[10px] text-muted-foreground">
+        <span>{t('promptLibrary.usedTimes').replace('{count}', String(prompt.usage_count))}</span>
+      </div>
+    </button>
+  );
+
+  const renderLanguageGroup = (
+    langPrompts: PromptItem[],
+    langCode: 'ru' | 'en',
+    isOpen: boolean,
+    setIsOpen: (open: boolean) => void
+  ) => {
+    if (langPrompts.length === 0) return null;
+    
+    const label = langCode === 'ru' ? 'RU' : 'EN';
+    const fullLabel = langCode === 'ru' ? t('promptLibrary.russianPrompts') : t('promptLibrary.englishPrompts');
+    
+    return (
+      <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+        <CollapsibleTrigger className="flex items-center gap-2 w-full py-2 px-1 hover:bg-accent/50 rounded-md transition-colors">
+          <ChevronDown className={cn(
+            "h-4 w-4 text-muted-foreground transition-transform duration-200",
+            !isOpen && "-rotate-90"
+          )} />
+          <Badge variant="outline" className="font-mono text-xs">
+            {label}
+          </Badge>
+          <span className="text-sm text-muted-foreground">{fullLabel}</span>
+          <span className="text-xs text-muted-foreground/60 ml-auto">({langPrompts.length})</span>
+        </CollapsibleTrigger>
+        <CollapsibleContent className="space-y-2 pt-2">
+          {langPrompts.map(renderPromptItem)}
+        </CollapsibleContent>
+      </Collapsible>
+    );
   };
 
   return (
@@ -208,65 +318,9 @@ export function PromptLibraryPicker({ open, onOpenChange, onSelect, currentRole 
               }
             </div>
           ) : (
-            <div className="space-y-2 py-2">
-              {filteredPrompts.map((prompt) => (
-                <button
-                  key={prompt.id}
-                  onClick={() => handleSelectPrompt(prompt)}
-                  className={cn(
-                    'w-full text-left p-3 rounded-lg border border-border',
-                    'hover:bg-accent hover:border-accent-foreground/20 transition-colors',
-                    'focus:outline-none focus:ring-2 focus:ring-ring'
-                  )}
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="font-medium text-sm truncate">{prompt.name}</span>
-                        <Badge variant="secondary" className={cn('text-[10px] px-1.5 py-0', getRoleBadge(prompt.role))}>
-                          {t(`role.${prompt.role}`)}
-                        </Badge>
-                        {prompt.is_shared && (
-                          <span title={t('promptLibrary.shared')}>
-                            <Users className="h-3 w-3 text-muted-foreground" />
-                          </span>
-                        )}
-                        {prompt.isOwner && (
-                          <span title={t('promptLibrary.own')}>
-                            <User className="h-3 w-3 text-muted-foreground" />
-                          </span>
-                        )}
-                      </div>
-                      {prompt.description && (
-                        <p className="text-xs text-muted-foreground mb-1 line-clamp-1">
-                          {prompt.description}
-                        </p>
-                      )}
-                      <p className="text-xs text-muted-foreground/70 line-clamp-2">
-                        {prompt.content}
-                      </p>
-                    </div>
-                    {prompt.isOwner && !prompt.is_default && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7 shrink-0 text-muted-foreground hover:text-destructive"
-                        onClick={(e) => handleDeletePrompt(e, prompt.id)}
-                        disabled={deletingId === prompt.id}
-                      >
-                        {deletingId === prompt.id ? (
-                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                        ) : (
-                          <Trash2 className="h-3.5 w-3.5" />
-                        )}
-                      </Button>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2 mt-2 text-[10px] text-muted-foreground">
-                    <span>{t('promptLibrary.usedTimes').replace('{count}', String(prompt.usage_count))}</span>
-                  </div>
-                </button>
-              ))}
+            <div className="space-y-3 py-2">
+              {renderLanguageGroup(ruPrompts, 'ru', ruOpen, setRuOpen)}
+              {renderLanguageGroup(enPrompts, 'en', enOpen, setEnOpen)}
             </div>
           )}
         </ScrollArea>
