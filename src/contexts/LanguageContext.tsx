@@ -704,6 +704,8 @@ const translations: Translations = {
   'memory.instructions': { ru: 'Инструкции', en: 'Instructions' },
   'memory.autoSaved': { ru: 'Авто-сохранено в память', en: 'Auto-saved to memory' },
   'memory.saveToMemory': { ru: 'Сохранить в память', en: 'Save to memory' },
+  'memory.saved': { ru: 'Сохранено!', en: 'Saved!' },
+  'memory.saving': { ru: 'Сохранение...', en: 'Saving...' },
   'memory.refresh': { ru: 'Освежить память', en: 'Refresh memory' },
   
   // Settings
