@@ -2521,6 +2521,244 @@ The moderator summary is inserted with a precise timestamp (last response + 1ms)
     }
   },
   {
+    id: 'session-memory',
+    titleKey: 'hydrapedia.sections.sessionMemory',
+    icon: 'Brain',
+    content: {
+      ru: `# Память сессии
+
+Система **Память сессии** позволяет сохранять и быстро находить важные фрагменты контекста с помощью семантического поиска на основе AI-эмбеддингов.
+
+## Концепция
+
+Вместо ручного поиска по тексту сообщений вы можете:
+
+1. **Сохранять** ключевые решения, инструкции и выводы
+2. **Искать** по смыслу, а не по точным словам
+3. **Интегрировать** найденный контекст в новые ответы
+
+## Архитектура
+
+\`\`\`mermaid
+graph LR
+    U[Пользователь] --> S[Сохранить в память]
+    S --> E[Edge Function]
+    E --> V[Векторный эмбеддинг]
+    V --> DB[(session_memory)]
+    Q[Поисковый запрос] --> E2[generate-embeddings]
+    E2 --> RPC[search_session_memory]
+    RPC --> DB
+    DB --> R[Результаты по релевантности]
+\`\`\`
+
+## Типы фрагментов
+
+| Тип | Иконка | Описание |
+|-----|--------|----------|
+| **message** | \`MessageSquare\` | Сохранённое сообщение |
+| **summary** | \`FileText\` | Резюме или сводка |
+| **decision** | \`CheckCircle\` | Принятое решение |
+| **context** | \`Bookmark\` | Контекстная информация |
+| **instruction** | \`Lightbulb\` | Инструкция или правило |
+
+## Управление памятью
+
+### Элементы управления в заголовке
+
+| Элемент | Иконка | Описание |
+|---------|--------|----------|
+| **Индикатор** | \`Brain\` N | Количество сохранённых фрагментов |
+| **Обновить** | \`RefreshCw\` | Принудительное обновление из БД |
+| **Управление** | \`Settings2\` | Открыть диалог управления |
+
+### Диалог управления памятью
+
+| Элемент | Описание |
+|---------|----------|
+| **Табы фильтрации** | Все / Сообщения / Резюме / Решения / и др. |
+| **Поле поиска** | Текстовый или семантический поиск |
+| **Переключатель режима** | \`Text\` ↔ \`Sparkles\` (AI-поиск) |
+| **Карточки фрагментов** | Содержимое с датой и кнопкой удаления |
+| **Очистить все** | Удаление всех фрагментов (с подтверждением) |
+
+## Семантический поиск
+
+### Как работает
+
+1. Нажмите кнопку \`Sparkles\` для активации AI-режима
+2. Введите поисковый запрос **на естественном языке**
+3. Система генерирует векторный эмбеддинг через Edge Function
+4. pgvector находит ближайшие по косинусному расстоянию фрагменты
+5. Результаты сортируются по **релевантности** (%)
+
+### Преимущества
+
+| Текстовый поиск | Семантический поиск |
+|-----------------|---------------------|
+| Ищет точные совпадения слов | Ищет по смыслу и контексту |
+| «API ключ» найдёт только «API ключ» | «настройки доступа» найдёт «API ключ» |
+| Быстрый, но ограниченный | Медленнее, но умнее |
+
+### Индикаторы результатов
+
+| Элемент | Описание |
+|---------|----------|
+| **Процент релевантности** | \`85%\` — близость к запросу |
+| **Бейдж типа** | Цветовая маркировка категории |
+| **Дата создания** | Когда фрагмент был сохранён |
+
+## Поиск дубликатов
+
+Система автоматически определяет повторяющиеся фрагменты:
+
+1. Переключитесь на вкладку **«Дубликаты»**
+2. Дубликаты выделены **янтарной** рамкой
+3. Отображается счётчик повторов (×N)
+
+> **Совет**: Регулярно очищайте дубликаты для оптимизации контекста.
+
+## Интеграция с ответами
+
+Сохранённые фрагменты автоматически используются при генерации ответов консультанта:
+
+\`\`\`
+[Контекст сессии]
+━━ Решения ━━
+- [Текст сохранённого решения]
+
+━━ Инструкции ━━
+- [Текст инструкции]
+\`\`\`
+
+Это помогает модели учитывать историю обсуждений без повторной передачи всего диалога.
+
+## Технические детали
+
+| Параметр | Значение |
+|----------|----------|
+| **Размерность вектора** | 1536 (OpenAI text-embedding-3-small) |
+| **Индекс** | HNSW (pgvector) |
+| **Метрика** | Косинусное расстояние |
+| **RLS** | Доступ только к своим сессиям |`,
+
+      en: `# Session Memory
+
+The **Session Memory** system allows you to save and quickly find important context fragments using semantic search based on AI embeddings.
+
+## Concept
+
+Instead of manually searching message text, you can:
+
+1. **Save** key decisions, instructions, and conclusions
+2. **Search** by meaning, not exact words
+3. **Integrate** found context into new responses
+
+## Architecture
+
+\`\`\`mermaid
+graph LR
+    U[User] --> S[Save to memory]
+    S --> E[Edge Function]
+    E --> V[Vector embedding]
+    V --> DB[(session_memory)]
+    Q[Search query] --> E2[generate-embeddings]
+    E2 --> RPC[search_session_memory]
+    RPC --> DB
+    DB --> R[Results by relevance]
+\`\`\`
+
+## Fragment Types
+
+| Type | Icon | Description |
+|------|------|-------------|
+| **message** | \`MessageSquare\` | Saved message |
+| **summary** | \`FileText\` | Summary or recap |
+| **decision** | \`CheckCircle\` | Made decision |
+| **context** | \`Bookmark\` | Contextual information |
+| **instruction** | \`Lightbulb\` | Instruction or rule |
+
+## Memory Management
+
+### Header Controls
+
+| Element | Icon | Description |
+|---------|------|-------------|
+| **Indicator** | \`Brain\` N | Number of saved fragments |
+| **Refresh** | \`RefreshCw\` | Force refresh from DB |
+| **Manage** | \`Settings2\` | Open management dialog |
+
+### Memory Management Dialog
+
+| Element | Description |
+|---------|-------------|
+| **Filter tabs** | All / Messages / Summaries / Decisions / etc. |
+| **Search field** | Text or semantic search |
+| **Mode toggle** | \`Text\` ↔ \`Sparkles\` (AI search) |
+| **Fragment cards** | Content with date and delete button |
+| **Clear all** | Delete all fragments (with confirmation) |
+
+## Semantic Search
+
+### How It Works
+
+1. Click the \`Sparkles\` button to activate AI mode
+2. Enter a search query in **natural language**
+3. System generates vector embedding via Edge Function
+4. pgvector finds nearest fragments by cosine distance
+5. Results are sorted by **relevance** (%)
+
+### Advantages
+
+| Text Search | Semantic Search |
+|-------------|-----------------|
+| Finds exact word matches | Finds by meaning and context |
+| "API key" finds only "API key" | "access settings" finds "API key" |
+| Fast but limited | Slower but smarter |
+
+### Result Indicators
+
+| Element | Description |
+|---------|-------------|
+| **Relevance percentage** | \`85%\` — closeness to query |
+| **Type badge** | Color-coded category |
+| **Creation date** | When fragment was saved |
+
+## Duplicate Detection
+
+The system automatically identifies repeating fragments:
+
+1. Switch to the **"Duplicates"** tab
+2. Duplicates are highlighted with an **amber** border
+3. Repeat count is shown (×N)
+
+> **Tip**: Regularly clean duplicates to optimize context.
+
+## Integration with Responses
+
+Saved fragments are automatically used when generating consultant responses:
+
+\`\`\`
+[Session Context]
+━━ Decisions ━━
+- [Saved decision text]
+
+━━ Instructions ━━
+- [Instruction text]
+\`\`\`
+
+This helps the model consider discussion history without re-sending the entire dialog.
+
+## Technical Details
+
+| Parameter | Value |
+|-----------|-------|
+| **Vector dimension** | 1536 (OpenAI text-embedding-3-small) |
+| **Index** | HNSW (pgvector) |
+| **Metric** | Cosine distance |
+| **RLS** | Access only to own sessions |`
+    }
+  },
+  {
     id: 'web-search',
     titleKey: 'hydrapedia.sections.webSearch',
     icon: 'Search',
