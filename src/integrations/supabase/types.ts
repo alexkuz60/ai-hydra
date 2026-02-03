@@ -321,6 +321,51 @@ export type Database = {
         }
         Relationships: []
       }
+      role_behaviors: {
+        Row: {
+          communication: Json
+          created_at: string
+          id: string
+          interactions: Json
+          is_shared: boolean
+          is_system: boolean
+          name: string
+          reactions: Json
+          role: string
+          updated_at: string
+          usage_count: number
+          user_id: string | null
+        }
+        Insert: {
+          communication?: Json
+          created_at?: string
+          id?: string
+          interactions?: Json
+          is_shared?: boolean
+          is_system?: boolean
+          name: string
+          reactions?: Json
+          role: string
+          updated_at?: string
+          usage_count?: number
+          user_id?: string | null
+        }
+        Update: {
+          communication?: Json
+          created_at?: string
+          id?: string
+          interactions?: Json
+          is_shared?: boolean
+          is_system?: boolean
+          name?: string
+          reactions?: Json
+          role?: string
+          updated_at?: string
+          usage_count?: number
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       sessions: {
         Row: {
           created_at: string
@@ -351,6 +396,51 @@ export type Database = {
           title?: string
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      task_blueprints: {
+        Row: {
+          category: Database["public"]["Enums"]["pattern_category"]
+          checkpoints: Json
+          created_at: string
+          description: string
+          id: string
+          is_shared: boolean
+          is_system: boolean
+          name: string
+          stages: Json
+          updated_at: string
+          usage_count: number
+          user_id: string | null
+        }
+        Insert: {
+          category?: Database["public"]["Enums"]["pattern_category"]
+          checkpoints?: Json
+          created_at?: string
+          description: string
+          id?: string
+          is_shared?: boolean
+          is_system?: boolean
+          name: string
+          stages?: Json
+          updated_at?: string
+          usage_count?: number
+          user_id?: string | null
+        }
+        Update: {
+          category?: Database["public"]["Enums"]["pattern_category"]
+          checkpoints?: Json
+          created_at?: string
+          description?: string
+          id?: string
+          is_shared?: boolean
+          is_system?: boolean
+          name?: string
+          stages?: Json
+          updated_at?: string
+          usage_count?: number
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -476,7 +566,10 @@ export type Database = {
     }
     Enums: {
       app_role: "user" | "moderator" | "admin" | "supervisor"
+      communication_tone: "formal" | "friendly" | "neutral" | "provocative"
       message_role: "user" | "assistant" | "critic" | "arbiter" | "consultant"
+      pattern_category: "planning" | "creative" | "analysis" | "technical"
+      verbosity_level: "concise" | "detailed" | "adaptive"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -605,7 +698,10 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["user", "moderator", "admin", "supervisor"],
+      communication_tone: ["formal", "friendly", "neutral", "provocative"],
       message_role: ["user", "assistant", "critic", "arbiter", "consultant"],
+      pattern_category: ["planning", "creative", "analysis", "technical"],
+      verbosity_level: ["concise", "detailed", "adaptive"],
     },
   },
 } as const
