@@ -21,8 +21,9 @@ import { useSendMessage } from '@/hooks/useSendMessage';
 import { useConsultantPanelWidth } from '@/hooks/useConsultantPanelWidth';
 import { useModelStatistics } from '@/hooks/useModelStatistics';
 import { useStreamingResponses } from '@/hooks/useStreamingResponses';
+import { useMemoryIntegration } from '@/hooks/useMemoryIntegration';
 import { PendingResponseState, RequestStartInfo } from '@/types/pending';
-import { Loader2, Target, Zap, ZapOff, Square, Circle } from 'lucide-react';
+import { Loader2, Target, Zap, ZapOff, Square, Circle, Brain } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { toast } from 'sonner';
@@ -92,6 +93,7 @@ export default function ExpertPanel() {
   const { incrementDismissal } = useModelStatistics(user?.id);
 
   // Messages management hook - defined first so we can use fetchMessages in streaming hook
+  // Messages management hook
   const {
     messages,
     displayedMessages,
@@ -104,6 +106,13 @@ export default function ExpertPanel() {
     handleRatingChange,
     fetchMessages,
   } = useMessages({ sessionId: currentTask?.id || null });
+
+  // Memory integration hook - auto-saves high-rated decisions
+  const { memoryStats, saveDecision, isSaving: isMemorySaving } = useMemoryIntegration({
+    sessionId: currentTask?.id || null,
+    messages,
+    enabled: true,
+  });
 
   // Hybrid streaming hook - manages parallel SSE streams for real-time responses
   const {
@@ -519,6 +528,37 @@ export default function ExpertPanel() {
                 <div className="flex items-center gap-2 text-sm min-w-0 flex-1">
                   <Target className="h-4 w-4 text-muted-foreground shrink-0" />
                   <span className="font-medium truncate">{currentTask.title}</span>
+                  
+                  {/* Memory Stats Indicator */}
+                  {memoryStats && memoryStats.total > 0 && (
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Badge 
+                            variant="secondary" 
+                            className="ml-2 gap-1 bg-hydra-memory/20 text-hydra-memory border-hydra-memory/30 cursor-help"
+                          >
+                            <Brain className="h-3 w-3" />
+                            <span className="text-xs">{memoryStats.total}</span>
+                          </Badge>
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom">
+                          <div className="text-xs space-y-1">
+                            <p className="font-medium">{t('memory.savedChunks')}</p>
+                            {memoryStats.byType.decision > 0 && (
+                              <p>• {t('memory.decisions')}: {memoryStats.byType.decision}</p>
+                            )}
+                            {memoryStats.byType.context > 0 && (
+                              <p>• {t('memory.context')}: {memoryStats.byType.context}</p>
+                            )}
+                            {memoryStats.byType.instruction > 0 && (
+                              <p>• {t('memory.instructions')}: {memoryStats.byType.instruction}</p>
+                            )}
+                          </div>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  )}
                 </div>
                 
                 {/* Streaming Controls */}
