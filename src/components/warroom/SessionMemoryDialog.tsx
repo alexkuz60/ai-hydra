@@ -208,7 +208,7 @@ export function SessionMemoryDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col">
+      <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col min-h-0">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Archive className="h-5 w-5 text-hydra-memory" />
@@ -334,7 +334,7 @@ export function SessionMemoryDialog({
         </div>
 
         {/* Chunks list */}
-        <div className="flex-1 min-h-[200px] max-h-[50vh] border rounded-md overflow-hidden">
+        <div className="flex-1 min-h-0 border rounded-md overflow-hidden">
           <ScrollArea className="h-full">
             {isLoading || isSearchingActive ? (
               <div className="flex items-center justify-center py-12">
