@@ -34,8 +34,8 @@ interface PromptItem {
   is_shared: boolean;
   is_default: boolean;
   usage_count: number;
-  user_id: string;
   created_at: string;
+  isOwner: boolean; // Determined separately without exposing user_id
 }
 
 interface PromptLibraryPickerProps {
@@ -71,13 +71,34 @@ export function PromptLibraryPicker({ open, onOpenChange, onSelect, currentRole 
     setLoading(true);
 
     try {
+      // Select only necessary columns, excluding user_id for privacy on shared prompts
       const { data, error } = await supabase
         .from('prompt_library')
-        .select('*')
+        .select('id, name, description, role, content, is_shared, is_default, usage_count, created_at')
         .order('usage_count', { ascending: false });
 
       if (error) throw error;
-      setPrompts(data || []);
+      
+      // Map data to include ownership check without exposing user_id
+      const promptsWithOwnership = (data || []).map(prompt => ({
+        ...prompt,
+        isOwner: false, // Will be determined after we check ownership separately
+      }));
+      
+      // Check ownership for own prompts only (RLS ensures we only see our own + shared)
+      const { data: ownPrompts } = await supabase
+        .from('prompt_library')
+        .select('id')
+        .eq('user_id', user!.id);
+      
+      const ownPromptIds = new Set((ownPrompts || []).map(p => p.id));
+      
+      const finalPrompts = promptsWithOwnership.map(prompt => ({
+        ...prompt,
+        isOwner: ownPromptIds.has(prompt.id),
+      }));
+      
+      setPrompts(finalPrompts);
     } catch (error: any) {
       toast.error(error.message);
     } finally {
@@ -210,7 +231,7 @@ export function PromptLibraryPicker({ open, onOpenChange, onSelect, currentRole 
                             <Users className="h-3 w-3 text-muted-foreground" />
                           </span>
                         )}
-                        {prompt.user_id === user?.id && (
+                        {prompt.isOwner && (
                           <span title={t('promptLibrary.own')}>
                             <User className="h-3 w-3 text-muted-foreground" />
                           </span>
@@ -225,7 +246,7 @@ export function PromptLibraryPicker({ open, onOpenChange, onSelect, currentRole 
                         {prompt.content}
                       </p>
                     </div>
-                    {prompt.user_id === user?.id && !prompt.is_default && (
+                    {prompt.isOwner && !prompt.is_default && (
                       <Button
                         variant="ghost"
                         size="icon"
