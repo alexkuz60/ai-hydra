@@ -1,8 +1,8 @@
-import React, { useEffect, useRef, useState, useId } from 'react';
+import React, { useEffect, useRef, useState, useId, useCallback } from 'react';
 import mermaid from 'mermaid';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Button } from '@/components/ui/button';
-import { Copy, Check, AlertCircle, ZoomIn, ZoomOut } from 'lucide-react';
+import { Copy, Check, AlertCircle, ZoomIn, ZoomOut, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface MermaidBlockProps {
@@ -13,22 +13,52 @@ interface MermaidBlockProps {
 export function MermaidBlock({ content, className }: MermaidBlockProps) {
   const { theme } = useTheme();
   const containerRef = useRef<HTMLDivElement>(null);
+  const mountedRef = useRef(true);
+  const renderAttemptRef = useRef(0);
   const [svg, setSvg] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
   const [zoom, setZoom] = useState(1);
   const uniqueId = useId().replace(/:/g, '-');
 
+  const cleanupMermaidElements = useCallback((id: string) => {
+    const selectors = [
+      `[id^="mermaid-${id}"]`,
+      `[id^="dmermaid-${id}"]`,
+      `[id*="d${id}"]`,
+    ];
+    selectors.forEach(selector => {
+      document.querySelectorAll(selector).forEach(el => el.remove());
+    });
+  }, []);
+
   useEffect(() => {
+    mountedRef.current = true;
+    const currentAttempt = ++renderAttemptRef.current;
+
     const renderDiagram = async () => {
       if (!content.trim()) {
-        setError('Empty diagram content');
+        if (mountedRef.current) {
+          setError('Empty diagram content');
+          setLoading(false);
+        }
+        return;
+      }
+
+      // Wait for next frame to ensure DOM is ready
+      await new Promise(resolve => requestAnimationFrame(resolve));
+      
+      // Additional small delay for stability
+      await new Promise(resolve => setTimeout(resolve, 50));
+
+      // Check if component is still mounted and this is still the current render attempt
+      if (!mountedRef.current || currentAttempt !== renderAttemptRef.current) {
         return;
       }
 
       // Clean up any orphaned mermaid elements from previous failed renders
-      const orphanedElements = document.querySelectorAll(`[id^="mermaid-${uniqueId}"], [id^="dmermaid-${uniqueId}"]`);
-      orphanedElements.forEach(el => el.remove());
+      cleanupMermaidElements(uniqueId);
 
       try {
         mermaid.initialize({
@@ -36,7 +66,6 @@ export function MermaidBlock({ content, className }: MermaidBlockProps) {
           theme: theme === 'dark' ? 'dark' : 'default',
           securityLevel: 'strict',
           fontFamily: 'ui-sans-serif, system-ui, sans-serif',
-          // Suppress console output for cleaner UX
           suppressErrorRendering: true,
           flowchart: {
             htmlLabels: true,
@@ -73,23 +102,28 @@ export function MermaidBlock({ content, className }: MermaidBlockProps) {
           },
         });
 
-        const { svg: renderedSvg } = await mermaid.render(`mermaid-${uniqueId}`, content);
-        setSvg(renderedSvg);
-        setError(null);
+        const { svg: renderedSvg } = await mermaid.render(`mermaid-${uniqueId}-${currentAttempt}`, content);
+        
+        if (mountedRef.current && currentAttempt === renderAttemptRef.current) {
+          setSvg(renderedSvg);
+          setError(null);
+          setLoading(false);
+        }
       } catch (err) {
         console.error('Mermaid render error:', err);
-        setError(err instanceof Error ? err.message : 'Failed to render diagram');
-        setSvg('');
         
-        // Clean up any error artifacts created by Mermaid in the DOM
-        // Mermaid sometimes creates orphaned elements on error
-        const errorElements = document.querySelectorAll(`[id^="mermaid-${uniqueId}"], [id*="d${uniqueId}"]`);
-        errorElements.forEach(el => el.remove());
+        if (mountedRef.current && currentAttempt === renderAttemptRef.current) {
+          setError(err instanceof Error ? err.message : 'Failed to render diagram');
+          setSvg('');
+          setLoading(false);
+        }
         
-        // Also clean up any dangling mermaid error divs that might be outside our container
+        // Clean up any error artifacts
+        cleanupMermaidElements(uniqueId);
+        
+        // Clean up dangling mermaid error divs
         const danglingErrors = document.querySelectorAll('.mermaid-error, #dmermaid, [id^="dmermaid"]');
         danglingErrors.forEach(el => {
-          // Only remove if it's not inside our component
           if (!containerRef.current?.contains(el)) {
             el.remove();
           }
@@ -97,14 +131,14 @@ export function MermaidBlock({ content, className }: MermaidBlockProps) {
       }
     };
 
+    setLoading(true);
     renderDiagram();
     
-    // Cleanup on unmount
     return () => {
-      const elementsToClean = document.querySelectorAll(`[id^="mermaid-${uniqueId}"], [id^="dmermaid-${uniqueId}"]`);
-      elementsToClean.forEach(el => el.remove());
+      mountedRef.current = false;
+      cleanupMermaidElements(uniqueId);
     };
-  }, [content, theme, uniqueId]);
+  }, [content, theme, uniqueId, cleanupMermaidElements]);
 
   const handleCopy = async () => {
     await navigator.clipboard.writeText(content);
@@ -114,6 +148,25 @@ export function MermaidBlock({ content, className }: MermaidBlockProps) {
 
   const handleZoomIn = () => setZoom(prev => Math.min(prev + 0.25, 3));
   const handleZoomOut = () => setZoom(prev => Math.max(prev - 0.25, 0.5));
+
+  if (loading) {
+    return (
+      <div className={cn(
+        "my-3 rounded-lg border border-border bg-card overflow-hidden",
+        className
+      )}>
+        <div className="flex items-center justify-between px-3 py-2 border-b border-border bg-muted/30">
+          <span className="text-xs text-muted-foreground font-mono">mermaid</span>
+        </div>
+        <div 
+          className="flex items-center justify-center p-8 bg-background/50"
+          style={{ minHeight: '150px' }}
+        >
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        </div>
+      </div>
+    );
+  }
 
   if (error) {
     return (
