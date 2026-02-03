@@ -10,6 +10,7 @@ import {
   CalculatorArgs,
   DatetimeArgs,
   WebSearchArgs,
+  BriefPromptEngineerArgs,
   SearchProviderConfig,
   AvailableSearchProvider,
 } from "./types.ts";
@@ -99,6 +100,40 @@ export const AVAILABLE_TOOLS: ToolDefinition[] = [
           }
         },
         required: ["query"]
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "brief_prompt_engineer",
+      description: "Подготавливает техническое задание для Промпт-Инженера на основе контекста текущей дискуссии. Возвращает структурированное ТЗ, которое будет передано Промпт-Инженеру для создания или оптимизации промпта.",
+      parameters: {
+        type: "object",
+        properties: {
+          task_description: {
+            type: "string",
+            description: "Детальное описание задачи: что требуется от Промпт-Инженера (создать промпт, оптимизировать существующий, адаптировать под роль и т.д.)"
+          },
+          context_summary: {
+            type: "string",
+            description: "Краткое резюме контекста из К-чата: ключевые решения, обсуждаемые темы, особенности задачи"
+          },
+          constraints: {
+            type: "string",
+            description: "Ограничения и требования через запятую, например: 'макс 500 токенов, формальный стиль, без эмодзи'"
+          },
+          target_role: {
+            type: "string",
+            description: "Целевая роль для которой нужен промпт, например: 'expert', 'critic', 'consultant'"
+          },
+          style: {
+            type: "string",
+            description: "Предпочтительный стиль промпта",
+            enum: ["concise", "detailed", "structured", "creative"]
+          }
+        },
+        required: ["task_description"]
       }
     }
   }
@@ -612,6 +647,127 @@ async function executeWebSearch(args: WebSearchArgs): Promise<string> {
 }
 
 // ============================================
+// Brief Prompt Engineer Implementation
+// ============================================
+
+function executeBriefPromptEngineer(args: BriefPromptEngineerArgs): string {
+  try {
+    const { task_description, context_summary, constraints, target_role, style } = args;
+    
+    // Parse constraints - can be string (comma-separated) or array
+    let constraintsList: string[] = [];
+    if (constraints) {
+      if (Array.isArray(constraints)) {
+        constraintsList = constraints.filter((c: string) => c.length > 0);
+      } else if (typeof constraints === 'string') {
+        constraintsList = (constraints as string).split(',').map((c: string) => c.trim()).filter((c: string) => c.length > 0);
+      }
+    }
+    
+    // Build structured brief for Prompt Engineer
+    const brief = {
+      // Header
+      type: "prompt_engineer_brief",
+      created_at: new Date().toISOString(),
+      
+      // Task section
+      objective: task_description,
+      
+      // Context section (optional)
+      context: context_summary || null,
+      
+      // Requirements section
+      requirements: {
+        target_role: target_role || "general",
+        style: style || "adaptive",
+        constraints: constraintsList,
+      },
+      
+      // Formatted markdown brief for human-readable output
+      formatted_brief: formatBriefAsMarkdown(task_description, context_summary, constraintsList, target_role, style),
+    };
+    
+    console.log('[Tool] Brief for Prompt Engineer generated:', brief);
+    
+    return JSON.stringify({
+      success: true,
+      brief,
+      message: "Техническое задание для Промпт-Инженера сформировано",
+    });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    return JSON.stringify({
+      success: false,
+      error: message
+    });
+  }
+}
+
+/** Format brief as structured markdown */
+function formatBriefAsMarkdown(
+  task: string, 
+  context: string | undefined, 
+  constraints: string[], 
+  targetRole: string | undefined,
+  style: string | undefined
+): string {
+  const sections: string[] = [];
+  
+  sections.push(`## 📋 Техническое задание для Промпт-Инженера\n`);
+  
+  sections.push(`### Цель\n${task}\n`);
+  
+  if (context) {
+    sections.push(`### Контекст\n${context}\n`);
+  }
+  
+  if (targetRole) {
+    sections.push(`### Целевая роль\n${getRoleLabel(targetRole)}\n`);
+  }
+  
+  if (style) {
+    sections.push(`### Стиль промпта\n${getStyleLabel(style)}\n`);
+  }
+  
+  if (constraints.length > 0) {
+    sections.push(`### Ограничения\n${constraints.map(c => `- ${c}`).join('\n')}\n`);
+  }
+  
+  return sections.join('\n');
+}
+
+/** Get human-readable role label */
+function getRoleLabel(role: string): string {
+  const labels: Record<string, string> = {
+    expert: "Эксперт",
+    critic: "Критик",
+    arbiter: "Арбитр",
+    consultant: "Консультант",
+    moderator: "Модератор",
+    advisor: "Советник",
+    archivist: "Архивариус",
+    analyst: "Аналитик",
+    webhunter: "Web-Охотник",
+    promptengineer: "Промпт-Инженер",
+    logistician: "Логистик",
+    general: "Общая роль",
+  };
+  return labels[role] || role;
+}
+
+/** Get human-readable style label */
+function getStyleLabel(style: string): string {
+  const labels: Record<string, string> = {
+    concise: "Лаконичный (минимум слов, максимум смысла)",
+    detailed: "Детальный (подробные инструкции)",
+    structured: "Структурированный (чёткие секции и пункты)",
+    creative: "Креативный (неформальный, вдохновляющий)",
+    adaptive: "Адаптивный (подстраивается под контекст)",
+  };
+  return labels[style] || style;
+}
+
+// ============================================
 // Prompt Tool Execution
 // ============================================
 
@@ -696,6 +852,9 @@ export async function executeToolCall(toolCall: ToolCall): Promise<ToolResult> {
         break;
       case "web_search":
         result = await executeWebSearch(args as unknown as WebSearchArgs);
+        break;
+      case "brief_prompt_engineer":
+        result = executeBriefPromptEngineer(args as unknown as BriefPromptEngineerArgs);
         break;
       default:
         result = JSON.stringify({ success: false, error: `Unknown tool: ${funcName}` });

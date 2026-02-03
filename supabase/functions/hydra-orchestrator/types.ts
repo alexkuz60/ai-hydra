@@ -219,6 +219,23 @@ export interface WebSearchArgs {
 }
 
 // ============================================
+// Brief Prompt Engineer Types
+// ============================================
+
+export interface BriefPromptEngineerArgs {
+  /** Описание задачи для Промпт-Инженера */
+  task_description: string;
+  /** Краткое резюме контекста из К-чата */
+  context_summary?: string;
+  /** Ограничения и требования */
+  constraints?: string[];
+  /** Целевая роль для генерации промпта */
+  target_role?: string;
+  /** Предпочтительный стиль промпта */
+  style?: "concise" | "detailed" | "structured" | "creative";
+}
+
+// ============================================
 // Search Provider Configuration
 // ============================================
 
