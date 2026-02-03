@@ -182,6 +182,7 @@ const translations: Translations = {
   'hydrapedia.sections.webSearch': { ru: 'Веб-поиск', en: 'Web Search' },
   'hydrapedia.sections.localization': { ru: 'Локализация', en: 'Localization' },
   'hydrapedia.sections.security': { ru: 'Безопасность', en: 'Security' },
+  'hydrapedia.sections.behavioralPatterns': { ru: 'Паттерны поведения', en: 'Behavioral Patterns' },
   
   // Mermaid
   'mermaid.error': { ru: 'Ошибка рендеринга диаграммы', en: 'Diagram render error' },
