@@ -580,6 +580,8 @@ const translations: Translations = {
   'promptLibrary.shared': { ru: 'Публичный', en: 'Shared' },
   'promptLibrary.own': { ru: 'Ваш промпт', en: 'Your prompt' },
   'promptLibrary.usedTimes': { ru: 'Использован: {count}', en: 'Used: {count}' },
+  'promptLibrary.russianPrompts': { ru: 'Русскоязычные промпты', en: 'Russian prompts' },
+  'promptLibrary.englishPrompts': { ru: 'Англоязычные промпты', en: 'English prompts' },
   
   // Expert Panel extras (legacy)
   'expertPanel.noModelsSelected': { ru: 'Модели не выбраны', en: 'No models selected' },
