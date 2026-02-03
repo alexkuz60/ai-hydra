@@ -53,3 +53,13 @@ export function getToolIconName(toolName: string): string {
   };
   return icons[toolName] || 'Wrench';
 }
+
+// Get search provider display name
+export function getSearchProviderName(provider: string): string {
+  const names: Record<string, string> = {
+    tavily: 'Tavily',
+    perplexity: 'Perplexity',
+    both: 'Tavily + Perplexity',
+  };
+  return names[provider] || provider;
+}

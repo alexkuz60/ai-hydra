@@ -7,7 +7,8 @@ import {
   executeToolCalls,
   registerCustomTools,
   testHttpTool,
-  setUserTavilyKey,
+  setSearchProviderKeys,
+  getAvailableSearchProviders,
 } from "./tools.ts";
 
 import type {
@@ -745,14 +746,13 @@ serve(async (req) => {
       }
     }
 
-    // Set user's personal Tavily key for web_search tool (if available)
+    // Set user's search provider API keys (Tavily + Perplexity)
     const userTavilyKey = (apiKeys as { tavily_api_key?: string | null })?.tavily_api_key ?? null;
-    setUserTavilyKey(userTavilyKey);
-    if (userTavilyKey) {
-      console.log(`[Tools] Using user's personal Tavily API key`);
-    } else {
-      console.log(`[Tools] Using system Tavily API key (fallback)`);
-    }
+    const userPerplexityKey = (apiKeys as { perplexity_api_key?: string | null })?.perplexity_api_key ?? null;
+    setSearchProviderKeys({ tavilyKey: userTavilyKey, perplexityKey: userPerplexityKey });
+    
+    const availableProviders = getAvailableSearchProviders();
+    console.log(`[Tools] Search providers available: ${availableProviders} (Tavily: ${userTavilyKey ? 'personal' : 'system'}, Perplexity: ${userPerplexityKey ? 'personal' : 'none'})`);
 
     const errors: { model: string; error: string }[] = [];
     console.log(`Processing ${models.length} models:`, models.map(m => m.model_id));
