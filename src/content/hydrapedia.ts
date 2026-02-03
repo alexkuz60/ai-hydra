@@ -2963,17 +2963,17 @@ When creating HTTP tools, the system validates URLs:
 
 \`\`\`mermaid
 graph TD
-    subgraph "Стратегические паттерны"
+    subgraph SP["Стратегические паттерны"]
         BP[Task Blueprint]
         BP --> S1[Этап 1]
         BP --> S2[Этап 2]
         BP --> S3[Этап N]
-        S1 --> R1[@assistant]
-        S2 --> R2[@critic]
-        S3 --> R3[@arbiter]
+        S1 --> R1[Ассистент]
+        S2 --> R2[Критик]
+        S3 --> R3[Арбитр]
     end
     
-    subgraph "Ролевые паттерны"
+    subgraph RP["Ролевые паттерны"]
         RB[Role Behavior]
         RB --> COM[Коммуникация]
         RB --> REA[Реакции]
@@ -3092,9 +3092,9 @@ graph TD
 
 \`\`\`mermaid
 graph LR
-    A[Запрос] --> B[@assistant<br/>Первичный ответ]
-    B --> C[@critic<br/>Анализ недостатков]
-    C --> D[@arbiter<br/>Синтез и улучшение]
+    A[Запрос] --> B[Ассистент]
+    B --> C[Критик]
+    C --> D[Арбитр]
     D --> E[Финальный ответ]
 \`\`\`
 
@@ -3123,17 +3123,17 @@ The "Behavioral Patterns" module allows you to manage task execution logic and A
 
 \`\`\`mermaid
 graph TD
-    subgraph "Strategic Patterns"
+    subgraph SP["Strategic Patterns"]
         BP[Task Blueprint]
         BP --> S1[Stage 1]
         BP --> S2[Stage 2]
         BP --> S3[Stage N]
-        S1 --> R1[@assistant]
-        S2 --> R2[@critic]
-        S3 --> R3[@arbiter]
+        S1 --> R1[Assistant]
+        S2 --> R2[Critic]
+        S3 --> R3[Arbiter]
     end
     
-    subgraph "Role Patterns"
+    subgraph RP["Role Patterns"]
         RB[Role Behavior]
         RB --> COM[Communication]
         RB --> REA[Reactions]
@@ -3252,9 +3252,9 @@ Pre-installed patterns available to all users.
 
 \`\`\`mermaid
 graph LR
-    A[Request] --> B[@assistant<br/>Initial response]
-    B --> C[@critic<br/>Weakness analysis]
-    C --> D[@arbiter<br/>Synthesis and improvement]
+    A[Request] --> B[Assistant]
+    B --> C[Critic]
+    C --> D[Arbiter]
     D --> E[Final response]
 \`\`\`
 
