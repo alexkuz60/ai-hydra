@@ -42,6 +42,12 @@ const DEFAULT_PROMPTS: Record<string, string> = {
 [Финальный вывод на основе анализа]`,
 };
 
+interface MemoryChunk {
+  content: string;
+  chunk_type: string;
+  metadata?: Record<string, unknown>;
+}
+
 interface StreamRequest {
   message: string;
   model_id: string;
@@ -49,6 +55,47 @@ interface StreamRequest {
   system_prompt?: string;
   temperature?: number;
   max_tokens?: number;
+  memory_context?: MemoryChunk[];
+}
+
+// Build memory context section for system prompt
+function buildMemoryContext(chunks: MemoryChunk[]): string {
+  if (!chunks || chunks.length === 0) return '';
+  
+  const sections: Record<string, string[]> = {
+    decision: [],
+    context: [],
+    instruction: [],
+    summary: [],
+  };
+  
+  chunks.forEach(chunk => {
+    const type = chunk.chunk_type || 'context';
+    if (sections[type]) {
+      sections[type].push(`• ${chunk.content}`);
+    } else {
+      sections.context.push(`• ${chunk.content}`);
+    }
+  });
+  
+  let contextText = '\n\n---\n## Контекст из памяти сессии\n';
+  
+  if (sections.decision.length > 0) {
+    contextText += '\n### Принятые решения:\n' + sections.decision.join('\n') + '\n';
+  }
+  if (sections.instruction.length > 0) {
+    contextText += '\n### Инструкции:\n' + sections.instruction.join('\n') + '\n';
+  }
+  if (sections.context.length > 0) {
+    contextText += '\n### Дополнительный контекст:\n' + sections.context.join('\n') + '\n';
+  }
+  if (sections.summary.length > 0) {
+    contextText += '\n### Саммари:\n' + sections.summary.join('\n') + '\n';
+  }
+  
+  contextText += '---\n\nУчитывай эту информацию при формировании ответа.';
+  
+  return contextText;
 }
 
 serve(async (req) => {
@@ -64,7 +111,8 @@ serve(async (req) => {
       role = 'assistant',
       system_prompt,
       temperature = 0.7,
-      max_tokens = 4096 
+      max_tokens = 4096,
+      memory_context = []
     }: StreamRequest = await req.json();
 
     if (!message || !model_id) {
@@ -83,8 +131,14 @@ serve(async (req) => {
       );
     }
 
-    // Build system prompt
-    const finalSystemPrompt = system_prompt || DEFAULT_PROMPTS[role] || DEFAULT_PROMPTS.assistant;
+    // Build system prompt with memory context
+    const basePrompt = system_prompt || DEFAULT_PROMPTS[role] || DEFAULT_PROMPTS.assistant;
+    const memorySection = buildMemoryContext(memory_context);
+    const finalSystemPrompt = basePrompt + memorySection;
+    
+    if (memory_context.length > 0) {
+      console.log(`[hydra-stream] Including ${memory_context.length} memory chunks in context`);
+    }
 
     // Determine token parameter based on model
     const isOpenAI = model_id.startsWith("openai/");

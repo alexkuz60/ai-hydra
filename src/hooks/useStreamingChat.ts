@@ -14,6 +14,12 @@ export interface StreamingMessage {
   sourceMessageId?: string | null;
 }
 
+interface MemoryChunk {
+  content: string;
+  chunk_type: string;
+  metadata?: Record<string, unknown>;
+}
+
 interface UseStreamingChatProps {
   sessionId: string | null;
 }
@@ -26,7 +32,8 @@ interface UseStreamingChatReturn {
     mode: ConsultantMode,
     modelId: string,
     sourceMessageId?: string | null,
-    hideUserMessage?: boolean
+    hideUserMessage?: boolean,
+    memoryContext?: MemoryChunk[]
   ) => Promise<void>;
   stopStreaming: () => void;
   clearMessages: () => void;
@@ -62,7 +69,8 @@ export function useStreamingChat({
       mode: ConsultantMode,
       modelId: string,
       sourceMessageId?: string | null,
-      hideUserMessage?: boolean
+      hideUserMessage?: boolean,
+      memoryContext?: MemoryChunk[]
     ) => {
       if (!sessionId || !content.trim() || !modelId) return;
 
@@ -115,6 +123,7 @@ export function useStreamingChat({
               message: content,
               model_id: modelId,
               role: modeToRole[mode],
+              memory_context: memoryContext || [],
             }),
             signal: abortControllerRef.current.signal,
           }

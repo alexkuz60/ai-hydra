@@ -110,6 +110,13 @@ export function ConsultantPanel({
   useEffect(() => {
     if (!initialQuery || !selectedModel) return;
     
+    // Prepare memory context for the request
+    const memoryContext = chunks.map(chunk => ({
+      content: chunk.content,
+      chunk_type: chunk.chunk_type,
+      metadata: chunk.metadata as Record<string, unknown> | undefined,
+    }));
+    
     // Check if we have AI responses (sourceMessages > 1 means supervisor + AI responses)
     if (initialQuery.sourceMessages && initialQuery.sourceMessages.length > 1) {
       // Has AI responses - auto-trigger moderator (hide user message with aggregated text)
@@ -119,7 +126,8 @@ export function ConsultantPanel({
         'moderator',
         selectedModel,
         initialQuery.messageId,
-        true // hideUserMessage - don't show aggregated text in D-chat
+        true, // hideUserMessage - don't show aggregated text in D-chat
+        memoryContext // Pass memory context
       ).finally(() => {
         setIsModeratingContext(false);
         onClearInitialQuery?.();
@@ -130,7 +138,7 @@ export function ConsultantPanel({
       setCurrentSourceMessageId(initialQuery.messageId);
       onClearInitialQuery?.();
     }
-  }, [initialQuery, selectedModel, sendQuery, onClearInitialQuery]);
+  }, [initialQuery, selectedModel, sendQuery, onClearInitialQuery, chunks]);
 
   // Update selected model when available models change
   useEffect(() => {
@@ -150,7 +158,15 @@ export function ConsultantPanel({
     const sourceId = currentSourceMessageId;
     setInput('');
     setCurrentSourceMessageId(null);
-    await sendQuery(messageContent, selectedMode, selectedModel, sourceId);
+    
+    // Prepare memory context for the request
+    const memoryContext = chunks.map(chunk => ({
+      content: chunk.content,
+      chunk_type: chunk.chunk_type,
+      metadata: chunk.metadata as Record<string, unknown> | undefined,
+    }));
+    
+    await sendQuery(messageContent, selectedMode, selectedModel, sourceId, false, memoryContext);
   };
 
   const handleQuickAction = (mode: ConsultantMode) => {
