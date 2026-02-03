@@ -709,162 +709,7 @@ Some models or situations don't support streaming. In these cases, the system au
 > **Tip**: With fallback, the model will still respond, you'll just see it all at once after generation completes.`
     }
   },
-  {
-    id: 'roles',
-    titleKey: 'hydrapedia.sections.roles',
-    icon: 'Shield',
-    content: {
-      ru: `# Роли агентов
-
-В AI-Hydra каждый ответ модели может иметь определённую роль. Это помогает структурировать диалог и понимать функцию каждого ответа.
-
-## Основные роли
-
-### \`@assistant\` Эксперт
-
-Основная роль для ответов. Эксперт даёт прямой, информативный ответ на запрос пользователя.
-
-**Когда использовать:**
-- Генерация контента
-- Ответы на вопросы
-- Написание кода
-- Объяснение концепций
-
-### \`@critic\` Критик
-
-Критик анализирует ответы других моделей, находит слабые места и предлагает улучшения.
-
-**Когда использовать:**
-- Проверка кода на ошибки
-- Анализ аргументации
-- Поиск уязвимостей
-- Редактура текста
-
-### \`@arbiter\` Арбитр
-
-Арбитр синтезирует ответы всех экспертов и критиков, формируя финальный ответ.
-
-**Когда использовать:**
-- Принятие решений
-- Разрешение конфликтов
-- Синтез нескольких точек зрения
-- Итоговые выводы
-
-### \`@consultant\` Консультант
-
-Консультант работает в боковой панели D-Chat, помогая углубиться в тему.
-
-**Когда использовать:**
-- Уточняющие вопросы
-- Пошаговые разъяснения
-- Детальный анализ
-- Альтернативные подходы
-
-## Дополнительные роли
-
-- \`@moderator\` — Модерация контента
-- \`@advisor\` — Стратегические советы
-- \`@archivist\` — Работа с историей и документами
-- \`@analyst\` — Глубокий анализ данных
-- \`@webhunter\` — Поиск информации в сети
-
-## Индикаторы ролей в интерфейсе
-
-### В списке сообщений
-- Цветной кружок слева от имени модели
-- Иконка роли внутри кружка
-- Название роли мелким текстом
-
-### В навигаторе чата
-- Цветной фон узла соответствует роли
-- Иконка роли в центре узла
-- При наведении — подсказка с названием
-
-## Назначение ролей
-
-Роли назначаются на основе:
-- Системного промпта модели (в библиотеке промптов)
-- Контекста запроса
-- Настроек по умолчанию
-
-> **Совет**: Создайте промпты для каждой роли в библиотеке и быстро переключайтесь между ними.`,
-
-      en: `# Agent Roles
-
-In AI-Hydra, each model response can have a specific role. This helps structure the dialogue and understand the function of each response.
-
-## Main Roles
-
-### \`@assistant\` Expert
-
-The main role for responses. The expert provides a direct, informative answer.
-
-**When to use:**
-- Content generation
-- Answering questions
-- Code writing
-- Concept explanation
-
-### \`@critic\` Critic
-
-The critic analyzes responses from other models, finds weaknesses and suggests improvements.
-
-**When to use:**
-- Code error checking
-- Argumentation analysis
-- Vulnerability search
-- Text editing
-
-### \`@arbiter\` Arbiter
-
-The arbiter synthesizes responses from all experts and critics, forming a final response.
-
-**When to use:**
-- Decision making
-- Conflict resolution
-- Multiple viewpoint synthesis
-- Final conclusions
-
-### \`@consultant\` Consultant
-
-The consultant works in the D-Chat side panel, helping to dive deeper into topics.
-
-**When to use:**
-- Follow-up questions
-- Step-by-step explanations
-- Detailed analysis
-- Alternative approaches
-
-## Additional Roles
-
-- \`@moderator\` — Content moderation
-- \`@advisor\` — Strategic advice
-- \`@archivist\` — History and documents
-- \`@analyst\` — Deep data analysis
-- \`@webhunter\` — Web information search
-
-## Role Indicators in Interface
-
-### In Message List
-- Colored circle to the left of model name
-- Role icon inside the circle
-- Role name in small text
-
-### In Chat Navigator
-- Colored node background matches role
-- Role icon in center of node
-- Tooltip with name on hover
-
-## Role Assignment
-
-Roles are assigned based on:
-- Model's system prompt (in prompt library)
-- Request context
-- Default settings
-
-> **Tip**: Create prompts for each role in the library and quickly switch between them.`
-    }
-  },
+  // NOTE: Section "roles" was merged into "roles-catalog" for unified role documentation
   {
     id: 'prompt-library',
     titleKey: 'hydrapedia.sections.promptLibrary',
@@ -2274,6 +2119,27 @@ AI-Hydra включает 11 специализированных ролей, р
 
 ---
 
+## Индикаторы ролей в интерфейсе
+
+### В списке сообщений
+- Цветной кружок слева от имени модели
+- Иконка роли внутри кружка
+- Название роли мелким текстом
+
+### В навигаторе чата
+- Цветной фон узла соответствует роли
+- Иконка роли в центре узла
+- При наведении — подсказка с названием
+
+### Назначение ролей
+
+Роли назначаются на основе:
+- Системного промпта модели (в библиотеке промптов)
+- Контекста запроса
+- Настроек по умолчанию
+
+---
+
 ## Страница «Штат специалистов»
 
 Доступна по адресу \`/staff-roles\`. Интерфейс:
@@ -2437,6 +2303,27 @@ Data-flow design.
 - Pipeline optimization
 - Bottleneck identification
 - Logic chain design
+
+---
+
+## Role Indicators in Interface
+
+### In Message List
+- Colored circle to the left of model name
+- Role icon inside the circle
+- Role name in small text
+
+### In Chat Navigator
+- Colored node background matches role
+- Role icon in center of node
+- Tooltip with name on hover
+
+### Role Assignment
+
+Roles are assigned based on:
+- Model's system prompt (in prompt library)
+- Request context
+- Default settings
 
 ---
 
