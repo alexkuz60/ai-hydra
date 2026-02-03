@@ -369,6 +369,60 @@ export type Database = {
         }
         Relationships: []
       }
+      session_memory: {
+        Row: {
+          chunk_type: string
+          content: string
+          created_at: string
+          embedding: string | null
+          id: string
+          metadata: Json | null
+          session_id: string
+          source_message_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          chunk_type?: string
+          content: string
+          created_at?: string
+          embedding?: string | null
+          id?: string
+          metadata?: Json | null
+          session_id: string
+          source_message_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          chunk_type?: string
+          content?: string
+          created_at?: string
+          embedding?: string | null
+          id?: string
+          metadata?: Json | null
+          session_id?: string
+          source_message_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "session_memory_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "session_memory_source_message_id_fkey"
+            columns: ["source_message_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sessions: {
         Row: {
           created_at: string
@@ -575,6 +629,21 @@ export type Database = {
       save_api_key: {
         Args: { p_api_key: string; p_provider: string }
         Returns: undefined
+      }
+      search_session_memory: {
+        Args: {
+          p_chunk_types?: string[]
+          p_limit?: number
+          p_query_embedding: string
+          p_session_id: string
+        }
+        Returns: {
+          chunk_type: string
+          content: string
+          id: string
+          metadata: Json
+          similarity: number
+        }[]
       }
       store_user_secret: {
         Args: {
