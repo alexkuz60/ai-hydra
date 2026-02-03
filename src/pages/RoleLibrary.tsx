@@ -63,7 +63,8 @@ interface RolePrompt {
   is_shared: boolean;
   is_default: boolean;
   usage_count: number;
-  user_id: string;
+  user_id: string | null; // null for shared prompts from other users (privacy protection)
+  is_owner: boolean; // from security view
   created_at: string;
   updated_at: string;
 }
@@ -118,13 +119,15 @@ export default function RoleLibrary() {
     if (!user) return;
 
     try {
+      // Use security view that masks user_id for non-owners
+      // This prevents user identity enumeration through shared prompts
       const { data, error } = await supabase
-        .from('prompt_library')
+        .from('prompt_library_safe' as any)
         .select('*')
         .order('updated_at', { ascending: false });
 
       if (error) throw error;
-      setPrompts(data || []);
+      setPrompts((data || []) as unknown as RolePrompt[]);
     } catch (error: any) {
       toast.error(error.message);
     } finally {
@@ -152,7 +155,13 @@ export default function RoleLibrary() {
 
       if (error) throw error;
 
-      setPrompts([data, ...prompts]);
+      // Add to list with is_owner = true since we just created it
+      const newPrompt: RolePrompt = {
+        ...data,
+        user_id: user.id,
+        is_owner: true
+      };
+      setPrompts([newPrompt, ...prompts]);
       setNewName('');
       setNewDescription('');
       setNewContent('');
@@ -249,10 +258,10 @@ export default function RoleLibrary() {
     // Role filter
     const matchesRole = roleFilter === 'all' || prompt.role === roleFilter;
     
-    // Owner filter
+    // Owner filter - use is_owner from security view instead of comparing user_id
     const matchesOwner = 
       ownerFilter === 'all' ||
-      (ownerFilter === 'own' && prompt.user_id === user?.id) ||
+      (ownerFilter === 'own' && prompt.is_owner) ||
       (ownerFilter === 'shared' && prompt.is_shared);
     
     return matchesSearch && matchesRole && matchesOwner;
@@ -434,8 +443,8 @@ export default function RoleLibrary() {
                     </div>
                   </div>
                   
-                  {/* Actions (only for own prompts) */}
-                  {prompt.user_id === user?.id && (
+                  {/* Actions (only for own prompts) - use is_owner from security view */}
+                  {prompt.is_owner && (
                     <div className="flex items-center gap-1 shrink-0">
                       <Button 
                         variant="ghost" 

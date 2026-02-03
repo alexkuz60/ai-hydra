@@ -512,7 +512,54 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      prompt_library_safe: {
+        Row: {
+          content: string | null
+          created_at: string | null
+          description: string | null
+          id: string | null
+          is_default: boolean | null
+          is_owner: boolean | null
+          is_shared: boolean | null
+          name: string | null
+          role: string | null
+          tags: string[] | null
+          updated_at: string | null
+          usage_count: number | null
+          user_id: string | null
+        }
+        Insert: {
+          content?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string | null
+          is_default?: boolean | null
+          is_owner?: never
+          is_shared?: boolean | null
+          name?: string | null
+          role?: string | null
+          tags?: string[] | null
+          updated_at?: string | null
+          usage_count?: number | null
+          user_id?: never
+        }
+        Update: {
+          content?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string | null
+          is_default?: boolean | null
+          is_owner?: never
+          is_shared?: boolean | null
+          name?: string | null
+          role?: string | null
+          tags?: string[] | null
+          updated_at?: string | null
+          usage_count?: number | null
+          user_id?: never
+        }
+        Relationships: []
+      }
     }
     Functions: {
       delete_user_secret: { Args: { p_secret_id: string }; Returns: undefined }
