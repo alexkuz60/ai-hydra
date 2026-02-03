@@ -33,10 +33,13 @@ import {
 } from '@/config/roles';
 import { cn } from '@/lib/utils';
 import RoleHierarchyEditor from './RoleHierarchyEditor';
+import { ConflictResolutionDialog } from './ConflictResolutionDialog';
 import { useRoleBehavior } from '@/hooks/useRoleBehavior';
 import { useUnsavedChanges } from '@/hooks/useUnsavedChanges';
 import { UnsavedChangesDialog } from '@/components/ui/unsaved-changes-dialog';
+import { detectConflicts, generateSyncOperations, applyOperationToInteractions, groupOperationsByRole, type HierarchyConflict } from '@/lib/hierarchyConflictDetector';
 import type { RoleInteractions } from '@/types/patterns';
+import type { Json } from '@/integrations/supabase/types';
 
 interface PromptLibraryItem {
   id: string;
@@ -82,8 +85,14 @@ const RoleDetailsPanel = forwardRef<HTMLDivElement, RoleDetailsPanelProps>(
     });
     const [originalInteractions, setOriginalInteractions] = useState<RoleInteractions | null>(null);
     
+    // Conflict resolution state
+    const [conflicts, setConflicts] = useState<HierarchyConflict[]>([]);
+    const [showConflictDialog, setShowConflictDialog] = useState(false);
+    const [isSyncing, setIsSyncing] = useState(false);
+    const [pendingInteractions, setPendingInteractions] = useState<RoleInteractions | null>(null);
+    
     // Load behavior from database
-    const { behavior, isLoading: isLoadingBehavior, isSaving, saveInteractions } = useRoleBehavior(selectedRole);
+    const { behavior, isLoading: isLoadingBehavior, isSaving, saveInteractions, fetchAllBehaviors } = useRoleBehavior(selectedRole);
 
     // Track changes to interactions when editing
     const handleInteractionsChange = useCallback((newInteractions: RoleInteractions) => {
@@ -456,14 +465,25 @@ const RoleDetailsPanel = forwardRef<HTMLDivElement, RoleDetailsPanelProps>(
                       variant="ghost"
                       size="sm"
                       onClick={async () => {
-                        if (isEditingHierarchy) {
-                          // Save to database
-                          const success = await saveInteractions(interactions);
-                          if (success) {
-                            toast.success(t('staffRoles.hierarchy.saved'));
-                            setIsEditingHierarchy(false);
-                            setOriginalInteractions(null);
-                            unsavedChanges.markSaved();
+                        if (isEditingHierarchy && selectedRole) {
+                          // Check for conflicts before saving
+                          const allBehaviors = await fetchAllBehaviors();
+                          const detectedConflicts = detectConflicts(selectedRole, interactions, allBehaviors);
+                          
+                          if (detectedConflicts.length > 0) {
+                            // Show conflict resolution dialog
+                            setConflicts(detectedConflicts);
+                            setPendingInteractions(interactions);
+                            setShowConflictDialog(true);
+                          } else {
+                            // No conflicts, save directly
+                            const success = await saveInteractions(interactions);
+                            if (success) {
+                              toast.success(t('staffRoles.hierarchy.saved'));
+                              setIsEditingHierarchy(false);
+                              setOriginalInteractions(null);
+                              unsavedChanges.markSaved();
+                            }
                           }
                         } else {
                           // Store original values before editing
@@ -471,7 +491,7 @@ const RoleDetailsPanel = forwardRef<HTMLDivElement, RoleDetailsPanelProps>(
                           setIsEditingHierarchy(true);
                         }
                       }}
-                      disabled={isSaving}
+                      disabled={isSaving || isSyncing}
                       className="gap-1.5 h-7 text-xs"
                     >
                       {isSaving ? (
@@ -537,6 +557,70 @@ const RoleDetailsPanel = forwardRef<HTMLDivElement, RoleDetailsPanelProps>(
           open={unsavedChanges.showConfirmDialog}
           onConfirm={unsavedChanges.confirmAndProceed}
           onCancel={unsavedChanges.cancelNavigation}
+        />
+        
+        {/* Conflict Resolution Dialog */}
+        <ConflictResolutionDialog
+          open={showConflictDialog}
+          onOpenChange={setShowConflictDialog}
+          conflicts={conflicts}
+          isSyncing={isSyncing}
+          onSync={async () => {
+            if (!selectedRole || !pendingInteractions) return;
+            
+            setIsSyncing(true);
+            try {
+              // Generate sync operations
+              const operations = generateSyncOperations(conflicts);
+              const grouped = groupOperationsByRole(operations);
+              
+              // First save the current role's interactions
+              const success = await saveInteractions(pendingInteractions);
+              if (!success) throw new Error('Failed to save current role');
+              
+              // Then update all affected roles
+              const allBehaviors = await fetchAllBehaviors();
+              
+              for (const [role, ops] of grouped) {
+                let roleInteractions = allBehaviors.get(role) || {
+                  defers_to: [],
+                  challenges: [],
+                  collaborates: [],
+                };
+                
+                // Apply all operations for this role
+                for (const op of ops) {
+                  roleInteractions = applyOperationToInteractions(roleInteractions, op);
+                }
+                
+                // Update in database
+                const { error } = await supabase
+                  .from('role_behaviors')
+                  .update({
+                    interactions: roleInteractions as unknown as Json,
+                    updated_at: new Date().toISOString(),
+                  })
+                  .eq('role', role);
+                
+                if (error) {
+                  console.error(`Failed to update role ${role}:`, error);
+                }
+              }
+              
+              toast.success(t('staffRoles.hierarchy.syncSuccess'));
+              setShowConflictDialog(false);
+              setConflicts([]);
+              setPendingInteractions(null);
+              setIsEditingHierarchy(false);
+              setOriginalInteractions(null);
+              unsavedChanges.markSaved();
+            } catch (error) {
+              console.error('Sync failed:', error);
+              toast.error(t('common.error'));
+            } finally {
+              setIsSyncing(false);
+            }
+          }}
         />
       </div>
     );

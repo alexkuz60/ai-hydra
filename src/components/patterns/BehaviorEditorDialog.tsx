@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import {
   Dialog,
@@ -23,8 +23,14 @@ import { Plus, Trash2, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ROLE_CONFIG, AGENT_ROLES, type AgentRole } from '@/config/roles';
 import RoleHierarchyEditor from '@/components/staff/RoleHierarchyEditor';
+import { ConflictResolutionDialog } from '@/components/staff/ConflictResolutionDialog';
 import { UnsavedChangesDialog } from '@/components/ui/unsaved-changes-dialog';
 import { useUnsavedChanges } from '@/hooks/useUnsavedChanges';
+import { useRoleBehavior } from '@/hooks/useRoleBehavior';
+import { detectConflicts, generateSyncOperations, applyOperationToInteractions, groupOperationsByRole, type HierarchyConflict } from '@/lib/hierarchyConflictDetector';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+import type { Json } from '@/integrations/supabase/types';
 import type { 
   RoleBehavior, 
   CommunicationTone, 
@@ -56,6 +62,9 @@ export function BehaviorEditorDialog({
   const { t } = useLanguage();
   const isEditing = !!behavior?.id;
   const unsavedChanges = useUnsavedChanges();
+  
+  // Use role behavior hook for fetching all behaviors (for conflict detection)
+  const { fetchAllBehaviors } = useRoleBehavior(null);
 
   const [role, setRole] = useState<AgentRole>('assistant');
   const [tone, setTone] = useState<CommunicationTone>('friendly');
@@ -68,6 +77,15 @@ export function BehaviorEditorDialog({
     collaborates: [],
   });
   const [isShared, setIsShared] = useState(false);
+  
+  // Conflict resolution state
+  const [conflicts, setConflicts] = useState<HierarchyConflict[]>([]);
+  const [showConflictDialog, setShowConflictDialog] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [pendingBehaviorData, setPendingBehaviorData] = useState<{
+    data: Omit<RoleBehavior, 'id'> & { id?: string };
+    isShared: boolean;
+  } | null>(null);
 
   // Compute initial state hash for change detection
   const initialStateHash = useMemo(() => {
@@ -150,10 +168,78 @@ export function BehaviorEditorDialog({
       reactions: reactions.filter(r => r.trigger.trim() && r.behavior.trim()),
       interactions,
     };
-    await onSave(data, isShared);
-    unsavedChanges.markSaved();
-    onOpenChange(false);
+    
+    // Check for conflicts before saving
+    const allBehaviors = await fetchAllBehaviors();
+    const detectedConflicts = detectConflicts(role, interactions, allBehaviors);
+    
+    if (detectedConflicts.length > 0) {
+      // Show conflict resolution dialog
+      setConflicts(detectedConflicts);
+      setPendingBehaviorData({ data, isShared });
+      setShowConflictDialog(true);
+    } else {
+      // No conflicts, save directly
+      await onSave(data, isShared);
+      unsavedChanges.markSaved();
+      onOpenChange(false);
+    }
   };
+  
+  const handleSyncAndSave = useCallback(async () => {
+    if (!pendingBehaviorData) return;
+    
+    setIsSyncing(true);
+    try {
+      // Generate sync operations
+      const operations = generateSyncOperations(conflicts);
+      const grouped = groupOperationsByRole(operations);
+      
+      // First save the current behavior
+      await onSave(pendingBehaviorData.data, pendingBehaviorData.isShared);
+      
+      // Then update all affected roles
+      const allBehaviors = await fetchAllBehaviors();
+      
+      for (const [roleKey, ops] of grouped) {
+        let roleInteractions = allBehaviors.get(roleKey) || {
+          defers_to: [],
+          challenges: [],
+          collaborates: [],
+        };
+        
+        // Apply all operations for this role
+        for (const op of ops) {
+          roleInteractions = applyOperationToInteractions(roleInteractions, op);
+        }
+        
+        // Update in database
+        const { error } = await supabase
+          .from('role_behaviors')
+          .update({
+            interactions: roleInteractions as unknown as Json,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('role', roleKey);
+        
+        if (error) {
+          console.error(`Failed to update role ${roleKey}:`, error);
+        }
+      }
+      
+      toast.success(t('staffRoles.hierarchy.syncSuccess'));
+      setShowConflictDialog(false);
+      setConflicts([]);
+      setPendingBehaviorData(null);
+      unsavedChanges.markSaved();
+      onOpenChange(false);
+    } catch (error) {
+      console.error('Sync failed:', error);
+      toast.error(t('common.error'));
+    } finally {
+      setIsSyncing(false);
+    }
+  }, [conflicts, pendingBehaviorData, onSave, fetchAllBehaviors, t, unsavedChanges, onOpenChange]);
 
   const handleClose = () => {
     if (unsavedChanges.hasUnsavedChanges) {
@@ -325,8 +411,8 @@ export function BehaviorEditorDialog({
           <Button variant="outline" onClick={handleClose}>
             {t('common.cancel')}
           </Button>
-          <Button onClick={handleSave} disabled={!isValid || isSaving}>
-            {isSaving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+          <Button onClick={handleSave} disabled={!isValid || isSaving || isSyncing}>
+            {(isSaving || isSyncing) && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
             {isEditing ? t('common.save') : t('common.create')}
           </Button>
         </DialogFooter>
@@ -337,6 +423,20 @@ export function BehaviorEditorDialog({
       open={unsavedChanges.showConfirmDialog}
       onConfirm={unsavedChanges.confirmAndProceed}
       onCancel={unsavedChanges.cancelNavigation}
+    />
+    
+    <ConflictResolutionDialog
+      open={showConflictDialog}
+      onOpenChange={(open) => {
+        setShowConflictDialog(open);
+        if (!open) {
+          setConflicts([]);
+          setPendingBehaviorData(null);
+        }
+      }}
+      conflicts={conflicts}
+      isSyncing={isSyncing}
+      onSync={handleSyncAndSave}
     />
     </>
   );
