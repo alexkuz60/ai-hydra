@@ -132,6 +132,8 @@ const translations: Translations = {
   'patterns.duplicateToEdit': { ru: 'Создать копию для редактирования', en: 'Duplicate to edit' },
   'patterns.deleteConfirmTitle': { ru: 'Удалить паттерн?', en: 'Delete pattern?' },
   'patterns.deleteConfirmDescription': { ru: 'Это действие необратимо. Будет удалён паттерн', en: 'This action cannot be undone. This will delete the pattern' },
+  'patterns.systemPattern': { ru: 'Системный паттерн', en: 'System pattern' },
+  'patterns.publicPattern': { ru: 'Публичный паттерн', en: 'Public pattern' },
   
   // Hydrapedia
   'hydrapedia.title': { ru: 'Гидропедия', en: 'Hydrapedia' },
