@@ -720,6 +720,20 @@ const translations: Translations = {
   'hydrapedia.playground.paymentError': { ru: 'Требуется пополнение баланса Lovable AI.', en: 'Payment required. Please add funds to Lovable AI.' },
   'hydrapedia.playground.genericError': { ru: 'Произошла ошибка. Попробуйте снова.', en: 'An error occurred. Please try again.' },
   
+  // Prompt Engineer
+  'promptEngineer.buttonTooltip': { ru: 'Оптимизировать запрос с Промпт-Инженером', en: 'Optimize prompt with Prompt Engineer' },
+  'promptEngineer.title': { ru: 'Промпт-Инженер', en: 'Prompt Engineer' },
+  'promptEngineer.description': { ru: 'Анализ и оптимизация вашего запроса для достижения лучших результатов', en: 'Analysis and optimization of your prompt for better results' },
+  'promptEngineer.original': { ru: 'Исходный запрос', en: 'Original prompt' },
+  'promptEngineer.optimized': { ru: 'Оптимизированный запрос', en: 'Optimized prompt' },
+  'promptEngineer.explanation': { ru: 'Что изменено', en: 'What was changed' },
+  'promptEngineer.improvements': { ru: 'Улучшения', en: 'Improvements' },
+  'promptEngineer.optimizing': { ru: 'Анализирую и оптимизирую...', en: 'Analyzing and optimizing...' },
+  'promptEngineer.apply': { ru: 'Применить', en: 'Apply' },
+  'promptEngineer.emptyInput': { ru: 'Введите текст запроса для оптимизации', en: 'Enter prompt text to optimize' },
+  'promptEngineer.error': { ru: 'Не удалось оптимизировать запрос', en: 'Failed to optimize prompt' },
+  'promptEngineer.applied': { ru: 'Оптимизированный запрос применён', en: 'Optimized prompt applied' },
+  
   // Error Boundary
   'error.title': { ru: 'Что-то пошло не так', en: 'Something went wrong' },
   'error.description': { ru: 'Произошла непредвиденная ошибка. Попробуйте перезагрузить страницу.', en: 'An unexpected error occurred. Please try reloading the page.' },

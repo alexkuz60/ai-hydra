@@ -6,6 +6,7 @@ import { TimeoutSlider } from '@/components/warroom/TimeoutSlider';
 import { UnifiedSendButton } from '@/components/warroom/UnifiedSendButton';
 import { MermaidPreview } from '@/components/warroom/MermaidPreview';
 import { MermaidBlock } from '@/components/warroom/MermaidBlock';
+import { PromptEngineerButton } from '@/components/warroom/PromptEngineerButton';
 import { ModelOption } from '@/hooks/useAvailableModels';
 import { cn } from '@/lib/utils';
 import { Loader2, GitBranch } from 'lucide-react';
@@ -220,6 +221,13 @@ export function ChatInputArea({
           <TimeoutSlider
             value={timeoutSeconds}
             onChange={onTimeoutChange}
+            disabled={sending}
+          />
+
+          {/* Prompt Engineer button */}
+          <PromptEngineerButton
+            currentInput={input}
+            onOptimizedPrompt={onInputChange}
             disabled={sending}
           />
 
