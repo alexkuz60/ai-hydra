@@ -31,7 +31,7 @@ const ROLE_NAME_MAP: Record<string, MessageRole> = {
   'promptengineer': 'promptengineer',
   'промпт-инженер': 'promptengineer',
   'flowregulator': 'flowregulator',
-  'регулировщик': 'flowregulator',
+  'логистик': 'flowregulator',
   'user': 'user',
   'пользователь': 'user',
 };
