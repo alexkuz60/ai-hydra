@@ -1,124 +1,222 @@
 
-# План: Синхронизация табеля о рангах с базой данных
 
-## Обзор
-Реализуем двустороннюю синхронизацию данных иерархии ролей между страницей **Штат специалистов** и таблицей `role_behaviors` в базе данных. При выборе роли будут загружаться существующие настройки взаимодействий, а при редактировании — сохраняться обратно.
+# План: Автоматическая проверка и синхронизация табеля о рангах
 
-## Текущая ситуация
-- Таблица `role_behaviors` уже содержит системные записи для каждой роли с полем `interactions` (JSONB)
-- `RoleHierarchyEditor` компонент уже используется в обоих местах (StaffRoles и BehaviorEditorDialog)
-- Страница `RoleDetailsPanel` сбрасывает `interactions` в пустой объект при смене роли
-- Нет механизма загрузки существующих настроек из БД
+## Проблема
 
-## План реализации
+При редактировании иерархии ролей могут возникать логические противоречия:
 
-### 1. Создание хука `useRoleBehavior`
-Создать специализированный хук для работы с поведением конкретной роли:
+| Роль A устанавливает | Роль B имеет | Противоречие |
+|---------------------|--------------|--------------|
+| A → defers_to: [B] (B начальник) | B → collaborates: [A] (A коллега) | B считает A коллегой, а A считает B начальником |
+| A → challenges: [B] (B подчинённый) | B → defers_to: [A] (A начальник) | ✅ Симметрично — не противоречие |
+| A → collaborates: [B] (B коллега) | B → challenges: [A] (A подчинённый) | A считает B коллегой, но B считает A подчинённым |
 
-**Файл:** `src/hooks/useRoleBehavior.ts`
+### Правила симметрии
 
-Функциональность:
-- Загрузка `role_behaviors` для выбранной роли при её изменении
-- Приоритет: пользовательское поведение → системное поведение
-- Функция сохранения/обновления записи
-- Состояния загрузки и сохранения
+Корректные симметричные отношения:
+- `A.defers_to[B]` ↔ `B.challenges[A]` — Иерархия "начальник-подчинённый"
+- `A.collaborates[B]` ↔ `B.collaborates[A]` — Равные коллеги
 
-### 2. Интеграция в RoleDetailsPanel
-Обновить `src/components/staff/RoleDetailsPanel.tsx`:
+## Решение
 
-- Использовать новый хук `useRoleBehavior` для выбранной роли
-- При загрузке роли — заполнять `interactions` данными из БД
-- При нажатии кнопки "Сохранить" — вызывать функцию сохранения хука
-- Добавить индикатор загрузки при получении данных
-- Показать toast-уведомление при успешном сохранении
+Добавить проверку и автосинхронизацию в момент сохранения иерархии. При обнаружении противоречий:
+1. Показать пользователю список конфликтов
+2. Предложить варианты: **Синхронизировать** (исправить обе стороны) или **Отмена**
 
-### 3. Логика сохранения
-При сохранении иерархии из Штатного расписания:
+---
 
-1. Если у пользователя уже есть кастомное поведение для роли — обновить его
-2. Если нет — создать новую запись `role_behaviors` (не системную)
-3. Обновить только поле `interactions`, сохраняя остальные настройки (communication, reactions)
+## Архитектура
 
-### 4. Обновление списка паттернов
-После сохранения в Штатном расписании:
-- Вызвать `refetch` из `usePatterns` для синхронизации списка на странице Паттерны поведения
+### Новый компонент: ConflictResolutionDialog
+
+Диалог для отображения обнаруженных конфликтов с предложением их разрешения.
+
+### Новая утилита: hierarchyConflictDetector
+
+Функции для обнаружения и разрешения конфликтов:
+
+```text
+┌──────────────────────────────────────────────────────────────┐
+│                    hierarchyConflictDetector.ts              │
+├──────────────────────────────────────────────────────────────┤
+│ detectConflicts(currentRole, newInteractions, allBehaviors)  │
+│   → HierarchyConflict[]                                      │
+│                                                              │
+│ generateSyncOperations(conflicts, strategy)                  │
+│   → SyncOperation[]                                          │
+│                                                              │
+│ applySyncOperations(operations)                              │
+│   → Promise<void>                                            │
+└──────────────────────────────────────────────────────────────┘
+```
 
 ---
 
 ## Технические детали
 
-### Структура хука useRoleBehavior
+### Типы данных
 
 ```typescript
-interface UseRoleBehaviorResult {
-  behavior: RoleBehavior | null;
-  isLoading: boolean;
-  isSaving: boolean;
-  saveInteractions: (interactions: RoleInteractions) => Promise<void>;
+interface HierarchyConflict {
+  sourceRole: AgentRole;      // Редактируемая роль
+  targetRole: AgentRole;      // Роль с конфликтом
+  sourceRelation: 'defers_to' | 'challenges' | 'collaborates';
+  targetRelation: 'defers_to' | 'challenges' | 'collaborates' | 'none';
+  expectedTargetRelation: 'defers_to' | 'challenges' | 'collaborates';
+  description: string;
 }
 
-function useRoleBehavior(role: AgentRole | null): UseRoleBehaviorResult
+interface SyncOperation {
+  role: AgentRole;
+  action: 'add' | 'remove';
+  list: 'defers_to' | 'challenges' | 'collaborates';
+  targetRole: AgentRole;
+}
 ```
 
-### Логика приоритета загрузки
-1. Ищем записи где `role = selectedRole`
-2. Сортируем: сначала `is_system = false` (пользовательские), потом системные
-3. Берём первую запись
-
-### SQL-запрос для загрузки
-```sql
-SELECT * FROM role_behaviors 
-WHERE role = $1 
-  AND (user_id = $userId OR is_system = true OR is_shared = true)
-ORDER BY 
-  CASE WHEN user_id = $userId THEN 0 ELSE 1 END,
-  is_system ASC
-LIMIT 1
-```
-
-### Изменения в RoleDetailsPanel
+### Алгоритм обнаружения конфликтов
 
 ```typescript
-// Добавить импорт хука
-import { useRoleBehavior } from '@/hooks/useRoleBehavior';
-
-// Использовать хук
-const { behavior, isLoading: isLoadingBehavior, isSaving, saveInteractions } = useRoleBehavior(selectedRole);
-
-// Синхронизировать interactions при загрузке
-useEffect(() => {
-  if (behavior?.interactions) {
-    setInteractions(behavior.interactions);
+function detectConflicts(
+  currentRole: AgentRole,
+  newInteractions: RoleInteractions,
+  allBehaviors: Map<AgentRole, RoleInteractions>
+): HierarchyConflict[] {
+  const conflicts: HierarchyConflict[] = [];
+  
+  // Для каждой роли в defers_to (начальники)
+  for (const superior of newInteractions.defers_to) {
+    const superiorInteractions = allBehaviors.get(superior);
+    // Начальник должен иметь нас в challenges (подчинённые)
+    if (!superiorInteractions?.challenges?.includes(currentRole)) {
+      conflicts.push({
+        sourceRole: currentRole,
+        targetRole: superior,
+        sourceRelation: 'defers_to',
+        targetRelation: getRelationType(superiorInteractions, currentRole),
+        expectedTargetRelation: 'challenges',
+        description: `${superior} не считает ${currentRole} подчинённым`
+      });
+    }
   }
-}, [behavior]);
+  
+  // Для каждой роли в challenges (подчинённые)
+  for (const subordinate of newInteractions.challenges) {
+    const subordinateInteractions = allBehaviors.get(subordinate);
+    // Подчинённый должен иметь нас в defers_to (начальники)
+    if (!subordinateInteractions?.defers_to?.includes(currentRole)) {
+      conflicts.push({...});
+    }
+  }
+  
+  // Для каждой роли в collaborates (коллеги)
+  for (const peer of newInteractions.collaborates) {
+    const peerInteractions = allBehaviors.get(peer);
+    // Коллега должен иметь нас тоже в collaborates
+    if (!peerInteractions?.collaborates?.includes(currentRole)) {
+      conflicts.push({...});
+    }
+  }
+  
+  return conflicts;
+}
+```
 
-// Обновить кнопку сохранения
-const handleSaveHierarchy = async () => {
-  await saveInteractions(interactions);
-  setIsEditingHierarchy(false);
-  toast.success(t('staffRoles.hierarchy.saved'));
-};
+### Интеграция в процесс сохранения
+
+В `useRoleBehavior.ts` и диалоге сохранения:
+
+1. При нажатии "Сохранить" — вызвать `detectConflicts()`
+2. Если конфликтов нет — сохранить как обычно
+3. Если есть конфликты — показать `ConflictResolutionDialog`
+4. При выборе "Синхронизировать":
+   - Сгенерировать список операций
+   - Обновить все затронутые записи в БД в одной транзакции
+
+### UI диалога ConflictResolutionDialog
+
+```text
+┌─────────────────────────────────────────────────┐
+│ ⚠️ Обнаружены противоречия в иерархии          │
+├─────────────────────────────────────────────────┤
+│                                                 │
+│ Эксперт → defers_to: Консультант               │
+│   ⚡ Консультант считает Эксперта коллегой     │
+│   Предлагаемое исправление:                    │
+│   Консультант.challenges += Эксперт            │
+│                                                 │
+│ Эксперт → collaborates: Критик                 │
+│   ⚡ Критик считает Эксперта подчинённым       │
+│   Предлагаемое исправление:                    │
+│   Критик.collaborates += Эксперт               │
+│                                                 │
+├─────────────────────────────────────────────────┤
+│        [Отмена]  [Синхронизировать всё]         │
+└─────────────────────────────────────────────────┘
 ```
 
 ---
 
+## Файлы для создания
+
+| Файл | Описание |
+|------|----------|
+| `src/lib/hierarchyConflictDetector.ts` | Логика обнаружения и разрешения конфликтов |
+| `src/components/staff/ConflictResolutionDialog.tsx` | UI для отображения конфликтов |
+
 ## Файлы для изменения
 
-| Файл | Действие |
-|------|----------|
-| `src/hooks/useRoleBehavior.ts` | Создать |
-| `src/components/staff/RoleDetailsPanel.tsx` | Обновить |
-| `src/contexts/LanguageContext.tsx` | Добавить переводы |
+| Файл | Изменения |
+|------|-----------|
+| `src/hooks/useRoleBehavior.ts` | Добавить функцию `fetchAllBehaviors()` для загрузки всех иерархий |
+| `src/components/staff/RoleDetailsPanel.tsx` | Интеграция проверки конфликтов при сохранении |
+| `src/components/patterns/BehaviorEditorDialog.tsx` | Интеграция проверки конфликтов при сохранении |
+| `src/contexts/LanguageContext.tsx` | Переводы для диалога конфликтов |
+
+---
 
 ## Переводы для добавления
 
 ```typescript
-'staffRoles.hierarchy.saved': {
-  ru: 'Иерархия сохранена',
-  en: 'Hierarchy saved',
+'staffRoles.hierarchy.conflicts': {
+  ru: 'Обнаружены противоречия в иерархии',
+  en: 'Hierarchy conflicts detected',
 },
-'staffRoles.hierarchy.loading': {
-  ru: 'Загрузка настроек...',
-  en: 'Loading settings...',
+'staffRoles.hierarchy.conflictsDescription': {
+  ru: 'Установленные связи противоречат настройкам других ролей',
+  en: 'The set relationships conflict with other role settings',
+},
+'staffRoles.hierarchy.syncAll': {
+  ru: 'Синхронизировать',
+  en: 'Synchronize',
+},
+'staffRoles.hierarchy.conflictExpects': {
+  ru: 'ожидается',
+  en: 'expected',
+},
+'staffRoles.hierarchy.conflictHas': {
+  ru: 'сейчас',
+  en: 'currently',
+},
+'staffRoles.hierarchy.syncing': {
+  ru: 'Синхронизация...',
+  en: 'Synchronizing...',
+},
+'staffRoles.hierarchy.syncSuccess': {
+  ru: 'Иерархия синхронизирована',
+  en: 'Hierarchy synchronized',
 },
 ```
+
+---
+
+## Порядок реализации
+
+1. Создать `src/lib/hierarchyConflictDetector.ts` с типами и логикой
+2. Создать `src/components/staff/ConflictResolutionDialog.tsx`
+3. Обновить `src/hooks/useRoleBehavior.ts` — добавить `fetchAllBehaviors`
+4. Интегрировать проверку в `RoleDetailsPanel.tsx`
+5. Интегрировать проверку в `BehaviorEditorDialog.tsx`
+6. Добавить переводы в `LanguageContext.tsx`
+
