@@ -296,7 +296,7 @@ export function ConsultantPanel({
                 </AnimatePresence>
               </motion.button>
             </TooltipTrigger>
-            <TooltipContent>
+            <TooltipContent side="bottom">
               {memoryRefreshed ? t('memory.refreshed') : t('memory.refresh')}
             </TooltipContent>
           </Tooltip>
