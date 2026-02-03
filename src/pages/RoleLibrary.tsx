@@ -53,6 +53,7 @@ import { AgentRole, AGENT_ROLES, getRoleBadgeColor } from '@/config/roles';
 import { RoleSelectOptions, RoleDisplay } from '@/components/ui/RoleSelectItem';
 
 type OwnerFilter = 'all' | 'own' | 'shared';
+type PromptLanguage = 'ru' | 'en' | 'auto';
 
 interface RolePrompt {
   id: string;
@@ -64,6 +65,7 @@ interface RolePrompt {
   is_default: boolean;
   usage_count: number;
   is_owner: boolean; // computed server-side (privacy-safe)
+  language?: PromptLanguage;
   created_at: string;
   updated_at: string;
 }
@@ -88,6 +90,7 @@ export default function RoleLibrary() {
   const [newContent, setNewContent] = useState('');
   const [newRole, setNewRole] = useState<AgentRole>('assistant');
   const [newIsShared, setNewIsShared] = useState(false);
+  const [newLanguage, setNewLanguage] = useState<PromptLanguage>('auto');
   const [creating, setCreating] = useState(false);
 
   // Edit sheet
@@ -98,6 +101,7 @@ export default function RoleLibrary() {
   const [editContent, setEditContent] = useState('');
   const [editRole, setEditRole] = useState<AgentRole>('assistant');
   const [editIsShared, setEditIsShared] = useState(false);
+  const [editLanguage, setEditLanguage] = useState<PromptLanguage>('auto');
   const [updating, setUpdating] = useState(false);
 
   // Delete dialog
@@ -144,6 +148,7 @@ export default function RoleLibrary() {
           content: newContent.trim(),
           role: newRole,
           is_shared: newIsShared,
+          language: newLanguage,
         }]);
 
       if (error) throw error;
@@ -155,6 +160,7 @@ export default function RoleLibrary() {
       setNewContent('');
       setNewRole('assistant');
       setNewIsShared(false);
+      setNewLanguage('auto');
       toast.success(t('roleLibrary.created'));
     } catch (error: any) {
       toast.error(error.message);
@@ -170,6 +176,7 @@ export default function RoleLibrary() {
     setEditContent(prompt.content);
     setEditRole(prompt.role as AgentRole);
     setEditIsShared(prompt.is_shared);
+    setEditLanguage(prompt.language || 'auto');
     setEditSheet(true);
   };
 
@@ -186,6 +193,7 @@ export default function RoleLibrary() {
           content: editContent.trim(),
           role: editRole,
           is_shared: editIsShared,
+          language: editLanguage,
         })
         .eq('id', editingPrompt.id);
 
@@ -311,17 +319,31 @@ export default function RoleLibrary() {
                 className="min-h-[120px]"
               />
 
-              {/* Footer with switch and button */}
-              <div className="flex items-center justify-between pt-2">
-                <div className="flex items-center gap-2">
-                  <Switch
-                    id="new-shared"
-                    checked={newIsShared}
-                    onCheckedChange={setNewIsShared}
-                  />
-                  <Label htmlFor="new-shared" className="text-sm cursor-pointer">
-                    {t('roleLibrary.isShared')}
-                  </Label>
+              {/* Footer with switches and button */}
+              <div className="flex items-center justify-between pt-2 flex-wrap gap-3">
+                <div className="flex items-center gap-4">
+                  {/* Language selector */}
+                  <Select value={newLanguage} onValueChange={(v) => setNewLanguage(v as PromptLanguage)}>
+                    <SelectTrigger className="w-[110px] h-8">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-popover border border-border z-50">
+                      <SelectItem value="auto">{t('roleLibrary.languageAuto')}</SelectItem>
+                      <SelectItem value="ru">{t('roleLibrary.languageRu')}</SelectItem>
+                      <SelectItem value="en">{t('roleLibrary.languageEn')}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  
+                  <div className="flex items-center gap-2">
+                    <Switch
+                      id="new-shared"
+                      checked={newIsShared}
+                      onCheckedChange={setNewIsShared}
+                    />
+                    <Label htmlFor="new-shared" className="text-sm cursor-pointer">
+                      {t('roleLibrary.isShared')}
+                    </Label>
+                  </div>
                 </div>
                 <Button 
                   onClick={handleCreate} 
@@ -502,16 +524,34 @@ export default function RoleLibrary() {
                   />
                 </div>
 
-                {/* Shared switch */}
-                <div className="flex items-center gap-2">
-                  <Switch
-                    id="edit-shared"
-                    checked={editIsShared}
-                    onCheckedChange={setEditIsShared}
-                  />
-                  <Label htmlFor="edit-shared" className="cursor-pointer">
-                    {t('roleLibrary.isShared')}
-                  </Label>
+                {/* Language and Shared */}
+                <div className="flex items-center gap-4 flex-wrap">
+                  {/* Language selector */}
+                  <div className="space-y-2">
+                    <Label>{t('roleLibrary.language')}</Label>
+                    <Select value={editLanguage} onValueChange={(v) => setEditLanguage(v as PromptLanguage)}>
+                      <SelectTrigger className="w-[120px]">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="bg-popover border border-border z-50">
+                        <SelectItem value="auto">{t('roleLibrary.languageAuto')}</SelectItem>
+                        <SelectItem value="ru">{t('roleLibrary.languageRu')}</SelectItem>
+                        <SelectItem value="en">{t('roleLibrary.languageEn')}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  {/* Shared switch */}
+                  <div className="flex items-center gap-2 pt-6">
+                    <Switch
+                      id="edit-shared"
+                      checked={editIsShared}
+                      onCheckedChange={setEditIsShared}
+                    />
+                    <Label htmlFor="edit-shared" className="cursor-pointer">
+                      {t('roleLibrary.isShared')}
+                    </Label>
+                  </div>
                 </div>
               </div>
             </ScrollArea>

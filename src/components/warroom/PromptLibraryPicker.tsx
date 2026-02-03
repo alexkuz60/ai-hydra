@@ -39,6 +39,8 @@ function detectLanguage(text: string): 'ru' | 'en' {
   return cyrillicMatches.length > latinMatches.length ? 'ru' : 'en';
 }
 
+type PromptLanguage = 'ru' | 'en' | 'auto';
+
 interface PromptItem {
   id: string;
   name: string;
@@ -49,7 +51,16 @@ interface PromptItem {
   is_default: boolean;
   usage_count: number;
   created_at: string;
+  language: PromptLanguage;
   isOwner: boolean; // Determined separately without exposing user_id
+}
+
+// Get effective language for grouping (use manual setting or auto-detect)
+function getEffectiveLanguage(prompt: PromptItem): 'ru' | 'en' {
+  if (prompt.language === 'ru' || prompt.language === 'en') {
+    return prompt.language;
+  }
+  return detectLanguage(prompt.content);
 }
 
 interface PromptLibraryPickerProps {
@@ -90,7 +101,7 @@ export function PromptLibraryPicker({ open, onOpenChange, onSelect, currentRole 
       // Select only necessary columns, excluding user_id for privacy on shared prompts
       const { data, error } = await supabase
         .from('prompt_library')
-        .select('id, name, description, role, content, is_shared, is_default, usage_count, created_at')
+        .select('id, name, description, role, content, is_shared, is_default, usage_count, created_at, language')
         .order('usage_count', { ascending: false });
 
       if (error) throw error;
@@ -98,6 +109,7 @@ export function PromptLibraryPicker({ open, onOpenChange, onSelect, currentRole 
       // Map data to include ownership check without exposing user_id
       const promptsWithOwnership = (data || []).map(prompt => ({
         ...prompt,
+        language: (prompt.language || 'auto') as PromptLanguage,
         isOwner: false, // Will be determined after we check ownership separately
       }));
       
@@ -173,9 +185,9 @@ export function PromptLibraryPicker({ open, onOpenChange, onSelect, currentRole 
     return matchesSearch && matchesRole;
   });
 
-  // Group prompts by detected language
-  const ruPrompts = filteredPrompts.filter(p => detectLanguage(p.content) === 'ru');
-  const enPrompts = filteredPrompts.filter(p => detectLanguage(p.content) === 'en');
+  // Group prompts by effective language (manual or auto-detected)
+  const ruPrompts = filteredPrompts.filter(p => getEffectiveLanguage(p) === 'ru');
+  const enPrompts = filteredPrompts.filter(p => getEffectiveLanguage(p) === 'en');
 
   const getRoleBadge = (role: string) => {
     const colorClass = getRoleBadgeColor(role);

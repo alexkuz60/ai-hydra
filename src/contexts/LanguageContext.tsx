@@ -666,6 +666,10 @@ const translations: Translations = {
   'roleLibrary.filterShared': { ru: 'Публичные', en: 'Public' },
   'roleLibrary.usedCount': { ru: 'Использований: {count}', en: 'Used: {count} times' },
   'roleLibrary.noResults': { ru: 'Ничего не найдено', en: 'No results found' },
+  'roleLibrary.language': { ru: 'Язык', en: 'Language' },
+  'roleLibrary.languageAuto': { ru: 'Авто', en: 'Auto' },
+  'roleLibrary.languageRu': { ru: 'Русский', en: 'Russian' },
+  'roleLibrary.languageEn': { ru: 'English', en: 'English' },
   'common.save': { ru: 'Сохранить', en: 'Save' },
   
   // Skeleton indicators for pending responses
