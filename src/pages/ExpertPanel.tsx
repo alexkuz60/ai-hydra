@@ -715,6 +715,8 @@ export default function ExpertPanel() {
                 onDelete={handleDeleteMessage}
                 onRatingChange={handleRatingChange}
                 onClarifyWithSpecialist={handleClarifyWithSpecialist}
+                onSaveToMemory={saveDecision}
+                isSavingToMemory={isMemorySaving}
                 pendingResponses={filteredPendingResponses}
                 streamingResponses={filteredStreamingResponses}
                 timeoutSeconds={timeoutSeconds}

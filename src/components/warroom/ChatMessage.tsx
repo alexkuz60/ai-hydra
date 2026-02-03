@@ -15,7 +15,8 @@ import {
   ChevronUp, 
   Trash2,
   Brain,
-  RefreshCw
+  RefreshCw,
+  Archive
 } from 'lucide-react';
 import {
   Tooltip,
@@ -90,11 +91,13 @@ interface ChatMessageProps {
   isCollapsed?: boolean;
   onToggleCollapse?: (messageId: string) => void;
   onClarifyWithSpecialist?: (selectedText: string, messageId: string) => void;
+  onSaveToMemory?: (messageId: string, content: string) => void;
+  isSavingToMemory?: boolean;
 }
 
 const MAX_COLLAPSED_LINES = 3;
 
-export function ChatMessage({ message, userDisplayInfo, onDelete, onRatingChange, isCollapsed, onToggleCollapse, onClarifyWithSpecialist }: ChatMessageProps) {
+export function ChatMessage({ message, userDisplayInfo, onDelete, onRatingChange, isCollapsed, onToggleCollapse, onClarifyWithSpecialist, onSaveToMemory, isSavingToMemory }: ChatMessageProps) {
   const { t } = useLanguage();
   const contentRef = useRef<HTMLDivElement>(null);
   
@@ -257,6 +260,29 @@ export function ChatMessage({ message, userDisplayInfo, onDelete, onRatingChange
 
       {/* Message controls */}
       <div className="absolute bottom-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+        {/* Save to memory button for AI messages */}
+        {isAiMessage && onSaveToMemory && (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 text-hydra-archivist hover:text-hydra-archivist hover:bg-hydra-archivist/10"
+                  onClick={() => onSaveToMemory(message.id, message.content)}
+                  disabled={isSavingToMemory}
+                  title={t('memory.saveToMemory')}
+                >
+                  <Archive className={cn("h-4 w-4", isSavingToMemory && "animate-pulse")} />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="top">
+                <p className="text-xs">{t('memory.saveToMemory')}</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        )}
+        
         {isLongContent && (
           <Button
             variant="ghost"
