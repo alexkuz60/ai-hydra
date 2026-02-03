@@ -115,7 +115,7 @@ export const ROLE_CONFIG: Record<MessageRole, RoleConfigItem> = {
     color: 'text-hydra-analyst',
     label: 'role.analyst',
     description: 'staffRoles.description.analyst',
-    isTechnicalStaff: false,
+    isTechnicalStaff: true,
     cardVariant: 'analyst',
   },
   webhunter: {
