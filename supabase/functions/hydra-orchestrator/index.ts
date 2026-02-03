@@ -7,6 +7,7 @@ import {
   executeToolCalls,
   registerCustomTools,
   testHttpTool,
+  setUserTavilyKey,
 } from "./tools.ts";
 
 import type {
@@ -742,6 +743,15 @@ serve(async (req) => {
         }
         console.log(`Loaded ${customToolsMap.size} custom tools`);
       }
+    }
+
+    // Set user's personal Tavily key for web_search tool (if available)
+    const userTavilyKey = (apiKeys as { tavily_api_key?: string | null })?.tavily_api_key ?? null;
+    setUserTavilyKey(userTavilyKey);
+    if (userTavilyKey) {
+      console.log(`[Tools] Using user's personal Tavily API key`);
+    } else {
+      console.log(`[Tools] Using system Tavily API key (fallback)`);
     }
 
     const errors: { model: string; error: string }[] = [];
