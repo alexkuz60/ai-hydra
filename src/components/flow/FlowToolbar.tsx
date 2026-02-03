@@ -74,9 +74,13 @@ interface FlowToolbarProps {
   onAutoLayout: (direction: 'LR' | 'TB') => void;
 }
 
-export function FlowToolbar({
+// Header actions component for Layout header slot
+export function FlowHeaderActions({
   diagramName,
-  onNameChange,
+  savedDiagrams,
+  currentDiagramId,
+  onLoadDiagram,
+  onDeleteDiagram,
   onSave,
   onNew,
   onExportPng,
@@ -86,30 +90,21 @@ export function FlowToolbar({
   onExportPdf,
   onCopyToClipboard,
   onGenerateMermaid,
-  savedDiagrams,
-  currentDiagramId,
-  onLoadDiagram,
-  onDeleteDiagram,
   isSaving,
   hasChanges,
-  edgeSettings,
-  onEdgeSettingsChange,
-  canUndo,
-  canRedo,
-  onUndo,
-  onRedo,
-  onAutoLayout,
-}: FlowToolbarProps) {
+}: Pick<FlowToolbarProps, 
+  'diagramName' | 'savedDiagrams' | 'currentDiagramId' | 'onLoadDiagram' | 'onDeleteDiagram' |
+  'onSave' | 'onNew' | 'onExportPng' | 'onExportSvg' | 'onExportJson' | 'onExportYaml' |
+  'onExportPdf' | 'onCopyToClipboard' | 'onGenerateMermaid' | 'isSaving' | 'hasChanges'
+>) {
   const { t } = useLanguage();
   const [mermaidCode, setMermaidCode] = useState('');
   const [mermaidOpen, setMermaidOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
 
-  // Deduplicate diagrams by name, keeping only the most recent version
   const uniqueDiagrams = useMemo(() => {
     const byName = new Map<string, FlowDiagram>();
-    // savedDiagrams already sorted by updated_at DESC, so first occurrence is the latest
     for (const diagram of savedDiagrams) {
       if (!byName.has(diagram.name)) {
         byName.set(diagram.name, diagram);
@@ -118,7 +113,6 @@ export function FlowToolbar({
     return Array.from(byName.values());
   }, [savedDiagrams]);
 
-  // Check if current diagram has multiple versions
   const hasVersionHistory = useMemo(() => {
     return savedDiagrams.filter(d => d.name === diagramName).length > 1;
   }, [savedDiagrams, diagramName]);
@@ -136,97 +130,13 @@ export function FlowToolbar({
   };
 
   return (
-    <div className="h-14 bg-card border-b border-border flex items-center gap-3 px-4">
-      {/* Diagram name */}
-      <Input
-        value={diagramName}
-        onChange={(e) => onNameChange(e.target.value)}
-        className="w-48 h-8 text-sm"
-        placeholder={t('flowEditor.newDiagram')}
-      />
-      
-      {hasChanges && (
-        <span className="text-xs text-muted-foreground">•</span>
-      )}
-
-      {/* Undo/Redo buttons */}
-      <div className="flex items-center gap-1 border-r border-border pr-3">
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8"
-              onClick={onUndo}
-              disabled={!canUndo}
-            >
-              <Undo2 className="h-4 w-4" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side="bottom">
-            <p>Отменить (Ctrl+Z)</p>
-          </TooltipContent>
-        </Tooltip>
-        
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8"
-              onClick={onRedo}
-              disabled={!canRedo}
-            >
-              <Redo2 className="h-4 w-4" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side="bottom">
-            <p>Повторить (Ctrl+Shift+Z)</p>
-          </TooltipContent>
-        </Tooltip>
-      </div>
-
-      {/* Auto Layout */}
+    <>
+      {/* Open diagram */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="outline" size="sm" className="gap-1">
-            <LayoutGrid className="h-4 w-4" />
-            {t('flowEditor.autoLayout')}
-            <ChevronDown className="h-3 w-3" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          <DropdownMenuItem onClick={() => onAutoLayout('LR')}>
-            <ArrowRight className="h-4 w-4 mr-2" />
-            {t('flowEditor.layoutHorizontal')}
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => onAutoLayout('TB')}>
-            <ArrowDown className="h-4 w-4 mr-2" />
-            {t('flowEditor.layoutVertical')}
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-
-      <div className="flex-1" />
-
-      {/* Edge Style Selector */}
-      <EdgeStyleSelector
-        settings={edgeSettings}
-        onSettingsChange={onEdgeSettingsChange}
-      />
-
-      {/* Actions */}
-      <Button variant="outline" size="sm" onClick={onNew}>
-        <Plus className="h-4 w-4 mr-1" />
-        {t('flowEditor.newDiagram')}
-      </Button>
-
-      {/* Load diagram */}
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="outline" size="sm" disabled={uniqueDiagrams.length === 0}>
-            <FolderOpen className="h-4 w-4 mr-1" />
-            Открыть
+          <Button variant="ghost" size="sm" disabled={uniqueDiagrams.length === 0} className="h-7 text-xs">
+            <FolderOpen className="h-3.5 w-3.5 mr-1" />
+            {t('flowEditor.open')}
             <ChevronDown className="h-3 w-3 ml-1" />
           </Button>
         </DropdownMenuTrigger>
@@ -252,12 +162,12 @@ export function FlowToolbar({
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
-              variant="outline"
+              variant="ghost"
               size="icon"
-              className="h-8 w-8"
+              className="h-7 w-7"
               onClick={() => setHistoryOpen(true)}
             >
-              <History className="h-4 w-4" />
+              <History className="h-3.5 w-3.5" />
             </Button>
           </TooltipTrigger>
           <TooltipContent>
@@ -266,21 +176,30 @@ export function FlowToolbar({
         </Tooltip>
       )}
 
+      {/* Save */}
       <Button 
-        variant="outline" 
+        variant="ghost" 
         size="sm" 
         onClick={onSave}
         disabled={isSaving}
+        className="h-7 text-xs"
       >
-        <Save className="h-4 w-4 mr-1" />
+        <Save className="h-3.5 w-3.5 mr-1" />
         {t('flowEditor.save')}
+        {hasChanges && <span className="ml-1 text-hydra-warning">•</span>}
+      </Button>
+
+      {/* New */}
+      <Button variant="ghost" size="sm" onClick={onNew} className="h-7 text-xs">
+        <Plus className="h-3.5 w-3.5 mr-1" />
+        {t('flowEditor.newDiagram')}
       </Button>
 
       {/* Export dropdown */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="outline" size="sm">
-            <Download className="h-4 w-4 mr-1" />
+          <Button variant="ghost" size="sm" className="h-7 text-xs">
+            <Download className="h-3.5 w-3.5 mr-1" />
             {t('flowEditor.export')}
             <ChevronDown className="h-3 w-3 ml-1" />
           </Button>
@@ -357,6 +276,106 @@ export function FlowToolbar({
         currentDiagramId={currentDiagramId}
         onLoadDiagram={onLoadDiagram}
         onDeleteDiagram={onDeleteDiagram}
+      />
+    </>
+  );
+}
+
+export function FlowToolbar({
+  diagramName,
+  onNameChange,
+  edgeSettings,
+  onEdgeSettingsChange,
+  canUndo,
+  canRedo,
+  onUndo,
+  onRedo,
+  onAutoLayout,
+  hasChanges,
+}: Pick<FlowToolbarProps, 
+  'diagramName' | 'onNameChange' | 'edgeSettings' | 'onEdgeSettingsChange' |
+  'canUndo' | 'canRedo' | 'onUndo' | 'onRedo' | 'onAutoLayout' | 'hasChanges'
+>) {
+  const { t } = useLanguage();
+
+  return (
+    <div className="h-12 bg-card border-b border-border flex items-center gap-3 px-4">
+      {/* Diagram name */}
+      <Input
+        value={diagramName}
+        onChange={(e) => onNameChange(e.target.value)}
+        className="w-48 h-8 text-sm"
+        placeholder={t('flowEditor.newDiagram')}
+      />
+      
+      {hasChanges && (
+        <span className="text-xs text-muted-foreground">•</span>
+      )}
+
+      {/* Undo/Redo buttons */}
+      <div className="flex items-center gap-1 border-l border-border pl-3">
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              onClick={onUndo}
+              disabled={!canUndo}
+            >
+              <Undo2 className="h-4 w-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="bottom">
+            <p>Отменить (Ctrl+Z)</p>
+          </TooltipContent>
+        </Tooltip>
+        
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              onClick={onRedo}
+              disabled={!canRedo}
+            >
+              <Redo2 className="h-4 w-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="bottom">
+            <p>Повторить (Ctrl+Shift+Z)</p>
+          </TooltipContent>
+        </Tooltip>
+      </div>
+
+      <div className="flex-1" />
+
+      {/* Auto Layout - right aligned */}
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="outline" size="sm" className="gap-1">
+            <LayoutGrid className="h-4 w-4" />
+            {t('flowEditor.autoLayout')}
+            <ChevronDown className="h-3 w-3" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem onClick={() => onAutoLayout('LR')}>
+            <ArrowRight className="h-4 w-4 mr-2" />
+            {t('flowEditor.layoutHorizontal')}
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => onAutoLayout('TB')}>
+            <ArrowDown className="h-4 w-4 mr-2" />
+            {t('flowEditor.layoutVertical')}
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      {/* Edge Style Selector */}
+      <EdgeStyleSelector
+        settings={edgeSettings}
+        onSettingsChange={onEdgeSettingsChange}
       />
     </div>
   );

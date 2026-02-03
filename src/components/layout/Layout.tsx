@@ -4,9 +4,10 @@ import { AppSidebar } from './AppSidebar';
 
 interface LayoutProps {
   children: ReactNode;
+  headerActions?: ReactNode;
 }
 
-export function Layout({ children }: LayoutProps) {
+export function Layout({ children, headerActions }: LayoutProps) {
   return (
     <SidebarProvider defaultOpen={true}>
       <div className="min-h-screen flex w-full bg-background hydra-neural-bg">
@@ -15,6 +16,11 @@ export function Layout({ children }: LayoutProps) {
           {/* Compact header with sidebar trigger */}
           <header className="h-10 flex items-center border-b border-border/50 px-2 bg-background/50 backdrop-blur-sm">
             <SidebarTrigger className="text-muted-foreground hover:text-primary" />
+            {headerActions && (
+              <div className="flex-1 flex items-center justify-end gap-2 px-2">
+                {headerActions}
+              </div>
+            )}
           </header>
           <main className="flex-1">
             {children}
