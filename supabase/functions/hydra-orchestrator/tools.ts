@@ -379,13 +379,23 @@ function executeCurrentDatetime(args: DatetimeArgs): string {
 // Web Search Implementation
 // ============================================
 
+/** User's personal Tavily API key (set per request) */
+let userTavilyApiKey: string | null = null;
+
+/** Set the user's personal Tavily API key for the current request */
+export function setUserTavilyKey(key: string | null): void {
+  userTavilyApiKey = key;
+}
+
 async function executeWebSearch(args: WebSearchArgs): Promise<string> {
-  const tavilyApiKey = Deno.env.get('TAVILY_API_KEY');
+  // Priority: 1. User's personal key, 2. System fallback key
+  const tavilyApiKey = userTavilyApiKey || Deno.env.get('TAVILY_API_KEY');
+  const isPersonalKey = !!userTavilyApiKey;
   
   if (!tavilyApiKey) {
     return JSON.stringify({
       success: false,
-      error: "TAVILY_API_KEY не настроен. Веб-поиск недоступен."
+      error: "Веб-поиск недоступен. Добавьте ваш Tavily API-ключ в настройках профиля."
     });
   }
   
@@ -407,8 +417,12 @@ async function executeWebSearch(args: WebSearchArgs): Promise<string> {
       requestBody.exclude_domains = args.exclude_domains.split(',').map(d => d.trim());
     }
     
-    console.log('[Tool] Web search request:', { query: args.query, search_depth: args.search_depth });
-    
+    console.log('[Tool] Web search request:', { 
+      query: args.query, 
+      search_depth: args.search_depth,
+      using_personal_key: isPersonalKey 
+    });
+
     const response = await fetch('https://api.tavily.com/search', {
       method: 'POST',
       headers: {
