@@ -406,8 +406,540 @@ interface RoleNodeData {
 
 ---
 
-### Направление D: Исполняемые потоки (Flow Runtime)
-> Flow-диаграммы как автономные пайплайны
+### Направление D: Flow Runtime — Движок исполнения диаграмм
+
+> Flow-диаграммы как автономные пайплайны с параллельным и последовательным исполнением
+
+---
+
+#### D1: Архитектура Flow Runtime
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                         FLOW RUNTIME ENGINE                             │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                         │
+│   ┌─────────────┐    ┌─────────────┐    ┌─────────────────────────┐    │
+│   │   PARSER    │───►│  SCHEDULER  │───►│     EXECUTOR            │    │
+│   │             │    │             │    │                         │    │
+│   │ Flow JSON   │    │ DAG Builder │    │  Node Runners           │    │
+│   │ → AST       │    │ Dependency  │    │  Parallel Execution     │    │
+│   │             │    │ Resolution  │    │  State Management       │    │
+│   └─────────────┘    └─────────────┘    └───────────┬─────────────┘    │
+│                                                     │                   │
+│                           ┌─────────────────────────┴─────────────┐    │
+│                           ▼                                       ▼    │
+│                   ┌─────────────┐                       ┌───────────┐  │
+│                   │   STATE     │                       │  EVENT    │  │
+│                   │   STORE     │                       │  EMITTER  │  │
+│                   │             │                       │           │  │
+│                   │ Node States │                       │ Progress  │  │
+│                   │ Data Flow   │                       │ Errors    │  │
+│                   │ History     │                       │ Complete  │  │
+│                   └─────────────┘                       └───────────┘  │
+│                                                                         │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+#### D2: Ядро движка — TypeScript интерфейсы
+
+```typescript
+// ============================================
+// Flow Runtime Core Types
+// ============================================
+
+/** Состояние выполнения узла */
+type NodeExecutionState = 
+  | 'pending'      // Ожидает входных данных
+  | 'ready'        // Готов к выполнению
+  | 'running'      // Выполняется
+  | 'completed'    // Успешно завершён
+  | 'failed'       // Ошибка
+  | 'skipped'      // Пропущен (условие не выполнено)
+  | 'waiting_user' // Ожидает ввода пользователя (checkpoint)
+  ;
+
+/** Контекст выполнения узла */
+interface NodeExecutionContext {
+  nodeId: string;
+  nodeType: FlowNodeType;
+  inputs: Record<string, unknown>;      // Данные от предыдущих узлов
+  config: FlowNodeData;                 // Конфигурация узла
+  globalState: FlowState;               // Глобальное состояние потока
+  emit: (event: FlowEvent) => void;     // Отправка событий
+}
+
+/** Результат выполнения узла */
+interface NodeExecutionResult {
+  success: boolean;
+  outputs: Record<string, unknown>;     // Данные для следующих узлов
+  error?: string;
+  metadata?: {
+    duration_ms: number;
+    tokens_used?: number;
+    model?: string;
+  };
+}
+
+/** Глобальное состояние потока */
+interface FlowState {
+  flowId: string;
+  sessionId: string;
+  status: 'idle' | 'running' | 'paused' | 'completed' | 'failed';
+  currentStage?: string;                // Текущий этап (для паттернов)
+  nodes: Record<string, {
+    state: NodeExecutionState;
+    result?: NodeExecutionResult;
+    startedAt?: Date;
+    completedAt?: Date;
+  }>;
+  variables: Record<string, unknown>;   // Переменные потока
+  history: FlowHistoryEntry[];          // История выполнения
+}
+
+/** Событие выполнения */
+type FlowEvent = 
+  | { type: 'node_started'; nodeId: string; timestamp: Date }
+  | { type: 'node_completed'; nodeId: string; result: NodeExecutionResult }
+  | { type: 'node_failed'; nodeId: string; error: string }
+  | { type: 'flow_progress'; completed: number; total: number; stage?: string }
+  | { type: 'user_input_required'; nodeId: string; prompt: string }
+  | { type: 'flow_completed'; outputs: Record<string, unknown> }
+  ;
+```
+
+---
+
+#### D3: Node Runners — Исполнители узлов
+
+Каждый тип узла имеет свой Runner:
+
+```typescript
+// Реестр исполнителей узлов
+const NODE_RUNNERS: Record<FlowNodeType, NodeRunner> = {
+  input: InputNodeRunner,
+  output: OutputNodeRunner,
+  prompt: PromptNodeRunner,
+  model: ModelNodeRunner,
+  condition: ConditionNodeRunner,
+  tool: ToolNodeRunner,
+  transform: TransformNodeRunner,
+  filter: FilterNodeRunner,
+  merge: MergeNodeRunner,
+  split: SplitNodeRunner,
+  database: DatabaseNodeRunner,
+  api: ApiNodeRunner,
+  storage: StorageNodeRunner,
+  loop: LoopNodeRunner,
+  delay: DelayNodeRunner,
+  switch: SwitchNodeRunner,
+  embedding: EmbeddingNodeRunner,
+  memory: MemoryNodeRunner,
+  classifier: ClassifierNodeRunner,
+  group: GroupNodeRunner,        // Passthrough для Stage
+  checkpoint: CheckpointNodeRunner,
+  role: RoleNodeRunner,
+};
+
+// Пример: Model Node Runner
+const ModelNodeRunner: NodeRunner = async (ctx: NodeExecutionContext) => {
+  const { modelName, temperature, maxTokens } = ctx.config;
+  const prompt = ctx.inputs.prompt as string;
+  
+  // Вызов через hydra-orchestrator
+  const response = await invokeModel({
+    model_id: modelName,
+    message: prompt,
+    temperature,
+    max_tokens: maxTokens,
+    role: ctx.config.role || 'assistant',
+  });
+  
+  return {
+    success: true,
+    outputs: {
+      response: response.content,
+      reasoning: response.reasoning,
+    },
+    metadata: {
+      duration_ms: response.duration,
+      tokens_used: response.usage?.total_tokens,
+      model: modelName,
+    },
+  };
+};
+
+// Пример: Condition Node Runner
+const ConditionNodeRunner: NodeRunner = async (ctx: NodeExecutionContext) => {
+  const { condition } = ctx.config;
+  const data = ctx.inputs.data;
+  
+  // Безопасное вычисление условия
+  const result = evaluateCondition(condition, data);
+  
+  return {
+    success: true,
+    outputs: {
+      true: result ? data : undefined,
+      false: result ? undefined : data,
+    },
+  };
+};
+
+// Пример: Checkpoint Node Runner (ожидание пользователя)
+const CheckpointNodeRunner: NodeRunner = async (ctx: NodeExecutionContext) => {
+  const { requiresUserInput, autoPass, condition } = ctx.config;
+  
+  if (autoPass && evaluateCondition(condition, ctx.inputs)) {
+    return { success: true, outputs: ctx.inputs };
+  }
+  
+  if (requiresUserInput) {
+    ctx.emit({
+      type: 'user_input_required',
+      nodeId: ctx.nodeId,
+      prompt: ctx.config.label || 'Подтвердите продолжение',
+    });
+    
+    // Переводим узел в состояние ожидания
+    return { 
+      success: true, 
+      outputs: {},
+      metadata: { waiting: true } 
+    };
+  }
+  
+  return { success: true, outputs: ctx.inputs };
+};
+```
+
+---
+
+#### D4: Scheduler — Планировщик исполнения
+
+```typescript
+class FlowScheduler {
+  private dag: DAG<string>;           // Directed Acyclic Graph
+  private readyQueue: string[] = [];  // Узлы готовые к выполнению
+  private runningNodes: Set<string> = new Set();
+  
+  constructor(nodes: Node[], edges: Edge[]) {
+    this.dag = this.buildDAG(nodes, edges);
+    this.initializeReadyQueue();
+  }
+  
+  /** Построение графа зависимостей */
+  private buildDAG(nodes: Node[], edges: Edge[]): DAG<string> {
+    const dag = new DAG<string>();
+    
+    nodes.forEach(node => dag.addNode(node.id));
+    edges.forEach(edge => dag.addEdge(edge.source, edge.target));
+    
+    // Проверка на циклы (кроме loop-back edges)
+    if (dag.hasCycle()) {
+      throw new FlowValidationError('Flow contains invalid cycles');
+    }
+    
+    return dag;
+  }
+  
+  /** Инициализация очереди — узлы без входящих рёбер */
+  private initializeReadyQueue(): void {
+    this.readyQueue = this.dag.getRootNodes();
+  }
+  
+  /** Получить следующие узлы для параллельного выполнения */
+  getNextBatch(): string[] {
+    const batch = [...this.readyQueue];
+    this.readyQueue = [];
+    batch.forEach(id => this.runningNodes.add(id));
+    return batch;
+  }
+  
+  /** Отметить узел как завершённый */
+  markCompleted(nodeId: string): void {
+    this.runningNodes.delete(nodeId);
+    
+    // Добавить зависимые узлы в очередь, если все их зависимости выполнены
+    const dependents = this.dag.getDependents(nodeId);
+    dependents.forEach(depId => {
+      const dependencies = this.dag.getDependencies(depId);
+      const allCompleted = dependencies.every(d => 
+        !this.runningNodes.has(d) && this.isCompleted(d)
+      );
+      if (allCompleted) {
+        this.readyQueue.push(depId);
+      }
+    });
+  }
+  
+  /** Проверка завершённости потока */
+  isFlowComplete(): boolean {
+    return this.readyQueue.length === 0 && this.runningNodes.size === 0;
+  }
+}
+```
+
+---
+
+#### D5: Executor — Главный исполнитель
+
+```typescript
+class FlowExecutor {
+  private state: FlowState;
+  private scheduler: FlowScheduler;
+  private eventEmitter: EventEmitter;
+  
+  constructor(
+    private flow: FlowDiagram,
+    private sessionId: string,
+  ) {
+    this.state = this.initializeState();
+    this.scheduler = new FlowScheduler(flow.nodes, flow.edges);
+    this.eventEmitter = new EventEmitter();
+  }
+  
+  /** Запуск исполнения потока */
+  async execute(initialInputs: Record<string, unknown>): Promise<FlowState> {
+    this.state.status = 'running';
+    this.state.variables = { ...initialInputs };
+    
+    while (!this.scheduler.isFlowComplete()) {
+      const batch = this.scheduler.getNextBatch();
+      
+      if (batch.length === 0) {
+        // Ожидание пользовательского ввода или внешнего события
+        await this.waitForResume();
+        continue;
+      }
+      
+      // Параллельное выполнение узлов
+      const results = await Promise.allSettled(
+        batch.map(nodeId => this.executeNode(nodeId))
+      );
+      
+      // Обработка результатов
+      results.forEach((result, idx) => {
+        const nodeId = batch[idx];
+        if (result.status === 'fulfilled') {
+          this.scheduler.markCompleted(nodeId);
+          this.propagateOutputs(nodeId, result.value.outputs);
+        } else {
+          this.handleNodeError(nodeId, result.reason);
+        }
+      });
+      
+      // Отправка прогресса
+      this.emitProgress();
+    }
+    
+    this.state.status = 'completed';
+    this.eventEmitter.emit('flow_completed', this.collectOutputs());
+    
+    return this.state;
+  }
+  
+  /** Выполнение одного узла */
+  private async executeNode(nodeId: string): Promise<NodeExecutionResult> {
+    const node = this.flow.nodes.find(n => n.id === nodeId)!;
+    const runner = NODE_RUNNERS[node.type as FlowNodeType];
+    
+    this.state.nodes[nodeId].state = 'running';
+    this.state.nodes[nodeId].startedAt = new Date();
+    
+    this.eventEmitter.emit('node_started', { nodeId, timestamp: new Date() });
+    
+    const context: NodeExecutionContext = {
+      nodeId,
+      nodeType: node.type as FlowNodeType,
+      inputs: this.gatherInputs(nodeId),
+      config: node.data as FlowNodeData,
+      globalState: this.state,
+      emit: (event) => this.eventEmitter.emit(event.type, event),
+    };
+    
+    const result = await runner(context);
+    
+    this.state.nodes[nodeId].state = result.success ? 'completed' : 'failed';
+    this.state.nodes[nodeId].completedAt = new Date();
+    this.state.nodes[nodeId].result = result;
+    
+    return result;
+  }
+  
+  /** Сбор входных данных для узла */
+  private gatherInputs(nodeId: string): Record<string, unknown> {
+    const incomingEdges = this.flow.edges.filter(e => e.target === nodeId);
+    const inputs: Record<string, unknown> = {};
+    
+    incomingEdges.forEach(edge => {
+      const sourceResult = this.state.nodes[edge.source]?.result;
+      if (sourceResult?.outputs) {
+        const handleId = edge.sourceHandle || 'default';
+        inputs[edge.targetHandle || handleId] = sourceResult.outputs[handleId];
+      }
+    });
+    
+    return inputs;
+  }
+  
+  /** Пауза для ожидания пользователя */
+  async pause(checkpointId: string): Promise<void> {
+    this.state.status = 'paused';
+    this.state.nodes[checkpointId].state = 'waiting_user';
+  }
+  
+  /** Продолжение после пользовательского ввода */
+  async resume(checkpointId: string, userInput: unknown): Promise<void> {
+    this.state.nodes[checkpointId].result = {
+      success: true,
+      outputs: { userInput },
+    };
+    this.scheduler.markCompleted(checkpointId);
+    this.state.status = 'running';
+  }
+}
+```
+
+---
+
+#### D6: Edge Function — Серверная часть
+
+```typescript
+// supabase/functions/flow-runtime/index.ts
+
+Deno.serve(async (req) => {
+  const { flowId, action, payload } = await req.json();
+  
+  switch (action) {
+    case 'start': {
+      const flow = await loadFlow(flowId);
+      const executor = new FlowExecutor(flow, payload.sessionId);
+      
+      // Стриминг событий через SSE
+      const stream = new ReadableStream({
+        async start(controller) {
+          executor.on('*', (event) => {
+            controller.enqueue(`data: ${JSON.stringify(event)}\n\n`);
+          });
+          
+          await executor.execute(payload.inputs);
+          controller.close();
+        }
+      });
+      
+      return new Response(stream, {
+        headers: { 'Content-Type': 'text/event-stream' },
+      });
+    }
+    
+    case 'resume': {
+      const executor = await restoreExecutor(payload.executionId);
+      await executor.resume(payload.checkpointId, payload.userInput);
+      // ...
+    }
+    
+    case 'cancel': {
+      // Отмена выполнения
+    }
+  }
+});
+```
+
+---
+
+#### D7: Frontend — Визуализация исполнения
+
+```typescript
+// src/hooks/useFlowExecution.ts
+
+export function useFlowExecution(flowId: string) {
+  const [state, setState] = useState<FlowState | null>(null);
+  const [events, setEvents] = useState<FlowEvent[]>([]);
+  
+  const startExecution = async (inputs: Record<string, unknown>) => {
+    const eventSource = new EventSource(
+      `${SUPABASE_URL}/functions/v1/flow-runtime?flowId=${flowId}`
+    );
+    
+    eventSource.onmessage = (event) => {
+      const flowEvent: FlowEvent = JSON.parse(event.data);
+      setEvents(prev => [...prev, flowEvent]);
+      
+      // Обновление состояния узлов на канвасе
+      if (flowEvent.type === 'node_started') {
+        highlightNode(flowEvent.nodeId, 'running');
+      }
+      if (flowEvent.type === 'node_completed') {
+        highlightNode(flowEvent.nodeId, 'completed');
+      }
+    };
+  };
+  
+  return { state, events, startExecution };
+}
+```
+
+**UI визуализации в Flow Editor:**
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│  ▶️ RUNNING: Lovable PM Flow                          [⏸ Pause] [⏹ Stop] │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                         │
+│     ✅ INPUT          ✅ PROMPT         🔄 MODEL         ⬜ OUTPUT      │
+│     ┌─────┐          ┌─────┐          ┌─────┐          ┌─────┐        │
+│     │     │ ───────► │     │ ───────► │ ⏳  │ ───────► │     │        │
+│     └─────┘          └─────┘          └─────┘          └─────┘        │
+│       ✓                ✓              running                          │
+│                                                                         │
+│   ┌─────────────────────────────────────────────────────────────────┐  │
+│   │  📊 Node: gpt-5-model                                           │  │
+│   │  Status: Running (12s)                                          │  │
+│   │  Input: "Проанализируй требования..."                          │  │
+│   │  ▓▓▓▓▓▓▓▓▓▓▓▓░░░░░░░░ 60%                                      │  │
+│   └─────────────────────────────────────────────────────────────────┘  │
+│                                                                         │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+#### D8: Интеграция с Expert Panel
+
+При запуске паттерна из чата:
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│  💬 EXPERT PANEL                                                        │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                         │
+│  [USER] Запусти паттерн "Lovable Project Manager"                      │
+│                                                                         │
+│  ┌─────────────────────────────────────────────────────────────────┐   │
+│  │  🤖 FLOW RUNTIME: Lovable PM                       [⬛⬛⬜⬜] 2/4 │   │
+│  │  ─────────────────────────────────────────────────────────────   │   │
+│  │  ✅ Этап 1: Анализ требований           3m 24s                   │   │
+│  │  🔄 Этап 2: Декомпозиция                running...               │   │
+│  │  ⬜ Этап 3: Формулировка запросов                                │   │
+│  │  ⬜ Этап 4: Валидация                                            │   │
+│  └─────────────────────────────────────────────────────────────────┘   │
+│                                                                         │
+│  [ADVISOR 💡] Анализ завершён. Вот структурированное ТЗ:               │
+│  ...                                                                    │
+│                                                                         │
+│  [ANALYST 📊] Декомпозирую на подзадачи...                             │
+│  ...                                                                    │
+│                                                                         │
+│  ┌─────────────────────────────────────────────────────────────────┐   │
+│  │  ◆ CHECKPOINT: Подтвердите список задач                         │   │
+│  │  [✓ Подтвердить]  [✏️ Редактировать]  [✕ Отменить]              │   │
+│  └─────────────────────────────────────────────────────────────────┘   │
+│                                                                         │
+└─────────────────────────────────────────────────────────────────────────┘
+```
 
 ---
 
