@@ -24,6 +24,9 @@ interface ChatMessagesListProps {
   onDelete: (id: string) => void;
   onRatingChange: (id: string, rating: number) => void;
   onClarifyWithSpecialist?: (selectedText: string, messageId: string) => void;
+  // Memory
+  onSaveToMemory?: (messageId: string, content: string) => void;
+  isSavingToMemory?: boolean;
   // Pending responses for skeleton indicators
   pendingResponses?: Map<string, PendingResponseState>;
   // Streaming responses for real-time content
@@ -49,6 +52,8 @@ export function ChatMessagesList({
   onDelete,
   onRatingChange,
   onClarifyWithSpecialist,
+  onSaveToMemory,
+  isSavingToMemory,
   pendingResponses,
   streamingResponses,
   timeoutSeconds = 120,
@@ -98,6 +103,8 @@ export function ChatMessagesList({
                   isCollapsed={isCollapsed(message.id)}
                   onToggleCollapse={onToggleCollapse}
                   onClarifyWithSpecialist={onClarifyWithSpecialist}
+                  onSaveToMemory={onSaveToMemory}
+                  isSavingToMemory={isSavingToMemory}
                 />
               </div>
             </React.Fragment>
