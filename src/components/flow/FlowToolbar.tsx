@@ -312,17 +312,16 @@ export function FlowToolbar({
             <Clipboard className="h-4 w-4 mr-2" />
             {t('flowEditor.copyToClipboard')}
           </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={handleGenerateMermaid}>
+            <FileCode className="h-4 w-4 mr-2" />
+            {t('flowEditor.generateMermaid')}
+          </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
 
       {/* Mermaid dialog */}
       <Dialog open={mermaidOpen} onOpenChange={setMermaidOpen}>
-        <DialogTrigger asChild>
-          <Button variant="outline" size="sm" onClick={handleGenerateMermaid}>
-            <FileCode className="h-4 w-4 mr-1" />
-            {t('flowEditor.generateMermaid')}
-          </Button>
-        </DialogTrigger>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>{t('flowEditor.generateMermaid')}</DialogTitle>
