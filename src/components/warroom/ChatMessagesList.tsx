@@ -25,7 +25,7 @@ interface ChatMessagesListProps {
   onRatingChange: (id: string, rating: number) => void;
   onClarifyWithSpecialist?: (selectedText: string, messageId: string) => void;
   // Memory
-  onSaveToMemory?: (messageId: string, content: string) => void;
+  onSaveToMemory?: (messageId: string, content: string) => Promise<void>;
   isSavingToMemory?: boolean;
   // Pending responses for skeleton indicators
   pendingResponses?: Map<string, PendingResponseState>;

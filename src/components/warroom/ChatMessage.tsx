@@ -16,8 +16,10 @@ import {
   Trash2,
   Brain,
   RefreshCw,
-  Archive
+  Archive,
+  Check
 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   Tooltip,
   TooltipContent,
@@ -91,7 +93,7 @@ interface ChatMessageProps {
   isCollapsed?: boolean;
   onToggleCollapse?: (messageId: string) => void;
   onClarifyWithSpecialist?: (selectedText: string, messageId: string) => void;
-  onSaveToMemory?: (messageId: string, content: string) => void;
+  onSaveToMemory?: (messageId: string, content: string) => Promise<void>;
   isSavingToMemory?: boolean;
 }
 
@@ -100,6 +102,7 @@ const MAX_COLLAPSED_LINES = 3;
 export function ChatMessage({ message, userDisplayInfo, onDelete, onRatingChange, isCollapsed, onToggleCollapse, onClarifyWithSpecialist, onSaveToMemory, isSavingToMemory }: ChatMessageProps) {
   const { t } = useLanguage();
   const contentRef = useRef<HTMLDivElement>(null);
+  const [savedToMemory, setSavedToMemory] = useState(false);
   
   // Use controlled state from parent if provided, otherwise local state
   const [localExpanded, setLocalExpanded] = useState(true);
@@ -118,6 +121,19 @@ export function ChatMessage({ message, userDisplayInfo, onDelete, onRatingChange
       onClarifyWithSpecialist(text, message.id);
     }
   }, [onClarifyWithSpecialist, message.id]);
+
+  const handleSaveToMemory = useCallback(async () => {
+    if (onSaveToMemory && !savedToMemory && !isSavingToMemory) {
+      try {
+        await onSaveToMemory(message.id, message.content);
+        setSavedToMemory(true);
+        // Reset after 3 seconds
+        setTimeout(() => setSavedToMemory(false), 3000);
+      } catch (error) {
+        // Error is handled by the hook
+      }
+    }
+  }, [onSaveToMemory, message.id, message.content, savedToMemory, isSavingToMemory]);
   
   const config = getRoleConfig(message.role);
   
@@ -265,19 +281,61 @@ export function ChatMessage({ message, userDisplayInfo, onDelete, onRatingChange
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7 text-hydra-archivist hover:text-hydra-archivist hover:bg-hydra-archivist/10"
-                  onClick={() => onSaveToMemory(message.id, message.content)}
-                  disabled={isSavingToMemory}
-                  title={t('memory.saveToMemory')}
+                <motion.button
+                  className={cn(
+                    "h-7 w-7 rounded-md flex items-center justify-center transition-colors",
+                    savedToMemory 
+                      ? "bg-hydra-success/20 text-hydra-success cursor-default"
+                      : "hover:bg-hydra-archivist/10 text-hydra-archivist hover:text-hydra-archivist"
+                  )}
+                  onClick={handleSaveToMemory}
+                  disabled={isSavingToMemory || savedToMemory}
+                  whileTap={!savedToMemory && !isSavingToMemory ? { scale: 0.9 } : undefined}
                 >
-                  <Archive className={cn("h-4 w-4", isSavingToMemory && "animate-pulse")} />
-                </Button>
+                  <AnimatePresence mode="wait">
+                    {savedToMemory ? (
+                      <motion.span
+                        key="saved"
+                        initial={{ scale: 0, rotate: -180 }}
+                        animate={{ scale: 1, rotate: 0 }}
+                        exit={{ scale: 0, opacity: 0 }}
+                        transition={{ 
+                          type: "spring",
+                          stiffness: 300,
+                          damping: 20
+                        }}
+                      >
+                        <Check className="h-4 w-4" />
+                      </motion.span>
+                    ) : isSavingToMemory ? (
+                      <motion.span
+                        key="saving"
+                        animate={{ rotate: 360 }}
+                        transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                      >
+                        <Archive className="h-4 w-4" />
+                      </motion.span>
+                    ) : (
+                      <motion.span
+                        key="idle"
+                        initial={{ scale: 0.8, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        exit={{ scale: 0.8, opacity: 0 }}
+                      >
+                        <Archive className="h-4 w-4" />
+                      </motion.span>
+                    )}
+                  </AnimatePresence>
+                </motion.button>
               </TooltipTrigger>
               <TooltipContent side="top">
-                <p className="text-xs">{t('memory.saveToMemory')}</p>
+                <p className="text-xs">
+                  {savedToMemory 
+                    ? t('memory.saved') 
+                    : isSavingToMemory 
+                    ? t('memory.saving') 
+                    : t('memory.saveToMemory')}
+                </p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
