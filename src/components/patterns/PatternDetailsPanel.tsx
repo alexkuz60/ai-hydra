@@ -5,7 +5,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Target, GitBranch, CheckCircle2, MessageSquare, Users, ArrowRight, Loader2 } from 'lucide-react';
+import { Target, GitBranch, CheckCircle2, MessageSquare, Users, ArrowRight, Loader2, Pencil, Copy, Lock } from 'lucide-react';
 import { ROLE_CONFIG } from '@/config/roles';
 import { cn } from '@/lib/utils';
 import type { TaskBlueprint, RoleBehavior } from '@/types/patterns';
@@ -13,9 +13,12 @@ import { isTaskBlueprint } from '@/types/patterns';
 import { useFlowDiagrams } from '@/hooks/useFlowDiagrams';
 import { blueprintToFlow } from '@/lib/blueprintToFlow';
 import { useToast } from '@/hooks/use-toast';
+import type { PatternMeta } from '@/hooks/usePatterns';
 
 interface PatternDetailsPanelProps {
   selectedPattern: TaskBlueprint | RoleBehavior | null;
+  patternMeta?: PatternMeta | null;
+  onEdit?: () => void;
 }
 
 const CategoryBadge: React.FC<{ category: string }> = ({ category }) => {
@@ -332,7 +335,7 @@ const RoleBehaviorDetails: React.FC<{ pattern: RoleBehavior }> = ({ pattern }) =
   );
 };
 
-const PatternDetailsPanel: React.FC<PatternDetailsPanelProps> = ({ selectedPattern }) => {
+const PatternDetailsPanel: React.FC<PatternDetailsPanelProps> = ({ selectedPattern, patternMeta, onEdit }) => {
   const { t } = useLanguage();
 
   if (!selectedPattern) {
@@ -349,6 +352,38 @@ const PatternDetailsPanel: React.FC<PatternDetailsPanelProps> = ({ selectedPatte
   return (
     <ScrollArea className="h-full">
       <div className="p-6">
+        {/* Edit button */}
+        {onEdit && (
+          <div className="flex justify-end mb-4">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onEdit}
+              className="gap-2"
+            >
+              {patternMeta?.isSystem ? (
+                <>
+                  <Copy className="h-4 w-4" />
+                  {t('patterns.duplicateToEdit')}
+                </>
+              ) : (
+                <>
+                  <Pencil className="h-4 w-4" />
+                  {t('common.edit')}
+                </>
+              )}
+            </Button>
+          </div>
+        )}
+
+        {/* System pattern indicator */}
+        {patternMeta?.isSystem && (
+          <div className="flex items-center gap-2 mb-4 p-2 rounded-md bg-muted/50 text-sm text-muted-foreground">
+            <Lock className="h-4 w-4" />
+            {t('patterns.cannotEditSystem')}
+          </div>
+        )}
+
         {isTaskBlueprint(selectedPattern) ? (
           <TaskBlueprintDetails pattern={selectedPattern} />
         ) : (
