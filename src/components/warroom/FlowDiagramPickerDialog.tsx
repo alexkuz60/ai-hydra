@@ -30,6 +30,18 @@ export function FlowDiagramPickerDialog({
   const { diagrams, isLoading } = useFlowDiagrams();
   const [hoveredId, setHoveredId] = useState<string | null>(null);
 
+  // Deduplicate diagrams by name, keeping only the most recent version
+  const uniqueDiagrams = useMemo(() => {
+    const byName = new Map<string, FlowDiagram>();
+    // diagrams already sorted by updated_at DESC, so first occurrence is the latest
+    for (const diagram of diagrams) {
+      if (!byName.has(diagram.name)) {
+        byName.set(diagram.name, diagram);
+      }
+    }
+    return Array.from(byName.values());
+  }, [diagrams]);
+
   const handleSelect = (diagram: FlowDiagram) => {
     const mermaidCode = exportToMermaid(diagram.nodes, diagram.edges);
     onSelect(mermaidCode, diagram.name);
@@ -41,10 +53,10 @@ export function FlowDiagramPickerDialog({
   // Pre-compute mermaid code for hovered diagram
   const hoveredMermaid = useMemo(() => {
     if (!hoveredId) return null;
-    const diagram = diagrams.find(d => d.id === hoveredId);
+    const diagram = uniqueDiagrams.find(d => d.id === hoveredId);
     if (!diagram) return null;
     return exportToMermaid(diagram.nodes, diagram.edges);
-  }, [hoveredId, diagrams]);
+  }, [hoveredId, uniqueDiagrams]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -60,7 +72,7 @@ export function FlowDiagramPickerDialog({
           <div className="flex items-center justify-center py-8">
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
           </div>
-        ) : diagrams.length === 0 ? (
+        ) : uniqueDiagrams.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-8 text-center">
             <Workflow className="h-12 w-12 text-muted-foreground/50 mb-3" />
             <p className="text-sm text-muted-foreground">
@@ -75,7 +87,7 @@ export function FlowDiagramPickerDialog({
             {/* Diagram list */}
             <ScrollArea className="flex-1 max-h-[350px] pr-3">
               <div className="space-y-2">
-                {diagrams.map((diagram) => (
+                {uniqueDiagrams.map((diagram) => (
                   <button
                     key={diagram.id}
                     onClick={() => handleSelect(diagram)}

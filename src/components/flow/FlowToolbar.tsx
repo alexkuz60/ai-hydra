@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -98,6 +98,18 @@ export function FlowToolbar({
   const [mermaidCode, setMermaidCode] = useState('');
   const [mermaidOpen, setMermaidOpen] = useState(false);
   const [copied, setCopied] = useState(false);
+
+  // Deduplicate diagrams by name, keeping only the most recent version
+  const uniqueDiagrams = useMemo(() => {
+    const byName = new Map<string, FlowDiagram>();
+    // savedDiagrams already sorted by updated_at DESC, so first occurrence is the latest
+    for (const diagram of savedDiagrams) {
+      if (!byName.has(diagram.name)) {
+        byName.set(diagram.name, diagram);
+      }
+    }
+    return Array.from(byName.values());
+  }, [savedDiagrams]);
 
   const handleGenerateMermaid = () => {
     const code = onGenerateMermaid();
@@ -200,14 +212,14 @@ export function FlowToolbar({
       {/* Load diagram */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="outline" size="sm" disabled={savedDiagrams.length === 0}>
+          <Button variant="outline" size="sm" disabled={uniqueDiagrams.length === 0}>
             <FolderOpen className="h-4 w-4 mr-1" />
             Открыть
             <ChevronDown className="h-3 w-3 ml-1" />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="max-h-60 overflow-auto">
-          {savedDiagrams.map((diagram) => (
+          {uniqueDiagrams.map((diagram) => (
             <DropdownMenuItem
               key={diagram.id}
               onClick={() => onLoadDiagram(diagram)}
