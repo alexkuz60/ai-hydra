@@ -73,21 +73,32 @@ export function useSessionMemory(sessionId: string | null) {
     enabled: !!sessionId && !!user,
   });
 
-  // Create a new memory chunk
+  // Create a new memory chunk with auto-generated embedding
   const createChunkMutation = useMutation({
     mutationFn: async (input: CreateMemoryChunkInput) => {
       if (!user) throw new Error('User not authenticated');
 
+      // Generate embedding for the content
+      let embedding: number[] | null = null;
+      try {
+        embedding = await generateEmbedding(input.content);
+      } catch (e) {
+        console.warn('Failed to generate embedding, saving without it:', e);
+      }
+
+      const insertData = {
+        session_id: input.session_id,
+        user_id: user.id,
+        content: input.content,
+        chunk_type: input.chunk_type || 'message',
+        source_message_id: input.source_message_id || null,
+        metadata: (input.metadata || {}) as Json,
+        embedding: embedding ? `[${embedding.join(',')}]` : undefined,
+      };
+
       const { data, error } = await supabase
         .from('session_memory')
-        .insert({
-          session_id: input.session_id,
-          user_id: user.id,
-          content: input.content,
-          chunk_type: input.chunk_type || 'message',
-          source_message_id: input.source_message_id || null,
-          metadata: (input.metadata || {}) as Json,
-        })
+        .insert(insertData)
         .select()
         .single();
 
@@ -348,18 +359,29 @@ export function useSessionMemory(sessionId: string | null) {
     };
   }, [chunks]);
 
-  // Bulk create chunks (useful for batch operations)
+  // Bulk create chunks with auto-generated embeddings (useful for batch operations)
   const createChunksBatch = useCallback(
     async (inputs: CreateMemoryChunkInput[]): Promise<SessionMemoryChunk[]> => {
       if (!user) throw new Error('User not authenticated');
 
-      const records = inputs.map((input) => ({
+      // Generate embeddings for all inputs in parallel
+      const embeddingsPromises = inputs.map(async (input) => {
+        try {
+          return await generateEmbedding(input.content);
+        } catch {
+          return null;
+        }
+      });
+      const embeddings = await Promise.all(embeddingsPromises);
+
+      const records = inputs.map((input, index) => ({
         session_id: input.session_id,
         user_id: user.id,
         content: input.content,
         chunk_type: input.chunk_type || 'message',
         source_message_id: input.source_message_id || null,
         metadata: (input.metadata || {}) as Json,
+        embedding: embeddings[index] ? `[${embeddings[index]!.join(',')}]` : undefined,
       }));
 
       const { data, error } = await supabase
@@ -372,7 +394,7 @@ export function useSessionMemory(sessionId: string | null) {
       queryClient.invalidateQueries({ queryKey });
       return data as SessionMemoryChunk[];
     },
-    [user, queryClient, queryKey]
+    [user, queryClient, queryKey, generateEmbedding]
   );
 
   return {
