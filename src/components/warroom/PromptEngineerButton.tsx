@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import {
@@ -9,10 +9,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
-import { Wand2, Loader2, Sparkles, Copy, Check, ArrowRight } from 'lucide-react';
+import { Wand2, Loader2, Sparkles, Copy, Check, ArrowRight, ChevronDown, ChevronUp } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 import { toast } from 'sonner';
@@ -40,6 +39,15 @@ export function PromptEngineerButton({
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<OptimizationResult | null>(null);
   const [copied, setCopied] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  const lineCount = useMemo(() => {
+    if (!result?.optimizedPrompt) return 0;
+    return result.optimizedPrompt.split('\n').length;
+  }, [result?.optimizedPrompt]);
+
+  const needsCollapse = lineCount > 5;
+  const needsScroll = lineCount > 10;
 
   const handleOptimize = async () => {
     if (!currentInput.trim()) {
@@ -194,8 +202,11 @@ export function PromptEngineerButton({
         </TooltipContent>
       </Tooltip>
 
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-2xl">
+      <Dialog open={dialogOpen} onOpenChange={(open) => {
+        setDialogOpen(open);
+        if (!open) setIsExpanded(false);
+      }}>
+        <DialogContent className="max-w-3xl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Wand2 className="h-5 w-5 text-hydra-promptengineer" />
@@ -239,24 +250,54 @@ export function PromptEngineerButton({
                       <Sparkles className="h-4 w-4 text-hydra-promptengineer" />
                       {t('promptEngineer.optimized')}
                     </label>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={handleCopy}
-                      className="h-7 px-2"
-                    >
-                      {copied ? (
-                        <Check className="h-3.5 w-3.5 text-green-500" />
-                      ) : (
-                        <Copy className="h-3.5 w-3.5" />
+                    <div className="flex items-center gap-1">
+                      {needsCollapse && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setIsExpanded(!isExpanded)}
+                          className="h-7 px-2"
+                        >
+                          {isExpanded ? (
+                            <ChevronUp className="h-3.5 w-3.5" />
+                          ) : (
+                            <ChevronDown className="h-3.5 w-3.5" />
+                          )}
+                        </Button>
                       )}
-                    </Button>
-                  </div>
-                  <ScrollArea className="max-h-[200px]">
-                    <div className="p-3 rounded-lg bg-hydra-promptengineer/10 border border-hydra-promptengineer/30 text-sm whitespace-pre-wrap">
-                      {result.optimizedPrompt}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleCopy}
+                        className="h-7 px-2"
+                      >
+                        {copied ? (
+                          <Check className="h-3.5 w-3.5 text-green-500" />
+                        ) : (
+                          <Copy className="h-3.5 w-3.5" />
+                        )}
+                      </Button>
                     </div>
-                  </ScrollArea>
+                  </div>
+                  <div className={cn(
+                    "rounded-lg bg-hydra-promptengineer/10 border border-hydra-promptengineer/30",
+                    needsScroll && isExpanded && "max-h-[300px] overflow-hidden"
+                  )}>
+                    {needsScroll && isExpanded ? (
+                      <ScrollArea className="h-[300px]">
+                        <div className="p-3 text-sm whitespace-pre-wrap">
+                          {result.optimizedPrompt}
+                        </div>
+                      </ScrollArea>
+                    ) : (
+                      <div className={cn(
+                        "p-3 text-sm whitespace-pre-wrap",
+                        needsCollapse && !isExpanded && "line-clamp-5"
+                      )}>
+                        {result.optimizedPrompt}
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 {/* Explanation */}
