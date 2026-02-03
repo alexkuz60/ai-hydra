@@ -697,6 +697,15 @@ const translations: Translations = {
   'message.copied': { ru: 'Скопировано', en: 'Copied' },
   'message.copy': { ru: 'Копировать', en: 'Copy' },
   
+  // Memory
+  'memory.savedChunks': { ru: 'Сохранённые фрагменты', en: 'Saved chunks' },
+  'memory.decisions': { ru: 'Решения', en: 'Decisions' },
+  'memory.context': { ru: 'Контекст', en: 'Context' },
+  'memory.instructions': { ru: 'Инструкции', en: 'Instructions' },
+  'memory.autoSaved': { ru: 'Авто-сохранено в память', en: 'Auto-saved to memory' },
+  'memory.saveToMemory': { ru: 'Сохранить в память', en: 'Save to memory' },
+  'memory.refresh': { ru: 'Освежить память', en: 'Refresh memory' },
+  
   // Settings
   'settings.timeout': { ru: 'Таймаут ожидания', en: 'Response timeout' },
   'settings.timeoutDescription': { ru: 'Время ожидания ответа от эксперта до показа диалога действий', en: 'Time to wait for expert response before showing action dialog' },
