@@ -10,7 +10,6 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Switch } from '@/components/ui/switch';
 import {
@@ -23,6 +22,7 @@ import {
 import { Plus, Trash2, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ROLE_CONFIG, AGENT_ROLES, type AgentRole } from '@/config/roles';
+import RoleHierarchyEditor from '@/components/staff/RoleHierarchyEditor';
 import type { 
   RoleBehavior, 
   CommunicationTone, 
@@ -98,16 +98,6 @@ export function BehaviorEditorDialog({
     setReactions(reactions.map((r, i) => i === index ? { ...r, ...updates } : r));
   };
 
-  const toggleInteraction = (type: keyof RoleInteractions, targetRole: AgentRole) => {
-    const current = interactions[type];
-    const hasRole = current.includes(targetRole);
-    setInteractions({
-      ...interactions,
-      [type]: hasRole
-        ? current.filter(r => r !== targetRole)
-        : [...current, targetRole],
-    });
-  };
 
   const handleSave = async () => {
     const data: Omit<RoleBehavior, 'id'> & { id?: string } = {
@@ -257,38 +247,15 @@ export function BehaviorEditorDialog({
               ))}
             </div>
 
-            {/* Interactions */}
-            <div className="space-y-4 p-4 rounded-lg border bg-muted/30">
+            {/* Interactions - Role Hierarchy */}
+            <div className="space-y-3 p-4 rounded-lg border bg-muted/30">
               <Label className="text-base font-medium">{t('patterns.interactions')}</Label>
-
-              {(['defers_to', 'challenges', 'collaborates'] as const).map((type) => (
-                <div key={type} className="grid gap-2">
-                  <Label className="text-xs text-muted-foreground">
-                    {t(`patterns.${type}`)}
-                  </Label>
-                  <div className="flex flex-wrap gap-1.5">
-                    {AGENT_ROLES.filter(r => r !== role).map((r) => {
-                      const config = ROLE_CONFIG[r];
-                      const Icon = config.icon;
-                      const isSelected = interactions[type].includes(r);
-                      return (
-                        <Badge
-                          key={r}
-                          variant={isSelected ? 'default' : 'outline'}
-                          className={cn(
-                            'cursor-pointer gap-1 transition-all',
-                            isSelected && config.color
-                          )}
-                          onClick={() => toggleInteraction(type, r)}
-                        >
-                          <Icon className="h-3 w-3" />
-                          {t(config.label)}
-                        </Badge>
-                      );
-                    })}
-                  </div>
-                </div>
-              ))}
+              <RoleHierarchyEditor
+                selectedRole={role}
+                interactions={interactions}
+                onInteractionsChange={setInteractions}
+                isEditing={true}
+              />
             </div>
 
             {/* Share toggle */}
