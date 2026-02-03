@@ -33,6 +33,7 @@ import {
 } from '@/config/roles';
 import { cn } from '@/lib/utils';
 import RoleHierarchyEditor from './RoleHierarchyEditor';
+import { useRoleBehavior } from '@/hooks/useRoleBehavior';
 import type { RoleInteractions } from '@/types/patterns';
 
 interface PromptLibraryItem {
@@ -58,7 +59,7 @@ const RoleDetailsPanel = forwardRef<HTMLDivElement, RoleDetailsPanelProps>(
     const [editedPrompt, setEditedPrompt] = useState('');
     const [promptName, setPromptName] = useState('');
     const [isShared, setIsShared] = useState(false);
-    const [isSaving, setIsSaving] = useState(false);
+    const [isSavingPrompt, setIsSavingPrompt] = useState(false);
     
     // Library state
     const [libraryPrompts, setLibraryPrompts] = useState<PromptLibraryItem[]>([]);
@@ -73,6 +74,9 @@ const RoleDetailsPanel = forwardRef<HTMLDivElement, RoleDetailsPanelProps>(
       challenges: [],
       collaborates: [],
     });
+    
+    // Load behavior from database
+    const { behavior, isLoading: isLoadingBehavior, isSaving, saveInteractions } = useRoleBehavior(selectedRole);
 
     // Reset edit state when role changes
     useEffect(() => {
@@ -82,13 +86,20 @@ const RoleDetailsPanel = forwardRef<HTMLDivElement, RoleDetailsPanelProps>(
       setIsShared(false);
       setSelectedLibraryPrompt('');
       setIsEditingHierarchy(false);
-      // Reset interactions - in a real app, load from behavior patterns
-      setInteractions({
-        defers_to: [],
-        challenges: [],
-        collaborates: [],
-      });
     }, [selectedRole]);
+
+    // Sync interactions from loaded behavior
+    useEffect(() => {
+      if (behavior?.interactions) {
+        setInteractions(behavior.interactions);
+      } else {
+        setInteractions({
+          defers_to: [],
+          challenges: [],
+          collaborates: [],
+        });
+      }
+    }, [behavior]);
 
     // Load prompts from library for selected role
     useEffect(() => {
@@ -149,7 +160,7 @@ const RoleDetailsPanel = forwardRef<HTMLDivElement, RoleDetailsPanelProps>(
         return;
       }
 
-      setIsSaving(true);
+      setIsSavingPrompt(true);
       try {
         const { error } = await supabase
           .from('prompt_library')
@@ -183,7 +194,7 @@ const RoleDetailsPanel = forwardRef<HTMLDivElement, RoleDetailsPanelProps>(
       } catch (error: any) {
         toast.error(error.message);
       } finally {
-        setIsSaving(false);
+        setIsSavingPrompt(false);
       }
     };
 
@@ -345,7 +356,7 @@ const RoleDetailsPanel = forwardRef<HTMLDivElement, RoleDetailsPanelProps>(
                       disabled={isSaving || !promptName.trim() || !editedPrompt.trim()}
                       className="gap-1.5"
                     >
-                      {isSaving ? (
+                      {isSavingPrompt ? (
                         <Loader2 className="h-4 w-4 animate-spin" />
                       ) : (
                         <Save className="h-4 w-4" />
@@ -390,10 +401,27 @@ const RoleDetailsPanel = forwardRef<HTMLDivElement, RoleDetailsPanelProps>(
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => setIsEditingHierarchy(!isEditingHierarchy)}
+                    onClick={async () => {
+                      if (isEditingHierarchy) {
+                        // Save to database
+                        const success = await saveInteractions(interactions);
+                        if (success) {
+                          toast.success(t('staffRoles.hierarchy.saved'));
+                          setIsEditingHierarchy(false);
+                        }
+                      } else {
+                        setIsEditingHierarchy(true);
+                      }
+                    }}
+                    disabled={isSaving}
                     className="gap-1.5 h-7 text-xs"
                   >
-                    {isEditingHierarchy ? (
+                    {isSaving ? (
+                      <>
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                        {t('staffRoles.hierarchy.saving')}
+                      </>
+                    ) : isEditingHierarchy ? (
                       <>
                         <Save className="h-3 w-3" />
                         {t('staffRoles.hierarchy.save')}
@@ -408,12 +436,21 @@ const RoleDetailsPanel = forwardRef<HTMLDivElement, RoleDetailsPanelProps>(
                 )}
               </div>
               <CollapsibleContent className="pt-3">
-                <RoleHierarchyEditor
-                  selectedRole={selectedRole}
-                  interactions={interactions}
-                  onInteractionsChange={setInteractions}
-                  isEditing={isEditingHierarchy}
-                />
+                {isLoadingBehavior ? (
+                  <div className="flex items-center justify-center py-4">
+                    <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                    <span className="ml-2 text-sm text-muted-foreground">
+                      {t('staffRoles.hierarchy.loading')}
+                    </span>
+                  </div>
+                ) : (
+                  <RoleHierarchyEditor
+                    selectedRole={selectedRole}
+                    interactions={interactions}
+                    onInteractionsChange={setInteractions}
+                    isEditing={isEditingHierarchy}
+                  />
+                )}
               </CollapsibleContent>
             </Collapsible>
 
