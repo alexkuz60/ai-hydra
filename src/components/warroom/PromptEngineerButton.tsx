@@ -14,7 +14,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Wand2, Loader2, Sparkles, Copy, Check, ArrowRight } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { supabase } from '@/integrations/supabase/client';
+
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
@@ -51,12 +51,7 @@ export function PromptEngineerButton({
     setResult(null);
 
     try {
-      const { data, error } = await supabase.functions.invoke('hydra-stream', {
-        body: {
-          messages: [
-            {
-              role: 'system',
-              content: `Вы - Промпт-Инженер системы Hydra, специализирующийся на оптимизации промптов для ИИ-систем.
+      const systemPrompt = `Вы - Промпт-Инженер системы Hydra, специализирующийся на оптимизации промптов для ИИ-систем.
 
 Ваша задача — улучшить пользовательский запрос, сделав его:
 1. Более структурированным и понятным для ИИ
@@ -70,32 +65,74 @@ export function PromptEngineerButton({
   "improvements": ["улучшение 1", "улучшение 2", "улучшение 3"]
 }
 
-Не добавляйте markdown-разметку, только чистый JSON.`,
-            },
-            {
-              role: 'user',
-              content: `Оптимизируй следующий запрос:\n\n${currentInput}`,
-            },
-          ],
-          model: 'google/gemini-2.5-flash',
-          stream: false,
+Не добавляйте markdown-разметку, только чистый JSON.`;
+
+      // Use fetch directly to handle SSE stream
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+      
+      const response = await fetch(`${supabaseUrl}/functions/v1/hydra-stream`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${supabaseKey}`,
         },
+        body: JSON.stringify({
+          message: `Оптимизируй следующий запрос:\n\n${currentInput}`,
+          model_id: 'google/gemini-2.5-flash',
+          role: 'assistant',
+          system_prompt: systemPrompt,
+          temperature: 0.7,
+          max_tokens: 2048,
+        }),
       });
 
-      if (error) throw error;
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `HTTP ${response.status}`);
+      }
 
-      // Parse the response - handle both streaming and non-streaming formats
-      let content = '';
-      if (typeof data === 'string') {
-        content = data;
-      } else if (data?.choices?.[0]?.message?.content) {
-        content = data.choices[0].message.content;
-      } else if (data?.content) {
-        content = data.content;
+      // Parse SSE stream and collect full response
+      const reader = response.body?.getReader();
+      if (!reader) throw new Error('No response body');
+
+      const decoder = new TextDecoder();
+      let fullContent = '';
+      let buffer = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+
+        // Process SSE lines
+        let newlineIndex;
+        while ((newlineIndex = buffer.indexOf('\n')) !== -1) {
+          let line = buffer.slice(0, newlineIndex);
+          buffer = buffer.slice(newlineIndex + 1);
+
+          if (line.endsWith('\r')) line = line.slice(0, -1);
+          if (line.startsWith(':') || line.trim() === '') continue;
+          if (!line.startsWith('data: ')) continue;
+
+          const jsonStr = line.slice(6).trim();
+          if (jsonStr === '[DONE]') continue;
+
+          try {
+            const parsed = JSON.parse(jsonStr);
+            const content = parsed.choices?.[0]?.delta?.content;
+            if (content) fullContent += content;
+          } catch {
+            // Incomplete JSON, re-buffer
+            buffer = line + '\n' + buffer;
+            break;
+          }
+        }
       }
 
       // Clean potential markdown code blocks
-      content = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+      let content = fullContent.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
 
       const parsed: OptimizationResult = JSON.parse(content);
       setResult(parsed);
