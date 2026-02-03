@@ -2949,5 +2949,331 @@ When creating HTTP tools, the system validates URLs:
 
 > **Important**: AI-Hydra doesn't share your API keys with third parties. They're used only for direct requests to providers.`
     }
+  },
+  {
+    id: 'behavioral-patterns',
+    titleKey: 'hydrapedia.sections.behavioralPatterns',
+    icon: 'Sparkles',
+    content: {
+      ru: `# Паттерны поведения
+
+Модуль «Паттерны поведения» позволяет управлять логикой выполнения задач и стилем общения ИИ-агентов. Система построена на двухуровневой архитектуре.
+
+## Концепция
+
+\`\`\`mermaid
+graph TD
+    subgraph "Стратегические паттерны"
+        BP[Task Blueprint]
+        BP --> S1[Этап 1]
+        BP --> S2[Этап 2]
+        BP --> S3[Этап N]
+        S1 --> R1[@assistant]
+        S2 --> R2[@critic]
+        S3 --> R3[@arbiter]
+    end
+    
+    subgraph "Ролевые паттерны"
+        RB[Role Behavior]
+        RB --> COM[Коммуникация]
+        RB --> REA[Реакции]
+        RB --> INT[Взаимодействия]
+    end
+    
+    BP -.-> RB
+\`\`\`
+
+## Два типа паттернов
+
+### 1. Стратегические паттерны (Task Blueprints)
+
+Определяют **что делать** — последовательность этапов для решения задачи.
+
+| Поле | Описание |
+|------|----------|
+| **Название** | Уникальное имя паттерна |
+| **Категория** | Планирование / Креатив / Анализ / Техническая |
+| **Этапы** | Упорядоченный список шагов выполнения |
+| **Контрольные точки** | Критерии успешного завершения |
+
+#### Структура этапа
+
+| Элемент | Описание |
+|---------|----------|
+| **Название** | Краткое описание этапа |
+| **Роль** | Какой агент выполняет (@assistant, @critic, и т.д.) |
+| **Инструкция** | Подробное описание задачи для агента |
+| **Условие перехода** | Когда переходить к следующему этапу |
+
+#### Категории паттернов
+
+| Категория | Иконка | Цвет | Пример |
+|-----------|--------|------|--------|
+| **Планирование** | \`Target\` | Синий | Декомпозиция проекта |
+| **Креатив** | \`Sparkles\` | Фиолетовый | Генерация идей |
+| **Анализ** | \`Search\` | Зелёный | Исследование рынка |
+| **Техническая** | \`Code\` | Оранжевый | Code review |
+
+### 2. Ролевые паттерны (Role Behaviors)
+
+Определяют **как общаться** — стиль коммуникации конкретной роли.
+
+| Поле | Описание |
+|------|----------|
+| **Роль** | К какой роли применяется (@critic, @arbiter, etc.) |
+| **Коммуникация** | Тон, детализация, формат ответов |
+| **Реакции** | Триггеры и автоматические действия |
+| **Взаимодействия** | Правила работы с другими агентами |
+
+#### Параметры коммуникации
+
+| Параметр | Варианты | Описание |
+|----------|----------|----------|
+| **Тон** | Формальный / Дружелюбный / Нейтральный / Провокационный | Стиль общения |
+| **Детализация** | Краткий / Детальный / Адаптивный | Объём ответов |
+| **Использование эмодзи** | Да / Нет | Допустимость эмодзи |
+| **Использование примеров** | Да / Нет | Включение примеров кода |
+
+## Интерфейс страницы
+
+### Левая панель — Список паттернов
+
+| Элемент | Иконка | Описание |
+|---------|--------|----------|
+| **Группа «Стратегические»** | \`Target\` | Сворачиваемый список Task Blueprints |
+| **Группа «Ролевые»** | \`Sparkles\` | Сворачиваемый список Role Behaviors |
+| **Создать новый** | \`Plus\` | Кнопка создания паттерна |
+| **Редактировать** | \`Pencil\` | Редактирование своего паттерна |
+| **Дублировать** | \`Copy\` | Копирование системного паттерна |
+| **Удалить** | \`Trash2\` | Удаление своего паттерна |
+| **Системный** | \`Lock\` | Метка системного паттерна (только чтение) |
+| **Публичный** | \`Users\` | Метка публичного паттерна |
+
+### Правая панель — Детали
+
+Отображает полную информацию о выбранном паттерне:
+
+- Все этапы с инструкциями
+- Контрольные точки
+- Параметры коммуникации
+- Правила реакций
+
+## Типы паттернов
+
+### Системные паттерны
+
+Предустановленные паттерны, доступные всем пользователям.
+
+| Характеристика | Значение |
+|----------------|----------|
+| **Метка** | \`Lock\` (замок) |
+| **Редактирование** | Нельзя изменить |
+| **Удаление** | Невозможно |
+| **Дублирование** | Можно скопировать как свой |
+
+### Пользовательские паттерны
+
+| Характеристика | Значение |
+|----------------|----------|
+| **Создание** | Через кнопку «+» |
+| **Редактирование** | Полное |
+| **Удаление** | Да |
+| **Публикация** | Можно сделать публичным |
+
+### Публичные паттерны
+
+| Характеристика | Значение |
+|----------------|----------|
+| **Метка** | \`Users\` (группа) |
+| **Видимость** | Все пользователи |
+| **Редактирование** | Только автор |
+
+## Пример: Паттерн «Критический анализ»
+
+\`\`\`mermaid
+graph LR
+    A[Запрос] --> B[@assistant<br/>Первичный ответ]
+    B --> C[@critic<br/>Анализ недостатков]
+    C --> D[@arbiter<br/>Синтез и улучшение]
+    D --> E[Финальный ответ]
+\`\`\`
+
+### Этапы паттерна
+
+| # | Роль | Задача |
+|---|------|--------|
+| 1 | @assistant | Генерация первичного решения |
+| 2 | @critic | Выявление слабых мест и ошибок |
+| 3 | @arbiter | Объединение с учётом критики |
+
+## Использование паттернов
+
+1. **Выберите паттерн** из списка или создайте новый
+2. **Изучите этапы** на правой панели
+3. **Применяйте логику** при работе с моделями на Панели экспертов
+4. **Настройте поведение** ролей через Role Behaviors
+
+> **Совет**: Начните с дублирования системного паттерна и адаптируйте его под свои задачи.`,
+
+      en: `# Behavioral Patterns
+
+The "Behavioral Patterns" module allows you to manage task execution logic and AI agent communication styles. The system is built on a two-level architecture.
+
+## Concept
+
+\`\`\`mermaid
+graph TD
+    subgraph "Strategic Patterns"
+        BP[Task Blueprint]
+        BP --> S1[Stage 1]
+        BP --> S2[Stage 2]
+        BP --> S3[Stage N]
+        S1 --> R1[@assistant]
+        S2 --> R2[@critic]
+        S3 --> R3[@arbiter]
+    end
+    
+    subgraph "Role Patterns"
+        RB[Role Behavior]
+        RB --> COM[Communication]
+        RB --> REA[Reactions]
+        RB --> INT[Interactions]
+    end
+    
+    BP -.-> RB
+\`\`\`
+
+## Two Types of Patterns
+
+### 1. Strategic Patterns (Task Blueprints)
+
+Define **what to do** — the sequence of stages for solving a task.
+
+| Field | Description |
+|-------|-------------|
+| **Name** | Unique pattern name |
+| **Category** | Planning / Creative / Analysis / Technical |
+| **Stages** | Ordered list of execution steps |
+| **Checkpoints** | Success criteria |
+
+#### Stage Structure
+
+| Element | Description |
+|---------|-------------|
+| **Name** | Brief stage description |
+| **Role** | Which agent executes (@assistant, @critic, etc.) |
+| **Instruction** | Detailed task description for agent |
+| **Transition condition** | When to move to next stage |
+
+#### Pattern Categories
+
+| Category | Icon | Color | Example |
+|----------|------|-------|---------|
+| **Planning** | \`Target\` | Blue | Project decomposition |
+| **Creative** | \`Sparkles\` | Purple | Idea generation |
+| **Analysis** | \`Search\` | Green | Market research |
+| **Technical** | \`Code\` | Orange | Code review |
+
+### 2. Role Patterns (Role Behaviors)
+
+Define **how to communicate** — the communication style of a specific role.
+
+| Field | Description |
+|-------|-------------|
+| **Role** | Which role applies (@critic, @arbiter, etc.) |
+| **Communication** | Tone, verbosity, response format |
+| **Reactions** | Triggers and automatic actions |
+| **Interactions** | Rules for working with other agents |
+
+#### Communication Parameters
+
+| Parameter | Options | Description |
+|-----------|---------|-------------|
+| **Tone** | Formal / Friendly / Neutral / Provocative | Communication style |
+| **Verbosity** | Concise / Detailed / Adaptive | Response length |
+| **Use emoji** | Yes / No | Emoji allowed |
+| **Use examples** | Yes / No | Include code examples |
+
+## Page Interface
+
+### Left Panel — Pattern List
+
+| Element | Icon | Description |
+|---------|------|-------------|
+| **"Strategic" Group** | \`Target\` | Collapsible Task Blueprints list |
+| **"Role" Group** | \`Sparkles\` | Collapsible Role Behaviors list |
+| **Create new** | \`Plus\` | Pattern creation button |
+| **Edit** | \`Pencil\` | Edit your pattern |
+| **Duplicate** | \`Copy\` | Copy system pattern |
+| **Delete** | \`Trash2\` | Delete your pattern |
+| **System** | \`Lock\` | System pattern badge (read-only) |
+| **Public** | \`Users\` | Public pattern badge |
+
+### Right Panel — Details
+
+Displays full information about selected pattern:
+
+- All stages with instructions
+- Checkpoints
+- Communication parameters
+- Reaction rules
+
+## Pattern Types
+
+### System Patterns
+
+Pre-installed patterns available to all users.
+
+| Characteristic | Value |
+|----------------|-------|
+| **Badge** | \`Lock\` (padlock) |
+| **Editing** | Cannot modify |
+| **Deletion** | Impossible |
+| **Duplication** | Can copy as your own |
+
+### User Patterns
+
+| Characteristic | Value |
+|----------------|-------|
+| **Creation** | Via "+" button |
+| **Editing** | Full |
+| **Deletion** | Yes |
+| **Publishing** | Can make public |
+
+### Public Patterns
+
+| Characteristic | Value |
+|----------------|-------|
+| **Badge** | \`Users\` (group) |
+| **Visibility** | All users |
+| **Editing** | Author only |
+
+## Example: "Critical Analysis" Pattern
+
+\`\`\`mermaid
+graph LR
+    A[Request] --> B[@assistant<br/>Initial response]
+    B --> C[@critic<br/>Weakness analysis]
+    C --> D[@arbiter<br/>Synthesis and improvement]
+    D --> E[Final response]
+\`\`\`
+
+### Pattern Stages
+
+| # | Role | Task |
+|---|------|------|
+| 1 | @assistant | Generate initial solution |
+| 2 | @critic | Identify weaknesses and errors |
+| 3 | @arbiter | Merge with critique in mind |
+
+## Using Patterns
+
+1. **Select a pattern** from the list or create a new one
+2. **Study the stages** in the right panel
+3. **Apply the logic** when working with models in Expert Panel
+4. **Configure role behavior** through Role Behaviors
+
+> **Tip**: Start by duplicating a system pattern and adapt it to your tasks.`
+    }
   }
 ];
