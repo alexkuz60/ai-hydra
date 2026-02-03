@@ -105,6 +105,8 @@ export default function ExpertPanel() {
     clearSessionMemory,
     isDeleting: memoryDeleting,
     isClearing: memoryClearing,
+    semanticSearch,
+    isSearching: memorySearching,
   } = useSessionMemory(currentTask?.id || null);
   
   // Memory management state
@@ -874,6 +876,8 @@ export default function ExpertPanel() {
         onDeleteChunk={deleteChunk}
         onClearAll={clearSessionMemory}
         isClearing={memoryClearing}
+        onSemanticSearch={semanticSearch}
+        isSearching={memorySearching}
       />
     </Layout>
   );

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import {
   Dialog,
@@ -12,9 +12,10 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Input } from '@/components/ui/input';
-import { SessionMemoryChunk, ChunkType } from '@/hooks/useSessionMemory';
+import { SessionMemoryChunk, ChunkType, SearchResult } from '@/hooks/useSessionMemory';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   Archive,
   Trash2,
@@ -28,6 +29,8 @@ import {
   AlertTriangle,
   Search,
   Copy,
+  Sparkles,
+  Text,
 } from 'lucide-react';
 
 interface SessionMemoryDialogProps {
@@ -39,6 +42,9 @@ interface SessionMemoryDialogProps {
   onDeleteChunk: (chunkId: string) => Promise<void>;
   onClearAll: () => Promise<void>;
   isClearing: boolean;
+  // Optional: for semantic search
+  onSemanticSearch?: (query: string) => Promise<SearchResult[]>;
+  isSearching?: boolean;
 }
 
 const CHUNK_TYPE_CONFIG: Record<ChunkType, { icon: React.ElementType; color: string; labelKey: string }> = {
@@ -83,12 +89,46 @@ export function SessionMemoryDialog({
   onDeleteChunk,
   onClearAll,
   isClearing,
+  onSemanticSearch,
+  isSearching: externalIsSearching = false,
 }: SessionMemoryDialogProps) {
   const { t } = useLanguage();
   const [activeFilter, setActiveFilter] = useState<ChunkType | 'all' | 'duplicates'>('all');
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [confirmClearAll, setConfirmClearAll] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [useSemanticSearch, setUseSemanticSearch] = useState(false);
+  const [semanticResults, setSemanticResults] = useState<SearchResult[]>([]);
+  const [isSearchingInternal, setIsSearchingInternal] = useState(false);
+  
+  const isSearchingActive = externalIsSearching || isSearchingInternal;
+  
+  // Debounced semantic search
+  const handleSearchChange = useCallback(async (value: string) => {
+    setSearchQuery(value);
+    
+    if (useSemanticSearch && onSemanticSearch && value.trim().length >= 3) {
+      setIsSearchingInternal(true);
+      try {
+        const results = await onSemanticSearch(value.trim());
+        setSemanticResults(results);
+      } catch (error) {
+        console.error('Semantic search failed:', error);
+        setSemanticResults([]);
+      } finally {
+        setIsSearchingInternal(false);
+      }
+    } else if (!value.trim()) {
+      setSemanticResults([]);
+    }
+  }, [useSemanticSearch, onSemanticSearch]);
+  
+  // Toggle search mode
+  const toggleSearchMode = useCallback(() => {
+    setUseSemanticSearch(prev => !prev);
+    setSemanticResults([]);
+    setSearchQuery('');
+  }, []);
 
   // Find duplicates
   const duplicateMap = useMemo(() => findDuplicates(chunks), [chunks]);
@@ -107,7 +147,17 @@ export function SessionMemoryDialog({
     return count;
   }, [duplicateMap]);
 
-  const filteredChunks = useMemo(() => {
+  // Determine which items to display
+  const displayItems = useMemo(() => {
+    // If semantic search is active and we have results, show them
+    if (useSemanticSearch && semanticResults.length > 0) {
+      return semanticResults.map(result => ({
+        ...result,
+        isSemanticResult: true,
+      }));
+    }
+    
+    // Otherwise filter chunks normally
     let result = chunks;
 
     // Apply type/duplicates filter
@@ -117,14 +167,18 @@ export function SessionMemoryDialog({
       result = result.filter((chunk) => chunk.chunk_type === activeFilter);
     }
 
-    // Apply search filter
-    if (searchQuery.trim()) {
+    // Apply text search filter (only in text mode)
+    if (!useSemanticSearch && searchQuery.trim()) {
       const query = searchQuery.toLowerCase().trim();
       result = result.filter((chunk) => chunk.content.toLowerCase().includes(query));
     }
 
-    return result;
-  }, [chunks, activeFilter, searchQuery, duplicateIds]);
+    return result.map(chunk => ({
+      ...chunk,
+      isSemanticResult: false,
+      similarity: undefined,
+    }));
+  }, [chunks, activeFilter, searchQuery, duplicateIds, useSemanticSearch, semanticResults]);
 
   const chunkCounts = useMemo(() => {
     const counts: Record<string, number> = { all: chunks.length };
@@ -163,16 +217,71 @@ export function SessionMemoryDialog({
           <DialogDescription>{t('memory.dialogDescription')}</DialogDescription>
         </DialogHeader>
 
-        {/* Search input */}
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder={t('memory.searchPlaceholder')}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9 h-9"
-          />
+        {/* Search input with mode toggle */}
+        <div className="flex items-center gap-2">
+          <div className="relative flex-1">
+            {isSearchingActive ? (
+              <Loader2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground animate-spin" />
+            ) : (
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            )}
+            <Input
+              placeholder={useSemanticSearch ? t('memory.semanticSearchPlaceholder') : t('memory.searchPlaceholder')}
+              value={searchQuery}
+              onChange={(e) => handleSearchChange(e.target.value)}
+              className={cn(
+                "pl-9 h-9 pr-10",
+                useSemanticSearch && "border-hydra-cyan/50 focus-visible:ring-hydra-cyan/30"
+              )}
+            />
+          </div>
+          
+          {/* Semantic search toggle */}
+          {onSemanticSearch && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant={useSemanticSearch ? 'secondary' : 'ghost'}
+                  size="icon"
+                  className={cn(
+                    "h-9 w-9 shrink-0",
+                    useSemanticSearch && "bg-hydra-cyan/20 text-hydra-cyan hover:bg-hydra-cyan/30"
+                  )}
+                  onClick={toggleSearchMode}
+                >
+                  <AnimatePresence mode="wait">
+                    <motion.span
+                      key={useSemanticSearch ? 'semantic' : 'text'}
+                      initial={{ scale: 0.8, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      exit={{ scale: 0.8, opacity: 0 }}
+                      transition={{ duration: 0.15 }}
+                    >
+                      {useSemanticSearch ? (
+                        <Sparkles className="h-4 w-4" />
+                      ) : (
+                        <Text className="h-4 w-4" />
+                      )}
+                    </motion.span>
+                  </AnimatePresence>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">
+                <p className="text-xs">
+                  {useSemanticSearch ? t('memory.switchToTextSearch') : t('memory.switchToSemanticSearch')}
+                </p>
+              </TooltipContent>
+            </Tooltip>
+          )}
         </div>
+        
+        {/* Semantic search hint */}
+        {useSemanticSearch && (
+          <div className="flex items-center gap-2 text-xs text-hydra-cyan/80">
+            <Sparkles className="h-3 w-3" />
+            <span>{t('memory.semanticSearchHint')}</span>
+          </div>
+        )}
 
         {/* Filter tabs */}
         <div className="flex items-center gap-2 flex-wrap">
@@ -226,27 +335,34 @@ export function SessionMemoryDialog({
 
         {/* Chunks list */}
         <ScrollArea className="flex-1 min-h-[200px] max-h-[400px] border rounded-md">
-          {isLoading ? (
+          {isLoading || isSearchingActive ? (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              {isSearchingActive && useSemanticSearch && (
+                <span className="ml-2 text-sm text-muted-foreground">{t('memory.searching')}</span>
+              )}
             </div>
-          ) : filteredChunks.length === 0 ? (
+          ) : displayItems.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
               <Archive className="h-10 w-10 mb-2 opacity-50" />
               <p className="text-sm">{searchQuery ? t('memory.noSearchResults') : t('memory.empty')}</p>
             </div>
           ) : (
             <div className="divide-y divide-border">
-              {filteredChunks.map((chunk) => {
-                const config = CHUNK_TYPE_CONFIG[chunk.chunk_type as ChunkType] || CHUNK_TYPE_CONFIG.message;
+              {displayItems.map((item) => {
+                const config = CHUNK_TYPE_CONFIG[item.chunk_type as ChunkType] || CHUNK_TYPE_CONFIG.message;
                 const Icon = config.icon;
-                const isDuplicate = duplicateIds.has(chunk.id);
+                const isDuplicate = duplicateIds.has(item.id);
+                const similarity = 'similarity' in item ? item.similarity : undefined;
+                const isSemanticResult = 'isSemanticResult' in item && item.isSemanticResult;
+                
                 return (
                   <div
-                    key={chunk.id}
+                    key={item.id}
                     className={cn(
                       'p-3 hover:bg-muted/50 transition-colors group',
-                      isDuplicate && 'bg-amber-500/5 border-l-2 border-l-amber-500/50'
+                      isDuplicate && 'bg-amber-500/5 border-l-2 border-l-amber-500/50',
+                      isSemanticResult && 'border-l-2 border-l-hydra-cyan/50'
                     )}
                   >
                     <div className="flex items-start gap-3">
@@ -258,6 +374,16 @@ export function SessionMemoryDialog({
                           <Badge variant="outline" className={cn('text-[10px] h-5', config.color)}>
                             {t(config.labelKey)}
                           </Badge>
+                          {/* Similarity score for semantic results */}
+                          {similarity !== undefined && (
+                            <Badge 
+                              variant="outline" 
+                              className="text-[10px] h-5 text-hydra-cyan border-hydra-cyan/50"
+                            >
+                              <Sparkles className="h-2.5 w-2.5 mr-0.5" />
+                              {Math.round(similarity * 100)}%
+                            </Badge>
+                          )}
                           {isDuplicate && (
                             <Tooltip>
                               <TooltipTrigger>
@@ -269,12 +395,14 @@ export function SessionMemoryDialog({
                               <TooltipContent>{t('memory.duplicateTooltip')}</TooltipContent>
                             </Tooltip>
                           )}
-                          <span className="text-[10px] text-muted-foreground">
-                            {format(new Date(chunk.created_at), 'dd.MM.yy HH:mm')}
-                          </span>
+                          {'created_at' in item && (
+                            <span className="text-[10px] text-muted-foreground">
+                              {format(new Date(item.created_at), 'dd.MM.yy HH:mm')}
+                            </span>
+                          )}
                         </div>
                         <p className="text-sm line-clamp-3 text-foreground/90">
-                          {chunk.content}
+                          {item.content}
                         </p>
                       </div>
                       <Tooltip>
@@ -283,10 +411,10 @@ export function SessionMemoryDialog({
                             variant="ghost"
                             size="icon"
                             className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive hover:bg-destructive/10"
-                            onClick={() => handleDelete(chunk.id)}
-                            disabled={isDeleting || deletingId === chunk.id}
+                            onClick={() => handleDelete(item.id)}
+                            disabled={isDeleting || deletingId === item.id}
                           >
-                            {deletingId === chunk.id ? (
+                            {deletingId === item.id ? (
                               <Loader2 className="h-3.5 w-3.5 animate-spin" />
                             ) : (
                               <Trash2 className="h-3.5 w-3.5" />
