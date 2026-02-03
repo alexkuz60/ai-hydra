@@ -282,6 +282,7 @@ export type Database = {
           id: string
           is_default: boolean
           is_shared: boolean
+          language: string | null
           name: string
           role: string
           tags: string[] | null
@@ -297,6 +298,7 @@ export type Database = {
           id?: string
           is_default?: boolean
           is_shared?: boolean
+          language?: string | null
           name: string
           role?: string
           tags?: string[] | null
@@ -312,6 +314,7 @@ export type Database = {
           id?: string
           is_default?: boolean
           is_shared?: boolean
+          language?: string | null
           name?: string
           role?: string
           tags?: string[] | null
@@ -553,6 +556,7 @@ export type Database = {
           is_default: boolean
           is_owner: boolean
           is_shared: boolean
+          language: string
           name: string
           role: string
           tags: string[]
