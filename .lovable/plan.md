@@ -321,5 +321,5 @@ async function invokePromptEngineer(sessionId: string, userRequest: string) {
 - [x] Фаза 2: UI кнопки ПИ (PromptEngineerButton в ChatInputArea)
 - [x] Фаза 3: Оркестрация Аналитик → ПИ (tool brief_prompt_engineer)
 - [x] Фаза 4: Векторная память (session_memory + pgvector + HNSW + search_session_memory)
-- [ ] Фаза 5: Паттерны поведения
+- [x] Фаза 5: Паттерны поведения (системные role_behaviors + task_blueprints для тех.персонала)
 - [ ] Фаза 6: Фоновые процессы
