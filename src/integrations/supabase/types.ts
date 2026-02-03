@@ -363,6 +363,8 @@ export type Database = {
           id: string
           openai_vault_id: string | null
           openrouter_vault_id: string | null
+          perplexity_vault_id: string | null
+          tavily_vault_id: string | null
           updated_at: string
           user_id: string
           xai_vault_id: string | null
@@ -375,6 +377,8 @@ export type Database = {
           id?: string
           openai_vault_id?: string | null
           openrouter_vault_id?: string | null
+          perplexity_vault_id?: string | null
+          tavily_vault_id?: string | null
           updated_at?: string
           user_id: string
           xai_vault_id?: string | null
@@ -387,6 +391,8 @@ export type Database = {
           id?: string
           openai_vault_id?: string | null
           openrouter_vault_id?: string | null
+          perplexity_vault_id?: string | null
+          tavily_vault_id?: string | null
           updated_at?: string
           user_id?: string
           xai_vault_id?: string | null
@@ -429,6 +435,8 @@ export type Database = {
           has_groq: boolean
           has_openai: boolean
           has_openrouter: boolean
+          has_perplexity: boolean
+          has_tavily: boolean
           has_xai: boolean
         }[]
       }
@@ -440,6 +448,8 @@ export type Database = {
           groq_api_key: string
           openai_api_key: string
           openrouter_api_key: string
+          perplexity_api_key: string
+          tavily_api_key: string
           xai_api_key: string
         }[]
       }

@@ -12,7 +12,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { User, Key, Settings, Loader2, Eye, EyeOff, Check, Moon, Sun, Globe, Shield, BarChart3 } from 'lucide-react';
+import { User, Key, Settings, Loader2, Eye, EyeOff, Check, Moon, Sun, Globe, Shield, BarChart3, Search, AlertTriangle } from 'lucide-react';
+import { Separator } from '@/components/ui/separator';
 import { Link } from 'react-router-dom';
 import { UsageStats } from '@/components/profile/UsageStats';
 
@@ -32,6 +33,8 @@ interface ApiKeys {
   xai_api_key: string | null;
   openrouter_api_key: string | null;
   groq_api_key: string | null;
+  tavily_api_key: string | null;
+  perplexity_api_key: string | null;
 }
 
 export default function Profile() {
@@ -51,6 +54,8 @@ export default function Profile() {
     xai: false,
     openrouter: false,
     groq: false,
+    tavily: false,
+    perplexity: false,
   });
 
   // Form states
@@ -62,6 +67,8 @@ export default function Profile() {
   const [xaiKey, setXaiKey] = useState('');
   const [openrouterKey, setOpenrouterKey] = useState('');
   const [groqKey, setGroqKey] = useState('');
+  const [tavilyKey, setTavilyKey] = useState('');
+  const [perplexityKey, setPerplexityKey] = useState('');
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -106,6 +113,8 @@ export default function Profile() {
           xai_api_key?: string;
           openrouter_api_key?: string;
           groq_api_key?: string;
+          tavily_api_key?: string;
+          perplexity_api_key?: string;
         };
         setOpenaiKey(keys.openai_api_key || '');
         setGeminiKey(keys.google_gemini_api_key || '');
@@ -113,6 +122,8 @@ export default function Profile() {
         setXaiKey(keys.xai_api_key || '');
         setOpenrouterKey(keys.openrouter_api_key || '');
         setGroqKey(keys.groq_api_key || '');
+        setTavilyKey(keys.tavily_api_key || '');
+        setPerplexityKey(keys.perplexity_api_key || '');
       }
     } catch (error: any) {
       toast.error(error.message);
@@ -158,6 +169,8 @@ export default function Profile() {
         supabase.rpc('save_api_key', { p_provider: 'xai', p_api_key: xaiKey || '' }),
         supabase.rpc('save_api_key', { p_provider: 'openrouter', p_api_key: openrouterKey || '' }),
         supabase.rpc('save_api_key', { p_provider: 'groq', p_api_key: groqKey || '' }),
+        supabase.rpc('save_api_key', { p_provider: 'tavily', p_api_key: tavilyKey || '' }),
+        supabase.rpc('save_api_key', { p_provider: 'perplexity', p_api_key: perplexityKey || '' }),
       ];
 
       const results = await Promise.all(savePromises);
@@ -473,6 +486,78 @@ export default function Profile() {
                   </div>
                   <p className="text-xs text-muted-foreground">
                     Получите ключ на <a href="https://console.groq.com/keys" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">console.groq.com/keys</a> — сверхбыстрый инференс Llama 3.3, Mixtral, Gemma
+                  </p>
+                </div>
+
+                {/* Web Search Section */}
+                <Separator className="my-6" />
+                
+                <div className="flex items-center gap-2 mb-4">
+                  <Search className="h-5 w-5 text-primary" />
+                  <h3 className="text-lg font-semibold">{t('profile.webSearch')}</h3>
+                </div>
+
+                {/* Warning Block */}
+                <div className="p-4 rounded-lg bg-amber-500/10 border border-amber-500/30 mb-4">
+                  <div className="flex gap-3">
+                    <AlertTriangle className="h-5 w-5 text-amber-500 flex-shrink-0 mt-0.5" />
+                    <p className="text-sm text-amber-200">
+                      {t('profile.webSearchWarning')}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Tavily */}
+                <div className="space-y-2">
+                  <Label htmlFor="tavily">{t('profile.tavily')}</Label>
+                  <div className="relative">
+                    <Input
+                      id="tavily"
+                      type={showKeys.tavily ? 'text' : 'password'}
+                      value={tavilyKey}
+                      onChange={(e) => setTavilyKey(e.target.value)}
+                      placeholder="tvly-..."
+                      className="pr-10"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="absolute right-0 top-0 h-full px-3"
+                      onClick={() => setShowKeys({ ...showKeys, tavily: !showKeys.tavily })}
+                    >
+                      {showKeys.tavily ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {t('profile.tavilyHint')} — <a href="https://tavily.com/app" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">tavily.com/app</a>
+                  </p>
+                </div>
+
+                {/* Perplexity */}
+                <div className="space-y-2">
+                  <Label htmlFor="perplexity">{t('profile.perplexity')}</Label>
+                  <div className="relative">
+                    <Input
+                      id="perplexity"
+                      type={showKeys.perplexity ? 'text' : 'password'}
+                      value={perplexityKey}
+                      onChange={(e) => setPerplexityKey(e.target.value)}
+                      placeholder="pplx-..."
+                      className="pr-10"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="absolute right-0 top-0 h-full px-3"
+                      onClick={() => setShowKeys({ ...showKeys, perplexity: !showKeys.perplexity })}
+                    >
+                      {showKeys.perplexity ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {t('profile.perplexityHint')} — <a href="https://perplexity.ai/settings/api" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">perplexity.ai/settings/api</a>
                   </p>
                 </div>
 

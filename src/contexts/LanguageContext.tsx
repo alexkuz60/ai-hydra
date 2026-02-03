@@ -272,6 +272,15 @@ const translations: Translations = {
   'profile.language': { ru: 'Язык интерфейса', en: 'Interface Language' },
   'profile.themeDark': { ru: 'Тёмная', en: 'Dark' },
   'profile.themeLight': { ru: 'Светлая', en: 'Light' },
+  'profile.webSearch': { ru: 'Веб-поиск', en: 'Web Search' },
+  'profile.webSearchWarning': { 
+    ru: 'По умолчанию используется общий ключ Tavily с ограничениями (1000 запросов/мес на всех пользователей). Для полноценной работы Web-Hunter добавьте персональный ключ.',
+    en: 'By default, a shared Tavily key with limitations (1000 requests/month for all users) is used. For full Web-Hunter functionality, add your personal key.'
+  },
+  'profile.tavily': { ru: 'Tavily (AI Search)', en: 'Tavily (AI Search)' },
+  'profile.tavilyHint': { ru: 'Бесплатный план: 1000 запросов/мес', en: 'Free plan: 1000 requests/month' },
+  'profile.perplexity': { ru: 'Perplexity (Sonar API)', en: 'Perplexity (Sonar API)' },
+  'profile.perplexityHint': { ru: 'Sonar API для глубокого поиска', en: 'Sonar API for deep search' },
   'profile.stats': { ru: 'Статистика', en: 'Statistics' },
   'profile.statsTitle': { ru: 'Использование токенов', en: 'Token Usage' },
   'profile.totalTokens': { ru: 'Всего токенов', en: 'Total Tokens' },

@@ -97,6 +97,8 @@ interface UserApiKeys {
   xai: boolean;
   openrouter: boolean;
   groq: boolean;
+  tavily: boolean;
+  perplexity: boolean;
 }
 
 export function useAvailableModels() {
@@ -109,6 +111,8 @@ export function useAvailableModels() {
     xai: false,
     openrouter: false,
     groq: false,
+    tavily: false,
+    perplexity: false,
   });
   const [loading, setLoading] = useState(true);
 
@@ -143,6 +147,8 @@ export function useAvailableModels() {
             has_xai?: boolean; 
             has_openrouter?: boolean;
             has_groq?: boolean;
+            has_tavily?: boolean;
+            has_perplexity?: boolean;
           };
           setUserApiKeys({
             openai: status.has_openai || false,
@@ -151,6 +157,8 @@ export function useAvailableModels() {
             xai: status.has_xai || false,
             openrouter: status.has_openrouter || false,
             groq: status.has_groq || false,
+            tavily: status.has_tavily || false,
+            perplexity: status.has_perplexity || false,
           });
         }
       } catch (error) {
