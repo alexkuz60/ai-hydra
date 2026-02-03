@@ -179,6 +179,7 @@ const translations: Translations = {
   'hydrapedia.sections.tasks': { ru: 'Задачи', en: 'Tasks' },
   'hydrapedia.sections.rolesCatalog': { ru: 'Каталог ролей', en: 'Roles Catalog' },
   'hydrapedia.sections.dChatModerator': { ru: 'D-Chat Модератор', en: 'D-Chat Moderator' },
+  'hydrapedia.sections.sessionMemory': { ru: 'Память сессии', en: 'Session Memory' },
   'hydrapedia.sections.webSearch': { ru: 'Веб-поиск', en: 'Web Search' },
   'hydrapedia.sections.localization': { ru: 'Локализация', en: 'Localization' },
   'hydrapedia.sections.security': { ru: 'Безопасность', en: 'Security' },
