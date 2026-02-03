@@ -1,9 +1,9 @@
-import React, { useState, useCallback, useRef, useEffect } from 'react';
+import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { useNodesState, useEdgesState, Node, Edge, ReactFlowInstance, ReactFlowProvider } from '@xyflow/react';
 import { Layout } from '@/components/layout/Layout';
 import { FlowCanvas } from '@/components/flow/FlowCanvas';
 import { FlowSidebar } from '@/components/flow/FlowSidebar';
-import { FlowToolbar } from '@/components/flow/FlowToolbar';
+import { FlowToolbar, FlowHeaderActions } from '@/components/flow/FlowToolbar';
 import { NodePropertiesPanel } from '@/components/flow/NodePropertiesPanel';
 import { EdgePropertiesPanel } from '@/components/flow/EdgePropertiesPanel';
 import { useFlowDiagrams, exportToMermaid } from '@/hooks/useFlowDiagrams';
@@ -309,32 +309,40 @@ function FlowEditorContent() {
     }, 50);
   }, [nodes, edges, getLayoutedElements, setNodes, setEdges]);
 
+  const headerActions = useMemo(() => (
+    <FlowHeaderActions
+      diagramName={diagramName}
+      savedDiagrams={diagrams}
+      currentDiagramId={currentDiagramId}
+      onLoadDiagram={handleLoadDiagram}
+      onDeleteDiagram={deleteDiagram}
+      onSave={handleSave}
+      onNew={handleNew}
+      onExportPng={exportPng}
+      onExportSvg={exportSvg}
+      onExportJson={exportJson}
+      onExportYaml={exportYaml}
+      onExportPdf={exportPdf}
+      onCopyToClipboard={copyToClipboard}
+      onGenerateMermaid={handleGenerateMermaid}
+      isSaving={isSaving}
+      hasChanges={hasChanges}
+    />
+  ), [diagramName, diagrams, currentDiagramId, handleLoadDiagram, deleteDiagram, 
+      handleSave, handleNew, exportPng, exportSvg, exportJson, exportYaml, 
+      exportPdf, copyToClipboard, handleGenerateMermaid, isSaving, hasChanges]);
+
   if (!user) {
     return <Navigate to="/login" replace />;
   }
 
   return (
-    <Layout>
+    <Layout headerActions={headerActions}>
       <TooltipProvider>
-        <div className="flex flex-col h-[calc(100vh-4rem)]">
+        <div className="flex flex-col h-[calc(100vh-2.5rem)]">
           <FlowToolbar
             diagramName={diagramName}
             onNameChange={setDiagramName}
-            onSave={handleSave}
-            onNew={handleNew}
-            onExportPng={exportPng}
-            onExportSvg={exportSvg}
-            onExportJson={exportJson}
-            onExportYaml={exportYaml}
-            onExportPdf={exportPdf}
-            onCopyToClipboard={copyToClipboard}
-            onGenerateMermaid={handleGenerateMermaid}
-            savedDiagrams={diagrams}
-            currentDiagramId={currentDiagramId}
-            onLoadDiagram={handleLoadDiagram}
-            onDeleteDiagram={deleteDiagram}
-            isSaving={isSaving}
-            hasChanges={hasChanges}
             edgeSettings={edgeSettings}
             onEdgeSettingsChange={handleEdgeSettingsChange}
             canUndo={history.canUndo}
@@ -342,6 +350,7 @@ function FlowEditorContent() {
             onUndo={handleUndo}
             onRedo={handleRedo}
             onAutoLayout={handleAutoLayout}
+            hasChanges={hasChanges}
           />
           <div className="flex flex-1 overflow-hidden">
             <FlowSidebar onDragStart={onDragStart} />

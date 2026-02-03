@@ -203,6 +203,7 @@ const translations: Translations = {
   'flowEditor.title': { ru: 'Редактор Data-Flow', en: 'Data-Flow Editor' },
   'flowEditor.description': { ru: 'Визуальное проектирование логики AI-промптов и цепочек обработки', en: 'Visual design for AI prompt logic and processing chains' },
   'flowEditor.newDiagram': { ru: 'Новая диаграмма', en: 'New Diagram' },
+  'flowEditor.open': { ru: 'Открыть', en: 'Open' },
   'flowEditor.save': { ru: 'Сохранить', en: 'Save' },
   'flowEditor.export': { ru: 'Экспорт', en: 'Export' },
   'flowEditor.exportPng': { ru: 'Экспорт в PNG', en: 'Export as PNG' },
