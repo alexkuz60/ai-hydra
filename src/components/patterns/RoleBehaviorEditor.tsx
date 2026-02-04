@@ -13,7 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Plus, Trash2, Loader2, Save, X, MessageSquare, Users } from 'lucide-react';
+import { Plus, Trash2, Loader2, Save, X, MessageSquare, Users, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ROLE_CONFIG, AGENT_ROLES, type AgentRole } from '@/config/roles';
 import { TRIGGER_DICTIONARY, BEHAVIOR_DICTIONARY, FORMAT_DICTIONARY } from '@/config/behaviorDictionaries';
@@ -78,6 +78,8 @@ export function RoleBehaviorEditor({
   const [conflicts, setConflicts] = useState<HierarchyConflict[]>([]);
   const [showConflictDialog, setShowConflictDialog] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [isChecking, setIsChecking] = useState(false);
+  const [checkResult, setCheckResult] = useState<'ok' | 'conflicts' | null>(null);
   const [pendingBehaviorData, setPendingBehaviorData] = useState<{
     data: Omit<RoleBehavior, 'id'> & { id?: string };
     isShared: boolean;
@@ -107,6 +109,11 @@ export function RoleBehaviorEditor({
     onHasUnsavedChanges?.(hasChanges);
   }, [hasChanges, onHasUnsavedChanges]);
 
+  // Reset check result when interactions change
+  useEffect(() => {
+    setCheckResult(null);
+  }, [interactions]);
+
   const addReaction = () => {
     setReactions([...reactions, { ...emptyReaction }]);
   };
@@ -117,6 +124,28 @@ export function RoleBehaviorEditor({
 
   const updateReaction = (index: number, updates: Partial<RoleReaction>) => {
     setReactions(reactions.map((r, i) => i === index ? { ...r, ...updates } : r));
+  };
+
+  const handleCheckConflicts = async () => {
+    setIsChecking(true);
+    try {
+      const allBehaviors = await fetchAllBehaviors();
+      const detectedConflicts = detectConflicts(role, interactions, allBehaviors);
+      
+      if (detectedConflicts.length > 0) {
+        setConflicts(detectedConflicts);
+        setCheckResult('conflicts');
+        setShowConflictDialog(true);
+      } else {
+        setCheckResult('ok');
+        toast.success(t('staffRoles.hierarchy.noConflicts'));
+      }
+    } catch (error) {
+      console.error('Check failed:', error);
+      toast.error(t('common.error'));
+    } finally {
+      setIsChecking(false);
+    }
   };
 
   const handleSave = async () => {
@@ -370,9 +399,40 @@ export function RoleBehaviorEditor({
 
         {/* Interactions - Role Hierarchy */}
         <div className="space-y-3 p-4 rounded-lg border bg-muted/30">
-          <div className="flex items-center gap-2 text-sm font-medium">
-            <Users className="h-4 w-4" />
-            {t('patterns.interactions')}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 text-sm font-medium">
+              <Users className="h-4 w-4" />
+              {t('patterns.interactions')}
+            </div>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleCheckConflicts}
+                  disabled={isChecking}
+                  className={cn(
+                    "h-7 text-xs gap-1",
+                    checkResult === 'ok' && "border-green-500/50 text-green-600",
+                    checkResult === 'conflicts' && "border-destructive/50 text-destructive"
+                  )}
+                >
+                  {isChecking ? (
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                  ) : checkResult === 'ok' ? (
+                    <CheckCircle2 className="h-3 w-3" />
+                  ) : checkResult === 'conflicts' ? (
+                    <AlertTriangle className="h-3 w-3" />
+                  ) : (
+                    <AlertTriangle className="h-3 w-3" />
+                  )}
+                  {t('staffRoles.hierarchy.checkConflicts')}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                {t('staffRoles.hierarchy.checkConflictsTooltip')}
+              </TooltipContent>
+            </Tooltip>
           </div>
           <RoleHierarchyEditor
             selectedRole={role}

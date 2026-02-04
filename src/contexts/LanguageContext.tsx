@@ -163,6 +163,9 @@ const translations: Translations = {
   'staffRoles.hierarchy.conflictHas': { ru: 'сейчас', en: 'currently' },
   'staffRoles.hierarchy.syncing': { ru: 'Синхронизация...', en: 'Synchronizing...' },
   'staffRoles.hierarchy.syncSuccess': { ru: 'Иерархия синхронизирована', en: 'Hierarchy synchronized' },
+  'staffRoles.hierarchy.checkConflicts': { ru: 'Проверить', en: 'Check' },
+  'staffRoles.hierarchy.checkConflictsTooltip': { ru: 'Проверить связи на противоречия', en: 'Check relationships for conflicts' },
+  'staffRoles.hierarchy.noConflicts': { ru: 'Противоречий не обнаружено', en: 'No conflicts detected' },
   'patterns.systemPattern': { ru: 'Системный паттерн', en: 'System pattern' },
   'patterns.publicPattern': { ru: 'Публичный паттерн', en: 'Public pattern' },
   
