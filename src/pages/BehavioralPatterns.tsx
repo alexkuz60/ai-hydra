@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { Layout } from '@/components/layout/Layout';
 import { useLanguage } from '@/contexts/LanguageContext';
 import {
@@ -39,6 +39,8 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { useUnsavedChanges } from '@/hooks/useUnsavedChanges';
+import { UnsavedChangesDialog } from '@/components/ui/unsaved-changes-dialog';
 
 type SelectedPattern = TaskBlueprint | RoleBehavior | null;
 
@@ -92,7 +94,17 @@ const BehavioralPatterns = () => {
   
   // Inline editing for behaviors
   const [isEditingBehavior, setIsEditingBehavior] = useState(false);
-  const [hasUnsavedBehaviorChanges, setHasUnsavedBehaviorChanges] = useState(false);
+  
+  // Unsaved changes protection
+  const {
+    hasUnsavedChanges,
+    setHasUnsavedChanges,
+    showConfirmDialog,
+    withConfirmation,
+    confirmAndProceed,
+    cancelNavigation,
+    markSaved,
+  } = useUnsavedChanges();
   
   // Delete confirmation
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -128,44 +140,87 @@ const BehavioralPatterns = () => {
     setBlueprintDialogOpen(true);
   };
 
-  const handleCreateBehavior = () => {
-    // Set a new empty behavior pattern as selected
-    const newBehavior: RoleBehavior = {
-      id: '' as unknown as string,
-      role: 'assistant',
-      communication: { tone: 'friendly', verbosity: 'adaptive', format_preference: [] },
-      reactions: [{ trigger: '', behavior: '' }],
-      interactions: { defers_to: [], challenges: [], collaborates: [] },
+  const handleCreateBehavior = useCallback(() => {
+    const doCreate = () => {
+      // Set a new empty behavior pattern as selected
+      const newBehavior: RoleBehavior = {
+        id: '' as unknown as string,
+        role: 'assistant',
+        communication: { tone: 'friendly', verbosity: 'adaptive', format_preference: [] },
+        reactions: [{ trigger: '', behavior: '' }],
+        interactions: { defers_to: [], challenges: [], collaborates: [] },
+      };
+      setSelectedPattern(newBehavior);
+      setIsEditingBehavior(true);
+      markSaved();
     };
-    setSelectedPattern(newBehavior);
-    setIsEditingBehavior(true);
-  };
-
-  const handleEditBehavior = (pattern: RoleBehaviorWithMeta, e?: React.MouseEvent) => {
-    e?.stopPropagation();
-    // Select the pattern and switch to edit mode
-    setSelectedPattern(pattern.meta.isSystem ? { ...pattern, id: undefined as unknown as string } : pattern);
-    setIsEditingBehavior(true);
-  };
-
-  const handleCancelBehaviorEdit = () => {
-    setIsEditingBehavior(false);
-    // If was creating new behavior (no id), deselect
-    if (selectedPattern && !selectedPattern.id) {
-      setSelectedPattern(null);
+    
+    if (isEditingBehavior && hasUnsavedChanges) {
+      withConfirmation(doCreate);
+    } else {
+      doCreate();
     }
-  };
+  }, [isEditingBehavior, hasUnsavedChanges, withConfirmation, markSaved]);
 
-  const handleSaveBehaviorInline = async (data: Omit<RoleBehavior, 'id'> & { id?: string }, isShared: boolean) => {
+  const handleEditBehavior = useCallback((pattern: RoleBehaviorWithMeta, e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    
+    const doEdit = () => {
+      // Select the pattern and switch to edit mode
+      setSelectedPattern(pattern.meta.isSystem ? { ...pattern, id: undefined as unknown as string } : pattern);
+      setIsEditingBehavior(true);
+      markSaved();
+    };
+    
+    if (isEditingBehavior && hasUnsavedChanges) {
+      withConfirmation(doEdit);
+    } else {
+      doEdit();
+    }
+  }, [isEditingBehavior, hasUnsavedChanges, withConfirmation, markSaved]);
+
+  const handleCancelBehaviorEdit = useCallback(() => {
+    const doCancel = () => {
+      setIsEditingBehavior(false);
+      markSaved();
+      // If was creating new behavior (no id), deselect
+      if (selectedPattern && !selectedPattern.id) {
+        setSelectedPattern(null);
+      }
+    };
+    
+    if (hasUnsavedChanges) {
+      withConfirmation(doCancel);
+    } else {
+      doCancel();
+    }
+  }, [hasUnsavedChanges, withConfirmation, markSaved, selectedPattern]);
+  
+  // Handle selecting a pattern (with unsaved changes protection)
+  const handleSelectPattern = useCallback((pattern: SelectedPattern) => {
+    const doSelect = () => {
+      setSelectedPattern(pattern);
+      setIsEditingBehavior(false);
+      markSaved();
+    };
+    
+    if (isEditingBehavior && hasUnsavedChanges) {
+      withConfirmation(doSelect);
+    } else {
+      doSelect();
+    }
+  }, [isEditingBehavior, hasUnsavedChanges, withConfirmation, markSaved]);
+
+  const handleSaveBehaviorInline = useCallback(async (data: Omit<RoleBehavior, 'id'> & { id?: string }, isShared: boolean) => {
     await saveBehavior(data, isShared);
     setIsEditingBehavior(false);
-    setHasUnsavedBehaviorChanges(false);
+    markSaved();
     // Select the saved behavior if it was new
     const savedBehavior = behaviors.find(b => b.role === data.role);
     if (savedBehavior) {
       setSelectedPattern(savedBehavior);
     }
-  };
+  }, [saveBehavior, behaviors, markSaved]);
 
   const handleSaveBlueprint = async (data: Omit<TaskBlueprint, 'id'> & { id?: string }, isShared: boolean) => {
     await saveBlueprint(data, isShared);
@@ -224,7 +279,7 @@ const BehavioralPatterns = () => {
           'cursor-pointer transition-colors group',
           isSelected ? 'bg-primary/10 hover:bg-primary/15' : 'hover:bg-muted/30'
         )}
-        onClick={() => setSelectedPattern(pattern)}
+        onClick={() => handleSelectPattern(pattern)}
       >
         <TableCell className="pl-8">
           <div className="w-10 h-10 rounded-lg bg-hydra-arbiter/10 flex items-center justify-center">
@@ -318,7 +373,7 @@ const BehavioralPatterns = () => {
           'cursor-pointer transition-colors group',
           isSelected ? 'bg-primary/10 hover:bg-primary/15' : 'hover:bg-muted/30'
         )}
-        onClick={() => setSelectedPattern(pattern)}
+        onClick={() => handleSelectPattern(pattern)}
       >
         <TableCell className="pl-8">
           <div
@@ -577,7 +632,7 @@ const BehavioralPatterns = () => {
                 onCancelEdit={handleCancelBehaviorEdit}
                 onSaveBehavior={handleSaveBehaviorInline}
                 isSaving={isSaving}
-                onHasUnsavedChanges={setHasUnsavedBehaviorChanges}
+                onHasUnsavedChanges={setHasUnsavedChanges}
                 onEdit={() => {
                   if (!selectedPattern) return;
                   const bp = blueprints.find(b => b.id === selectedPattern.id);
@@ -628,6 +683,13 @@ const BehavioralPatterns = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      
+      {/* Unsaved changes confirmation dialog */}
+      <UnsavedChangesDialog
+        open={showConfirmDialog}
+        onConfirm={confirmAndProceed}
+        onCancel={cancelNavigation}
+      />
     </Layout>
   );
 };
