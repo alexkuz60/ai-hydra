@@ -372,6 +372,68 @@ export type Database = {
         }
         Relationships: []
       }
+      role_memory: {
+        Row: {
+          confidence_score: number | null
+          content: string
+          created_at: string | null
+          embedding: string | null
+          id: string
+          last_used_at: string | null
+          memory_type: string
+          metadata: Json | null
+          role: string
+          source_message_id: string | null
+          source_session_id: string | null
+          tags: string[] | null
+          updated_at: string | null
+          usage_count: number | null
+          user_id: string
+        }
+        Insert: {
+          confidence_score?: number | null
+          content: string
+          created_at?: string | null
+          embedding?: string | null
+          id?: string
+          last_used_at?: string | null
+          memory_type?: string
+          metadata?: Json | null
+          role: string
+          source_message_id?: string | null
+          source_session_id?: string | null
+          tags?: string[] | null
+          updated_at?: string | null
+          usage_count?: number | null
+          user_id: string
+        }
+        Update: {
+          confidence_score?: number | null
+          content?: string
+          created_at?: string | null
+          embedding?: string | null
+          id?: string
+          last_used_at?: string | null
+          memory_type?: string
+          metadata?: Json | null
+          role?: string
+          source_message_id?: string | null
+          source_session_id?: string | null
+          tags?: string[] | null
+          updated_at?: string | null
+          usage_count?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "role_memory_source_session_id_fkey"
+            columns: ["source_session_id"]
+            isOneToOne: false
+            referencedRelation: "sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       session_memory: {
         Row: {
           chunk_type: string
@@ -628,10 +690,31 @@ export type Database = {
         }
         Returns: boolean
       }
+      increment_role_memory_usage: {
+        Args: { p_memory_id: string }
+        Returns: undefined
+      }
       is_admin_or_supervisor: { Args: { _user_id: string }; Returns: boolean }
       save_api_key: {
         Args: { p_api_key: string; p_provider: string }
         Returns: undefined
+      }
+      search_role_memory: {
+        Args: {
+          p_limit?: number
+          p_memory_types?: string[]
+          p_query_embedding: string
+          p_role: string
+        }
+        Returns: {
+          confidence_score: number
+          content: string
+          id: string
+          memory_type: string
+          metadata: Json
+          similarity: number
+          tags: string[]
+        }[]
       }
       search_session_memory: {
         Args: {
