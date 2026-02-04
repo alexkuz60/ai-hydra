@@ -392,13 +392,13 @@ export default function ToolsLibrary() {
             <p className="text-sm text-muted-foreground">{t('tools.description')}</p>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={handleImport}>
-              <Upload className="h-4 w-4 mr-2" />
-              {t('tools.import')}
-            </Button>
             <Button variant="outline" onClick={handleStartCreate}>
               <Plus className="h-4 w-4 mr-2" />
               {t('tools.createTool')}
+            </Button>
+            <Button variant="outline" onClick={handleImport}>
+              <Upload className="h-4 w-4 mr-2" />
+              {t('tools.import')}
             </Button>
           </div>
         </div>
