@@ -26,19 +26,15 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Target, Sparkles, ChevronDown, ChevronRight, Plus, Pencil, Copy, Loader2, Lock, Trash2, Users, Wrench, Settings2 } from 'lucide-react';
+import { Target, Sparkles, ChevronDown, ChevronRight, Plus, Loader2, Wrench, Settings2 } from 'lucide-react';
 import { ROLE_CONFIG } from '@/config/roles';
-import { cn } from '@/lib/utils';
 import PatternDetailsPanel from '@/components/patterns/PatternDetailsPanel';
+import { BlueprintRow } from '@/components/patterns/BlueprintRow';
+import { BehaviorRow } from '@/components/patterns/BehaviorRow';
 import { isTaskBlueprint } from '@/types/patterns';
 import { usePatterns, type TaskBlueprintWithMeta, type RoleBehaviorWithMeta } from '@/hooks/usePatterns';
 import type { TaskBlueprint, RoleBehavior } from '@/types/patterns';
 import { useUserRoles } from '@/hooks/useUserRoles';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
 import { useUnsavedChanges } from '@/hooks/useUnsavedChanges';
 import { UnsavedChangesDialog } from '@/components/ui/unsaved-changes-dialog';
 
@@ -88,7 +84,7 @@ const BehavioralPatterns = () => {
   const [defaultExpertExpanded, setDefaultExpertExpanded] = useState(true);
   const [techExpanded, setTechExpanded] = useState(true);
   
-  // Inline editing state (unified for both types)
+  // Inline editing state
   const [isEditing, setIsEditing] = useState(false);
   const [editingType, setEditingType] = useState<'blueprint' | 'behavior' | null>(null);
   
@@ -121,9 +117,9 @@ const BehavioralPatterns = () => {
     return bh?.meta || null;
   }, [selectedPattern, blueprints, behaviors]);
 
+  // Blueprint handlers
   const handleCreateBlueprint = useCallback(() => {
     const doCreate = () => {
-      // Set a new empty blueprint pattern as selected
       const newBlueprint: TaskBlueprint = {
         id: '' as unknown as string,
         name: '',
@@ -149,7 +145,6 @@ const BehavioralPatterns = () => {
     e?.stopPropagation();
     
     const doEdit = () => {
-      // Select the pattern and switch to edit mode (keep original id for direct editing)
       setSelectedPattern(pattern);
       setIsEditing(true);
       setEditingType('blueprint');
@@ -167,7 +162,6 @@ const BehavioralPatterns = () => {
     e?.stopPropagation();
     
     const doDuplicate = () => {
-      // Create a copy without id
       setSelectedPattern({ ...pattern, id: undefined as unknown as string, name: `${pattern.name} (копия)` });
       setIsEditing(true);
       setEditingType('blueprint');
@@ -181,9 +175,15 @@ const BehavioralPatterns = () => {
     }
   }, [isEditing, hasUnsavedChanges, withConfirmation, markSaved]);
 
+  const handleDeleteBlueprint = useCallback((pattern: TaskBlueprintWithMeta, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setPatternToDelete({ id: pattern.id, name: pattern.name, type: 'blueprint' });
+    setDeleteDialogOpen(true);
+  }, []);
+
+  // Behavior handlers
   const handleCreateBehavior = useCallback(() => {
     const doCreate = () => {
-      // Set a new empty behavior pattern as selected
       const newBehavior: RoleBehavior = {
         id: '' as unknown as string,
         role: 'assistant',
@@ -208,7 +208,6 @@ const BehavioralPatterns = () => {
     e?.stopPropagation();
     
     const doEdit = () => {
-      // Select the pattern and switch to edit mode (keep original id for direct editing)
       setSelectedPattern(pattern);
       setIsEditing(true);
       setEditingType('behavior');
@@ -226,7 +225,6 @@ const BehavioralPatterns = () => {
     e?.stopPropagation();
     
     const doDuplicate = () => {
-      // Create a copy without id
       setSelectedPattern({ ...pattern, id: undefined as unknown as string });
       setIsEditing(true);
       setEditingType('behavior');
@@ -240,12 +238,19 @@ const BehavioralPatterns = () => {
     }
   }, [isEditing, hasUnsavedChanges, withConfirmation, markSaved]);
 
+  const handleDeleteBehavior = useCallback((pattern: RoleBehaviorWithMeta, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const config = ROLE_CONFIG[pattern.role];
+    setPatternToDelete({ id: pattern.id, name: t(config?.label || pattern.role), type: 'behavior' });
+    setDeleteDialogOpen(true);
+  }, [t]);
+
+  // Common handlers
   const handleCancelEdit = useCallback(() => {
     const doCancel = () => {
       setIsEditing(false);
       setEditingType(null);
       markSaved();
-      // If was creating new pattern (no id), deselect
       if (selectedPattern && !selectedPattern.id) {
         setSelectedPattern(null);
       }
@@ -258,7 +263,6 @@ const BehavioralPatterns = () => {
     }
   }, [hasUnsavedChanges, withConfirmation, markSaved, selectedPattern]);
   
-  // Handle selecting a pattern (with unsaved changes protection)
   const handleSelectPattern = useCallback((pattern: SelectedPattern) => {
     const doSelect = () => {
       setSelectedPattern(pattern);
@@ -279,7 +283,6 @@ const BehavioralPatterns = () => {
     setIsEditing(false);
     setEditingType(null);
     markSaved();
-    // Select the saved behavior if it was new
     const savedBehavior = behaviors.find(b => b.role === data.role);
     if (savedBehavior) {
       setSelectedPattern(savedBehavior);
@@ -291,257 +294,27 @@ const BehavioralPatterns = () => {
     setIsEditing(false);
     setEditingType(null);
     markSaved();
-    // Select the saved blueprint if it was new
     const savedBlueprint = blueprints.find(b => b.name === data.name);
     if (savedBlueprint) {
       setSelectedPattern(savedBlueprint);
     }
   }, [saveBlueprint, blueprints, markSaved]);
 
-  const handleDeleteBlueprint = (pattern: TaskBlueprintWithMeta, e: React.MouseEvent) => {
-    e.stopPropagation();
-    setPatternToDelete({ id: pattern.id, name: pattern.name, type: 'blueprint' });
-    setDeleteDialogOpen(true);
-  };
-
-  const handleDeleteBehavior = (pattern: RoleBehaviorWithMeta, e: React.MouseEvent) => {
-    e.stopPropagation();
-    const config = ROLE_CONFIG[pattern.role];
-    setPatternToDelete({ id: pattern.id, name: t(config?.label || pattern.role), type: 'behavior' });
-    setDeleteDialogOpen(true);
-  };
-
   const confirmDelete = async () => {
     if (!patternToDelete) return;
     
     if (patternToDelete.type === 'blueprint') {
       await deleteBlueprint(patternToDelete.id);
-      if (selectedPattern?.id === patternToDelete.id) {
-        setSelectedPattern(null);
-      }
     } else {
       await deleteBehavior(patternToDelete.id);
-      if (selectedPattern?.id === patternToDelete.id) {
-        setSelectedPattern(null);
-      }
+    }
+    
+    if (selectedPattern?.id === patternToDelete.id) {
+      setSelectedPattern(null);
     }
     
     setDeleteDialogOpen(false);
     setPatternToDelete(null);
-  };
-
-  const renderBlueprintRow = (pattern: TaskBlueprintWithMeta) => {
-    const isSelected = selectedId === pattern.id;
-
-    const categoryColors: Record<string, string> = {
-      planning: 'text-blue-400',
-      creative: 'text-purple-400',
-      analysis: 'text-green-400',
-      technical: 'text-orange-400',
-    };
-
-    return (
-      <TableRow
-        key={pattern.id}
-        className={cn(
-          'cursor-pointer transition-colors group',
-          isSelected ? 'bg-primary/10 hover:bg-primary/15' : 'hover:bg-muted/30'
-        )}
-        onClick={() => handleSelectPattern(pattern)}
-      >
-        <TableCell className="pl-8">
-          <div className="w-10 h-10 rounded-lg bg-hydra-arbiter/10 flex items-center justify-center">
-            <Target className="h-5 w-5 text-hydra-arbiter" />
-          </div>
-        </TableCell>
-        <TableCell>
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex flex-col gap-1 flex-1 min-w-0">
-              <div className="flex items-center gap-2">
-                <span className="font-medium truncate">{pattern.name}</span>
-                {pattern.meta.isSystem && (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Lock className="h-3 w-3 text-muted-foreground shrink-0" />
-                    </TooltipTrigger>
-                    <TooltipContent>{t('patterns.systemPattern')}</TooltipContent>
-                  </Tooltip>
-                )}
-                {pattern.meta.isShared && !pattern.meta.isSystem && (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Users className="h-3 w-3 text-muted-foreground shrink-0" />
-                    </TooltipTrigger>
-                    <TooltipContent>{t('patterns.publicPattern')}</TooltipContent>
-                  </Tooltip>
-                )}
-              </div>
-              <div className="flex items-center gap-2">
-                <span className={cn('text-xs', categoryColors[pattern.category])}>
-                  {t(`patterns.category.${pattern.category}`)}
-                </span>
-                <Badge variant="outline" className="text-xs py-0">
-                  {t('patterns.stages')} ({pattern.stages.length})
-                </Badge>
-              </div>
-            </div>
-            <div className="flex items-center gap-1 shrink-0">
-              {pattern.meta.isSystem && (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="opacity-0 group-hover:opacity-100 transition-opacity"
-                      onClick={(e) => handleDuplicateBlueprint(pattern, e)}
-                    >
-                      <Copy className="h-4 w-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>{t('patterns.duplicateToEdit')}</TooltipContent>
-                </Tooltip>
-              )}
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="opacity-0 group-hover:opacity-100 transition-opacity"
-                    onClick={(e) => handleEditBlueprint(pattern, e)}
-                  >
-                    <Pencil className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>{t('common.edit')}</TooltipContent>
-              </Tooltip>
-              {!pattern.meta.isSystem && pattern.meta.isOwned && (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive"
-                      onClick={(e) => handleDeleteBlueprint(pattern, e)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    {t('common.delete')}
-                  </TooltipContent>
-                </Tooltip>
-              )}
-            </div>
-          </div>
-        </TableCell>
-      </TableRow>
-    );
-  };
-
-  const renderBehaviorRow = (pattern: RoleBehaviorWithMeta) => {
-    const isSelected = selectedId === pattern.id;
-    const config = ROLE_CONFIG[pattern.role];
-    const IconComponent = config?.icon;
-
-    return (
-      <TableRow
-        key={pattern.id}
-        className={cn(
-          'cursor-pointer transition-colors group',
-          isSelected ? 'bg-primary/10 hover:bg-primary/15' : 'hover:bg-muted/30'
-        )}
-        onClick={() => handleSelectPattern(pattern)}
-      >
-        <TableCell className="pl-8">
-          <div
-            className={cn(
-              'w-10 h-10 rounded-lg flex items-center justify-center',
-              `bg-${config?.color.replace('text-', '')}/10`
-            )}
-          >
-            {IconComponent && <IconComponent className={cn('h-5 w-5', config?.color)} />}
-          </div>
-        </TableCell>
-        <TableCell>
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex flex-col gap-1 flex-1 min-w-0">
-              <div className="flex items-center gap-2">
-                <span className={cn('font-medium', config?.color)}>
-                  {t(config?.label || pattern.role)}
-                </span>
-                {pattern.meta.isSystem && (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Lock className="h-3 w-3 text-muted-foreground" />
-                    </TooltipTrigger>
-                    <TooltipContent>{t('patterns.systemPattern')}</TooltipContent>
-                  </Tooltip>
-                )}
-                {pattern.meta.isShared && !pattern.meta.isSystem && (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Users className="h-3 w-3 text-muted-foreground" />
-                    </TooltipTrigger>
-                    <TooltipContent>{t('patterns.publicPattern')}</TooltipContent>
-                  </Tooltip>
-                )}
-              </div>
-              <span className="text-xs text-muted-foreground">
-                {t(`patterns.tone.${pattern.communication.tone}`)} •{' '}
-                {t(`patterns.verbosity.${pattern.communication.verbosity}`)}
-              </span>
-            </div>
-            <div className="flex items-center gap-1 shrink-0">
-              {pattern.meta.isSystem && (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="opacity-0 group-hover:opacity-100 transition-opacity"
-                      onClick={(e) => handleDuplicateBehavior(pattern, e)}
-                    >
-                      <Copy className="h-4 w-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>{t('patterns.duplicateToEdit')}</TooltipContent>
-                </Tooltip>
-              )}
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="opacity-0 group-hover:opacity-100 transition-opacity"
-                    onClick={(e) => handleEditBehavior(pattern, e)}
-                  >
-                    <Pencil className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>{t('common.edit')}</TooltipContent>
-              </Tooltip>
-              {!pattern.meta.isSystem && pattern.meta.isOwned && (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive"
-                      onClick={(e) => handleDeleteBehavior(pattern, e)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    {t('common.delete')}
-                  </TooltipContent>
-                </Tooltip>
-              )}
-            </div>
-          </div>
-        </TableCell>
-      </TableRow>
-    );
   };
 
   if (isLoading) {
@@ -582,24 +355,15 @@ const BehavioralPatterns = () => {
                   >
                     <TableCell colSpan={2} className="py-2">
                       <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-                        {strategicExpanded ? (
-                          <ChevronDown className="h-4 w-4" />
-                        ) : (
-                          <ChevronRight className="h-4 w-4" />
-                        )}
+                        {strategicExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
                         <Target className="h-4 w-4" />
                         {t('patterns.strategicGroup')}
-                        <Badge variant="outline" className="ml-2 text-xs">
-                          {blueprints.length}
-                        </Badge>
+                        <Badge variant="outline" className="ml-2 text-xs">{blueprints.length}</Badge>
                         <Button
                           variant="ghost"
                           size="sm"
                           className="ml-auto h-6 px-2"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleCreateBlueprint();
-                          }}
+                          onClick={(e) => { e.stopPropagation(); handleCreateBlueprint(); }}
                         >
                           <Plus className="h-3 w-3 mr-1" />
                           {t('patterns.createNew')}
@@ -607,7 +371,17 @@ const BehavioralPatterns = () => {
                       </div>
                     </TableCell>
                   </TableRow>
-                  {strategicExpanded && blueprints.map(renderBlueprintRow)}
+                  {strategicExpanded && blueprints.map((pattern) => (
+                    <BlueprintRow
+                      key={pattern.id}
+                      pattern={pattern}
+                      isSelected={selectedId === pattern.id}
+                      onSelect={handleSelectPattern}
+                      onEdit={handleEditBlueprint}
+                      onDuplicate={handleDuplicateBlueprint}
+                      onDelete={handleDeleteBlueprint}
+                    />
+                  ))}
 
                   {/* Expert Behaviors Group */}
                   <TableRow
@@ -616,24 +390,15 @@ const BehavioralPatterns = () => {
                   >
                     <TableCell colSpan={2} className="py-2">
                       <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-                        {expertExpanded ? (
-                          <ChevronDown className="h-4 w-4" />
-                        ) : (
-                          <ChevronRight className="h-4 w-4" />
-                        )}
+                        {expertExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
                         <Sparkles className="h-4 w-4" />
                         {t('patterns.expertGroup')}
-                        <Badge variant="outline" className="ml-2 text-xs">
-                          {expertBehaviors.length}
-                        </Badge>
+                        <Badge variant="outline" className="ml-2 text-xs">{expertBehaviors.length}</Badge>
                         <Button
                           variant="ghost"
                           size="sm"
                           className="ml-auto h-6 px-2"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleCreateBehavior();
-                          }}
+                          onClick={(e) => { e.stopPropagation(); handleCreateBehavior(); }}
                         >
                           <Plus className="h-3 w-3 mr-1" />
                           {t('patterns.createNew')}
@@ -643,7 +408,17 @@ const BehavioralPatterns = () => {
                   </TableRow>
                   
                   {/* Custom expert behaviors (non-system) */}
-                  {expertExpanded && customExpertBehaviors.map(renderBehaviorRow)}
+                  {expertExpanded && customExpertBehaviors.map((pattern) => (
+                    <BehaviorRow
+                      key={pattern.id}
+                      pattern={pattern}
+                      isSelected={selectedId === pattern.id}
+                      onSelect={handleSelectPattern}
+                      onEdit={handleEditBehavior}
+                      onDuplicate={handleDuplicateBehavior}
+                      onDelete={handleDeleteBehavior}
+                    />
+                  ))}
                   
                   {/* Default expert behaviors subsection (system) */}
                   {expertExpanded && defaultExpertBehaviors.length > 0 && (
@@ -653,21 +428,25 @@ const BehavioralPatterns = () => {
                     >
                       <TableCell colSpan={2} className="py-1.5 pl-8">
                         <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-                          {defaultExpertExpanded ? (
-                            <ChevronDown className="h-3 w-3" />
-                          ) : (
-                            <ChevronRight className="h-3 w-3" />
-                          )}
+                          {defaultExpertExpanded ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
                           <Settings2 className="h-3 w-3" />
                           {t('patterns.defaultBehaviors')}
-                          <Badge variant="outline" className="text-[10px] py-0 px-1.5">
-                            {defaultExpertBehaviors.length}
-                          </Badge>
+                          <Badge variant="outline" className="text-[10px] py-0 px-1.5">{defaultExpertBehaviors.length}</Badge>
                         </div>
                       </TableCell>
                     </TableRow>
                   )}
-                  {expertExpanded && defaultExpertExpanded && defaultExpertBehaviors.map(renderBehaviorRow)}
+                  {expertExpanded && defaultExpertExpanded && defaultExpertBehaviors.map((pattern) => (
+                    <BehaviorRow
+                      key={pattern.id}
+                      pattern={pattern}
+                      isSelected={selectedId === pattern.id}
+                      onSelect={handleSelectPattern}
+                      onEdit={handleEditBehavior}
+                      onDuplicate={handleDuplicateBehavior}
+                      onDelete={handleDeleteBehavior}
+                    />
+                  ))}
 
                   {/* Technical Staff Behaviors Group */}
                   <TableRow
@@ -676,24 +455,15 @@ const BehavioralPatterns = () => {
                   >
                     <TableCell colSpan={2} className="py-2">
                       <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-                        {techExpanded ? (
-                          <ChevronDown className="h-4 w-4" />
-                        ) : (
-                          <ChevronRight className="h-4 w-4" />
-                        )}
+                        {techExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
                         <Wrench className="h-4 w-4" />
                         {t('patterns.technicalGroup')}
-                        <Badge variant="outline" className="ml-2 text-xs">
-                          {techBehaviors.length}
-                        </Badge>
+                        <Badge variant="outline" className="ml-2 text-xs">{techBehaviors.length}</Badge>
                         <Button
                           variant="ghost"
                           size="sm"
                           className="ml-auto h-6 px-2"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleCreateBehavior();
-                          }}
+                          onClick={(e) => { e.stopPropagation(); handleCreateBehavior(); }}
                         >
                           <Plus className="h-3 w-3 mr-1" />
                           {t('patterns.createNew')}
@@ -701,7 +471,17 @@ const BehavioralPatterns = () => {
                       </div>
                     </TableCell>
                   </TableRow>
-                  {techExpanded && techBehaviors.map(renderBehaviorRow)}
+                  {techExpanded && techBehaviors.map((pattern) => (
+                    <BehaviorRow
+                      key={pattern.id}
+                      pattern={pattern}
+                      isSelected={selectedId === pattern.id}
+                      onSelect={handleSelectPattern}
+                      onEdit={handleEditBehavior}
+                      onDuplicate={handleDuplicateBehavior}
+                      onDelete={handleDeleteBehavior}
+                    />
+                  ))}
                 </TableBody>
               </Table>
             </div>
