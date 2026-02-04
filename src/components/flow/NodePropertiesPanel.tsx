@@ -19,6 +19,9 @@ import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Badge } from '@/components/ui/badge';
+import { DatabaseNodeForm } from './properties/DatabaseNodeForm';
+import { ApiNodeForm } from './properties/ApiNodeForm';
+import { StorageNodeForm } from './properties/StorageNodeForm';
 
 interface PromptLibraryItem {
   id: string;
@@ -655,123 +658,26 @@ export function NodePropertiesPanel({
       // ===== INTEGRATION NODES =====
       case 'database':
         return (
-          <>
-            <div className="space-y-2">
-              <Label htmlFor="label">{t('flowEditor.properties.label')}</Label>
-              <Input
-                id="label"
-                value={(selectedNode.data.label as string) || ''}
-                onChange={(e) => handleDataChange('label', e.target.value)}
-                placeholder={t('flowEditor.nodes.database')}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="dbOperation">{t('flowEditor.properties.dbOperation')}</Label>
-              <Select
-                value={(selectedNode.data.dbOperation as string) || 'read'}
-                onValueChange={(value) => handleDataChange('dbOperation', value)}
-              >
-                <SelectTrigger className="bg-background">
-                  <SelectValue placeholder={t('flowEditor.properties.selectDbOperation')} />
-                </SelectTrigger>
-                <SelectContent className="bg-popover border z-50">
-                  <SelectItem value="read">{t('flowEditor.properties.dbRead')}</SelectItem>
-                  <SelectItem value="write">{t('flowEditor.properties.dbWrite')}</SelectItem>
-                  <SelectItem value="update">{t('flowEditor.properties.dbUpdate')}</SelectItem>
-                  <SelectItem value="delete">{t('flowEditor.properties.dbDelete')}</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="tableName">{t('flowEditor.properties.tableName')}</Label>
-              <Input
-                id="tableName"
-                value={(selectedNode.data.tableName as string) || ''}
-                onChange={(e) => handleDataChange('tableName', e.target.value)}
-                placeholder={t('flowEditor.properties.tableNamePlaceholder')}
-              />
-            </div>
-          </>
+          <DatabaseNodeForm
+            node={selectedNode}
+            onDataChange={handleDataChange}
+          />
         );
 
       case 'api':
         return (
-          <>
-            <div className="space-y-2">
-              <Label htmlFor="label">{t('flowEditor.properties.label')}</Label>
-              <Input
-                id="label"
-                value={(selectedNode.data.label as string) || ''}
-                onChange={(e) => handleDataChange('label', e.target.value)}
-                placeholder={t('flowEditor.nodes.api')}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="apiMethod">{t('flowEditor.properties.apiMethod')}</Label>
-              <Select
-                value={(selectedNode.data.apiMethod as string) || 'GET'}
-                onValueChange={(value) => handleDataChange('apiMethod', value)}
-              >
-                <SelectTrigger className="bg-background">
-                  <SelectValue placeholder={t('flowEditor.properties.selectApiMethod')} />
-                </SelectTrigger>
-                <SelectContent className="bg-popover border z-50">
-                  <SelectItem value="GET">GET</SelectItem>
-                  <SelectItem value="POST">POST</SelectItem>
-                  <SelectItem value="PUT">PUT</SelectItem>
-                  <SelectItem value="DELETE">DELETE</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="apiUrl">{t('flowEditor.properties.apiUrl')}</Label>
-              <Input
-                id="apiUrl"
-                value={(selectedNode.data.apiUrl as string) || ''}
-                onChange={(e) => handleDataChange('apiUrl', e.target.value)}
-                placeholder="https://api.example.com/endpoint"
-              />
-            </div>
-          </>
+          <ApiNodeForm
+            node={selectedNode}
+            onDataChange={handleDataChange}
+          />
         );
 
       case 'storage':
         return (
-          <>
-            <div className="space-y-2">
-              <Label htmlFor="label">{t('flowEditor.properties.label')}</Label>
-              <Input
-                id="label"
-                value={(selectedNode.data.label as string) || ''}
-                onChange={(e) => handleDataChange('label', e.target.value)}
-                placeholder={t('flowEditor.nodes.storage')}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="storageOperation">{t('flowEditor.properties.storageOperation')}</Label>
-              <Select
-                value={(selectedNode.data.storageOperation as string) || 'read'}
-                onValueChange={(value) => handleDataChange('storageOperation', value)}
-              >
-                <SelectTrigger className="bg-background">
-                  <SelectValue placeholder={t('flowEditor.properties.selectStorageOperation')} />
-                </SelectTrigger>
-                <SelectContent className="bg-popover border z-50">
-                  <SelectItem value="read">{t('flowEditor.properties.storageRead')}</SelectItem>
-                  <SelectItem value="write">{t('flowEditor.properties.storageWrite')}</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="storagePath">{t('flowEditor.properties.storagePath')}</Label>
-              <Input
-                id="storagePath"
-                value={(selectedNode.data.storagePath as string) || ''}
-                onChange={(e) => handleDataChange('storagePath', e.target.value)}
-                placeholder="/bucket/path/to/file"
-              />
-            </div>
-          </>
+          <StorageNodeForm
+            node={selectedNode}
+            onDataChange={handleDataChange}
+          />
         );
 
       // ===== LOGIC & CONTROL NODES =====
