@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef } from 'react';
 import { toast } from 'sonner';
+import { DEFAULT_SYSTEM_PROMPTS, type AgentRole } from '@/config/roles';
 
 export type ConsultantMode = 'web_search' | 'expert' | 'critic' | 'arbiter' | 'moderator';
 
@@ -33,7 +34,8 @@ interface UseStreamingChatReturn {
     modelId: string,
     sourceMessageId?: string | null,
     hideUserMessage?: boolean,
-    memoryContext?: MemoryChunk[]
+    memoryContext?: MemoryChunk[],
+    overrideRole?: AgentRole
   ) => Promise<void>;
   stopStreaming: () => void;
   clearMessages: () => void;
@@ -70,9 +72,14 @@ export function useStreamingChat({
       modelId: string,
       sourceMessageId?: string | null,
       hideUserMessage?: boolean,
-      memoryContext?: MemoryChunk[]
+      memoryContext?: MemoryChunk[],
+      overrideRole?: AgentRole
     ) => {
       if (!sessionId || !content.trim() || !modelId) return;
+      
+      // Determine role and system prompt
+      const role = overrideRole || modeToRole[mode];
+      const systemPrompt = overrideRole ? DEFAULT_SYSTEM_PROMPTS[overrideRole] : undefined;
 
       // Abort any existing stream
       if (abortControllerRef.current) {
@@ -122,7 +129,8 @@ export function useStreamingChat({
             body: JSON.stringify({
               message: content,
               model_id: modelId,
-              role: modeToRole[mode],
+              role: role,
+              system_prompt: systemPrompt,
               memory_context: memoryContext || [],
             }),
             signal: abortControllerRef.current.signal,

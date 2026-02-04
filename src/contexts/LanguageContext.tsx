@@ -475,6 +475,15 @@ const translations: Translations = {
   'consultant.askOnly': { ru: 'Спросить', en: 'Ask' },
   'consultant.onlyRequest': { ru: 'Запрос только консультанту', en: 'Consultant-only request' },
   
+  // Tech Support Dialog
+  'techSupport.title': { ru: 'Вызов технического специалиста', en: 'Tech Support' },
+  'techSupport.callTech': { ru: 'Вызов техника', en: 'Call Tech' },
+  'techSupport.callTechTooltip': { ru: 'Открыть диалог с техническим специалистом (Архивариус, Аналитик, Промпт-инженер, Логистик)', en: 'Open dialog with technical specialist (Archivist, Analyst, Prompt Engineer, Flow Logistician)' },
+  'techSupport.selectModel': { ru: 'Выберите модель', en: 'Select Model' },
+  'techSupport.clear': { ru: 'Очистить историю', en: 'Clear History' },
+  'techSupport.placeholder': { ru: 'Опишите задачу для технического специалиста...', en: 'Describe the task for the technical specialist...' },
+  'techSupport.chatWith': { ru: 'Диалог с:', en: 'Chat with:' },
+  
   // Common
   'common.loading': { ru: 'Загрузка...', en: 'Loading...' },
   'common.error': { ru: 'Ошибка', en: 'Error' },

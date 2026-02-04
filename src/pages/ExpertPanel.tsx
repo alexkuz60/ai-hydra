@@ -24,8 +24,9 @@ import { useStreamingResponses } from '@/hooks/useStreamingResponses';
 import { useMemoryIntegration } from '@/hooks/useMemoryIntegration';
 import { useSessionMemory } from '@/hooks/useSessionMemory';
 import { PendingResponseState, RequestStartInfo } from '@/types/pending';
-import { Loader2, Target, Zap, ZapOff, Square, Circle, Brain, RefreshCw, Check, Settings2 } from 'lucide-react';
+import { Loader2, Target, Zap, ZapOff, Square, Circle, Brain, RefreshCw, Check, Settings2, Wrench } from 'lucide-react';
 import { SessionMemoryDialog } from '@/components/warroom/SessionMemoryDialog';
+import { TechSupportDialog } from '@/components/warroom/TechSupportDialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
@@ -653,10 +654,34 @@ export default function ExpertPanel() {
                     </div>
                   )}
                 </div>
-                
-                {/* Streaming Controls */}
+                {/* Header Actions */}
                 <div className="flex items-center gap-2">
-                  {/* Streaming Mode Toggle - first */}
+                  {/* Tech Support Button */}
+                  <TechSupportDialog
+                    sessionId={currentTask?.id || null}
+                    availableModels={allAvailableModels}
+                    trigger={
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 gap-1.5 text-muted-foreground hover:text-foreground"
+                            >
+                              <Wrench className="h-3.5 w-3.5" />
+                              <span className="text-xs hidden sm:inline">{t('techSupport.callTech')}</span>
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent side="bottom">
+                            {t('techSupport.callTechTooltip')}
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    }
+                  />
+                  
+                  {/* Streaming Mode Toggle */}
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
