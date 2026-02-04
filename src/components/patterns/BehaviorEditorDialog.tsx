@@ -126,11 +126,15 @@ export function BehaviorEditorDialog({
   useEffect(() => {
     if (behavior) {
       setRole(behavior.role);
-      setTone(behavior.communication.tone);
-      setVerbosity(behavior.communication.verbosity);
-      setFormatPreference([...behavior.communication.format_preference]);
-      setReactions(behavior.reactions.length ? [...behavior.reactions] : [{ ...emptyReaction }]);
-      setInteractions({ ...behavior.interactions });
+      setTone(behavior.communication?.tone || 'friendly');
+      setVerbosity(behavior.communication?.verbosity || 'adaptive');
+      setFormatPreference([...(behavior.communication?.format_preference || [])]);
+      setReactions(behavior.reactions?.length ? [...behavior.reactions] : [{ ...emptyReaction }]);
+      setInteractions({
+        defers_to: behavior.interactions?.defers_to || [],
+        challenges: behavior.interactions?.challenges || [],
+        collaborates: behavior.interactions?.collaborates || [],
+      });
     } else {
       setRole('assistant');
       setTone('friendly');
