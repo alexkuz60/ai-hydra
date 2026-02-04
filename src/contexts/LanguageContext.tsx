@@ -189,6 +189,7 @@ const translations: Translations = {
   // Patterns groups
   'patterns.expertGroup': { ru: 'Эксперты', en: 'Experts' },
   'patterns.technicalGroup': { ru: 'Технический персонал', en: 'Technical Staff' },
+  'patterns.defaultBehaviors': { ru: 'По умолчанию', en: 'Default' },
   
   // Mermaid
   'mermaid.error': { ru: 'Ошибка рендеринга диаграммы', en: 'Diagram render error' },
