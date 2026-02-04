@@ -440,6 +440,7 @@ export default function ToolsLibrary() {
             ) : (
               <ToolDetailsPanel
                 tool={selectedTool}
+                allTools={tools}
                 isOwned={isOwned}
                 onEdit={() => selectedTool && !isSystemTool(selectedTool) && handleStartEdit(selectedTool as CustomTool)}
                 onDelete={() => selectedTool && !isSystemTool(selectedTool) && setToolToDelete(selectedTool as CustomTool)}

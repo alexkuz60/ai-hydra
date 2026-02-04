@@ -1006,6 +1006,13 @@ const translations: Translations = {
   'tools.validation.urlRequired': { ru: 'Введите URL эндпоинта', en: 'URL is required' },
   'tools.validation.urlInvalid': { ru: 'Введите корректный URL', en: 'Please enter a valid URL' },
   'tools.validation.paramNameRequired': { ru: 'Введите имя параметра', en: 'Parameter name is required' },
+  // Usage statistics
+  'tools.usageStatistics': { ru: 'Статистика использования', en: 'Usage Statistics' },
+  'tools.totalCalls': { ru: 'Всего вызовов', en: 'Total calls' },
+  'tools.avgPerDay': { ru: 'В среднем/день', en: 'Avg per day' },
+  'tools.daysActive': { ru: 'Дней активен', en: 'Days active' },
+  'tools.rankOf': { ru: 'место из', en: 'rank of' },
+  'tools.usageComparison': { ru: 'Сравнение по использованию (топ-5)', en: 'Usage comparison (top 5)' },
 };
 
 interface LanguageContextType {
