@@ -211,33 +211,74 @@ export const runTransformNode: NodeRunner = async (ctx) => {
 
 /**
  * Split Node Runner
- * Splits data into multiple outputs
+ * Splits data into multiple outputs for parallel processing
+ * Supports two modes:
+ * - distribute: Split array/string into parts
+ * - duplicate: Send same data to all outputs
  */
 export const runSplitNode: NodeRunner = async (ctx) => {
   const { node, inputs } = ctx;
   const splitKey = node.data.splitKey as string || '';
+  const splitMode = node.data.splitMode as string || 'distribute';
+  const outputCount = node.data.outputCount as number || 2;
 
   const input = Object.values(inputs)[0];
-  let output: unknown[];
+
+  ctx.sendEvent({
+    type: 'node_progress',
+    nodeId: node.id,
+    data: { message: `Split mode: ${splitMode}, outputs: ${outputCount}` },
+  });
 
   try {
+    // Duplicate mode: same input to all outputs
+    if (splitMode === 'duplicate') {
+      const outputs: Record<string, unknown> = {};
+      for (let i = 1; i <= outputCount; i++) {
+        outputs[`output-${i}`] = input;
+      }
+      return { success: true, output: outputs };
+    }
+
+    // Distribute mode: split input across outputs
+    let items: unknown[];
+    
     if (Array.isArray(input)) {
-      output = input;
+      items = input;
     } else if (typeof input === 'string') {
-      output = splitKey ? input.split(splitKey) : input.split('\n');
+      items = splitKey ? input.split(splitKey) : input.split('\n');
     } else if (typeof input === 'object' && input !== null) {
-      output = Object.values(input);
+      items = Object.values(input);
     } else {
-      output = [input];
+      items = [input];
+    }
+
+    // Distribute items across outputs
+    const outputs: Record<string, unknown[]> = {};
+    for (let i = 1; i <= outputCount; i++) {
+      outputs[`output-${i}`] = [];
+    }
+
+    items.forEach((item, index) => {
+      const outputIndex = (index % outputCount) + 1;
+      (outputs[`output-${outputIndex}`] as unknown[]).push(item);
+    });
+
+    // If only one item per output, unwrap arrays
+    const finalOutputs: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(outputs)) {
+      finalOutputs[key] = (value as unknown[]).length === 1 
+        ? (value as unknown[])[0] 
+        : value;
     }
 
     ctx.sendEvent({
       type: 'node_progress',
       nodeId: node.id,
-      data: { message: `Split into ${output.length} items` },
+      data: { message: `Split ${items.length} items into ${outputCount} outputs` },
     });
 
-    return { success: true, output };
+    return { success: true, output: finalOutputs };
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : String(err);
     return { success: false, error: `Split failed: ${errorMessage}` };
@@ -855,31 +896,73 @@ export const runCheckpointNode: NodeRunner = async (ctx) => {
 /**
  * Merge Node Runner
  * Combines multiple inputs into one output
+ * Used after Split for parallel processing patterns
  */
 export const runMergeNode: NodeRunner = async (ctx) => {
   const { node, inputs } = ctx;
-  const strategy = node.data.mergeStrategy || 'concat';
+  const strategy = node.data.mergeStrategy as string || 'concat';
+  const waitForAll = node.data.waitForAll !== false;
+
+  // Get all non-null inputs
+  const inputValues = Object.entries(inputs)
+    .filter(([_, v]) => v !== null && v !== undefined)
+    .sort(([a], [b]) => {
+      // Sort by input handle number for consistent ordering
+      const numA = parseInt(a.replace('input-', '')) || 0;
+      const numB = parseInt(b.replace('input-', '')) || 0;
+      return numA - numB;
+    })
+    .map(([_, v]) => v);
+
+  ctx.sendEvent({
+    type: 'node_progress',
+    nodeId: node.id,
+    data: { 
+      message: `Merging ${inputValues.length} inputs (${strategy})`,
+      waitForAll,
+    },
+  });
 
   let output: unknown;
 
   switch (strategy) {
     case 'concat':
-      output = Object.values(inputs).filter(Boolean).join('\n\n');
+      // Concatenate all inputs as strings
+      output = inputValues
+        .map(v => typeof v === 'string' ? v : JSON.stringify(v))
+        .join('\n\n');
       break;
+      
     case 'array':
-      output = Object.values(inputs).filter(Boolean);
+      // Combine into flat array
+      output = inputValues.flatMap(v => Array.isArray(v) ? v : [v]);
       break;
+      
     case 'object':
-      output = { ...inputs };
+      // Merge into object with input keys
+      output = Object.fromEntries(
+        Object.entries(inputs).filter(([_, v]) => v !== null && v !== undefined)
+      );
       break;
+      
+    case 'first':
+      // Take first non-null value
+      output = inputValues[0] ?? null;
+      break;
+      
+    case 'last':
+      // Take last non-null value
+      output = inputValues[inputValues.length - 1] ?? null;
+      break;
+      
     default:
-      output = inputs;
+      output = inputValues;
   }
 
   ctx.sendEvent({
     type: 'node_progress',
     nodeId: node.id,
-    data: { message: `Merged ${Object.keys(inputs).length} inputs (${strategy})` },
+    data: { message: `Merged ${inputValues.length} inputs successfully` },
   });
 
   return { success: true, output };

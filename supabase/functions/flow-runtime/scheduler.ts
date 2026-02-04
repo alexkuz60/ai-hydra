@@ -83,6 +83,7 @@ export function createExecutionPlan(nodes: FlowNode[], edges: FlowEdge[]): Execu
 
 /**
  * Gets the input edges for a node (which nodes feed into it)
+ * Handles special case of Split node outputs (output-1, output-2, etc.)
  */
 export function getNodeInputs(
   nodeId: string,
@@ -94,6 +95,21 @@ export function getNodeInputs(
   for (const edge of edges) {
     if (edge.target === nodeId) {
       const sourceOutput = nodeOutputs.get(edge.source);
+      
+      // Handle Split node outputs - sourceOutput is an object with output-1, output-2, etc.
+      if (sourceOutput && typeof sourceOutput === 'object' && !Array.isArray(sourceOutput)) {
+        const sourceHandle = edge.sourceHandle || 'default';
+        const outputMap = sourceOutput as Record<string, unknown>;
+        
+        // If the source handle matches a key in the output map, use that specific output
+        if (sourceHandle in outputMap) {
+          const handleKey = edge.targetHandle || sourceHandle || 'default';
+          inputs[handleKey] = outputMap[sourceHandle];
+          continue;
+        }
+      }
+      
+      // Default behavior
       const handleKey = edge.targetHandle || edge.sourceHandle || 'default';
       inputs[handleKey] = sourceOutput;
     }
