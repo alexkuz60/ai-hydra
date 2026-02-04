@@ -5,7 +5,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Target, GitBranch, CheckCircle2, MessageSquare, Users, ArrowRight, Loader2, Pencil, Copy, Lock } from 'lucide-react';
+import { Target, GitBranch, CheckCircle2, MessageSquare, Users, ArrowRight, Loader2, Pencil, Copy, Lock, ChevronDown } from 'lucide-react';
 import { ROLE_CONFIG } from '@/config/roles';
 import { cn } from '@/lib/utils';
 import type { TaskBlueprint, RoleBehavior } from '@/types/patterns';
@@ -115,16 +115,12 @@ const TaskBlueprintDetails: React.FC<{ pattern: TaskBlueprint }> = ({ pattern })
                   {index + 1}
                 </div>
                 {index < pattern.stages.length - 1 && (
-                  <div className="relative w-0.5 flex-1 min-h-[16px] overflow-hidden">
-                    {/* Static gradient background */}
-                    <div className="absolute inset-0 bg-gradient-to-b from-primary/40 to-primary/10" />
-                    {/* Animated pulse overlay */}
-                    <div 
-                      className="absolute inset-0 w-full animate-pipeline-flow"
-                      style={{
-                        background: 'linear-gradient(to bottom, transparent 0%, hsl(var(--primary) / 0.6) 50%, transparent 100%)',
-                        backgroundSize: '100% 200%',
-                      }}
+                  <div className="relative w-4 flex-1 min-h-[16px] flex flex-col items-center overflow-hidden">
+                    {/* Static line background */}
+                    <div className="absolute inset-x-0 mx-auto w-0.5 h-full bg-gradient-to-b from-primary/40 to-primary/10" />
+                    {/* Running arrow */}
+                    <ChevronDown 
+                      className="absolute w-3 h-3 text-primary animate-arrow-flow"
                     />
                   </div>
                 )}

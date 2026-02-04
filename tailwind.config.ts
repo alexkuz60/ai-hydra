@@ -133,6 +133,12 @@ export default {
           "0%": { backgroundPosition: "0% 0%" },
           "100%": { backgroundPosition: "0% 100%" },
         },
+        "arrow-flow": {
+          "0%": { top: "-12px", opacity: "0" },
+          "20%": { opacity: "1" },
+          "80%": { opacity: "1" },
+          "100%": { top: "calc(100% - 4px)", opacity: "0" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -141,6 +147,7 @@ export default {
         "slide-up": "slide-up 0.3s ease-out",
         "pulse-glow": "pulse-glow 2s ease-in-out infinite",
         "pipeline-flow": "pipeline-flow 1.5s ease-in-out infinite",
+        "arrow-flow": "arrow-flow 1.2s ease-in-out infinite",
       },
     },
   },
