@@ -5,6 +5,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Target, GitBranch, CheckCircle2, MessageSquare, Users, ArrowRight, Loader2, Pencil, Copy, Lock, ChevronDown } from 'lucide-react';
 import { ROLE_CONFIG } from '@/config/roles';
 import { cn } from '@/lib/utils';
@@ -14,6 +15,7 @@ import { useFlowDiagrams } from '@/hooks/useFlowDiagrams';
 import { blueprintToFlow } from '@/lib/blueprintToFlow';
 import { useToast } from '@/hooks/use-toast';
 import type { PatternMeta } from '@/hooks/usePatterns';
+import { FORMAT_DICTIONARY, TRIGGER_DICTIONARY, BEHAVIOR_DICTIONARY } from '@/config/behaviorDictionaries';
 
 interface PatternDetailsPanelProps {
   selectedPattern: TaskBlueprint | RoleBehavior | null;
@@ -204,7 +206,7 @@ const TaskBlueprintDetails: React.FC<{ pattern: TaskBlueprint }> = ({ pattern })
 };
 
 const RoleBehaviorDetails: React.FC<{ pattern: RoleBehavior }> = ({ pattern }) => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const roleConfig = ROLE_CONFIG[pattern.role];
   const RoleIcon = roleConfig?.icon;
 
@@ -263,11 +265,30 @@ const RoleBehaviorDetails: React.FC<{ pattern: RoleBehavior }> = ({ pattern }) =
           <div className="mt-3 p-3 rounded-lg bg-muted/30 border border-border/50">
             <span className="text-xs text-muted-foreground">{t('patterns.formatPreference')}</span>
             <div className="flex flex-wrap gap-1 mt-2">
-              {pattern.communication.format_preference.map((format) => (
-                <Badge key={format} variant="secondary" className="text-xs">
-                  {format}
-                </Badge>
-              ))}
+              <TooltipProvider delayDuration={300}>
+                {pattern.communication.format_preference.map((format) => {
+                  const entry = FORMAT_DICTIONARY.entries.find(e => e.key === format);
+                  const label = entry?.label[language as 'ru' | 'en'] || format;
+                  const description = entry?.description?.[language as 'ru' | 'en'];
+                  
+                  return description ? (
+                    <Tooltip key={format}>
+                      <TooltipTrigger asChild>
+                        <Badge variant="secondary" className="text-xs cursor-help">
+                          {label}
+                        </Badge>
+                      </TooltipTrigger>
+                      <TooltipContent side="top" className="max-w-xs">
+                        <p className="text-xs">{description}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  ) : (
+                    <Badge key={format} variant="secondary" className="text-xs">
+                      {label}
+                    </Badge>
+                  );
+                })}
+              </TooltipProvider>
             </div>
           </div>
         )}
@@ -281,17 +302,54 @@ const RoleBehaviorDetails: React.FC<{ pattern: RoleBehavior }> = ({ pattern }) =
           {t('patterns.reactions')} ({pattern.reactions.length})
         </h3>
         <div className="space-y-2">
-          {pattern.reactions.map((reaction, index) => (
-            <div
-              key={index}
-              className="p-3 rounded-lg bg-muted/30 border border-border/50"
-            >
-              <div className="text-xs text-muted-foreground mb-1">
-                {t('patterns.trigger')}: <span className="text-foreground">{reaction.trigger}</span>
-              </div>
-              <p className="text-sm">{reaction.behavior}</p>
-            </div>
-          ))}
+          <TooltipProvider delayDuration={300}>
+            {pattern.reactions.map((reaction, index) => {
+              const triggerEntry = TRIGGER_DICTIONARY.entries.find(e => e.key === reaction.trigger);
+              const behaviorEntry = BEHAVIOR_DICTIONARY.entries.find(e => e.key === reaction.behavior);
+              
+              const triggerLabel = triggerEntry?.label[language as 'ru' | 'en'] || reaction.trigger;
+              const triggerDesc = triggerEntry?.description?.[language as 'ru' | 'en'];
+              const behaviorLabel = behaviorEntry?.label[language as 'ru' | 'en'] || reaction.behavior;
+              const behaviorDesc = behaviorEntry?.description?.[language as 'ru' | 'en'];
+              
+              return (
+                <div
+                  key={index}
+                  className="p-3 rounded-lg bg-muted/30 border border-border/50"
+                >
+                  <div className="text-xs text-muted-foreground mb-1 flex items-center gap-1">
+                    {t('patterns.trigger')}:{' '}
+                    {triggerDesc ? (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span className="text-foreground cursor-help underline decoration-dotted underline-offset-2">
+                            {triggerLabel}
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent side="top" className="max-w-xs">
+                          <p className="text-xs">{triggerDesc}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    ) : (
+                      <span className="text-foreground">{triggerLabel}</span>
+                    )}
+                  </div>
+                  {behaviorDesc ? (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <p className="text-sm cursor-help">{behaviorLabel}</p>
+                      </TooltipTrigger>
+                      <TooltipContent side="top" className="max-w-xs">
+                        <p className="text-xs">{behaviorDesc}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  ) : (
+                    <p className="text-sm">{behaviorLabel}</p>
+                  )}
+                </div>
+              );
+            })}
+          </TooltipProvider>
         </div>
       </div>
 
