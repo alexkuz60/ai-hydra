@@ -249,77 +249,91 @@ export function BlueprintEditorDialog({
                 </Button>
               </div>
 
-              {stages.map((stage, index) => (
-                <div key={index} className="p-4 rounded-lg border bg-muted/30 space-y-3">
-                  <div className="flex items-center gap-2">
-                    <GripVertical className="h-4 w-4 text-muted-foreground cursor-grab" />
-                    <span className="w-6 h-6 rounded-full bg-primary/20 text-primary text-xs flex items-center justify-center font-medium">
-                      {index + 1}
-                    </span>
-                    <Input
-                      value={stage.name}
-                      onChange={(e) => updateStage(index, { name: e.target.value })}
-                      placeholder={t('patterns.stageName')}
-                      className="flex-1"
-                    />
-                    {stages.length > 1 && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => removeStage(index)}
-                        className="text-destructive hover:text-destructive"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    )}
-                  </div>
+              <div className="relative">
+                {stages.map((stage, index) => (
+                  <div key={index} className="relative flex gap-4">
+                    {/* Timeline connector */}
+                    <div className="flex flex-col items-center">
+                      <div className="w-8 h-8 rounded-full bg-primary/20 text-primary text-sm flex items-center justify-center font-semibold border-2 border-primary/40 z-10">
+                        {index + 1}
+                      </div>
+                      {index < stages.length - 1 && (
+                        <div className="w-0.5 flex-1 bg-gradient-to-b from-primary/40 to-primary/10 min-h-[20px]" />
+                      )}
+                    </div>
+                    
+                    {/* Stage content */}
+                    <div className="flex-1 pb-4">
+                      <div className="p-4 rounded-lg border bg-muted/30 space-y-3">
+                        <div className="flex items-center gap-2">
+                          <GripVertical className="h-4 w-4 text-muted-foreground cursor-grab" />
+                          <Input
+                            value={stage.name}
+                            onChange={(e) => updateStage(index, { name: e.target.value })}
+                            placeholder={t('patterns.stageName')}
+                            className="flex-1 font-medium"
+                          />
+                          {stages.length > 1 && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => removeStage(index)}
+                              className="text-destructive hover:text-destructive"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
 
-                  <div className="grid gap-2">
-                    <Label className="text-xs text-muted-foreground">{t('patterns.objective')}</Label>
-                    <Input
-                      value={stage.objective}
-                      onChange={(e) => updateStage(index, { objective: e.target.value })}
-                      placeholder={t('patterns.objectivePlaceholder')}
-                    />
-                  </div>
+                        <div className="grid gap-2">
+                          <Label className="text-xs text-muted-foreground">{t('patterns.objective')}</Label>
+                          <Input
+                            value={stage.objective}
+                            onChange={(e) => updateStage(index, { objective: e.target.value })}
+                            placeholder={t('patterns.objectivePlaceholder')}
+                          />
+                        </div>
 
-                  <div className="grid gap-2">
-                    <Label className="text-xs text-muted-foreground">{t('patterns.roles')}</Label>
-                    <div className="flex flex-wrap gap-1.5">
-                      {AGENT_ROLES.map((role) => {
-                        const config = ROLE_CONFIG[role];
-                        const Icon = config.icon;
-                        const isSelected = stage.roles.includes(role);
-                        return (
-                          <Badge
-                            key={role}
-                            variant={isSelected ? 'default' : 'outline'}
-                            className={cn(
-                              'cursor-pointer gap-1 transition-all',
-                              isSelected && config.color
-                            )}
-                            onClick={() => toggleRole(index, role)}
-                          >
-                            <Icon className="h-3 w-3" />
-                            {t(config.label)}
-                          </Badge>
-                        );
-                      })}
+                        <div className="grid gap-2">
+                          <Label className="text-xs text-muted-foreground">{t('patterns.roles')}</Label>
+                          <div className="flex flex-wrap gap-1.5">
+                            {AGENT_ROLES.map((role) => {
+                              const config = ROLE_CONFIG[role];
+                              const Icon = config.icon;
+                              const isSelected = stage.roles.includes(role);
+                              return (
+                                <Badge
+                                  key={role}
+                                  variant={isSelected ? 'default' : 'outline'}
+                                  className={cn(
+                                    'cursor-pointer gap-1 transition-all',
+                                    isSelected && config.color
+                                  )}
+                                  onClick={() => toggleRole(index, role)}
+                                >
+                                  <Icon className="h-3 w-3" />
+                                  {t(config.label)}
+                                </Badge>
+                              );
+                            })}
+                          </div>
+                        </div>
+
+                        <div className="grid gap-2">
+                          <Label className="text-xs text-muted-foreground">{t('patterns.deliverables')}</Label>
+                          <Input
+                            value={stage.deliverables.join(', ')}
+                            onChange={(e) => updateStage(index, { 
+                              deliverables: e.target.value.split(',').map(d => d.trim()) 
+                            })}
+                            placeholder={t('patterns.deliverablesPlaceholder')}
+                          />
+                        </div>
+                      </div>
                     </div>
                   </div>
-
-                  <div className="grid gap-2">
-                    <Label className="text-xs text-muted-foreground">{t('patterns.deliverables')}</Label>
-                    <Input
-                      value={stage.deliverables.join(', ')}
-                      onChange={(e) => updateStage(index, { 
-                        deliverables: e.target.value.split(',').map(d => d.trim()) 
-                      })}
-                      placeholder={t('patterns.deliverablesPlaceholder')}
-                    />
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
 
             {/* Checkpoints */}
