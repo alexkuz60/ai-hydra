@@ -68,6 +68,8 @@ export interface FlowNodeData {
   memoryType?: 'short' | 'long' | 'rag';
   // Classifier node specific
   classifierLabels?: string[];
+  // Bypass mode - skip execution during runtime
+  bypassed?: boolean;
   // Allow additional properties
   [key: string]: unknown;
 }

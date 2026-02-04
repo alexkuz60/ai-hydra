@@ -3,7 +3,7 @@ import { Node } from '@xyflow/react';
 import { 
   X, ArrowDownToLine, ArrowUpFromLine, FileText, Brain, GitBranch, Wrench, Library,
   Shuffle, Filter, Combine, Split, Database, Globe, HardDrive, Repeat, Clock, LayoutList,
-  Sparkles, MemoryStick, Tags, Group
+  Sparkles, MemoryStick, Tags, Group, SkipForward
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,6 +13,7 @@ import { Slider } from '@/components/ui/slider';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { FlowNodeType } from '@/types/flow';
 import { cn } from '@/lib/utils';
@@ -914,6 +915,30 @@ export function NodePropertiesPanel({
         </div>
         
         {renderInputFields()}
+        
+        <Separator className="my-4" />
+        
+        {/* Bypass Mode Toggle - Not available for group nodes */}
+        {nodeType !== 'group' && (
+          <div className="flex items-center justify-between py-2 px-3 rounded-lg border bg-muted/30">
+            <div className="flex items-center gap-2">
+              <SkipForward className="h-4 w-4 text-muted-foreground" />
+              <div className="flex flex-col">
+                <Label htmlFor="bypass-toggle" className="text-sm font-medium cursor-pointer">
+                  {t('flowEditor.properties.bypassNode')}
+                </Label>
+                <span className="text-xs text-muted-foreground">
+                  {t('flowEditor.properties.bypassHint')}
+                </span>
+              </div>
+            </div>
+            <Switch
+              id="bypass-toggle"
+              checked={Boolean(selectedNode.data.bypassed)}
+              onCheckedChange={(checked) => handleDataChange('bypassed', checked)}
+            />
+          </div>
+        )}
         
         <Separator className="my-4" />
         
