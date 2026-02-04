@@ -450,6 +450,15 @@ const translations: Translations = {
   'flowEditor.properties.classifierLabelsPlaceholder': { ru: 'positive\nnegative\nneutral', en: 'positive\nnegative\nneutral' },
   'flowEditor.properties.classifierLabelsHint': { ru: 'По одной метке на строку', en: 'One label per line' },
   
+  // Validation messages
+  'flowEditor.validation.required': { ru: 'Обязательное поле', en: 'This field is required' },
+  'flowEditor.validation.invalidUrl': { ru: 'Некорректный URL', en: 'Invalid URL format' },
+  'flowEditor.validation.invalidJson': { ru: 'Некорректный JSON', en: 'Invalid JSON format' },
+  'flowEditor.validation.mustBePositive': { ru: 'Значение должно быть положительным', en: 'Value must be positive' },
+  'flowEditor.validation.mustBeNonNegative': { ru: 'Значение не может быть отрицательным', en: 'Value cannot be negative' },
+  'flowEditor.validation.invalidTableName': { ru: 'Некорректное имя таблицы', en: 'Invalid table name' },
+  'flowEditor.validation.invalidBucketName': { ru: 'Некорректное имя бакета', en: 'Invalid bucket name' },
+  
   // Auth
   'auth.email': { ru: 'Email', en: 'Email' },
   'auth.password': { ru: 'Пароль', en: 'Password' },

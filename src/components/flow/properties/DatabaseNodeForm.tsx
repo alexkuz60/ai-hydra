@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Node } from '@xyflow/react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -8,6 +8,8 @@ import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { FieldError } from './FieldError';
+import { validateRequired, validateJson, validateTableName } from './validation';
 
 interface DatabaseNodeFormProps {
   node: Node;
@@ -18,7 +20,40 @@ export function DatabaseNodeForm({ node, onDataChange }: DatabaseNodeFormProps) 
   const { t } = useLanguage();
   const data = node.data as Record<string, unknown>;
 
-  const operation = (data.dbOperation as string) || 'read';
+  const operation = (data.dbOperation as string) || 'select';
+
+  // Validation errors
+  const errors = useMemo(() => {
+    const errs: Record<string, string | null> = {};
+    
+    // Table name required for non-RPC operations
+    if (operation !== 'rpc') {
+      errs.tableName = validateRequired(data.tableName, 'tableName') || 
+                       validateTableName(data.tableName as string || '');
+    }
+    
+    // RPC function name required for RPC
+    if (operation === 'rpc') {
+      errs.rpcFunction = validateRequired(data.rpcFunction, 'rpcFunction');
+    }
+    
+    // JSON validation for filters
+    if (typeof data.filters === 'string' && data.filters) {
+      errs.filters = validateJson(data.filters);
+    }
+    
+    // JSON validation for dbData
+    if (typeof data.dbData === 'string' && data.dbData) {
+      errs.dbData = validateJson(data.dbData);
+    }
+    
+    // JSON validation for rpcParams
+    if (typeof data.rpcParams === 'string' && data.rpcParams) {
+      errs.rpcParams = validateJson(data.rpcParams);
+    }
+    
+    return errs;
+  }, [data.tableName, data.rpcFunction, data.filters, data.dbData, data.rpcParams, operation]);
 
   return (
     <div className="space-y-4">
@@ -60,7 +95,9 @@ export function DatabaseNodeForm({ node, onDataChange }: DatabaseNodeFormProps) 
           value={(data.tableName as string) || ''}
           onChange={(e) => onDataChange('tableName', e.target.value)}
           placeholder={t('flowEditor.properties.tableNamePlaceholder')}
+          className={errors.tableName ? 'border-destructive' : ''}
         />
+        <FieldError error={errors.tableName} />
       </div>
 
       <Separator />
@@ -108,8 +145,9 @@ export function DatabaseNodeForm({ node, onDataChange }: DatabaseNodeFormProps) 
                 }}
                 placeholder='{"id": "eq.{{input.id}}", "status": "eq.active"}'
                 rows={3}
-                className="font-mono text-sm"
+                className={`font-mono text-sm ${errors.filters ? 'border-destructive' : ''}`}
               />
+              <FieldError error={errors.filters} />
               <p className="text-xs text-muted-foreground">
                 {t('flowEditor.properties.filtersHint')}
               </p>
@@ -136,8 +174,9 @@ export function DatabaseNodeForm({ node, onDataChange }: DatabaseNodeFormProps) 
                   }}
                   placeholder='{"name": "{{input.name}}", "email": "{{input.email}}"}'
                   rows={4}
-                  className="font-mono text-sm"
+                  className={`font-mono text-sm ${errors.dbData ? 'border-destructive' : ''}`}
                 />
+                <FieldError error={errors.dbData} />
                 <p className="text-xs text-muted-foreground">
                   {t('flowEditor.properties.dbDataHint')}
                 </p>
@@ -154,7 +193,9 @@ export function DatabaseNodeForm({ node, onDataChange }: DatabaseNodeFormProps) 
                     value={(data.rpcFunction as string) || ''}
                     onChange={(e) => onDataChange('rpcFunction', e.target.value)}
                     placeholder="my_function_name"
+                    className={errors.rpcFunction ? 'border-destructive' : ''}
                   />
+                  <FieldError error={errors.rpcFunction} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="rpcParams">{t('flowEditor.properties.rpcParams')}</Label>
@@ -175,8 +216,9 @@ export function DatabaseNodeForm({ node, onDataChange }: DatabaseNodeFormProps) 
                     }}
                     placeholder='{"param1": "value1"}'
                     rows={3}
-                    className="font-mono text-sm"
+                    className={`font-mono text-sm ${errors.rpcParams ? 'border-destructive' : ''}`}
                   />
+                  <FieldError error={errors.rpcParams} />
                 </div>
               </>
             )}

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo } from 'react';
 import { Node } from '@xyflow/react';
 import { Plus, Trash2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -10,6 +10,8 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { FieldError } from './FieldError';
+import { validateRequired, validateUrl, validateJson, validatePositiveNumber, validateNonNegativeNumber } from './validation';
 
 interface ApiNodeFormProps {
   node: Node;
@@ -27,6 +29,36 @@ export function ApiNodeForm({ node, onDataChange }: ApiNodeFormProps) {
 
   const method = (data.apiMethod as string) || 'GET';
   const headers = (data.headers as Header[]) || [];
+  const bodyType = (data.bodyType as string) || 'json';
+
+  // Validation errors
+  const errors = useMemo(() => {
+    const errs: Record<string, string | null> = {};
+    
+    // URL is required
+    errs.apiUrl = validateRequired(data.apiUrl, 'apiUrl') || 
+                  validateUrl(data.apiUrl as string || '');
+    
+    // JSON body validation
+    if (['POST', 'PUT', 'PATCH'].includes(method) && bodyType === 'json') {
+      if (typeof data.requestBody === 'string' && data.requestBody) {
+        errs.requestBody = validateJson(data.requestBody);
+      }
+    }
+    
+    // Query params JSON validation
+    if (typeof data.queryParams === 'string' && data.queryParams) {
+      errs.queryParams = validateJson(data.queryParams);
+    }
+    
+    // Timeout validation
+    errs.timeout = validatePositiveNumber(data.timeout as number);
+    
+    // Retry count validation
+    errs.retryCount = validateNonNegativeNumber(data.retryCount as number);
+    
+    return errs;
+  }, [data.apiUrl, data.requestBody, data.queryParams, data.timeout, data.retryCount, method, bodyType]);
 
   const addHeader = () => {
     onDataChange('headers', [...headers, { key: '', value: '' }]);
@@ -84,7 +116,9 @@ export function ApiNodeForm({ node, onDataChange }: ApiNodeFormProps) {
             value={(data.apiUrl as string) || ''}
             onChange={(e) => onDataChange('apiUrl', e.target.value)}
             placeholder="https://api.example.com/{{input.endpoint}}"
+            className={errors.apiUrl ? 'border-destructive' : ''}
           />
+          <FieldError error={errors.apiUrl} />
         </div>
       </div>
 
@@ -208,8 +242,9 @@ export function ApiNodeForm({ node, onDataChange }: ApiNodeFormProps) {
                     }}
                     placeholder='{"key": "{{input.value}}"}'
                     rows={6}
-                    className="font-mono text-sm"
+                    className={`font-mono text-sm ${errors.requestBody ? 'border-destructive' : ''}`}
                   />
+                  <FieldError error={errors.requestBody} />
                   <p className="text-xs text-muted-foreground">
                     {t('flowEditor.properties.bodyHint')}
                   </p>
@@ -246,8 +281,9 @@ export function ApiNodeForm({ node, onDataChange }: ApiNodeFormProps) {
                 }}
                 placeholder='{"page": "1", "limit": "{{input.limit}}"}'
                 rows={3}
-                className="font-mono text-sm"
+                className={`font-mono text-sm ${errors.queryParams ? 'border-destructive' : ''}`}
               />
+              <FieldError error={errors.queryParams} />
             </div>
           </AccordionContent>
         </AccordionItem>
@@ -270,7 +306,9 @@ export function ApiNodeForm({ node, onDataChange }: ApiNodeFormProps) {
                 onChange={(e) => onDataChange('timeout', parseInt(e.target.value) || 30000)}
                 min={1000}
                 max={300000}
+                className={errors.timeout ? 'border-destructive' : ''}
               />
+              <FieldError error={errors.timeout} />
               <p className="text-xs text-muted-foreground">
                 {t('flowEditor.properties.timeoutHint')}
               </p>
@@ -287,7 +325,9 @@ export function ApiNodeForm({ node, onDataChange }: ApiNodeFormProps) {
                   onChange={(e) => onDataChange('retryCount', parseInt(e.target.value) || 0)}
                   min={0}
                   max={5}
+                  className={errors.retryCount ? 'border-destructive' : ''}
                 />
+                <FieldError error={errors.retryCount} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="retryDelay">{t('flowEditor.properties.retryDelay')}</Label>
