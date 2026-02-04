@@ -390,9 +390,11 @@ export function useFlowRuntime(options: UseFlowRuntimeOptions = {}) {
             }));
             options.onCheckpoint?.(completeData.checkpoint.nodeId, completeData.checkpoint.message);
           } else {
+            // Clear nodeOutputs to stop edge pulse animations
             setState(prev => ({
               ...prev,
               isRunning: false,
+              nodeOutputs: new Map(),
               finalOutput: completeData.output,
             }));
             options.onComplete?.(completeData.output);
