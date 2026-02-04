@@ -5,10 +5,10 @@ import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Globe, FileText, Pencil, Trash2, Users, Copy, Lock, Calculator, Clock, Search, Download } from 'lucide-react';
-import { format } from 'date-fns';
 import type { CustomTool, SystemTool } from '@/types/customTools';
 import { cn } from '@/lib/utils';
 import { isSystemTool, ToolItem } from './ToolRow';
+import { ToolUsageStats } from './ToolUsageStats';
 
 function getToolIcon(tool: ToolItem) {
   if (isSystemTool(tool)) {
@@ -24,6 +24,7 @@ function getToolIcon(tool: ToolItem) {
 
 interface ToolDetailsPanelProps {
   tool: ToolItem | null;
+  allTools?: CustomTool[];
   isOwned: boolean;
   onEdit: () => void;
   onDelete: () => void;
@@ -33,6 +34,7 @@ interface ToolDetailsPanelProps {
 
 export function ToolDetailsPanel({
   tool,
+  allTools = [],
   isOwned,
   onEdit,
   onDelete,
@@ -252,23 +254,12 @@ export function ToolDetailsPanel({
           </section>
         )}
 
-        {/* Metadata - only for custom tools */}
+        {/* Usage Statistics - only for custom tools */}
         {!isSystem && (
-          <section className="pt-4 border-t">
-            <div className="flex items-center gap-6 text-xs text-muted-foreground">
-              <div>
-                <span className="font-medium">{t('tools.usageCount')}:</span> {(tool as CustomTool).usage_count}
-              </div>
-              <div>
-                <span className="font-medium">{t('tools.created')}:</span>{' '}
-                {format(new Date((tool as CustomTool).created_at), 'dd.MM.yyyy')}
-              </div>
-              <div>
-                <span className="font-medium">{t('tools.updated')}:</span>{' '}
-                {format(new Date((tool as CustomTool).updated_at), 'dd.MM.yyyy')}
-              </div>
-            </div>
-          </section>
+          <ToolUsageStats 
+            tool={tool as CustomTool} 
+            allTools={allTools} 
+          />
         )}
       </div>
     </ScrollArea>
