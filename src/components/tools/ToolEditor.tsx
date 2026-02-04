@@ -30,6 +30,7 @@ import {
   Save,
 } from 'lucide-react';
 import { HttpToolTester } from '@/components/tools/HttpToolTester';
+import { PromptToolTester } from '@/components/tools/PromptToolTester';
 import { 
   ToolFormData, 
   ToolParameter, 
@@ -288,20 +289,29 @@ export function ToolEditor({
 
           {/* Prompt Template - only for prompt type */}
           {formData.toolType === 'prompt' && (
-            <div className="space-y-2">
-              <Label>{t('tools.promptTemplate')} <span className="text-destructive">*</span></Label>
-              <Textarea
-                value={formData.promptTemplate}
-                onChange={(e) => updateField('promptTemplate', e.target.value)}
-                onBlur={() => markTouched('promptTemplate')}
-                placeholder={t('tools.promptTemplatePlaceholder')}
-                className={cn(
-                  'min-h-[120px] font-mono text-sm',
-                  shouldShowError('promptTemplate') && errors.promptTemplate && 'border-destructive focus-visible:ring-destructive'
-                )}
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>{t('tools.promptTemplate')} <span className="text-destructive">*</span></Label>
+                <Textarea
+                  value={formData.promptTemplate}
+                  onChange={(e) => updateField('promptTemplate', e.target.value)}
+                  onBlur={() => markTouched('promptTemplate')}
+                  placeholder={t('tools.promptTemplatePlaceholder')}
+                  className={cn(
+                    'min-h-[120px] font-mono text-sm',
+                    shouldShowError('promptTemplate') && errors.promptTemplate && 'border-destructive focus-visible:ring-destructive'
+                  )}
+                />
+                <p className="text-xs text-muted-foreground">{t('tools.promptTemplateHint')}</p>
+                {shouldShowError('promptTemplate') && <FieldError error={errors.promptTemplate} />}
+              </div>
+
+              {/* Prompt Tool Tester */}
+              <PromptToolTester
+                promptTemplate={formData.promptTemplate}
+                parameters={formData.parameters}
+                toolName={formData.displayName || t('tools.newTool')}
               />
-              <p className="text-xs text-muted-foreground">{t('tools.promptTemplateHint')}</p>
-              {shouldShowError('promptTemplate') && <FieldError error={errors.promptTemplate} />}
             </div>
           )}
 
