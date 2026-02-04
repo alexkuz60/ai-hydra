@@ -1,8 +1,10 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 
 // ============================================
 // Embedding Generation Edge Function
-// Uses Lovable AI Gateway for vector embeddings
+// Uses user's OpenAI API key for vector embeddings
+// (Lovable AI Gateway does not support embedding models)
 // ============================================
 
 const CORS_HEADERS = {
@@ -51,22 +53,69 @@ serve(async (req) => {
       }
     }
 
-    // Get Lovable AI API key
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
+    // Get user's OpenAI API key from authorization header
+    const authHeader = req.headers.get("authorization");
+    if (!authHeader) {
       return new Response(
-        JSON.stringify({ error: "LOVABLE_API_KEY not configured" }),
+        JSON.stringify({ error: "Authorization header required" }),
+        { status: 401, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Initialize Supabase client to get user's API key
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Get user from token
+    const token = authHeader.replace("Bearer ", "");
+    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+    
+    if (userError || !user) {
+      return new Response(
+        JSON.stringify({ error: "Invalid or expired token" }),
+        { status: 401, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Get user's OpenAI API key from vault using service role
+    // We need to call the RPC as the user, so create a user-scoped client
+    const userSupabase = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, {
+      global: { headers: { Authorization: authHeader } }
+    });
+
+    const { data: apiKeys, error: keysError } = await userSupabase
+      .rpc("get_my_api_keys");
+
+    if (keysError) {
+      console.error("[generate-embeddings] Error fetching API keys:", keysError);
+      return new Response(
+        JSON.stringify({ error: "Failed to retrieve API keys" }),
         { status: 500, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } }
+      );
+    }
+
+    // apiKeys is an array, get the first result
+    const keyData = Array.isArray(apiKeys) ? apiKeys[0] : apiKeys;
+    const openaiKey = keyData?.openai_api_key as string | undefined;
+    
+    if (!openaiKey) {
+      return new Response(
+        JSON.stringify({ 
+          error: "OpenAI API key required for embeddings",
+          details: "Please add your OpenAI API key in Profile settings. Embedding models are not available through the built-in AI gateway."
+        }),
+        { status: 400, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } }
       );
     }
 
     console.log(`[generate-embeddings] Generating embeddings for ${texts.length} text(s), model=${model}`);
 
-    // Call Lovable AI embeddings endpoint
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/embeddings", {
+    // Call OpenAI embeddings endpoint directly
+    const response = await fetch("https://api.openai.com/v1/embeddings", {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${LOVABLE_API_KEY}`,
+        "Authorization": `Bearer ${openaiKey}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
@@ -84,24 +133,24 @@ serve(async (req) => {
           { status: 429, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } }
         );
       }
-      if (response.status === 402) {
-        console.error("[generate-embeddings] Payment required");
+      if (response.status === 401) {
+        console.error("[generate-embeddings] Invalid OpenAI API key");
         return new Response(
-          JSON.stringify({ error: "Payment required. Please add funds to your Lovable AI workspace." }),
-          { status: 402, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } }
+          JSON.stringify({ error: "Invalid OpenAI API key. Please check your API key in Profile settings." }),
+          { status: 401, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } }
         );
       }
       const errorText = await response.text();
-      console.error("[generate-embeddings] AI gateway error:", response.status, errorText);
+      console.error("[generate-embeddings] OpenAI API error:", response.status, errorText);
       return new Response(
-        JSON.stringify({ error: `AI gateway error: ${response.status}`, details: errorText }),
+        JSON.stringify({ error: `OpenAI API error: ${response.status}`, details: errorText }),
         { status: 500, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } }
       );
     }
 
     const data = await response.json();
     
-    // Extract embeddings from OpenAI-compatible response format
+    // Extract embeddings from OpenAI response format
     const embeddings: number[][] = data.data.map((item: { embedding: number[] }) => item.embedding);
     
     const result: EmbeddingResponse = {
