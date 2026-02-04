@@ -71,7 +71,7 @@ const translations: Translations = {
   'patterns.roleGroup': { ru: 'Ролевые паттерны', en: 'Role Patterns' },
   'patterns.selectPattern': { ru: 'Выберите паттерн для просмотра деталей', en: 'Select a pattern to view details' },
   'patterns.pattern': { ru: 'Паттерн', en: 'Pattern' },
-  'patterns.stagesCount': { ru: 'этапов', en: 'stages' },
+  'patterns.stagesCount': { ru: 'этапы', en: 'stages' },
   'patterns.stages': { ru: 'Этапы', en: 'Stages' },
   'patterns.checkpoints': { ru: 'Контрольные точки', en: 'Checkpoints' },
   'patterns.afterStage': { ru: 'После этапа', en: 'After stage' },
