@@ -298,7 +298,6 @@ const BehavioralPatterns = () => {
     }
   }, [saveBlueprint, blueprints, markSaved]);
 
-
   const handleDeleteBlueprint = (pattern: TaskBlueprintWithMeta, e: React.MouseEvent) => {
     e.stopPropagation();
     setPatternToDelete({ id: pattern.id, name: pattern.name, type: 'blueprint' });
@@ -738,7 +737,6 @@ const BehavioralPatterns = () => {
           </ResizablePanel>
         </ResizablePanelGroup>
       </div>
-
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
