@@ -102,8 +102,13 @@ export function BlueprintEditorDialog({
       setName(blueprint.name);
       setCategory(blueprint.category);
       setDescription(blueprint.description);
-      setStages(blueprint.stages.length ? [...blueprint.stages] : [{ ...emptyStage }]);
-      setCheckpoints([...blueprint.checkpoints]);
+      setStages(blueprint.stages?.length ? [...blueprint.stages] : [{ ...emptyStage }]);
+      // Ensure checkpoints have valid after_stage values
+      const validCheckpoints = (blueprint.checkpoints || []).map(cp => ({
+        after_stage: cp.after_stage ?? 0,
+        condition: cp.condition || '',
+      }));
+      setCheckpoints(validCheckpoints);
     } else {
       setName('');
       setCategory('planning');
@@ -330,7 +335,7 @@ export function BlueprintEditorDialog({
               {checkpoints.map((checkpoint, index) => (
                 <div key={index} className="flex items-center gap-2 p-3 rounded-lg border bg-hydra-arbiter/5">
                   <Select
-                    value={checkpoint.after_stage.toString()}
+                    value={(checkpoint.after_stage ?? 0).toString()}
                     onValueChange={(v) => updateCheckpoint(index, { after_stage: parseInt(v) })}
                   >
                     <SelectTrigger className="w-32">
