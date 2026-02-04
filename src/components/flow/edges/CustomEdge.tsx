@@ -1,4 +1,4 @@
-import React, { memo, useMemo } from 'react';
+import React, { memo, useMemo, useState, useCallback } from 'react';
 import {
   BaseEdge,
   EdgeLabelRenderer,
@@ -15,6 +15,7 @@ import {
   FLOW_DATA_COLORS,
   EdgeDirection,
 } from '@/types/edgeTypes';
+import { EdgeDataTooltip } from './EdgeDataTooltip';
 
 // Get path based on line type
 function getEdgePath(
@@ -92,6 +93,10 @@ export const CustomEdge = memo(({
   data,
   selected,
 }: EdgeProps) => {
+  // Hover state for tooltip
+  const [isHovered, setIsHovered] = useState(false);
+  const [hoverPosition, setHoverPosition] = useState({ x: 0, y: 0 });
+
   // Cast data to our expected type
   const edgeData = (data || {}) as FlowEdgeData;
   
@@ -100,6 +105,33 @@ export const CustomEdge = memo(({
   const label = edgeData.label as string | undefined;
   const animated = edgeData.animated !== false;
   const strokeWidth = (edgeData.strokeWidth as number) || 2;
+  const runtimeData = edgeData.runtimeData; // Data from flow execution
+
+  // Handle mouse events for tooltip
+  const handleMouseEnter = useCallback((e: React.MouseEvent) => {
+    const rect = (e.target as SVGPathElement).ownerSVGElement?.getBoundingClientRect();
+    if (rect) {
+      setHoverPosition({
+        x: e.clientX - rect.left,
+        y: e.clientY - rect.top,
+      });
+    }
+    setIsHovered(true);
+  }, []);
+
+  const handleMouseMove = useCallback((e: React.MouseEvent) => {
+    const rect = (e.target as SVGPathElement).ownerSVGElement?.getBoundingClientRect();
+    if (rect) {
+      setHoverPosition({
+        x: e.clientX - rect.left,
+        y: e.clientY - rect.top,
+      });
+    }
+  }, []);
+
+  const handleMouseLeave = useCallback(() => {
+    setIsHovered(false);
+  }, []);
 
   // Calculate path
   const [edgePath, labelX, labelY] = useMemo(() => 
@@ -141,25 +173,32 @@ export const CustomEdge = memo(({
 
   return (
     <>
-      {/* Invisible wider path for easier selection */}
+      {/* Invisible wider path for easier selection and hover */}
       <path
         d={edgePath}
         fill="none"
-        strokeWidth={20}
+        strokeWidth={24}
         stroke="transparent"
-        className="react-flow__edge-interaction"
+        className="react-flow__edge-interaction cursor-pointer"
+        onMouseEnter={handleMouseEnter}
+        onMouseMove={handleMouseMove}
+        onMouseLeave={handleMouseLeave}
       />
       
       {/* Main edge path */}
       <BaseEdge
         id={id}
         path={edgePath}
-        style={edgeStyle}
+        style={{
+          ...edgeStyle,
+          strokeWidth: isHovered ? strokeWidth + 1.5 : edgeStyle.strokeWidth,
+        }}
         markerEnd={markerEnd as string}
         className={cn(
           'transition-all duration-200',
           animationClass,
-          selected && 'drop-shadow-[0_0_6px_hsl(var(--primary))]'
+          selected && 'drop-shadow-[0_0_6px_hsl(var(--primary))]',
+          isHovered && 'drop-shadow-[0_0_8px_hsl(var(--primary)/0.5)]'
         )}
       />
 
@@ -185,6 +224,18 @@ export const CustomEdge = memo(({
       )}
 
       {/* Direction indicator for backward edges */}
+      {/* Data tooltip on hover */}
+      <EdgeLabelRenderer>
+        <EdgeDataTooltip
+          x={hoverPosition.x}
+          y={hoverPosition.y}
+          dataType={dataType}
+          data={runtimeData}
+          label={label}
+          visible={isHovered}
+        />
+      </EdgeLabelRenderer>
+
       {direction === 'backward' && (
         <EdgeLabelRenderer>
           <div
