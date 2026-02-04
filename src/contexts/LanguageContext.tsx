@@ -475,6 +475,10 @@ const translations: Translations = {
   'flowEditor.validation.invalidTableName': { ru: 'Некорректное имя таблицы', en: 'Invalid table name' },
   'flowEditor.validation.invalidBucketName': { ru: 'Некорректное имя бакета', en: 'Invalid bucket name' },
   
+  // Bypass mode
+  'flowEditor.bypassEnabled': { ru: 'Bypass включён', en: 'Bypass enabled' },
+  'flowEditor.bypassDisabled': { ru: 'Bypass отключён', en: 'Bypass disabled' },
+  
   // Auth
   'auth.email': { ru: 'Email', en: 'Email' },
   'auth.password': { ru: 'Пароль', en: 'Password' },

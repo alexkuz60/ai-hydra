@@ -152,6 +152,32 @@ function FlowEditorContent() {
     lastStateRef.current = stateSignature;
   }, [nodes, edges, history]);
 
+  const handleUndo = useCallback(() => {
+    const previousState = history.undo();
+    if (previousState) {
+      // Save current state to redo stack
+      history.pushToRedo({ nodes, edges });
+      
+      isUndoRedoAction.current = true;
+      setNodes(previousState.nodes);
+      setEdges(previousState.edges);
+      lastStateRef.current = JSON.stringify(previousState);
+    }
+  }, [history, nodes, edges, setNodes, setEdges]);
+
+  const handleRedo = useCallback(() => {
+    const nextState = history.redo();
+    if (nextState) {
+      // Save current state to undo stack
+      history.pushState({ nodes, edges });
+      
+      isUndoRedoAction.current = true;
+      setNodes(nextState.nodes);
+      setEdges(nextState.edges);
+      lastStateRef.current = JSON.stringify(nextState);
+    }
+  }, [history, nodes, edges, setNodes, setEdges]);
+
   // Keyboard shortcuts for undo/redo
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -181,33 +207,7 @@ function FlowEditorContent() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [nodes, edges]);
-
-  const handleUndo = useCallback(() => {
-    const previousState = history.undo();
-    if (previousState) {
-      // Save current state to redo stack
-      history.pushToRedo({ nodes, edges });
-      
-      isUndoRedoAction.current = true;
-      setNodes(previousState.nodes);
-      setEdges(previousState.edges);
-      lastStateRef.current = JSON.stringify(previousState);
-    }
-  }, [history, nodes, edges, setNodes, setEdges]);
-
-  const handleRedo = useCallback(() => {
-    const nextState = history.redo();
-    if (nextState) {
-      // Save current state to undo stack
-      history.pushState({ nodes, edges });
-      
-      isUndoRedoAction.current = true;
-      setNodes(nextState.nodes);
-      setEdges(nextState.edges);
-      lastStateRef.current = JSON.stringify(nextState);
-    }
-  }, [history, nodes, edges, setNodes, setEdges]);
+  }, [handleUndo, handleRedo]);
 
   // Save edge settings when they change
   const handleEdgeSettingsChange = useCallback((newSettings: EdgeStyleSettings) => {
@@ -278,6 +278,38 @@ function FlowEditorContent() {
       prev?.id === nodeId ? { ...prev, data } : prev
     );
   }, [setNodes]);
+
+  // Keyboard shortcut for bypass toggle (B key)
+  useEffect(() => {
+    const handleBypassKeyDown = (e: KeyboardEvent) => {
+      // Skip if typing in an input field
+      if (
+        e.target instanceof HTMLInputElement ||
+        e.target instanceof HTMLTextAreaElement
+      ) {
+        return;
+      }
+
+      // B = Toggle bypass mode for selected node
+      if ((e.key === 'b' || e.key === 'B' || e.key === 'и' || e.key === 'И') && !e.ctrlKey && !e.metaKey) {
+        if (selectedNode) {
+          e.preventDefault();
+          const currentBypassed = selectedNode.data?.bypassed === true;
+          handleUpdateNode(selectedNode.id, {
+            ...selectedNode.data,
+            bypassed: !currentBypassed,
+          });
+          toast({
+            title: !currentBypassed ? t('flowEditor.bypassEnabled') : t('flowEditor.bypassDisabled'),
+            description: selectedNode.data?.label as string,
+          });
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleBypassKeyDown);
+    return () => window.removeEventListener('keydown', handleBypassKeyDown);
+  }, [selectedNode, handleUpdateNode, t, toast]);
 
   const handleDeleteNode = useCallback((nodeId: string) => {
     setNodes((nds) => nds.filter((node) => node.id !== nodeId));
