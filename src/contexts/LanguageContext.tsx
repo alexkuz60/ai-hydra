@@ -1020,6 +1020,15 @@ const translations: Translations = {
   'tools.previewResult': { ru: 'Предпросмотр результата', en: 'Preview result' },
   'tools.undefined': { ru: 'не задан', en: 'undefined' },
   'tools.undefinedParamsHint': { ru: 'В шаблоне обнаружены плейсхолдеры, не описанные в параметрах. Добавьте их для лучшей документации.', en: 'Found placeholders in template that are not defined as parameters. Consider adding them for better documentation.' },
+  // Tool categories
+  'tools.categoryLabel': { ru: 'Категория', en: 'Category' },
+  'tools.category.general': { ru: 'Общие', en: 'General' },
+  'tools.category.data': { ru: 'Данные', en: 'Data' },
+  'tools.category.integration': { ru: 'Интеграции', en: 'Integrations' },
+  'tools.category.ai': { ru: 'AI / ML', en: 'AI / ML' },
+  'tools.category.automation': { ru: 'Автоматизация', en: 'Automation' },
+  'tools.category.utility': { ru: 'Утилиты', en: 'Utilities' },
+  'tools.systemTools': { ru: 'Системные', en: 'System' },
 };
 
 interface LanguageContextType {

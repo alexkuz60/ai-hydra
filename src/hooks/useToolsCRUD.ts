@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { 
   CustomTool, 
   ToolType, 
+  ToolCategory,
   HttpConfig, 
   ToolParameter,
   ToolFormData,
@@ -36,6 +37,7 @@ export function useToolsCRUD() {
         ...tool,
         parameters: (Array.isArray(tool.parameters) ? tool.parameters : []) as ToolParameter[],
         tool_type: (tool.tool_type || 'prompt') as ToolType,
+        category: (tool.category || 'general') as ToolCategory,
         http_config: (tool.http_config as unknown) as HttpConfig | null,
       }));
 
@@ -85,6 +87,7 @@ export function useToolsCRUD() {
           parameters: JSON.parse(JSON.stringify(formData.parameters)),
           is_shared: formData.isShared,
           tool_type: formData.toolType,
+          category: formData.category,
           http_config: httpConfig ? JSON.parse(JSON.stringify(httpConfig)) : null,
         }])
         .select()
@@ -96,6 +99,7 @@ export function useToolsCRUD() {
         ...data,
         parameters: Array.isArray(data.parameters) ? data.parameters : [],
         tool_type: data.tool_type as ToolType,
+        category: (data.category || 'general') as ToolCategory,
         http_config: (data.http_config as unknown) as HttpConfig | null,
       } as CustomTool;
 
@@ -145,6 +149,7 @@ export function useToolsCRUD() {
           parameters: JSON.parse(JSON.stringify(formData.parameters)),
           is_shared: formData.isShared,
           tool_type: formData.toolType,
+          category: formData.category,
           http_config: httpConfig ? JSON.parse(JSON.stringify(httpConfig)) : null,
         })
         .eq('id', toolId);
@@ -163,6 +168,7 @@ export function useToolsCRUD() {
                 parameters: formData.parameters,
                 is_shared: formData.isShared,
                 tool_type: formData.toolType,
+                category: formData.category,
                 http_config: httpConfig,
                 updated_at: new Date().toISOString(),
               }

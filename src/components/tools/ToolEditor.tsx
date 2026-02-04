@@ -35,12 +35,15 @@ import {
   ToolFormData, 
   ToolParameter, 
   ToolType, 
+  ToolCategory,
   HttpMethod,
   PARAM_TYPES,
   HTTP_METHODS,
+  TOOL_CATEGORIES,
   validateToolName,
 } from '@/types/customTools';
 import { cn } from '@/lib/utils';
+import { Database, Plug, Sparkles, Zap, Settings, Wrench } from 'lucide-react';
 
 // Validation errors interface
 interface ValidationErrors {
@@ -285,6 +288,37 @@ export function ToolEditor({
               )}
             />
             {shouldShowError('description') && <FieldError error={errors.description} />}
+          </div>
+
+          {/* Category */}
+          <div className="space-y-2">
+            <Label>{t('tools.categoryLabel')}</Label>
+            <Select 
+              value={formData.category} 
+              onValueChange={(v) => updateField('category', v as ToolCategory)}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="bg-popover border border-border z-50">
+                {TOOL_CATEGORIES.map((cat) => {
+                  const IconComponent = cat.icon === 'Database' ? Database 
+                    : cat.icon === 'Plug' ? Plug 
+                    : cat.icon === 'Sparkles' ? Sparkles 
+                    : cat.icon === 'Zap' ? Zap 
+                    : cat.icon === 'Settings' ? Settings 
+                    : Wrench;
+                  return (
+                    <SelectItem key={cat.value} value={cat.value}>
+                      <div className="flex items-center gap-2">
+                        <IconComponent className="h-4 w-4 text-muted-foreground" />
+                        {t(cat.labelKey)}
+                      </div>
+                    </SelectItem>
+                  );
+                })}
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Prompt Template - only for prompt type */}

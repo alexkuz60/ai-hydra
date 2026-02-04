@@ -16,6 +16,7 @@ export type Database = {
     Tables: {
       custom_tools: {
         Row: {
+          category: string
           created_at: string
           description: string
           display_name: string
@@ -31,6 +32,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          category?: string
           created_at?: string
           description: string
           display_name: string
@@ -46,6 +48,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          category?: string
           created_at?: string
           description?: string
           display_name?: string

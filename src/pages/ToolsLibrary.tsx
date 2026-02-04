@@ -6,7 +6,7 @@ import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody } from '@/components/ui/table';
-import { Loader2, Search, Plus, Wrench, Upload, Download } from 'lucide-react';
+import { Loader2, Search, Plus, Wrench, Upload, Database, Plug, Sparkles, Zap, Settings, ChevronDown, ChevronRight } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -39,10 +39,12 @@ import {
   CustomTool, 
   OwnerFilter, 
   ToolFormData, 
+  ToolCategory,
   getEmptyFormData, 
   toolToFormData,
   SYSTEM_TOOLS,
   SystemTool,
+  TOOL_CATEGORIES,
   exportToolToJson,
   importToolFromJson,
 } from '@/types/customTools';
@@ -111,6 +113,53 @@ export default function ToolsLibrary() {
       return true;
     });
   }, [allTools, searchQuery, ownerFilter, user?.id]);
+
+  // Group tools by category
+  const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(new Set());
+
+  const groupedTools = useMemo(() => {
+    const groups: Record<string, ToolItem[]> = {};
+    
+    // System tools group
+    const systemTools = filteredTools.filter(isSystemTool);
+    if (systemTools.length > 0) {
+      groups['system'] = systemTools;
+    }
+    
+    // Group custom tools by category
+    const customTools = filteredTools.filter(t => !isSystemTool(t)) as CustomTool[];
+    for (const tool of customTools) {
+      const cat = tool.category || 'general';
+      if (!groups[cat]) groups[cat] = [];
+      groups[cat].push(tool);
+    }
+    
+    return groups;
+  }, [filteredTools]);
+
+  const toggleCategory = (category: string) => {
+    setCollapsedCategories(prev => {
+      const next = new Set(prev);
+      if (next.has(category)) {
+        next.delete(category);
+      } else {
+        next.add(category);
+      }
+      return next;
+    });
+  };
+
+  const getCategoryIcon = (cat: string) => {
+    switch (cat) {
+      case 'system': return Wrench;
+      case 'data': return Database;
+      case 'integration': return Plug;
+      case 'ai': return Sparkles;
+      case 'automation': return Zap;
+      case 'utility': return Settings;
+      default: return Wrench;
+    }
+  };
 
   // Handlers
   const handleSelectTool = (tool: ToolItem) => {
@@ -400,25 +449,60 @@ export default function ToolsLibrary() {
                     </div>
                   </div>
                 ) : (
-                  <Table>
-                    <TableBody>
-                      {filteredTools.map((tool) => {
-                        const isSys = isSystemTool(tool);
+                  <div className="divide-y">
+                    {/* Order: system first, then by TOOL_CATEGORIES order */}
+                    {(['system', ...TOOL_CATEGORIES.map(c => c.value)] as string[])
+                      .filter(cat => groupedTools[cat] && groupedTools[cat].length > 0)
+                      .map((category) => {
+                        const toolsInCategory = groupedTools[category];
+                        const isCollapsed = collapsedCategories.has(category);
+                        const CategoryIcon = getCategoryIcon(category);
+                        const categoryLabel = category === 'system' 
+                          ? t('tools.systemTools')
+                          : t(`tools.category.${category}`);
+
                         return (
-                          <ToolRow
-                            key={tool.id}
-                            tool={tool}
-                            isSelected={selectedTool?.id === tool.id}
-                            isOwned={!isSys && (tool as CustomTool).user_id === user?.id}
-                            onSelect={handleSelectTool}
-                            onEdit={handleStartEdit}
-                            onDelete={handleDeleteClick}
-                            onDuplicate={handleDuplicate}
-                          />
+                          <div key={category}>
+                            <button
+                              onClick={() => toggleCategory(category)}
+                              className="w-full flex items-center gap-2 px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-muted/50 transition-colors"
+                            >
+                              {isCollapsed ? (
+                                <ChevronRight className="h-4 w-4" />
+                              ) : (
+                                <ChevronDown className="h-4 w-4" />
+                              )}
+                              <CategoryIcon className="h-4 w-4" />
+                              <span>{categoryLabel}</span>
+                              <span className="ml-auto text-xs bg-muted px-1.5 py-0.5 rounded">
+                                {toolsInCategory.length}
+                              </span>
+                            </button>
+                            {!isCollapsed && (
+                              <Table>
+                                <TableBody>
+                                  {toolsInCategory.map((tool) => {
+                                    const isSys = isSystemTool(tool);
+                                    return (
+                                      <ToolRow
+                                        key={tool.id}
+                                        tool={tool}
+                                        isSelected={selectedTool?.id === tool.id}
+                                        isOwned={!isSys && (tool as CustomTool).user_id === user?.id}
+                                        onSelect={handleSelectTool}
+                                        onEdit={handleStartEdit}
+                                        onDelete={handleDeleteClick}
+                                        onDuplicate={handleDuplicate}
+                                      />
+                                    );
+                                  })}
+                                </TableBody>
+                              </Table>
+                            )}
+                          </div>
                         );
                       })}
-                    </TableBody>
-                  </Table>
+                  </div>
                 )}
               </div>
             </div>
