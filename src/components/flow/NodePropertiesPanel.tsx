@@ -212,17 +212,33 @@ export function NodePropertiesPanel({
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="description">{t('flowEditor.properties.description')}</Label>
+              <Label htmlFor="inputValue">{t('flowEditor.properties.inputValue')}</Label>
+              <Textarea
+                id="inputValue"
+                value={(selectedNode.data.inputValue as string) || ''}
+                onChange={(e) => handleDataChange('inputValue', e.target.value)}
+                placeholder={t('flowEditor.properties.inputValuePlaceholder')}
+                rows={5}
+                className="font-mono text-sm"
+              />
+            </div>
+            <Separator className="my-2" />
+            <div className="space-y-2">
+              <Label htmlFor="description" className="text-muted-foreground text-xs">
+                {t('flowEditor.properties.description')}
+              </Label>
               <Textarea
                 id="description"
                 value={(selectedNode.data.description as string) || ''}
                 onChange={(e) => handleDataChange('description', e.target.value)}
                 placeholder={t('flowEditor.properties.inputDescPlaceholder')}
-                rows={3}
+                rows={2}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="inputType">{t('flowEditor.properties.inputType')}</Label>
+              <Label htmlFor="inputType" className="text-muted-foreground text-xs">
+                {t('flowEditor.properties.inputType')}
+              </Label>
               <Input
                 id="inputType"
                 value={(selectedNode.data.inputType as string) || ''}
