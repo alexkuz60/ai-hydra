@@ -614,6 +614,22 @@ export function NodePropertiesPanel({
               />
             </div>
             <div className="space-y-2">
+              <Label htmlFor="inputCount">{t('flowEditor.properties.inputCount')}</Label>
+              <Select
+                value={String((selectedNode.data.inputCount as number) || 2)}
+                onValueChange={(value) => handleDataChange('inputCount', parseInt(value))}
+              >
+                <SelectTrigger className="bg-background">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-popover border z-50">
+                  {[2, 3, 4, 5].map(n => (
+                    <SelectItem key={n} value={String(n)}>{n} {t('flowEditor.properties.inputs')}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
               <Label htmlFor="mergeStrategy">{t('flowEditor.properties.mergeStrategy')}</Label>
               <Select
                 value={(selectedNode.data.mergeStrategy as string) || 'concat'}
@@ -624,10 +640,30 @@ export function NodePropertiesPanel({
                 </SelectTrigger>
                 <SelectContent className="bg-popover border z-50">
                   <SelectItem value="concat">{t('flowEditor.properties.mergeConcat')}</SelectItem>
-                  <SelectItem value="object">{t('flowEditor.properties.mergeObject')}</SelectItem>
                   <SelectItem value="array">{t('flowEditor.properties.mergeArray')}</SelectItem>
+                  <SelectItem value="object">{t('flowEditor.properties.mergeObject')}</SelectItem>
+                  <SelectItem value="first">{t('flowEditor.properties.mergeFirst')}</SelectItem>
+                  <SelectItem value="last">{t('flowEditor.properties.mergeLast')}</SelectItem>
                 </SelectContent>
               </Select>
+              <p className="text-xs text-muted-foreground">
+                {t('flowEditor.properties.mergeStrategyHint')}
+              </p>
+            </div>
+            <div className="flex items-center justify-between py-2">
+              <div className="flex flex-col">
+                <Label htmlFor="waitForAll" className="text-sm">
+                  {t('flowEditor.properties.waitForAll')}
+                </Label>
+                <span className="text-xs text-muted-foreground">
+                  {t('flowEditor.properties.waitForAllHint')}
+                </span>
+              </div>
+              <Switch
+                id="waitForAll"
+                checked={(selectedNode.data.waitForAll as boolean) !== false}
+                onCheckedChange={(checked) => handleDataChange('waitForAll', checked)}
+              />
             </div>
           </>
         );
@@ -645,6 +681,40 @@ export function NodePropertiesPanel({
               />
             </div>
             <div className="space-y-2">
+              <Label htmlFor="outputCount">{t('flowEditor.properties.outputCount')}</Label>
+              <Select
+                value={String((selectedNode.data.outputCount as number) || 2)}
+                onValueChange={(value) => handleDataChange('outputCount', parseInt(value))}
+              >
+                <SelectTrigger className="bg-background">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-popover border z-50">
+                  {[2, 3, 4, 5].map(n => (
+                    <SelectItem key={n} value={String(n)}>{n} {t('flowEditor.properties.outputs')}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="splitMode">{t('flowEditor.properties.splitMode')}</Label>
+              <Select
+                value={(selectedNode.data.splitMode as string) || 'distribute'}
+                onValueChange={(value) => handleDataChange('splitMode', value)}
+              >
+                <SelectTrigger className="bg-background">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-popover border z-50">
+                  <SelectItem value="distribute">{t('flowEditor.properties.splitDistribute')}</SelectItem>
+                  <SelectItem value="duplicate">{t('flowEditor.properties.splitDuplicate')}</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                {t('flowEditor.properties.splitModeHint')}
+              </p>
+            </div>
+            <div className="space-y-2">
               <Label htmlFor="splitKey">{t('flowEditor.properties.splitKey')}</Label>
               <Input
                 id="splitKey"
@@ -652,6 +722,9 @@ export function NodePropertiesPanel({
                 onChange={(e) => handleDataChange('splitKey', e.target.value)}
                 placeholder={t('flowEditor.properties.splitKeyPlaceholder')}
               />
+              <p className="text-xs text-muted-foreground">
+                {t('flowEditor.properties.splitKeyHint')}
+              </p>
             </div>
           </>
         );

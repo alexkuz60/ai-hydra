@@ -8,16 +8,32 @@ interface SplitNodeProps {
   data: {
     label?: string;
     splitKey?: string;
+    splitMode?: 'distribute' | 'duplicate';
+    outputCount?: number;
     bypassed?: boolean;
   };
   selected?: boolean;
 }
 
 export const SplitNode = memo(({ data, selected }: SplitNodeProps) => {
+  const outputCount = data.outputCount || 2;
+  const splitMode = data.splitMode || 'distribute';
+  
+  // Generate output handles based on count (max 5)
+  const handles = Array.from({ length: Math.min(outputCount, 5) }, (_, i) => i);
+  
+  // Calculate positions for handles
+  const getHandlePosition = (index: number, total: number) => {
+    if (total === 1) return '50%';
+    const spacing = 60 / (total - 1);
+    const startOffset = 20;
+    return `${startOffset + (spacing * index)}%`;
+  };
+
   return (
     <NodeBypassWrapper bypassed={data.bypassed}>
       <div className={cn(
-        "px-4 py-3 min-w-[160px] rounded-lg border-2 transition-all",
+        "px-4 py-3 min-w-[180px] rounded-lg border-2 transition-all",
         "bg-hydra-archivist/10 border-hydra-archivist",
         selected && "ring-2 ring-hydra-archivist ring-offset-2 ring-offset-background"
       )}>
@@ -32,28 +48,30 @@ export const SplitNode = memo(({ data, selected }: SplitNodeProps) => {
           </div>
           <div className="flex-1 min-w-0">
             <div className="text-sm font-medium truncate">{data.label || 'Разделение'}</div>
-            {data.splitKey && (
-              <div className="text-xs text-muted-foreground truncate">
-                {data.splitKey}
-              </div>
-            )}
+            <div className="flex items-center gap-1.5 mt-0.5">
+              <span className="text-xs text-muted-foreground">
+                {splitMode === 'distribute' ? '⇉' : '⧉'} {outputCount}
+              </span>
+              {data.splitKey && (
+                <span className="text-xs text-muted-foreground truncate">
+                  • {data.splitKey}
+                </span>
+              )}
+            </div>
           </div>
         </div>
-        {/* Multiple output handles */}
-        <Handle
-          type="source"
-          position={Position.Bottom}
-          id="output-1"
-          className="!w-3 !h-3 !bg-hydra-archivist !border-2 !border-background"
-          style={{ left: '30%' }}
-        />
-        <Handle
-          type="source"
-          position={Position.Bottom}
-          id="output-2"
-          className="!w-3 !h-3 !bg-hydra-archivist !border-2 !border-background"
-          style={{ left: '70%' }}
-        />
+        
+        {/* Dynamic output handles */}
+        {handles.map((index) => (
+          <Handle
+            key={`output-${index + 1}`}
+            type="source"
+            position={Position.Bottom}
+            id={`output-${index + 1}`}
+            className="!w-3 !h-3 !bg-hydra-archivist !border-2 !border-background"
+            style={{ left: getHandlePosition(index, handles.length) }}
+          />
+        ))}
       </div>
     </NodeBypassWrapper>
   );

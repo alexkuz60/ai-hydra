@@ -320,13 +320,27 @@ const translations: Translations = {
   // Merge node properties
   'flowEditor.properties.mergeStrategy': { ru: 'Стратегия слияния', en: 'Merge Strategy' },
   'flowEditor.properties.selectMergeStrategy': { ru: 'Выберите стратегию', en: 'Select strategy' },
-  'flowEditor.properties.mergeConcat': { ru: 'Конкатенация', en: 'Concatenate' },
+  'flowEditor.properties.mergeConcat': { ru: 'Конкатенация текста', en: 'Concatenate text' },
   'flowEditor.properties.mergeObject': { ru: 'Объединение объектов', en: 'Merge objects' },
-  'flowEditor.properties.mergeArray': { ru: 'Массив', en: 'Array' },
+  'flowEditor.properties.mergeArray': { ru: 'Массив значений', en: 'Array of values' },
+  'flowEditor.properties.mergeFirst': { ru: 'Первое значение', en: 'First value' },
+  'flowEditor.properties.mergeLast': { ru: 'Последнее значение', en: 'Last value' },
+  'flowEditor.properties.mergeStrategyHint': { ru: 'Как объединять данные из параллельных веток', en: 'How to combine data from parallel branches' },
+  'flowEditor.properties.inputCount': { ru: 'Количество входов', en: 'Input Count' },
+  'flowEditor.properties.inputs': { ru: 'входов', en: 'inputs' },
+  'flowEditor.properties.waitForAll': { ru: 'Ожидать все входы', en: 'Wait for all inputs' },
+  'flowEditor.properties.waitForAllHint': { ru: 'Выполнить слияние только когда все входы готовы', en: 'Merge only when all inputs are ready' },
   
   // Split node properties
-  'flowEditor.properties.splitKey': { ru: 'Ключ разделения', en: 'Split Key' },
-  'flowEditor.properties.splitKeyPlaceholder': { ru: 'data.items', en: 'data.items' },
+  'flowEditor.properties.splitKey': { ru: 'Разделитель', en: 'Split Delimiter' },
+  'flowEditor.properties.splitKeyPlaceholder': { ru: '\\n или , или |', en: '\\n or , or |' },
+  'flowEditor.properties.splitKeyHint': { ru: 'Для разделения строк. Пустое = разбивка по переносу строки', en: 'For splitting strings. Empty = split by newline' },
+  'flowEditor.properties.outputCount': { ru: 'Количество выходов', en: 'Output Count' },
+  'flowEditor.properties.outputs': { ru: 'выходов', en: 'outputs' },
+  'flowEditor.properties.splitMode': { ru: 'Режим разделения', en: 'Split Mode' },
+  'flowEditor.properties.splitDistribute': { ru: 'Распределить элементы', en: 'Distribute items' },
+  'flowEditor.properties.splitDuplicate': { ru: 'Дублировать вход', en: 'Duplicate input' },
+  'flowEditor.properties.splitModeHint': { ru: 'Распределение разбивает данные по выходам, дублирование отправляет копию на каждый выход', en: 'Distribute splits data across outputs, duplicate sends copy to each output' },
   
   // Database node properties
   'flowEditor.properties.dbOperation': { ru: 'Операция', en: 'Operation' },
