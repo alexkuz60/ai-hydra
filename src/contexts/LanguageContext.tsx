@@ -292,6 +292,8 @@ const translations: Translations = {
   'flowEditor.properties.toolNamePlaceholder': { ru: 'Выберите или введите инструмент...', en: 'Select or enter tool...' },
   'flowEditor.properties.toolConfig': { ru: 'Конфигурация (JSON)', en: 'Configuration (JSON)' },
   'flowEditor.properties.deleteNode': { ru: 'Удалить узел', en: 'Delete Node' },
+  'flowEditor.properties.bypassNode': { ru: 'Bypass режим', en: 'Bypass Mode' },
+  'flowEditor.properties.bypassHint': { ru: 'Пропустить выполнение этого узла при запуске потока', en: 'Skip execution of this node when running the flow' },
   'flowEditor.properties.selectFromLibrary': { ru: 'Выбрать из библиотеки', en: 'Select from Library' },
   'flowEditor.properties.noPromptSelected': { ru: 'Не выбран', en: 'Not selected' },
   'flowEditor.properties.loadingPrompts': { ru: 'Загрузка промптов...', en: 'Loading prompts...' },

@@ -178,6 +178,24 @@ export class FlowExecutor {
       return { success: true };
     }
 
+    // Handle bypassed nodes - pass through inputs without execution
+    if (node.data.bypassed) {
+      nodeExecution.state = 'skipped';
+      nodeExecution.completedAt = new Date().toISOString();
+      
+      // Get inputs from connected nodes and pass them through
+      const inputs = getNodeInputs(nodeId, this.edges, this.nodeOutputs);
+      const passthrough = Object.values(inputs)[0] || null;
+      this.nodeOutputs.set(nodeId, passthrough);
+      
+      this.emitEvent('node_complete', nodeId, { 
+        bypassed: true, 
+        message: 'Node bypassed, inputs passed through' 
+      });
+      
+      return { success: true };
+    }
+
     // Mark as running
     nodeExecution.state = 'running';
     nodeExecution.startedAt = new Date().toISOString();
