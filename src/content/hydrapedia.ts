@@ -884,7 +884,7 @@ In the Expert Panel, click the \`BookOpen\` icon next to the model selector:
     content: {
       ru: `# Инструменты
 
-Инструменты расширяют возможности AI-моделей, позволяя им выполнять действия.
+Инструменты расширяют возможности AI-моделей, позволяя им выполнять действия: искать в интернете, делать вычисления, обращаться к внешним API.
 
 ## Интерфейс библиотеки инструментов
 
@@ -914,92 +914,234 @@ In the Expert Panel, click the \`BookOpen\` icon next to the model selector:
 
 **Иконка**: \`FileText\`
 
-Текстовые инструкции, которые модель интерпретирует и выполняет.
+Текстовые инструкции с подстановкой параметров. Модель интерпретирует шаблон и выполняет задачу.
 
 **Подходят для:**
-- Форматирования вывода
+- Форматирования вывода по шаблону
 - Пошаговых инструкций
-- Специализированных задач
+- Специализированных задач (перевод, суммаризация)
+
+**Пример шаблона:**
+\`\`\`
+Переведи текст "{{text}}" на {{language}}.
+Формат: только перевод, без пояснений.
+\`\`\`
 
 ### HTTP API инструменты
 
 **Иконка**: \`Globe\`
 
-Реальные вызовы к внешним API.
+Реальные вызовы к внешним API с полной конфигурацией запроса.
 
 **Позволяют:**
-- Получать данные из интернета
-- Взаимодействовать с сервисами
-- Выполнять вычисления
+- Получать данные из интернета (погода, курсы, новости)
+- Взаимодействовать с сервисами (CRM, базы данных)
+- Интегрировать внешние AI-сервисы
 
-## Создание инструмента
+---
 
-### Форма редактирования
+## HTTP-инструменты: Подробное руководство
+
+### Создание HTTP-инструмента
+
+1. Нажмите **«Новый инструмент»** \`Plus\`
+2. Выберите тип **«HTTP API»**
+3. Заполните основные поля:
+
+| Поле | Описание | Пример |
+|------|----------|--------|
+| **Имя** | Уникальный ID (snake_case) | \`get_weather\` |
+| **Отображаемое имя** | Читаемое название | \`Погода по городу\` |
+| **Описание** | Что делает инструмент | \`Получает текущую погоду\` |
+
+### Конфигурация HTTP-запроса
+
+#### Метод и URL
 
 | Поле | Описание |
 |------|----------|
-| **Имя** | Уникальный идентификатор (snake_case) |
-| **Отображаемое имя** | Читаемое название |
-| **Описание** | Что делает инструмент |
-| **Тип** | Промпт или HTTP |
-| **Шаблон/Конфиг** | Текст промпта или HTTP-настройки |
-| **Параметры** | JSON-схема входных параметров |
+| **Method** | HTTP-метод: \`GET\`, \`POST\`, \`PUT\`, \`DELETE\` |
+| **URL** | Адрес API с подстановками \`{{param}}\` |
 
-### HTTP-инструмент — настройки
+**Пример URL с параметрами:**
+\`\`\`
+https://api.openweathermap.org/data/2.5/weather?q={{city}}&appid={{api_key}}&units=metric
+\`\`\`
 
-| Поле | Описание |
-|------|----------|
-| **Method** | GET, POST, PUT, DELETE |
-| **URL** | Адрес API с переменными \`{{param}}\` |
-| **Headers** | Заголовки запроса (JSON) |
-| **Body** | Тело запроса для POST/PUT |
+#### Заголовки (Headers)
+
+Заголовки задаются как JSON-объект. Поддерживаются подстановки параметров:
 
 \`\`\`json
 {
-  "method": "GET",
-  "url": "https://api.example.com/data?q={{query}}",
-  "headers": {
-    "Authorization": "Bearer {{apiKey}}"
+  "Authorization": "Bearer {{token}}",
+  "Content-Type": "application/json",
+  "X-Custom-Header": "value"
+}
+\`\`\`
+
+| Кнопка | Описание |
+|--------|----------|
+| **Добавить стандартные** | Вставляет \`Content-Type: application/json\` |
+| **Добавить Bearer** | Вставляет \`Authorization: Bearer {{token}}\` |
+
+#### Тело запроса (Body)
+
+Для методов \`POST\` и \`PUT\` можно указать тело запроса:
+
+\`\`\`json
+{
+  "message": "{{user_message}}",
+  "settings": {
+    "temperature": 0.7,
+    "max_tokens": 1000
   }
 }
 \`\`\`
 
-## Тестирование
+#### Извлечение данных (Response Path)
 
-### Панель тестирования
+JSONPath для извлечения нужной части ответа:
+
+| Путь | Описание | Пример |
+|------|----------|--------|
+| \`data\` | Поле верхнего уровня | \`{"data": {...}}\` → \`{...}\` |
+| \`results[0]\` | Первый элемент массива | \`{"results": [...]}\` → первый элемент |
+| \`data.items[0].name\` | Вложенный путь | Глубокое извлечение |
+
+### Параметры инструмента
+
+Параметры определяют, какие данные модель должна передать при вызове:
+
+| Поле | Тип | Описание |
+|------|-----|----------|
+| **name** | string | Имя параметра (используется в \`{{name}}\`) |
+| **type** | string/number/boolean | Тип данных |
+| **description** | string | Описание для модели |
+| **required** | boolean | Обязательный ли параметр |
+
+**Пример схемы параметров:**
+\`\`\`json
+[
+  {
+    "name": "city",
+    "type": "string",
+    "description": "Название города",
+    "required": true
+  },
+  {
+    "name": "units",
+    "type": "string",
+    "description": "Единицы измерения: metric или imperial",
+    "required": false
+  }
+]
+\`\`\`
+
+### Тестирование HTTP-инструментов
+
+Перед сохранением инструмента протестируйте его работу:
+
+#### Панель тестирования
 
 | Элемент | Иконка | Описание |
 |---------|--------|----------|
-| **Параметры** | \`FileText\` | Поля для ввода тестовых значений |
-| **Выполнить** | \`Play\` | Запуск теста |
-| **Результат** | — | Вывод ответа API |
-| **Статус** | \`CheckCircle\` / \`XCircle\` | Успех или ошибка |
-| **Время** | \`Clock\` | Время выполнения |
+| **Поля параметров** | \`FileText\` | Ввод тестовых значений |
+| **Выполнить тест** | \`Play\` | Отправка реального HTTP-запроса |
+| **Индикатор загрузки** | \`Loader\` | Показывает выполнение запроса |
+| **Статус** | \`CheckCircle\` / \`XCircle\` | Успех (зелёный) или ошибка (красный) |
+| **Время выполнения** | \`Clock\` | Время ответа в миллисекундах |
+| **Результат** | — | JSON-ответ API |
+
+#### Процесс тестирования
+
+1. Заполните все обязательные параметры
+2. Нажмите **«Тестировать»** \`Play\`
+3. Дождитесь ответа (до 30 сек)
+4. Проверьте результат:
+   - ✅ **Успех**: зелёная галочка, JSON-результат
+   - ⚠️ **Предупреждение**: путь не найден, показан полный ответ
+   - ❌ **Ошибка**: красный крестик, описание проблемы
+
+#### Типичные ошибки
+
+| Ошибка | Причина | Решение |
+|--------|---------|---------|
+| \`HTTP 401\` | Неверная авторизация | Проверьте токен/ключ API |
+| \`HTTP 404\` | Неверный URL | Проверьте адрес и параметры |
+| \`Таймаут\` | Сервер не отвечает | Увеличьте таймаут или проверьте URL |
+| \`Путь не найден\` | Неверный Response Path | Проверьте структуру ответа |
+| \`SSRF блокировка\` | Внутренний адрес | Используйте публичные API |
+
+### Примеры HTTP-инструментов
+
+#### 1. Погодный API
+
+\`\`\`
+Имя: get_weather
+URL: https://api.openweathermap.org/data/2.5/weather?q={{city}}&appid={{api_key}}&units=metric
+Метод: GET
+Response Path: main
+Параметры: city (string, required), api_key (string, required)
+\`\`\`
+
+#### 2. Отправка в Slack
+
+\`\`\`
+Имя: send_slack_message
+URL: https://hooks.slack.com/services/{{webhook_id}}
+Метод: POST
+Headers: {"Content-Type": "application/json"}
+Body: {"text": "{{message}}", "channel": "{{channel}}"}
+Параметры: webhook_id, message, channel
+\`\`\`
+
+#### 3. Поиск в базе знаний
+
+\`\`\`
+Имя: search_knowledge_base
+URL: https://api.example.com/search
+Метод: POST
+Headers: {"Authorization": "Bearer {{token}}"}
+Body: {"query": "{{query}}", "limit": 5}
+Response Path: results
+\`\`\`
 
 ## Безопасность
 
 ### SSRF-защита
 
-При создании HTTP-инструментов система валидирует URL для предотвращения SSRF-атак:
+Система валидирует URL для предотвращения SSRF-атак:
 
-| Блокируется | Пример |
-|-------------|--------|
-| Localhost | \`localhost\`, \`127.0.0.1\` |
-| Внутренние сети | \`10.x.x.x\`, \`192.168.x.x\`, \`172.16.x.x\` |
-| Невалидные схемы | \`file://\`, \`ftp://\` |
+| Блокируется | Примеры |
+|-------------|---------|
+| Localhost | \`localhost\`, \`127.0.0.1\`, \`0.0.0.0\` |
+| Приватные сети | \`10.x.x.x\`, \`192.168.x.x\`, \`172.16-31.x.x\` |
+| Внутренние домены | \`*.local\`, \`*.internal\` |
 
-### Таймауты и лимиты
+### Лимиты и ограничения
 
 | Параметр | Значение |
 |----------|----------|
 | **Таймаут запроса** | 30 секунд |
-| **Макс. размер ответа** | 1 МБ |
+| **Макс. размер ответа** | 1 МБ (1 048 576 байт) |
+| **Разрешённые схемы** | \`http://\`, \`https://\` |
 
-> **Важно**: HTTP-инструменты требуют корректной настройки CORS.`,
+> **Важно**: HTTP-инструменты выполняются на сервере. Убедитесь, что целевой API доступен и не требует особой сетевой конфигурации.
+
+## Активация инструментов
+
+Инструменты активируются per-model в настройках задачи:
+
+1. Откройте **Настройки модели** \`Settings\`
+2. Перейдите на вкладку **«Инструменты»**
+3. Включите нужные инструменты для каждой модели
+
+> **Совет**: Не все модели поддерживают Tool Calling. Проверьте документацию провайдера.`,
 
       en: `# Tools
 
-Tools extend AI model capabilities, allowing them to perform actions.
+Tools extend AI model capabilities, allowing them to perform actions: search the web, make calculations, call external APIs.
 
 ## Tools Library Interface
 
@@ -1029,88 +1171,230 @@ Tools extend AI model capabilities, allowing them to perform actions.
 
 **Icon**: \`FileText\`
 
-Text instructions that the model interprets and executes.
+Text instructions with parameter substitution. The model interprets the template and executes the task.
 
 **Suitable for:**
-- Output formatting
+- Output formatting with templates
 - Step-by-step instructions
-- Specialized tasks
+- Specialized tasks (translation, summarization)
+
+**Template example:**
+\`\`\`
+Translate the text "{{text}}" to {{language}}.
+Format: translation only, no explanations.
+\`\`\`
 
 ### HTTP API Tools
 
 **Icon**: \`Globe\`
 
-Real calls to external APIs.
+Real calls to external APIs with full request configuration.
 
 **Allow you to:**
-- Fetch data from the internet
-- Interact with services
-- Perform calculations
+- Fetch data from the internet (weather, rates, news)
+- Interact with services (CRM, databases)
+- Integrate external AI services
 
-## Creating a Tool
+---
 
-### Edit Form
+## HTTP Tools: Detailed Guide
+
+### Creating an HTTP Tool
+
+1. Click **"New Tool"** \`Plus\`
+2. Select type **"HTTP API"**
+3. Fill in the basic fields:
+
+| Field | Description | Example |
+|-------|-------------|---------|
+| **Name** | Unique ID (snake_case) | \`get_weather\` |
+| **Display Name** | Readable name | \`Weather by City\` |
+| **Description** | What the tool does | \`Gets current weather\` |
+
+### HTTP Request Configuration
+
+#### Method and URL
 
 | Field | Description |
 |-------|-------------|
-| **Name** | Unique identifier (snake_case) |
-| **Display Name** | Readable name |
-| **Description** | What the tool does |
-| **Type** | Prompt or HTTP |
-| **Template/Config** | Prompt text or HTTP settings |
-| **Parameters** | JSON schema of input params |
+| **Method** | HTTP method: \`GET\`, \`POST\`, \`PUT\`, \`DELETE\` |
+| **URL** | API address with substitutions \`{{param}}\` |
 
-### HTTP Tool — Settings
+**URL example with parameters:**
+\`\`\`
+https://api.openweathermap.org/data/2.5/weather?q={{city}}&appid={{api_key}}&units=metric
+\`\`\`
 
-| Field | Description |
-|-------|-------------|
-| **Method** | GET, POST, PUT, DELETE |
-| **URL** | API address with variables \`{{param}}\` |
-| **Headers** | Request headers (JSON) |
-| **Body** | Request body for POST/PUT |
+#### Headers
+
+Headers are set as a JSON object. Parameter substitutions are supported:
 
 \`\`\`json
 {
-  "method": "GET",
-  "url": "https://api.example.com/data?q={{query}}",
-  "headers": {
-    "Authorization": "Bearer {{apiKey}}"
+  "Authorization": "Bearer {{token}}",
+  "Content-Type": "application/json",
+  "X-Custom-Header": "value"
+}
+\`\`\`
+
+| Button | Description |
+|--------|-------------|
+| **Add Standard** | Inserts \`Content-Type: application/json\` |
+| **Add Bearer** | Inserts \`Authorization: Bearer {{token}}\` |
+
+#### Request Body
+
+For \`POST\` and \`PUT\` methods, you can specify a request body:
+
+\`\`\`json
+{
+  "message": "{{user_message}}",
+  "settings": {
+    "temperature": 0.7,
+    "max_tokens": 1000
   }
 }
 \`\`\`
 
-## Testing
+#### Data Extraction (Response Path)
 
-### Testing Panel
+JSONPath to extract the needed part of the response:
+
+| Path | Description | Example |
+|------|-------------|---------|
+| \`data\` | Top-level field | \`{"data": {...}}\` → \`{...}\` |
+| \`results[0]\` | First array element | \`{"results": [...]}\` → first element |
+| \`data.items[0].name\` | Nested path | Deep extraction |
+
+### Tool Parameters
+
+Parameters define what data the model should pass when calling:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| **name** | string | Parameter name (used in \`{{name}}\`) |
+| **type** | string/number/boolean | Data type |
+| **description** | string | Description for the model |
+| **required** | boolean | Whether parameter is required |
+
+**Parameter schema example:**
+\`\`\`json
+[
+  {
+    "name": "city",
+    "type": "string",
+    "description": "City name",
+    "required": true
+  },
+  {
+    "name": "units",
+    "type": "string",
+    "description": "Units: metric or imperial",
+    "required": false
+  }
+]
+\`\`\`
+
+### Testing HTTP Tools
+
+Test your tool before saving:
+
+#### Testing Panel
 
 | Element | Icon | Description |
 |---------|------|-------------|
-| **Parameters** | \`FileText\` | Fields for test values |
-| **Execute** | \`Play\` | Run test |
-| **Result** | — | API response output |
-| **Status** | \`CheckCircle\` / \`XCircle\` | Success or error |
-| **Time** | \`Clock\` | Execution time |
+| **Parameter Fields** | \`FileText\` | Enter test values |
+| **Run Test** | \`Play\` | Send actual HTTP request |
+| **Loading Indicator** | \`Loader\` | Shows request in progress |
+| **Status** | \`CheckCircle\` / \`XCircle\` | Success (green) or error (red) |
+| **Execution Time** | \`Clock\` | Response time in milliseconds |
+| **Result** | — | API JSON response |
+
+#### Testing Process
+
+1. Fill in all required parameters
+2. Click **"Test"** \`Play\`
+3. Wait for response (up to 30 sec)
+4. Check the result:
+   - ✅ **Success**: green checkmark, JSON result
+   - ⚠️ **Warning**: path not found, full response shown
+   - ❌ **Error**: red cross, problem description
+
+#### Common Errors
+
+| Error | Cause | Solution |
+|-------|-------|----------|
+| \`HTTP 401\` | Invalid authorization | Check API token/key |
+| \`HTTP 404\` | Invalid URL | Check address and parameters |
+| \`Timeout\` | Server not responding | Increase timeout or check URL |
+| \`Path not found\` | Invalid Response Path | Check response structure |
+| \`SSRF block\` | Internal address | Use public APIs |
+
+### HTTP Tool Examples
+
+#### 1. Weather API
+
+\`\`\`
+Name: get_weather
+URL: https://api.openweathermap.org/data/2.5/weather?q={{city}}&appid={{api_key}}&units=metric
+Method: GET
+Response Path: main
+Parameters: city (string, required), api_key (string, required)
+\`\`\`
+
+#### 2. Send to Slack
+
+\`\`\`
+Name: send_slack_message
+URL: https://hooks.slack.com/services/{{webhook_id}}
+Method: POST
+Headers: {"Content-Type": "application/json"}
+Body: {"text": "{{message}}", "channel": "{{channel}}"}
+Parameters: webhook_id, message, channel
+\`\`\`
+
+#### 3. Knowledge Base Search
+
+\`\`\`
+Name: search_knowledge_base
+URL: https://api.example.com/search
+Method: POST
+Headers: {"Authorization": "Bearer {{token}}"}
+Body: {"query": "{{query}}", "limit": 5}
+Response Path: results
+\`\`\`
 
 ## Security
 
 ### SSRF Protection
 
-When creating HTTP tools, the system validates URLs to prevent SSRF attacks:
+The system validates URLs to prevent SSRF attacks:
 
-| Blocked | Example |
-|---------|---------|
-| Localhost | \`localhost\`, \`127.0.0.1\` |
-| Internal Networks | \`10.x.x.x\`, \`192.168.x.x\`, \`172.16.x.x\` |
-| Invalid Schemes | \`file://\`, \`ftp://\` |
+| Blocked | Examples |
+|---------|----------|
+| Localhost | \`localhost\`, \`127.0.0.1\`, \`0.0.0.0\` |
+| Private Networks | \`10.x.x.x\`, \`192.168.x.x\`, \`172.16-31.x.x\` |
+| Internal Domains | \`*.local\`, \`*.internal\` |
 
-### Timeouts and Limits
+### Limits and Restrictions
 
 | Parameter | Value |
 |-----------|-------|
 | **Request Timeout** | 30 seconds |
-| **Max Response Size** | 1 MB |
+| **Max Response Size** | 1 MB (1,048,576 bytes) |
+| **Allowed Schemes** | \`http://\`, \`https://\` |
 
-> **Important**: HTTP tools require proper CORS configuration.`
+> **Important**: HTTP tools are executed on the server. Make sure the target API is accessible and doesn't require special network configuration.
+
+## Tool Activation
+
+Tools are activated per-model in task settings:
+
+1. Open **Model Settings** \`Settings\`
+2. Go to the **"Tools"** tab
+3. Enable desired tools for each model
+
+> **Tip**: Not all models support Tool Calling. Check the provider documentation.`
     }
   },
   {
