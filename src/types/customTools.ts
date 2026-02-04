@@ -77,29 +77,6 @@ export const SYSTEM_TOOLS: SystemTool[] = [
   },
   // Built-in prompt tools by category
   {
-    id: 'builtin_summarizer',
-    name: 'text_summarizer',
-    display_name: 'Резюмизатор текста',
-    description: 'Сжимает длинный текст до ключевых тезисов. Полезен для быстрого анализа документов и выделения главного.',
-    parameters: [
-      { name: 'text', type: 'string', description: 'Текст для резюмирования', required: true },
-      { name: 'max_points', type: 'number', description: 'Максимальное количество ключевых пунктов (по умолчанию 5)', required: false },
-    ],
-    tool_type: 'prompt',
-    is_system: true,
-    category: 'general',
-    prompt_template: `Проанализируй следующий текст и выдели {{max_points}} ключевых пунктов. 
-Каждый пункт должен быть кратким (1-2 предложения) и содержать самую важную информацию.
-
-Формат ответа:
-1. [Ключевой пункт]
-2. [Ключевой пункт]
-...
-
-Текст для анализа:
-{{text}}`,
-  },
-  {
     id: 'builtin_json_formatter',
     name: 'json_formatter',
     display_name: 'JSON Форматтер',
@@ -122,62 +99,6 @@ export const SYSTEM_TOOLS: SystemTool[] = [
 
 Входные данные:
 {{input}}`,
-  },
-  {
-    id: 'builtin_prompt_optimizer',
-    name: 'prompt_optimizer',
-    display_name: 'Промпт-Оптимизатор',
-    description: 'Улучшает формулировку промптов для более точных ответов ИИ. Добавляет структуру, контекст и ограничения.',
-    parameters: [
-      { name: 'original_prompt', type: 'string', description: 'Исходный промпт для улучшения', required: true },
-      { name: 'target_role', type: 'string', description: 'Целевая роль ИИ (эксперт, критик, арбитр и т.д.)', required: false },
-      { name: 'style', type: 'string', description: 'Стиль: concise (краткий), detailed (детальный), structured (структурированный), creative (креативный)', required: false },
-    ],
-    tool_type: 'prompt',
-    is_system: true,
-    category: 'ai',
-    prompt_template: `Ты — эксперт по промпт-инженерии. Улучши следующий промпт.
-
-Целевая роль: {{target_role}}
-Желаемый стиль: {{style}}
-
-Оригинальный промпт:
-{{original_prompt}}
-
-Требования к улучшению:
-1. Добавь чёткий контекст и роль для ИИ
-2. Структурируй инструкции по шагам
-3. Укажи формат ожидаемого ответа
-4. Добавь ограничения для предотвращения ошибок
-5. Сохрани исходный смысл и цель
-
-Верни улучшенную версию промпта:`,
-  },
-  {
-    id: 'builtin_checklist_generator',
-    name: 'checklist_generator',
-    display_name: 'Чек-лист Генератор',
-    description: 'Создаёт структурированный план действий для любой задачи. Разбивает сложные задачи на конкретные шаги.',
-    parameters: [
-      { name: 'task_description', type: 'string', description: 'Описание задачи', required: true },
-      { name: 'steps_count', type: 'number', description: 'Количество шагов (по умолчанию 7)', required: false },
-    ],
-    tool_type: 'prompt',
-    is_system: true,
-    category: 'automation',
-    prompt_template: `Создай детальный чек-лист из {{steps_count}} шагов для выполнения следующей задачи.
-
-Задача: {{task_description}}
-
-Требования к чек-листу:
-- Каждый шаг должен быть конкретным и выполнимым
-- Шаги должны идти в логическом порядке
-- Добавь критерии завершения для каждого шага
-- Укажи возможные риски или подводные камни
-
-Формат:
-☐ [Шаг] — [Критерий выполнения]
-  ⚠️ [Риск/Примечание, если есть]`,
   },
   {
     id: 'builtin_transliterator',
