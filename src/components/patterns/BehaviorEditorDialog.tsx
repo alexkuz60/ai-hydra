@@ -8,7 +8,6 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Switch } from '@/components/ui/switch';
@@ -22,6 +21,9 @@ import {
 import { Plus, Trash2, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ROLE_CONFIG, AGENT_ROLES, type AgentRole } from '@/config/roles';
+import { TRIGGER_DICTIONARY, BEHAVIOR_DICTIONARY, FORMAT_DICTIONARY } from '@/config/behaviorDictionaries';
+import { DictionaryCombobox } from '@/components/ui/DictionaryCombobox';
+import { DictionaryMultiSelect } from '@/components/ui/DictionaryMultiSelect';
 import RoleHierarchyEditor from '@/components/staff/RoleHierarchyEditor';
 import { ConflictResolutionDialog } from '@/components/staff/ConflictResolutionDialog';
 import { UnsavedChangesDialog } from '@/components/ui/unsaved-changes-dialog';
@@ -339,12 +341,14 @@ export function BehaviorEditorDialog({
                 </div>
               </div>
 
+            {/* Format Preference - Multi-select */}
               <div className="grid gap-2">
                 <Label className="text-xs text-muted-foreground">{t('patterns.formatPreference')}</Label>
-                <Input
-                  value={formatPreference.join(', ')}
-                  onChange={(e) => setFormatPreference(e.target.value.split(',').map(f => f.trim()))}
-                  placeholder={t('patterns.formatPlaceholder')}
+                <DictionaryMultiSelect
+                  dictionary={FORMAT_DICTIONARY}
+                  values={formatPreference}
+                  onChange={setFormatPreference}
+                  placeholder={t('patterns.dictionary.addFormat')}
                 />
               </div>
             </div>
@@ -362,17 +366,17 @@ export function BehaviorEditorDialog({
               {reactions.map((reaction, index) => (
                 <div key={index} className="flex gap-2 p-3 rounded-lg border">
                   <div className="flex-1 space-y-2">
-                    <Input
+                    <DictionaryCombobox
+                      dictionary={TRIGGER_DICTIONARY}
                       value={reaction.trigger}
-                      onChange={(e) => updateReaction(index, { trigger: e.target.value })}
+                      onChange={(value) => updateReaction(index, { trigger: value })}
                       placeholder={t('patterns.triggerPlaceholder')}
-                      className="text-sm"
                     />
-                    <Input
+                    <DictionaryCombobox
+                      dictionary={BEHAVIOR_DICTIONARY}
                       value={reaction.behavior}
-                      onChange={(e) => updateReaction(index, { behavior: e.target.value })}
+                      onChange={(value) => updateReaction(index, { behavior: value })}
                       placeholder={t('patterns.behaviorPlaceholder')}
-                      className="text-sm"
                     />
                   </div>
                   {reactions.length > 1 && (
