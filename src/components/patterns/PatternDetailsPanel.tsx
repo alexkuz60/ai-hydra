@@ -286,7 +286,7 @@ const RoleBehaviorDetails: React.FC<{ pattern: RoleBehavior }> = ({ pattern }) =
           {t('patterns.interactions')}
         </h3>
         <div className="space-y-3">
-          {pattern.interactions.defers_to.length > 0 && (
+          {pattern.interactions?.defers_to && pattern.interactions.defers_to.length > 0 && (
             <div className="p-3 rounded-lg bg-muted/30 border border-border/50">
               <span className="text-xs text-muted-foreground">{t('patterns.defersTo')}</span>
               <div className="flex flex-wrap gap-1 mt-2">
@@ -301,7 +301,7 @@ const RoleBehaviorDetails: React.FC<{ pattern: RoleBehavior }> = ({ pattern }) =
               </div>
             </div>
           )}
-          {pattern.interactions.challenges.length > 0 && (
+          {pattern.interactions?.challenges && pattern.interactions.challenges.length > 0 && (
             <div className="p-3 rounded-lg bg-muted/30 border border-border/50">
               <span className="text-xs text-muted-foreground">{t('patterns.challenges')}</span>
               <div className="flex flex-wrap gap-1 mt-2">
@@ -316,7 +316,7 @@ const RoleBehaviorDetails: React.FC<{ pattern: RoleBehavior }> = ({ pattern }) =
               </div>
             </div>
           )}
-          {pattern.interactions.collaborates.length > 0 && (
+          {pattern.interactions?.collaborates && pattern.interactions.collaborates.length > 0 && (
             <div className="p-3 rounded-lg bg-muted/30 border border-border/50">
               <span className="text-xs text-muted-foreground">{t('patterns.collaborates')}</span>
               <div className="flex flex-wrap gap-1 mt-2">
