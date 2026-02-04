@@ -448,6 +448,7 @@ function FlowEditorContent() {
               onPaneClick={handlePaneClick}
               edgeSettings={edgeSettings}
               nodeStatuses={flowRuntime.nodeStatuses}
+              nodeOutputs={flowRuntime.nodeOutputs}
             />
             {selectedNode && !showExecutionPanel && (
               <NodePropertiesPanel

@@ -29,6 +29,8 @@ export interface FlowExecutionState {
   isPaused: boolean;
   currentNodeId?: string;
   nodeStatuses: Map<string, NodeStatus>;
+  // Map of nodeId -> output data for edge visualization
+  nodeOutputs: Map<string, unknown>;
   checkpoint?: {
     nodeId: string;
     message: string;
@@ -54,6 +56,7 @@ export function useFlowRuntime(options: UseFlowRuntimeOptions = {}) {
     isRunning: false,
     isPaused: false,
     nodeStatuses: new Map(),
+    nodeOutputs: new Map(),
   });
   
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -78,6 +81,7 @@ export function useFlowRuntime(options: UseFlowRuntimeOptions = {}) {
       isRunning: true,
       isPaused: false,
       nodeStatuses: new Map(),
+      nodeOutputs: new Map(),
       currentNodeId: undefined,
       checkpoint: undefined,
       finalOutput: undefined,
@@ -272,6 +276,7 @@ export function useFlowRuntime(options: UseFlowRuntimeOptions = {}) {
           ...prev,
           isRunning: true,
           nodeStatuses: new Map(),
+          nodeOutputs: new Map(),
         }));
         break;
 
@@ -311,13 +316,23 @@ export function useFlowRuntime(options: UseFlowRuntimeOptions = {}) {
         if (event.nodeId) {
           setState(prev => {
             const newStatuses = new Map(prev.nodeStatuses);
+            const newOutputs = new Map(prev.nodeOutputs);
+            const eventData = event.data as { outputPreview?: unknown; output?: unknown };
+            const outputData = eventData.output ?? eventData.outputPreview;
+            
             const existing = newStatuses.get(event.nodeId!) || { nodeId: event.nodeId!, state: 'completed' as NodeState };
             newStatuses.set(event.nodeId!, {
               ...existing,
               state: 'completed',
-              output: (event.data as { outputPreview?: unknown }).outputPreview,
+              output: eventData.outputPreview,
             });
-            return { ...prev, nodeStatuses: newStatuses };
+            
+            // Store full output for edge visualization
+            if (outputData !== undefined) {
+              newOutputs.set(event.nodeId!, outputData);
+            }
+            
+            return { ...prev, nodeStatuses: newStatuses, nodeOutputs: newOutputs };
           });
         }
         break;
