@@ -282,6 +282,18 @@ export interface ValidateFlowDiagramArgs {
   validation_level?: "syntax" | "logic" | "optimization";
 }
 
+/** Args for save_role_experience tool (all technical roles) */
+export interface SaveRoleExperienceArgs {
+  /** Content describing the experience/insight */
+  content: string;
+  /** Type of memory: experience, preference, skill, mistake, or success */
+  memory_type: "experience" | "preference" | "skill" | "mistake" | "success";
+  /** Confidence score 0.0-1.0 */
+  confidence?: number;
+  /** Tags for categorization */
+  tags?: string[];
+}
+
 // ============================================
 // Tool Execution Context
 // ============================================
@@ -292,4 +304,6 @@ export interface ToolExecutionContext {
   userId: string;
   supabaseUrl: string;
   supabaseKey: string;
+  /** Current role being used (for role-specific tools) */
+  currentRole?: string;
 }

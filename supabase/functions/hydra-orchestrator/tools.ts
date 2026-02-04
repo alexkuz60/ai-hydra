@@ -18,6 +18,7 @@ import {
   UpdateSessionMemoryArgs,
   SearchSessionMemoryArgs,
   ValidateFlowDiagramArgs,
+  SaveRoleExperienceArgs,
   ToolExecutionContext,
 } from "./types.ts";
 
@@ -220,6 +221,36 @@ export const AVAILABLE_TOOLS: ToolDefinition[] = [
           }
         },
         required: ["diagram_id"]
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "save_role_experience",
+      description: "Сохраняет полезный опыт или инсайт для текущей роли. Информация будет доступна в будущих сессиях для улучшения качества работы. Используй после успешного решения задачи или извлечения урока.",
+      parameters: {
+        type: "object",
+        properties: {
+          content: {
+            type: "string",
+            description: "Описание опыта или инсайта для сохранения"
+          },
+          memory_type: {
+            type: "string",
+            description: "Тип памяти: experience (опыт), preference (предпочтение), skill (навык), mistake (ошибка), success (успех)",
+            enum: ["experience", "preference", "skill", "mistake", "success"]
+          },
+          confidence: {
+            type: "number",
+            description: "Уверенность в полезности опыта от 0.0 до 1.0 (по умолчанию 0.7)"
+          },
+          tags: {
+            type: "string",
+            description: "Теги для категоризации через запятую, например: 'архитектура, микросервисы'"
+          }
+        },
+        required: ["content", "memory_type"]
       }
     }
   }
@@ -865,6 +896,13 @@ export function setExecutionContext(context: ToolExecutionContext | null): void 
   currentExecutionContext = context;
 }
 
+/** Update the current role in execution context */
+export function setCurrentRole(role: string | undefined): void {
+  if (currentExecutionContext) {
+    currentExecutionContext.currentRole = role;
+  }
+}
+
 /** Execute update_session_memory tool (Archivist) */
 async function executeUpdateSessionMemory(args: UpdateSessionMemoryArgs): Promise<string> {
   if (!currentExecutionContext) {
@@ -1330,6 +1368,120 @@ async function executeValidateFlowDiagram(args: ValidateFlowDiagramArgs): Promis
 }
 
 // ============================================
+// Save Role Experience Tool Implementation
+// ============================================
+
+/** Execute save_role_experience tool (all technical roles) */
+async function executeSaveRoleExperience(args: SaveRoleExperienceArgs): Promise<string> {
+  if (!currentExecutionContext) {
+    return JSON.stringify({ success: false, error: "Контекст сессии недоступен" });
+  }
+  
+  const { sessionId, userId, supabaseUrl, supabaseKey, currentRole } = currentExecutionContext;
+  const { content, memory_type, confidence = 0.7, tags } = args;
+  
+  if (!content || content.trim().length === 0) {
+    return JSON.stringify({ success: false, error: "Содержимое не может быть пустым" });
+  }
+  
+  if (!currentRole) {
+    return JSON.stringify({ success: false, error: "Роль не определена в контексте" });
+  }
+  
+  try {
+    const supabase = createClient(supabaseUrl, supabaseKey);
+    
+    // Generate embedding for the content
+    let embedding: number[] | null = null;
+    try {
+      const embeddingResponse = await fetch(`${supabaseUrl}/functions/v1/generate-embeddings`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${supabaseKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ texts: [content] }),
+      });
+      
+      if (embeddingResponse.ok) {
+        const embData = await embeddingResponse.json();
+        if (embData.embeddings?.[0]) {
+          embedding = embData.embeddings[0];
+        }
+      }
+    } catch (embError) {
+      console.warn('[Tool] Failed to generate embedding for role experience:', embError);
+    }
+    
+    // Parse tags if provided as string
+    let parsedTags: string[] = [];
+    if (tags) {
+      if (typeof tags === 'string') {
+        parsedTags = (tags as string).split(',').map(t => t.trim()).filter(t => t.length > 0);
+      } else if (Array.isArray(tags)) {
+        parsedTags = tags;
+      }
+    }
+    
+    // Validate confidence score
+    const validConfidence = Math.max(0, Math.min(1, confidence));
+    
+    // Insert into role_memory
+    const insertData: Record<string, unknown> = {
+      user_id: userId,
+      role: currentRole,
+      content: content.trim(),
+      memory_type,
+      confidence_score: validConfidence,
+      tags: parsedTags,
+      source_session_id: sessionId,
+      metadata: {
+        created_by_tool: true,
+        timestamp: new Date().toISOString(),
+      },
+    };
+    
+    if (embedding) {
+      insertData.embedding = JSON.stringify(embedding);
+    }
+    
+    const { data, error: insertError } = await supabase
+      .from('role_memory')
+      .insert(insertData)
+      .select('id')
+      .single();
+    
+    if (insertError) {
+      console.error('[Tool] role_memory insert error:', insertError);
+      return JSON.stringify({ success: false, error: insertError.message });
+    }
+    
+    const memoryTypeLabels: Record<string, string> = {
+      experience: 'опыт',
+      preference: 'предпочтение',
+      skill: 'навык',
+      mistake: 'ошибка (урок)',
+      success: 'успех',
+    };
+    
+    return JSON.stringify({
+      success: true,
+      message: `Сохранён ${memoryTypeLabels[memory_type] || memory_type} для роли "${currentRole}"`,
+      memory_id: data?.id,
+      role: currentRole,
+      memory_type,
+      confidence: validConfidence,
+      tags: parsedTags,
+      has_embedding: !!embedding,
+    });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    console.error('[Tool] save_role_experience exception:', message);
+    return JSON.stringify({ success: false, error: message });
+  }
+}
+
+//
 // Prompt Tool Execution
 // ============================================
 
@@ -1427,6 +1579,9 @@ export async function executeToolCall(toolCall: ToolCall): Promise<ToolResult> {
         break;
       case "validate_flow_diagram":
         result = await executeValidateFlowDiagram(args as unknown as ValidateFlowDiagramArgs);
+        break;
+      case "save_role_experience":
+        result = await executeSaveRoleExperience(args as unknown as SaveRoleExperienceArgs);
         break;
       default:
         result = JSON.stringify({ success: false, error: `Unknown tool: ${funcName}` });
