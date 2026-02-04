@@ -204,7 +204,7 @@ export function TechSupportDialog({
             <Textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder={t('techSupport.placeholder')}
+              placeholder={t(`techSupport.placeholder.${selectedRole}`) || t('techSupport.placeholder')}
               className="min-h-[60px] max-h-[100px] resize-none text-sm"
               onKeyDown={handleKeyDown}
             />

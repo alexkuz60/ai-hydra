@@ -617,6 +617,11 @@ const translations: Translations = {
   'techSupport.selectModel': { ru: 'Выберите модель', en: 'Select Model' },
   'techSupport.clear': { ru: 'Очистить историю', en: 'Clear History' },
   'techSupport.placeholder': { ru: 'Опишите задачу для технического специалиста...', en: 'Describe the task for the technical specialist...' },
+  'techSupport.placeholder.archivist': { ru: 'Что найти в архивах или систематизировать?', en: 'What to find in archives or organize?' },
+  'techSupport.placeholder.analyst': { ru: 'Какие данные проанализировать или визуализировать?', en: 'What data to analyze or visualize?' },
+  'techSupport.placeholder.promptengineer': { ru: 'Какой промпт оптимизировать или создать?', en: 'Which prompt to optimize or create?' },
+  'techSupport.placeholder.flowregulator': { ru: 'Какой поток данных спроектировать или проверить?', en: 'Which data flow to design or verify?' },
+  'techSupport.placeholder.toolsmith': { ru: 'Какой инструмент настроить или создать?', en: 'Which tool to configure or create?' },
   'techSupport.chatWith': { ru: 'Диалог с:', en: 'Chat with:' },
   
   // Common
