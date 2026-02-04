@@ -2,6 +2,8 @@
 // Flow Runtime Type Definitions
 // ============================================
 
+import { SupabaseClient } from "npm:@supabase/supabase-js@2";
+
 export type NodeState = 'pending' | 'ready' | 'running' | 'waiting_user' | 'completed' | 'failed' | 'skipped';
 
 export interface FlowNode {
@@ -108,6 +110,7 @@ export interface NodeRunnerContext {
   supabaseUrl: string;
   supabaseKey: string;
   lovableApiKey: string;
+  supabaseClient?: SupabaseClient;
   sendEvent: (event: Omit<SSEEvent, 'flowId' | 'timestamp'>) => void;
 }
 
