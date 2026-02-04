@@ -503,6 +503,7 @@ function FlowEditorContent() {
                 state={flowRuntime}
                 onCancel={handleStopExecution}
                 onClose={() => setShowExecutionPanel(false)}
+                onClearResults={flowRuntime.clearResults}
               />
             )}
           </div>

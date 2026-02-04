@@ -220,6 +220,19 @@ export function useFlowRuntime(options: UseFlowRuntimeOptions = {}) {
   }, []);
 
   /**
+   * Clear execution results (node outputs for edge visualization)
+   */
+  const clearResults = useCallback(() => {
+    setState(prev => ({
+      ...prev,
+      nodeStatuses: new Map(),
+      nodeOutputs: new Map(),
+      finalOutput: undefined,
+      error: undefined,
+    }));
+  }, []);
+
+  /**
    * Process SSE stream from flow-runtime
    */
   const processSSEStream = async (response: Response, flowId: string) => {
@@ -406,5 +419,6 @@ export function useFlowRuntime(options: UseFlowRuntimeOptions = {}) {
     startFlow,
     resumeFlow,
     cancelFlow,
+    clearResults,
   };
 }

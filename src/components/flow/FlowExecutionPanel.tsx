@@ -14,13 +14,16 @@ import {
   Clock,
   Pause,
   SkipForward,
+  Eraser,
 } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 interface FlowExecutionPanelProps {
   state: FlowExecutionState;
   onCancel: () => void;
   onClose: () => void;
+  onClearResults: () => void;
 }
 
 const stateIcons: Record<NodeStatus['state'], React.ComponentType<{ className?: string }>> = {
@@ -43,8 +46,9 @@ const stateColors: Record<NodeStatus['state'], string> = {
   skipped: 'text-muted-foreground',
 };
 
-export function FlowExecutionPanel({ state, onCancel, onClose }: FlowExecutionPanelProps) {
+export function FlowExecutionPanel({ state, onCancel, onClose, onClearResults }: FlowExecutionPanelProps) {
   const { t } = useLanguage();
+  const hasResults = state.nodeStatuses.size > 0 || state.nodeOutputs.size > 0;
   
   const statusArray = Array.from(state.nodeStatuses.values());
   const completedCount = statusArray.filter(s => s.state === 'completed').length;
@@ -67,9 +71,21 @@ export function FlowExecutionPanel({ state, onCancel, onClose }: FlowExecutionPa
           )}
           <span className="font-medium text-sm">{t('flowEditor.execution')}</span>
         </div>
-        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onClose}>
-          <X className="h-4 w-4" />
-        </Button>
+        <div className="flex items-center gap-1">
+          {hasResults && !state.isRunning && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onClearResults}>
+                  <Eraser className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>{t('flowEditor.clearResults')}</TooltipContent>
+            </Tooltip>
+          )}
+          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onClose}>
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
 
       {/* Progress */}
