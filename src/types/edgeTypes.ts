@@ -20,6 +20,8 @@ export interface FlowEdgeData {
   strokeWidth?: number;
   lineType?: EdgeLineType;
   markerType?: EdgeMarkerType;
+  // Runtime data for visualization on hover
+  runtimeData?: unknown;
   // Index signature for React Flow compatibility
   [key: string]: unknown;
 }
