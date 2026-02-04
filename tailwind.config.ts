@@ -82,6 +82,7 @@ export default {
           webhunter: "hsl(var(--hydra-webhunter))",
           promptengineer: "hsl(var(--hydra-promptengineer))",
           flowregulator: "hsl(var(--hydra-flowregulator))",
+          toolsmith: "hsl(var(--hydra-toolsmith))",
           memory: "hsl(var(--hydra-memory))",
           cyan: "hsl(var(--hydra-cyan))",
           info: "hsl(var(--hydra-info))",
