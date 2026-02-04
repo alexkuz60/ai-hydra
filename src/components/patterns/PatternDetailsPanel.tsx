@@ -17,11 +17,18 @@ import { blueprintToFlow } from '@/lib/blueprintToFlow';
 import { useToast } from '@/hooks/use-toast';
 import type { PatternMeta } from '@/hooks/usePatterns';
 import { FORMAT_DICTIONARY, TRIGGER_DICTIONARY, BEHAVIOR_DICTIONARY } from '@/config/behaviorDictionaries';
+import { RoleBehaviorEditor } from './RoleBehaviorEditor';
 
 interface PatternDetailsPanelProps {
   selectedPattern: TaskBlueprint | RoleBehavior | null;
   patternMeta?: PatternMeta | null;
   onEdit?: () => void;
+  // Inline editing support
+  isEditing?: boolean;
+  onCancelEdit?: () => void;
+  onSaveBehavior?: (behavior: Omit<RoleBehavior, 'id'> & { id?: string }, isShared: boolean) => Promise<void>;
+  isSaving?: boolean;
+  onHasUnsavedChanges?: (hasChanges: boolean) => void;
 }
 
 const CategoryBadge: React.FC<{ category: string }> = ({ category }) => {
@@ -430,7 +437,16 @@ const RoleBehaviorDetails: React.FC<{ pattern: RoleBehavior }> = ({ pattern }) =
   );
 };
 
-const PatternDetailsPanel: React.FC<PatternDetailsPanelProps> = ({ selectedPattern, patternMeta, onEdit }) => {
+const PatternDetailsPanel: React.FC<PatternDetailsPanelProps> = ({ 
+  selectedPattern, 
+  patternMeta, 
+  onEdit,
+  isEditing = false,
+  onCancelEdit,
+  onSaveBehavior,
+  isSaving = false,
+  onHasUnsavedChanges,
+}) => {
   const { t } = useLanguage();
 
   if (!selectedPattern) {
@@ -441,6 +457,24 @@ const PatternDetailsPanel: React.FC<PatternDetailsPanelProps> = ({ selectedPatte
           <p>{t('patterns.selectPattern')}</p>
         </div>
       </div>
+    );
+  }
+
+  // Inline editing mode for RoleBehavior
+  if (isEditing && !isTaskBlueprint(selectedPattern) && onSaveBehavior && onCancelEdit) {
+    return (
+      <ScrollArea className="h-full">
+        <div className="p-6">
+          <RoleBehaviorEditor
+            behavior={selectedPattern}
+            isSystem={patternMeta?.isSystem}
+            onSave={onSaveBehavior}
+            onCancel={onCancelEdit}
+            onHasUnsavedChanges={onHasUnsavedChanges}
+            isSaving={isSaving}
+          />
+        </div>
+      </ScrollArea>
     );
   }
 
@@ -472,7 +506,7 @@ const PatternDetailsPanel: React.FC<PatternDetailsPanelProps> = ({ selectedPatte
         )}
 
         {/* System pattern indicator */}
-        {patternMeta?.isSystem && (
+        {patternMeta?.isSystem && !onEdit && (
           <div className="flex items-center gap-2 mb-4 p-2 rounded-md bg-muted/50 text-sm text-muted-foreground">
             <Lock className="h-4 w-4" />
             {t('patterns.cannotEditSystem')}
