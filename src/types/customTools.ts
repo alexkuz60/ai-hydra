@@ -3,6 +3,16 @@
 export type ToolType = 'prompt' | 'http_api' | 'system';
 export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE';
 export type OwnerFilter = 'all' | 'own' | 'shared' | 'system';
+export type ToolCategory = 'general' | 'data' | 'integration' | 'ai' | 'automation' | 'utility';
+
+export const TOOL_CATEGORIES: { value: ToolCategory; labelKey: string; icon: string }[] = [
+  { value: 'general', labelKey: 'tools.category.general', icon: 'Wrench' },
+  { value: 'data', labelKey: 'tools.category.data', icon: 'Database' },
+  { value: 'integration', labelKey: 'tools.category.integration', icon: 'Plug' },
+  { value: 'ai', labelKey: 'tools.category.ai', icon: 'Sparkles' },
+  { value: 'automation', labelKey: 'tools.category.automation', icon: 'Zap' },
+  { value: 'utility', labelKey: 'tools.category.utility', icon: 'Settings' },
+];
 
 export interface ToolParameter {
   name: string;
@@ -82,6 +92,7 @@ export interface CustomTool {
   updated_at: string;
   tool_type: ToolType;
   http_config: HttpConfig | null;
+  category: ToolCategory;
 }
 
 export interface ToolFormData {
@@ -92,6 +103,7 @@ export interface ToolFormData {
   parameters: ToolParameter[];
   isShared: boolean;
   toolType: ToolType;
+  category: ToolCategory;
   httpUrl: string;
   httpMethod: HttpMethod;
   httpHeaders: { key: string; value: string }[];
@@ -116,6 +128,7 @@ export function getEmptyFormData(): ToolFormData {
     parameters: [],
     isShared: false,
     toolType: 'prompt',
+    category: 'general',
     httpUrl: '',
     httpMethod: 'GET',
     httpHeaders: [],
@@ -134,6 +147,7 @@ export function toolToFormData(tool: CustomTool): ToolFormData {
     parameters: [...tool.parameters],
     isShared: tool.is_shared,
     toolType: tool.tool_type || 'prompt',
+    category: tool.category || 'general',
     httpUrl: hc?.url || '',
     httpMethod: hc?.method || 'GET',
     httpHeaders: hc?.headers 
@@ -191,6 +205,7 @@ export function importToolFromJson(json: string): ToolFormData | null {
       parameters: Array.isArray(t.parameters) ? t.parameters : [],
       isShared: false,
       toolType: t.tool_type || 'prompt',
+      category: t.category || 'general',
       httpUrl: hc?.url || '',
       httpMethod: hc?.method || 'GET',
       httpHeaders: hc?.headers 
