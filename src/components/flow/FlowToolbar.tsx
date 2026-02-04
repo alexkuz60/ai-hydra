@@ -36,6 +36,9 @@ import {
   ArrowRight,
   ArrowDown,
   History,
+  Play,
+  Square,
+  Loader2,
 } from 'lucide-react';
 import {
   Tooltip,
@@ -72,6 +75,11 @@ interface FlowToolbarProps {
   onUndo: () => void;
   onRedo: () => void;
   onAutoLayout: (direction: 'LR' | 'TB') => void;
+  // Execution
+  isExecuting?: boolean;
+  onStartExecution?: () => void;
+  onStopExecution?: () => void;
+  canExecute?: boolean;
 }
 
 // Header actions component for Layout header slot
@@ -292,9 +300,14 @@ export function FlowToolbar({
   onRedo,
   onAutoLayout,
   hasChanges,
+  isExecuting,
+  onStartExecution,
+  onStopExecution,
+  canExecute,
 }: Pick<FlowToolbarProps, 
   'diagramName' | 'onNameChange' | 'edgeSettings' | 'onEdgeSettingsChange' |
-  'canUndo' | 'canRedo' | 'onUndo' | 'onRedo' | 'onAutoLayout' | 'hasChanges'
+  'canUndo' | 'canRedo' | 'onUndo' | 'onRedo' | 'onAutoLayout' | 'hasChanges' |
+  'isExecuting' | 'onStartExecution' | 'onStopExecution' | 'canExecute'
 >) {
   const { t } = useLanguage();
 
@@ -350,6 +363,36 @@ export function FlowToolbar({
       </div>
 
       <div className="flex-1" />
+
+      {/* Run button */}
+      {onStartExecution && onStopExecution && (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant={isExecuting ? 'destructive' : 'default'}
+              size="sm"
+              className="gap-2"
+              onClick={isExecuting ? onStopExecution : onStartExecution}
+              disabled={!canExecute && !isExecuting}
+            >
+              {isExecuting ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  {t('flowEditor.stopExecution')}
+                </>
+              ) : (
+                <>
+                  <Play className="h-4 w-4" />
+                  {t('flowEditor.run')}
+                </>
+              )}
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>{isExecuting ? t('flowEditor.stopExecution') : t('flowEditor.runDiagram')}</p>
+          </TooltipContent>
+        </Tooltip>
+      )}
 
       {/* Auto Layout - right aligned */}
       <DropdownMenu>

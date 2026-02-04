@@ -1,4 +1,4 @@
-import React, { useCallback, useRef } from 'react';
+import React, { useCallback, useRef, useMemo } from 'react';
 import {
   ReactFlow,
   MiniMap,
@@ -16,6 +16,7 @@ import {
   OnEdgesChange,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
+import type { NodeStatus } from '@/hooks/useFlowRuntime';
 
 import { InputNode } from './nodes/InputNode';
 import { OutputNode } from './nodes/OutputNode';
@@ -72,6 +73,24 @@ const edgeTypes = {
   custom: CustomEdge,
 } as const;
 
+// Helper to get node className based on execution status
+function getNodeStatusClassName(state: string): string {
+  switch (state) {
+    case 'running':
+      return 'ring-2 ring-primary ring-offset-2 ring-offset-background animate-pulse';
+    case 'completed':
+      return 'ring-2 ring-green-500 ring-offset-2 ring-offset-background';
+    case 'failed':
+      return 'ring-2 ring-destructive ring-offset-2 ring-offset-background';
+    case 'waiting_user':
+      return 'ring-2 ring-amber-500 ring-offset-2 ring-offset-background animate-pulse';
+    case 'skipped':
+      return 'opacity-50';
+    default:
+      return '';
+  }
+}
+
 interface FlowCanvasProps {
   nodes: Node[];
   edges: Edge[];
@@ -84,6 +103,7 @@ interface FlowCanvasProps {
   onEdgeClick?: (event: React.MouseEvent, edge: Edge) => void;
   onPaneClick?: () => void;
   edgeSettings: EdgeStyleSettings;
+  nodeStatuses?: Map<string, NodeStatus>;
 }
 
 export function FlowCanvas({
@@ -98,10 +118,34 @@ export function FlowCanvas({
   onEdgeClick,
   onPaneClick,
   edgeSettings,
+  nodeStatuses,
 }: FlowCanvasProps) {
   const { theme } = useTheme();
   const { t, language } = useLanguage();
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
+
+  // Enrich nodes with execution status for visual feedback
+  const enrichedNodes = useMemo(() => {
+    if (!nodeStatuses || nodeStatuses.size === 0) return nodes;
+    
+    return nodes.map(node => {
+      const status = nodeStatuses.get(node.id);
+      if (!status) return node;
+      
+      // Add status to node data for styling
+      return {
+        ...node,
+        data: {
+          ...node.data,
+          executionStatus: status.state,
+          executionProgress: status.progress,
+          executionError: status.error,
+        },
+        // Add visual styling based on status
+        className: getNodeStatusClassName(status.state),
+      };
+    });
+  }, [nodes, nodeStatuses]);
 
   const onConnect = useCallback(
     (params: Connection) => {
@@ -201,7 +245,7 @@ export function FlowCanvas({
   return (
     <div ref={reactFlowWrapper} className="flex-1 h-full">
       <ReactFlow
-        nodes={nodes}
+        nodes={enrichedNodes}
         edges={edges}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}

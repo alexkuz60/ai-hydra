@@ -6,16 +6,20 @@ import { FlowSidebar } from '@/components/flow/FlowSidebar';
 import { FlowToolbar, FlowHeaderActions } from '@/components/flow/FlowToolbar';
 import { NodePropertiesPanel } from '@/components/flow/NodePropertiesPanel';
 import { EdgePropertiesPanel } from '@/components/flow/EdgePropertiesPanel';
+import { FlowExecutionPanel } from '@/components/flow/FlowExecutionPanel';
+import { FlowCheckpointDialog } from '@/components/flow/FlowCheckpointDialog';
 import { useFlowDiagrams, exportToMermaid } from '@/hooks/useFlowDiagrams';
 import { useFlowExport } from '@/hooks/useFlowExport';
 import { useFlowHistoryExtended, HistoryState } from '@/hooks/useFlowHistory';
 import { useAutoLayout, LayoutDirection } from '@/hooks/useAutoLayout';
+import { useFlowRuntime } from '@/hooks/useFlowRuntime';
 import { FlowNodeType, FlowDiagram } from '@/types/flow';
 import { EdgeStyleSettings, FlowEdgeData, DEFAULT_EDGE_SETTINGS } from '@/types/edgeTypes';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate, useSearchParams } from 'react-router-dom';
 import { TooltipProvider } from '@/components/ui/tooltip';
+import { useToast } from '@/hooks/use-toast';
 
 const initialNodes: Node[] = [];
 const initialEdges: Edge[] = [];
@@ -44,6 +48,7 @@ function saveEdgeSettings(settings: EdgeStyleSettings) {
 
 function FlowEditorContent() {
   const { t } = useLanguage();
+  const { toast } = useToast();
   const { user } = useAuth();
   const [searchParams] = useSearchParams();
   const urlDiagramId = searchParams.get('id');
@@ -57,7 +62,28 @@ function FlowEditorContent() {
   const [selectedNode, setSelectedNode] = useState<Node | null>(null);
   const [selectedEdge, setSelectedEdge] = useState<Edge | null>(null);
   const [edgeSettings, setEdgeSettings] = useState<EdgeStyleSettings>(loadEdgeSettings);
+  const [showExecutionPanel, setShowExecutionPanel] = useState(false);
   const reactFlowInstance = useRef<ReactFlowInstance | null>(null);
+
+  // Flow runtime for execution
+  const flowRuntime = useFlowRuntime({
+    onComplete: (output) => {
+      toast({
+        title: t('flowEditor.executionComplete'),
+        description: typeof output === 'string' ? output : JSON.stringify(output).slice(0, 100),
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: t('flowEditor.executionError'),
+        description: error,
+        variant: 'destructive',
+      });
+    },
+    onCheckpoint: (nodeId, message) => {
+      console.log('[FlowEditor] Checkpoint reached:', nodeId, message);
+    },
+  });
 
   // History for undo/redo
   const history = useFlowHistoryExtended({ maxHistory: 50 });
@@ -309,6 +335,57 @@ function FlowEditorContent() {
     }, 50);
   }, [nodes, edges, getLayoutedElements, setNodes, setEdges]);
 
+  // Flow execution handlers
+  const canExecute = useMemo(() => {
+    return currentDiagramId !== null && nodes.length > 0;
+  }, [currentDiagramId, nodes.length]);
+
+  const handleStartExecution = useCallback(async () => {
+    if (!currentDiagramId) {
+      toast({
+        title: t('flowEditor.saveFirst'),
+        description: t('flowEditor.saveFirstDescription'),
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Generate a unique session ID for this execution
+    const executionSessionId = `flow-exec-${Date.now()}`;
+    setShowExecutionPanel(true);
+    
+    await flowRuntime.startFlow(currentDiagramId, executionSessionId);
+  }, [currentDiagramId, flowRuntime, toast, t]);
+
+  const handleStopExecution = useCallback(() => {
+    flowRuntime.cancelFlow();
+  }, [flowRuntime]);
+
+  const handleCheckpointApprove = useCallback((userInput?: string) => {
+    if (flowRuntime.checkpoint && currentDiagramId) {
+      const executionSessionId = `flow-exec-${Date.now()}`;
+      flowRuntime.resumeFlow(
+        currentDiagramId,
+        executionSessionId,
+        flowRuntime.checkpoint.nodeId,
+        true,
+        userInput
+      );
+    }
+  }, [flowRuntime, currentDiagramId]);
+
+  const handleCheckpointReject = useCallback(() => {
+    if (flowRuntime.checkpoint && currentDiagramId) {
+      const executionSessionId = `flow-exec-${Date.now()}`;
+      flowRuntime.resumeFlow(
+        currentDiagramId,
+        executionSessionId,
+        flowRuntime.checkpoint.nodeId,
+        false
+      );
+    }
+  }, [flowRuntime, currentDiagramId]);
+
   const headerActions = useMemo(() => (
     <FlowHeaderActions
       diagramName={diagramName}
@@ -351,6 +428,10 @@ function FlowEditorContent() {
             onRedo={handleRedo}
             onAutoLayout={handleAutoLayout}
             hasChanges={hasChanges}
+            isExecuting={flowRuntime.isRunning}
+            onStartExecution={handleStartExecution}
+            onStopExecution={handleStopExecution}
+            canExecute={canExecute}
           />
           <div className="flex flex-1 overflow-hidden">
             <FlowSidebar onDragStart={onDragStart} />
@@ -366,8 +447,9 @@ function FlowEditorContent() {
               onEdgeClick={handleEdgeClick}
               onPaneClick={handlePaneClick}
               edgeSettings={edgeSettings}
+              nodeStatuses={flowRuntime.nodeStatuses}
             />
-            {selectedNode && (
+            {selectedNode && !showExecutionPanel && (
               <NodePropertiesPanel
                 selectedNode={selectedNode}
                 onClose={() => setSelectedNode(null)}
@@ -375,7 +457,7 @@ function FlowEditorContent() {
                 onDeleteNode={handleDeleteNode}
               />
             )}
-            {selectedEdge && (
+            {selectedEdge && !showExecutionPanel && (
               <EdgePropertiesPanel
                 selectedEdge={selectedEdge}
                 onClose={() => setSelectedEdge(null)}
@@ -383,9 +465,27 @@ function FlowEditorContent() {
                 onDeleteEdge={handleDeleteEdge}
               />
             )}
+            {showExecutionPanel && (
+              <FlowExecutionPanel
+                state={flowRuntime}
+                onCancel={handleStopExecution}
+                onClose={() => setShowExecutionPanel(false)}
+              />
+            )}
           </div>
         </div>
       </TooltipProvider>
+
+      {/* Checkpoint dialog */}
+      {flowRuntime.checkpoint && (
+        <FlowCheckpointDialog
+          open={flowRuntime.isPaused && !!flowRuntime.checkpoint}
+          nodeId={flowRuntime.checkpoint.nodeId}
+          message={flowRuntime.checkpoint.message}
+          onApprove={handleCheckpointApprove}
+          onReject={handleCheckpointReject}
+        />
+      )}
     </Layout>
   );
 }

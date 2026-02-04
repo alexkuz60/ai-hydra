@@ -251,6 +251,24 @@ const translations: Translations = {
   'flowEditor.saved': { ru: 'Диаграмма сохранена', en: 'Diagram saved' },
   'flowEditor.deleted': { ru: 'Диаграмма удалена', en: 'Diagram deleted' },
   
+  // Flow Editor - Execution
+  'flowEditor.run': { ru: 'Запустить', en: 'Run' },
+  'flowEditor.runDiagram': { ru: 'Запустить диаграмму', en: 'Run diagram' },
+  'flowEditor.stopExecution': { ru: 'Остановить', en: 'Stop' },
+  'flowEditor.execution': { ru: 'Выполнение', en: 'Execution' },
+  'flowEditor.progress': { ru: 'Прогресс', en: 'Progress' },
+  'flowEditor.executionComplete': { ru: 'Выполнение завершено', en: 'Execution complete' },
+  'flowEditor.executionError': { ru: 'Ошибка выполнения', en: 'Execution error' },
+  'flowEditor.noNodesExecuting': { ru: 'Нет активных узлов', en: 'No nodes executing' },
+  'flowEditor.saveFirst': { ru: 'Сначала сохраните', en: 'Save first' },
+  'flowEditor.saveFirstDescription': { ru: 'Сохраните диаграмму перед запуском', en: 'Save the diagram before running' },
+  'flowEditor.checkpoint': { ru: 'Контрольная точка', en: 'Checkpoint' },
+  'flowEditor.checkpointDescription': { ru: 'Выполнение приостановлено для подтверждения', en: 'Execution paused for confirmation' },
+  'flowEditor.checkpointInput': { ru: 'Дополнительный ввод (опционально)', en: 'Additional input (optional)' },
+  'flowEditor.checkpointInputPlaceholder': { ru: 'Введите дополнительные данные...', en: 'Enter additional data...' },
+  'flowEditor.approve': { ru: 'Подтвердить', en: 'Approve' },
+  'flowEditor.reject': { ru: 'Отклонить', en: 'Reject' },
+  
   // Flow Editor - Node Properties Panel
   'flowEditor.properties.title': { ru: 'Свойства узла', en: 'Node Properties' },
   'flowEditor.properties.label': { ru: 'Название', en: 'Label' },
