@@ -26,7 +26,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Target, Sparkles, ChevronDown, ChevronRight, Plus, Pencil, Copy, Loader2, Lock, Trash2, Users } from 'lucide-react';
+import { Target, Sparkles, ChevronDown, ChevronRight, Plus, Pencil, Copy, Loader2, Lock, Trash2, Users, Wrench } from 'lucide-react';
 import { ROLE_CONFIG } from '@/config/roles';
 import { cn } from '@/lib/utils';
 import PatternDetailsPanel from '@/components/patterns/PatternDetailsPanel';
@@ -34,6 +34,7 @@ import { BlueprintEditorDialog } from '@/components/patterns/BlueprintEditorDial
 import { BehaviorEditorDialog } from '@/components/patterns/BehaviorEditorDialog';
 import { usePatterns, type TaskBlueprintWithMeta, type RoleBehaviorWithMeta } from '@/hooks/usePatterns';
 import type { TaskBlueprint, RoleBehavior } from '@/types/patterns';
+import { useUserRoles } from '@/hooks/useUserRoles';
 import {
   Tooltip,
   TooltipContent,
@@ -44,11 +45,35 @@ type SelectedPattern = TaskBlueprint | RoleBehavior | null;
 
 const BehavioralPatterns = () => {
   const { t } = useLanguage();
-  const { blueprints, behaviors, isLoading, isSaving, saveBlueprint, saveBehavior, deleteBlueprint, deleteBehavior } = usePatterns();
+  const { isAdmin } = useUserRoles();
+  const { blueprints: allBlueprints, behaviors: allBehaviors, isLoading, isSaving, saveBlueprint, saveBehavior, deleteBlueprint, deleteBehavior } = usePatterns();
+  
+  // Filter out system patterns for non-admins
+  const blueprints = useMemo(() => 
+    isAdmin ? allBlueprints : allBlueprints.filter(b => !b.meta.isSystem),
+    [allBlueprints, isAdmin]
+  );
+  
+  const behaviors = useMemo(() => 
+    isAdmin ? allBehaviors : allBehaviors.filter(b => !b.meta.isSystem),
+    [allBehaviors, isAdmin]
+  );
+  
+  // Split behaviors into experts and technical staff
+  const expertBehaviors = useMemo(() => 
+    behaviors.filter(b => !ROLE_CONFIG[b.role]?.isTechnicalStaff),
+    [behaviors]
+  );
+  
+  const techBehaviors = useMemo(() => 
+    behaviors.filter(b => ROLE_CONFIG[b.role]?.isTechnicalStaff),
+    [behaviors]
+  );
   
   const [selectedPattern, setSelectedPattern] = useState<SelectedPattern>(null);
   const [strategicExpanded, setStrategicExpanded] = useState(true);
-  const [roleExpanded, setRoleExpanded] = useState(true);
+  const [expertExpanded, setExpertExpanded] = useState(true);
+  const [techExpanded, setTechExpanded] = useState(true);
   
   // Editor dialogs
   const [blueprintDialogOpen, setBlueprintDialogOpen] = useState(false);
@@ -406,22 +431,22 @@ const BehavioralPatterns = () => {
                   </TableRow>
                   {strategicExpanded && blueprints.map(renderBlueprintRow)}
 
-                  {/* Role Patterns Group */}
+                  {/* Expert Behaviors Group */}
                   <TableRow
                     className="bg-muted/30 hover:bg-muted/40 cursor-pointer"
-                    onClick={() => setRoleExpanded(!roleExpanded)}
+                    onClick={() => setExpertExpanded(!expertExpanded)}
                   >
                     <TableCell colSpan={2} className="py-2">
                       <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-                        {roleExpanded ? (
+                        {expertExpanded ? (
                           <ChevronDown className="h-4 w-4" />
                         ) : (
                           <ChevronRight className="h-4 w-4" />
                         )}
                         <Sparkles className="h-4 w-4" />
-                        {t('patterns.roleGroup')}
+                        {t('patterns.expertGroup')}
                         <Badge variant="outline" className="ml-2 text-xs">
-                          {behaviors.length}
+                          {expertBehaviors.length}
                         </Badge>
                         <Button
                           variant="ghost"
@@ -438,7 +463,41 @@ const BehavioralPatterns = () => {
                       </div>
                     </TableCell>
                   </TableRow>
-                  {roleExpanded && behaviors.map(renderBehaviorRow)}
+                  {expertExpanded && expertBehaviors.map(renderBehaviorRow)}
+
+                  {/* Technical Staff Behaviors Group */}
+                  <TableRow
+                    className="bg-muted/30 hover:bg-muted/40 cursor-pointer"
+                    onClick={() => setTechExpanded(!techExpanded)}
+                  >
+                    <TableCell colSpan={2} className="py-2">
+                      <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                        {techExpanded ? (
+                          <ChevronDown className="h-4 w-4" />
+                        ) : (
+                          <ChevronRight className="h-4 w-4" />
+                        )}
+                        <Wrench className="h-4 w-4" />
+                        {t('patterns.technicalGroup')}
+                        <Badge variant="outline" className="ml-2 text-xs">
+                          {techBehaviors.length}
+                        </Badge>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="ml-auto h-6 px-2"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleCreateBehavior();
+                          }}
+                        >
+                          <Plus className="h-3 w-3 mr-1" />
+                          {t('patterns.createNew')}
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                  {techExpanded && techBehaviors.map(renderBehaviorRow)}
                 </TableBody>
               </Table>
             </div>

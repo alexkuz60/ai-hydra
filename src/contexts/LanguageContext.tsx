@@ -184,6 +184,11 @@ const translations: Translations = {
   'hydrapedia.sections.localization': { ru: 'Локализация', en: 'Localization' },
   'hydrapedia.sections.security': { ru: 'Безопасность', en: 'Security' },
   'hydrapedia.sections.behavioralPatterns': { ru: 'Паттерны поведения', en: 'Behavioral Patterns' },
+  'hydrapedia.sections.hydraTraining': { ru: 'Дрессировка Гидры', en: 'Hydra Training' },
+  
+  // Patterns groups
+  'patterns.expertGroup': { ru: 'Эксперты', en: 'Experts' },
+  'patterns.technicalGroup': { ru: 'Технический персонал', en: 'Technical Staff' },
   
   // Mermaid
   'mermaid.error': { ru: 'Ошибка рендеринга диаграммы', en: 'Diagram render error' },

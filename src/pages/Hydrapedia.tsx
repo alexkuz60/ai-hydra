@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { hydrapediaSections } from '@/content/hydrapedia';
+import { useUserRoles } from '@/hooks/useUserRoles';
 import { toast } from 'sonner';
 import {
   Lightbulb,
@@ -130,10 +131,18 @@ function searchContent(query: string, language: 'ru' | 'en'): SearchResult[] {
 
 export default function Hydrapedia() {
   const { t, language } = useLanguage();
+  const { isAdmin } = useUserRoles();
   const [searchParams, setSearchParams] = useSearchParams();
+  
+  // Filter sections based on admin status
+  const visibleSections = useMemo(() => 
+    hydrapediaSections.filter(section => !section.adminOnly || isAdmin),
+    [isAdmin]
+  );
+  
   const [activeSection, setActiveSection] = useState(() => {
     const sectionFromUrl = searchParams.get('section');
-    return hydrapediaSections.find(s => s.id === sectionFromUrl)?.id || hydrapediaSections[0].id;
+    return visibleSections.find(s => s.id === sectionFromUrl)?.id || visibleSections[0]?.id;
   });
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [tocOpen, setTocOpen] = useState(false);
@@ -145,7 +154,7 @@ export default function Hydrapedia() {
   const initialScrollDone = useRef(false);
   const [showScrollTop, setShowScrollTop] = useState(false);
 
-  const currentSection = hydrapediaSections.find(s => s.id === activeSection);
+  const currentSection = visibleSections.find(s => s.id === activeSection);
   const content = currentSection?.content[language] || '';
   
   const headings = useMemo(() => extractHeadings(content), [content]);
@@ -295,17 +304,17 @@ export default function Hydrapedia() {
       const target = e.target as HTMLElement;
       if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return;
       
-      const currentIndex = hydrapediaSections.findIndex(s => s.id === activeSection);
+      const currentIndex = visibleSections.findIndex(s => s.id === activeSection);
       
       if (e.key === 'ArrowLeft' || (e.key === 'ArrowUp' && !e.shiftKey)) {
         e.preventDefault();
         if (currentIndex > 0) {
-          handleSectionClick(hydrapediaSections[currentIndex - 1].id);
+          handleSectionClick(visibleSections[currentIndex - 1].id);
         }
       } else if (e.key === 'ArrowRight' || (e.key === 'ArrowDown' && !e.shiftKey)) {
         e.preventDefault();
-        if (currentIndex < hydrapediaSections.length - 1) {
-          handleSectionClick(hydrapediaSections[currentIndex + 1].id);
+        if (currentIndex < visibleSections.length - 1) {
+          handleSectionClick(visibleSections[currentIndex + 1].id);
         }
       }
     };
@@ -496,7 +505,7 @@ export default function Hydrapedia() {
           >
             <ScrollArea className="h-full">
               <nav className="p-3 space-y-1">
-                {hydrapediaSections.map((section) => {
+                {visibleSections.map((section) => {
                   const Icon = iconMap[section.icon] || Lightbulb;
                   const isActive = activeSection === section.id;
                   
@@ -554,7 +563,7 @@ export default function Hydrapedia() {
                         className="text-muted-foreground hover:text-foreground"
                         onClick={(e) => {
                           e.preventDefault();
-                          handleSectionClick(hydrapediaSections[0].id);
+                          handleSectionClick(visibleSections[0]?.id);
                         }}
                       >
                         {t('hydrapedia.title')}
