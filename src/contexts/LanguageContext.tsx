@@ -1013,6 +1013,13 @@ const translations: Translations = {
   'tools.daysActive': { ru: 'Дней активен', en: 'Days active' },
   'tools.rankOf': { ru: 'место из', en: 'rank of' },
   'tools.usageComparison': { ru: 'Сравнение по использованию (топ-5)', en: 'Usage comparison (top 5)' },
+  // Prompt Tool Tester
+  'tools.testPromptTool': { ru: 'Тестирование промпта', en: 'Test Prompt' },
+  'tools.testParams': { ru: 'Значения параметров', en: 'Parameter values' },
+  'tools.enterValue': { ru: 'Введите значение...', en: 'Enter value...' },
+  'tools.previewResult': { ru: 'Предпросмотр результата', en: 'Preview result' },
+  'tools.undefined': { ru: 'не задан', en: 'undefined' },
+  'tools.undefinedParamsHint': { ru: 'В шаблоне обнаружены плейсхолдеры, не описанные в параметрах. Добавьте их для лучшей документации.', en: 'Found placeholders in template that are not defined as parameters. Consider adding them for better documentation.' },
 };
 
 interface LanguageContextType {
