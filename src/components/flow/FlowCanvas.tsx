@@ -104,6 +104,7 @@ interface FlowCanvasProps {
   onPaneClick?: () => void;
   edgeSettings: EdgeStyleSettings;
   nodeStatuses?: Map<string, NodeStatus>;
+  nodeOutputs?: Map<string, unknown>;
 }
 
 export function FlowCanvas({
@@ -119,6 +120,7 @@ export function FlowCanvas({
   onPaneClick,
   edgeSettings,
   nodeStatuses,
+  nodeOutputs,
 }: FlowCanvasProps) {
   const { theme } = useTheme();
   const { t, language } = useLanguage();
@@ -146,6 +148,27 @@ export function FlowCanvas({
       };
     });
   }, [nodes, nodeStatuses]);
+
+  // Enrich edges with runtime data from completed nodes
+  const enrichedEdges = useMemo(() => {
+    if (!nodeOutputs || nodeOutputs.size === 0) return edges;
+    
+    return edges.map(edge => {
+      // Get output data from the source node
+      const sourceOutput = nodeOutputs.get(edge.source);
+      
+      if (sourceOutput === undefined) return edge;
+      
+      // Add runtime data to edge for tooltip visualization
+      return {
+        ...edge,
+        data: {
+          ...edge.data,
+          runtimeData: sourceOutput,
+        },
+      };
+    });
+  }, [edges, nodeOutputs]);
 
   const onConnect = useCallback(
     (params: Connection) => {
@@ -246,7 +269,7 @@ export function FlowCanvas({
     <div ref={reactFlowWrapper} className="flex-1 h-full">
       <ReactFlow
         nodes={enrichedNodes}
-        edges={edges}
+        edges={enrichedEdges}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
