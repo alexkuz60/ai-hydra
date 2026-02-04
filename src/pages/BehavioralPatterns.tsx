@@ -26,7 +26,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Target, Sparkles, ChevronDown, ChevronRight, Plus, Pencil, Copy, Loader2, Lock, Trash2, Users, Wrench } from 'lucide-react';
+import { Target, Sparkles, ChevronDown, ChevronRight, Plus, Pencil, Copy, Loader2, Lock, Trash2, Users, Wrench, Settings2 } from 'lucide-react';
 import { ROLE_CONFIG } from '@/config/roles';
 import { cn } from '@/lib/utils';
 import PatternDetailsPanel from '@/components/patterns/PatternDetailsPanel';
@@ -65,6 +65,17 @@ const BehavioralPatterns = () => {
     [behaviors]
   );
   
+  // Further split expert behaviors into default (system) and custom
+  const defaultExpertBehaviors = useMemo(() => 
+    expertBehaviors.filter(b => b.meta.isSystem),
+    [expertBehaviors]
+  );
+  
+  const customExpertBehaviors = useMemo(() => 
+    expertBehaviors.filter(b => !b.meta.isSystem),
+    [expertBehaviors]
+  );
+  
   const techBehaviors = useMemo(() => 
     behaviors.filter(b => ROLE_CONFIG[b.role]?.isTechnicalStaff),
     [behaviors]
@@ -73,6 +84,7 @@ const BehavioralPatterns = () => {
   const [selectedPattern, setSelectedPattern] = useState<SelectedPattern>(null);
   const [strategicExpanded, setStrategicExpanded] = useState(true);
   const [expertExpanded, setExpertExpanded] = useState(true);
+  const [defaultExpertExpanded, setDefaultExpertExpanded] = useState(true);
   const [techExpanded, setTechExpanded] = useState(true);
   
   // Editor dialogs
@@ -463,7 +475,33 @@ const BehavioralPatterns = () => {
                       </div>
                     </TableCell>
                   </TableRow>
-                  {expertExpanded && expertBehaviors.map(renderBehaviorRow)}
+                  
+                  {/* Custom expert behaviors (non-system) */}
+                  {expertExpanded && customExpertBehaviors.map(renderBehaviorRow)}
+                  
+                  {/* Default expert behaviors subsection (system) */}
+                  {expertExpanded && defaultExpertBehaviors.length > 0 && (
+                    <TableRow
+                      className="bg-muted/20 hover:bg-muted/30 cursor-pointer"
+                      onClick={() => setDefaultExpertExpanded(!defaultExpertExpanded)}
+                    >
+                      <TableCell colSpan={2} className="py-1.5 pl-8">
+                        <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                          {defaultExpertExpanded ? (
+                            <ChevronDown className="h-3 w-3" />
+                          ) : (
+                            <ChevronRight className="h-3 w-3" />
+                          )}
+                          <Settings2 className="h-3 w-3" />
+                          {t('patterns.defaultBehaviors')}
+                          <Badge variant="outline" className="text-[10px] py-0 px-1.5">
+                            {defaultExpertBehaviors.length}
+                          </Badge>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  )}
+                  {expertExpanded && defaultExpertExpanded && defaultExpertBehaviors.map(renderBehaviorRow)}
 
                   {/* Technical Staff Behaviors Group */}
                   <TableRow
