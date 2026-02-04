@@ -149,8 +149,8 @@ const BehavioralPatterns = () => {
     e?.stopPropagation();
     
     const doEdit = () => {
-      // Select the pattern and switch to edit mode
-      setSelectedPattern(pattern.meta.isSystem ? { ...pattern, id: undefined as unknown as string, name: `${pattern.name} (копия)` } : pattern);
+      // Select the pattern and switch to edit mode (keep original id for direct editing)
+      setSelectedPattern(pattern);
       setIsEditing(true);
       setEditingType('blueprint');
       markSaved();
@@ -160,6 +160,24 @@ const BehavioralPatterns = () => {
       withConfirmation(doEdit);
     } else {
       doEdit();
+    }
+  }, [isEditing, hasUnsavedChanges, withConfirmation, markSaved]);
+
+  const handleDuplicateBlueprint = useCallback((pattern: TaskBlueprintWithMeta, e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    
+    const doDuplicate = () => {
+      // Create a copy without id
+      setSelectedPattern({ ...pattern, id: undefined as unknown as string, name: `${pattern.name} (копия)` });
+      setIsEditing(true);
+      setEditingType('blueprint');
+      markSaved();
+    };
+    
+    if (isEditing && hasUnsavedChanges) {
+      withConfirmation(doDuplicate);
+    } else {
+      doDuplicate();
     }
   }, [isEditing, hasUnsavedChanges, withConfirmation, markSaved]);
 
@@ -190,8 +208,8 @@ const BehavioralPatterns = () => {
     e?.stopPropagation();
     
     const doEdit = () => {
-      // Select the pattern and switch to edit mode
-      setSelectedPattern(pattern.meta.isSystem ? { ...pattern, id: undefined as unknown as string } : pattern);
+      // Select the pattern and switch to edit mode (keep original id for direct editing)
+      setSelectedPattern(pattern);
       setIsEditing(true);
       setEditingType('behavior');
       markSaved();
@@ -201,6 +219,24 @@ const BehavioralPatterns = () => {
       withConfirmation(doEdit);
     } else {
       doEdit();
+    }
+  }, [isEditing, hasUnsavedChanges, withConfirmation, markSaved]);
+
+  const handleDuplicateBehavior = useCallback((pattern: RoleBehaviorWithMeta, e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    
+    const doDuplicate = () => {
+      // Create a copy without id
+      setSelectedPattern({ ...pattern, id: undefined as unknown as string });
+      setIsEditing(true);
+      setEditingType('behavior');
+      markSaved();
+    };
+    
+    if (isEditing && hasUnsavedChanges) {
+      withConfirmation(doDuplicate);
+    } else {
+      doDuplicate();
     }
   }, [isEditing, hasUnsavedChanges, withConfirmation, markSaved]);
 
@@ -351,6 +387,21 @@ const BehavioralPatterns = () => {
               </div>
             </div>
             <div className="flex items-center gap-1 shrink-0">
+              {pattern.meta.isSystem && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={(e) => handleDuplicateBlueprint(pattern, e)}
+                    >
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>{t('patterns.duplicateToEdit')}</TooltipContent>
+                </Tooltip>
+              )}
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
@@ -359,16 +410,10 @@ const BehavioralPatterns = () => {
                     className="opacity-0 group-hover:opacity-100 transition-opacity"
                     onClick={(e) => handleEditBlueprint(pattern, e)}
                   >
-                    {pattern.meta.isSystem ? (
-                      <Copy className="h-4 w-4" />
-                    ) : (
-                      <Pencil className="h-4 w-4" />
-                    )}
+                    <Pencil className="h-4 w-4" />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent>
-                  {pattern.meta.isSystem ? t('patterns.duplicateToEdit') : t('common.edit')}
-                </TooltipContent>
+                <TooltipContent>{t('common.edit')}</TooltipContent>
               </Tooltip>
               {!pattern.meta.isSystem && pattern.meta.isOwned && (
                 <Tooltip>
@@ -448,6 +493,21 @@ const BehavioralPatterns = () => {
               </span>
             </div>
             <div className="flex items-center gap-1 shrink-0">
+              {pattern.meta.isSystem && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={(e) => handleDuplicateBehavior(pattern, e)}
+                    >
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>{t('patterns.duplicateToEdit')}</TooltipContent>
+                </Tooltip>
+              )}
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
@@ -456,16 +516,10 @@ const BehavioralPatterns = () => {
                     className="opacity-0 group-hover:opacity-100 transition-opacity"
                     onClick={(e) => handleEditBehavior(pattern, e)}
                   >
-                    {pattern.meta.isSystem ? (
-                      <Copy className="h-4 w-4" />
-                    ) : (
-                      <Pencil className="h-4 w-4" />
-                    )}
+                    <Pencil className="h-4 w-4" />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent>
-                  {pattern.meta.isSystem ? t('patterns.duplicateToEdit') : t('common.edit')}
-                </TooltipContent>
+                <TooltipContent>{t('common.edit')}</TooltipContent>
               </Tooltip>
               {!pattern.meta.isSystem && pattern.meta.isOwned && (
                 <Tooltip>
