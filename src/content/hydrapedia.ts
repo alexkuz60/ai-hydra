@@ -1528,6 +1528,97 @@ Tools are activated per-model in task settings:
 | **Memory** | \`Brain\` | Чтение/запись в долговременную память |
 | **Tool** | \`Wrench\` | Вызов кастомного инструмента |
 
+---
+
+## Tool Node — Вызов кастомных инструментов
+
+Узел **Tool** позволяет интегрировать инструменты из Библиотеки инструментов непосредственно в потоки обработки данных.
+
+### Назначение
+
+Tool Node выполняет кастомные инструменты (Prompt или HTTP API) как часть потока, передавая данные между узлами автоматически.
+
+### Свойства узла
+
+| Поле | Описание |
+|------|----------|
+| **Label** | Отображаемое имя узла на холсте |
+| **Tool** | Выбор инструмента из библиотеки |
+| **Parameter Mapping** | Маппинг входных данных на параметры |
+
+### Выбор инструмента
+
+1. Добавьте узел **Tool** из категории **AI** на холст
+2. Выберите узел — откроется панель свойств справа
+3. В выпадающем списке **Tool** выберите нужный инструмент
+4. Система автоматически отобразит параметры инструмента
+
+### Маппинг параметров
+
+Для каждого параметра инструмента можно указать источник данных:
+
+| Источник | Описание | Пример |
+|----------|----------|--------|
+| **Статическое значение** | Фиксированное значение | \`"Москва"\` |
+| **JSONPath из входа** | Извлечение из входных данных | \`$.city\` |
+| **Весь вход** | Передать все входные данные | \`$\` |
+
+**Пример маппинга:**
+\`\`\`json
+{
+  "city": "$.location.city",
+  "api_key": "sk-xxx-static-key",
+  "units": "metric"
+}
+\`\`\`
+
+### Поддерживаемые типы инструментов
+
+| Тип | Иконка | Поведение в потоке |
+|-----|--------|-------------------|
+| **Prompt** | \`FileText\` | Подстановка параметров в шаблон, возврат текста |
+| **HTTP API** | \`Globe\` | Выполнение HTTP-запроса, возврат JSON |
+
+### Входы и выходы
+
+| Точка | Описание |
+|-------|----------|
+| **Вход (сверху)** | Данные для передачи в параметры инструмента |
+| **Выход (снизу)** | Результат выполнения инструмента |
+
+### Пример: Обогащение данных через API
+
+\`\`\`mermaid
+graph TD
+    I[Input: город] --> T[Tool: get_weather]
+    T --> M[Model: сгенерировать отчёт]
+    M --> O[Output]
+\`\`\`
+
+В этом примере:
+1. **Input** получает название города
+2. **Tool** вызывает HTTP-инструмент для получения погоды
+3. **Model** генерирует текстовый отчёт на основе данных о погоде
+4. **Output** возвращает финальный результат
+
+### Обработка ошибок
+
+При ошибке выполнения инструмента:
+
+| Ситуация | Поведение |
+|----------|-----------|
+| **HTTP ошибка** | Узел помечается красным, поток останавливается |
+| **Таймаут** | Ошибка после 30 секунд ожидания |
+| **Невалидные параметры** | Ошибка валидации перед запуском |
+
+### Советы по использованию
+
+> **Совет 1**: Создавайте инструменты для часто используемых API-вызовов и переиспользуйте их в разных потоках.
+
+> **Совет 2**: Используйте JSONPath-маппинг для динамического извлечения параметров из сложных структур данных.
+
+> **Совет 3**: Комбинируйте Tool Node с Condition Node для ветвления логики на основе результатов инструмента.
+
 ## Flow Runtime — Выполнение потоков
 
 Редактор включает полноценный движок выполнения потоков с визуализацией в реальном времени.
@@ -1762,6 +1853,97 @@ Panel for editing parameters of the selected node.
 | **Classifier** | \`Tag\` | Classify text into categories |
 | **Memory** | \`Brain\` | Read/write to long-term memory |
 | **Tool** | \`Wrench\` | Invoke custom tool |
+
+---
+
+## Tool Node — Calling Custom Tools
+
+The **Tool** node allows you to integrate tools from the Tools Library directly into data processing flows.
+
+### Purpose
+
+Tool Node executes custom tools (Prompt or HTTP API) as part of a flow, automatically passing data between nodes.
+
+### Node Properties
+
+| Field | Description |
+|-------|-------------|
+| **Label** | Display name on canvas |
+| **Tool** | Select tool from library |
+| **Parameter Mapping** | Map input data to parameters |
+
+### Selecting a Tool
+
+1. Add a **Tool** node from the **AI** category to the canvas
+2. Select the node — properties panel opens on the right
+3. Choose the desired tool from the **Tool** dropdown
+4. The system automatically displays tool parameters
+
+### Parameter Mapping
+
+For each tool parameter, you can specify a data source:
+
+| Source | Description | Example |
+|--------|-------------|---------|
+| **Static value** | Fixed value | \`"Moscow"\` |
+| **JSONPath from input** | Extract from input data | \`$.city\` |
+| **Entire input** | Pass all input data | \`$\` |
+
+**Mapping example:**
+\`\`\`json
+{
+  "city": "$.location.city",
+  "api_key": "sk-xxx-static-key",
+  "units": "metric"
+}
+\`\`\`
+
+### Supported Tool Types
+
+| Type | Icon | Behavior in Flow |
+|------|------|------------------|
+| **Prompt** | \`FileText\` | Parameter substitution in template, returns text |
+| **HTTP API** | \`Globe\` | Execute HTTP request, returns JSON |
+
+### Inputs and Outputs
+
+| Point | Description |
+|-------|-------------|
+| **Input (top)** | Data to pass to tool parameters |
+| **Output (bottom)** | Tool execution result |
+
+### Example: Data Enrichment via API
+
+\`\`\`mermaid
+graph TD
+    I[Input: city] --> T[Tool: get_weather]
+    T --> M[Model: generate report]
+    M --> O[Output]
+\`\`\`
+
+In this example:
+1. **Input** receives the city name
+2. **Tool** calls HTTP tool to get weather
+3. **Model** generates a text report based on weather data
+4. **Output** returns the final result
+
+### Error Handling
+
+When tool execution fails:
+
+| Situation | Behavior |
+|-----------|----------|
+| **HTTP error** | Node marked red, flow stops |
+| **Timeout** | Error after 30 seconds |
+| **Invalid parameters** | Validation error before execution |
+
+### Usage Tips
+
+> **Tip 1**: Create tools for frequently used API calls and reuse them across different flows.
+
+> **Tip 2**: Use JSONPath mapping to dynamically extract parameters from complex data structures.
+
+> **Tip 3**: Combine Tool Node with Condition Node to branch logic based on tool results.
 
 ## Flow Runtime — Executing Flows
 
