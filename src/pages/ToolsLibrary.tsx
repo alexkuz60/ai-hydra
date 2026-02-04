@@ -6,7 +6,7 @@ import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody } from '@/components/ui/table';
-import { Loader2, Search, Plus, Wrench } from 'lucide-react';
+import { Loader2, Search, Plus, Wrench, Upload, Download } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -43,8 +43,11 @@ import {
   toolToFormData,
   SYSTEM_TOOLS,
   SystemTool,
+  exportToolToJson,
+  importToolFromJson,
 } from '@/types/customTools';
 import { ToolItem, isSystemTool } from '@/components/tools/ToolRow';
+import { toast } from 'sonner';
 
 export default function ToolsLibrary() {
   const { user, loading: authLoading } = useAuth();
@@ -253,6 +256,53 @@ export default function ToolsLibrary() {
     setEditingTool(null);
   };
 
+  const handleExport = (tool: CustomTool, e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    const json = exportToolToJson(tool);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${tool.name}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast.success(t('tools.exportSuccess'));
+  };
+
+  const handleImport = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    input.onchange = async (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (!file) return;
+      
+      try {
+        const text = await file.text();
+        const importedData = importToolFromJson(text);
+        
+        if (!importedData) {
+          toast.error(t('tools.importError'));
+          return;
+        }
+        
+        // Set form data and enter create mode
+        setFormData(importedData);
+        setIsCreating(true);
+        setIsEditing(false);
+        setSelectedTool(null);
+        setEditingTool(null);
+        toast.success(t('tools.importSuccess'));
+      } catch (err) {
+        console.error('Import error:', err);
+        toast.error(t('tools.importError'));
+      }
+    };
+    input.click();
+  };
+
   const handleConfirmDelete = async () => {
     if (!toolToDelete) return;
     const success = await deleteTool(toolToDelete.id);
@@ -292,10 +342,16 @@ export default function ToolsLibrary() {
             <h1 className="text-2xl font-bold">{t('tools.title')}</h1>
             <p className="text-sm text-muted-foreground">{t('tools.description')}</p>
           </div>
-          <Button onClick={handleStartCreate} className="hydra-glow-sm">
-            <Plus className="h-4 w-4 mr-2" />
-            {t('tools.createTool')}
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={handleImport}>
+              <Upload className="h-4 w-4 mr-2" />
+              {t('tools.import')}
+            </Button>
+            <Button onClick={handleStartCreate} className="hydra-glow-sm">
+              <Plus className="h-4 w-4 mr-2" />
+              {t('tools.createTool')}
+            </Button>
+          </div>
         </div>
 
         {/* Main content */}
@@ -388,6 +444,7 @@ export default function ToolsLibrary() {
                 onEdit={() => selectedTool && !isSystemTool(selectedTool) && handleStartEdit(selectedTool as CustomTool)}
                 onDelete={() => selectedTool && !isSystemTool(selectedTool) && setToolToDelete(selectedTool as CustomTool)}
                 onDuplicate={() => selectedTool && !isSystemTool(selectedTool) && handleDuplicate(selectedTool as CustomTool)}
+                onExport={() => selectedTool && !isSystemTool(selectedTool) && handleExport(selectedTool as CustomTool)}
               />
             )}
           </ResizablePanel>

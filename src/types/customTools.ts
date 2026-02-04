@@ -151,3 +151,55 @@ export function validateToolName(name: string): string {
     .replace(/_+/g, '_')
     .replace(/^_|_$/g, '');
 }
+
+// Export tool to JSON format
+export function exportToolToJson(tool: CustomTool): string {
+  const exportData = {
+    version: 1,
+    type: 'hydra_tool',
+    tool: {
+      name: tool.name,
+      display_name: tool.display_name,
+      description: tool.description,
+      prompt_template: tool.prompt_template,
+      parameters: tool.parameters,
+      tool_type: tool.tool_type,
+      http_config: tool.http_config,
+    },
+  };
+  return JSON.stringify(exportData, null, 2);
+}
+
+// Import tool from JSON format
+export function importToolFromJson(json: string): ToolFormData | null {
+  try {
+    const data = JSON.parse(json);
+    
+    // Validate format
+    if (data.type !== 'hydra_tool' || !data.tool) {
+      return null;
+    }
+    
+    const t = data.tool;
+    const hc = t.http_config;
+    
+    return {
+      name: `${t.name}_imported`,
+      displayName: `${t.display_name} (импорт)`,
+      description: t.description || '',
+      promptTemplate: t.prompt_template || '',
+      parameters: Array.isArray(t.parameters) ? t.parameters : [],
+      isShared: false,
+      toolType: t.tool_type || 'prompt',
+      httpUrl: hc?.url || '',
+      httpMethod: hc?.method || 'GET',
+      httpHeaders: hc?.headers 
+        ? Object.entries(hc.headers).map(([key, value]) => ({ key, value: String(value) }))
+        : [],
+      httpBodyTemplate: hc?.body_template || '',
+      httpResponsePath: hc?.response_path || '',
+    };
+  } catch {
+    return null;
+  }
+}
