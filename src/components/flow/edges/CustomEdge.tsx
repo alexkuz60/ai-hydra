@@ -16,6 +16,7 @@ import {
   EdgeDirection,
 } from '@/types/edgeTypes';
 import { EdgeDataTooltip } from './EdgeDataTooltip';
+import { motion } from 'framer-motion';
 
 // Get path based on line type
 function getEdgePath(
@@ -106,6 +107,7 @@ export const CustomEdge = memo(({
   const animated = edgeData.animated !== false;
   const strokeWidth = (edgeData.strokeWidth as number) || 2;
   const runtimeData = edgeData.runtimeData; // Data from flow execution
+  const hasFlowedData = runtimeData !== undefined; // Indicates data passed through this edge
 
   // Handle mouse events for tooltip
   const handleMouseEnter = useCallback((e: React.MouseEvent) => {
@@ -145,11 +147,15 @@ export const CustomEdge = memo(({
     [sourceX, targetX]
   );
 
-  // Get color based on data type
+  // Get color based on data type and flow state
   const edgeColor = useMemo(() => {
+    // When data has flowed through, use a brighter success color
+    if (hasFlowedData) {
+      return 'hsl(var(--hydra-success))';
+    }
     const colorHSL = FLOW_DATA_COLORS[dataType];
     return `hsl(${colorHSL})`;
-  }, [dataType]);
+  }, [dataType, hasFlowedData]);
 
   // Build edge style
   const edgeStyle = useMemo((): React.CSSProperties => {
@@ -165,8 +171,13 @@ export const CustomEdge = memo(({
       baseStyle.stroke = 'hsl(35 90% 55%)'; // Orange for backward
     }
 
+    // Add glow effect when data has flowed
+    if (hasFlowedData && direction !== 'backward') {
+      baseStyle.filter = 'drop-shadow(0 0 4px hsl(var(--hydra-success) / 0.6))';
+    }
+
     return { ...baseStyle, ...(style as React.CSSProperties) };
-  }, [edgeColor, strokeWidth, selected, direction, style]);
+  }, [edgeColor, strokeWidth, selected, direction, style, hasFlowedData]);
 
   // Animation class
   const animationClass = animated && direction === 'forward' ? 'react-flow__edge-path-animated' : '';
@@ -224,6 +235,35 @@ export const CustomEdge = memo(({
       )}
 
       {/* Direction indicator for backward edges */}
+      {/* Data flow indicator - pulsing dot when data has flowed */}
+      {hasFlowedData && (
+        <EdgeLabelRenderer>
+          <motion.div
+            style={{
+              position: 'absolute',
+              transform: `translate(-50%, -50%) translate(${labelX}px, ${labelY}px)`,
+              pointerEvents: 'none',
+            }}
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ 
+              scale: [1, 1.3, 1],
+              opacity: 1,
+            }}
+            transition={{
+              scale: {
+                duration: 1.5,
+                repeat: Infinity,
+                ease: 'easeInOut',
+              },
+              opacity: {
+                duration: 0.3,
+              },
+            }}
+            className="w-3 h-3 rounded-full bg-hydra-success shadow-[0_0_8px_hsl(var(--hydra-success))]"
+          />
+        </EdgeLabelRenderer>
+      )}
+
       {/* Data tooltip on hover */}
       <EdgeLabelRenderer>
         <EdgeDataTooltip
