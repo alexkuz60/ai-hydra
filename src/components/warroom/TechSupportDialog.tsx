@@ -38,8 +38,8 @@ export function TechSupportDialog({
   sessionId,
   availableModels,
   trigger,
-  open,
-  onOpenChange,
+  open: controlledOpen,
+  onOpenChange: controlledOnOpenChange,
 }: TechSupportDialogProps) {
   const { t } = useLanguage();
   const [input, setInput] = useState('');
@@ -48,6 +48,14 @@ export function TechSupportDialog({
     availableModels[0]?.id || ''
   );
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  
+  // Internal state for uncontrolled mode
+  const [internalOpen, setInternalOpen] = useState(false);
+  
+  // Use controlled or uncontrolled mode
+  const isControlled = controlledOpen !== undefined;
+  const open = isControlled ? controlledOpen : internalOpen;
+  const onOpenChange = isControlled ? controlledOnOpenChange : setInternalOpen;
 
   const { messages, streaming, sendQuery, stopStreaming, clearMessages } = useStreamingChat({
     sessionId,
@@ -85,8 +93,9 @@ export function TechSupportDialog({
   const RoleIcon = roleConfig.icon;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
+    <>
+      {trigger && React.cloneElement(trigger as React.ReactElement, { onClick: () => onOpenChange?.(true) })}
+      <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl h-[70vh] flex flex-col p-0 gap-0">
         <DialogHeader className="p-4 border-b border-border shrink-0">
           <DialogTitle className="flex items-center gap-2">
@@ -200,7 +209,12 @@ export function TechSupportDialog({
               onKeyDown={handleKeyDown}
             />
             <Button
-              onClick={handleSend}
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleSend();
+              }}
               disabled={!input.trim() || streaming || !selectedModel}
               size="icon"
               className={cn("h-[60px] w-10 shrink-0", roleConfig.color.replace('text-', 'bg-').replace('hydra-', 'hydra-') + '/20')}
@@ -220,6 +234,7 @@ export function TechSupportDialog({
           </div>
         </div>
       </DialogContent>
-    </Dialog>
+      </Dialog>
+    </>
   );
 }
