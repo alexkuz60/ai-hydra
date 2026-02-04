@@ -2,6 +2,7 @@
 // Flow Executor - Orchestrates node execution
 // ============================================
 
+import { createClient, SupabaseClient } from "npm:@supabase/supabase-js@2";
 import { 
   FlowNode, 
   FlowEdge, 
@@ -46,6 +47,7 @@ export class FlowExecutor {
   private nodeOutputs: Map<string, unknown>;
   private context: Record<string, unknown>;
   private sendSSE: (event: SSEEvent) => void;
+  private supabaseClient: SupabaseClient;
 
   constructor(
     flowId: string,
@@ -63,6 +65,9 @@ export class FlowExecutor {
     this.nodeStates = new Map();
     this.nodeOutputs = new Map();
     this.context = {};
+    
+    // Create Supabase client for database/storage operations
+    this.supabaseClient = createClient(config.supabaseUrl, config.supabaseKey);
 
     // Initialize all nodes as pending
     for (const node of nodes) {
@@ -208,6 +213,7 @@ export class FlowExecutor {
       supabaseUrl: this.config.supabaseUrl,
       supabaseKey: this.config.supabaseKey,
       lovableApiKey: this.config.lovableApiKey,
+      supabaseClient: this.supabaseClient,
       sendEvent: (event) => this.emitEvent(event.type, event.nodeId, event.data),
     };
 
