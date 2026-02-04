@@ -120,16 +120,9 @@ export default function ToolsLibrary() {
   const groupedTools = useMemo(() => {
     const groups: Record<string, ToolItem[]> = {};
     
-    // System tools group
-    const systemTools = filteredTools.filter(isSystemTool);
-    if (systemTools.length > 0) {
-      groups['system'] = systemTools;
-    }
-    
-    // Group custom tools by category
-    const customTools = filteredTools.filter(t => !isSystemTool(t)) as CustomTool[];
-    for (const tool of customTools) {
-      const cat = tool.category || 'general';
+    // Group all tools (system and custom) by category
+    for (const tool of filteredTools) {
+      const cat = (tool as SystemTool).category || (tool as CustomTool).category || 'general';
       if (!groups[cat]) groups[cat] = [];
       groups[cat].push(tool);
     }
@@ -450,16 +443,14 @@ export default function ToolsLibrary() {
                   </div>
                 ) : (
                   <div className="divide-y">
-                    {/* Order: system first, then by TOOL_CATEGORIES order */}
-                    {(['system', ...TOOL_CATEGORIES.map(c => c.value)] as string[])
+                    {/* Order: by TOOL_CATEGORIES order */}
+                    {(TOOL_CATEGORIES.map(c => c.value) as string[])
                       .filter(cat => groupedTools[cat] && groupedTools[cat].length > 0)
                       .map((category) => {
                         const toolsInCategory = groupedTools[category];
                         const isCollapsed = collapsedCategories.has(category);
                         const CategoryIcon = getCategoryIcon(category);
-                        const categoryLabel = category === 'system' 
-                          ? t('tools.systemTools')
-                          : t(`tools.category.${category}`);
+                        const categoryLabel = t(`tools.category.${category}`);
 
                         return (
                           <div key={category}>
