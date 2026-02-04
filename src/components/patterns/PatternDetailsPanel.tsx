@@ -18,6 +18,7 @@ import { useToast } from '@/hooks/use-toast';
 import type { PatternMeta } from '@/hooks/usePatterns';
 import { FORMAT_DICTIONARY, TRIGGER_DICTIONARY, BEHAVIOR_DICTIONARY } from '@/config/behaviorDictionaries';
 import { RoleBehaviorEditor } from './RoleBehaviorEditor';
+import { BlueprintEditor } from './BlueprintEditor';
 
 interface PatternDetailsPanelProps {
   selectedPattern: TaskBlueprint | RoleBehavior | null;
@@ -27,6 +28,7 @@ interface PatternDetailsPanelProps {
   isEditing?: boolean;
   onCancelEdit?: () => void;
   onSaveBehavior?: (behavior: Omit<RoleBehavior, 'id'> & { id?: string }, isShared: boolean) => Promise<void>;
+  onSaveBlueprint?: (blueprint: Omit<TaskBlueprint, 'id'> & { id?: string }, isShared: boolean) => Promise<void>;
   isSaving?: boolean;
   onHasUnsavedChanges?: (hasChanges: boolean) => void;
 }
@@ -444,6 +446,7 @@ const PatternDetailsPanel: React.FC<PatternDetailsPanelProps> = ({
   isEditing = false,
   onCancelEdit,
   onSaveBehavior,
+  onSaveBlueprint,
   isSaving = false,
   onHasUnsavedChanges,
 }) => {
@@ -457,6 +460,24 @@ const PatternDetailsPanel: React.FC<PatternDetailsPanelProps> = ({
           <p>{t('patterns.selectPattern')}</p>
         </div>
       </div>
+    );
+  }
+
+  // Inline editing mode for TaskBlueprint
+  if (isEditing && isTaskBlueprint(selectedPattern) && onSaveBlueprint && onCancelEdit) {
+    return (
+      <ScrollArea className="h-full">
+        <div className="p-6">
+          <BlueprintEditor
+            blueprint={selectedPattern}
+            isSystem={patternMeta?.isSystem}
+            onSave={onSaveBlueprint}
+            onCancel={onCancelEdit}
+            onHasUnsavedChanges={onHasUnsavedChanges}
+            isSaving={isSaving}
+          />
+        </div>
+      </ScrollArea>
     );
   }
 

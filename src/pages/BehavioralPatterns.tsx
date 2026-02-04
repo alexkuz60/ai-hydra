@@ -30,7 +30,7 @@ import { Target, Sparkles, ChevronDown, ChevronRight, Plus, Pencil, Copy, Loader
 import { ROLE_CONFIG } from '@/config/roles';
 import { cn } from '@/lib/utils';
 import PatternDetailsPanel from '@/components/patterns/PatternDetailsPanel';
-import { BlueprintEditorDialog } from '@/components/patterns/BlueprintEditorDialog';
+import { isTaskBlueprint } from '@/types/patterns';
 import { usePatterns, type TaskBlueprintWithMeta, type RoleBehaviorWithMeta } from '@/hooks/usePatterns';
 import type { TaskBlueprint, RoleBehavior } from '@/types/patterns';
 import { useUserRoles } from '@/hooks/useUserRoles';
@@ -88,12 +88,9 @@ const BehavioralPatterns = () => {
   const [defaultExpertExpanded, setDefaultExpertExpanded] = useState(true);
   const [techExpanded, setTechExpanded] = useState(true);
   
-  // Editor dialogs (only for blueprints now)
-  const [blueprintDialogOpen, setBlueprintDialogOpen] = useState(false);
-  const [editingBlueprint, setEditingBlueprint] = useState<TaskBlueprint | null>(null);
-  
-  // Inline editing for behaviors
-  const [isEditingBehavior, setIsEditingBehavior] = useState(false);
+  // Inline editing state (unified for both types)
+  const [isEditing, setIsEditing] = useState(false);
+  const [editingType, setEditingType] = useState<'blueprint' | 'behavior' | null>(null);
   
   // Unsaved changes protection
   const {
@@ -124,21 +121,47 @@ const BehavioralPatterns = () => {
     return bh?.meta || null;
   }, [selectedPattern, blueprints, behaviors]);
 
-  const handleCreateBlueprint = () => {
-    setEditingBlueprint(null);
-    setBlueprintDialogOpen(true);
-  };
-
-  const handleEditBlueprint = (pattern: TaskBlueprintWithMeta, e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (pattern.meta.isSystem) {
-      // Duplicate for editing
-      setEditingBlueprint({ ...pattern, id: undefined as unknown as string, name: `${pattern.name} (копия)` });
+  const handleCreateBlueprint = useCallback(() => {
+    const doCreate = () => {
+      // Set a new empty blueprint pattern as selected
+      const newBlueprint: TaskBlueprint = {
+        id: '' as unknown as string,
+        name: '',
+        category: 'planning',
+        description: '',
+        stages: [{ name: '', roles: [], objective: '', deliverables: [] }],
+        checkpoints: [],
+      };
+      setSelectedPattern(newBlueprint);
+      setIsEditing(true);
+      setEditingType('blueprint');
+      markSaved();
+    };
+    
+    if (isEditing && hasUnsavedChanges) {
+      withConfirmation(doCreate);
     } else {
-      setEditingBlueprint(pattern);
+      doCreate();
     }
-    setBlueprintDialogOpen(true);
-  };
+  }, [isEditing, hasUnsavedChanges, withConfirmation, markSaved]);
+
+  const handleEditBlueprint = useCallback((pattern: TaskBlueprintWithMeta, e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    
+    const doEdit = () => {
+      // Select the pattern and switch to edit mode
+      setSelectedPattern(pattern.meta.isSystem ? { ...pattern, id: undefined as unknown as string, name: `${pattern.name} (копия)` } : pattern);
+      setIsEditing(true);
+      setEditingType('blueprint');
+      markSaved();
+    };
+    
+    if (isEditing && hasUnsavedChanges) {
+      withConfirmation(doEdit);
+    } else {
+      doEdit();
+    }
+  }, [isEditing, hasUnsavedChanges, withConfirmation, markSaved]);
 
   const handleCreateBehavior = useCallback(() => {
     const doCreate = () => {
@@ -151,16 +174,17 @@ const BehavioralPatterns = () => {
         interactions: { defers_to: [], challenges: [], collaborates: [] },
       };
       setSelectedPattern(newBehavior);
-      setIsEditingBehavior(true);
+      setIsEditing(true);
+      setEditingType('behavior');
       markSaved();
     };
     
-    if (isEditingBehavior && hasUnsavedChanges) {
+    if (isEditing && hasUnsavedChanges) {
       withConfirmation(doCreate);
     } else {
       doCreate();
     }
-  }, [isEditingBehavior, hasUnsavedChanges, withConfirmation, markSaved]);
+  }, [isEditing, hasUnsavedChanges, withConfirmation, markSaved]);
 
   const handleEditBehavior = useCallback((pattern: RoleBehaviorWithMeta, e?: React.MouseEvent) => {
     e?.stopPropagation();
@@ -168,22 +192,24 @@ const BehavioralPatterns = () => {
     const doEdit = () => {
       // Select the pattern and switch to edit mode
       setSelectedPattern(pattern.meta.isSystem ? { ...pattern, id: undefined as unknown as string } : pattern);
-      setIsEditingBehavior(true);
+      setIsEditing(true);
+      setEditingType('behavior');
       markSaved();
     };
     
-    if (isEditingBehavior && hasUnsavedChanges) {
+    if (isEditing && hasUnsavedChanges) {
       withConfirmation(doEdit);
     } else {
       doEdit();
     }
-  }, [isEditingBehavior, hasUnsavedChanges, withConfirmation, markSaved]);
+  }, [isEditing, hasUnsavedChanges, withConfirmation, markSaved]);
 
-  const handleCancelBehaviorEdit = useCallback(() => {
+  const handleCancelEdit = useCallback(() => {
     const doCancel = () => {
-      setIsEditingBehavior(false);
+      setIsEditing(false);
+      setEditingType(null);
       markSaved();
-      // If was creating new behavior (no id), deselect
+      // If was creating new pattern (no id), deselect
       if (selectedPattern && !selectedPattern.id) {
         setSelectedPattern(null);
       }
@@ -200,20 +226,22 @@ const BehavioralPatterns = () => {
   const handleSelectPattern = useCallback((pattern: SelectedPattern) => {
     const doSelect = () => {
       setSelectedPattern(pattern);
-      setIsEditingBehavior(false);
+      setIsEditing(false);
+      setEditingType(null);
       markSaved();
     };
     
-    if (isEditingBehavior && hasUnsavedChanges) {
+    if (isEditing && hasUnsavedChanges) {
       withConfirmation(doSelect);
     } else {
       doSelect();
     }
-  }, [isEditingBehavior, hasUnsavedChanges, withConfirmation, markSaved]);
+  }, [isEditing, hasUnsavedChanges, withConfirmation, markSaved]);
 
   const handleSaveBehaviorInline = useCallback(async (data: Omit<RoleBehavior, 'id'> & { id?: string }, isShared: boolean) => {
     await saveBehavior(data, isShared);
-    setIsEditingBehavior(false);
+    setIsEditing(false);
+    setEditingType(null);
     markSaved();
     // Select the saved behavior if it was new
     const savedBehavior = behaviors.find(b => b.role === data.role);
@@ -222,13 +250,18 @@ const BehavioralPatterns = () => {
     }
   }, [saveBehavior, behaviors, markSaved]);
 
-  const handleSaveBlueprint = async (data: Omit<TaskBlueprint, 'id'> & { id?: string }, isShared: boolean) => {
+  const handleSaveBlueprintInline = useCallback(async (data: Omit<TaskBlueprint, 'id'> & { id?: string }, isShared: boolean) => {
     await saveBlueprint(data, isShared);
-  };
+    setIsEditing(false);
+    setEditingType(null);
+    markSaved();
+    // Select the saved blueprint if it was new
+    const savedBlueprint = blueprints.find(b => b.name === data.name);
+    if (savedBlueprint) {
+      setSelectedPattern(savedBlueprint);
+    }
+  }, [saveBlueprint, blueprints, markSaved]);
 
-  const handleSaveBehavior = async (data: Omit<RoleBehavior, 'id'> & { id?: string }, isShared: boolean) => {
-    await saveBehavior(data, isShared);
-  };
 
   const handleDeleteBlueprint = (pattern: TaskBlueprintWithMeta, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -628,17 +661,17 @@ const BehavioralPatterns = () => {
               <PatternDetailsPanel 
                 selectedPattern={selectedPattern} 
                 patternMeta={selectedMeta}
-                isEditing={isEditingBehavior}
-                onCancelEdit={handleCancelBehaviorEdit}
+                isEditing={isEditing}
+                onCancelEdit={handleCancelEdit}
                 onSaveBehavior={handleSaveBehaviorInline}
+                onSaveBlueprint={handleSaveBlueprintInline}
                 isSaving={isSaving}
                 onHasUnsavedChanges={setHasUnsavedChanges}
                 onEdit={() => {
                   if (!selectedPattern) return;
                   const bp = blueprints.find(b => b.id === selectedPattern.id);
                   if (bp) {
-                    setEditingBlueprint(bp.meta.isSystem ? { ...bp, id: undefined as unknown as string, name: `${bp.name} (копия)` } : bp);
-                    setBlueprintDialogOpen(true);
+                    handleEditBlueprint(bp);
                   } else {
                     const bh = behaviors.find(b => b.id === selectedPattern.id);
                     if (bh) {
@@ -651,15 +684,6 @@ const BehavioralPatterns = () => {
           </ResizablePanel>
         </ResizablePanelGroup>
       </div>
-
-      {/* Dialogs */}
-      <BlueprintEditorDialog
-        open={blueprintDialogOpen}
-        onOpenChange={setBlueprintDialogOpen}
-        blueprint={editingBlueprint}
-        onSave={handleSaveBlueprint}
-        isSaving={isSaving}
-      />
 
 
       {/* Delete Confirmation Dialog */}
