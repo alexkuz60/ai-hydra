@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -39,6 +39,81 @@ import {
   HTTP_METHODS,
   validateToolName,
 } from '@/types/customTools';
+import { cn } from '@/lib/utils';
+
+// Validation errors interface
+interface ValidationErrors {
+  displayName?: string;
+  name?: string;
+  description?: string;
+  promptTemplate?: string;
+  httpUrl?: string;
+  parameters?: Record<number, { name?: string }>;
+}
+
+// Validate form and return errors
+function validateForm(formData: ToolFormData, t: (key: string) => string): ValidationErrors {
+  const errors: ValidationErrors = {};
+  
+  if (!formData.displayName.trim()) {
+    errors.displayName = t('tools.validation.displayNameRequired');
+  } else if (formData.displayName.length > 100) {
+    errors.displayName = t('tools.validation.displayNameTooLong');
+  }
+  
+  if (!formData.name.trim()) {
+    errors.name = t('tools.validation.nameRequired');
+  } else if (!/^[a-z][a-z0-9_]*$/.test(formData.name)) {
+    errors.name = t('tools.validation.nameInvalid');
+  } else if (formData.name.length > 50) {
+    errors.name = t('tools.validation.nameTooLong');
+  }
+  
+  if (!formData.description.trim()) {
+    errors.description = t('tools.validation.descriptionRequired');
+  } else if (formData.description.length > 500) {
+    errors.description = t('tools.validation.descriptionTooLong');
+  }
+  
+  if (formData.toolType === 'prompt') {
+    if (!formData.promptTemplate.trim()) {
+      errors.promptTemplate = t('tools.validation.promptRequired');
+    }
+  } else if (formData.toolType === 'http_api') {
+    if (!formData.httpUrl.trim()) {
+      errors.httpUrl = t('tools.validation.urlRequired');
+    } else {
+      try {
+        // Basic URL validation - replace placeholders first
+        const testUrl = formData.httpUrl.replace(/\{\{[^}]+\}\}/g, 'test');
+        new URL(testUrl);
+      } catch {
+        errors.httpUrl = t('tools.validation.urlInvalid');
+      }
+    }
+  }
+  
+  // Validate parameters
+  const paramErrors: Record<number, { name?: string }> = {};
+  formData.parameters.forEach((param, index) => {
+    if (!param.name.trim()) {
+      paramErrors[index] = { name: t('tools.validation.paramNameRequired') };
+    }
+  });
+  if (Object.keys(paramErrors).length > 0) {
+    errors.parameters = paramErrors;
+  }
+  
+  return errors;
+}
+
+// Field error component
+function FieldError({ error }: { error?: string }) {
+  if (!error) return null;
+  return (
+    <p className="text-xs text-destructive mt-1">{error}</p>
+  );
+}
 
 interface ToolEditorProps {
   formData: ToolFormData;
@@ -58,10 +133,32 @@ export function ToolEditor({
   isEditing,
 }: ToolEditorProps) {
   const { t } = useLanguage();
-  const [paramsExpanded, setParamsExpanded] = React.useState(formData.parameters.length > 0);
+  const [paramsExpanded, setParamsExpanded] = useState(formData.parameters.length > 0);
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
+  const [submitAttempted, setSubmitAttempted] = useState(false);
+
+  // Compute validation errors
+  const errors = useMemo(() => validateForm(formData, t), [formData, t]);
+  const isValid = Object.keys(errors).length === 0;
+
+  // Show error only if field is touched or form was submitted
+  const shouldShowError = (field: string) => touched[field] || submitAttempted;
+
+  const markTouched = (field: string) => {
+    if (!touched[field]) {
+      setTouched(prev => ({ ...prev, [field]: true }));
+    }
+  };
 
   const updateField = <K extends keyof ToolFormData>(field: K, value: ToolFormData[K]) => {
     onChange({ ...formData, [field]: value });
+  };
+
+  const handleSave = () => {
+    setSubmitAttempted(true);
+    if (isValid) {
+      onSave();
+    }
   };
 
   const addParameter = () => {
@@ -99,12 +196,6 @@ export function ToolEditor({
     updateField('httpHeaders', formData.httpHeaders.filter((_, i) => i !== index));
   };
 
-  const isValid = 
-    formData.name.trim() && 
-    formData.displayName.trim() && 
-    formData.description.trim() &&
-    (formData.toolType === 'prompt' ? formData.promptTemplate.trim() : formData.httpUrl.trim());
-
   return (
     <div className="h-full flex flex-col">
       {/* Header */}
@@ -116,7 +207,7 @@ export function ToolEditor({
           <Button variant="outline" size="sm" onClick={onCancel} disabled={saving}>
             {t('common.cancel')}
           </Button>
-          <Button size="sm" onClick={onSave} disabled={saving || !isValid}>
+          <Button size="sm" onClick={handleSave} disabled={saving}>
             {saving && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
             <Save className="h-4 w-4 mr-2" />
             {t('common.save')}
@@ -153,8 +244,13 @@ export function ToolEditor({
             <Input
               value={formData.displayName}
               onChange={(e) => updateField('displayName', e.target.value)}
+              onBlur={() => markTouched('displayName')}
               placeholder={t('tools.displayNamePlaceholder')}
+              className={cn(
+                shouldShowError('displayName') && errors.displayName && 'border-destructive focus-visible:ring-destructive'
+              )}
             />
+            {shouldShowError('displayName') && <FieldError error={errors.displayName} />}
           </div>
 
           {/* Technical Name */}
@@ -162,11 +258,16 @@ export function ToolEditor({
             <Label>{t('tools.technicalName')} <span className="text-destructive">*</span></Label>
             <Input
               value={formData.name}
-              onChange={(e) => updateField('name', e.target.value)}
+              onChange={(e) => updateField('name', validateToolName(e.target.value))}
+              onBlur={() => markTouched('name')}
               placeholder="report_generator"
-              className="font-mono"
+              className={cn(
+                'font-mono',
+                shouldShowError('name') && errors.name && 'border-destructive focus-visible:ring-destructive'
+              )}
             />
             <p className="text-xs text-muted-foreground">{t('tools.technicalNameHint')}</p>
+            {shouldShowError('name') && <FieldError error={errors.name} />}
           </div>
 
           {/* Description */}
@@ -175,9 +276,14 @@ export function ToolEditor({
             <Textarea
               value={formData.description}
               onChange={(e) => updateField('description', e.target.value)}
+              onBlur={() => markTouched('description')}
               placeholder={t('tools.descriptionPlaceholder')}
-              className="min-h-[80px]"
+              className={cn(
+                'min-h-[80px]',
+                shouldShowError('description') && errors.description && 'border-destructive focus-visible:ring-destructive'
+              )}
             />
+            {shouldShowError('description') && <FieldError error={errors.description} />}
           </div>
 
           {/* Prompt Template - only for prompt type */}
@@ -187,10 +293,15 @@ export function ToolEditor({
               <Textarea
                 value={formData.promptTemplate}
                 onChange={(e) => updateField('promptTemplate', e.target.value)}
+                onBlur={() => markTouched('promptTemplate')}
                 placeholder={t('tools.promptTemplatePlaceholder')}
-                className="min-h-[120px] font-mono text-sm"
+                className={cn(
+                  'min-h-[120px] font-mono text-sm',
+                  shouldShowError('promptTemplate') && errors.promptTemplate && 'border-destructive focus-visible:ring-destructive'
+                )}
               />
               <p className="text-xs text-muted-foreground">{t('tools.promptTemplateHint')}</p>
+              {shouldShowError('promptTemplate') && <FieldError error={errors.promptTemplate} />}
             </div>
           )}
 
@@ -205,10 +316,15 @@ export function ToolEditor({
                 <Input
                   value={formData.httpUrl}
                   onChange={(e) => updateField('httpUrl', e.target.value)}
+                  onBlur={() => markTouched('httpUrl')}
                   placeholder="https://api.example.com/v1/{{resource}}"
-                  className="font-mono text-sm"
+                  className={cn(
+                    'font-mono text-sm',
+                    shouldShowError('httpUrl') && errors.httpUrl && 'border-destructive focus-visible:ring-destructive'
+                  )}
                 />
                 <p className="text-xs text-muted-foreground">{t('tools.httpUrlHint')}</p>
+                {shouldShowError('httpUrl') && <FieldError error={errors.httpUrl} />}
               </div>
 
               {/* Method */}
@@ -324,59 +440,73 @@ export function ToolEditor({
             </CollapsibleTrigger>
             <CollapsibleContent className="pt-3">
               <div className="space-y-3">
-                {formData.parameters.map((param, index) => (
-                  <div key={index} className="flex gap-2 items-start p-3 rounded-lg bg-muted/30 border border-border/50">
-                    <div className="flex-1 space-y-2">
-                      <div className="flex gap-2">
+                {formData.parameters.map((param, index) => {
+                  const paramError = errors.parameters?.[index];
+                  const paramTouched = touched[`param_${index}_name`] || submitAttempted;
+                  
+                  return (
+                    <div key={index} className="flex gap-2 items-start p-3 rounded-lg bg-muted/30 border border-border/50">
+                      <div className="flex-1 space-y-2">
+                        <div className="flex gap-2">
+                          <div className="flex-1">
+                            <Input
+                              value={param.name}
+                              onChange={(e) => updateParameter(index, 'name', validateToolName(e.target.value))}
+                              onBlur={() => setTouched(prev => ({ ...prev, [`param_${index}_name`]: true }))}
+                              placeholder="param_name"
+                              className={cn(
+                                'font-mono text-sm',
+                                paramTouched && paramError?.name && 'border-destructive focus-visible:ring-destructive'
+                              )}
+                            />
+                            {paramTouched && paramError?.name && (
+                              <p className="text-xs text-destructive mt-1">{paramError.name}</p>
+                            )}
+                          </div>
+                          <Select 
+                            value={param.type} 
+                            onValueChange={(v) => updateParameter(index, 'type', v)}
+                          >
+                            <SelectTrigger className="w-[100px]">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent className="bg-popover border border-border z-50">
+                              {PARAM_TYPES.map((pt) => (
+                                <SelectItem key={pt.value} value={pt.value}>
+                                  {t(pt.labelKey)}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
                         <Input
-                          value={param.name}
-                          onChange={(e) => updateParameter(index, 'name', validateToolName(e.target.value))}
-                          placeholder="param_name"
-                          className="flex-1 font-mono text-sm"
+                          value={param.description}
+                          onChange={(e) => updateParameter(index, 'description', e.target.value)}
+                          placeholder={t('tools.paramDescriptionPlaceholder')}
+                          className="text-sm"
                         />
-                        <Select 
-                          value={param.type} 
-                          onValueChange={(v) => updateParameter(index, 'type', v)}
-                        >
-                          <SelectTrigger className="w-[100px]">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent className="bg-popover border border-border z-50">
-                            {PARAM_TYPES.map((pt) => (
-                              <SelectItem key={pt.value} value={pt.value}>
-                                {t(pt.labelKey)}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <div className="flex items-center gap-2">
+                          <Switch
+                            checked={param.required}
+                            onCheckedChange={(v) => updateParameter(index, 'required', v)}
+                            id={`req-${index}`}
+                          />
+                          <Label htmlFor={`req-${index}`} className="text-xs cursor-pointer">
+                            {t('tools.required')}
+                          </Label>
+                        </div>
                       </div>
-                      <Input
-                        value={param.description}
-                        onChange={(e) => updateParameter(index, 'description', e.target.value)}
-                        placeholder={t('tools.paramDescriptionPlaceholder')}
-                        className="text-sm"
-                      />
-                      <div className="flex items-center gap-2">
-                        <Switch
-                          checked={param.required}
-                          onCheckedChange={(v) => updateParameter(index, 'required', v)}
-                          id={`req-${index}`}
-                        />
-                        <Label htmlFor={`req-${index}`} className="text-xs cursor-pointer">
-                          {t('tools.required')}
-                        </Label>
-                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => removeParameter(index)}
+                        className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => removeParameter(index)}
-                      className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive"
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ))}
+                  );
+                })}
                 <Button
                   type="button"
                   variant="outline"

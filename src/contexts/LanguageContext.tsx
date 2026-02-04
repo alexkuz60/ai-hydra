@@ -994,6 +994,18 @@ const translations: Translations = {
   'tools.systemTool': { ru: 'Системный', en: 'System' },
   'tools.systemReadOnly': { ru: 'Системный инструмент (только чтение)', en: 'System tool (read-only)' },
   'tools.systemToolNote': { ru: 'Это встроенный системный инструмент. Его параметры определены системой и не могут быть изменены. Инструмент доступен для всех пользователей и может быть активирован в настройках модели.', en: 'This is a built-in system tool. Its parameters are defined by the system and cannot be modified. The tool is available to all users and can be enabled in model settings.' },
+  // Validation errors
+  'tools.validation.displayNameRequired': { ru: 'Введите название инструмента', en: 'Display name is required' },
+  'tools.validation.displayNameTooLong': { ru: 'Название не должно превышать 100 символов', en: 'Display name must be less than 100 characters' },
+  'tools.validation.nameRequired': { ru: 'Введите техническое имя', en: 'Technical name is required' },
+  'tools.validation.nameInvalid': { ru: 'Имя должно начинаться с буквы и содержать только a-z, 0-9, _', en: 'Name must start with a letter and contain only a-z, 0-9, _' },
+  'tools.validation.nameTooLong': { ru: 'Техническое имя не должно превышать 50 символов', en: 'Technical name must be less than 50 characters' },
+  'tools.validation.descriptionRequired': { ru: 'Введите описание инструмента', en: 'Description is required' },
+  'tools.validation.descriptionTooLong': { ru: 'Описание не должно превышать 500 символов', en: 'Description must be less than 500 characters' },
+  'tools.validation.promptRequired': { ru: 'Введите шаблон промпта', en: 'Prompt template is required' },
+  'tools.validation.urlRequired': { ru: 'Введите URL эндпоинта', en: 'URL is required' },
+  'tools.validation.urlInvalid': { ru: 'Введите корректный URL', en: 'Please enter a valid URL' },
+  'tools.validation.paramNameRequired': { ru: 'Введите имя параметра', en: 'Parameter name is required' },
 };
 
 interface LanguageContextType {
