@@ -238,6 +238,21 @@ export default function ToolsLibrary() {
     setToolToDelete(tool);
   };
 
+  const handleDuplicate = (tool: CustomTool, e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    // Create form data from the tool with modified name
+    const duplicateFormData = toolToFormData(tool);
+    duplicateFormData.name = `${tool.name}_copy`;
+    duplicateFormData.displayName = `${tool.display_name} (копия)`;
+    duplicateFormData.isShared = false; // New copy is private by default
+    
+    setFormData(duplicateFormData);
+    setIsCreating(true);
+    setIsEditing(false);
+    setSelectedTool(null);
+    setEditingTool(null);
+  };
+
   const handleConfirmDelete = async () => {
     if (!toolToDelete) return;
     const success = await deleteTool(toolToDelete.id);
@@ -342,6 +357,7 @@ export default function ToolsLibrary() {
                             onSelect={handleSelectTool}
                             onEdit={handleStartEdit}
                             onDelete={handleDeleteClick}
+                            onDuplicate={handleDuplicate}
                           />
                         );
                       })}
@@ -371,6 +387,7 @@ export default function ToolsLibrary() {
                 isOwned={isOwned}
                 onEdit={() => selectedTool && !isSystemTool(selectedTool) && handleStartEdit(selectedTool as CustomTool)}
                 onDelete={() => selectedTool && !isSystemTool(selectedTool) && setToolToDelete(selectedTool as CustomTool)}
+                onDuplicate={() => selectedTool && !isSystemTool(selectedTool) && handleDuplicate(selectedTool as CustomTool)}
               />
             )}
           </ResizablePanel>
