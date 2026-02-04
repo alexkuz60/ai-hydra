@@ -2564,19 +2564,23 @@ graph LR
 
 ## Управление памятью
 
+Память сессии доступна как в D-Chat (консультант), так и в основном чате (Панель экспертов).
+
 ### Элементы управления в заголовке
 
 | Элемент | Иконка | Описание |
 |---------|--------|----------|
 | **Индикатор** | \`Brain\` N | Количество сохранённых фрагментов |
-| **Обновить** | \`RefreshCw\` | Принудительное обновление из БД |
+| **Обновить** | \`RefreshCw\` | Принудительное обновление из БД (с анимацией ✓) |
 | **Управление** | \`Settings2\` | Открыть диалог управления |
+
+> **Совет**: Кнопки управления памятью появляются в заголовке Панели экспертов рядом с индикатором (🧠 N).
 
 ### Диалог управления памятью
 
 | Элемент | Описание |
 |---------|----------|
-| **Табы фильтрации** | Все / Сообщения / Резюме / Решения / и др. |
+| **Табы фильтрации** | Все / Сообщения / Резюме / Решения / Дубликаты |
 | **Поле поиска** | Текстовый или семантический поиск |
 | **Переключатель режима** | \`Text\` ↔ \`Sparkles\` (AI-поиск) |
 | **Карточки фрагментов** | Содержимое с датой и кнопкой удаления |
@@ -2680,19 +2684,23 @@ graph LR
 
 ## Memory Management
 
+Session memory is accessible both in D-Chat (consultant) and in the main chat (Expert Panel).
+
 ### Header Controls
 
 | Element | Icon | Description |
 |---------|------|-------------|
 | **Indicator** | \`Brain\` N | Number of saved fragments |
-| **Refresh** | \`RefreshCw\` | Force refresh from DB |
+| **Refresh** | \`RefreshCw\` | Force refresh from DB (with ✓ animation) |
 | **Manage** | \`Settings2\` | Open management dialog |
+
+> **Tip**: Memory management buttons appear in the Expert Panel header next to the indicator (🧠 N).
 
 ### Memory Management Dialog
 
 | Element | Description |
 |---------|-------------|
-| **Filter tabs** | All / Messages / Summaries / Decisions / etc. |
+| **Filter tabs** | All / Messages / Summaries / Decisions / Duplicates |
 | **Search field** | Text or semantic search |
 | **Mode toggle** | \`Text\` ↔ \`Sparkles\` (AI search) |
 | **Fragment cards** | Content with date and delete button |
@@ -3280,7 +3288,8 @@ graph TD
 | Элемент | Иконка | Описание |
 |---------|--------|----------|
 | **Группа «Стратегические»** | \`Target\` | Сворачиваемый список Task Blueprints |
-| **Группа «Ролевые»** | \`Sparkles\` | Сворачиваемый список Role Behaviors |
+| **Группа «Эксперты»** | \`Sparkles\` | Ролевые паттерны экспертов (не isTechnicalStaff) |
+| **Группа «Технический персонал»** | \`Wrench\` | Ролевые паттерны тех. персонала |
 | **Создать новый** | \`Plus\` | Кнопка создания паттерна |
 | **Редактировать** | \`Pencil\` | Редактирование своего паттерна |
 | **Дублировать** | \`Copy\` | Копирование системного паттерна |
@@ -3288,14 +3297,27 @@ graph TD
 | **Системный** | \`Lock\` | Метка системного паттерна (только чтение) |
 | **Публичный** | \`Users\` | Метка публичного паттерна |
 
+> **Для админов**: Системные паттерны (с меткой \`Lock\`) видны только администраторам. Обычные пользователи видят только свои и публичные паттерны.
+
 ### Правая панель — Детали
 
 Отображает полную информацию о выбранном паттерне:
 
-- Все этапы с инструкциями
+- Все этапы с инструкциями (отображаются вертикальным **таймлайном** с анимацией потока)
 - Контрольные точки
 - Параметры коммуникации
 - Правила реакций
+
+### Визуальный таймлайн этапов
+
+При выборе стратегического паттерна этапы отображаются как вертикальный пайплайн:
+
+| Элемент | Описание |
+|---------|----------|
+| **Номер этапа** | Кружок с номером (подсвечивается при наведении) |
+| **Линия-коннектор** | Градиентная линия между этапами с анимацией потока |
+| **Карточка этапа** | Название, цель и назначенные роли |
+| **Анимация** | Визуальный эффект «движения данных» по пайплайну |
 
 ## Типы паттернов
 
@@ -3440,7 +3462,8 @@ Define **how to communicate** — the communication style of a specific role.
 | Element | Icon | Description |
 |---------|------|-------------|
 | **"Strategic" Group** | \`Target\` | Collapsible Task Blueprints list |
-| **"Role" Group** | \`Sparkles\` | Collapsible Role Behaviors list |
+| **"Experts" Group** | \`Sparkles\` | Expert role patterns (not isTechnicalStaff) |
+| **"Technical Staff" Group** | \`Wrench\` | Technical staff role patterns |
 | **Create new** | \`Plus\` | Pattern creation button |
 | **Edit** | \`Pencil\` | Edit your pattern |
 | **Duplicate** | \`Copy\` | Copy system pattern |
@@ -3448,14 +3471,27 @@ Define **how to communicate** — the communication style of a specific role.
 | **System** | \`Lock\` | System pattern badge (read-only) |
 | **Public** | \`Users\` | Public pattern badge |
 
+> **For Admins**: System patterns (with \`Lock\` badge) are visible only to administrators. Regular users see only their own and public patterns.
+
 ### Right Panel — Details
 
 Displays full information about selected pattern:
 
-- All stages with instructions
+- All stages with instructions (displayed as a vertical **timeline** with flow animation)
 - Checkpoints
 - Communication parameters
 - Reaction rules
+
+### Visual Stage Timeline
+
+When selecting a strategic pattern, stages are displayed as a vertical pipeline:
+
+| Element | Description |
+|---------|-------------|
+| **Stage number** | Circle with number (highlights on hover) |
+| **Connector line** | Gradient line between stages with flow animation |
+| **Stage card** | Name, objective and assigned roles |
+| **Animation** | Visual "data flow" effect through the pipeline |
 
 ## Pattern Types
 
@@ -3664,6 +3700,30 @@ graph LR
 2. **Консистентность**: Стиль коммуникации должен соответствовать задачам роли
 3. **Взаимодействия**: Настройте иерархию для предсказуемого поведения
 
+## Синхронизация табеля о рангах
+
+При сохранении иерархии ролей система автоматически проверяет симметричность связей:
+
+### Правила симметрии
+
+| Связь | Требуется | Описание |
+|-------|-----------|----------|
+| \`A.defers_to[B]\` | \`B.challenges[A]\` | Начальник-подчинённый |
+| \`A.collaborates[B]\` | \`B.collaborates[A]\` | Коллеги на равных |
+
+### Диалог разрешения конфликтов
+
+При обнаружении противоречий открывается \`ConflictResolutionDialog\`:
+
+| Элемент | Описание |
+|---------|----------|
+| **Список конфликтов** | Какие роли требуют синхронизации |
+| **Предлагаемые изменения** | Автоматически рассчитанные правки |
+| **Синхронизировать всё** | Применить все изменения в одной транзакции |
+| **Отмена** | Сохранить без синхронизации |
+
+> **Важно**: Рекомендуется всегда синхронизировать иерархию для предсказуемого поведения агентов.
+
 ## Примеры системных паттернов
 
 ### Prompt Optimization Pipeline
@@ -3821,6 +3881,30 @@ System patterns can be visualized through Flow Editor:
 1. **Uniqueness**: Each role should have a unique character
 2. **Consistency**: Communication style should match role tasks
 3. **Interactions**: Configure hierarchy for predictable behavior
+
+## Hierarchy Synchronization
+
+When saving role hierarchy, the system automatically checks relationship symmetry:
+
+### Symmetry Rules
+
+| Relation | Required | Description |
+|----------|----------|-------------|
+| \`A.defers_to[B]\` | \`B.challenges[A]\` | Superior-subordinate |
+| \`A.collaborates[B]\` | \`B.collaborates[A]\` | Equal colleagues |
+
+### Conflict Resolution Dialog
+
+When contradictions are detected, \`ConflictResolutionDialog\` opens:
+
+| Element | Description |
+|---------|-------------|
+| **Conflict list** | Which roles need synchronization |
+| **Proposed changes** | Automatically calculated edits |
+| **Synchronize all** | Apply all changes in one transaction |
+| **Cancel** | Save without synchronization |
+
+> **Important**: It's recommended to always synchronize hierarchy for predictable agent behavior.
 
 ## System Pattern Examples
 
