@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Globe, FileText, Pencil, Trash2, Users, Copy, Lock, Calculator, Clock, Search } from 'lucide-react';
+import { Globe, FileText, Pencil, Trash2, Users, Copy, Lock, Calculator, Clock, Search, Download } from 'lucide-react';
 import { format } from 'date-fns';
 import type { CustomTool, SystemTool } from '@/types/customTools';
 import { cn } from '@/lib/utils';
@@ -28,6 +28,7 @@ interface ToolDetailsPanelProps {
   onEdit: () => void;
   onDelete: () => void;
   onDuplicate?: () => void;
+  onExport?: () => void;
 }
 
 export function ToolDetailsPanel({
@@ -36,6 +37,7 @@ export function ToolDetailsPanel({
   onEdit,
   onDelete,
   onDuplicate,
+  onExport,
 }: ToolDetailsPanelProps) {
   const { t } = useLanguage();
 
@@ -97,6 +99,16 @@ export function ToolDetailsPanel({
           {/* Actions - only for non-system tools */}
           {!isSystem && (
             <div className="flex items-center gap-1">
+              {onExport && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button variant="ghost" size="icon" onClick={onExport}>
+                      <Download className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>{t('tools.export')}</TooltipContent>
+                </Tooltip>
+              )}
               {onDuplicate && (
                 <Tooltip>
                   <TooltipTrigger asChild>
