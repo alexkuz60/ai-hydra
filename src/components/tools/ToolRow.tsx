@@ -4,7 +4,7 @@ import { TableRow, TableCell } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { Globe, FileText, Pencil, Trash2, Users, Lock, Calculator, Clock, Search } from 'lucide-react';
+import { Globe, FileText, Pencil, Trash2, Users, Lock, Calculator, Clock, Search, Copy } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import type { CustomTool, SystemTool } from '@/types/customTools';
@@ -34,6 +34,7 @@ interface ToolRowProps {
   onSelect: (tool: ToolItem) => void;
   onEdit?: (tool: CustomTool, e: React.MouseEvent) => void;
   onDelete?: (tool: CustomTool, e: React.MouseEvent) => void;
+  onDuplicate?: (tool: CustomTool, e: React.MouseEvent) => void;
 }
 
 export function ToolRow({
@@ -43,6 +44,7 @@ export function ToolRow({
   onSelect,
   onEdit,
   onDelete,
+  onDuplicate,
 }: ToolRowProps) {
   const { t } = useLanguage();
   const isSystem = isSystemTool(tool);
@@ -118,34 +120,54 @@ export function ToolRow({
               </div>
             )}
           </div>
-          {!isSystem && isOwned && onEdit && onDelete && (
+          {/* Action buttons */}
+          {!isSystem && (
             <div className="flex items-center gap-1 shrink-0">
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="opacity-0 group-hover:opacity-100 transition-opacity"
-                    onClick={(e) => onEdit(tool as CustomTool, e)}
-                  >
-                    <Pencil className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>{t('common.edit')}</TooltipContent>
-              </Tooltip>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive"
-                    onClick={(e) => onDelete(tool as CustomTool, e)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>{t('common.delete')}</TooltipContent>
-              </Tooltip>
+              {onDuplicate && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={(e) => onDuplicate(tool as CustomTool, e)}
+                    >
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>{t('common.duplicate')}</TooltipContent>
+                </Tooltip>
+              )}
+              {isOwned && onEdit && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={(e) => onEdit(tool as CustomTool, e)}
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>{t('common.edit')}</TooltipContent>
+                </Tooltip>
+              )}
+              {isOwned && onDelete && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive"
+                      onClick={(e) => onDelete(tool as CustomTool, e)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>{t('common.delete')}</TooltipContent>
+                </Tooltip>
+              )}
             </div>
           )}
         </div>
