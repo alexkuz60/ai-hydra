@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef } from 'react';
 import { toast } from 'sonner';
 import { DEFAULT_SYSTEM_PROMPTS, type AgentRole } from '@/config/roles';
-
+import { supabase } from '@/integrations/supabase/client';
 export type ConsultantMode = 'web_search' | 'expert' | 'critic' | 'arbiter' | 'moderator';
 
 export interface StreamingMessage {
@@ -118,13 +118,17 @@ export function useStreamingChat({
       }
 
       try {
+        // Get user's auth token for DeepSeek models (they require user authentication)
+        const { data: { session } } = await supabase.auth.getSession();
+        const authToken = session?.access_token || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+        
         const response = await fetch(
           `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/hydra-stream`,
           {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+              'Authorization': `Bearer ${authToken}`,
             },
             body: JSON.stringify({
               message: content,
