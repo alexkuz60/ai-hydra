@@ -4,18 +4,36 @@ import { TableRow, TableCell } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { Globe, FileText, Pencil, Trash2, Users } from 'lucide-react';
+import { Globe, FileText, Pencil, Trash2, Users, Lock, Calculator, Clock, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
-import type { CustomTool } from '@/types/customTools';
+import type { CustomTool, SystemTool } from '@/types/customTools';
+
+type ToolItem = CustomTool | SystemTool;
+
+function isSystemTool(tool: ToolItem): tool is SystemTool {
+  return 'is_system' in tool && tool.is_system === true;
+}
+
+function getToolIcon(tool: ToolItem) {
+  if (isSystemTool(tool)) {
+    switch (tool.name) {
+      case 'calculator': return Calculator;
+      case 'current_datetime': return Clock;
+      case 'web_search': return Search;
+      default: return Lock;
+    }
+  }
+  return tool.tool_type === 'http_api' ? Globe : FileText;
+}
 
 interface ToolRowProps {
-  tool: CustomTool;
+  tool: ToolItem;
   isSelected: boolean;
   isOwned: boolean;
-  onSelect: (tool: CustomTool) => void;
-  onEdit: (tool: CustomTool, e: React.MouseEvent) => void;
-  onDelete: (tool: CustomTool, e: React.MouseEvent) => void;
+  onSelect: (tool: ToolItem) => void;
+  onEdit?: (tool: CustomTool, e: React.MouseEvent) => void;
+  onDelete?: (tool: CustomTool, e: React.MouseEvent) => void;
 }
 
 export function ToolRow({
@@ -27,6 +45,13 @@ export function ToolRow({
   onDelete,
 }: ToolRowProps) {
   const { t } = useLanguage();
+  const isSystem = isSystemTool(tool);
+  const Icon = getToolIcon(tool);
+
+  const getTypeBadge = () => {
+    if (isSystem) return t('tools.systemTool');
+    return tool.tool_type === 'http_api' ? 'HTTP' : 'Prompt';
+  };
 
   return (
     <TableRow
@@ -37,12 +62,14 @@ export function ToolRow({
       onClick={() => onSelect(tool)}
     >
       <TableCell className="pl-6">
-        <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-          {tool.tool_type === 'http_api' ? (
-            <Globe className="h-5 w-5 text-primary" />
-          ) : (
-            <FileText className="h-5 w-5 text-primary" />
-          )}
+        <div className={cn(
+          "w-10 h-10 rounded-lg flex items-center justify-center",
+          isSystem ? "bg-amber-500/10" : "bg-primary/10"
+        )}>
+          <Icon className={cn(
+            "h-5 w-5",
+            isSystem ? "text-amber-500" : "text-primary"
+          )} />
         </div>
       </TableCell>
       <TableCell>
@@ -53,10 +80,24 @@ export function ToolRow({
               <code className="text-xs bg-muted px-1.5 py-0.5 rounded font-mono text-muted-foreground">
                 {tool.name}
               </code>
-              <Badge variant="secondary" className="text-[10px]">
-                {tool.tool_type === 'http_api' ? 'HTTP' : 'Prompt'}
+              <Badge 
+                variant={isSystem ? "outline" : "secondary"} 
+                className={cn(
+                  "text-[10px]",
+                  isSystem && "border-amber-500/50 text-amber-600 dark:text-amber-400"
+                )}
+              >
+                {getTypeBadge()}
               </Badge>
-              {tool.is_shared && (
+              {isSystem && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Lock className="h-3 w-3 text-muted-foreground shrink-0" />
+                  </TooltipTrigger>
+                  <TooltipContent>{t('tools.systemReadOnly')}</TooltipContent>
+                </Tooltip>
+              )}
+              {!isSystem && (tool as CustomTool).is_shared && (
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Users className="h-3 w-3 text-muted-foreground shrink-0" />
@@ -65,12 +106,19 @@ export function ToolRow({
                 </Tooltip>
               )}
             </div>
-            <div className="flex items-center gap-3 text-xs text-muted-foreground">
-              <span>{t('tools.usageCount')}: {tool.usage_count}</span>
-              <span>{format(new Date(tool.updated_at), 'dd.MM.yyyy')}</span>
-            </div>
+            {!isSystem && (
+              <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                <span>{t('tools.usageCount')}: {(tool as CustomTool).usage_count}</span>
+                <span>{format(new Date((tool as CustomTool).updated_at), 'dd.MM.yyyy')}</span>
+              </div>
+            )}
+            {isSystem && (
+              <div className="text-xs text-muted-foreground line-clamp-1">
+                {tool.description}
+              </div>
+            )}
           </div>
-          {isOwned && (
+          {!isSystem && isOwned && onEdit && onDelete && (
             <div className="flex items-center gap-1 shrink-0">
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -78,7 +126,7 @@ export function ToolRow({
                     variant="ghost"
                     size="icon"
                     className="opacity-0 group-hover:opacity-100 transition-opacity"
-                    onClick={(e) => onEdit(tool, e)}
+                    onClick={(e) => onEdit(tool as CustomTool, e)}
                   >
                     <Pencil className="h-4 w-4" />
                   </Button>
@@ -91,7 +139,7 @@ export function ToolRow({
                     variant="ghost"
                     size="icon"
                     className="opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive"
-                    onClick={(e) => onDelete(tool, e)}
+                    onClick={(e) => onDelete(tool as CustomTool, e)}
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
@@ -105,3 +153,6 @@ export function ToolRow({
     </TableRow>
   );
 }
+
+export { isSystemTool };
+export type { ToolItem };

@@ -949,6 +949,7 @@ const translations: Translations = {
   'tools.nothingFound': { ru: 'Ничего не найдено', en: 'Nothing found' },
   'tools.searchPlaceholder': { ru: 'Поиск инструментов...', en: 'Search tools...' },
   'tools.filterAll': { ru: 'Все', en: 'All' },
+  'tools.filterSystem': { ru: 'Системные', en: 'System' },
   'tools.filterOwn': { ru: 'Мои', en: 'Mine' },
   'tools.filterShared': { ru: 'Общие', en: 'Shared' },
   'tools.shared': { ru: 'Общий доступ', en: 'Shared' },
@@ -985,6 +986,9 @@ const translations: Translations = {
   'tools.paramType.string': { ru: 'Текст', en: 'Text' },
   'tools.paramType.number': { ru: 'Число', en: 'Number' },
   'tools.paramType.boolean': { ru: 'Да/Нет', en: 'Yes/No' },
+  'tools.systemTool': { ru: 'Системный', en: 'System' },
+  'tools.systemReadOnly': { ru: 'Системный инструмент (только чтение)', en: 'System tool (read-only)' },
+  'tools.systemToolNote': { ru: 'Это встроенный системный инструмент. Его параметры определены системой и не могут быть изменены. Инструмент доступен для всех пользователей и может быть активирован в настройках модели.', en: 'This is a built-in system tool. Its parameters are defined by the system and cannot be modified. The tool is available to all users and can be enabled in model settings.' },
 };
 
 interface LanguageContextType {
