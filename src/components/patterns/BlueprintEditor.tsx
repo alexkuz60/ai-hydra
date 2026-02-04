@@ -46,7 +46,7 @@ export function BlueprintEditor({
   isSaving = false,
 }: BlueprintEditorProps) {
   const { t } = useLanguage();
-  const isEditing = !!blueprint?.id && !isSystem;
+  const isEditing = !!blueprint?.id;
 
   const [name, setName] = useState(blueprint.name || '');
   const [category, setCategory] = useState<PatternCategory>(blueprint.category || 'planning');
@@ -126,7 +126,7 @@ export function BlueprintEditor({
 
   const handleSave = async () => {
     const data: Omit<TaskBlueprint, 'id'> & { id?: string } = {
-      ...(blueprint?.id && !isSystem && { id: blueprint.id }),
+      ...(blueprint?.id && { id: blueprint.id }),
       name,
       category,
       description,

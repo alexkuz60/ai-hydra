@@ -57,7 +57,7 @@ export function RoleBehaviorEditor({
   isSaving = false,
 }: RoleBehaviorEditorProps) {
   const { t, language } = useLanguage();
-  const isEditing = !!behavior?.id && !isSystem;
+  const isEditing = !!behavior?.id;
   const { fetchAllBehaviors } = useRoleBehavior(null);
 
   const [role, setRole] = useState<AgentRole>(behavior.role);
@@ -150,7 +150,7 @@ export function RoleBehaviorEditor({
 
   const handleSave = async () => {
     const data: Omit<RoleBehavior, 'id'> & { id?: string } = {
-      ...(behavior?.id && !isSystem && { id: behavior.id }),
+      ...(behavior?.id && { id: behavior.id }),
       role,
       communication: {
         tone,
