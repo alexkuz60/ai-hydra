@@ -35,6 +35,7 @@ interface ApiKeys {
   groq_api_key: string | null;
   tavily_api_key: string | null;
   perplexity_api_key: string | null;
+  deepseek_api_key: string | null;
 }
 
 export default function Profile() {
@@ -56,6 +57,7 @@ export default function Profile() {
     groq: false,
     tavily: false,
     perplexity: false,
+    deepseek: false,
   });
 
   // Form states
@@ -69,6 +71,7 @@ export default function Profile() {
   const [groqKey, setGroqKey] = useState('');
   const [tavilyKey, setTavilyKey] = useState('');
   const [perplexityKey, setPerplexityKey] = useState('');
+  const [deepseekKey, setDeepseekKey] = useState('');
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -115,6 +118,7 @@ export default function Profile() {
           groq_api_key?: string;
           tavily_api_key?: string;
           perplexity_api_key?: string;
+          deepseek_api_key?: string;
         };
         setOpenaiKey(keys.openai_api_key || '');
         setGeminiKey(keys.google_gemini_api_key || '');
@@ -124,6 +128,7 @@ export default function Profile() {
         setGroqKey(keys.groq_api_key || '');
         setTavilyKey(keys.tavily_api_key || '');
         setPerplexityKey(keys.perplexity_api_key || '');
+        setDeepseekKey(keys.deepseek_api_key || '');
       }
     } catch (error: any) {
       toast.error(error.message);
@@ -171,6 +176,7 @@ export default function Profile() {
         supabase.rpc('save_api_key', { p_provider: 'groq', p_api_key: groqKey || '' }),
         supabase.rpc('save_api_key', { p_provider: 'tavily', p_api_key: tavilyKey || '' }),
         supabase.rpc('save_api_key', { p_provider: 'perplexity', p_api_key: perplexityKey || '' }),
+        supabase.rpc('save_api_key', { p_provider: 'deepseek', p_api_key: deepseekKey || '' }),
       ];
 
       const results = await Promise.all(savePromises);
@@ -486,6 +492,33 @@ export default function Profile() {
                   </div>
                   <p className="text-xs text-muted-foreground">
                     Получите ключ на <a href="https://console.groq.com/keys" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">console.groq.com/keys</a> — сверхбыстрый инференс Llama 3.3, Mixtral, Gemma
+                  </p>
+                </div>
+
+                {/* DeepSeek */}
+                <div className="space-y-2">
+                  <Label htmlFor="deepseek">DeepSeek AI</Label>
+                  <div className="relative">
+                    <Input
+                      id="deepseek"
+                      type={showKeys.deepseek ? 'text' : 'password'}
+                      value={deepseekKey}
+                      onChange={(e) => setDeepseekKey(e.target.value)}
+                      placeholder="sk-..."
+                      className="pr-10"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="absolute right-0 top-0 h-full px-3"
+                      onClick={() => setShowKeys({ ...showKeys, deepseek: !showKeys.deepseek })}
+                    >
+                      {showKeys.deepseek ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Получите ключ на <a href="https://platform.deepseek.com/api_keys" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">platform.deepseek.com</a> — DeepSeek-V3, DeepSeek-R1 (reasoning)
                   </p>
                 </div>
 

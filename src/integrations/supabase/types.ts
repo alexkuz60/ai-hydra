@@ -570,6 +570,7 @@ export type Database = {
         Row: {
           anthropic_vault_id: string | null
           created_at: string
+          deepseek_vault_id: string | null
           gemini_vault_id: string | null
           groq_vault_id: string | null
           id: string
@@ -584,6 +585,7 @@ export type Database = {
         Insert: {
           anthropic_vault_id?: string | null
           created_at?: string
+          deepseek_vault_id?: string | null
           gemini_vault_id?: string | null
           groq_vault_id?: string | null
           id?: string
@@ -598,6 +600,7 @@ export type Database = {
         Update: {
           anthropic_vault_id?: string | null
           created_at?: string
+          deepseek_vault_id?: string | null
           gemini_vault_id?: string | null
           groq_vault_id?: string | null
           id?: string
@@ -643,6 +646,7 @@ export type Database = {
         Args: never
         Returns: {
           has_anthropic: boolean
+          has_deepseek: boolean
           has_gemini: boolean
           has_groq: boolean
           has_openai: boolean
@@ -656,6 +660,7 @@ export type Database = {
         Args: never
         Returns: {
           anthropic_api_key: string
+          deepseek_api_key: string
           google_gemini_api_key: string
           groq_api_key: string
           openai_api_key: string
