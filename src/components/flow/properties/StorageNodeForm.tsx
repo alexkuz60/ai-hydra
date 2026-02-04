@@ -1,13 +1,14 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Node } from '@xyflow/react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { FieldError } from './FieldError';
+import { validateRequired, validateBucketName, validatePositiveNumber } from './validation';
 
 interface StorageNodeFormProps {
   node: Node;
@@ -19,6 +20,32 @@ export function StorageNodeForm({ node, onDataChange }: StorageNodeFormProps) {
   const data = node.data as Record<string, unknown>;
 
   const operation = (data.storageOperation as string) || 'download';
+
+  // Validation errors
+  const errors = useMemo(() => {
+    const errs: Record<string, string | null> = {};
+    
+    // Bucket is required
+    errs.bucket = validateRequired(data.bucket, 'bucket') || 
+                  validateBucketName(data.bucket as string || '');
+    
+    // Path is required for most operations
+    if (operation !== 'list') {
+      errs.storagePath = validateRequired(data.storagePath, 'storagePath');
+    }
+    
+    // Destination path required for move/copy
+    if (operation === 'move' || operation === 'copy') {
+      errs.destinationPath = validateRequired(data.destinationPath, 'destinationPath');
+    }
+    
+    // Expires validation for signed URLs
+    if ((data.signedUrl as boolean) && (data.expiresIn as number)) {
+      errs.expiresIn = validatePositiveNumber(data.expiresIn as number);
+    }
+    
+    return errs;
+  }, [data.bucket, data.storagePath, data.destinationPath, data.signedUrl, data.expiresIn, operation]);
 
   return (
     <div className="space-y-4">
@@ -64,7 +91,9 @@ export function StorageNodeForm({ node, onDataChange }: StorageNodeFormProps) {
           value={(data.bucket as string) || ''}
           onChange={(e) => onDataChange('bucket', e.target.value)}
           placeholder="message-files"
+          className={errors.bucket ? 'border-destructive' : ''}
         />
+        <FieldError error={errors.bucket} />
         <p className="text-xs text-muted-foreground">
           {t('flowEditor.properties.bucketHint')}
         </p>
@@ -78,7 +107,9 @@ export function StorageNodeForm({ node, onDataChange }: StorageNodeFormProps) {
           value={(data.storagePath as string) || ''}
           onChange={(e) => onDataChange('storagePath', e.target.value)}
           placeholder="{{input.userId}}/documents/{{input.filename}}"
+          className={errors.storagePath ? 'border-destructive' : ''}
         />
+        <FieldError error={errors.storagePath} />
         <p className="text-xs text-muted-foreground">
           {t('flowEditor.properties.storagePathHint')}
         </p>
@@ -93,7 +124,9 @@ export function StorageNodeForm({ node, onDataChange }: StorageNodeFormProps) {
             value={(data.destinationPath as string) || ''}
             onChange={(e) => onDataChange('destinationPath', e.target.value)}
             placeholder="archive/{{input.filename}}"
+            className={errors.destinationPath ? 'border-destructive' : ''}
           />
+          <FieldError error={errors.destinationPath} />
         </div>
       )}
 
