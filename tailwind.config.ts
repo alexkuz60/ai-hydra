@@ -129,6 +129,10 @@ export default {
           "0%": { transform: "rotate(0deg)" },
           "100%": { transform: "rotate(360deg)" },
         },
+        "pipeline-flow": {
+          "0%": { backgroundPosition: "0% 0%" },
+          "100%": { backgroundPosition: "0% 100%" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -136,6 +140,7 @@ export default {
         "fade-in": "fade-in 0.3s ease-out",
         "slide-up": "slide-up 0.3s ease-out",
         "pulse-glow": "pulse-glow 2s ease-in-out infinite",
+        "pipeline-flow": "pipeline-flow 1.5s ease-in-out infinite",
       },
     },
   },

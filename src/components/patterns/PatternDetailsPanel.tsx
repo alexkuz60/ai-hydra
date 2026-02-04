@@ -108,20 +108,31 @@ const TaskBlueprintDetails: React.FC<{ pattern: TaskBlueprint }> = ({ pattern })
         </h3>
         <div className="relative">
           {pattern.stages.map((stage, index) => (
-            <div key={index} className="relative flex gap-3">
+            <div key={index} className="relative flex gap-3 group">
               {/* Timeline connector */}
               <div className="flex flex-col items-center">
-                <div className="w-7 h-7 rounded-full bg-primary/20 text-primary text-xs flex items-center justify-center font-semibold border-2 border-primary/40 z-10">
+                <div className="w-7 h-7 rounded-full bg-primary/20 text-primary text-xs flex items-center justify-center font-semibold border-2 border-primary/40 z-10 transition-all duration-300 group-hover:scale-110 group-hover:border-primary/60 group-hover:bg-primary/30">
                   {index + 1}
                 </div>
                 {index < pattern.stages.length - 1 && (
-                  <div className="w-0.5 flex-1 bg-gradient-to-b from-primary/40 to-primary/10 min-h-[16px]" />
+                  <div className="relative w-0.5 flex-1 min-h-[16px] overflow-hidden">
+                    {/* Static gradient background */}
+                    <div className="absolute inset-0 bg-gradient-to-b from-primary/40 to-primary/10" />
+                    {/* Animated pulse overlay */}
+                    <div 
+                      className="absolute inset-0 w-full animate-pipeline-flow"
+                      style={{
+                        background: 'linear-gradient(to bottom, transparent 0%, hsl(var(--primary) / 0.6) 50%, transparent 100%)',
+                        backgroundSize: '100% 200%',
+                      }}
+                    />
+                  </div>
                 )}
               </div>
               
               {/* Stage content */}
               <div className="flex-1 pb-3">
-                <div className="p-3 rounded-lg bg-muted/30 border border-border/50">
+                <div className="p-3 rounded-lg bg-muted/30 border border-border/50 transition-all duration-300 group-hover:border-primary/30 group-hover:bg-muted/50">
                   <span className="font-medium text-sm">{stage.name}</span>
                   <p className="text-xs text-muted-foreground mt-1 mb-2">{stage.objective}</p>
                   <div className="flex flex-wrap gap-1">
