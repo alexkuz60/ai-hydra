@@ -2,6 +2,8 @@
 // Tool Calling for hydra-orchestrator
 // ============================================
 
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
 import {
   ToolDefinition,
   ToolCall,
@@ -13,6 +15,10 @@ import {
   BriefPromptEngineerArgs,
   SearchProviderConfig,
   AvailableSearchProvider,
+  UpdateSessionMemoryArgs,
+  SearchSessionMemoryArgs,
+  ValidateFlowDiagramArgs,
+  ToolExecutionContext,
 } from "./types.ts";
 
 import {
@@ -21,7 +27,7 @@ import {
 } from "./http-executor.ts";
 
 // Re-export for external use
-export type { ToolDefinition, ToolCall, ToolResult, CustomToolDefinition, SearchProviderConfig, AvailableSearchProvider };
+export type { ToolDefinition, ToolCall, ToolResult, CustomToolDefinition, SearchProviderConfig, AvailableSearchProvider, ToolExecutionContext };
 export { testHttpTool };
 
 // ============================================
@@ -134,6 +140,86 @@ export const AVAILABLE_TOOLS: ToolDefinition[] = [
           }
         },
         required: ["task_description"]
+      }
+    }
+  },
+  // ============================================
+  // Technical Staff Tools
+  // ============================================
+  {
+    type: "function",
+    function: {
+      name: "update_session_memory",
+      description: "Сохраняет важную информацию в векторную память сессии. Используй для фиксации ключевых решений, контекста, инструкций и резюме. Информация будет доступна для семантического поиска.",
+      parameters: {
+        type: "object",
+        properties: {
+          content: {
+            type: "string",
+            description: "Текст для сохранения в памяти сессии"
+          },
+          chunk_type: {
+            type: "string",
+            description: "Тип записи: decision (решение), context (контекст), instruction (инструкция), summary (резюме)",
+            enum: ["decision", "context", "instruction", "summary"]
+          },
+          importance: {
+            type: "number",
+            description: "Важность записи от 1 до 10 (по умолчанию 5)"
+          },
+          tags: {
+            type: "string",
+            description: "Теги для категоризации через запятую, например: 'архитектура, база данных'"
+          }
+        },
+        required: ["content", "chunk_type"]
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "search_session_memory",
+      description: "Выполняет семантический поиск по памяти сессии. Возвращает релевантные записи с оценкой схожести. Используй для контекстуализации и поиска предыдущих решений.",
+      parameters: {
+        type: "object",
+        properties: {
+          query: {
+            type: "string",
+            description: "Поисковый запрос для семантического поиска"
+          },
+          chunk_types: {
+            type: "string",
+            description: "Фильтр по типам записей через запятую, например: 'decision,context'"
+          },
+          limit: {
+            type: "number",
+            description: "Максимальное количество результатов (по умолчанию 5)"
+          }
+        },
+        required: ["query"]
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "validate_flow_diagram",
+      description: "Анализирует flow-диаграмму на корректность и выявляет проблемы. Проверяет синтаксис (наличие входа/выхода), логику (циклы, недостижимые узлы) и предлагает оптимизации.",
+      parameters: {
+        type: "object",
+        properties: {
+          diagram_id: {
+            type: "string",
+            description: "UUID диаграммы для проверки"
+          },
+          validation_level: {
+            type: "string",
+            description: "Уровень проверки: syntax (базовый), logic (глубокий), optimization (с рекомендациями)",
+            enum: ["syntax", "logic", "optimization"]
+          }
+        },
+        required: ["diagram_id"]
       }
     }
   }
@@ -768,6 +854,482 @@ function getStyleLabel(style: string): string {
 }
 
 // ============================================
+// Technical Staff Tools Implementation
+// ============================================
+
+/** Current execution context (set per request) */
+let currentExecutionContext: ToolExecutionContext | null = null;
+
+/** Set the execution context for session-aware tools */
+export function setExecutionContext(context: ToolExecutionContext | null): void {
+  currentExecutionContext = context;
+}
+
+/** Execute update_session_memory tool (Archivist) */
+async function executeUpdateSessionMemory(args: UpdateSessionMemoryArgs): Promise<string> {
+  if (!currentExecutionContext) {
+    return JSON.stringify({ success: false, error: "Контекст сессии недоступен" });
+  }
+  
+  const { sessionId, userId, supabaseUrl, supabaseKey } = currentExecutionContext;
+  const { content, chunk_type, importance = 5, tags } = args;
+  
+  if (!content || content.trim().length === 0) {
+    return JSON.stringify({ success: false, error: "Содержимое не может быть пустым" });
+  }
+  
+  try {
+    const supabase = createClient(supabaseUrl, supabaseKey);
+    
+    // Generate embedding for the content
+    let embedding: number[] | null = null;
+    try {
+      const embeddingResponse = await fetch(`${supabaseUrl}/functions/v1/generate-embeddings`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${supabaseKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ texts: [content] }),
+      });
+      
+      if (embeddingResponse.ok) {
+        const embData = await embeddingResponse.json();
+        if (embData.embeddings?.[0]) {
+          embedding = embData.embeddings[0];
+        }
+      }
+    } catch (embError) {
+      console.warn('[Tool] Failed to generate embedding:', embError);
+    }
+    
+    // Parse tags if provided as string
+    let parsedTags: string[] = [];
+    if (tags) {
+      if (typeof tags === 'string') {
+        parsedTags = (tags as string).split(',').map(t => t.trim()).filter(t => t.length > 0);
+      } else if (Array.isArray(tags)) {
+        parsedTags = tags;
+      }
+    }
+    
+    // Insert into session_memory
+    const insertData: Record<string, unknown> = {
+      session_id: sessionId,
+      user_id: userId,
+      content: content.trim(),
+      chunk_type,
+      metadata: {
+        importance,
+        tags: parsedTags,
+        source: 'tool:update_session_memory',
+        created_by: 'archivist',
+      },
+    };
+    
+    if (embedding) {
+      insertData.embedding = `[${embedding.join(',')}]`;
+    }
+    
+    const { data, error } = await supabase
+      .from('session_memory')
+      .insert(insertData)
+      .select('id')
+      .single();
+    
+    if (error) {
+      console.error('[Tool] update_session_memory error:', error);
+      return JSON.stringify({ success: false, error: `Ошибка сохранения: ${error.message}` });
+    }
+    
+    console.log(`[Tool] Memory chunk saved: ${data.id}, type: ${chunk_type}, importance: ${importance}`);
+    
+    return JSON.stringify({
+      success: true,
+      chunk_id: data.id,
+      chunk_type,
+      importance,
+      tags: parsedTags,
+      has_embedding: !!embedding,
+      message: `Запись сохранена в память сессии (тип: ${chunk_type}, важность: ${importance}/10)`
+    });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    console.error('[Tool] update_session_memory exception:', message);
+    return JSON.stringify({ success: false, error: message });
+  }
+}
+
+/** Execute search_session_memory tool (Archivist) */
+async function executeSearchSessionMemory(args: SearchSessionMemoryArgs): Promise<string> {
+  if (!currentExecutionContext) {
+    return JSON.stringify({ success: false, error: "Контекст сессии недоступен" });
+  }
+  
+  const { sessionId, supabaseUrl, supabaseKey } = currentExecutionContext;
+  const { query, chunk_types, limit = 5 } = args;
+  
+  if (!query || query.trim().length === 0) {
+    return JSON.stringify({ success: false, error: "Поисковый запрос не может быть пустым" });
+  }
+  
+  try {
+    const supabase = createClient(supabaseUrl, supabaseKey);
+    
+    // Generate embedding for the query
+    const embeddingResponse = await fetch(`${supabaseUrl}/functions/v1/generate-embeddings`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${supabaseKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ texts: [query] }),
+    });
+    
+    if (!embeddingResponse.ok) {
+      // Fallback to text search if embedding fails
+      console.warn('[Tool] Embedding failed, falling back to text search');
+      
+      let queryBuilder = supabase
+        .from('session_memory')
+        .select('id, content, chunk_type, metadata, created_at')
+        .eq('session_id', sessionId)
+        .ilike('content', `%${query}%`)
+        .order('created_at', { ascending: false })
+        .limit(limit);
+      
+      if (chunk_types) {
+        const typesArray = typeof chunk_types === 'string' 
+          ? (chunk_types as string).split(',').map(t => t.trim())
+          : chunk_types;
+        queryBuilder = queryBuilder.in('chunk_type', typesArray);
+      }
+      
+      const { data, error } = await queryBuilder;
+      
+      if (error) {
+        return JSON.stringify({ success: false, error: `Ошибка поиска: ${error.message}` });
+      }
+      
+      return JSON.stringify({
+        success: true,
+        search_type: 'text',
+        query,
+        results_count: data?.length || 0,
+        results: data?.map(r => ({
+          id: r.id,
+          content: r.content,
+          chunk_type: r.chunk_type,
+          metadata: r.metadata,
+        })) || [],
+      });
+    }
+    
+    const embData = await embeddingResponse.json();
+    const queryEmbedding = embData.embeddings?.[0];
+    
+    if (!queryEmbedding) {
+      return JSON.stringify({ success: false, error: "Не удалось сгенерировать embedding" });
+    }
+    
+    // Parse chunk_types for RPC
+    let typesArray: string[] | null = null;
+    if (chunk_types) {
+      typesArray = typeof chunk_types === 'string' 
+        ? (chunk_types as string).split(',').map(t => t.trim())
+        : chunk_types;
+    }
+    
+    // Call semantic search RPC
+    const { data, error } = await supabase.rpc('search_session_memory', {
+      p_session_id: sessionId,
+      p_query_embedding: `[${queryEmbedding.join(',')}]`,
+      p_limit: limit,
+      p_chunk_types: typesArray,
+    });
+    
+    if (error) {
+      console.error('[Tool] search_session_memory RPC error:', error);
+      return JSON.stringify({ success: false, error: `Ошибка поиска: ${error.message}` });
+    }
+    
+    console.log(`[Tool] Semantic search found ${data?.length || 0} results for query: "${query}"`);
+    
+    return JSON.stringify({
+      success: true,
+      search_type: 'semantic',
+      query,
+      results_count: data?.length || 0,
+      results: data?.map((r: { id: string; content: string; chunk_type: string; metadata: unknown; similarity: number }) => ({
+        id: r.id,
+        content: r.content,
+        chunk_type: r.chunk_type,
+        metadata: r.metadata,
+        similarity: Math.round(r.similarity * 100) / 100,
+      })) || [],
+    });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    console.error('[Tool] search_session_memory exception:', message);
+    return JSON.stringify({ success: false, error: message });
+  }
+}
+
+/** Execute validate_flow_diagram tool (Logistician) */
+async function executeValidateFlowDiagram(args: ValidateFlowDiagramArgs): Promise<string> {
+  if (!currentExecutionContext) {
+    return JSON.stringify({ success: false, error: "Контекст сессии недоступен" });
+  }
+  
+  const { supabaseUrl, supabaseKey } = currentExecutionContext;
+  const { diagram_id, validation_level = 'logic' } = args;
+  
+  if (!diagram_id) {
+    return JSON.stringify({ success: false, error: "ID диаграммы обязателен" });
+  }
+  
+  try {
+    const supabase = createClient(supabaseUrl, supabaseKey);
+    
+    // Fetch the diagram
+    const { data: diagram, error: fetchError } = await supabase
+      .from('flow_diagrams')
+      .select('id, name, nodes, edges')
+      .eq('id', diagram_id)
+      .single();
+    
+    if (fetchError || !diagram) {
+      return JSON.stringify({ 
+        success: false, 
+        error: fetchError?.message || 'Диаграмма не найдена' 
+      });
+    }
+    
+    const nodes = (diagram.nodes || []) as Array<{ id: string; type: string; data?: Record<string, unknown>; position?: { x: number; y: number } }>;
+    const edges = (diagram.edges || []) as Array<{ id: string; source: string; target: string }>;
+    
+    const issues: Array<{ severity: 'error' | 'warning' | 'info'; code: string; message: string; node_id?: string }> = [];
+    const suggestions: string[] = [];
+    
+    // Build adjacency maps
+    const outgoingEdges = new Map<string, string[]>();
+    const incomingEdges = new Map<string, string[]>();
+    const nodeMap = new Map<string, typeof nodes[0]>();
+    
+    for (const node of nodes) {
+      nodeMap.set(node.id, node);
+      outgoingEdges.set(node.id, []);
+      incomingEdges.set(node.id, []);
+    }
+    
+    for (const edge of edges) {
+      outgoingEdges.get(edge.source)?.push(edge.target);
+      incomingEdges.get(edge.target)?.push(edge.source);
+    }
+    
+    // ===== SYNTAX VALIDATION =====
+    
+    // Check for input nodes (nodes with no incoming edges)
+    const inputNodes = nodes.filter(n => (incomingEdges.get(n.id)?.length || 0) === 0);
+    if (inputNodes.length === 0) {
+      issues.push({ severity: 'error', code: 'NO_INPUT', message: 'Нет входных узлов (без входящих связей)' });
+    }
+    
+    // Check for output nodes (nodes with no outgoing edges)
+    const outputNodes = nodes.filter(n => (outgoingEdges.get(n.id)?.length || 0) === 0);
+    if (outputNodes.length === 0) {
+      issues.push({ severity: 'error', code: 'NO_OUTPUT', message: 'Нет выходных узлов (без исходящих связей)' });
+    }
+    
+    // Check for orphan edges (referencing non-existent nodes)
+    for (const edge of edges) {
+      if (!nodeMap.has(edge.source)) {
+        issues.push({ severity: 'error', code: 'ORPHAN_EDGE', message: `Связь ссылается на несуществующий узел: ${edge.source}` });
+      }
+      if (!nodeMap.has(edge.target)) {
+        issues.push({ severity: 'error', code: 'ORPHAN_EDGE', message: `Связь ссылается на несуществующий узел: ${edge.target}` });
+      }
+    }
+    
+    // Check for nodes without labels
+    for (const node of nodes) {
+      if (!node.data?.label && node.type !== 'group') {
+        issues.push({ severity: 'warning', code: 'NO_LABEL', message: `Узел без названия`, node_id: node.id });
+      }
+    }
+    
+    if (validation_level === 'syntax') {
+      return JSON.stringify({
+        success: true,
+        diagram_name: diagram.name,
+        validation_level,
+        issues,
+        metrics: {
+          total_nodes: nodes.length,
+          total_edges: edges.length,
+          input_nodes: inputNodes.length,
+          output_nodes: outputNodes.length,
+        },
+      });
+    }
+    
+    // ===== LOGIC VALIDATION =====
+    
+    // Detect cycles using DFS
+    const visited = new Set<string>();
+    const recursionStack = new Set<string>();
+    const cycleNodes: string[] = [];
+    
+    function detectCycle(nodeId: string): boolean {
+      visited.add(nodeId);
+      recursionStack.add(nodeId);
+      
+      for (const neighbor of outgoingEdges.get(nodeId) || []) {
+        if (!visited.has(neighbor)) {
+          if (detectCycle(neighbor)) return true;
+        } else if (recursionStack.has(neighbor)) {
+          cycleNodes.push(neighbor);
+          return true;
+        }
+      }
+      
+      recursionStack.delete(nodeId);
+      return false;
+    }
+    
+    for (const node of nodes) {
+      if (!visited.has(node.id)) {
+        if (detectCycle(node.id)) {
+          issues.push({ 
+            severity: 'error', 
+            code: 'CYCLE_DETECTED', 
+            message: `Обнаружен цикл в графе. Циклические зависимости могут привести к бесконечному выполнению.`,
+            node_id: cycleNodes[0],
+          });
+          break;
+        }
+      }
+    }
+    
+    // Find unreachable nodes (not connected to any input)
+    const reachableFromInputs = new Set<string>();
+    const queue: string[] = inputNodes.map(n => n.id);
+    
+    while (queue.length > 0) {
+      const current = queue.shift()!;
+      if (reachableFromInputs.has(current)) continue;
+      reachableFromInputs.add(current);
+      
+      for (const neighbor of outgoingEdges.get(current) || []) {
+        if (!reachableFromInputs.has(neighbor)) {
+          queue.push(neighbor);
+        }
+      }
+    }
+    
+    for (const node of nodes) {
+      if (!reachableFromInputs.has(node.id) && node.type !== 'group') {
+        issues.push({ 
+          severity: 'warning', 
+          code: 'UNREACHABLE_NODE', 
+          message: `Узел недостижим из входных точек`, 
+          node_id: node.id 
+        });
+      }
+    }
+    
+    if (validation_level === 'logic') {
+      return JSON.stringify({
+        success: true,
+        diagram_name: diagram.name,
+        validation_level,
+        issues,
+        metrics: {
+          total_nodes: nodes.length,
+          total_edges: edges.length,
+          input_nodes: inputNodes.length,
+          output_nodes: outputNodes.length,
+          reachable_nodes: reachableFromInputs.size,
+          has_cycles: cycleNodes.length > 0,
+        },
+      });
+    }
+    
+    // ===== OPTIMIZATION SUGGESTIONS =====
+    
+    // Check for nodes with many incoming connections (potential bottleneck)
+    for (const node of nodes) {
+      const incoming = incomingEdges.get(node.id)?.length || 0;
+      if (incoming > 5) {
+        suggestions.push(`Узел "${node.data?.label || node.id}" имеет ${incoming} входящих связей — возможное узкое место`);
+      }
+    }
+    
+    // Check for long sequential chains (could be parallelized)
+    let maxChainLength = 0;
+    const chainLengths = new Map<string, number>();
+    
+    function getChainLength(nodeId: string): number {
+      if (chainLengths.has(nodeId)) return chainLengths.get(nodeId)!;
+      
+      const outgoing = outgoingEdges.get(nodeId) || [];
+      if (outgoing.length !== 1) {
+        chainLengths.set(nodeId, 1);
+        return 1;
+      }
+      
+      const length = 1 + getChainLength(outgoing[0]);
+      chainLengths.set(nodeId, length);
+      maxChainLength = Math.max(maxChainLength, length);
+      return length;
+    }
+    
+    for (const node of inputNodes) {
+      getChainLength(node.id);
+    }
+    
+    if (maxChainLength > 7) {
+      suggestions.push(`Обнаружена длинная последовательная цепочка (${maxChainLength} узлов). Рассмотрите возможность параллелизации`);
+    }
+    
+    // Check for duplicate node types in sequence
+    const nodeTypes = nodes.filter(n => n.type !== 'group').map(n => n.type);
+    const typeCounts = nodeTypes.reduce((acc, type) => {
+      acc[type] = (acc[type] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+    
+    for (const [type, count] of Object.entries(typeCounts)) {
+      if (count > 5) {
+        suggestions.push(`Много узлов типа "${type}" (${count}). Возможно, стоит объединить логику`);
+      }
+    }
+    
+    return JSON.stringify({
+      success: true,
+      diagram_name: diagram.name,
+      validation_level,
+      issues,
+      suggestions,
+      metrics: {
+        total_nodes: nodes.length,
+        total_edges: edges.length,
+        input_nodes: inputNodes.length,
+        output_nodes: outputNodes.length,
+        reachable_nodes: reachableFromInputs.size,
+        has_cycles: cycleNodes.length > 0,
+        max_chain_length: maxChainLength,
+        depth: maxChainLength,
+      },
+    });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    console.error('[Tool] validate_flow_diagram exception:', message);
+    return JSON.stringify({ success: false, error: message });
+  }
+}
+
+// ============================================
 // Prompt Tool Execution
 // ============================================
 
@@ -855,6 +1417,16 @@ export async function executeToolCall(toolCall: ToolCall): Promise<ToolResult> {
         break;
       case "brief_prompt_engineer":
         result = executeBriefPromptEngineer(args as unknown as BriefPromptEngineerArgs);
+        break;
+      // Technical Staff Tools
+      case "update_session_memory":
+        result = await executeUpdateSessionMemory(args as unknown as UpdateSessionMemoryArgs);
+        break;
+      case "search_session_memory":
+        result = await executeSearchSessionMemory(args as unknown as SearchSessionMemoryArgs);
+        break;
+      case "validate_flow_diagram":
+        result = await executeValidateFlowDiagram(args as unknown as ValidateFlowDiagramArgs);
         break;
       default:
         result = JSON.stringify({ success: false, error: `Unknown tool: ${funcName}` });
