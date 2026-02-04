@@ -233,7 +233,7 @@ const BehavioralPatterns = () => {
                   {t(`patterns.category.${pattern.category}`)}
                 </span>
                 <Badge variant="outline" className="text-xs py-0">
-                  {pattern.stages.length} {t('patterns.stagesCount')}
+                  {t('patterns.stages')} ({pattern.stages.length})
                 </Badge>
               </div>
             </div>
