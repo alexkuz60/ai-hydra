@@ -260,6 +260,7 @@ const translations: Translations = {
   'flowEditor.executionComplete': { ru: 'Выполнение завершено', en: 'Execution complete' },
   'flowEditor.executionError': { ru: 'Ошибка выполнения', en: 'Execution error' },
   'flowEditor.noNodesExecuting': { ru: 'Нет активных узлов', en: 'No nodes executing' },
+  'flowEditor.clearResults': { ru: 'Очистить результаты', en: 'Clear results' },
   'flowEditor.saveFirst': { ru: 'Сначала сохраните', en: 'Save first' },
   'flowEditor.saveFirstDescription': { ru: 'Сохраните диаграмму перед запуском', en: 'Save the diagram before running' },
   'flowEditor.checkpoint': { ru: 'Контрольная точка', en: 'Checkpoint' },
