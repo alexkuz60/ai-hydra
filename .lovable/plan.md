@@ -1,157 +1,578 @@
 
-# План реорганизации системы паттернов и Гидропедии
+# Стратегический план реализации: Flow Runtime, Инструменты техперсонала, Ролевая память
 
 ## Обзор
 
-Реорганизация направлена на разделение системных (внутренних) компонентов платформы от пользовательских инструментов. Стратегические паттерны и ролевые шаблоны станут частью "дрессировки Гидры" — скрытой от обычных пользователей системы настройки поведения ИИ.
-
----
-
-## 1. Скрытие стратегических паттернов в Flow Editor
-
-### Проблема
-При нажатии "Открыть в редакторе потоков" в деталях паттерна создаётся Flow-диаграмма. Эти сгенерированные диаграммы отображаются в общем списке "Открыть" в редакторе потоков.
-
-### Решение
-Добавить признак `source` к таблице `flow_diagrams` для отличия сгенерированных диаграмм от пользовательских.
-
-**Изменения:**
-- **База данных**: Добавить колонку `source TEXT DEFAULT 'user'` (значения: `'user'` | `'pattern'`)
-- **`src/hooks/useFlowDiagrams.ts`**: Фильтровать диаграммы в списке "Открыть" по `source !== 'pattern'`
-- **`src/components/patterns/PatternDetailsPanel.tsx`**: При сохранении диаграммы передавать `source: 'pattern'`
-- **`src/types/flow.ts`**: Добавить поле `source?: 'user' | 'pattern'` в интерфейс
-
----
-
-## 2. Страница "Дрессировка Гидры" в Гидропедии
-
-### Проблема
-Необходима специальная страница документации, видимая только администраторам, описывающая внутреннее устройство системы паттернов.
-
-### Решение
-Добавить свойство `adminOnly` к секциям Гидропедии и создать новую секцию.
-
-**Изменения:**
-- **`src/content/hydrapedia.ts`**:
-  - Добавить `adminOnly?: boolean` в интерфейс `HydrapediaSection`
-  - Добавить новую секцию `hydra-training` с иконкой `Shield`
-  - Контент: описание стратегических паттернов, ролевых шаблонов, их применения
-
-- **`src/pages/Hydrapedia.tsx`**:
-  - Импортировать `useUserRoles`
-  - Фильтровать `hydrapediaSections`: показывать секции с `adminOnly: true` только если `isAdmin`
-
-- **`src/contexts/LanguageContext.tsx`**:
-  - Добавить ключи локализации для заголовка секции
-
----
-
-## 3. Скрытие системных паттернов от обычных пользователей
-
-### Проблема
-Страница `/behavioral-patterns` показывает все паттерны всем пользователям. Системные паттерны ("инстинкты Гидры") должны быть видны только администраторам.
-
-### Решение
-Фильтрация паттернов на основе ролей пользователя.
-
-**Изменения:**
-- **`src/pages/BehavioralPatterns.tsx`**:
-  - Импортировать `useUserRoles`
-  - Для НЕ-админов фильтровать `blueprints` и `behaviors` по `!meta.isSystem`
-  - Админы видят всё
-
----
-
-## 4. Разделение ролевых шаблонов на секции
-
-### Проблема
-Ролевые шаблоны отображаются единым списком. Необходимо разделить на "Эксперты" и "Технический персонал".
-
-### Решение
-Использовать существующий флаг `isTechnicalStaff` из `ROLE_CONFIG`.
-
-**Изменения:**
-- **`src/pages/BehavioralPatterns.tsx`**:
-  - Разделить `behaviors` на две группы:
-    - `expertBehaviors` = где `ROLE_CONFIG[role].isTechnicalStaff === false`
-    - `techBehaviors` = где `ROLE_CONFIG[role].isTechnicalStaff === true`
-  - Добавить два сворачиваемых раздела в таблице:
-    - "Эксперты" (Sparkles icon)
-    - "Технический персонал" (Wrench icon)
-  - Каждый раздел со своим счётчиком и кнопкой создания
-
-- **`src/contexts/LanguageContext.tsx`**:
-  - Добавить ключи: `patterns.expertGroup`, `patterns.technicalGroup`
-
----
-
-## Диаграмма архитектуры доступа
+Реализация трёх взаимосвязанных стратегических функций, которые трансформируют Hydra из платформы для обсуждений в автономную систему исполнения задач:
 
 ```text
-+------------------------+     +------------------------+
-|    Обычный пользователь|     |      Администратор     |
-+------------------------+     +------------------------+
-          |                              |
-          v                              v
-+--------------------+         +----------------------+
-| Паттерны поведения |         | Паттерны поведения   |
-|--------------------|         |----------------------|
-| [x] Свои паттерны  |         | [x] Все паттерны     |
-| [ ] Системные      |         | [x] Системные        |
-| [x] Публичные      |         | [x] Публичные        |
-+--------------------+         +----------------------+
-          |                              |
-          v                              v
-+--------------------+         +----------------------+
-| Flow Editor        |         | Flow Editor          |
-|--------------------|         |----------------------|
-| source='user' only |         | Все диаграммы        |
-+--------------------+         +----------------------+
-          |                              |
-          v                              v
-+--------------------+         +----------------------+
-| Гидропедия         |         | Гидропедия           |
-|--------------------|         |----------------------|
-| [ ] Дрессировка    |         | [x] Дрессировка      |
-| [x] Остальные      |         | [x] Все секции       |
-+--------------------+         +----------------------+
+┌─────────────────────────────────────────────────────────────────┐
+│                     HYDRA EVOLUTION                             │
+├─────────────────────────────────────────────────────────────────┤
+│  1. Flow Runtime       → Автономное исполнение пайплайнов       │
+│  2. Инструменты        → Программное поведение техперсонала     │
+│  3. Ролевая память     → Накопление опыта между сессиями        │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## Технические детали
+## Фаза 1: Инструменты техперсонала (2-3 дня)
 
-### Новые ключи локализации
-```typescript
-'patterns.expertGroup': { ru: 'Эксперты', en: 'Experts' }
-'patterns.technicalGroup': { ru: 'Технический персонал', en: 'Technical Staff' }
-'hydrapedia.sections.hydraTraining': { ru: 'Дрессировка Гидры', en: 'Hydra Training' }
+### 1.1 Инструмент `update_session_memory` для Архивариуса
+
+**Назначение**: Позволяет Архивариусу программно сохранять важные фрагменты в векторную память сессии.
+
+**Реализация в `supabase/functions/hydra-orchestrator/tools.ts`**:
+
+```text
+┌─────────────────────────────────────────────────────────────────┐
+│  update_session_memory                                          │
+├─────────────────────────────────────────────────────────────────┤
+│  Параметры:                                                     │
+│  • content (string) - Текст для сохранения                      │
+│  • chunk_type (enum) - decision|context|instruction|summary     │
+│  • importance (number) - Приоритет 1-10                         │
+│  • tags (string[]) - Теги для категоризации                     │
+│                                                                 │
+│  Действия:                                                      │
+│  1. Генерирует embedding через generate-embeddings              │
+│  2. Сохраняет в session_memory с метаданными                    │
+│  3. Возвращает подтверждение и ID чанка                         │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
-### Миграция БД
+**Технические шаги**:
+1. Добавить определение инструмента в `AVAILABLE_TOOLS`
+2. Создать функцию `executeUpdateSessionMemory(args, sessionId, userId)`
+3. Интегрировать вызов в `executeToolCalls` с контекстом сессии
+4. Добавить тип `UpdateSessionMemoryArgs` в `types.ts`
+
+### 1.2 Инструмент `validate_flow_diagram` для Логистика
+
+**Назначение**: Позволяет Логистику анализировать data-flow диаграммы и выявлять проблемы.
+
+```text
+┌─────────────────────────────────────────────────────────────────┐
+│  validate_flow_diagram                                          │
+├─────────────────────────────────────────────────────────────────┤
+│  Параметры:                                                     │
+│  • diagram_id (uuid) - ID диаграммы для проверки                │
+│  • validation_level (enum) - syntax|logic|optimization          │
+│                                                                 │
+│  Проверки:                                                      │
+│  • Syntax: наличие входа/выхода, корректные связи               │
+│  • Logic: циклы, недостижимые узлы, типы данных                 │
+│  • Optimization: дублирование, узкие места, параллелизация      │
+│                                                                 │
+│  Возвращает:                                                    │
+│  • issues[] - найденные проблемы с severity                     │
+│  • suggestions[] - рекомендации по улучшению                    │
+│  • metrics - статистика (узлы, связи, глубина)                  │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+**Технические шаги**:
+1. Добавить определение инструмента в `AVAILABLE_TOOLS`
+2. Создать `executeValidateFlowDiagram(args)` с логикой валидации
+3. Реализовать алгоритмы проверки графов (BFS/DFS для достижимости)
+4. Загружать диаграмму из БД через Supabase client в edge function
+
+### 1.3 Инструмент `search_session_memory` для Архивариуса
+
+**Назначение**: Семантический поиск по памяти сессии для контекстуализации.
+
+```text
+┌─────────────────────────────────────────────────────────────────┐
+│  search_session_memory                                          │
+├─────────────────────────────────────────────────────────────────┤
+│  Параметры:                                                     │
+│  • query (string) - Поисковый запрос                            │
+│  • chunk_types (string[]) - Фильтр по типам                     │
+│  • limit (number) - Макс. количество результатов (default: 5)   │
+│                                                                 │
+│  Действия:                                                      │
+│  1. Генерирует embedding для query                              │
+│  2. Вызывает RPC search_session_memory                          │
+│  3. Возвращает релевантные чанки с similarity score             │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Фаза 2: Ролевая память (3-4 дня)
+
+### 2.1 Новая таблица `role_memory`
+
+**Миграция базы данных**:
+
 ```sql
-ALTER TABLE flow_diagrams 
-ADD COLUMN source TEXT DEFAULT 'user' 
-CHECK (source IN ('user', 'pattern'));
+-- Таблица для хранения накопленного опыта ролей
+CREATE TABLE public.role_memory (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  role text NOT NULL,  -- 'archivist', 'analyst', etc.
+  
+  -- Контент и классификация
+  content text NOT NULL,
+  memory_type text NOT NULL DEFAULT 'experience'
+    CHECK (memory_type IN ('experience', 'preference', 'skill', 'mistake', 'success')),
+  
+  -- Контекст происхождения
+  source_session_id uuid REFERENCES sessions(id) ON DELETE SET NULL,
+  source_message_id uuid,
+  
+  -- Метрики качества
+  confidence_score numeric(3,2) DEFAULT 0.7,
+  usage_count integer DEFAULT 0,
+  last_used_at timestamptz,
+  
+  -- Векторный поиск
+  embedding vector(1536),
+  
+  -- Метаданные
+  metadata jsonb DEFAULT '{}',
+  tags text[] DEFAULT '{}',
+  
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now()
+);
+
+-- Индексы
+CREATE INDEX idx_role_memory_user_role ON role_memory(user_id, role);
+CREATE INDEX idx_role_memory_embedding ON role_memory USING hnsw (embedding vector_cosine_ops);
+
+-- RLS политики
+ALTER TABLE role_memory ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can manage own role memory" ON role_memory
+  FOR ALL USING (auth.uid() = user_id);
 ```
 
-### Файлы для изменения
-1. `src/hooks/useFlowDiagrams.ts` — фильтрация по source
-2. `src/components/patterns/PatternDetailsPanel.tsx` — передача source при сохранении
-3. `src/types/flow.ts` — расширение типа
-4. `src/content/hydrapedia.ts` — новая секция + флаг adminOnly
-5. `src/pages/Hydrapedia.tsx` — фильтрация секций по роли
-6. `src/pages/BehavioralPatterns.tsx` — фильтрация паттернов + разделение ролей
-7. `src/contexts/LanguageContext.tsx` — новые ключи локализации
+### 2.2 RPC функция для поиска в ролевой памяти
+
+```sql
+CREATE OR REPLACE FUNCTION public.search_role_memory(
+  p_role text,
+  p_query_embedding vector(1536),
+  p_limit int DEFAULT 5,
+  p_memory_types text[] DEFAULT NULL
+)
+RETURNS TABLE (
+  id uuid,
+  content text,
+  memory_type text,
+  confidence_score numeric,
+  similarity float
+)
+LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  RETURN QUERY
+  SELECT 
+    rm.id,
+    rm.content,
+    rm.memory_type,
+    rm.confidence_score,
+    1 - (rm.embedding <=> p_query_embedding) AS similarity
+  FROM public.role_memory rm
+  WHERE rm.user_id = auth.uid()
+    AND rm.role = p_role
+    AND rm.embedding IS NOT NULL
+    AND (p_memory_types IS NULL OR rm.memory_type = ANY(p_memory_types))
+  ORDER BY rm.embedding <=> p_query_embedding
+  LIMIT p_limit;
+END;
+$$;
+```
+
+### 2.3 Хук `useRoleMemory`
+
+**Файл**: `src/hooks/useRoleMemory.ts`
+
+```text
+┌─────────────────────────────────────────────────────────────────┐
+│  useRoleMemory(role: AgentRole)                                 │
+├─────────────────────────────────────────────────────────────────┤
+│  Возвращает:                                                    │
+│  • memories - Список записей памяти роли                        │
+│  • saveMemory(content, type, metadata) - Сохранить опыт         │
+│  • searchMemory(query, types) - Семантический поиск             │
+│  • deleteMemory(id) - Удалить запись                            │
+│  • getStats() - Статистика по типам памяти                      │
+│                                                                 │
+│  Автоматически:                                                 │
+│  • Генерирует embeddings при сохранении                         │
+│  • Инкрементирует usage_count при использовании                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### 2.4 Интеграция с системными промптами
+
+**Модификация `hydra-orchestrator`**:
+
+При вызове модели с определённой ролью:
+1. Загрузить топ-5 релевантных записей из `role_memory` по запросу
+2. Добавить секцию "Накопленный опыт" в системный промпт
+3. После успешного ответа — предложить сохранить полезный опыт (через tool call)
+
+### 2.5 Инструмент `save_role_experience`
+
+Новый инструмент для автоматического накопления опыта:
+
+```text
+┌─────────────────────────────────────────────────────────────────┐
+│  save_role_experience                                           │
+├─────────────────────────────────────────────────────────────────┤
+│  Параметры:                                                     │
+│  • content (string) - Описание опыта                            │
+│  • memory_type (enum) - experience|skill|mistake|success        │
+│  • confidence (number) - Уверенность 0.0-1.0                    │
+│  • tags (string[]) - Теги для категоризации                     │
+│                                                                 │
+│  Автоматически определяет role из контекста вызова              │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Фаза 3: Flow Runtime (5-7 дней)
+
+### 3.1 Архитектура Flow Runtime
+
+```text
+┌─────────────────────────────────────────────────────────────────┐
+│                      FLOW RUNTIME ARCHITECTURE                  │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  ┌───────────┐     ┌───────────┐     ┌───────────┐             │
+│  │  Scheduler │────▶│  Executor │────▶│  Runners  │             │
+│  │  (DAG)     │     │  (State)  │     │  (Nodes)  │             │
+│  └───────────┘     └───────────┘     └───────────┘             │
+│       │                  │                  │                   │
+│       ▼                  ▼                  ▼                   │
+│  ┌─────────────────────────────────────────────────────────┐   │
+│  │                    SSE Event Stream                      │   │
+│  │  node_started | node_progress | node_completed | error   │   │
+│  └─────────────────────────────────────────────────────────┘   │
+│                            │                                    │
+│                            ▼                                    │
+│  ┌─────────────────────────────────────────────────────────┐   │
+│  │                    ExpertPanel UI                        │   │
+│  │         Visual progress indicators on stages             │   │
+│  └─────────────────────────────────────────────────────────┘   │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### 3.2 Новая edge-функция `flow-runtime`
+
+**Файл**: `supabase/functions/flow-runtime/index.ts`
+
+**Структура**:
+
+```text
+flow-runtime/
+├── index.ts          # Главный entry point с SSE
+├── scheduler.ts      # DAG-планировщик выполнения
+├── executor.ts       # Управление состояниями узлов
+├── runners/          # Исполнители для каждого типа узла
+│   ├── model.ts      # AI-модель
+│   ├── condition.ts  # Условное ветвление
+│   ├── tool.ts       # Вызов инструмента
+│   ├── transform.ts  # Преобразование данных
+│   ├── api.ts        # HTTP запросы
+│   └── checkpoint.ts # Ожидание пользователя
+└── types.ts          # Типы для runtime
+```
+
+### 3.3 Состояния узлов
+
+```text
+┌─────────────────────────────────────────────────────────────────┐
+│  NODE STATES                                                    │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  pending ──▶ running ──▶ completed                              │
+│     │           │                                               │
+│     │           └──▶ failed                                     │
+│     │                                                           │
+│     └──▶ waiting_user  (checkpoint nodes)                       │
+│                │                                                │
+│                └──▶ running (after user approval)               │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### 3.4 SSE события
+
+```typescript
+interface FlowRuntimeEvent {
+  type: 'flow_started' | 'node_started' | 'node_progress' | 'node_completed' 
+      | 'node_failed' | 'checkpoint_reached' | 'flow_completed' | 'flow_failed';
+  
+  flow_id: string;
+  node_id?: string;
+  
+  // Для progress событий
+  progress?: {
+    current_step: number;
+    total_steps: number;
+    message: string;
+  };
+  
+  // Для completed событий
+  output?: unknown;
+  
+  // Для checkpoint событий
+  checkpoint?: {
+    condition: string;
+    requires_input: boolean;
+    options?: string[];
+  };
+  
+  // Для ошибок
+  error?: string;
+}
+```
+
+### 3.5 Таблица `flow_runs` для персистентности
+
+```sql
+CREATE TABLE public.flow_runs (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL,
+  diagram_id uuid NOT NULL REFERENCES flow_diagrams(id),
+  session_id uuid REFERENCES sessions(id),
+  
+  status text NOT NULL DEFAULT 'pending'
+    CHECK (status IN ('pending', 'running', 'paused', 'completed', 'failed', 'cancelled')),
+  
+  -- Состояние выполнения
+  node_states jsonb DEFAULT '{}',  -- {node_id: {status, output, error}}
+  current_node_id text,
+  
+  -- Входные/выходные данные
+  input_data jsonb DEFAULT '{}',
+  output_data jsonb,
+  
+  -- Checkpoint информация
+  pending_checkpoint_id text,
+  checkpoint_response jsonb,
+  
+  -- Метрики
+  started_at timestamptz,
+  completed_at timestamptz,
+  total_tokens_used integer DEFAULT 0,
+  
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now()
+);
+
+-- RLS
+ALTER TABLE flow_runs ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can manage own flow runs" ON flow_runs
+  FOR ALL USING (auth.uid() = user_id);
+```
+
+### 3.6 Фронтенд интеграция
+
+**Компонент `FlowExecutionPanel`**:
+
+```text
+┌─────────────────────────────────────────────────────────────────┐
+│  FLOW EXECUTION PANEL                                           │
+├─────────────────────────────────────────────────────────────────┤
+│  ┌─────────────────────────────────────────────────────────┐   │
+│  │  📊 Пайплайн: Анализ конкурентов                        │   │
+│  │  Статус: Выполняется • Этап 2/4                         │   │
+│  └─────────────────────────────────────────────────────────┘   │
+│                                                                 │
+│  ┌──────────┐     ┌──────────┐     ┌──────────┐                │
+│  │  ✅       │────▶│  🔄      │────▶│  ⏳      │                │
+│  │  Сбор    │     │  Анализ  │     │  Синтез  │                │
+│  │  данных  │     │  (75%)   │     │  (pending)│               │
+│  └──────────┘     └──────────┘     └──────────┘                │
+│                                                                 │
+│  ┌─────────────────────────────────────────────────────────┐   │
+│  │  [Приостановить]  [Отменить]  [Посмотреть результаты]   │   │
+│  └─────────────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+**Хук `useFlowExecution`**:
+
+```typescript
+interface UseFlowExecutionReturn {
+  // Запуск
+  startExecution: (diagramId: string, input: Record<string, unknown>) => Promise<string>;
+  
+  // Управление
+  pauseExecution: (runId: string) => Promise<void>;
+  resumeExecution: (runId: string, checkpointResponse?: unknown) => Promise<void>;
+  cancelExecution: (runId: string) => Promise<void>;
+  
+  // Состояние
+  currentRun: FlowRun | null;
+  nodeStates: Map<string, NodeExecutionState>;
+  events: FlowRuntimeEvent[];
+  
+  // Realtime подписка
+  isConnected: boolean;
+}
+```
+
+### 3.7 Node Runners (примеры)
+
+**Model Runner**:
+```typescript
+async function runModelNode(
+  node: FlowNode, 
+  inputs: Record<string, unknown>,
+  context: ExecutionContext
+): Promise<NodeOutput> {
+  const { modelName, temperature, maxTokens, role } = node.data;
+  
+  // Вызов AI через hydra-stream или hydra-orchestrator
+  const response = await callAI({
+    model_id: modelName,
+    message: inputs.text as string,
+    role,
+    temperature,
+    max_tokens: maxTokens,
+    memory_context: context.memoryChunks,
+  });
+  
+  return {
+    text: response.content,
+    reasoning: response.reasoning,
+    usage: response.usage,
+  };
+}
+```
+
+**Checkpoint Runner**:
+```typescript
+async function runCheckpointNode(
+  node: FlowNode,
+  inputs: Record<string, unknown>,
+  context: ExecutionContext
+): Promise<NodeOutput | 'waiting'> {
+  const { condition, requiresInput } = node.data;
+  
+  // Эмитим событие checkpoint_reached
+  context.emit({
+    type: 'checkpoint_reached',
+    node_id: node.id,
+    checkpoint: {
+      condition,
+      requires_input: requiresInput,
+      current_data: inputs,
+    },
+  });
+  
+  // Возвращаем специальный статус "waiting"
+  return 'waiting';
+}
+```
+
+---
+
+## Фаза 4: Интеграция компонентов (2-3 дня)
+
+### 4.1 Связь Flow Runtime с ролевой памятью
+
+При выполнении узлов типа `model`:
+1. Загрузить релевантную память роли
+2. Добавить в контекст вызова
+3. После успешного выполнения — опционально сохранить опыт
+
+### 4.2 Связь инструментов с Flow Runtime
+
+Инструменты техперсонала могут вызываться:
+- Напрямую из чата (текущий механизм)
+- Из узлов типа `tool` в Flow Runtime
+- Автоматически при определённых событиях
+
+### 4.3 UI интеграция в ExpertPanel
+
+**Кнопка "Запустить пайплайн"** в панели паттернов:
+1. Генерирует Flow диаграмму из паттерна (blueprintToFlow)
+2. Открывает FlowExecutionPanel
+3. Стримит прогресс выполнения в реальном времени
+
+---
+
+## План файлов и изменений
+
+### Новые файлы
+
+```text
+Frontend:
+├── src/hooks/useRoleMemory.ts
+├── src/hooks/useFlowExecution.ts
+├── src/components/flow/FlowExecutionPanel.tsx
+├── src/components/flow/NodeExecutionStatus.tsx
+└── src/types/flowRuntime.ts
+
+Edge Functions:
+├── supabase/functions/flow-runtime/
+│   ├── index.ts
+│   ├── scheduler.ts
+│   ├── executor.ts
+│   ├── types.ts
+│   └── runners/
+│       ├── index.ts
+│       ├── model.ts
+│       ├── condition.ts
+│       ├── tool.ts
+│       ├── transform.ts
+│       ├── api.ts
+│       └── checkpoint.ts
+```
+
+### Модифицируемые файлы
+
+```text
+Edge Functions:
+├── supabase/functions/hydra-orchestrator/tools.ts     (+3 инструмента)
+├── supabase/functions/hydra-orchestrator/types.ts     (+типы для инструментов)
+├── supabase/functions/hydra-orchestrator/constants.ts (+системные промпты с памятью)
+└── supabase/config.toml                               (+flow-runtime функция)
+
+Frontend:
+├── src/pages/ExpertPanel.tsx                          (+FlowExecutionPanel)
+├── src/components/patterns/PatternDetailsPanel.tsx    (+кнопка запуска)
+└── src/hooks/useSessionMemory.ts                      (+интеграция с инструментами)
+
+Database:
+└── Новые миграции для role_memory и flow_runs
+```
 
 ---
 
 ## Порядок реализации
 
-1. Миграция БД (добавление колонки `source`)
-2. Обновление типов и хуков для Flow Editor
-3. Обновление генерации диаграмм из паттернов
-4. Фильтрация в BehavioralPatterns + разделение на секции
-5. Добавление секции "Дрессировка Гидры" в Гидропедию
-6. Фильтрация секций Гидропедии по роли
-7. Локализация
+| Неделя | Задача | Зависимости |
+|--------|--------|-------------|
+| 1 | Инструменты `update_session_memory`, `search_session_memory` | - |
+| 1 | Инструмент `validate_flow_diagram` | - |
+| 2 | Таблица `role_memory` + RPC | Миграция БД |
+| 2 | Хук `useRoleMemory` + интеграция с промптами | role_memory |
+| 3 | Flow Runtime: scheduler + executor | - |
+| 3 | Node Runners: model, condition, tool | scheduler |
+| 4 | Flow Runtime: SSE + checkpoint | executor |
+| 4 | Таблица `flow_runs` + персистентность | runtime |
+| 5 | Хук `useFlowExecution` + UI | flow_runs |
+| 5 | Интеграция в ExpertPanel | все компоненты |
+
+---
+
+## Риски и митигации
+
+| Риск | Вероятность | Митигация |
+|------|-------------|-----------|
+| Сложность DAG-планировщика | Средняя | Начать с линейного выполнения, добавить параллелизм позже |
+| Таймауты при долгих пайплайнах | Высокая | Персистентность состояния в `flow_runs`, возобновление |
+| Рост затрат на embeddings | Средняя | Кэширование, дедупликация, лимиты на пользователя |
+| Конфликты в ролевой памяти | Низкая | Confidence scores, decay старых записей |
