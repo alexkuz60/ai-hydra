@@ -82,7 +82,17 @@ export function FlowExecutionPanel({ state, onCancel, onClose, onClearResults }:
               <TooltipContent>{t('flowEditor.clearResults')}</TooltipContent>
             </Tooltip>
           )}
-          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onClose}>
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="h-7 w-7" 
+            onClick={() => {
+              if (state.isRunning) {
+                onCancel();
+              }
+              onClose();
+            }}
+          >
             <X className="h-4 w-4" />
           </Button>
         </div>

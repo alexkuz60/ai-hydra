@@ -58,7 +58,7 @@ export const runPromptNode: NodeRunner = async (ctx) => {
  */
 export const runModelNode: NodeRunner = async (ctx) => {
   const { node, inputs, lovableApiKey } = ctx;
-  const modelName = node.data.modelName as string || 'openai/gpt-4o-mini';
+  const modelName = node.data.modelName as string || 'google/gemini-3-flash-preview';
   const temperature = node.data.temperature as number || 0.7;
   const maxTokens = node.data.maxTokens as number || 2048;
 
@@ -766,7 +766,7 @@ Respond with ONLY the category name, nothing else.`;
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "openai/gpt-4o-mini",
+        model: "google/gemini-3-flash-preview",
         messages: [{ role: "user", content: prompt }],
         temperature: 0,
         max_tokens: 50,
