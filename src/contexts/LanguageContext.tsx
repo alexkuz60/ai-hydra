@@ -88,6 +88,7 @@ const translations: Translations = {
   'patterns.behavior': { ru: 'Поведение', en: 'Behavior' },
   'patterns.defersTo': { ru: 'Уступает', en: 'Defers to' },
   'patterns.challenges': { ru: 'Оспаривает', en: 'Challenges' },
+  'patterns.noInteractions': { ru: 'Нет связей', en: 'No interactions' },
   'patterns.collaborates': { ru: 'Сотрудничает', en: 'Collaborates with' },
   'patterns.tone.formal': { ru: 'Формальный', en: 'Formal' },
   'patterns.tone.friendly': { ru: 'Дружелюбный', en: 'Friendly' },
