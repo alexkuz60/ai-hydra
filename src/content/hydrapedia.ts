@@ -140,12 +140,14 @@ The platform sends your request to selected models, collects their responses, an
 
 | Провайдер | Модели | Где получить |
 |-----------|--------|--------------|
-| OpenAI | GPT-4, GPT-4o | [platform.openai.com](https://platform.openai.com) |
-| Anthropic | Claude 3 | [console.anthropic.com](https://console.anthropic.com) |
-| Google | Gemini | [ai.google.dev](https://ai.google.dev) |
-| xAI | Grok | [x.ai](https://x.ai) |
-| Groq | LLaMA, Mixtral | [console.groq.com](https://console.groq.com) |
-| OpenRouter | 100+ моделей | [openrouter.ai](https://openrouter.ai) |
+| OpenAI | GPT-5, GPT-5-mini, GPT-5.2 | [platform.openai.com](https://platform.openai.com) |
+| Anthropic | Claude 3.5, Claude 4 | [console.anthropic.com](https://console.anthropic.com) |
+| Google | Gemini 2.5, Gemini 3 | [ai.google.dev](https://ai.google.dev) |
+| xAI | Grok 2, Grok 3 | [x.ai](https://x.ai) |
+| Groq | LLaMA 3, Mixtral | [console.groq.com](https://console.groq.com) |
+| DeepSeek | DeepSeek V3, DeepSeek R1 | [platform.deepseek.com](https://platform.deepseek.com) |
+| Perplexity | Sonar Pro | [perplexity.ai](https://www.perplexity.ai) |
+| OpenRouter | 200+ моделей | [openrouter.ai](https://openrouter.ai) |
 
 ### Как добавить ключ
 
@@ -153,7 +155,7 @@ The platform sends your request to selected models, collects their responses, an
 2. Введите ключ в соответствующее поле
 3. Нажмите **Сохранить**
 
-> **Совет**: Начните с OpenRouter — один ключ даёт доступ к сотням моделей.
+> **Совет**: Начните с OpenRouter — один ключ даёт доступ к сотням моделей всех провайдеров.
 
 ## Элементы страницы Профиль
 
@@ -192,12 +194,14 @@ To work with AI models, you'll need API keys from providers:
 
 | Provider | Models | Where to get |
 |----------|--------|--------------|
-| OpenAI | GPT-4, GPT-4o | [platform.openai.com](https://platform.openai.com) |
-| Anthropic | Claude 3 | [console.anthropic.com](https://console.anthropic.com) |
-| Google | Gemini | [ai.google.dev](https://ai.google.dev) |
-| xAI | Grok | [x.ai](https://x.ai) |
-| Groq | LLaMA, Mixtral | [console.groq.com](https://console.groq.com) |
-| OpenRouter | 100+ models | [openrouter.ai](https://openrouter.ai) |
+| OpenAI | GPT-5, GPT-5-mini, GPT-5.2 | [platform.openai.com](https://platform.openai.com) |
+| Anthropic | Claude 3.5, Claude 4 | [console.anthropic.com](https://console.anthropic.com) |
+| Google | Gemini 2.5, Gemini 3 | [ai.google.dev](https://ai.google.dev) |
+| xAI | Grok 2, Grok 3 | [x.ai](https://x.ai) |
+| Groq | LLaMA 3, Mixtral | [console.groq.com](https://console.groq.com) |
+| DeepSeek | DeepSeek V3, DeepSeek R1 | [platform.deepseek.com](https://platform.deepseek.com) |
+| Perplexity | Sonar Pro | [perplexity.ai](https://www.perplexity.ai) |
+| OpenRouter | 200+ models | [openrouter.ai](https://openrouter.ai) |
 
 ### How to Add a Key
 
@@ -205,7 +209,7 @@ To work with AI models, you'll need API keys from providers:
 2. Enter the key in the corresponding field
 3. Click **Save**
 
-> **Tip**: Start with OpenRouter — one key gives you access to hundreds of models.
+> **Tip**: Start with OpenRouter — one key gives you access to hundreds of models from all providers.
 
 ## Profile Page Controls
 
@@ -1116,7 +1120,7 @@ When creating HTTP tools, the system validates URLs to prevent SSRF attacks:
     content: {
       ru: `# Редактор потоков мысли
 
-Визуальный инструмент для проектирования сложных цепочек обработки данных.
+Визуальный инструмент для проектирования и **выполнения** сложных цепочек обработки данных.
 
 ## Интерфейс редактора
 
@@ -1130,6 +1134,7 @@ When creating HTTP tools, the system validates URLs to prevent SSRF attacks:
 | **Авто-раскладка** | \`LayoutGrid\` | Автоматическое выравнивание (Dagre) |
 | **Сохранить** | \`Save\` | Сохранение изменений |
 | **Экспорт** | \`Download\` | Экспорт в PNG/SVG/JSON/PDF/Mermaid |
+| **Запуск** | \`Play\` | Запуск выполнения потока |
 | **Назад** | \`ArrowLeft\` | Возврат к списку диаграмм |
 
 ### История изменений (Undo/Redo)
@@ -1198,52 +1203,103 @@ When creating HTTP tools, the system validates URLs to prevent SSRF attacks:
 
 | Узел | Иконка | Назначение |
 |------|--------|------------|
-| **Input** | \`ArrowRight\` | Точка входа данных |
+| **Input** | \`ArrowRight\` | Точка входа данных (обязательно для запуска) |
 | **Output** | \`ArrowLeft\` | Точка вывода результата |
 | **Prompt** | \`FileText\` | Системный промпт |
-| **Model** | \`Bot\` | Вызов языковой модели |
+| **Model** | \`Bot\` | Вызов языковой модели (Gemini, GPT-5 и др.) |
 
 ### Логика
 
 | Узел | Иконка | Назначение |
 |------|--------|------------|
 | **Condition** | \`HelpCircle\` | Ветвление (if/else) |
+| **Checkpoint** | \`UserCheck\` | Ожидание подтверждения пользователя |
 | **Switch** | \`GitBranch\` | Множественное ветвление |
 | **Loop** | \`RefreshCw\` | Итерация по массиву |
-| **Delay** | \`Timer\` | Задержка выполнения |
+| **Delay** | \`Timer\` | Задержка выполнения (мс/сек/мин) |
 
 ### Данные
 
 | Узел | Иконка | Назначение |
 |------|--------|------------|
-| **Transform** | \`Wrench\` | Преобразование данных |
+| **Transform** | \`Wrench\` | Преобразование данных (JSONPath, regex) |
 | **Filter** | \`Filter\` | Фильтрация по условию |
-| **Merge** | \`Merge\` | Объединение потоков |
+| **Merge** | \`Merge\` | Объединение нескольких потоков |
 | **Split** | \`Scissors\` | Разделение на подпотоки |
 
 ### Интеграции
 
 | Узел | Иконка | Назначение |
 |------|--------|------------|
-| **API** | \`Globe\` | HTTP-запросы |
-| **Database** | \`Database\` | CRUD-операции |
-| **Storage** | \`HardDrive\` | Файловые операции |
+| **API** | \`Globe\` | HTTP-запросы (GET/POST/PUT/DELETE) |
+| **Database** | \`Database\` | CRUD-операции с таблицами |
+| **Storage** | \`HardDrive\` | Файловые операции (upload/download/signed URL) |
 
 ### AI-специфичные
 
 | Узел | Иконка | Назначение |
 |------|--------|------------|
-| **Embedding** | \`Hash\` | Векторные представления |
-| **Classifier** | \`Tag\` | Классификация текста |
-| **Memory** | \`Brain\` | Долговременная память |
-| **Tool** | \`Wrench\` | Вызов инструмента |
+| **Embedding** | \`Hash\` | Генерация векторных эмбеддингов |
+| **Classifier** | \`Tag\` | Классификация текста по категориям |
+| **Memory** | \`Brain\` | Чтение/запись в долговременную память |
+| **Tool** | \`Wrench\` | Вызов кастомного инструмента |
+
+## Flow Runtime — Выполнение потоков
+
+Редактор включает полноценный движок выполнения потоков с визуализацией в реальном времени.
+
+### Панель выполнения
+
+| Элемент | Иконка | Описание |
+|---------|--------|----------|
+| **Запуск** | \`Play\` | Начать выполнение потока |
+| **Стоп** | \`Square\` | Остановить выполнение |
+| **Очистить** | \`Eraser\` | Сбросить результаты |
+| **Закрыть** | \`X\` | Закрыть панель (автоматически останавливает) |
+
+### Валидация перед запуском
+
+> **Важно**: Для запуска потока необходимо:
+> 1. Наличие хотя бы одного узла **Input**
+> 2. Заполнение поля **inputValue** в свойствах Input-узла
+
+При отсутствии данных отображается: *«Пустой запрос — пустой ответ»*
+
+### Визуализация выполнения
+
+| Индикатор | Цвет | Описание |
+|-----------|------|----------|
+| **Кольцо (running)** | Голубой | Узел выполняется |
+| **Галочка (completed)** | Зелёный | Узел завершён успешно |
+| **Крестик (failed)** | Красный | Ошибка выполнения |
+| **Пауза (waiting)** | Жёлтый | Ожидание пользователя |
+| **Стрелка (skipped)** | Серый | Узел пропущен (bypass) |
+
+### Визуализация данных на связях
+
+При наведении на связь во время/после выполнения отображается:
+
+| Элемент | Описание |
+|---------|----------|
+| **Тип данных** | text / json / file / signal |
+| **Превью данных** | Форматированный JSON или текст |
+| **Пульсирующая точка** | Индикатор прохождения данных |
+
+### Контрольные точки (Checkpoints)
+
+Узел **Checkpoint** приостанавливает выполнение до ручного подтверждения:
+
+1. Поток останавливается на узле Checkpoint
+2. В панели появляется сообщение и кнопки
+3. Нажмите **Подтвердить** или **Отклонить**
+4. Поток продолжится или завершится
 
 ## Пример: Цепочка с критиком
 
 \`\`\`mermaid
 graph LR
     I[Вход] --> P[Промпт]
-    P --> M1[GPT-4]
+    P --> M1[GPT-5]
     P --> M2[Claude]
     M1 --> C[Критик]
     M2 --> C
@@ -1299,7 +1355,7 @@ graph LR
 
       en: `# Thought Flow Editor
 
-A visual tool for designing complex data processing chains.
+A visual tool for designing and **executing** complex data processing chains.
 
 ## Editor Interface
 
@@ -1313,6 +1369,7 @@ A visual tool for designing complex data processing chains.
 | **Auto Layout** | \`LayoutGrid\` | Automatic alignment (Dagre) |
 | **Save** | \`Save\` | Save changes |
 | **Export** | \`Download\` | Export to PNG/SVG/JSON/PDF/Mermaid |
+| **Run** | \`Play\` | Start flow execution |
 | **Back** | \`ArrowLeft\` | Return to diagram list |
 
 ### History (Undo/Redo)
@@ -1381,52 +1438,103 @@ Panel for editing parameters of the selected node.
 
 | Node | Icon | Purpose |
 |------|------|---------|
-| **Input** | \`ArrowRight\` | Data entry point |
+| **Input** | \`ArrowRight\` | Data entry point (required for execution) |
 | **Output** | \`ArrowLeft\` | Result output point |
 | **Prompt** | \`FileText\` | System prompt |
-| **Model** | \`Bot\` | Language model call |
+| **Model** | \`Bot\` | Language model call (Gemini, GPT-5, etc.) |
 
 ### Logic
 
 | Node | Icon | Purpose |
 |------|------|---------|
 | **Condition** | \`HelpCircle\` | Branching (if/else) |
+| **Checkpoint** | \`UserCheck\` | Wait for user confirmation |
 | **Switch** | \`GitBranch\` | Multiple branching |
 | **Loop** | \`RefreshCw\` | Array iteration |
-| **Delay** | \`Timer\` | Execution delay |
+| **Delay** | \`Timer\` | Execution delay (ms/sec/min) |
 
 ### Data
 
 | Node | Icon | Purpose |
 |------|------|---------|
-| **Transform** | \`Wrench\` | Data transformation |
+| **Transform** | \`Wrench\` | Data transformation (JSONPath, regex) |
 | **Filter** | \`Filter\` | Conditional filtering |
-| **Merge** | \`Merge\` | Stream merging |
-| **Split** | \`Scissors\` | Splitting into substreams |
+| **Merge** | \`Merge\` | Merge multiple streams |
+| **Split** | \`Scissors\` | Split into substreams |
 
 ### Integrations
 
 | Node | Icon | Purpose |
 |------|------|---------|
-| **API** | \`Globe\` | HTTP requests |
-| **Database** | \`Database\` | CRUD operations |
-| **Storage** | \`HardDrive\` | File operations |
+| **API** | \`Globe\` | HTTP requests (GET/POST/PUT/DELETE) |
+| **Database** | \`Database\` | CRUD operations with tables |
+| **Storage** | \`HardDrive\` | File operations (upload/download/signed URL) |
 
 ### AI-Specific
 
 | Node | Icon | Purpose |
 |------|------|---------|
-| **Embedding** | \`Hash\` | Vector representations |
-| **Classifier** | \`Tag\` | Text classification |
-| **Memory** | \`Brain\` | Long-term memory |
-| **Tool** | \`Wrench\` | Tool invocation |
+| **Embedding** | \`Hash\` | Generate vector embeddings |
+| **Classifier** | \`Tag\` | Classify text into categories |
+| **Memory** | \`Brain\` | Read/write to long-term memory |
+| **Tool** | \`Wrench\` | Invoke custom tool |
+
+## Flow Runtime — Executing Flows
+
+The editor includes a full-featured flow execution engine with real-time visualization.
+
+### Execution Panel
+
+| Element | Icon | Description |
+|---------|------|-------------|
+| **Run** | \`Play\` | Start flow execution |
+| **Stop** | \`Square\` | Stop execution |
+| **Clear** | \`Eraser\` | Reset results |
+| **Close** | \`X\` | Close panel (auto-stops execution) |
+
+### Pre-run Validation
+
+> **Important**: To run a flow, you need:
+> 1. At least one **Input** node
+> 2. Fill in the **inputValue** field in Input node properties
+
+If no data provided: *"Empty request — empty response"*
+
+### Execution Visualization
+
+| Indicator | Color | Description |
+|-----------|-------|-------------|
+| **Ring (running)** | Blue | Node is executing |
+| **Checkmark (completed)** | Green | Node completed successfully |
+| **Cross (failed)** | Red | Execution error |
+| **Pause (waiting)** | Yellow | Waiting for user |
+| **Arrow (skipped)** | Gray | Node bypassed |
+
+### Data Visualization on Edges
+
+Hover over an edge during/after execution to see:
+
+| Element | Description |
+|---------|-------------|
+| **Data type** | text / json / file / signal |
+| **Data preview** | Formatted JSON or text |
+| **Pulsing dot** | Data flow indicator |
+
+### Checkpoints
+
+**Checkpoint** node pauses execution until manual confirmation:
+
+1. Flow stops at Checkpoint node
+2. Panel shows message and buttons
+3. Click **Confirm** or **Reject**
+4. Flow continues or terminates
 
 ## Example: Chain with Critic
 
 \`\`\`mermaid
 graph LR
     I[Input] --> P[Prompt]
-    P --> M1[GPT-4]
+    P --> M1[GPT-5]
     P --> M2[Claude]
     M1 --> C[Critic]
     M2 --> C
@@ -2558,9 +2666,24 @@ graph LR
 |-----|--------|----------|
 | **message** | \`MessageSquare\` | Сохранённое сообщение |
 | **summary** | \`FileText\` | Резюме или сводка |
-| **decision** | \`CheckCircle\` | Принятое решение |
+| **decision** | \`CheckCircle\` | Принятое решение (авто-сохранение при рейтинге ≥7) |
 | **context** | \`Bookmark\` | Контекстная информация |
 | **instruction** | \`Lightbulb\` | Инструкция или правило |
+
+## Сохранение в память
+
+### Автоматическое сохранение
+
+Ответы моделей с высоким рейтингом (7+ «мозгов») автоматически сохраняются как **decision**.
+
+### Ручное сохранение
+
+| Элемент | Иконка | Описание |
+|---------|--------|----------|
+| **Кнопка сохранения** | \`Package\` | Появляется при наведении на сообщение |
+| **Защита от дубликатов** | ✓ | Повторное сохранение заблокировано |
+
+> **Совет**: При удалении сообщения из чата связанные фрагменты памяти удаляются автоматически.
 
 ## Управление памятью
 
@@ -2571,20 +2694,23 @@ graph LR
 | Элемент | Иконка | Описание |
 |---------|--------|----------|
 | **Индикатор** | \`Brain\` N | Количество сохранённых фрагментов |
+| **Тултип** | (наведение) | Разбивка по типам фрагментов |
 | **Обновить** | \`RefreshCw\` | Принудительное обновление из БД (с анимацией ✓) |
 | **Управление** | \`Settings2\` | Открыть диалог управления |
 
-> **Совет**: Кнопки управления памятью появляются в заголовке Панели экспертов рядом с индикатором (🧠 N).
-
-### Диалог управления памятью
+### Диалог управления памятью (SessionMemoryDialog)
 
 | Элемент | Описание |
 |---------|----------|
-| **Табы фильтрации** | Все / Сообщения / Резюме / Решения / Дубликаты |
+| **Табы фильтрации** | Все / Сообщения / Резюме / Решения / Контекст / Инструкции |
+| **Вкладка «Дубликаты»** | Группировка повторяющихся фрагментов |
 | **Поле поиска** | Текстовый или семантический поиск |
 | **Переключатель режима** | \`Text\` ↔ \`Sparkles\` (AI-поиск) |
+| **Similarity Score** | Процент сходства при семантическом поиске |
 | **Карточки фрагментов** | Содержимое с датой и кнопкой удаления |
+| **Массовое удаление** | Удаление всех дубликатов одной группы |
 | **Очистить все** | Удаление всех фрагментов (с подтверждением) |
+| **ScrollArea** | Вертикальная прокрутка для больших объёмов |
 
 ## Семантический поиск
 
@@ -2594,7 +2720,7 @@ graph LR
 2. Введите поисковый запрос **на естественном языке**
 3. Система генерирует векторный эмбеддинг через Edge Function
 4. pgvector находит ближайшие по косинусному расстоянию фрагменты
-5. Результаты сортируются по **релевантности** (%)
+5. Результаты сортируются по **Similarity Score** (%)
 
 ### Преимущества
 
@@ -2608,21 +2734,23 @@ graph LR
 
 | Элемент | Описание |
 |---------|----------|
-| **Процент релевантности** | \`85%\` — близость к запросу |
+| **Similarity Score** | \`85%\` — близость к запросу |
 | **Бейдж типа** | Цветовая маркировка категории |
 | **Дата создания** | Когда фрагмент был сохранён |
 
-## Поиск дубликатов
+## Обнаружение дубликатов
 
 Система автоматически определяет повторяющиеся фрагменты:
 
 1. Переключитесь на вкладку **«Дубликаты»**
-2. Дубликаты выделены **янтарной** рамкой
-3. Отображается счётчик повторов (×N)
+2. Дубликаты сгруппированы по содержимому
+3. Выделены **янтарной** рамкой
+4. Отображается счётчик повторов (×N)
+5. Кнопка **«Удалить группу»** для массовой очистки
 
 > **Совет**: Регулярно очищайте дубликаты для оптимизации контекста.
 
-## Интеграция с ответами
+## Интеграция с ответами (RAG)
 
 Сохранённые фрагменты автоматически используются при генерации ответов консультанта:
 
@@ -2644,7 +2772,8 @@ graph LR
 | **Размерность вектора** | 1536 (OpenAI text-embedding-3-small) |
 | **Индекс** | HNSW (pgvector) |
 | **Метрика** | Косинусное расстояние |
-| **RLS** | Доступ только к своим сессиям |`,
+| **RLS** | Доступ только к своим сессиям |
+| **API-ключ** | Требуется OpenAI ключ в профиле |`,
 
       en: `# Session Memory
 
@@ -2678,9 +2807,24 @@ graph LR
 |------|------|-------------|
 | **message** | \`MessageSquare\` | Saved message |
 | **summary** | \`FileText\` | Summary or recap |
-| **decision** | \`CheckCircle\` | Made decision |
+| **decision** | \`CheckCircle\` | Made decision (auto-saved at rating ≥7) |
 | **context** | \`Bookmark\` | Contextual information |
 | **instruction** | \`Lightbulb\` | Instruction or rule |
+
+## Saving to Memory
+
+### Automatic Saving
+
+Model responses with high ratings (7+ brains) are automatically saved as **decision**.
+
+### Manual Saving
+
+| Element | Icon | Description |
+|---------|------|-------------|
+| **Save button** | \`Package\` | Appears on message hover |
+| **Duplicate protection** | ✓ | Re-saving is blocked |
+
+> **Tip**: When deleting a message from chat, related memory fragments are automatically deleted.
 
 ## Memory Management
 
@@ -2691,20 +2835,23 @@ Session memory is accessible both in D-Chat (consultant) and in the main chat (E
 | Element | Icon | Description |
 |---------|------|-------------|
 | **Indicator** | \`Brain\` N | Number of saved fragments |
+| **Tooltip** | (hover) | Breakdown by fragment types |
 | **Refresh** | \`RefreshCw\` | Force refresh from DB (with ✓ animation) |
 | **Manage** | \`Settings2\` | Open management dialog |
 
-> **Tip**: Memory management buttons appear in the Expert Panel header next to the indicator (🧠 N).
-
-### Memory Management Dialog
+### Memory Management Dialog (SessionMemoryDialog)
 
 | Element | Description |
 |---------|-------------|
-| **Filter tabs** | All / Messages / Summaries / Decisions / Duplicates |
+| **Filter tabs** | All / Messages / Summaries / Decisions / Context / Instructions |
+| **Duplicates tab** | Grouping of repeating fragments |
 | **Search field** | Text or semantic search |
 | **Mode toggle** | \`Text\` ↔ \`Sparkles\` (AI search) |
+| **Similarity Score** | Similarity percentage for semantic search |
 | **Fragment cards** | Content with date and delete button |
+| **Bulk delete** | Delete all duplicates in a group |
 | **Clear all** | Delete all fragments (with confirmation) |
+| **ScrollArea** | Vertical scroll for large volumes |
 
 ## Semantic Search
 
@@ -2714,7 +2861,7 @@ Session memory is accessible both in D-Chat (consultant) and in the main chat (E
 2. Enter a search query in **natural language**
 3. System generates vector embedding via Edge Function
 4. pgvector finds nearest fragments by cosine distance
-5. Results are sorted by **relevance** (%)
+5. Results are sorted by **Similarity Score** (%)
 
 ### Advantages
 
@@ -2728,7 +2875,7 @@ Session memory is accessible both in D-Chat (consultant) and in the main chat (E
 
 | Element | Description |
 |---------|-------------|
-| **Relevance percentage** | \`85%\` — closeness to query |
+| **Similarity Score** | \`85%\` — closeness to query |
 | **Type badge** | Color-coded category |
 | **Creation date** | When fragment was saved |
 
@@ -2737,12 +2884,14 @@ Session memory is accessible both in D-Chat (consultant) and in the main chat (E
 The system automatically identifies repeating fragments:
 
 1. Switch to the **"Duplicates"** tab
-2. Duplicates are highlighted with an **amber** border
-3. Repeat count is shown (×N)
+2. Duplicates are grouped by content
+3. Highlighted with an **amber** border
+4. Repeat count is shown (×N)
+5. **"Delete group"** button for bulk cleanup
 
 > **Tip**: Regularly clean duplicates to optimize context.
 
-## Integration with Responses
+## Integration with Responses (RAG)
 
 Saved fragments are automatically used when generating consultant responses:
 
@@ -2764,7 +2913,8 @@ This helps the model consider discussion history without re-sending the entire d
 | **Vector dimension** | 1536 (OpenAI text-embedding-3-small) |
 | **Index** | HNSW (pgvector) |
 | **Metric** | Cosine distance |
-| **RLS** | Access only to own sessions |`
+| **RLS** | Access only to own sessions |
+| **API key** | OpenAI key required in profile |`
     }
   },
   {
@@ -3614,6 +3764,77 @@ graph LR
    - \`analysis\` — аналитика
    - \`technical\` — технические задачи
 
+## Flow Runtime — Движок выполнения
+
+Flow Runtime — это серверный движок для **автономного выполнения** Flow-диаграмм как пайплайнов обработки данных.
+
+### Архитектура
+
+\`\`\`mermaid
+graph TD
+    FE[Flow Editor UI] --> API[Edge Function: flow-runtime]
+    API --> SCH[Scheduler: топологическая сортировка]
+    SCH --> EX[Executor: послойное выполнение]
+    EX --> NR[Node Runners]
+    NR --> SSE[SSE-стрим событий]
+    SSE --> FE
+\`\`\`
+
+### Компоненты движка
+
+| Компонент | Файл | Назначение |
+|-----------|------|------------|
+| **Scheduler** | \`scheduler.ts\` | DAG-планировщик, топологическая сортировка |
+| **Executor** | \`executor.ts\` | Оркестрация узлов, управление состоянием |
+| **Runners** | \`runners.ts\` | Реализации узлов (Model, API, DB и др.) |
+| **Types** | \`types.ts\` | Типы событий и состояний |
+
+### Поддерживаемые узлы (Node Runners)
+
+| Узел | Функция | Описание |
+|------|---------|----------|
+| **Input** | \`runInputNode\` | Точка входа данных |
+| **Prompt** | \`runPromptNode\` | Формирование системного промпта |
+| **Model** | \`runModelNode\` | Вызов AI-модели через Lovable AI Gateway |
+| **Condition** | \`runConditionNode\` | Логическое ветвление |
+| **Checkpoint** | \`runCheckpointNode\` | Ожидание подтверждения пользователя |
+| **Transform** | \`runTransformNode\` | Преобразование данных (JSONPath, regex) |
+| **Filter** | \`runFilterNode\` | Фильтрация по условию |
+| **Merge** | \`runMergeNode\` | Объединение потоков |
+| **Split** | \`runSplitNode\` | Разделение на подпотоки |
+| **Delay** | \`runDelayNode\` | Задержка выполнения |
+| **Output** | \`runOutputNode\` | Финальный результат |
+| **API** | \`runApiNode\` | HTTP-запросы |
+| **Database** | \`runDatabaseNode\` | CRUD через Supabase |
+| **Storage** | \`runStorageNode\` | Файловые операции |
+| **Loop** | \`runLoopNode\` | Итерация по массиву |
+| **Switch** | \`runSwitchNode\` | Множественное ветвление |
+| **Embedding** | \`runEmbeddingNode\` | Генерация векторов |
+| **Memory** | \`runMemoryNode\` | Работа с session_memory |
+| **Classifier** | \`runClassifierNode\` | AI-классификация текста |
+| **Tool** | \`runToolNode\` | Вызов кастомного инструмента |
+
+### SSE-события
+
+Движок стримит события в реальном времени:
+
+| Событие | Описание |
+|---------|----------|
+| \`flow_start\` | Поток начал выполнение |
+| \`node_start\` | Узел начал выполнение |
+| \`node_progress\` | Прогресс узла (опционально) |
+| \`node_complete\` | Узел завершён успешно |
+| \`node_error\` | Ошибка выполнения узла |
+| \`checkpoint\` | Ожидание подтверждения |
+| \`flow_complete\` | Поток завершён |
+| \`flow_error\` | Критическая ошибка |
+
+### Модель по умолчанию
+
+Движок использует \`google/gemini-3-flash-preview\` для узлов Model и Classifier, так как эта модель поддерживается Lovable AI Gateway.
+
+> **Важно**: Старые диаграммы с \`openai/gpt-4o-mini\` требуют ручной корректировки в БД.
+
 ## Ролевые шаблоны (Role Behaviors)
 
 Ролевые шаблоны определяют **характер и стиль** каждого агента:
@@ -3682,7 +3903,7 @@ graph LR
 |------------------|--------------|
 | Этап (Stage) | Group Node (контейнер) |
 | Роль на этапе | Model Node внутри группы |
-| Контрольная точка | Condition Node |
+| Контрольная точка | Checkpoint Node |
 | Результат (Deliverable) | Output Node |
 
 ## Рекомендации по созданию паттернов
@@ -3796,6 +4017,77 @@ graph LR
    - \`analysis\` — analytics
    - \`technical\` — technical tasks
 
+## Flow Runtime — Execution Engine
+
+Flow Runtime is a server-side engine for **autonomous execution** of Flow diagrams as data processing pipelines.
+
+### Architecture
+
+\`\`\`mermaid
+graph TD
+    FE[Flow Editor UI] --> API[Edge Function: flow-runtime]
+    API --> SCH[Scheduler: topological sort]
+    SCH --> EX[Executor: layer-by-layer execution]
+    EX --> NR[Node Runners]
+    NR --> SSE[SSE event stream]
+    SSE --> FE
+\`\`\`
+
+### Engine Components
+
+| Component | File | Purpose |
+|-----------|------|---------|
+| **Scheduler** | \`scheduler.ts\` | DAG planner, topological sorting |
+| **Executor** | \`executor.ts\` | Node orchestration, state management |
+| **Runners** | \`runners.ts\` | Node implementations (Model, API, DB, etc.) |
+| **Types** | \`types.ts\` | Event and state types |
+
+### Supported Nodes (Node Runners)
+
+| Node | Function | Description |
+|------|----------|-------------|
+| **Input** | \`runInputNode\` | Data entry point |
+| **Prompt** | \`runPromptNode\` | System prompt formation |
+| **Model** | \`runModelNode\` | AI model call via Lovable AI Gateway |
+| **Condition** | \`runConditionNode\` | Logical branching |
+| **Checkpoint** | \`runCheckpointNode\` | Wait for user confirmation |
+| **Transform** | \`runTransformNode\` | Data transformation (JSONPath, regex) |
+| **Filter** | \`runFilterNode\` | Conditional filtering |
+| **Merge** | \`runMergeNode\` | Stream merging |
+| **Split** | \`runSplitNode\` | Split into substreams |
+| **Delay** | \`runDelayNode\` | Execution delay |
+| **Output** | \`runOutputNode\` | Final result |
+| **API** | \`runApiNode\` | HTTP requests |
+| **Database** | \`runDatabaseNode\` | CRUD via Supabase |
+| **Storage** | \`runStorageNode\` | File operations |
+| **Loop** | \`runLoopNode\` | Array iteration |
+| **Switch** | \`runSwitchNode\` | Multiple branching |
+| **Embedding** | \`runEmbeddingNode\` | Vector generation |
+| **Memory** | \`runMemoryNode\` | Work with session_memory |
+| **Classifier** | \`runClassifierNode\` | AI text classification |
+| **Tool** | \`runToolNode\` | Custom tool invocation |
+
+### SSE Events
+
+The engine streams events in real-time:
+
+| Event | Description |
+|-------|-------------|
+| \`flow_start\` | Flow started execution |
+| \`node_start\` | Node started execution |
+| \`node_progress\` | Node progress (optional) |
+| \`node_complete\` | Node completed successfully |
+| \`node_error\` | Node execution error |
+| \`checkpoint\` | Waiting for confirmation |
+| \`flow_complete\` | Flow completed |
+| \`flow_error\` | Critical error |
+
+### Default Model
+
+The engine uses \`google/gemini-3-flash-preview\` for Model and Classifier nodes, as this model is supported by Lovable AI Gateway.
+
+> **Important**: Old diagrams with \`openai/gpt-4o-mini\` require manual database correction.
+
 ## Role Behaviors
 
 Role behaviors define the **character and style** of each agent:
@@ -3864,7 +4156,7 @@ System patterns can be visualized through Flow Editor:
 |-----------------|--------------|
 | Stage | Group Node (container) |
 | Role in stage | Model Node inside group |
-| Checkpoint | Condition Node |
+| Checkpoint | Checkpoint Node |
 | Deliverable | Output Node |
 
 ## Pattern Creation Recommendations
