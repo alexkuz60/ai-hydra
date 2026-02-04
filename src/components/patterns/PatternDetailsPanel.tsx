@@ -296,60 +296,47 @@ const RoleBehaviorDetails: React.FC<{ pattern: RoleBehavior }> = ({ pattern }) =
 
       <Separator className="my-4" />
 
-      {/* Reactions */}
+      {/* Reactions - compact badge layout */}
       <div className="mb-6">
         <h3 className="text-sm font-medium text-muted-foreground mb-3">
           {t('patterns.reactions')} ({pattern.reactions.length})
         </h3>
-        <div className="space-y-2">
-          <TooltipProvider delayDuration={300}>
-            {pattern.reactions.map((reaction, index) => {
-              const triggerEntry = TRIGGER_DICTIONARY.entries.find(e => e.key === reaction.trigger);
-              const behaviorEntry = BEHAVIOR_DICTIONARY.entries.find(e => e.key === reaction.behavior);
-              
-              const triggerLabel = triggerEntry?.label[language as 'ru' | 'en'] || reaction.trigger;
-              const triggerDesc = triggerEntry?.description?.[language as 'ru' | 'en'];
-              const behaviorLabel = behaviorEntry?.label[language as 'ru' | 'en'] || reaction.behavior;
-              const behaviorDesc = behaviorEntry?.description?.[language as 'ru' | 'en'];
-              
-              return (
-                <div
-                  key={index}
-                  className="p-3 rounded-lg bg-muted/30 border border-border/50"
-                >
-                  <div className="text-xs text-muted-foreground mb-1 flex items-center gap-1">
-                    {t('patterns.trigger')}:{' '}
-                    {triggerDesc ? (
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <span className="text-foreground cursor-help underline decoration-dotted underline-offset-2">
-                            {triggerLabel}
-                          </span>
-                        </TooltipTrigger>
-                        <TooltipContent side="top" className="max-w-xs">
-                          <p className="text-xs">{triggerDesc}</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    ) : (
-                      <span className="text-foreground">{triggerLabel}</span>
-                    )}
+        <div className="p-3 rounded-lg bg-muted/30 border border-border/50">
+          <span className="text-xs text-muted-foreground">{t('patterns.reactionTriggers')}</span>
+          <div className="flex flex-wrap gap-1 mt-2">
+            <TooltipProvider delayDuration={300}>
+              {pattern.reactions.map((reaction, index) => {
+                const triggerEntry = TRIGGER_DICTIONARY.entries.find(e => e.key === reaction.trigger);
+                const behaviorEntry = BEHAVIOR_DICTIONARY.entries.find(e => e.key === reaction.behavior);
+                
+                const triggerLabel = triggerEntry?.label[language as 'ru' | 'en'] || reaction.trigger;
+                const triggerDesc = triggerEntry?.description?.[language as 'ru' | 'en'];
+                const behaviorLabel = behaviorEntry?.label[language as 'ru' | 'en'] || reaction.behavior;
+                const behaviorDesc = behaviorEntry?.description?.[language as 'ru' | 'en'];
+                
+                const tooltipContent = (
+                  <div className="space-y-1">
+                    {triggerDesc && <p className="text-xs"><span className="text-muted-foreground">{t('patterns.trigger')}:</span> {triggerDesc}</p>}
+                    <p className="text-xs"><span className="text-muted-foreground">{t('patterns.behavior')}:</span> {behaviorLabel}</p>
+                    {behaviorDesc && <p className="text-xs text-muted-foreground">{behaviorDesc}</p>}
                   </div>
-                  {behaviorDesc ? (
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <p className="text-sm cursor-help">{behaviorLabel}</p>
-                      </TooltipTrigger>
-                      <TooltipContent side="top" className="max-w-xs">
-                        <p className="text-xs">{behaviorDesc}</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  ) : (
-                    <p className="text-sm">{behaviorLabel}</p>
-                  )}
-                </div>
-              );
-            })}
-          </TooltipProvider>
+                );
+                
+                return (
+                  <Tooltip key={index}>
+                    <TooltipTrigger asChild>
+                      <Badge variant="secondary" className="text-xs cursor-help">
+                        {triggerLabel}
+                      </Badge>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="max-w-xs">
+                      {tooltipContent}
+                    </TooltipContent>
+                  </Tooltip>
+                );
+              })}
+            </TooltipProvider>
+          </div>
         </div>
       </div>
 

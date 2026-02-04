@@ -84,6 +84,8 @@ const translations: Translations = {
   'patterns.verbosity': { ru: 'Детальность', en: 'Verbosity' },
   'patterns.formatPreference': { ru: 'Предпочтения формата', en: 'Format Preference' },
   'patterns.trigger': { ru: 'Триггер', en: 'Trigger' },
+  'patterns.reactionTriggers': { ru: 'Триггеры реакций', en: 'Reaction Triggers' },
+  'patterns.behavior': { ru: 'Поведение', en: 'Behavior' },
   'patterns.defersTo': { ru: 'Уступает', en: 'Defers to' },
   'patterns.challenges': { ru: 'Оспаривает', en: 'Challenges' },
   'patterns.collaborates': { ru: 'Сотрудничает', en: 'Collaborates with' },
