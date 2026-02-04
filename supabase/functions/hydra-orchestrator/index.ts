@@ -623,6 +623,48 @@ async function callPersonalModel(
     };
   }
 
+  // DeepSeek (OpenAI-compatible API)
+  if (provider === "deepseek") {
+    const userContent = imageAttachments.length > 0 
+      ? buildMultimodalContent(message, attachments)
+      : message;
+    
+    // DeepSeek-R1 is a reasoning model, handle reasoning_content
+    const isReasoningModel = model === 'deepseek-reasoner';
+      
+    const response = await fetch("https://api.deepseek.com/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model,
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userContent },
+        ],
+        temperature: isReasoningModel ? undefined : temperature, // R1 doesn't support temperature
+        max_tokens: maxTokens,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`DeepSeek error: ${errorText}`);
+    }
+    const data = await response.json();
+    const messageResponse = data.choices?.[0]?.message;
+    
+    return { 
+      model, 
+      provider: "deepseek", 
+      content: messageResponse?.content || "",
+      reasoning: messageResponse?.reasoning_content || null, // R1 provides reasoning
+      usage: data.usage || null,
+    };
+  }
+
   throw new Error(`Unknown provider: ${provider}`);
 }
 
@@ -823,6 +865,8 @@ serve(async (req) => {
           if (modelReq.provider === "anthropic") apiKey = apiKeys?.anthropic_api_key;
           if (modelReq.provider === "xai") apiKey = apiKeys?.xai_api_key;
           if (modelReq.provider === "openrouter") apiKey = (apiKeys as { openrouter_api_key?: string | null })?.openrouter_api_key ?? null;
+          if (modelReq.provider === "groq") apiKey = (apiKeys as { groq_api_key?: string | null })?.groq_api_key ?? null;
+          if (modelReq.provider === "deepseek") apiKey = (apiKeys as { deepseek_api_key?: string | null })?.deepseek_api_key ?? null;
 
           if (!apiKey) {
             throw new Error(`No API key configured for ${modelReq.provider}`);
