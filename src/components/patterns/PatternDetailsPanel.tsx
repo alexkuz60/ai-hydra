@@ -241,16 +241,18 @@ const RoleBehaviorDetails: React.FC<{ pattern: RoleBehavior }> = ({ pattern }) =
             </p>
           </div>
         </div>
-        <div className="mt-3 p-3 rounded-lg bg-muted/30 border border-border/50">
-          <span className="text-xs text-muted-foreground">{t('patterns.formatPreference')}</span>
-          <div className="flex flex-wrap gap-1 mt-2">
-            {pattern.communication.format_preference.map((format) => (
-              <Badge key={format} variant="secondary" className="text-xs">
-                {format}
-              </Badge>
-            ))}
+        {pattern.communication?.format_preference && pattern.communication.format_preference.length > 0 && (
+          <div className="mt-3 p-3 rounded-lg bg-muted/30 border border-border/50">
+            <span className="text-xs text-muted-foreground">{t('patterns.formatPreference')}</span>
+            <div className="flex flex-wrap gap-1 mt-2">
+              {pattern.communication.format_preference.map((format) => (
+                <Badge key={format} variant="secondary" className="text-xs">
+                  {format}
+                </Badge>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       <Separator className="my-4" />
