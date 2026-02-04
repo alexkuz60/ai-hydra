@@ -20,7 +20,7 @@ import {
 } from 'lucide-react';
 
 // Technical staff roles only
-type TechRole = 'archivist' | 'analyst' | 'promptengineer' | 'flowregulator';
+type TechRole = 'archivist' | 'analyst' | 'promptengineer' | 'flowregulator' | 'toolsmith';
 
 const TECH_ROLES: TechRole[] = AGENT_ROLES.filter(
   role => ROLE_CONFIG[role].isTechnicalStaff
