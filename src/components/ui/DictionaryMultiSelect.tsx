@@ -17,9 +17,15 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { Input } from '@/components/ui/input';
 import { useLanguage } from '@/contexts/LanguageContext';
-import type { Dictionary } from '@/config/behaviorDictionaries';
+import type { Dictionary, DictionaryEntry } from '@/config/behaviorDictionaries';
 import { getEntryLabel, findEntryByKey } from '@/config/behaviorDictionaries';
 
 interface DictionaryMultiSelectProps {
@@ -29,6 +35,11 @@ interface DictionaryMultiSelectProps {
   placeholder?: string;
   allowCustom?: boolean;
   className?: string;
+}
+
+// Helper to get description by language
+function getEntryDescription(entry: DictionaryEntry, language: 'ru' | 'en'): string | undefined {
+  return entry.description?.[language];
 }
 
 export function DictionaryMultiSelect({
@@ -51,6 +62,7 @@ export function DictionaryMultiSelect({
       return {
         key: v,
         label: entry ? getEntryLabel(entry, language) : v,
+        description: entry ? getEntryDescription(entry, language) : undefined,
       };
     });
   }, [values, dictionary, language]);
@@ -92,26 +104,45 @@ export function DictionaryMultiSelect({
 
   return (
     <div className={cn('space-y-2', className)}>
-      {/* Selected tags */}
+      {/* Selected tags with tooltips */}
       {selectedLabels.length > 0 && (
-        <div className="flex flex-wrap gap-1.5">
-          {selectedLabels.map(({ key, label }) => (
-            <Badge
-              key={key}
-              variant="secondary"
-              className="flex items-center gap-1 pr-1"
-            >
-              {label}
-              <button
-                type="button"
-                onClick={() => handleRemove(key)}
-                className="ml-1 rounded-full hover:bg-muted-foreground/20 p-0.5"
-              >
-                <X className="h-3 w-3" />
-              </button>
-            </Badge>
-          ))}
-        </div>
+        <TooltipProvider delayDuration={300}>
+          <div className="flex flex-wrap gap-1.5">
+            {selectedLabels.map(({ key, label, description }) => {
+              const badge = (
+                <Badge
+                  key={key}
+                  variant="secondary"
+                  className="flex items-center gap-1 pr-1"
+                >
+                  {label}
+                  <button
+                    type="button"
+                    onClick={() => handleRemove(key)}
+                    className="ml-1 rounded-full hover:bg-muted-foreground/20 p-0.5"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </Badge>
+              );
+
+              if (description) {
+                return (
+                  <Tooltip key={key}>
+                    <TooltipTrigger asChild>
+                      {badge}
+                    </TooltipTrigger>
+                    <TooltipContent className="max-w-[250px]">
+                      <p className="text-sm">{description}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                );
+              }
+
+              return badge;
+            })}
+          </div>
+        </TooltipProvider>
       )}
 
       {/* Custom input mode */}
@@ -160,27 +191,48 @@ export function DictionaryMultiSelect({
               <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-[300px] p-0" align="start">
+          <PopoverContent className="w-[320px] p-0" align="start">
             <Command>
               <CommandInput placeholder={t('patterns.dictionary.searchPlaceholder')} />
               <CommandList>
                 <CommandEmpty>{t('patterns.dictionary.noResults')}</CommandEmpty>
                 
-                <CommandGroup>
-                  {availableEntries.map((entry) => (
-                    <CommandItem
-                      key={entry.key}
-                      value={`${entry.key} ${getEntryLabel(entry, language)}`}
-                      onSelect={() => {
-                        handleSelect(entry.key);
-                        setOpen(false);
-                      }}
-                    >
-                      <Plus className="mr-2 h-4 w-4" />
-                      {getEntryLabel(entry, language)}
-                    </CommandItem>
-                  ))}
-                </CommandGroup>
+                <TooltipProvider delayDuration={300}>
+                  <CommandGroup>
+                    {availableEntries.map((entry) => {
+                      const description = getEntryDescription(entry, language);
+                      const itemContent = (
+                        <CommandItem
+                          key={entry.key}
+                          value={`${entry.key} ${getEntryLabel(entry, language)}`}
+                          onSelect={() => {
+                            handleSelect(entry.key);
+                            setOpen(false);
+                          }}
+                          className="cursor-pointer"
+                        >
+                          <Plus className="mr-2 h-4 w-4 flex-shrink-0" />
+                          <span className="truncate">{getEntryLabel(entry, language)}</span>
+                        </CommandItem>
+                      );
+
+                      if (description) {
+                        return (
+                          <Tooltip key={entry.key}>
+                            <TooltipTrigger asChild>
+                              {itemContent}
+                            </TooltipTrigger>
+                            <TooltipContent side="right" className="max-w-[250px]">
+                              <p className="text-sm">{description}</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        );
+                      }
+
+                      return itemContent;
+                    })}
+                  </CommandGroup>
+                </TooltipProvider>
                 
                 {allowCustom && (
                   <>
@@ -192,6 +244,7 @@ export function DictionaryMultiSelect({
                           setCustomMode(true);
                           setOpen(false);
                         }}
+                        className="cursor-pointer"
                       >
                         <Plus className="mr-2 h-4 w-4" />
                         {t('patterns.dictionary.other')}

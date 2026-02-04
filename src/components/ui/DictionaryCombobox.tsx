@@ -16,10 +16,16 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { Input } from '@/components/ui/input';
 import { useLanguage } from '@/contexts/LanguageContext';
 import type { Dictionary, DictionaryEntry } from '@/config/behaviorDictionaries';
-import { getEntryLabel, findEntryByKey, getCategoryLabel, getEntriesByCategory } from '@/config/behaviorDictionaries';
+import { getEntryLabel, findEntryByKey, getEntriesByCategory } from '@/config/behaviorDictionaries';
 
 interface DictionaryComboboxProps {
   dictionary: Dictionary;
@@ -28,6 +34,11 @@ interface DictionaryComboboxProps {
   placeholder?: string;
   allowCustom?: boolean;
   className?: string;
+}
+
+// Helper to get description by language
+function getEntryDescription(entry: DictionaryEntry, language: 'ru' | 'en'): string | undefined {
+  return entry.description?.[language];
 }
 
 export function DictionaryCombobox({
@@ -142,34 +153,55 @@ export function DictionaryCombobox({
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[300px] p-0" align="start">
+      <PopoverContent className="w-[320px] p-0" align="start">
         <Command>
           <CommandInput placeholder={t('patterns.dictionary.searchPlaceholder')} />
           <CommandList>
             <CommandEmpty>{t('patterns.dictionary.noResults')}</CommandEmpty>
             
-            {groupedEntries.map((group, groupIndex) => (
-              <React.Fragment key={group.key}>
-                {groupIndex > 0 && <CommandSeparator />}
-                <CommandGroup heading={group.label || undefined}>
-                  {group.entries.map((entry) => (
-                    <CommandItem
-                      key={entry.key}
-                      value={`${entry.key} ${getEntryLabel(entry, language)}`}
-                      onSelect={() => handleSelect(entry.key)}
-                    >
-                      <Check
-                        className={cn(
-                          'mr-2 h-4 w-4',
-                          value === entry.key ? 'opacity-100' : 'opacity-0'
-                        )}
-                      />
-                      {getEntryLabel(entry, language)}
-                    </CommandItem>
-                  ))}
-                </CommandGroup>
-              </React.Fragment>
-            ))}
+            <TooltipProvider delayDuration={300}>
+              {groupedEntries.map((group, groupIndex) => (
+                <React.Fragment key={group.key}>
+                  {groupIndex > 0 && <CommandSeparator />}
+                  <CommandGroup heading={group.label || undefined}>
+                    {group.entries.map((entry) => {
+                      const description = getEntryDescription(entry, language);
+                      const itemContent = (
+                        <CommandItem
+                          key={entry.key}
+                          value={`${entry.key} ${getEntryLabel(entry, language)}`}
+                          onSelect={() => handleSelect(entry.key)}
+                          className="cursor-pointer"
+                        >
+                          <Check
+                            className={cn(
+                              'mr-2 h-4 w-4 flex-shrink-0',
+                              value === entry.key ? 'opacity-100' : 'opacity-0'
+                            )}
+                          />
+                          <span className="truncate">{getEntryLabel(entry, language)}</span>
+                        </CommandItem>
+                      );
+                      
+                      if (description) {
+                        return (
+                          <Tooltip key={entry.key}>
+                            <TooltipTrigger asChild>
+                              {itemContent}
+                            </TooltipTrigger>
+                            <TooltipContent side="right" className="max-w-[250px]">
+                              <p className="text-sm">{description}</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        );
+                      }
+                      
+                      return itemContent;
+                    })}
+                  </CommandGroup>
+                </React.Fragment>
+              ))}
+            </TooltipProvider>
             
             {allowCustom && (
               <>
@@ -182,6 +214,7 @@ export function DictionaryCombobox({
                       setCustomValue(currentEntry ? '' : value);
                       setOpen(false);
                     }}
+                    className="cursor-pointer"
                   >
                     <PenLine className="mr-2 h-4 w-4" />
                     {t('patterns.dictionary.other')}
