@@ -382,12 +382,48 @@ function FlowEditorContent() {
       return;
     }
 
+    // Validate input nodes
+    const inputNodes = nodes.filter(n => n.type === 'input');
+    if (inputNodes.length === 0) {
+      toast({
+        title: t('flowEditor.emptyInputTitle'),
+        description: t('flowEditor.emptyInputDescription'),
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Check if at least one input node has data
+    const hasInputData = inputNodes.some(n => {
+      const inputValue = n.data?.inputValue as string | undefined;
+      return inputValue && inputValue.trim().length > 0;
+    });
+
+    if (!hasInputData) {
+      toast({
+        title: t('flowEditor.emptyInputTitle'),
+        description: t('flowEditor.emptyInputDescription'),
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Collect input data from all input nodes
+    const inputData = inputNodes.reduce((acc, node) => {
+      const value = (node.data?.inputValue as string) || '';
+      return {
+        ...acc,
+        [node.id]: value,
+        input: value, // fallback for single input
+      };
+    }, {} as Record<string, string>);
+
     // Generate a unique session ID for this execution
     const executionSessionId = `flow-exec-${Date.now()}`;
     setShowExecutionPanel(true);
     
-    await flowRuntime.startFlow(currentDiagramId, executionSessionId);
-  }, [currentDiagramId, flowRuntime, toast, t]);
+    await flowRuntime.startFlow(currentDiagramId, executionSessionId, inputData);
+  }, [currentDiagramId, flowRuntime, toast, t, nodes]);
 
   const handleStopExecution = useCallback(() => {
     flowRuntime.cancelFlow();

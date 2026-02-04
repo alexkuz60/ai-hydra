@@ -476,6 +476,12 @@ const translations: Translations = {
   'flowEditor.validation.invalidTableName': { ru: 'Некорректное имя таблицы', en: 'Invalid table name' },
   'flowEditor.validation.invalidBucketName': { ru: 'Некорректное имя бакета', en: 'Invalid bucket name' },
   
+  // Input validation
+  'flowEditor.emptyInputTitle': { ru: 'Пустой запрос — пустой ответ', en: 'Empty request — empty response' },
+  'flowEditor.emptyInputDescription': { ru: 'Заполните входные данные в настройках блока', en: 'Fill in input data in block settings' },
+  'flowEditor.properties.inputValue': { ru: 'Входные данные', en: 'Input Data' },
+  'flowEditor.properties.inputValuePlaceholder': { ru: 'Введите данные для передачи в поток...', en: 'Enter data to pass to the flow...' },
+  
   // Bypass mode
   'flowEditor.bypassEnabled': { ru: 'Bypass включён', en: 'Bypass enabled' },
   'flowEditor.bypassDisabled': { ru: 'Bypass отключён', en: 'Bypass disabled' },
