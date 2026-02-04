@@ -5,7 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 export interface ModelOption {
   id: string;
   name: string;
-  provider: 'lovable' | 'openai' | 'gemini' | 'anthropic' | 'xai' | 'openrouter' | 'groq';
+  provider: 'lovable' | 'openai' | 'gemini' | 'anthropic' | 'xai' | 'openrouter' | 'groq' | 'deepseek';
   requiresApiKey: boolean;
 }
 
@@ -60,6 +60,10 @@ export const PERSONAL_KEY_MODELS: ModelOption[] = [
   { id: 'llama-3.2-90b-vision-preview', name: 'Llama 3.2 90B Vision', provider: 'groq', requiresApiKey: true },
   { id: 'mixtral-8x7b-32768', name: 'Mixtral 8x7B', provider: 'groq', requiresApiKey: true },
   { id: 'gemma2-9b-it', name: 'Gemma 2 9B', provider: 'groq', requiresApiKey: true },
+  
+  // DeepSeek models
+  { id: 'deepseek-chat', name: 'DeepSeek-V3', provider: 'deepseek', requiresApiKey: true },
+  { id: 'deepseek-reasoner', name: 'DeepSeek-R1 (Reasoning)', provider: 'deepseek', requiresApiKey: true },
 ];
 
 // All valid model IDs for filtering deprecated models (centralized)
@@ -99,6 +103,7 @@ interface UserApiKeys {
   groq: boolean;
   tavily: boolean;
   perplexity: boolean;
+  deepseek: boolean;
 }
 
 export function useAvailableModels() {
@@ -113,6 +118,7 @@ export function useAvailableModels() {
     groq: false,
     tavily: false,
     perplexity: false,
+    deepseek: false,
   });
   const [loading, setLoading] = useState(true);
 
@@ -149,6 +155,7 @@ export function useAvailableModels() {
             has_groq?: boolean;
             has_tavily?: boolean;
             has_perplexity?: boolean;
+            has_deepseek?: boolean;
           };
           setUserApiKeys({
             openai: status.has_openai || false,
@@ -159,6 +166,7 @@ export function useAvailableModels() {
             groq: status.has_groq || false,
             tavily: status.has_tavily || false,
             perplexity: status.has_perplexity || false,
+            deepseek: status.has_deepseek || false,
           });
         }
       } catch (error) {
@@ -179,6 +187,7 @@ export function useAvailableModels() {
     if (model.provider === 'xai') return userApiKeys.xai;
     if (model.provider === 'openrouter') return userApiKeys.openrouter;
     if (model.provider === 'groq') return userApiKeys.groq;
+    if (model.provider === 'deepseek') return userApiKeys.deepseek;
     return false;
   });
 
