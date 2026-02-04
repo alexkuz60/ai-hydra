@@ -1,16 +1,18 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { FlowDiagram, FlowNodeData } from '@/types/flow';
+import { FlowDiagram, FlowNodeData, FlowDiagramSource } from '@/types/flow';
 import { Node, Edge, Viewport } from '@xyflow/react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
+import { useUserRoles } from '@/hooks/useUserRoles';
 
 export function useFlowDiagrams() {
   const { toast } = useToast();
   const { user } = useAuth();
+  const { isAdmin } = useUserRoles();
   const queryClient = useQueryClient();
 
-  const { data: diagrams = [], isLoading } = useQuery({
+  const { data: allDiagrams = [], isLoading } = useQuery({
     queryKey: ['flow-diagrams', user?.id],
     queryFn: async () => {
       if (!user) return [];
@@ -28,10 +30,16 @@ export function useFlowDiagrams() {
         nodes: (d.nodes || []) as Node[],
         edges: (d.edges || []) as Edge[],
         viewport: (d.viewport || { x: 0, y: 0, zoom: 1 }) as Viewport,
+        source: (d.source || 'user') as FlowDiagramSource,
       })) as FlowDiagram[];
     },
     enabled: !!user,
   });
+
+  // Filter out pattern-generated diagrams for non-admins in the "Open" list
+  const diagrams = isAdmin 
+    ? allDiagrams 
+    : allDiagrams.filter(d => d.source !== 'pattern');
 
   const saveMutation = useMutation({
     mutationFn: async ({
@@ -42,6 +50,7 @@ export function useFlowDiagrams() {
       edges,
       viewport,
       is_shared,
+      source,
     }: Partial<FlowDiagram> & { name: string }) => {
       if (!user) throw new Error('Not authenticated');
 
@@ -52,6 +61,7 @@ export function useFlowDiagrams() {
         edges: edges as any,
         viewport: viewport as any,
         is_shared: is_shared || false,
+        source: source || 'user',
         user_id: user.id,
       };
 

@@ -72,6 +72,8 @@ export interface FlowNodeData {
   [key: string]: unknown;
 }
 
+export type FlowDiagramSource = 'user' | 'pattern';
+
 export interface FlowDiagram {
   id: string;
   user_id: string;
@@ -81,6 +83,7 @@ export interface FlowDiagram {
   edges: Edge[];
   viewport: Viewport;
   is_shared: boolean;
+  source: FlowDiagramSource;
   created_at: string;
   updated_at: string;
 }
@@ -92,6 +95,7 @@ export interface FlowDiagramInsert {
   edges: Edge[];
   viewport?: Viewport;
   is_shared?: boolean;
+  source?: FlowDiagramSource;
   user_id: string;
 }
 

@@ -71,6 +71,7 @@ export type Database = {
           is_shared: boolean
           name: string
           nodes: Json
+          source: string | null
           updated_at: string
           user_id: string
           viewport: Json | null
@@ -83,6 +84,7 @@ export type Database = {
           is_shared?: boolean
           name: string
           nodes?: Json
+          source?: string | null
           updated_at?: string
           user_id: string
           viewport?: Json | null
@@ -95,6 +97,7 @@ export type Database = {
           is_shared?: boolean
           name?: string
           nodes?: Json
+          source?: string | null
           updated_at?: string
           user_id?: string
           viewport?: Json | null

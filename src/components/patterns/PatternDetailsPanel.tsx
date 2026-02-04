@@ -50,13 +50,14 @@ const TaskBlueprintDetails: React.FC<{ pattern: TaskBlueprint }> = ({ pattern })
       // Generate flow from blueprint
       const { nodes, edges } = blueprintToFlow(pattern);
       
-      // Save as new diagram
+      // Save as new diagram with source='pattern' to hide from regular users' "Open" list
       const diagram = await saveDiagram({
         name: `Flow: ${pattern.name}`,
         description: `Автоматически сгенерировано из паттерна "${pattern.name}"`,
         nodes,
         edges,
         viewport: { x: 0, y: 0, zoom: 0.8 },
+        source: 'pattern',
       });
       
       toast({

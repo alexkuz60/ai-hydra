@@ -2,6 +2,7 @@ export interface HydrapediaSection {
   id: string;
   titleKey: string;
   icon: string;
+  adminOnly?: boolean;
   content: {
     ru: string;
     en: string;
@@ -3512,6 +3513,330 @@ graph LR
 4. **Configure role behavior** through Role Behaviors
 
 > **Tip**: Start by duplicating a system pattern and adapt it to your tasks.`
+    }
+  },
+  // Admin-only section: Hydra Training
+  {
+    id: 'hydra-training',
+    titleKey: 'hydrapedia.sections.hydraTraining',
+    icon: 'Shield',
+    adminOnly: true,
+    content: {
+      ru: `# Дрессировка Гидры
+
+> **Внимание**: Эта секция доступна только администраторам. Здесь описаны внутренние механизмы системы, которые определяют поведение ИИ на системном уровне.
+
+## Философия системных паттернов
+
+Системные паттерны — это **инстинкты Гидры**, заложенные на глубинном уровне. Они определяют:
+
+- **Как** Гидра подходит к решению задач
+- **Какие** роли участвуют на каждом этапе
+- **Когда** требуется валидация или переход к следующему шагу
+
+### Отличие от пользовательских паттернов
+
+| Аспект | Системные паттерны | Пользовательские паттерны |
+|--------|-------------------|--------------------------|
+| Видимость | Только для админов | Для всех пользователей |
+| Редактирование | Только дублирование | Полное редактирование |
+| Назначение | Базовые инстинкты | Кастомные воркфлоу |
+| Метка | 🔒 Замок | — |
+
+## Архитектура стратегических паттернов
+
+Стратегические паттерны (Task Blueprints) определяют **последовательность этапов** решения задачи:
+
+\`\`\`mermaid
+graph LR
+    subgraph "Стратегический паттерн"
+        S1[Этап 1] --> C1{Контрольная точка}
+        C1 --> S2[Этап 2]
+        S2 --> C2{Контрольная точка}
+        C2 --> S3[Этап 3]
+    end
+    
+    S1 -.-> R1[Роли этапа 1]
+    S2 -.-> R2[Роли этапа 2]
+    S3 -.-> R3[Роли этапа 3]
+\`\`\`
+
+### Компоненты паттерна
+
+1. **Этапы (Stages)**: Последовательные шаги выполнения
+   - Название и цель этапа
+   - Назначенные роли (какие агенты работают)
+   - Ожидаемые результаты (deliverables)
+
+2. **Контрольные точки (Checkpoints)**: Условия для продвижения
+   - После какого этапа срабатывает
+   - Условие для перехода
+
+3. **Категория**: Классификация паттерна
+   - \`planning\` — планирование
+   - \`creative\` — творческие задачи
+   - \`analysis\` — аналитика
+   - \`technical\` — технические задачи
+
+## Ролевые шаблоны (Role Behaviors)
+
+Ролевые шаблоны определяют **характер и стиль** каждого агента:
+
+### Стиль коммуникации
+
+| Параметр | Описание |
+|----------|----------|
+| **Тон** | formal / friendly / neutral / provocative |
+| **Детальность** | concise / detailed / adaptive |
+| **Предпочтения формата** | markdown, списки, код, таблицы |
+
+### Реакции на триггеры
+
+Каждый агент может иметь предустановленные реакции:
+
+\`\`\`json
+{
+  "trigger": "unclear_question",
+  "behavior": "Попросить уточнить задачу перед ответом"
+}
+\`\`\`
+
+### Взаимодействия между ролями
+
+| Тип связи | Описание |
+|-----------|----------|
+| **defers_to** | Уступает этим ролям (признаёт авторитет) |
+| **challenges** | Может оспаривать решения этих ролей |
+| **collaborates** | Сотрудничает на равных |
+
+## Технический персонал vs Эксперты
+
+В системе есть разделение ролей на две категории:
+
+### Эксперты (Experts)
+Участвуют в коллегиальных обсуждениях (К-чат, Д-чат):
+- \`@assistant\` — универсальный эксперт
+- \`@critic\` — критик
+- \`@arbiter\` — арбитр
+- \`@consultant\` — консультант
+- \`@moderator\` — модератор
+- \`@advisor\` — советник
+- \`@webhunter\` — web-охотник
+
+### Технический персонал (Technical Staff)
+Персональные агенты-помощники, НЕ участвуют в советах:
+- \`@analyst\` — аналитик (формирование ТЗ)
+- \`@promptengineer\` — промпт-инженер
+- \`@flowregulator\` — логистик потоков
+- \`@archivist\` — архивариус (управление памятью)
+
+> **Важно**: Технические роли автоматически исключаются из селекторов моделей в экспертных панелях.
+
+## Интеграция с Flow Editor
+
+Системные паттерны можно визуализировать через Flow Editor:
+
+1. Кнопка **«Открыть в редакторе потоков»** генерирует диаграмму
+2. Диаграмма сохраняется с \`source: 'pattern'\`
+3. Такие диаграммы скрыты от обычных пользователей в списке «Открыть»
+
+### Маппинг элементов
+
+| Элемент паттерна | Элемент Flow |
+|------------------|--------------|
+| Этап (Stage) | Group Node (контейнер) |
+| Роль на этапе | Model Node внутри группы |
+| Контрольная точка | Condition Node |
+| Результат (Deliverable) | Output Node |
+
+## Рекомендации по созданию паттернов
+
+### Стратегические паттерны
+
+1. **Декомпозиция**: Разбивайте сложные задачи на 3-5 этапов
+2. **Роли**: Назначайте 1-3 роли на этап для фокуса
+3. **Контрольные точки**: Добавляйте после критических этапов
+4. **Результаты**: Чётко определяйте ожидаемые артефакты
+
+### Ролевые шаблоны
+
+1. **Уникальность**: Каждая роль должна иметь уникальный характер
+2. **Консистентность**: Стиль коммуникации должен соответствовать задачам роли
+3. **Взаимодействия**: Настройте иерархию для предсказуемого поведения
+
+## Примеры системных паттернов
+
+### Prompt Optimization Pipeline
+
+Этапы:
+1. **Анализ контекста** (@analyst) — формирование ТЗ
+2. **Оптимизация промпта** (@promptengineer) — применение техник
+3. **Валидация** (@critic) — проверка результата
+
+### Session Memory Update
+
+Этапы:
+1. **Сбор контекста** (@archivist) — анализ сессии
+2. **Генерация эмбеддингов** — векторизация
+3. **Компактификация** (@archivist) — сжатие памяти`,
+
+      en: `# Hydra Training
+
+> **Note**: This section is only available to administrators. It describes the internal mechanisms of the system that define AI behavior at the system level.
+
+## System Patterns Philosophy
+
+System patterns are **Hydra's instincts**, embedded at a deep level. They define:
+
+- **How** Hydra approaches task solving
+- **Which** roles participate at each stage
+- **When** validation or transition to the next step is required
+
+### Difference from User Patterns
+
+| Aspect | System Patterns | User Patterns |
+|--------|-----------------|---------------|
+| Visibility | Admins only | All users |
+| Editing | Duplication only | Full editing |
+| Purpose | Basic instincts | Custom workflows |
+| Label | 🔒 Lock | — |
+
+## Strategic Patterns Architecture
+
+Strategic patterns (Task Blueprints) define the **sequence of stages** for solving a task:
+
+\`\`\`mermaid
+graph LR
+    subgraph "Strategic Pattern"
+        S1[Stage 1] --> C1{Checkpoint}
+        C1 --> S2[Stage 2]
+        S2 --> C2{Checkpoint}
+        C2 --> S3[Stage 3]
+    end
+    
+    S1 -.-> R1[Stage 1 Roles]
+    S2 -.-> R2[Stage 2 Roles]
+    S3 -.-> R3[Stage 3 Roles]
+\`\`\`
+
+### Pattern Components
+
+1. **Stages**: Sequential execution steps
+   - Stage name and objective
+   - Assigned roles (which agents work)
+   - Expected deliverables
+
+2. **Checkpoints**: Conditions for progression
+   - After which stage it triggers
+   - Condition for transition
+
+3. **Category**: Pattern classification
+   - \`planning\` — planning
+   - \`creative\` — creative tasks
+   - \`analysis\` — analytics
+   - \`technical\` — technical tasks
+
+## Role Behaviors
+
+Role behaviors define the **character and style** of each agent:
+
+### Communication Style
+
+| Parameter | Description |
+|-----------|-------------|
+| **Tone** | formal / friendly / neutral / provocative |
+| **Verbosity** | concise / detailed / adaptive |
+| **Format preferences** | markdown, lists, code, tables |
+
+### Trigger Reactions
+
+Each agent can have preset reactions:
+
+\`\`\`json
+{
+  "trigger": "unclear_question",
+  "behavior": "Ask to clarify the task before responding"
+}
+\`\`\`
+
+### Role Interactions
+
+| Relation Type | Description |
+|---------------|-------------|
+| **defers_to** | Defers to these roles (recognizes authority) |
+| **challenges** | Can challenge decisions of these roles |
+| **collaborates** | Collaborates as equals |
+
+## Technical Staff vs Experts
+
+The system has a division of roles into two categories:
+
+### Experts
+Participate in collegiate discussions (K-chat, D-chat):
+- \`@assistant\` — universal expert
+- \`@critic\` — critic
+- \`@arbiter\` — arbiter
+- \`@consultant\` — consultant
+- \`@moderator\` — moderator
+- \`@advisor\` — advisor
+- \`@webhunter\` — web hunter
+
+### Technical Staff
+Personal assistant agents, DO NOT participate in councils:
+- \`@analyst\` — analyst (requirements formation)
+- \`@promptengineer\` — prompt engineer
+- \`@flowregulator\` — flow logistician
+- \`@archivist\` — archivist (memory management)
+
+> **Important**: Technical roles are automatically excluded from model selectors in expert panels.
+
+## Flow Editor Integration
+
+System patterns can be visualized through Flow Editor:
+
+1. The **"Open in Flow Editor"** button generates a diagram
+2. The diagram is saved with \`source: 'pattern'\`
+3. Such diagrams are hidden from regular users in the "Open" list
+
+### Element Mapping
+
+| Pattern Element | Flow Element |
+|-----------------|--------------|
+| Stage | Group Node (container) |
+| Role in stage | Model Node inside group |
+| Checkpoint | Condition Node |
+| Deliverable | Output Node |
+
+## Pattern Creation Recommendations
+
+### Strategic Patterns
+
+1. **Decomposition**: Break complex tasks into 3-5 stages
+2. **Roles**: Assign 1-3 roles per stage for focus
+3. **Checkpoints**: Add after critical stages
+4. **Deliverables**: Clearly define expected artifacts
+
+### Role Behaviors
+
+1. **Uniqueness**: Each role should have a unique character
+2. **Consistency**: Communication style should match role tasks
+3. **Interactions**: Configure hierarchy for predictable behavior
+
+## System Pattern Examples
+
+### Prompt Optimization Pipeline
+
+Stages:
+1. **Context Analysis** (@analyst) — requirements formation
+2. **Prompt Optimization** (@promptengineer) — applying techniques
+3. **Validation** (@critic) — result verification
+
+### Session Memory Update
+
+Stages:
+1. **Context Collection** (@archivist) — session analysis
+2. **Embedding Generation** — vectorization
+3. **Compactification** (@archivist) — memory compression`
     }
   }
 ];
