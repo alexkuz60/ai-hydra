@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 // ============================================
 // Streaming Edge Function for D-Chat
@@ -8,6 +9,9 @@ const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
+
+// DeepSeek models that need direct API access
+const DEEPSEEK_MODELS = ["deepseek-chat", "deepseek-reasoner"];
 
 // Default prompts by role
 const DEFAULT_PROMPTS: Record<string, string> = {
@@ -122,15 +126,6 @@ serve(async (req) => {
       );
     }
 
-    // Get Lovable AI API key
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
-      return new Response(
-        JSON.stringify({ error: "LOVABLE_API_KEY not configured" }),
-        { status: 500, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } }
-      );
-    }
-
     // Build system prompt with memory context
     const basePrompt = system_prompt || DEFAULT_PROMPTS[role] || DEFAULT_PROMPTS.assistant;
     const memorySection = buildMemoryContext(memory_context);
@@ -138,6 +133,95 @@ serve(async (req) => {
     
     if (memory_context.length > 0) {
       console.log(`[hydra-stream] Including ${memory_context.length} memory chunks in context`);
+    }
+
+    // Check if this is a DeepSeek model
+    const isDeepSeek = DEEPSEEK_MODELS.includes(model_id);
+    
+    if (isDeepSeek) {
+      // Get user's DeepSeek API key from database
+      const authHeader = req.headers.get("Authorization");
+      const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+      const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+      
+      const supabase = createClient(supabaseUrl, supabaseServiceKey);
+      
+      // Extract user from JWT
+      let userId: string | null = null;
+      if (authHeader?.startsWith("Bearer ")) {
+        const token = authHeader.slice(7);
+        const { data: { user } } = await supabase.auth.getUser(token);
+        userId = user?.id || null;
+      }
+      
+      if (!userId) {
+        return new Response(
+          JSON.stringify({ error: "Authentication required for DeepSeek models" }),
+          { status: 401, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } }
+        );
+      }
+      
+      // Get DeepSeek API key
+      const { data: apiKeys } = await supabase.rpc("get_my_api_keys").single();
+      const deepseekApiKey = (apiKeys as { deepseek_api_key?: string })?.deepseek_api_key;
+      
+      if (!deepseekApiKey) {
+        return new Response(
+          JSON.stringify({ error: "DeepSeek API key not configured. Please add it in your profile settings." }),
+          { status: 400, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } }
+        );
+      }
+      
+      const isReasoningModel = model_id === 'deepseek-reasoner';
+      
+      console.log(`[hydra-stream] DeepSeek streaming request: model=${model_id}`);
+      
+      const response = await fetch("https://api.deepseek.com/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${deepseekApiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: model_id,
+          messages: [
+            { role: "system", content: finalSystemPrompt },
+            { role: "user", content: message },
+          ],
+          stream: true,
+          temperature: isReasoningModel ? undefined : temperature,
+          max_tokens,
+        }),
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("[hydra-stream] DeepSeek error:", response.status, errorText);
+        return new Response(
+          JSON.stringify({ error: `DeepSeek error: ${response.status}` }),
+          { status: 500, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } }
+        );
+      }
+      
+      console.log("[hydra-stream] DeepSeek streaming response started");
+      
+      return new Response(response.body, {
+        headers: {
+          ...CORS_HEADERS,
+          "Content-Type": "text/event-stream",
+          "Cache-Control": "no-cache",
+          "Connection": "keep-alive",
+        },
+      });
+    }
+
+    // Get Lovable AI API key for non-DeepSeek models
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    if (!LOVABLE_API_KEY) {
+      return new Response(
+        JSON.stringify({ error: "LOVABLE_API_KEY not configured" }),
+        { status: 500, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } }
+      );
     }
 
     // Determine token parameter based on model
