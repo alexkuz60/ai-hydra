@@ -40,8 +40,11 @@ import {
   OwnerFilter, 
   ToolFormData, 
   getEmptyFormData, 
-  toolToFormData 
+  toolToFormData,
+  SYSTEM_TOOLS,
+  SystemTool,
 } from '@/types/customTools';
+import { ToolItem, isSystemTool } from '@/components/tools/ToolRow';
 
 export default function ToolsLibrary() {
   const { user, loading: authLoading } = useAuth();
@@ -51,12 +54,14 @@ export default function ToolsLibrary() {
   // CRUD hook
   const { tools, loading, saving, createTool, updateTool, deleteTool } = useToolsCRUD();
 
-  // Filters
   const [searchQuery, setSearchQuery] = useState('');
   const [ownerFilter, setOwnerFilter] = useState<OwnerFilter>('all');
 
-  // Selection & editing state
-  const [selectedTool, setSelectedTool] = useState<CustomTool | null>(null);
+  // Selected tool can be CustomTool or SystemTool
+  const [selectedTool, setSelectedTool] = useState<ToolItem | null>(null);
+  // Editing state - only for custom tools
+  const [editingTool, setEditingTool] = useState<CustomTool | null>(null);
+  
   const [isEditing, setIsEditing] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [formData, setFormData] = useState<ToolFormData>(getEmptyFormData());
@@ -74,34 +79,50 @@ export default function ToolsLibrary() {
     }
   }, [user, authLoading, navigate]);
 
+  // Combined tools list: system tools + user tools
+  const allTools = useMemo((): ToolItem[] => {
+    return [...SYSTEM_TOOLS, ...tools];
+  }, [tools]);
+
   // Filter tools
   const filteredTools = useMemo(() => {
-    return tools.filter((tool) => {
+    return allTools.filter((tool) => {
       const matchesSearch =
         tool.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         tool.display_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         tool.description.toLowerCase().includes(searchQuery.toLowerCase());
 
-      const matchesOwner =
-        ownerFilter === 'all' ||
-        (ownerFilter === 'own' && tool.user_id === user?.id) ||
-        (ownerFilter === 'shared' && tool.is_shared);
+      if (!matchesSearch) return false;
 
-      return matchesSearch && matchesOwner;
+      // Filter by owner
+      if (ownerFilter === 'system') {
+        return isSystemTool(tool);
+      }
+      if (ownerFilter === 'own') {
+        return !isSystemTool(tool) && (tool as CustomTool).user_id === user?.id;
+      }
+      if (ownerFilter === 'shared') {
+        return !isSystemTool(tool) && (tool as CustomTool).is_shared;
+      }
+      // 'all' - show everything
+      return true;
     });
-  }, [tools, searchQuery, ownerFilter, user?.id]);
+  }, [allTools, searchQuery, ownerFilter, user?.id]);
 
   // Handlers
-  const handleSelectTool = (tool: CustomTool) => {
+  const handleSelectTool = (tool: ToolItem) => {
     if (isEditing || isCreating) {
       unsavedChanges.withConfirmation(() => {
         setSelectedTool(tool);
+        setEditingTool(null);
         setIsEditing(false);
         setIsCreating(false);
         unsavedChanges.markSaved();
       });
     } else {
       setSelectedTool(tool);
+      setEditingTool(null);
+      setIsEditing(false);
     }
   };
 
@@ -112,6 +133,7 @@ export default function ToolsLibrary() {
         setIsCreating(true);
         setIsEditing(false);
         setSelectedTool(null);
+        setEditingTool(null);
         unsavedChanges.markSaved();
       });
     } else {
@@ -119,6 +141,7 @@ export default function ToolsLibrary() {
       setIsCreating(true);
       setIsEditing(false);
       setSelectedTool(null);
+      setEditingTool(null);
     }
   };
 
@@ -127,6 +150,7 @@ export default function ToolsLibrary() {
     if (isEditing || isCreating) {
       unsavedChanges.withConfirmation(() => {
         setSelectedTool(tool);
+        setEditingTool(tool);
         setFormData(toolToFormData(tool));
         setIsEditing(true);
         setIsCreating(false);
@@ -134,6 +158,7 @@ export default function ToolsLibrary() {
       });
     } else {
       setSelectedTool(tool);
+      setEditingTool(tool);
       setFormData(toolToFormData(tool));
       setIsEditing(true);
       setIsCreating(false);
@@ -145,11 +170,13 @@ export default function ToolsLibrary() {
       unsavedChanges.withConfirmation(() => {
         setIsEditing(false);
         setIsCreating(false);
+        setEditingTool(null);
         unsavedChanges.markSaved();
       });
     } else {
       setIsEditing(false);
       setIsCreating(false);
+      setEditingTool(null);
     }
   };
 
@@ -164,44 +191,43 @@ export default function ToolsLibrary() {
       if (newTool) {
         setIsCreating(false);
         setSelectedTool(newTool);
+        setEditingTool(null);
         unsavedChanges.markSaved();
       }
-    } else if (isEditing && selectedTool) {
-      const success = await updateTool(selectedTool.id, formData);
+    } else if (isEditing && editingTool) {
+      const success = await updateTool(editingTool.id, formData);
       if (success) {
         setIsEditing(false);
         // Update selected tool with new data
-        setSelectedTool((prev) =>
-          prev
-            ? {
-                ...prev,
-                name: formData.name,
-                display_name: formData.displayName,
-                description: formData.description,
-                prompt_template: formData.promptTemplate,
-                parameters: formData.parameters,
-                is_shared: formData.isShared,
-                tool_type: formData.toolType,
-                http_config:
-                  formData.toolType === 'http_api'
-                    ? {
-                        url: formData.httpUrl,
-                        method: formData.httpMethod,
-                        headers:
-                          formData.httpHeaders.length > 0
-                            ? Object.fromEntries(
-                                formData.httpHeaders
-                                  .filter((h) => h.key.trim())
-                                  .map((h) => [h.key.trim(), h.value])
-                              )
-                            : undefined,
-                        body_template: formData.httpBodyTemplate || undefined,
-                        response_path: formData.httpResponsePath || undefined,
-                      }
-                    : null,
-              }
-            : null
-        );
+        const updatedTool: CustomTool = {
+          ...editingTool,
+          name: formData.name,
+          display_name: formData.displayName,
+          description: formData.description,
+          prompt_template: formData.promptTemplate,
+          parameters: formData.parameters,
+          is_shared: formData.isShared,
+          tool_type: formData.toolType,
+          http_config:
+            formData.toolType === 'http_api'
+              ? {
+                  url: formData.httpUrl,
+                  method: formData.httpMethod,
+                  headers:
+                    formData.httpHeaders.length > 0
+                      ? Object.fromEntries(
+                          formData.httpHeaders
+                            .filter((h) => h.key.trim())
+                            .map((h) => [h.key.trim(), h.value])
+                        )
+                      : undefined,
+                  body_template: formData.httpBodyTemplate || undefined,
+                  response_path: formData.httpResponsePath || undefined,
+                }
+              : null,
+        };
+        setSelectedTool(updatedTool);
+        setEditingTool(null);
         unsavedChanges.markSaved();
       }
     }
@@ -215,9 +241,13 @@ export default function ToolsLibrary() {
   const handleConfirmDelete = async () => {
     if (!toolToDelete) return;
     const success = await deleteTool(toolToDelete.id);
-    if (success && selectedTool?.id === toolToDelete.id) {
-      setSelectedTool(null);
-      setIsEditing(false);
+    if (success) {
+      // Clear selection if we deleted the selected tool
+      if (selectedTool && !isSystemTool(selectedTool) && selectedTool.id === toolToDelete.id) {
+        setSelectedTool(null);
+        setEditingTool(null);
+        setIsEditing(false);
+      }
     }
     setToolToDelete(null);
   };
@@ -233,7 +263,10 @@ export default function ToolsLibrary() {
     );
   }
 
-  const isOwned = selectedTool?.user_id === user?.id;
+  // Check ownership for custom tools only
+  const isOwned = selectedTool && !isSystemTool(selectedTool) 
+    ? (selectedTool as CustomTool).user_id === user?.id 
+    : false;
 
   return (
     <Layout>
@@ -275,6 +308,7 @@ export default function ToolsLibrary() {
                   </SelectTrigger>
                   <SelectContent className="bg-popover border border-border z-50">
                     <SelectItem value="all">{t('tools.filterAll')}</SelectItem>
+                    <SelectItem value="system">{t('tools.filterSystem')}</SelectItem>
                     <SelectItem value="own">{t('tools.filterOwn')}</SelectItem>
                     <SelectItem value="shared">{t('tools.filterShared')}</SelectItem>
                   </SelectContent>
@@ -288,7 +322,7 @@ export default function ToolsLibrary() {
                     <div className="text-center">
                       <Wrench className="h-12 w-12 mx-auto mb-4 opacity-30" />
                       <p>
-                        {tools.length === 0
+                        {allTools.length === 0
                           ? t('tools.noTools')
                           : t('tools.nothingFound')}
                       </p>
@@ -297,17 +331,20 @@ export default function ToolsLibrary() {
                 ) : (
                   <Table>
                     <TableBody>
-                      {filteredTools.map((tool) => (
-                        <ToolRow
-                          key={tool.id}
-                          tool={tool}
-                          isSelected={selectedTool?.id === tool.id}
-                          isOwned={tool.user_id === user?.id}
-                          onSelect={handleSelectTool}
-                          onEdit={handleStartEdit}
-                          onDelete={handleDeleteClick}
-                        />
-                      ))}
+                      {filteredTools.map((tool) => {
+                        const isSys = isSystemTool(tool);
+                        return (
+                          <ToolRow
+                            key={tool.id}
+                            tool={tool}
+                            isSelected={selectedTool?.id === tool.id}
+                            isOwned={!isSys && (tool as CustomTool).user_id === user?.id}
+                            onSelect={handleSelectTool}
+                            onEdit={handleStartEdit}
+                            onDelete={handleDeleteClick}
+                          />
+                        );
+                      })}
                     </TableBody>
                   </Table>
                 )}
@@ -332,8 +369,8 @@ export default function ToolsLibrary() {
               <ToolDetailsPanel
                 tool={selectedTool}
                 isOwned={isOwned}
-                onEdit={() => selectedTool && handleStartEdit(selectedTool)}
-                onDelete={() => selectedTool && setToolToDelete(selectedTool)}
+                onEdit={() => selectedTool && !isSystemTool(selectedTool) && handleStartEdit(selectedTool as CustomTool)}
+                onDelete={() => selectedTool && !isSystemTool(selectedTool) && setToolToDelete(selectedTool as CustomTool)}
               />
             )}
           </ResizablePanel>

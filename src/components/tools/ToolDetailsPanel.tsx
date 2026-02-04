@@ -4,13 +4,26 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Globe, FileText, Pencil, Trash2, Users, Copy, ExternalLink } from 'lucide-react';
+import { Globe, FileText, Pencil, Trash2, Users, Copy, Lock, Calculator, Clock, Search } from 'lucide-react';
 import { format } from 'date-fns';
-import type { CustomTool } from '@/types/customTools';
+import type { CustomTool, SystemTool } from '@/types/customTools';
 import { cn } from '@/lib/utils';
+import { isSystemTool, ToolItem } from './ToolRow';
+
+function getToolIcon(tool: ToolItem) {
+  if (isSystemTool(tool)) {
+    switch (tool.name) {
+      case 'calculator': return Calculator;
+      case 'current_datetime': return Clock;
+      case 'web_search': return Search;
+      default: return Lock;
+    }
+  }
+  return tool.tool_type === 'http_api' ? Globe : FileText;
+}
 
 interface ToolDetailsPanelProps {
-  tool: CustomTool | null;
+  tool: ToolItem | null;
   isOwned: boolean;
   onEdit: () => void;
   onDelete: () => void;
@@ -37,8 +50,10 @@ export function ToolDetailsPanel({
     );
   }
 
-  const isHttp = tool.tool_type === 'http_api';
-  const hc = tool.http_config;
+  const isSystem = isSystemTool(tool);
+  const isHttp = !isSystem && tool.tool_type === 'http_api';
+  const hc = !isSystem ? (tool as CustomTool).http_config : null;
+  const Icon = getToolIcon(tool);
 
   return (
     <ScrollArea className="h-full">
@@ -46,12 +61,14 @@ export function ToolDetailsPanel({
         {/* Header */}
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-start gap-4">
-            <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-              {isHttp ? (
-                <Globe className="h-6 w-6 text-primary" />
-              ) : (
-                <FileText className="h-6 w-6 text-primary" />
-              )}
+            <div className={cn(
+              "w-12 h-12 rounded-lg flex items-center justify-center shrink-0",
+              isSystem ? "bg-amber-500/10" : "bg-primary/10"
+            )}>
+              <Icon className={cn(
+                "h-6 w-6",
+                isSystem ? "text-amber-500" : "text-primary"
+              )} />
             </div>
             <div>
               <h2 className="text-xl font-semibold">{tool.display_name}</h2>
@@ -59,8 +76,15 @@ export function ToolDetailsPanel({
                 <code className="text-sm bg-muted px-2 py-0.5 rounded font-mono text-muted-foreground">
                   {tool.name}
                 </code>
-                <Badge variant="secondary">{isHttp ? 'HTTP API' : 'Prompt Template'}</Badge>
-                {tool.is_shared && (
+                {isSystem ? (
+                  <Badge variant="outline" className="border-amber-500/50 text-amber-600 dark:text-amber-400 gap-1">
+                    <Lock className="h-3 w-3" />
+                    {t('tools.systemTool')}
+                  </Badge>
+                ) : (
+                  <Badge variant="secondary">{isHttp ? 'HTTP API' : 'Prompt Template'}</Badge>
+                )}
+                {!isSystem && (tool as CustomTool).is_shared && (
                   <Badge variant="outline" className="gap-1">
                     <Users className="h-3 w-3" />
                     {t('tools.shared')}
@@ -70,44 +94,46 @@ export function ToolDetailsPanel({
             </div>
           </div>
           
-          {/* Actions */}
-          <div className="flex items-center gap-1">
-            {onDuplicate && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button variant="ghost" size="icon" onClick={onDuplicate}>
-                    <Copy className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>{t('common.duplicate')}</TooltipContent>
-              </Tooltip>
-            )}
-            {isOwned && (
-              <>
+          {/* Actions - only for non-system tools */}
+          {!isSystem && (
+            <div className="flex items-center gap-1">
+              {onDuplicate && (
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Button variant="ghost" size="icon" onClick={onEdit}>
-                      <Pencil className="h-4 w-4" />
+                    <Button variant="ghost" size="icon" onClick={onDuplicate}>
+                      <Copy className="h-4 w-4" />
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent>{t('common.edit')}</TooltipContent>
+                  <TooltipContent>{t('common.duplicate')}</TooltipContent>
                 </Tooltip>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="text-destructive hover:text-destructive"
-                      onClick={onDelete}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>{t('common.delete')}</TooltipContent>
-                </Tooltip>
-              </>
-            )}
-          </div>
+              )}
+              {isOwned && (
+                <>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button variant="ghost" size="icon" onClick={onEdit}>
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>{t('common.edit')}</TooltipContent>
+                  </Tooltip>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="text-destructive hover:text-destructive"
+                        onClick={onDelete}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>{t('common.delete')}</TooltipContent>
+                  </Tooltip>
+                </>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Description */}
@@ -145,8 +171,8 @@ export function ToolDetailsPanel({
           </section>
         )}
 
-        {/* HTTP Config */}
-        {isHttp && hc && (
+        {/* HTTP Config - only for custom HTTP tools */}
+        {!isSystem && isHttp && hc && (
           <section className="space-y-4">
             <h3 className="text-sm font-medium text-muted-foreground">{t('tools.httpConfig')}</h3>
             
@@ -195,32 +221,43 @@ export function ToolDetailsPanel({
           </section>
         )}
 
-        {/* Prompt Template */}
-        {!isHttp && tool.prompt_template && (
+        {/* Prompt Template - only for custom prompt tools */}
+        {!isSystem && !isHttp && (tool as CustomTool).prompt_template && (
           <section>
             <h3 className="text-sm font-medium text-muted-foreground mb-2">{t('tools.promptTemplate')}</h3>
             <pre className="text-sm bg-muted p-4 rounded-lg overflow-auto max-h-48 whitespace-pre-wrap font-mono">
-              {tool.prompt_template}
+              {(tool as CustomTool).prompt_template}
             </pre>
           </section>
         )}
 
-        {/* Metadata */}
-        <section className="pt-4 border-t">
-          <div className="flex items-center gap-6 text-xs text-muted-foreground">
-            <div>
-              <span className="font-medium">{t('tools.usageCount')}:</span> {tool.usage_count}
+        {/* System tool note */}
+        {isSystem && (
+          <section className="p-4 bg-amber-500/5 border border-amber-500/20 rounded-lg">
+            <p className="text-sm text-muted-foreground">
+              {t('tools.systemToolNote')}
+            </p>
+          </section>
+        )}
+
+        {/* Metadata - only for custom tools */}
+        {!isSystem && (
+          <section className="pt-4 border-t">
+            <div className="flex items-center gap-6 text-xs text-muted-foreground">
+              <div>
+                <span className="font-medium">{t('tools.usageCount')}:</span> {(tool as CustomTool).usage_count}
+              </div>
+              <div>
+                <span className="font-medium">{t('tools.created')}:</span>{' '}
+                {format(new Date((tool as CustomTool).created_at), 'dd.MM.yyyy')}
+              </div>
+              <div>
+                <span className="font-medium">{t('tools.updated')}:</span>{' '}
+                {format(new Date((tool as CustomTool).updated_at), 'dd.MM.yyyy')}
+              </div>
             </div>
-            <div>
-              <span className="font-medium">{t('tools.created')}:</span>{' '}
-              {format(new Date(tool.created_at), 'dd.MM.yyyy')}
-            </div>
-            <div>
-              <span className="font-medium">{t('tools.updated')}:</span>{' '}
-              {format(new Date(tool.updated_at), 'dd.MM.yyyy')}
-            </div>
-          </div>
-        </section>
+          </section>
+        )}
       </div>
     </ScrollArea>
   );
