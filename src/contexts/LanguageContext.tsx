@@ -919,6 +919,19 @@ const translations: Translations = {
   'error.technicalInfo': { ru: 'Техническая информация', en: 'Technical details' },
   'error.tryAgain': { ru: 'Попробовать снова', en: 'Try again' },
   'error.reload': { ru: 'Перезагрузить', en: 'Reload' },
+  
+  // Dictionary components
+  'patterns.dictionary.select': { ru: 'Выберите...', en: 'Select...' },
+  'patterns.dictionary.searchPlaceholder': { ru: 'Поиск...', en: 'Search...' },
+  'patterns.dictionary.noResults': { ru: 'Не найдено', en: 'No results found' },
+  'patterns.dictionary.other': { ru: 'Другое...', en: 'Other...' },
+  'patterns.dictionary.customPlaceholder': { ru: 'Введите свой вариант', en: 'Enter custom value' },
+  'patterns.dictionary.addFormat': { ru: 'Добавить формат...', en: 'Add format...' },
+  'patterns.dictionary.category.dialogue': { ru: 'Диалог', en: 'Dialogue' },
+  'patterns.dictionary.category.quality': { ru: 'Качество', en: 'Quality' },
+  'patterns.dictionary.category.decisions': { ru: 'Решения', en: 'Decisions' },
+  'patterns.dictionary.category.data': { ru: 'Данные', en: 'Data' },
+  'patterns.dictionary.category.process': { ru: 'Процесс', en: 'Process' },
 };
 
 interface LanguageContextType {
