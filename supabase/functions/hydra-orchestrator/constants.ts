@@ -47,6 +47,7 @@ export const THINKING_MODELS = [
   'google/gemini-3-pro-preview',
   'openai/gpt-5',
   'openai/gpt-5.2',
+  'deepseek-reasoner', // DeepSeek-R1 reasoning model
 ];
 
 /** 
