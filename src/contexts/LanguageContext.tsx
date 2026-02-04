@@ -485,6 +485,9 @@ const translations: Translations = {
   'common.selectAll': { ru: 'Выбрать все', en: 'Select all' },
   'common.deselectAll': { ru: 'Снять все', en: 'Deselect all' },
   'common.delete': { ru: 'Удалить', en: 'Delete' },
+  'common.create': { ru: 'Создать', en: 'Create' },
+  'common.save': { ru: 'Сохранить', en: 'Save' },
+  'common.edit': { ru: 'Редактировать', en: 'Edit' },
   'common.all': { ru: 'Все', en: 'All' },
   'common.collapse': { ru: 'Свернуть', en: 'Collapse' },
   'common.expand': { ru: 'Развернуть', en: 'Expand' },
@@ -672,7 +675,6 @@ const translations: Translations = {
   'roleLibrary.languageAuto': { ru: 'Авто', en: 'Auto' },
   'roleLibrary.languageRu': { ru: 'Русский', en: 'Russian' },
   'roleLibrary.languageEn': { ru: 'English', en: 'English' },
-  'common.save': { ru: 'Сохранить', en: 'Save' },
   
   // Skeleton indicators for pending responses
   'skeleton.requestSent': { ru: 'Запрос отправлен...', en: 'Request sent...' },
