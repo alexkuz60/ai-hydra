@@ -247,3 +247,49 @@ export interface SearchProviderConfig {
 }
 
 export type AvailableSearchProvider = "tavily" | "perplexity" | "both" | "none";
+
+// ============================================
+// Technical Staff Tool Args
+// ============================================
+
+/** Args for update_session_memory tool (Archivist) */
+export interface UpdateSessionMemoryArgs {
+  /** Text content to save to session memory */
+  content: string;
+  /** Type of memory chunk */
+  chunk_type: "decision" | "context" | "instruction" | "summary";
+  /** Importance level 1-10 (higher = more important) */
+  importance?: number;
+  /** Tags for categorization */
+  tags?: string[];
+}
+
+/** Args for search_session_memory tool (Archivist) */
+export interface SearchSessionMemoryArgs {
+  /** Search query for semantic search */
+  query: string;
+  /** Filter by chunk types */
+  chunk_types?: string[];
+  /** Maximum number of results */
+  limit?: number;
+}
+
+/** Args for validate_flow_diagram tool (Logistician) */
+export interface ValidateFlowDiagramArgs {
+  /** UUID of the flow diagram to validate */
+  diagram_id: string;
+  /** Validation level: syntax, logic, or optimization */
+  validation_level?: "syntax" | "logic" | "optimization";
+}
+
+// ============================================
+// Tool Execution Context
+// ============================================
+
+/** Context passed to tool execution for session-aware tools */
+export interface ToolExecutionContext {
+  sessionId: string;
+  userId: string;
+  supabaseUrl: string;
+  supabaseKey: string;
+}

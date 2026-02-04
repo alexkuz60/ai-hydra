@@ -9,6 +9,7 @@ import {
   testHttpTool,
   setSearchProviderKeys,
   getAvailableSearchProviders,
+  setExecutionContext,
 } from "./tools.ts";
 
 import type {
@@ -754,6 +755,16 @@ serve(async (req) => {
     const availableProviders = getAvailableSearchProviders();
     console.log(`[Tools] Search providers available: ${availableProviders} (Tavily: ${userTavilyKey ? 'personal' : 'system'}, Perplexity: ${userPerplexityKey ? 'personal' : 'none'})`);
 
+    // Set execution context for session-aware tools (Archivist, Logistician)
+    const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
+    setExecutionContext({
+      sessionId: session_id,
+      userId: user.id,
+      supabaseUrl,
+      supabaseKey: supabaseServiceKey,
+    });
+    console.log(`[Tools] Execution context set for session: ${session_id}`);
     const errors: { model: string; error: string }[] = [];
     console.log(`Processing ${models.length} models:`, models.map(m => m.model_id));
 
