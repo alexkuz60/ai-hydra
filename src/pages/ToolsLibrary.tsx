@@ -347,7 +347,7 @@ export default function ToolsLibrary() {
               <Upload className="h-4 w-4 mr-2" />
               {t('tools.import')}
             </Button>
-            <Button onClick={handleStartCreate} className="hydra-glow-sm">
+            <Button variant="outline" onClick={handleStartCreate}>
               <Plus className="h-4 w-4 mr-2" />
               {t('tools.createTool')}
             </Button>
