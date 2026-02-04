@@ -6,7 +6,8 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Target, GitBranch, CheckCircle2, MessageSquare, Users, ArrowRight, Loader2, Pencil, Copy, Lock, ChevronDown } from 'lucide-react';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Target, GitBranch, CheckCircle2, MessageSquare, Users, ArrowRight, Loader2, Pencil, Copy, Lock, ChevronDown, ArrowUp, ArrowLeftRight, Swords } from 'lucide-react';
 import { ROLE_CONFIG } from '@/config/roles';
 import { cn } from '@/lib/utils';
 import type { TaskBlueprint, RoleBehavior } from '@/types/patterns';
@@ -342,17 +343,40 @@ const RoleBehaviorDetails: React.FC<{ pattern: RoleBehavior }> = ({ pattern }) =
 
       <Separator className="my-4" />
 
-      {/* Interactions */}
+      {/* Interactions - tabbed layout */}
       <div>
         <h3 className="text-sm font-medium text-muted-foreground mb-3 flex items-center gap-2">
           <Users className="h-4 w-4" />
           {t('patterns.interactions')}
         </h3>
-        <div className="space-y-3">
-          {pattern.interactions?.defers_to && pattern.interactions.defers_to.length > 0 && (
-            <div className="p-3 rounded-lg bg-muted/30 border border-border/50">
-              <span className="text-xs text-muted-foreground">{t('patterns.defersTo')}</span>
-              <div className="flex flex-wrap gap-1 mt-2">
+        <Tabs defaultValue="defers_to" className="w-full">
+          <TabsList className="w-full h-8 p-0.5">
+            <TabsTrigger value="defers_to" className="flex-1 h-7 text-xs gap-1 px-2">
+              <ArrowUp className="h-3 w-3" />
+              {t('patterns.defersTo')}
+              {pattern.interactions?.defers_to?.length ? (
+                <span className="text-muted-foreground">({pattern.interactions.defers_to.length})</span>
+              ) : null}
+            </TabsTrigger>
+            <TabsTrigger value="collaborates" className="flex-1 h-7 text-xs gap-1 px-2">
+              <ArrowLeftRight className="h-3 w-3" />
+              {t('patterns.collaborates')}
+              {pattern.interactions?.collaborates?.length ? (
+                <span className="text-muted-foreground">({pattern.interactions.collaborates.length})</span>
+              ) : null}
+            </TabsTrigger>
+            <TabsTrigger value="challenges" className="flex-1 h-7 text-xs gap-1 px-2">
+              <Swords className="h-3 w-3" />
+              {t('patterns.challenges')}
+              {pattern.interactions?.challenges?.length ? (
+                <span className="text-muted-foreground">({pattern.interactions.challenges.length})</span>
+              ) : null}
+            </TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="defers_to" className="mt-2">
+            {pattern.interactions?.defers_to && pattern.interactions.defers_to.length > 0 ? (
+              <div className="flex flex-wrap gap-1">
                 {pattern.interactions.defers_to.map((role) => {
                   const config = ROLE_CONFIG[role];
                   return (
@@ -362,27 +386,14 @@ const RoleBehaviorDetails: React.FC<{ pattern: RoleBehavior }> = ({ pattern }) =
                   );
                 })}
               </div>
-            </div>
-          )}
-          {pattern.interactions?.challenges && pattern.interactions.challenges.length > 0 && (
-            <div className="p-3 rounded-lg bg-muted/30 border border-border/50">
-              <span className="text-xs text-muted-foreground">{t('patterns.challenges')}</span>
-              <div className="flex flex-wrap gap-1 mt-2">
-                {pattern.interactions.challenges.map((role) => {
-                  const config = ROLE_CONFIG[role];
-                  return (
-                    <Badge key={role} variant="outline" className={cn('text-xs', config?.color)}>
-                      {t(config?.label || role)}
-                    </Badge>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-          {pattern.interactions?.collaborates && pattern.interactions.collaborates.length > 0 && (
-            <div className="p-3 rounded-lg bg-muted/30 border border-border/50">
-              <span className="text-xs text-muted-foreground">{t('patterns.collaborates')}</span>
-              <div className="flex flex-wrap gap-1 mt-2">
+            ) : (
+              <p className="text-xs text-muted-foreground italic">{t('patterns.noInteractions')}</p>
+            )}
+          </TabsContent>
+          
+          <TabsContent value="collaborates" className="mt-2">
+            {pattern.interactions?.collaborates && pattern.interactions.collaborates.length > 0 ? (
+              <div className="flex flex-wrap gap-1">
                 {pattern.interactions.collaborates.map((role) => {
                   const config = ROLE_CONFIG[role];
                   return (
@@ -392,9 +403,28 @@ const RoleBehaviorDetails: React.FC<{ pattern: RoleBehavior }> = ({ pattern }) =
                   );
                 })}
               </div>
-            </div>
-          )}
-        </div>
+            ) : (
+              <p className="text-xs text-muted-foreground italic">{t('patterns.noInteractions')}</p>
+            )}
+          </TabsContent>
+          
+          <TabsContent value="challenges" className="mt-2">
+            {pattern.interactions?.challenges && pattern.interactions.challenges.length > 0 ? (
+              <div className="flex flex-wrap gap-1">
+                {pattern.interactions.challenges.map((role) => {
+                  const config = ROLE_CONFIG[role];
+                  return (
+                    <Badge key={role} variant="outline" className={cn('text-xs', config?.color)}>
+                      {t(config?.label || role)}
+                    </Badge>
+                  );
+                })}
+              </div>
+            ) : (
+              <p className="text-xs text-muted-foreground italic">{t('patterns.noInteractions')}</p>
+            )}
+          </TabsContent>
+        </Tabs>
       </div>
     </>
   );
