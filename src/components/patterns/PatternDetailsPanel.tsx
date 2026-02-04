@@ -106,31 +106,41 @@ const TaskBlueprintDetails: React.FC<{ pattern: TaskBlueprint }> = ({ pattern })
           <GitBranch className="h-4 w-4" />
           {t('patterns.stages')} ({pattern.stages.length})
         </h3>
-        <div className="space-y-3">
+        <div className="relative">
           {pattern.stages.map((stage, index) => (
-            <div key={index} className="p-3 rounded-lg bg-muted/30 border border-border/50">
-              <div className="flex items-center gap-2 mb-2">
-                <span className="w-6 h-6 rounded-full bg-primary/20 text-primary text-xs flex items-center justify-center font-medium">
+            <div key={index} className="relative flex gap-3">
+              {/* Timeline connector */}
+              <div className="flex flex-col items-center">
+                <div className="w-7 h-7 rounded-full bg-primary/20 text-primary text-xs flex items-center justify-center font-semibold border-2 border-primary/40 z-10">
                   {index + 1}
-                </span>
-                <span className="font-medium text-sm">{stage.name}</span>
+                </div>
+                {index < pattern.stages.length - 1 && (
+                  <div className="w-0.5 flex-1 bg-gradient-to-b from-primary/40 to-primary/10 min-h-[16px]" />
+                )}
               </div>
-              <p className="text-xs text-muted-foreground mb-2 ml-8">{stage.objective}</p>
-              <div className="flex flex-wrap gap-1 ml-8">
-                {stage.roles.map((role) => {
-                  const config = ROLE_CONFIG[role];
-                  const Icon = config?.icon;
-                  return (
-                    <Badge
-                      key={role}
-                      variant="outline"
-                      className={cn('text-xs gap-1', config?.color)}
-                    >
-                      {Icon && <Icon className="h-3 w-3" />}
-                      {t(config?.label || role)}
-                    </Badge>
-                  );
-                })}
+              
+              {/* Stage content */}
+              <div className="flex-1 pb-3">
+                <div className="p-3 rounded-lg bg-muted/30 border border-border/50">
+                  <span className="font-medium text-sm">{stage.name}</span>
+                  <p className="text-xs text-muted-foreground mt-1 mb-2">{stage.objective}</p>
+                  <div className="flex flex-wrap gap-1">
+                    {stage.roles.map((role) => {
+                      const config = ROLE_CONFIG[role];
+                      const Icon = config?.icon;
+                      return (
+                        <Badge
+                          key={role}
+                          variant="outline"
+                          className={cn('text-xs gap-1', config?.color)}
+                        >
+                          {Icon && <Icon className="h-3 w-3" />}
+                          {t(config?.label || role)}
+                        </Badge>
+                      );
+                    })}
+                  </div>
+                </div>
               </div>
             </div>
           ))}
