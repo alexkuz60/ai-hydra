@@ -364,27 +364,21 @@ export function FlowToolbar({
 
       <div className="flex-1" />
 
-      {/* Run button */}
+      {/* Run/Stop button - icon only */}
       {onStartExecution && onStopExecution && (
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
               variant={isExecuting ? 'destructive' : 'default'}
-              size="sm"
-              className="gap-2"
+              size="icon"
+              className="h-8 w-8"
               onClick={isExecuting ? onStopExecution : onStartExecution}
               disabled={!canExecute && !isExecuting}
             >
               {isExecuting ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  {t('flowEditor.stopExecution')}
-                </>
+                <Square className="h-4 w-4" />
               ) : (
-                <>
-                  <Play className="h-4 w-4" />
-                  {t('flowEditor.run')}
-                </>
+                <Play className="h-4 w-4" />
               )}
             </Button>
           </TooltipTrigger>
