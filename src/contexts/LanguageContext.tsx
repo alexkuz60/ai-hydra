@@ -64,6 +64,7 @@ const translations: Translations = {
   'staffRoles.description.webhunter': { ru: 'Web-охотник. Специализируется на поиске информации в интернете. Формулирует эффективные запросы и анализирует найденные источники.', en: 'Web hunter. Specializes in searching for information on the internet. Formulates effective queries and analyzes found sources.' },
   'staffRoles.description.promptengineer': { ru: 'Промпт-инженер. Создаёт, оптимизирует и анализирует промпты для ИИ-систем. Помогает формулировать эффективные инструкции.', en: 'Prompt engineer. Creates, optimizes, and analyzes prompts for AI systems. Helps formulate effective instructions.' },
   'staffRoles.description.flowregulator': { ru: 'Логистик потоков. Проектирует и оптимизирует data-flow диаграммы и логические цепочки обработки. Анализирует архитектуру потоков данных.', en: 'Flow Logistician. Designs and optimizes data-flow diagrams and processing logic chains. Analyzes data flow architecture.' },
+  'staffRoles.description.toolsmith': { ru: 'Инструменталист. Разрабатывает и настраивает пользовательские инструменты для ИИ-агентов. Помогает создавать эффективные промпт-шаблоны, проектирует параметры и HTTP-интеграции.', en: 'Toolsmith. Develops and configures custom tools for AI agents. Helps create effective prompt templates, designs parameters and HTTP integrations.' },
   
   // Behavioral Patterns
   'patterns.description': { ru: 'Шаблоны логики решения задач и поведенческие модели AI-ролей', en: 'Task-solving logic templates and AI role behavioral models' },
@@ -601,6 +602,7 @@ const translations: Translations = {
   'role.webhunter': { ru: 'Web-Охотник', en: 'Web Hunter' },
   'role.promptengineer': { ru: 'Промпт-Инженер', en: 'Prompt Engineer' },
   'role.flowregulator': { ru: 'Логистик', en: 'Flow Logistician' },
+  'role.toolsmith': { ru: 'Инструменталист', en: 'Toolsmith' },
   
   // Consultant feature
   'consultant.select': { ru: 'Консультант', en: 'Consultant' },

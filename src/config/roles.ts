@@ -13,6 +13,7 @@ import {
   User,
   Wand2,
   Route,
+  Wrench,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -28,7 +29,8 @@ export type AgentRole =
   | 'analyst'
   | 'webhunter'
   | 'promptengineer'
-  | 'flowregulator';
+  | 'flowregulator'
+  | 'toolsmith';
 
 // All possible message roles including user
 // This is the SINGLE SOURCE OF TRUTH for MessageRole type
@@ -142,6 +144,14 @@ export const ROLE_CONFIG: Record<MessageRole, RoleConfigItem> = {
     isTechnicalStaff: true,
     cardVariant: 'default',
   },
+  toolsmith: {
+    icon: Wrench,
+    color: 'text-hydra-toolsmith',
+    label: 'role.toolsmith',
+    description: 'staffRoles.description.toolsmith',
+    isTechnicalStaff: true,
+    cardVariant: 'default',
+  },
 };
 
 // Supervisor icon (used for user with supervisor privileges)
@@ -161,6 +171,7 @@ export const AGENT_ROLES: AgentRole[] = [
   'webhunter',
   'promptengineer',
   'flowregulator',
+  'toolsmith',
 ];
 
 // Default system prompts for each agent role
@@ -176,6 +187,7 @@ export const DEFAULT_SYSTEM_PROMPTS: Record<AgentRole, string> = {
   webhunter: `Вы - web-охотник. Специализируетесь на поиске информации в интернете. Формулируйте эффективные поисковые запросы, анализируйте найденные источники и предоставляйте релевантную информацию.`,
   promptengineer: `Вы - промпт-инженер. Специализируетесь на создании, оптимизации и анализе промптов для ИИ-систем. Помогаете формулировать эффективные инструкции, улучшаете существующие промпты, анализируете их структуру и предлагаете оптимизации для достижения лучших результатов.`,
   flowregulator: `Вы - логистик потоков. Специализируетесь на проектировании и оптимизации data-flow диаграмм и логических цепочек обработки. Анализируете архитектуру потоков данных, выявляете узкие места, предлагаете оптимизации маршрутов и помогаете проектировать эффективные пайплайны обработки.`,
+  toolsmith: `Вы - инструменталист. Специализируетесь на разработке и настройке пользовательских инструментов для ИИ-агентов. Помогаете создавать эффективные промпт-шаблоны для инструментов, проектируете параметры, настраиваете HTTP-интеграции и оптимизируете JSON-path извлечение данных. Даёте рекомендации по структуре и документации инструментов.`,
 };
 
 // Helper function to get role config with fallback
@@ -196,6 +208,7 @@ export const ROLE_BADGE_COLORS: Record<string, string> = {
   webhunter: 'bg-hydra-webhunter/20 text-hydra-webhunter border-hydra-webhunter/30',
   promptengineer: 'bg-hydra-promptengineer/20 text-hydra-promptengineer border-hydra-promptengineer/30',
   flowregulator: 'bg-hydra-flowregulator/20 text-hydra-flowregulator border-hydra-flowregulator/30',
+  toolsmith: 'bg-hydra-toolsmith/20 text-hydra-toolsmith border-hydra-toolsmith/30',
 };
 
 export function getRoleBadgeColor(role: string): string {
