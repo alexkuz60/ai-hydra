@@ -134,7 +134,7 @@ export function ChatInputArea({
 
       // Save to localStorage (use ref to avoid saving a stale height)
       try {
-        localStorage.setItem('hydra-main-input-textarea-height', String(textareaHeightRef.current));
+        localStorage.setItem('hydra-main-chat-textarea-height', String(textareaHeightRef.current));
       } catch {
         /* ignore */
       }
@@ -147,7 +147,7 @@ export function ChatInputArea({
   // Load saved height on mount
   useEffect(() => {
     try {
-      const saved = localStorage.getItem('hydra-main-input-textarea-height');
+      const saved = localStorage.getItem('hydra-main-chat-textarea-height');
       if (saved) {
         const h = parseInt(saved, 10);
         if (!isNaN(h) && h >= MIN_TEXTAREA_HEIGHT && h <= MAX_TEXTAREA_HEIGHT) {

@@ -152,7 +152,7 @@ export default function ExpertPanel() {
    const { 
      isCollapsed: isInputCollapsed, 
      toggleCollapsed: toggleInputCollapse 
-   } = useInputAreaSize('hydra-main-input-collapsed');
+   } = useInputAreaSize('hydra-main-chat-input-collapsed');
   
   // Handler for refreshing memory with animation feedback
   const handleRefreshMemory = useCallback(async () => {
