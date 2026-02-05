@@ -103,12 +103,12 @@ export function SupervisorWishesPicker({
   const triggerTitle =
     activeRoles.length === 0
       ? (supervisorDisplayName ? `${t('supervisorWishes.title')} (${supervisorDisplayName})` : t('supervisorWishes.title'))
-      : `${t('supervisorWishes.wishesFor')} → ${dynamicRoleNames}`;
+      : `→ ${dynamicRoleNames}`;
 
   const popoverTitle =
     activeRoles.length === 0
       ? (supervisorDisplayName ? `${t('supervisorWishes.title')} (${supervisorDisplayName})` : t('supervisorWishes.title'))
-      : `${t('supervisorWishes.wishesFor')} → ${dynamicRoleNames}`;
+      : `→ ${dynamicRoleNames}`;
 
   const isDisabled = disabled || activeRoles.length === 0;
 
