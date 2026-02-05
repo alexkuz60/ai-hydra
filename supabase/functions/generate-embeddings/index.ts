@@ -100,12 +100,17 @@ serve(async (req) => {
     const openaiKey = keyData?.openai_api_key as string | undefined;
     
     if (!openaiKey) {
+      // Return null embeddings gracefully - embeddings are optional
+      console.log("[generate-embeddings] No OpenAI API key configured, skipping embedding generation");
       return new Response(
         JSON.stringify({ 
-          error: "OpenAI API key required for embeddings",
-          details: "Please add your OpenAI API key in Profile settings. Embedding models are not available through the built-in AI gateway."
+          embeddings: texts.map(() => null),
+          model: null,
+          usage: null,
+          skipped: true,
+          reason: "no_api_key"
         }),
-        { status: 400, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } }
+        { status: 200, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } }
       );
     }
 
