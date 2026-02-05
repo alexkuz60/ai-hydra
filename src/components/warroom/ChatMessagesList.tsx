@@ -75,7 +75,7 @@ export function ChatMessagesList({
 }: ChatMessagesListProps) {
   if (messages.length === 0) {
     return (
-      <ScrollArea className="flex-1 p-4 hydra-scrollbar">
+      <ScrollArea className="flex-1 min-h-0 p-4 hydra-scrollbar">
         <div className="max-w-4xl mx-auto">
           <div className="text-center py-16">
             <Sparkles className="h-12 w-12 text-primary mx-auto mb-4 animate-pulse-glow" />
@@ -89,7 +89,7 @@ export function ChatMessagesList({
   }
 
   return (
-    <ScrollArea className="flex-1 p-4 hydra-scrollbar">
+    <ScrollArea className="flex-1 min-h-0 p-4 hydra-scrollbar">
       <div className="max-w-4xl mx-auto space-y-4">
         {messages.map((message, index) => {
           const messageDate = new Date(message.created_at);
