@@ -2,12 +2,7 @@ import React, { useMemo } from 'react';
 import { Sparkles, X } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
 import {
@@ -64,39 +59,30 @@ export function SupervisorWishesPicker({
     .map((key) => SUPERVISOR_WISHES_DICTIONARY.find((w) => w.key === key))
     .filter(Boolean) as SupervisorWish[];
 
-  const displayText =
-    selectedWishLabels.length > 0
-      ? selectedWishLabels
-          .map((w) => w.label[language as 'ru' | 'en'])
-          .slice(0, 2)
-          .join(', ') + (selectedWishLabels.length > 2 ? '...' : '')
+  const triggerTitle =
+    activeRoles.length === 0
+      ? t('supervisorWishes.noRolesSelected')
       : t('supervisorWishes.selectWishes');
 
   return (
     <Popover>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <PopoverTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className={cn(
-                'h-9 w-9',
-                selectedWishes.length > 0 &&
-                  'bg-hydra-promptengineer/20 text-hydra-promptengineer hover:bg-hydra-promptengineer/30'
-              )}
-              disabled={disabled || activeRoles.length === 0}
-            >
-              <Sparkles className="h-4 w-4" />
-            </Button>
-          </PopoverTrigger>
-        </TooltipTrigger>
-        <TooltipContent side="right">
-          {activeRoles.length === 0
-            ? t('supervisorWishes.noRolesSelected')
-            : t('supervisorWishes.selectWishes')}
-        </TooltipContent>
-      </Tooltip>
+      <PopoverTrigger asChild>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          title={triggerTitle}
+          aria-label={triggerTitle}
+          className={cn(
+            'h-9 w-9',
+            selectedWishes.length > 0 &&
+              'bg-hydra-promptengineer/20 text-hydra-promptengineer hover:bg-hydra-promptengineer/30'
+          )}
+          disabled={disabled || activeRoles.length === 0}
+        >
+          <Sparkles className="h-4 w-4" />
+        </Button>
+      </PopoverTrigger>
 
       <PopoverContent className="w-80 p-3" align="end" side="top">
         <div className="space-y-3">
