@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+ import React, { useCallback, useState, useRef, useEffect } from 'react';
 import { Textarea } from '@/components/ui/textarea';
 import { FileUpload, MERMAID_TEMPLATE, AttachedFile } from '@/components/warroom/FileUpload';
 import { FlowDiagramPickerDialog } from '@/components/warroom/FlowDiagramPickerDialog';
@@ -9,13 +9,12 @@ import { MermaidBlock } from '@/components/warroom/MermaidBlock';
 import { PromptEngineerButton } from '@/components/warroom/PromptEngineerButton';
 import { ModelOption } from '@/hooks/useAvailableModels';
 import { cn } from '@/lib/utils';
-import { Loader2, GitBranch } from 'lucide-react';
+ import { Loader2, GitBranch, ChevronDown, ChevronUp } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
-import {
-  Dialog,
-  DialogContent,
-  DialogTrigger,
-} from '@/components/ui/dialog';
+ import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
+ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+ import { Button } from '@/components/ui/button';
+ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 // Re-export AttachedFile for external use
 export type { AttachedFile };
@@ -46,6 +45,9 @@ interface ChatInputAreaProps {
   onTimeoutChange: (value: number) => void;
   // Model count for send button
   selectedModelsCount: number;
+   // Collapsible & resizable
+   isCollapsed?: boolean;
+   onToggleCollapse?: () => void;
 }
 
 export function ChatInputArea({
@@ -65,9 +67,63 @@ export function ChatInputArea({
   timeoutSeconds,
   onTimeoutChange,
   selectedModelsCount,
+   isCollapsed = false,
+   onToggleCollapse,
 }: ChatInputAreaProps) {
   const { t } = useLanguage();
   const [flowPickerOpen, setFlowPickerOpen] = useState(false);
+   const textareaRef = useRef<HTMLTextAreaElement>(null);
+   const containerRef = useRef<HTMLDivElement>(null);
+   const [textareaHeight, setTextareaHeight] = useState(80);
+   const isResizing = useRef(false);
+ 
+   // Handle resize drag
+   const handleResizeStart = useCallback((e: React.MouseEvent) => {
+     e.preventDefault();
+     isResizing.current = true;
+     const startY = e.clientY;
+     const startHeight = textareaHeight;
+ 
+     const handleMouseMove = (moveEvent: MouseEvent) => {
+       if (!isResizing.current) return;
+       const delta = startY - moveEvent.clientY;
+       const newHeight = Math.max(60, Math.min(300, startHeight + delta));
+       setTextareaHeight(newHeight);
+     };
+ 
+     const handleMouseUp = () => {
+       isResizing.current = false;
+       document.removeEventListener('mousemove', handleMouseMove);
+       document.removeEventListener('mouseup', handleMouseUp);
+       // Save to localStorage
+       try {
+         localStorage.setItem('hydra-main-input-textarea-height', String(textareaHeight));
+       } catch { /* ignore */ }
+     };
+ 
+     document.addEventListener('mousemove', handleMouseMove);
+     document.addEventListener('mouseup', handleMouseUp);
+   }, [textareaHeight]);
+ 
+   // Load saved height on mount
+   useEffect(() => {
+     try {
+       const saved = localStorage.getItem('hydra-main-input-textarea-height');
+       if (saved) {
+         const h = parseInt(saved, 10);
+         if (!isNaN(h) && h >= 60 && h <= 300) {
+           setTextareaHeight(h);
+         }
+       }
+     } catch { /* ignore */ }
+   }, []);
+ 
+   // Focus textarea when expanding
+   useEffect(() => {
+     if (!isCollapsed && textareaRef.current) {
+       textareaRef.current.focus();
+     }
+   }, [isCollapsed]);
 
   // Handler to attach Mermaid diagram (instead of inserting into text)
   const handleAttachMermaid = useCallback((content: string, name?: string) => {
@@ -91,8 +147,44 @@ export function ChatInputArea({
   }, [onFilesChange]);
 
   return (
-    <div className="border-t border-border p-4 bg-background/80 backdrop-blur-sm">
+     <div ref={containerRef} className="border-t border-border bg-background/80 backdrop-blur-sm">
       <div className="max-w-4xl mx-auto">
+         {/* Collapsed state - compact bar */}
+         {isCollapsed ? (
+           <div className="flex items-center gap-2 p-3">
+             <Tooltip>
+               <TooltipTrigger asChild>
+                 <Button
+                   variant="ghost"
+                   size="icon"
+                   className="h-8 w-8 shrink-0"
+                   onClick={onToggleCollapse}
+                 >
+                   <ChevronUp className="h-4 w-4" />
+                 </Button>
+               </TooltipTrigger>
+               <TooltipContent>{t('expertPanel.expandInput')}</TooltipContent>
+             </Tooltip>
+             <button
+               onClick={onToggleCollapse}
+               className="flex-1 text-left text-sm text-muted-foreground hover:text-foreground transition-colors px-3 py-2 rounded-md hover:bg-muted/50"
+             >
+               {t('expertPanel.clickToType')}
+             </button>
+             <UnifiedSendButton
+               onSendToAll={onSend}
+               onSendToConsultant={onSendToConsultant}
+               sending={sending}
+               disabled={disabled}
+               hasMessage={!!input.trim() || attachedFiles.length > 0}
+               selectedModelsCount={selectedModelsCount}
+               availableModels={availableModels}
+               selectedConsultant={selectedConsultant}
+               onSelectConsultant={onSelectConsultant}
+             />
+           </div>
+         ) : (
+           <div className="p-4">
         {/* Upload progress indicator */}
         {uploadProgress && (
           <div className="mb-3 p-3 rounded-lg border border-primary/30 bg-primary/5">
@@ -207,8 +299,31 @@ export function ChatInputArea({
           </div>
         )}
 
-        <div className="flex gap-3 items-end">
+             {/* Resize handle */}
+             <div
+               onMouseDown={handleResizeStart}
+               className="h-1 w-full cursor-ns-resize flex items-center justify-center group hover:bg-primary/10 transition-colors mb-2"
+             >
+               <div className="h-0.5 w-12 bg-border group-hover:bg-primary/40 rounded-full transition-colors" />
+             </div>
+ 
+             <div className="flex gap-3 items-end">
           {/* Attach button */}
+               {/* Collapse toggle */}
+               <Tooltip>
+                 <TooltipTrigger asChild>
+                   <Button
+                     variant="ghost"
+                     size="icon"
+                     className="h-9 w-9 shrink-0"
+                     onClick={onToggleCollapse}
+                   >
+                     <ChevronDown className="h-4 w-4" />
+                   </Button>
+                 </TooltipTrigger>
+                 <TooltipContent>{t('expertPanel.collapseInput')}</TooltipContent>
+               </Tooltip>
+ 
           <FileUpload
             files={attachedFiles}
             onFilesChange={onFilesChange}
@@ -235,7 +350,9 @@ export function ChatInputArea({
             value={input}
             onChange={(e) => onInputChange(e.target.value)}
             placeholder={t('expertPanel.placeholder')}
-            className="flex-1 min-h-[60px] max-h-[200px] resize-none"
+               ref={textareaRef}
+               style={{ height: textareaHeight }}
+               className="flex-1 resize-none"
             onKeyDown={(e) => {
               if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
@@ -258,6 +375,8 @@ export function ChatInputArea({
             onSelectConsultant={onSelectConsultant}
           />
         </div>
+           </div>
+         )}
       </div>
 
       {/* Flow diagram picker dialog */}

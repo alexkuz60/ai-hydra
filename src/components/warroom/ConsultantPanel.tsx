@@ -23,6 +23,8 @@ import {
   Loader2,
   ChevronLeft,
   ChevronRight,
+   ChevronUp,
+   ChevronDown,
   Trash2,
   Users,
   Archive,
@@ -111,7 +113,73 @@ export function ConsultantPanel({
   } = useSessionMemory(sessionId);
   const [memoryRefreshed, setMemoryRefreshed] = useState(false);
   const [memoryDialogOpen, setMemoryDialogOpen] = useState(false);
+   const [inputCollapsed, setInputCollapsed] = useState(false);
+   const [inputHeight, setInputHeight] = useState(60);
+   const isResizing = useRef(false);
+   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const memoryStats = getStats();
+   
+   // Load saved input height
+   useEffect(() => {
+     try {
+       const saved = localStorage.getItem('hydra-dchat-input-height');
+       if (saved) {
+         const h = parseInt(saved, 10);
+         if (!isNaN(h) && h >= 40 && h <= 200) {
+           setInputHeight(h);
+         }
+       }
+       const collapsedSaved = localStorage.getItem('hydra-dchat-input-collapsed');
+       if (collapsedSaved) {
+         setInputCollapsed(collapsedSaved === 'true');
+       }
+     } catch { /* ignore */ }
+   }, []);
+ 
+   // Handle resize drag
+   const handleResizeStart = useCallback((e: React.MouseEvent) => {
+     e.preventDefault();
+     isResizing.current = true;
+     const startY = e.clientY;
+     const startHeight = inputHeight;
+ 
+     const handleMouseMove = (moveEvent: MouseEvent) => {
+       if (!isResizing.current) return;
+       const delta = startY - moveEvent.clientY;
+       const newHeight = Math.max(40, Math.min(200, startHeight + delta));
+       setInputHeight(newHeight);
+     };
+ 
+     const handleMouseUp = () => {
+       isResizing.current = false;
+       document.removeEventListener('mousemove', handleMouseMove);
+       document.removeEventListener('mouseup', handleMouseUp);
+       try {
+         localStorage.setItem('hydra-dchat-input-height', String(inputHeight));
+       } catch { /* ignore */ }
+     };
+ 
+     document.addEventListener('mousemove', handleMouseMove);
+     document.addEventListener('mouseup', handleMouseUp);
+   }, [inputHeight]);
+ 
+   // Toggle input collapse
+   const toggleInputCollapse = useCallback(() => {
+     setInputCollapsed(prev => {
+       const next = !prev;
+       try {
+         localStorage.setItem('hydra-dchat-input-collapsed', String(next));
+       } catch { /* ignore */ }
+       return next;
+     });
+   }, []);
+ 
+   // Focus textarea when expanding
+   useEffect(() => {
+     if (!inputCollapsed && textareaRef.current) {
+       textareaRef.current.focus();
+     }
+   }, [inputCollapsed]);
 
   // Handle memory refresh
   const handleRefreshMemory = useCallback(async () => {
@@ -462,12 +530,71 @@ export function ConsultantPanel({
 
       {/* Input area */}
       <div className="p-2 border-t border-border">
-        <div className="flex gap-2">
+         {inputCollapsed ? (
+           <div className="flex items-center gap-2">
+             <Tooltip>
+               <TooltipTrigger asChild>
+                 <Button
+                   variant="ghost"
+                   size="icon"
+                   className="h-7 w-7 shrink-0"
+                   onClick={toggleInputCollapse}
+                 >
+                   <ChevronUp className="h-3.5 w-3.5" />
+                 </Button>
+               </TooltipTrigger>
+               <TooltipContent>{t('dchat.expandInput')}</TooltipContent>
+             </Tooltip>
+             <button
+               onClick={toggleInputCollapse}
+               className="flex-1 text-left text-xs text-muted-foreground hover:text-foreground transition-colors px-2 py-1.5 rounded hover:bg-muted/50"
+             >
+               {t('dchat.clickToType')}
+             </button>
+             <Button
+               onClick={handleSend}
+               disabled={streaming || !input.trim() || !selectedModel}
+               size="icon"
+               className="h-7 w-7 shrink-0"
+             >
+               {streaming ? (
+                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
+               ) : (
+                 <Send className="h-3.5 w-3.5" />
+               )}
+             </Button>
+           </div>
+         ) : (
+           <>
+             {/* Resize handle */}
+             <div
+               onMouseDown={handleResizeStart}
+               className="h-1 w-full cursor-ns-resize flex items-center justify-center group hover:bg-primary/10 transition-colors mb-1"
+             >
+               <div className="h-0.5 w-8 bg-border group-hover:bg-primary/40 rounded-full transition-colors" />
+             </div>
+             
+             <div className="flex gap-2 items-end">
+               <Tooltip>
+                 <TooltipTrigger asChild>
+                   <Button
+                     variant="ghost"
+                     size="icon"
+                     className="h-7 w-7 shrink-0 self-start"
+                     onClick={toggleInputCollapse}
+                   >
+                     <ChevronDown className="h-3.5 w-3.5" />
+                   </Button>
+                 </TooltipTrigger>
+                 <TooltipContent>{t('dchat.collapseInput')}</TooltipContent>
+               </Tooltip>
           <Textarea
+                 ref={textareaRef}
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder={t('dchat.placeholder')}
-            className="min-h-[60px] max-h-[100px] resize-none text-sm"
+                 style={{ height: inputHeight }}
+                 className="resize-none text-sm"
             onKeyDown={(e) => {
               if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
@@ -489,6 +616,8 @@ export function ConsultantPanel({
             )}
           </Button>
         </div>
+           </>
+         )}
       </div>
       
       {/* Session Memory Dialog */}

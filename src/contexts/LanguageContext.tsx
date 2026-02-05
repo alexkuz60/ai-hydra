@@ -774,6 +774,12 @@ const translations: Translations = {
   
   // Expert Panel extras (legacy)
   'expertPanel.noModelsSelected': { ru: 'Модели не выбраны', en: 'No models selected' },
+   'expertPanel.collapseInput': { ru: 'Свернуть панель ввода', en: 'Collapse input panel' },
+   'expertPanel.expandInput': { ru: 'Развернуть панель ввода', en: 'Expand input panel' },
+   'expertPanel.clickToType': { ru: 'Нажмите для ввода сообщения...', en: 'Click to type a message...' },
+   'dchat.collapseInput': { ru: 'Свернуть ввод', en: 'Collapse input' },
+   'dchat.expandInput': { ru: 'Развернуть ввод', en: 'Expand input' },
+   'dchat.clickToType': { ru: 'Нажмите для ввода...', en: 'Click to type...' },
   
   // Presets
   'presets.title': { ru: 'Пресеты', en: 'Presets' },
