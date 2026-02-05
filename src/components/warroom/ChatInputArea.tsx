@@ -58,6 +58,7 @@ interface ChatInputAreaProps {
   // Collapsible & resizable
   isCollapsed?: boolean;
   onToggleCollapse?: () => void;
+  supervisorDisplayName?: string | null;
 }
 
 export function ChatInputArea({
@@ -82,6 +83,7 @@ export function ChatInputArea({
   activeRoles,
   isCollapsed = false,
   onToggleCollapse,
+  supervisorDisplayName,
 }: ChatInputAreaProps) {
   const { t } = useLanguage();
   const [flowPickerOpen, setFlowPickerOpen] = useState(false);
@@ -367,6 +369,7 @@ export function ChatInputArea({
                      onWishesChange={onWishesChange}
                      activeRoles={activeRoles}
                      disabled={sending}
+                     supervisorDisplayName={supervisorDisplayName}
                    />
 
                    {/* Prompt Engineer button */}
