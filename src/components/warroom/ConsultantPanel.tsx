@@ -495,7 +495,7 @@ export function ConsultantPanel({
       )}
 
       {/* Input area */}
-      <div className="border-t border-border bg-card/50">
+      <div className="border-t border-border bg-card/50 shrink-0">
          {inputCollapsed ? (
            <div className="flex items-center gap-2 px-3 py-3 h-14">
              <Tooltip>

@@ -163,11 +163,11 @@ export function ChatInputArea({
   }, [onFilesChange]);
 
   return (
-     <div ref={containerRef} className="border-t border-border bg-card/50">
+     <div ref={containerRef} className="border-t border-border bg-card/50 shrink-0">
       <div className="max-w-4xl mx-auto">
          {/* Collapsed state - compact bar */}
          {isCollapsed ? (
-           <div className="flex items-center gap-2 px-4 py-3 h-14">
+           <div className="flex items-center gap-2 px-3 py-3 h-14">
              <Tooltip>
                <TooltipTrigger asChild>
                  <Button
@@ -207,7 +207,7 @@ export function ChatInputArea({
               </Tooltip>
            </div>
          ) : (
-           <div className="p-4">
+           <div className="px-3 py-3">
         {/* Upload progress indicator */}
         {uploadProgress && (
           <div className="mb-3 p-3 rounded-lg border border-primary/30 bg-primary/5">
