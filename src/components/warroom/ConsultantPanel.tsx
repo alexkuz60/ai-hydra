@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -7,11 +7,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Badge } from '@/components/ui/badge';
 import { StreamingMessage } from '@/components/warroom/StreamingMessage';
+import { SupervisorWishesPicker } from '@/components/warroom/SupervisorWishesPicker';
 import { ModelOption } from '@/hooks/useAvailableModels';
 import { useStreamingChat, ConsultantMode } from '@/hooks/useStreamingChat';
 import { useSessionMemory } from '@/hooks/useSessionMemory';
 import { cn } from '@/lib/utils';
 import { PromptEngineerTools, PromptEngineerTool } from './PromptEngineerTools';
+import type { AgentRole } from '@/config/roles';
 import {
   Lightbulb,
   Search,
@@ -27,6 +29,7 @@ import {
   Trash2,
   Users,
   Wand2,
+  Sparkles,
 } from 'lucide-react';
 
 // Source message structure for moderator context
@@ -88,6 +91,7 @@ export function ConsultantPanel({
   );
   const [currentSourceMessageId, setCurrentSourceMessageId] = useState<string | null>(null);
   const [isModeratingContext, setIsModeratingContext] = useState(false);
+  const [selectedWishes, setSelectedWishes] = useState<string[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const { messages, streaming, sendQuery, stopStreaming, clearMessages } = useStreamingChat({
@@ -102,6 +106,20 @@ export function ConsultantPanel({
    const [inputHeight, setInputHeight] = useState(60);
    const isResizing = useRef(false);
    const textareaRef = useRef<HTMLTextAreaElement>(null);
+   
+   // Derive active roles from selected mode
+   const activeRoles = useMemo((): AgentRole[] => {
+     // Map consultant mode to agent roles
+     const modeToRole: Record<ConsultantMode, AgentRole> = {
+       'web_search': 'webhunter',
+       'expert': 'assistant',
+       'critic': 'critic',
+       'arbiter': 'arbiter',
+       'moderator': 'moderator',
+       'promptengineer': 'promptengineer',
+     };
+     return [modeToRole[selectedMode]];
+   }, [selectedMode]);
    
    // Handle prompt engineer tool selection
    const handlePromptEngineerTool = useCallback((tool: PromptEngineerTool, instruction: string) => {
@@ -491,48 +509,59 @@ export function ConsultantPanel({
                <div className="h-0.5 w-8 bg-border group-hover:bg-primary/40 rounded-full transition-colors" />
              </div>
              
-             <div className="flex gap-2 items-end">
-               <Tooltip>
-                 <TooltipTrigger asChild>
-                   <Button
-                     variant="ghost"
-                     size="icon"
-                     className="h-7 w-7 shrink-0 self-start"
-                     onClick={toggleInputCollapse}
-                   >
-                     <ChevronDown className="h-3.5 w-3.5" />
-                   </Button>
-                 </TooltipTrigger>
-                 <TooltipContent>{t('dchat.collapseInput')}</TooltipContent>
-               </Tooltip>
-          <Textarea
-                 ref={textareaRef}
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder={t('dchat.placeholder')}
-                 style={{ height: inputHeight }}
-                 className="resize-none text-sm"
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                handleSend();
-              }
-            }}
-            disabled={streaming}
-          />
-          <Button
-            onClick={handleSend}
-            disabled={streaming || !input.trim() || !selectedModel}
-            size="icon"
-            className="self-end shrink-0"
-          >
-            {streaming ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Send className="h-4 w-4" />
-            )}
-          </Button>
-        </div>
+              <div className="flex gap-2 items-end">
+                {/* Left toolbar */}
+                <div className="flex flex-col gap-1 shrink-0 self-start">
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7"
+                        onClick={toggleInputCollapse}
+                      >
+                        <ChevronDown className="h-3.5 w-3.5" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>{t('dchat.collapseInput')}</TooltipContent>
+                  </Tooltip>
+                  
+                  {/* Supervisor Wishes Picker */}
+                  <SupervisorWishesPicker
+                    selectedWishes={selectedWishes}
+                    onWishesChange={setSelectedWishes}
+                    activeRoles={activeRoles}
+                  />
+                </div>
+                
+                <Textarea
+                  ref={textareaRef}
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  placeholder={t('dchat.placeholder')}
+                  style={{ height: inputHeight }}
+                  className="resize-none text-sm"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      handleSend();
+                    }
+                  }}
+                  disabled={streaming}
+                />
+                <Button
+                  onClick={handleSend}
+                  disabled={streaming || !input.trim() || !selectedModel}
+                  size="icon"
+                  className="self-end shrink-0"
+                >
+                  {streaming ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Send className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
            </>
          )}
       </div>
