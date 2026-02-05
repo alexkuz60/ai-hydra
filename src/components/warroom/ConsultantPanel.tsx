@@ -8,6 +8,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { Badge } from '@/components/ui/badge';
 import { StreamingMessage } from '@/components/warroom/StreamingMessage';
 import { SupervisorWishesPicker } from '@/components/warroom/SupervisorWishesPicker';
+import { HorizontalResizeHandle } from '@/components/ui/horizontal-resize-handle';
 import { ModelOption } from '@/hooks/useAvailableModels';
 import { useStreamingChat, ConsultantMode } from '@/hooks/useStreamingChat';
 import { useSessionMemory } from '@/hooks/useSessionMemory';
@@ -520,7 +521,7 @@ export function ConsultantPanel({
                onClick={handleSend}
                disabled={streaming || !input.trim() || !selectedModel}
                size="icon"
-               className="h-9 w-9 shrink-0 hydra-glow-sm hover:bg-primary/80 transition-colors"
+               className="h-9 w-9 shrink-0 hydra-glow-sm"
              >
                {streaming ? (
                  <Loader2 className="h-4 w-4 animate-spin" />
@@ -531,13 +532,8 @@ export function ConsultantPanel({
            </div>
          ) : (
            <div className="px-3 py-3">
-             {/* Resize handle */}
-             <div
-               onMouseDown={handleResizeStart}
-               className="h-1 w-full cursor-ns-resize flex items-center justify-center group hover:bg-primary/10 transition-colors mb-1"
-             >
-               <div className="h-0.5 w-8 bg-border group-hover:bg-primary/40 rounded-full transition-colors" />
-             </div>
+              {/* Resize handle */}
+              <HorizontalResizeHandle onResizeStart={handleResizeStart} className="mb-1" />
              
               <div className="flex gap-2 items-end">
                 {/* Left toolbar */}
