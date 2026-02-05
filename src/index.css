@@ -393,29 +393,40 @@
   cursor: pointer;
 }
 
-.dark .react-flow__controls {
+/* React Flow controls - both themes */
+.react-flow__controls {
   background: hsl(var(--card)) !important;
   border: 1px solid hsl(var(--border)) !important;
-  box-shadow: 0 4px 12px hsl(0 0% 0% / 0.4) !important;
+  box-shadow: 0 4px 12px hsl(0 0% 0% / 0.15) !important;
   border-radius: 8px !important;
 }
 
-.dark .react-flow__controls-button {
+.react-flow__controls-button {
   background: hsl(var(--card)) !important;
   border: none !important;
   border-bottom: 1px solid hsl(var(--border)) !important;
 }
 
-.dark .react-flow__controls-button:hover {
+.react-flow__controls-button:hover {
   background: hsl(var(--muted)) !important;
 }
 
-.dark .react-flow__controls-button svg {
+.react-flow__controls-button svg {
   fill: hsl(var(--foreground)) !important;
 }
 
-.dark .react-flow__controls-button svg path {
+.react-flow__controls-button svg path {
   fill: hsl(var(--foreground)) !important;
+}
+
+/* MiniMap styling for both themes */
+.react-flow__minimap {
+  background: hsl(var(--card)) !important;
+  border: 1px solid hsl(var(--border)) !important;
+}
+
+.react-flow__minimap-mask {
+  fill: hsl(var(--background) / 0.6) !important;
 }
 
 @layer utilities {
