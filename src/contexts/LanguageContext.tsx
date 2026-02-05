@@ -742,7 +742,7 @@ const translations: Translations = {
   'settings.rolePrompt': { ru: 'Ролевой промпт', en: 'Role Prompt' },
   'settings.editPrompt': { ru: 'Редактировать', en: 'Edit' },
   'settings.revertPrompt': { ru: 'Вернуть', en: 'Revert' },
-  'settings.savePrompt': { ru: 'Сохранить в библиотеку', en: 'Save to Library' },
+  'settings.savePrompt': { ru: 'В библиотеку', en: 'To Library' },
   'settings.promptEditing': { ru: 'Редактирование', en: 'Editing' },
   'settings.promptSaved': { ru: 'Промпт сохранён в библиотеку', en: 'Prompt saved to library' },
   'settings.promptReverted': { ru: 'Промпт восстановлен', en: 'Prompt reverted' },

@@ -797,11 +797,11 @@ export function PerModelSettings({ selectedModels, settings, onChange, className
                           </div>
                           
                           {/* Prompt library and action buttons */}
-                          <div className="flex items-center gap-1.5">
+                          <div className="flex items-center gap-1.5 flex-wrap">
                             <Button
                               variant="outline"
                               size="sm"
-                              className="flex-1 h-9"
+                              className="h-9"
                               onClick={() => handleOpenLibrary(modelId)}
                             >
                               <Library className="h-4 w-4 mr-2" />
@@ -810,7 +810,7 @@ export function PerModelSettings({ selectedModels, settings, onChange, className
                             <Button
                               variant="default"
                               size="sm"
-                              className="flex-1 h-9"
+                              className="h-9"
                               onClick={() => handleOpenSaveDialog(modelId)}
                             >
                               <Save className="h-4 w-4 mr-2" />
