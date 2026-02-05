@@ -26,7 +26,7 @@ const translations: Translations = {
   'nav.signup': { ru: 'Регистрация', en: 'Sign Up' },
   'nav.admin': { ru: 'Админ-панель', en: 'Admin Panel' },
   'nav.warRoom': { ru: 'Экспертный Совет', en: 'Expert Council' },
-  'nav.modelRatings': { ru: 'Рейтинг моделей', en: 'Model Ratings' },
+   'nav.modelRatings': { ru: 'Подиум ИИ-моделей', en: 'AI Model Podium' },
   'nav.hydrapedia': { ru: 'Гидропедия', en: 'Hydrapedia' },
   'nav.staffRoles': { ru: 'Штат специалистов', en: 'AI Staff' },
   'nav.behavioralPatterns': { ru: 'Паттерны поведения', en: 'Behavioral Patterns' },
@@ -182,7 +182,7 @@ const translations: Translations = {
   'hydrapedia.sections.promptLibrary': { ru: 'Библиотека промптов', en: 'Prompt Library' },
   'hydrapedia.sections.tools': { ru: 'Инструменты', en: 'Tools' },
   'hydrapedia.sections.flowEditor': { ru: 'Редактор потоков', en: 'Flow Editor' },
-  'hydrapedia.sections.modelRatings': { ru: 'Рейтинг моделей', en: 'Model Ratings' },
+   'hydrapedia.sections.modelRatings': { ru: 'Подиум ИИ-моделей', en: 'AI Model Podium' },
   'hydrapedia.sections.bestPractices': { ru: 'Лучшие практики', en: 'Best Practices' },
   'hydrapedia.sections.streamingMode': { ru: 'Режим стриминга', en: 'Streaming Mode' },
   'hydrapedia.sections.tasks': { ru: 'Задачи', en: 'Tasks' },
@@ -702,7 +702,7 @@ const translations: Translations = {
   'files.mermaidDiagram': { ru: 'Диаграмма Mermaid', en: 'Mermaid Diagram' },
   
   // Stats
-  'stats.modelRatings': { ru: 'Рейтинг моделей', en: 'Model Ratings' },
+   'stats.modelRatings': { ru: 'Подиум ИИ-моделей', en: 'AI Model Podium' },
   'stats.totalBrains': { ru: 'Всего мозгов', en: 'Total brains' },
   'stats.avgRating': { ru: 'Средний балл', en: 'Average rating' },
   'stats.responseCount': { ru: 'Количество ответов', en: 'Response count' },
