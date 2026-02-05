@@ -41,6 +41,8 @@ const translations: Translations = {
   'staffRoles.systemPrompt': { ru: 'Системный промпт по умолчанию', en: 'Default System Prompt' },
   'staffRoles.technicalStaff': { ru: 'Технический персонал', en: 'Technical Staff' },
   'staffRoles.technicalStaffHint': { ru: 'Не участвует в коллегиальных обсуждениях. Служит агентом-помощником пользователя.', en: 'Does not participate in collegiate discussions. Serves as a user assistant agent.' },
+  'staffRoles.requiresApproval': { ru: 'Утверждение Супервизором', en: 'Supervisor Approval' },
+  'staffRoles.requiresApprovalHint': { ru: 'Ответы специалиста будут содержать интерактивные предложения для утверждения', en: 'Specialist responses will include interactive proposals for approval' },
   'staffRoles.editAndSave': { ru: 'Редактировать', en: 'Edit' },
   'staffRoles.promptName': { ru: 'Название промпта', en: 'Prompt Name' },
   'staffRoles.saveToLibrary': { ru: 'Сохранить в библиотеку', en: 'Save to Library' },
@@ -646,6 +648,7 @@ const translations: Translations = {
   'common.all': { ru: 'Все', en: 'All' },
   'common.collapse': { ru: 'Свернуть', en: 'Collapse' },
   'common.expand': { ru: 'Развернуть', en: 'Expand' },
+  'common.saved': { ru: 'Сохранено', en: 'Saved' },
   
   // Messages
   'messages.deleteTitle': { ru: 'Удалить сообщение?', en: 'Delete message?' },
@@ -655,6 +658,21 @@ const translations: Translations = {
   'messages.groupDeleted': { ru: 'Сообщения удалены', en: 'Messages deleted' },
   'messages.deleteGroupTitle': { ru: 'Удалить запрос и ответы?', en: 'Delete query and responses?' },
   'messages.deleteGroupConfirm': { ru: 'Будут удалены запрос пользователя и все ответы AI ({count} сообщений).', en: 'User query and all AI responses will be deleted ({count} messages).' },
+  
+  // Proposals (Supervisor Approval)
+  'proposals.title': { ru: 'Предложения для утверждения', en: 'Proposals for Approval' },
+  'proposals.approve': { ru: 'Утвердить выбранные', en: 'Approve Selected' },
+  'proposals.reject': { ru: 'Отклонить все', en: 'Reject All' },
+  'proposals.requestDetails': { ru: 'Запросить детали', en: 'Request Details' },
+  'proposals.addComment': { ru: 'Добавить комментарий', en: 'Add Comment' },
+  'proposals.commentPlaceholder': { ru: 'Введите комментарий...', en: 'Enter comment...' },
+  'proposals.approved': { ru: 'Утверждено', en: 'Approved' },
+  'proposals.rejected': { ru: 'Отклонено', en: 'Rejected' },
+  'proposals.pending': { ru: 'Ожидает решения', en: 'Pending' },
+  'proposals.needsClarification': { ru: 'Требует уточнения', en: 'Needs Clarification' },
+  'proposals.priority.high': { ru: 'Высокий', en: 'High' },
+  'proposals.priority.medium': { ru: 'Средний', en: 'Medium' },
+  'proposals.priority.low': { ru: 'Низкий', en: 'Low' },
   
   // Files
   'files.attach': { ru: 'Прикрепить файл', en: 'Attach file' },

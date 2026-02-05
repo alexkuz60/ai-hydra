@@ -26,6 +26,7 @@ import { Separator } from '@/components/ui/separator';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Wrench, Pencil, X, Save, Loader2, Library, ChevronDown, Network } from 'lucide-react';
+import { ClipboardCheck } from 'lucide-react';
 import { 
   ROLE_CONFIG, 
   DEFAULT_SYSTEM_PROMPTS, 
@@ -92,7 +93,7 @@ const RoleDetailsPanel = forwardRef<HTMLDivElement, RoleDetailsPanelProps>(
     const [pendingInteractions, setPendingInteractions] = useState<RoleInteractions | null>(null);
     
     // Load behavior from database
-    const { behavior, isLoading: isLoadingBehavior, isSaving, saveInteractions, fetchAllBehaviors } = useRoleBehavior(selectedRole);
+    const { behavior, isLoading: isLoadingBehavior, isSaving, saveInteractions, saveRequiresApproval, fetchAllBehaviors } = useRoleBehavior(selectedRole);
 
     // Track changes to interactions when editing
     const handleInteractionsChange = useCallback((newInteractions: RoleInteractions) => {
@@ -549,6 +550,37 @@ const RoleDetailsPanel = forwardRef<HTMLDivElement, RoleDetailsPanelProps>(
                 {t('staffRoles.technicalStaff')}
               </label>
             </div>
+
+            {/* Supervisor Approval Toggle */}
+            {user && (
+              <div className="flex items-center justify-between pt-2">
+                <div className="flex items-center gap-2">
+                  <ClipboardCheck className="h-4 w-4 text-muted-foreground" />
+                  <div className="space-y-0.5">
+                    <label 
+                      htmlFor="requiresApproval" 
+                      className="text-sm font-medium cursor-pointer"
+                    >
+                      {t('staffRoles.requiresApproval')}
+                    </label>
+                    <p className="text-xs text-muted-foreground">
+                      {t('staffRoles.requiresApprovalHint')}
+                    </p>
+                  </div>
+                </div>
+                <Switch
+                  id="requiresApproval"
+                  checked={behavior?.requires_approval ?? false}
+                  onCheckedChange={async (checked) => {
+                    const success = await saveRequiresApproval(checked);
+                    if (success) {
+                      toast.success(t('common.saved'));
+                    }
+                  }}
+                  disabled={isSaving || isLoadingBehavior}
+                />
+              </div>
+            )}
           </div>
         </ScrollArea>
         

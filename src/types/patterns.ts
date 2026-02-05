@@ -60,6 +60,20 @@ export interface RoleBehavior {
   communication: CommunicationStyle;
   reactions: RoleReaction[];
   interactions: RoleInteractions;
+  requires_approval?: boolean;
+}
+
+// Proposal types for supervisor approval feature
+export type ProposalPriority = 'high' | 'medium' | 'low';
+export type ProposalStatus = 'pending' | 'approved' | 'rejected' | 'needs_clarification';
+
+export interface Proposal {
+  id: string;
+  title: string;
+  description: string;
+  priority?: ProposalPriority;
+  status: ProposalStatus;
+  comment?: string;
 }
 
 // Union type for any pattern

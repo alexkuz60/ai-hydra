@@ -17,6 +17,7 @@ export interface RoleBehaviorData {
   is_system: boolean;
   is_shared: boolean;
   user_id: string | null;
+  requires_approval: boolean;
 }
 
 interface UseRoleBehaviorResult {
@@ -24,6 +25,7 @@ interface UseRoleBehaviorResult {
   isLoading: boolean;
   isSaving: boolean;
   saveInteractions: (interactions: RoleInteractions) => Promise<boolean>;
+  saveRequiresApproval: (requiresApproval: boolean) => Promise<boolean>;
   refetch: () => Promise<void>;
   fetchAllBehaviors: () => Promise<Map<AgentRole, RoleInteractions>>;
 }
@@ -88,6 +90,7 @@ export function useRoleBehavior(role: AgentRole | null): UseRoleBehaviorResult {
           is_system: selected.is_system,
           is_shared: selected.is_shared,
           user_id: selected.user_id,
+          requires_approval: selected.requires_approval ?? false,
         });
       } else {
         setBehavior(null);
@@ -186,6 +189,90 @@ export function useRoleBehavior(role: AgentRole | null): UseRoleBehaviorResult {
     }
   }, [role, user, fetchBehavior]);
 
+  const saveRequiresApproval = useCallback(async (requiresApproval: boolean): Promise<boolean> => {
+    if (!role || !user) {
+      toast.error('Необходима авторизация');
+      return false;
+    }
+
+    setIsSaving(true);
+    try {
+      // Check if user already has a custom behavior for this role
+      const { data: existing, error: checkError } = await supabase
+        .from('role_behaviors')
+        .select('id, communication, reactions, interactions')
+        .eq('role', role)
+        .eq('user_id', user.id)
+        .eq('is_system', false)
+        .maybeSingle();
+
+      if (checkError) throw checkError;
+
+      if (existing) {
+        // Update existing user behavior
+        const { error: updateError } = await supabase
+          .from('role_behaviors')
+          .update({
+            requires_approval: requiresApproval,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', existing.id);
+
+        if (updateError) throw updateError;
+      } else {
+        // Create new user behavior based on system defaults
+        const roleConfig = ROLE_CONFIG[role];
+        const roleName = roleConfig ? role : role;
+
+        // Get system behavior to copy data
+        const { data: systemBehavior } = await supabase
+          .from('role_behaviors')
+          .select('communication, reactions, interactions')
+          .eq('role', role)
+          .eq('is_system', true)
+          .maybeSingle();
+
+        const insertData: {
+          role: string;
+          name: string;
+          user_id: string;
+          is_system: boolean;
+          is_shared: boolean;
+          communication: Json;
+          reactions: Json;
+          interactions: Json;
+          requires_approval: boolean;
+        } = {
+          role: role,
+          name: `${roleName} (custom)`,
+          user_id: user.id,
+          is_system: false,
+          is_shared: false,
+          communication: (systemBehavior?.communication || DEFAULT_COMMUNICATION) as Json,
+          reactions: (systemBehavior?.reactions || []) as Json,
+          interactions: (systemBehavior?.interactions || DEFAULT_INTERACTIONS) as unknown as Json,
+          requires_approval: requiresApproval,
+        };
+        
+        const { error: insertError } = await supabase
+          .from('role_behaviors')
+          .insert(insertData);
+
+        if (insertError) throw insertError;
+      }
+
+      // Refetch to get updated data
+      await fetchBehavior();
+      return true;
+    } catch (error: any) {
+      console.error('Failed to save requires_approval:', error);
+      toast.error(error.message || 'Ошибка сохранения');
+      return false;
+    } finally {
+      setIsSaving(false);
+    }
+  }, [role, user, fetchBehavior]);
+
   /**
    * Fetch all role behaviors to build a complete interactions map
    * Used for conflict detection during hierarchy editing
@@ -248,6 +335,7 @@ export function useRoleBehavior(role: AgentRole | null): UseRoleBehaviorResult {
     isLoading,
     isSaving,
     saveInteractions,
+    saveRequiresApproval,
     refetch: fetchBehavior,
     fetchAllBehaviors,
   };

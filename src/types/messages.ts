@@ -3,6 +3,7 @@
 
 import { ToolCall, ToolResult } from './tools';
 import type { MessageRole } from '@/config/roles';
+import type { Proposal } from './patterns';
 
 // Re-export MessageRole for backward compatibility
 export type { MessageRole };
@@ -24,6 +25,8 @@ export interface MessageMetadata {
   // Fallback indicator - when model was rate-limited and used orchestrator
   used_fallback?: boolean;
   fallback_reason?: 'rate_limit' | 'error' | 'unsupported';
+  // Supervisor approval proposals
+  proposals?: Proposal[];
   [key: string]: unknown;
 }
 
