@@ -74,6 +74,15 @@ export interface CustomToolDefinition {
 // Request/Response Types
 // ============================================
 
+/** Tool usage mode: always, auto (AI decides), or on_request (user asks) */
+export type ToolUsageMode = 'always' | 'auto' | 'on_request';
+
+/** Settings for a single tool including enabled state and usage mode */
+export interface ToolSettings {
+  enabled: boolean;
+  usageMode: ToolUsageMode;
+}
+
 export interface ModelRequest {
   model_id: string;
   use_lovable_ai: boolean;
@@ -84,6 +93,8 @@ export interface ModelRequest {
   role?: 'assistant' | 'critic' | 'arbiter';
   enable_tools?: boolean;
   enabled_tools?: string[];
+  /** Tool settings with usage modes (new format) */
+  tool_settings?: Record<string, ToolSettings>;
   enabled_custom_tools?: string[];
   /** Search provider for web_search tool: tavily, perplexity, or both */
   search_provider?: 'tavily' | 'perplexity' | 'both';

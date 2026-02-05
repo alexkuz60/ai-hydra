@@ -198,6 +198,98 @@ export const FORMAT_DICTIONARY: Dictionary = {
   ],
 };
 
+// Supervisor Wishes Dictionary - typical supervisor instructions per role
+export interface SupervisorWish {
+  key: string;
+  label: { ru: string; en: string };
+  description?: { ru: string; en: string };
+  roles: string[]; // AgentRole values this wish applies to
+}
+
+export const SUPERVISOR_WISHES_DICTIONARY: SupervisorWish[] = [
+  // Universal wishes
+  { key: 'detailed_response', label: { ru: 'Подробный ответ', en: 'Detailed response' }, description: { ru: 'Дай развёрнутый ответ с пояснениями', en: 'Give a comprehensive answer with explanations' }, roles: ['assistant', 'consultant', 'advisor', 'analyst'] },
+  { key: 'concise_response', label: { ru: 'Краткий ответ', en: 'Concise response' }, description: { ru: 'Только ключевые тезисы без лишних деталей', en: 'Key points only, no extra details' }, roles: ['assistant', 'moderator', 'analyst', 'consultant'] },
+  { key: 'use_examples', label: { ru: 'Приводи примеры', en: 'Use examples' }, description: { ru: 'Иллюстрируй идеи конкретными примерами', en: 'Illustrate ideas with concrete examples' }, roles: ['assistant', 'consultant', 'promptengineer', 'advisor'] },
+  { key: 'beginner_friendly', label: { ru: 'Ответ для новичка', en: 'Beginner-friendly answer' }, description: { ru: 'Объясняй просто, избегай терминов', en: 'Explain simply, avoid jargon' }, roles: ['assistant', 'consultant', 'advisor'] },
+  { key: 'expert_level', label: { ru: 'Экспертный уровень', en: 'Expert level' }, description: { ru: 'Детальный технический анализ', en: 'Detailed technical analysis' }, roles: ['assistant', 'consultant', 'analyst', 'promptengineer'] },
+  
+  // Critic-specific
+  { key: 'focus_logic', label: { ru: 'Фокус на логике', en: 'Focus on logic' }, description: { ru: 'Сосредоточься на логических ошибках', en: 'Focus on logical errors' }, roles: ['critic'] },
+  { key: 'be_strict', label: { ru: 'Будь жёстче в оценке', en: 'Be stricter' }, description: { ru: 'Применяй более строгие критерии', en: 'Apply stricter criteria' }, roles: ['critic'] },
+  { key: 'be_gentle', label: { ru: 'Мягче с критикой', en: 'Be gentler' }, description: { ru: 'Конструктивная критика без жёсткости', en: 'Constructive criticism without harshness' }, roles: ['critic'] },
+  { key: 'check_facts', label: { ru: 'Проверь факты', en: 'Fact-check' }, description: { ru: 'Верифицируй фактологические утверждения', en: 'Verify factual claims' }, roles: ['critic', 'webhunter'] },
+  { key: 'find_edge_cases', label: { ru: 'Найди edge cases', en: 'Find edge cases' }, description: { ru: 'Ищи граничные случаи и исключения', en: 'Look for edge cases and exceptions' }, roles: ['critic', 'analyst'] },
+  
+  // Arbiter-specific
+  { key: 'priority_consensus', label: { ru: 'Нужен консенсус', en: 'Need consensus' }, description: { ru: 'Максимизируй согласие между позициями', en: 'Maximize agreement between positions' }, roles: ['arbiter'] },
+  { key: 'preserve_nuances', label: { ru: 'Сохрани все нюансы', en: 'Preserve all nuances' }, description: { ru: 'Не упрощай, сохрани детали различий', en: 'Don\'t simplify, keep difference details' }, roles: ['arbiter', 'moderator'] },
+  { key: 'weight_logic', label: { ru: 'Больше веса логике', en: 'Weight logic higher' }, description: { ru: 'Приоритизируй логические аргументы', en: 'Prioritize logical arguments' }, roles: ['arbiter'] },
+  { key: 'weight_practicality', label: { ru: 'Учти практичность', en: 'Consider practicality' }, description: { ru: 'Приоритизируй реализуемые решения', en: 'Prioritize implementable solutions' }, roles: ['arbiter', 'advisor'] },
+  
+  // Moderator-specific
+  { key: 'brief_summary', label: { ru: 'Краткое резюме', en: 'Brief summary' }, description: { ru: 'Сжатая сводка ключевых моментов', en: 'Condensed summary of key points' }, roles: ['moderator'] },
+  { key: 'full_report', label: { ru: 'Полный отчёт', en: 'Full report' }, description: { ru: 'Детальный отчёт со всеми аспектами', en: 'Detailed report with all aspects' }, roles: ['moderator'] },
+  { key: 'highlight_gaps', label: { ru: 'Отметь пробелы', en: 'Highlight gaps' }, description: { ru: 'Укажи, что не было рассмотрено', en: 'Indicate what was not covered' }, roles: ['moderator', 'analyst'] },
+  { key: 'highlight_divergences', label: { ru: 'Выдели расхождения', en: 'Highlight divergences' }, description: { ru: 'Акцентируй на различиях во мнениях', en: 'Emphasize differences in opinions' }, roles: ['moderator', 'arbiter'] },
+  
+  // Advisor-specific
+  { key: 'horizon_year', label: { ru: 'Горизонт 1 год', en: '1-year horizon' }, description: { ru: 'Стратегия на ближайший год', en: 'Strategy for the next year' }, roles: ['advisor'] },
+  { key: 'minimize_risks', label: { ru: 'Минимизируй риски', en: 'Minimize risks' }, description: { ru: 'Консервативный подход к рискам', en: 'Conservative approach to risks' }, roles: ['advisor'] },
+  { key: 'aggressive_growth', label: { ru: 'Агрессивный рост', en: 'Aggressive growth' }, description: { ru: 'Стратегия максимального роста', en: 'Maximum growth strategy' }, roles: ['advisor'] },
+  { key: 'consider_competitors', label: { ru: 'Учти конкурентов', en: 'Consider competitors' }, description: { ru: 'Включи конкурентный анализ', en: 'Include competitive analysis' }, roles: ['advisor', 'analyst'] },
+  
+  // Web-Hunter-specific
+  { key: 'edu_sources', label: { ru: 'Только .edu источники', en: '.edu sources only' }, description: { ru: 'Приоритет академическим источникам', en: 'Prioritize academic sources' }, roles: ['webhunter'] },
+  { key: 'fresh_sources', label: { ru: 'Свежие данные (2024+)', en: 'Fresh data (2024+)' }, description: { ru: 'Только актуальная информация', en: 'Only current information' }, roles: ['webhunter'] },
+  { key: 'compare_sources', label: { ru: 'Сравни источники', en: 'Compare sources' }, description: { ru: 'Перекрёстная проверка источников', en: 'Cross-check sources' }, roles: ['webhunter'] },
+  { key: 'find_primary', label: { ru: 'Первоисточники', en: 'Primary sources' }, description: { ru: 'Ищи оригинальные источники', en: 'Find original sources' }, roles: ['webhunter'] },
+  
+  // Archivist-specific
+  { key: 'find_keywords', label: { ru: 'Найди по ключевым словам', en: 'Find by keywords' }, description: { ru: 'Поиск по ключевым словам в архиве', en: 'Search by keywords in archive' }, roles: ['archivist'] },
+  { key: 'clean_duplicates', label: { ru: 'Очисти дубликаты', en: 'Clean duplicates' }, description: { ru: 'Удали повторяющиеся записи', en: 'Remove duplicate entries' }, roles: ['archivist'] },
+  { key: 'create_catalog', label: { ru: 'Создай каталог', en: 'Create catalog' }, description: { ru: 'Систематизируй в каталог', en: 'Systematize into a catalog' }, roles: ['archivist'] },
+  { key: 'update_memory', label: { ru: 'Обнови память сессии', en: 'Update session memory' }, description: { ru: 'Сохрани важное в память сессии', en: 'Save important to session memory' }, roles: ['archivist'] },
+  
+  // Analyst-specific
+  { key: 'quantitative', label: { ru: 'Количественный анализ', en: 'Quantitative analysis' }, description: { ru: 'Фокус на числовых данных', en: 'Focus on numerical data' }, roles: ['analyst'] },
+  { key: 'visualize', label: { ru: 'Визуализируй данные', en: 'Visualize data' }, description: { ru: 'Представь данные в графиках', en: 'Present data in charts' }, roles: ['analyst'] },
+  { key: 'prepare_brief', label: { ru: 'Подготовь ТЗ', en: 'Prepare brief' }, description: { ru: 'Формализуй требования для другой роли', en: 'Formalize requirements for another role' }, roles: ['analyst'] },
+  { key: 'find_anomalies', label: { ru: 'Найди аномалии', en: 'Find anomalies' }, description: { ru: 'Выяви отклонения от нормы', en: 'Identify deviations from the norm' }, roles: ['analyst'] },
+  { key: 'compare_periods', label: { ru: 'Сравни периоды', en: 'Compare periods' }, description: { ru: 'Сравнительный анализ по периодам', en: 'Comparative analysis by periods' }, roles: ['analyst'] },
+  
+  // Prompt Engineer-specific
+  { key: 'optimize_gpt5', label: { ru: 'Оптимизируй для GPT-5', en: 'Optimize for GPT-5' }, description: { ru: 'Адаптируй под особенности GPT-5', en: 'Adapt to GPT-5 specifics' }, roles: ['promptengineer'] },
+  { key: 'add_fewshot', label: { ru: 'Добавь few-shot примеры', en: 'Add few-shot examples' }, description: { ru: 'Включи обучающие примеры', en: 'Include training examples' }, roles: ['promptengineer'] },
+  { key: 'reduce_tokens', label: { ru: 'Сократи токены', en: 'Reduce tokens' }, description: { ru: 'Оптимизируй для экономии токенов', en: 'Optimize for token savings' }, roles: ['promptengineer'] },
+  { key: 'chain_of_thought', label: { ru: 'Chain-of-thought', en: 'Chain-of-thought' }, description: { ru: 'Добавь цепочку рассуждений', en: 'Add reasoning chain' }, roles: ['promptengineer'] },
+  { key: 'adapt_claude', label: { ru: 'Адаптируй для Claude', en: 'Adapt for Claude' }, description: { ru: 'Оптимизируй под Claude', en: 'Optimize for Claude' }, roles: ['promptengineer'] },
+  
+  // Flow Regulator-specific
+  { key: 'check_cycles', label: { ru: 'Проверь на циклы', en: 'Check for cycles' }, description: { ru: 'Выяви циклические зависимости', en: 'Identify cyclic dependencies' }, roles: ['flowregulator'] },
+  { key: 'add_parallelism', label: { ru: 'Добавь параллелизм', en: 'Add parallelism' }, description: { ru: 'Оптимизируй для параллельного выполнения', en: 'Optimize for parallel execution' }, roles: ['flowregulator'] },
+  { key: 'document_flow', label: { ru: 'Документируй поток', en: 'Document flow' }, description: { ru: 'Создай описание диаграммы', en: 'Create diagram description' }, roles: ['flowregulator'] },
+  { key: 'optimize_route', label: { ru: 'Оптимизируй маршрут', en: 'Optimize route' }, description: { ru: 'Найди оптимальный путь', en: 'Find optimal path' }, roles: ['flowregulator'] },
+  { key: 'validate_connections', label: { ru: 'Валидируй связи', en: 'Validate connections' }, description: { ru: 'Проверь корректность соединений', en: 'Check connection correctness' }, roles: ['flowregulator'] },
+  
+  // Toolsmith-specific
+  { key: 'setup_http_post', label: { ru: 'Настрой HTTP POST', en: 'Setup HTTP POST' }, description: { ru: 'Сконфигурируй POST-запрос', en: 'Configure POST request' }, roles: ['toolsmith'] },
+  { key: 'add_auth', label: { ru: 'Добавь авторизацию', en: 'Add authorization' }, description: { ru: 'Настрой заголовки авторизации', en: 'Configure authorization headers' }, roles: ['toolsmith'] },
+  { key: 'extract_jsonpath', label: { ru: 'Извлеки JSONPath', en: 'Extract JSONPath' }, description: { ru: 'Создай выражение для извлечения данных', en: 'Create expression for data extraction' }, roles: ['toolsmith'] },
+  { key: 'test_integration', label: { ru: 'Протестируй интеграцию', en: 'Test integration' }, description: { ru: 'Проверь работу инструмента', en: 'Verify tool operation' }, roles: ['toolsmith'] },
+  { key: 'document_params', label: { ru: 'Документируй параметры', en: 'Document parameters' }, description: { ru: 'Опиши все параметры инструмента', en: 'Describe all tool parameters' }, roles: ['toolsmith'] },
+];
+
+// Get supervisor wishes applicable to a specific role
+export function getSupervisorWishesForRole(role: string): SupervisorWish[] {
+  return SUPERVISOR_WISHES_DICTIONARY.filter(wish => wish.roles.includes(role));
+}
+
+// Get supervisor wish by key
+export function getSupervisorWishByKey(key: string): SupervisorWish | undefined {
+  return SUPERVISOR_WISHES_DICTIONARY.find(wish => wish.key === key);
+}
+
 // Helper to get label by language
 export function getEntryLabel(entry: DictionaryEntry, language: 'ru' | 'en'): string {
   return entry.label[language];
