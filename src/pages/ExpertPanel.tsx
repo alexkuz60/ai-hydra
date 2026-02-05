@@ -32,6 +32,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
+ import { useInputAreaSize } from '@/hooks/useInputAreaSize';
 
 export default function ExpertPanel() {
   const { user, loading: authLoading } = useAuth();
@@ -113,6 +114,12 @@ export default function ExpertPanel() {
   // Memory management state
   const [memoryRefreshed, setMemoryRefreshed] = useState(false);
   const [memoryDialogOpen, setMemoryDialogOpen] = useState(false);
+   
+   // Input area collapse state
+   const { 
+     isCollapsed: isInputCollapsed, 
+     toggleCollapsed: toggleInputCollapse 
+   } = useInputAreaSize('hydra-main-input-collapsed');
   
   // Handler for refreshing memory with animation feedback
   const handleRefreshMemory = useCallback(async () => {
@@ -894,6 +901,8 @@ export default function ExpertPanel() {
                 timeoutSeconds={timeoutSeconds}
                 onTimeoutChange={setTimeoutSeconds}
                 selectedModelsCount={selectedModels.length}
+                 isCollapsed={isInputCollapsed}
+                 onToggleCollapse={toggleInputCollapse}
               />
             </div>
           </ResizablePanel>
