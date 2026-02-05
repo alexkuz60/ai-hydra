@@ -17,7 +17,7 @@ const translations: Translations = {
   'nav.expertPanel': { ru: 'Панель экспертов', en: 'Expert Panel' },
   'nav.tasks': { ru: 'Задачи', en: 'Tasks' },
   'nav.roleLibrary': { ru: 'Библиотека промптов', en: 'Prompt Library' },
-  'nav.toolsLibrary': { ru: 'Инструменты', en: 'Tools' },
+  'nav.toolsLibrary': { ru: 'Инструментарий', en: 'Toolbox' },
   'nav.flowEditor': { ru: 'Редактор потоков мысли', en: 'Thought Flow Editor' },
   'nav.profile': { ru: 'Профиль', en: 'Profile' },
   'nav.settings': { ru: 'Настройки', en: 'Settings' },
