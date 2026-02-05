@@ -35,12 +35,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Settings, ChevronDown, RotateCcw, Save, Trash2, Loader2 } from 'lucide-react';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
+import { IconButtonWithTooltip } from '@/components/ui/IconButtonWithTooltip';
 import { cn } from '@/lib/utils';
 import { useModelPresets, ModelPreset } from '@/hooks/useModelPresets';
 import { toast } from 'sonner';
@@ -144,23 +139,13 @@ export function ModelSettings({ settings, onChange, className }: ModelSettingsPr
                   <Label className="text-xs text-muted-foreground">
                     {t('presets.title')}
                   </Label>
-                  <TooltipProvider delayDuration={300}>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-9 w-9"
-                          onClick={() => setSaveDialogOpen(true)}
-                        >
-                          <Save className="h-4 w-4" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent side="left">
-                        <p>{t('presets.save')}</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
+                  <IconButtonWithTooltip
+                    icon={Save}
+                    tooltip={t('presets.save')}
+                    onClick={() => setSaveDialogOpen(true)}
+                    variant="ghost"
+                    side="left"
+                  />
                 </div>
                 
                 {loading ? (
@@ -186,23 +171,14 @@ export function ModelSettings({ settings, onChange, className }: ModelSettingsPr
                         >
                           <span className="truncate">{preset.name}</span>
                         </Button>
-                        <TooltipProvider delayDuration={300}>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-9 w-9 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
-                                onClick={() => setPresetToDelete(preset)}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent side="right">
-                              <p>{t('tasks.delete')}</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
+                        <IconButtonWithTooltip
+                          icon={Trash2}
+                          tooltip={t('tasks.delete')}
+                          onClick={() => setPresetToDelete(preset)}
+                          variant="ghost"
+                          side="right"
+                          className="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
+                        />
                       </div>
                     ))}
                   </div>
