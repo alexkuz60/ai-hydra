@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { Sparkles, X } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
@@ -45,6 +45,21 @@ export function SupervisorWishesPicker({
     );
   }, [activeRoles]);
 
+  // Auto-cleanup: remove wishes that are no longer applicable when roles change
+  useEffect(() => {
+    if (activeRoles.length === 0 || selectedWishes.length === 0) return;
+
+    const applicableKeys = new Set<string>();
+    activeRoles.forEach((role) => {
+      getSupervisorWishesForRole(role).forEach((w) => applicableKeys.add(w.key));
+    });
+
+    const filtered = selectedWishes.filter((key) => applicableKeys.has(key));
+    if (filtered.length !== selectedWishes.length) {
+      onWishesChange(filtered);
+    }
+  }, [activeRoles, selectedWishes, onWishesChange]);
+
   const handleToggleWish = (wishKey: string) => {
     if (selectedWishes.includes(wishKey)) {
       onWishesChange(selectedWishes.filter((w) => w !== wishKey));
@@ -57,6 +72,12 @@ export function SupervisorWishesPicker({
     onWishesChange([]);
   };
 
+  const handleRowClick = (e: React.MouseEvent, wishKey: string) => {
+    e.stopPropagation();
+    e.preventDefault();
+    handleToggleWish(wishKey);
+  };
+
   const selectedWishLabels = selectedWishes
     .map((key) => SUPERVISOR_WISHES_DICTIONARY.find((w) => w.key === key))
     .filter(Boolean) as SupervisorWish[];
@@ -66,10 +87,12 @@ export function SupervisorWishesPicker({
       ? t('supervisorWishes.noRolesSelected')
       : t('supervisorWishes.selectWishes');
 
+  const isDisabled = disabled || activeRoles.length === 0;
+
   return (
-    <Popover open={isOpen} onOpenChange={setIsOpen}>
-      <PopoverTrigger asChild>
-        <div className="relative">
+    <div className="relative">
+      <Popover open={isOpen} onOpenChange={setIsOpen}>
+        <PopoverTrigger asChild>
           <Button
             type="button"
             variant="ghost"
@@ -81,114 +104,124 @@ export function SupervisorWishesPicker({
               selectedWishes.length > 0 &&
                 'bg-hydra-promptengineer/20 text-hydra-promptengineer hover:bg-hydra-promptengineer/30'
             )}
-            disabled={disabled || activeRoles.length === 0}
+            disabled={isDisabled}
           >
             <Sparkles className="h-4 w-4" />
           </Button>
-          
-          {/* Badge with count */}
-          {selectedWishes.length > 0 && (
-            <Badge 
-              variant="default"
-              className="absolute -top-2 -right-2 h-5 min-w-5 flex items-center justify-center px-1 text-xs bg-hydra-promptengineer text-white"
-            >
-              {selectedWishes.length}
-            </Badge>
-          )}
-        </div>
-      </PopoverTrigger>
+        </PopoverTrigger>
 
-      <PopoverContent className="w-80 p-3" align="end" side="top">
-        <div className="space-y-3">
-          {/* Header */}
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="font-medium text-sm">
-                {t('supervisorWishes.title')}
-              </h3>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                {t('supervisorWishes.description')}
-              </p>
-            </div>
-            {selectedWishes.length > 0 && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleClearAll();
-                }}
-                className="text-xs text-muted-foreground hover:text-foreground transition-colors"
-              >
-                <X className="h-3 w-3" />
-              </button>
-            )}
-          </div>
-
-          {/* Wishes list */}
-          <div className="max-h-64 overflow-y-auto space-y-1.5">
-            {applicableWishes.length > 0 ? (
-              applicableWishes.map((wish) => (
-                <div
-                  key={wish.key}
-                  className="flex items-start gap-2 p-2 rounded-md hover:bg-muted/50 transition-colors"
-                >
-                  <Checkbox
-                    id={wish.key}
-                    checked={selectedWishes.includes(wish.key)}
-                    onCheckedChange={() => handleToggleWish(wish.key)}
-                    onClick={(e) => e.stopPropagation()}
-                    className="mt-0.5"
-                  />
-                  <label
-                    htmlFor={wish.key}
-                    className="flex-1 cursor-pointer text-xs"
-                  >
-                    <div className="font-medium text-foreground">
-                      {wish.label[language as 'ru' | 'en']}
-                    </div>
-                    {wish.description && (
-                      <div className="text-muted-foreground">
-                        {wish.description[language as 'ru' | 'en']}
-                      </div>
-                    )}
-                  </label>
-                </div>
-              ))
-            ) : (
-              <div className="text-xs text-muted-foreground text-center py-4">
-                {t('supervisorWishes.noWishesForRoles')}
+        <PopoverContent 
+          className="w-80 p-3" 
+          align="end" 
+          side="top"
+          onPointerDownOutside={(e) => e.preventDefault()}
+          onInteractOutside={(e) => e.preventDefault()}
+        >
+          <div className="space-y-3">
+            {/* Header */}
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-medium text-sm">
+                  {t('supervisorWishes.title')}
+                </h3>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {t('supervisorWishes.description')}
+                </p>
               </div>
-            )}
-          </div>
+              <button
+                onClick={() => setIsOpen(false)}
+                className="text-muted-foreground hover:text-foreground transition-colors p-1"
+                aria-label="Close"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
 
-          {/* Selected wishes summary */}
-          {selectedWishes.length > 0 && (
-            <div className="border-t pt-2">
-              <p className="text-xs text-muted-foreground mb-2">
-                {t('supervisorWishes.selected')}: {selectedWishes.length}
-              </p>
-              <div className="flex flex-wrap gap-1">
-                {selectedWishLabels.map((wish) => (
+            {/* Wishes list */}
+            <div className="max-h-64 overflow-y-auto space-y-1.5">
+              {applicableWishes.length > 0 ? (
+                applicableWishes.map((wish) => (
                   <div
                     key={wish.key}
-                    className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-hydra-promptengineer/10 border border-hydra-promptengineer/30 text-hydra-promptengineer text-xs"
+                    onClick={(e) => handleRowClick(e, wish.key)}
+                    className="flex items-start gap-2 p-2 rounded-md hover:bg-muted/50 transition-colors cursor-pointer"
                   >
-                    <span>{wish.label[language as 'ru' | 'en']}</span>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleToggleWish(wish.key);
-                      }}
-                      className="hover:text-hydra-promptengineer/80"
-                    >
-                      <X className="h-2.5 w-2.5" />
-                    </button>
+                    <Checkbox
+                      id={wish.key}
+                      checked={selectedWishes.includes(wish.key)}
+                      onCheckedChange={() => {}}
+                      className="mt-0.5 pointer-events-none"
+                    />
+                    <div className="flex-1 text-xs">
+                      <div className="font-medium text-foreground">
+                        {wish.label[language as 'ru' | 'en']}
+                      </div>
+                      {wish.description && (
+                        <div className="text-muted-foreground">
+                          {wish.description[language as 'ru' | 'en']}
+                        </div>
+                      )}
+                    </div>
                   </div>
-                ))}
-              </div>
+                ))
+              ) : (
+                <div className="text-xs text-muted-foreground text-center py-4">
+                  {t('supervisorWishes.noWishesForRoles')}
+                </div>
+              )}
             </div>
-          )}
-        </div>
-      </PopoverContent>
-    </Popover>
+
+            {/* Selected wishes summary */}
+            {selectedWishes.length > 0 && (
+              <div className="border-t pt-2">
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-xs text-muted-foreground">
+                    {t('supervisorWishes.selected')}: {selectedWishes.length}
+                  </p>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleClearAll();
+                    }}
+                    className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    {t('supervisorWishes.clearAll') || 'Очистить'}
+                  </button>
+                </div>
+                <div className="flex flex-wrap gap-1">
+                  {selectedWishLabels.map((wish) => (
+                    <div
+                      key={wish.key}
+                      className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-hydra-promptengineer/10 border border-hydra-promptengineer/30 text-hydra-promptengineer text-xs"
+                    >
+                      <span>{wish.label[language as 'ru' | 'en']}</span>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleToggleWish(wish.key);
+                        }}
+                        className="hover:text-hydra-promptengineer/80"
+                      >
+                        <X className="h-2.5 w-2.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </PopoverContent>
+      </Popover>
+
+      {/* Badge positioned outside PopoverTrigger to avoid nested triggers */}
+      {selectedWishes.length > 0 && (
+        <Badge 
+          variant="default"
+          className="absolute -top-2 -right-2 h-5 min-w-5 flex items-center justify-center px-1 text-xs bg-hydra-promptengineer text-white pointer-events-none"
+        >
+          {selectedWishes.length}
+        </Badge>
+      )}
+    </div>
   );
 }
