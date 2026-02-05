@@ -91,10 +91,10 @@ export function ChatInputArea({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // UI sizing - min must accommodate toolbar buttons (3 buttons × 36px + gaps)
-  const MIN_TEXTAREA_HEIGHT = 100;
-  const MAX_TEXTAREA_HEIGHT = 300;
-  const DEFAULT_TEXTAREA_HEIGHT = 100;
+  // UI sizing - min must accommodate left toolbar (5 buttons × 36px + 4 gaps × 4px ≈ 196px)
+  const MIN_TEXTAREA_HEIGHT = 200;
+  const MAX_TEXTAREA_HEIGHT = 400;
+  const DEFAULT_TEXTAREA_HEIGHT = 200;
 
   const [textareaHeight, setTextareaHeight] = useState(DEFAULT_TEXTAREA_HEIGHT);
   const [isResizingState, setIsResizingState] = useState(false);
