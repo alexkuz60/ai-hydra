@@ -42,6 +42,8 @@ import {
 import { Message, MessageMetadata } from '@/types/messages';
 import { ToolCall, ToolResult } from '@/types/tools';
 import { ROLE_CONFIG, getRoleConfig } from '@/config/roles';
+import { ProposalApprovalBlock } from './ProposalApprovalBlock';
+import type { Proposal } from '@/types/patterns';
 
 // User display info passed from parent
 export interface UserDisplayInfo {
@@ -96,11 +98,13 @@ interface ChatMessageProps {
   onSaveToMemory?: (messageId: string, content: string) => Promise<void>;
   isSavingToMemory?: boolean;
   isAlreadySavedToMemory?: boolean;
+  onUpdateProposals?: (messageId: string, proposals: Proposal[]) => void;
+  onRequestProposalDetails?: (messageId: string, proposalIds: string[]) => void;
 }
 
 const MAX_COLLAPSED_LINES = 3;
 
-export function ChatMessage({ message, userDisplayInfo, onDelete, onRatingChange, isCollapsed, onToggleCollapse, onClarifyWithSpecialist, onSaveToMemory, isSavingToMemory, isAlreadySavedToMemory }: ChatMessageProps) {
+export function ChatMessage({ message, userDisplayInfo, onDelete, onRatingChange, isCollapsed, onToggleCollapse, onClarifyWithSpecialist, onSaveToMemory, isSavingToMemory, isAlreadySavedToMemory, onUpdateProposals, onRequestProposalDetails }: ChatMessageProps) {
   const { t } = useLanguage();
   const contentRef = useRef<HTMLDivElement>(null);
   const [savedToMemory, setSavedToMemory] = useState(isAlreadySavedToMemory || false);
@@ -154,6 +158,19 @@ export function ChatMessage({ message, userDisplayInfo, onDelete, onRatingChange
   const toolResults = metadataObj.tool_results as ToolResult[] | undefined;
   const usedFallback = metadataObj.used_fallback === true;
   const fallbackReason = metadataObj.fallback_reason;
+  const proposals = metadataObj.proposals as Proposal[] | undefined;
+
+  const handleUpdateProposals = useCallback((updatedProposals: Proposal[]) => {
+    if (onUpdateProposals) {
+      onUpdateProposals(message.id, updatedProposals);
+    }
+  }, [onUpdateProposals, message.id]);
+
+  const handleRequestDetails = useCallback((proposalIds: string[]) => {
+    if (onRequestProposalDetails) {
+      onRequestProposalDetails(message.id, proposalIds);
+    }
+  }, [onRequestProposalDetails, message.id]);
 
   // Check if content is long enough to be collapsible
   const lines = message.content.split('\n');
@@ -253,6 +270,16 @@ export function ChatMessage({ message, userDisplayInfo, onDelete, onRatingChange
           <TextSelectionPopup
             containerRef={contentRef}
             onClarify={handleClarify}
+          />
+        )}
+        
+        {/* Proposals approval block for AI messages */}
+        {isAiMessage && proposals && proposals.length > 0 && (
+          <ProposalApprovalBlock
+            proposals={proposals}
+            onUpdateProposals={handleUpdateProposals}
+            onRequestDetails={onRequestProposalDetails ? handleRequestDetails : undefined}
+            isReadOnly={!onUpdateProposals}
           />
         )}
         

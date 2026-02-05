@@ -340,6 +340,7 @@ export type Database = {
           is_system: boolean
           name: string
           reactions: Json
+          requires_approval: boolean | null
           role: string
           updated_at: string
           usage_count: number
@@ -354,6 +355,7 @@ export type Database = {
           is_system?: boolean
           name: string
           reactions?: Json
+          requires_approval?: boolean | null
           role: string
           updated_at?: string
           usage_count?: number
@@ -368,6 +370,7 @@ export type Database = {
           is_system?: boolean
           name?: string
           reactions?: Json
+          requires_approval?: boolean | null
           role?: string
           updated_at?: string
           usage_count?: number
