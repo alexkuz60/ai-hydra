@@ -34,7 +34,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Settings, ChevronDown, RotateCcw, Save, Trash2, FolderOpen, Loader2 } from 'lucide-react';
+import { Settings, ChevronDown, RotateCcw, Save, Trash2, Loader2 } from 'lucide-react';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { useModelPresets, ModelPreset } from '@/hooks/useModelPresets';
 import { toast } from 'sonner';
@@ -135,19 +141,26 @@ export function ModelSettings({ settings, onChange, className }: ModelSettingsPr
               {/* Presets Section */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <Label className="text-xs text-muted-foreground flex items-center gap-1.5">
-                    <FolderOpen className="h-3 w-3" />
+                  <Label className="text-xs text-muted-foreground">
                     {t('presets.title')}
                   </Label>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-6 text-xs px-2"
-                    onClick={() => setSaveDialogOpen(true)}
-                  >
-                    <Save className="h-3 w-3 mr-1" />
-                    {t('presets.save')}
-                  </Button>
+                  <TooltipProvider delayDuration={300}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-9 w-9"
+                          onClick={() => setSaveDialogOpen(true)}
+                        >
+                          <Save className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent side="left">
+                        <p>{t('presets.save')}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                 </div>
                 
                 {loading ? (
@@ -159,7 +172,7 @@ export function ModelSettings({ settings, onChange, className }: ModelSettingsPr
                     {t('presets.empty')}
                   </p>
                 ) : (
-                  <div className="space-y-1">
+                  <div className="space-y-1.5">
                     {presets.map((preset) => (
                       <div
                         key={preset.id}
@@ -168,19 +181,28 @@ export function ModelSettings({ settings, onChange, className }: ModelSettingsPr
                         <Button
                           variant="outline"
                           size="sm"
-                          className="flex-1 h-7 text-xs justify-start font-normal"
+                          className="flex-1 h-9 justify-start font-normal"
                           onClick={() => handleApplyPreset(preset)}
                         >
                           <span className="truncate">{preset.name}</span>
                         </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
-                          onClick={() => setPresetToDelete(preset)}
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
+                        <TooltipProvider delayDuration={300}>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-9 w-9 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
+                                onClick={() => setPresetToDelete(preset)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent side="right">
+                              <p>{t('tasks.delete')}</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
                       </div>
                     ))}
                   </div>
@@ -255,10 +277,10 @@ export function ModelSettings({ settings, onChange, className }: ModelSettingsPr
               <Button
                 variant="outline"
                 size="sm"
-                className="w-full"
+                className="w-full h-9"
                 onClick={handleReset}
               >
-                <RotateCcw className="h-3 w-3 mr-2" />
+                <RotateCcw className="h-4 w-4 mr-2" />
                 {t('settings.resetDefaults')}
               </Button>
             </div>
