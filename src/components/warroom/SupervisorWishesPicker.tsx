@@ -112,7 +112,10 @@ export function SupervisorWishesPicker({
             </div>
             {selectedWishes.length > 0 && (
               <button
-                onClick={handleClearAll}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleClearAll();
+                }}
                 className="text-xs text-muted-foreground hover:text-foreground transition-colors"
               >
                 <X className="h-3 w-3" />
@@ -132,6 +135,7 @@ export function SupervisorWishesPicker({
                     id={wish.key}
                     checked={selectedWishes.includes(wish.key)}
                     onCheckedChange={() => handleToggleWish(wish.key)}
+                    onClick={(e) => e.stopPropagation()}
                     className="mt-0.5"
                   />
                   <label
@@ -170,7 +174,10 @@ export function SupervisorWishesPicker({
                   >
                     <span>{wish.label[language as 'ru' | 'en']}</span>
                     <button
-                      onClick={() => handleToggleWish(wish.key)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleToggleWish(wish.key);
+                      }}
                       className="hover:text-hydra-promptengineer/80"
                     >
                       <X className="h-2.5 w-2.5" />
