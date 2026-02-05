@@ -751,7 +751,20 @@ export type Database = {
     Enums: {
       app_role: "user" | "moderator" | "admin" | "supervisor"
       communication_tone: "formal" | "friendly" | "neutral" | "provocative"
-      message_role: "user" | "assistant" | "critic" | "arbiter" | "consultant"
+      message_role:
+        | "user"
+        | "assistant"
+        | "critic"
+        | "arbiter"
+        | "consultant"
+        | "moderator"
+        | "advisor"
+        | "archivist"
+        | "analyst"
+        | "webhunter"
+        | "promptengineer"
+        | "flowregulator"
+        | "toolsmith"
       pattern_category: "planning" | "creative" | "analysis" | "technical"
       verbosity_level: "concise" | "detailed" | "adaptive"
     }
@@ -883,7 +896,21 @@ export const Constants = {
     Enums: {
       app_role: ["user", "moderator", "admin", "supervisor"],
       communication_tone: ["formal", "friendly", "neutral", "provocative"],
-      message_role: ["user", "assistant", "critic", "arbiter", "consultant"],
+      message_role: [
+        "user",
+        "assistant",
+        "critic",
+        "arbiter",
+        "consultant",
+        "moderator",
+        "advisor",
+        "archivist",
+        "analyst",
+        "webhunter",
+        "promptengineer",
+        "flowregulator",
+        "toolsmith",
+      ],
       pattern_category: ["planning", "creative", "analysis", "technical"],
       verbosity_level: ["concise", "detailed", "adaptive"],
     },
