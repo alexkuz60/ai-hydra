@@ -1,132 +1,104 @@
 
+# План: Унификация размеров кнопок по стандарту Flow Editor
 
-# План: Унификация UX для Библиотеки промптов и Задач
+## Проблема
 
-## Текущее состояние
+На скриншоте показан референс — компактная панель инструментов Flow Editor с кнопками:
+- `h-7` для header-кнопок (Open, Save, New, Export)
+- `h-8` для toolbar-кнопок (Undo/Redo, Play/Stop)
+- `size="sm"` для dropdown-триггеров (Auto Layout, Edge Style)
 
-Проанализированы 5 страниц проекта:
+В других частях интерфейса используются **несогласованные размеры**:
 
-| Страница | Архитектура | UI-паттерн |
-|----------|-------------|------------|
-| **Штат** (`StaffRoles`) | ResizablePanel + Table + DetailsPanel | Master-detail с коллапсом групп |
-| **Паттерны** (`BehavioralPatterns`) | ResizablePanel + Table + DetailsPanel/Editor | Master-detail с inline-редактированием |
-| **Инструментарий** (`ToolsLibrary`) | ResizablePanel + Table + DetailsPanel/Editor | Master-detail с категориями и фильтрами |
-| **Библиотека промптов** (`RoleLibrary`) | HydraCard-список + Sheet для редактирования | Карточки без деталь-панели |
-| **Задачи** (`Tasks`) | HydraCard-список + Sheet для конфигурации | Карточки без деталь-панели |
+| Компонент | Текущий размер | Проблема |
+|-----------|---------------|----------|
+| `UnifiedSendButton` | `size="lg"` (h-11) | Слишком большие кнопки отправки |
+| `PromptEngineerButton` | `h-10 w-10` | Иконка 10×10 вместо 9×9 |
+| `ConsultantSelector` | `h-9` | Близко к стандарту |
+| `TimeoutSlider` | `h-9` | Близко к стандарту |
+| `FileUpload` | `h-9 w-9` | Близко к стандарту |
+| `Index.tsx` (CTA) | `size="lg"` | Допустимо для landing page |
 
-## Цель
+## Целевой стандарт
 
-Привести **Библиотеку промптов** и **Задачи** к единому UX-паттерну:
-- `ResizablePanelGroup` (левая панель 35-40%, правая 60-65%)
-- Левая панель: таблица/список с группировкой и коллапсом
-- Правая панель: детали выбранного элемента или редактор
-- Защита несохранённых изменений (`useUnsavedChanges`)
-- Inline-редактирование вместо Sheet-диалогов
+Основываясь на FlowToolbar и принципе высокой плотности UI:
 
----
+```
+┌─────────────────────────────────────────────────────┐
+│ Header Actions (Layout header slot)                │
+│ → size="sm" + h-7 text-xs                         │
+│ → icon-only buttons: h-7 w-7                      │
+├─────────────────────────────────────────────────────┤
+│ Toolbar / Input Area                               │
+│ → size="sm" + h-8 (стандартные кнопки)             │
+│ → icon-only buttons: h-8 w-8 или h-9 w-9          │
+├─────────────────────────────────────────────────────┤
+│ Landing Page CTA                                   │
+│ → size="lg" — допустимо для привлечения внимания  │
+└─────────────────────────────────────────────────────┘
+```
 
-## Часть 1: Библиотека промптов (RoleLibrary)
+## Изменения
 
-### Изменения в структуре
+### 1. UnifiedSendButton.tsx
+- Заменить `size="lg"` → `size="sm"` с `h-9`
+- Уменьшить иконки с `h-5 w-5` до `h-4 w-4`
+- Сделать dropdown-триггер компактным (`px-2 h-9`)
 
-1. **Создать компоненты** (аналогично `ToolRow`, `ToolDetailsPanel`, `ToolEditor`):
-   - `src/components/prompts/PromptRow.tsx` — строка таблицы для промпта
-   - `src/components/prompts/PromptDetailsPanel.tsx` — панель просмотра деталей
-   - `src/components/prompts/PromptEditor.tsx` — форма редактирования
+### 2. PromptEngineerButton.tsx
+- Заменить `h-10 w-10` → `h-9 w-9`
+- Уменьшить иконку с `h-5 w-5` до `h-4 w-4`
 
-2. **Создать хук** `src/hooks/usePromptsCRUD.ts`:
-   - CRUD-операции для промптов
-   - Вызов RPC `get_prompt_library_safe`
-   - Состояние `loading`, `saving`, `prompts`
+### 3. ConsultantSelector.tsx
+- Уже близок к стандарту (`h-9`)
+- Унифицировать стиль с другими селекторами
 
-3. **Переработать страницу** `RoleLibrary.tsx`:
-   - Заменить HydraCard-список на `ResizablePanelGroup`
-   - Левая панель: Table с группировкой по языку (RU/EN) или роли
-   - Правая панель: `PromptDetailsPanel` (просмотр) или `PromptEditor` (редактирование)
-   - Удалить Sheet-диалоги
-   - Добавить `UnsavedChangesDialog`
+### 4. FileUpload.tsx
+- Уже использует `h-9 w-9` ✓
 
-### Группировка промптов
+### 5. TimeoutSlider.tsx
+- Уже использует `h-9` ✓
 
-Промпты будут сгруппированы в коллапсируемые секции:
-- **По языку**: RU, EN, Auto
-- **Подгруппа**: Системные (is_default) vs Пользовательские
-
----
-
-## Часть 2: Задачи (Tasks)
-
-### Изменения в структуре
-
-1. **Создать компоненты**:
-   - `src/components/tasks/TaskRow.tsx` — строка таблицы для задачи
-   - `src/components/tasks/TaskDetailsPanel.tsx` — панель конфигурации задачи
-
-2. **Переработать страницу** `Tasks.tsx`:
-   - Заменить карточки на `ResizablePanelGroup`
-   - Левая панель: список задач в виде таблицы
-   - Правая панель: конфигурация задачи (модели, настройки) — текущий контент Sheet
-   - Кнопка "Открыть" для навигации в ExpertPanel
-
-### Структура левой панели
-
-Задачи будут отображаться в простой таблице:
-- Иконка статуса (активная/архивная)
-- Название задачи
-- Количество моделей
-- Дата обновления
-
-Форма создания новой задачи останется в header или в правой панели при отсутствии выбранной задачи.
-
----
+### 6. Index.tsx (Landing)
+- Оставить `size="lg"` для CTA кнопок — это маркетинговая страница
+- Большие кнопки уместны для привлечения внимания
 
 ## Технические детали
 
-### Общие компоненты для переиспользования
+### Файлы для изменения
 
-```text
-┌─────────────────────────────────────────────────────────────┐
-│  Header: заголовок + описание + кнопки                     │
-├─────────────────────────────────────────────────────────────┤
-│  ResizablePanelGroup                                        │
-│  ┌─────────────────────┬───────────────────────────────────┐│
-│  │ Left Panel (35%)    │ Right Panel (65%)                 ││
-│  │ ┌─────────────────┐ │ ┌───────────────────────────────┐ ││
-│  │ │ Filters         │ │ │ DetailsPanel / Editor         │ ││
-│  │ ├─────────────────┤ │ │                               │ ││
-│  │ │ Grouped Table   │ │ │                               │ ││
-│  │ │ - Section 1 ▼   │ │ │                               │ ││
-│  │ │   Row           │ │ │                               │ ││
-│  │ │   Row           │ │ │                               │ ││
-│  │ │ - Section 2 ▼   │ │ │                               │ ││
-│  │ │   Row           │ │ │                               │ ││
-│  │ └─────────────────┘ │ └───────────────────────────────┘ ││
-│  └─────────────────────┴───────────────────────────────────┘│
-└─────────────────────────────────────────────────────────────┘
+1. **`src/components/warroom/UnifiedSendButton.tsx`**
+   - Строки 70, 86, 140, 156: `size="lg"` → `size="sm"` + `className="h-9"`
+   - Иконки: `h-5 w-5` → `h-4 w-4`
+
+2. **`src/components/warroom/PromptEngineerButton.tsx`**
+   - Строка 192-194: `h-10 w-10` → `h-9 w-9`
+   - Строка 197: `h-5 w-5` → `h-4 w-4`
+
+### Примеры кода
+
+**UnifiedSendButton (до):**
+```tsx
+<Button
+  onClick={onSendToAll}
+  disabled={disabled}
+  className="hydra-glow-sm rounded-r-none"
+  size="lg"
+>
+  <Loader2 className="h-5 w-5 animate-spin" />
 ```
 
-### Создаваемые файлы
+**UnifiedSendButton (после):**
+```tsx
+<Button
+  onClick={onSendToAll}
+  disabled={disabled}
+  className="hydra-glow-sm rounded-r-none h-9"
+  size="sm"
+>
+  <Loader2 className="h-4 w-4 animate-spin" />
+```
 
-**Библиотека промптов:**
-- `src/hooks/usePromptsCRUD.ts`
-- `src/components/prompts/PromptRow.tsx`
-- `src/components/prompts/PromptDetailsPanel.tsx`
-- `src/components/prompts/PromptEditor.tsx`
-- Переработка `src/pages/RoleLibrary.tsx`
+## Результат
 
-**Задачи:**
-- `src/components/tasks/TaskRow.tsx`
-- `src/components/tasks/TaskDetailsPanel.tsx`
-- Переработка `src/pages/Tasks.tsx`
-
-### Примерный план работ
-
-1. Создать `usePromptsCRUD.ts` — извлечь логику из RoleLibrary
-2. Создать `PromptRow.tsx` — отображение строки промпта
-3. Создать `PromptDetailsPanel.tsx` — просмотр выбранного промпта
-4. Создать `PromptEditor.tsx` — редактирование/создание
-5. Переработать `RoleLibrary.tsx` под ResizablePanel-архитектуру
-6. Создать `TaskRow.tsx` — строка задачи
-7. Создать `TaskDetailsPanel.tsx` — конфигурация модели
-8. Переработать `Tasks.tsx` под ResizablePanel-архитектуру
-
+После изменений все интерактивные элементы в области ввода чата будут иметь единообразную высоту `h-9` (36px), что соответствует стилю `size="sm"` в button.tsx и создаёт визуально сбалансированный, компактный интерфейс.
