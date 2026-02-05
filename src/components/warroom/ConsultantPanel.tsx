@@ -13,6 +13,7 @@ import { useStreamingChat, ConsultantMode } from '@/hooks/useStreamingChat';
 import { useSessionMemory } from '@/hooks/useSessionMemory';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
+import { PromptEngineerTools, PromptEngineerTool } from './PromptEngineerTools';
 import {
   Lightbulb,
   Search,
@@ -119,6 +120,25 @@ export function ConsultantPanel({
    const isResizing = useRef(false);
    const textareaRef = useRef<HTMLTextAreaElement>(null);
   const memoryStats = getStats();
+   
+   // Handle prompt engineer tool selection
+   const handlePromptEngineerTool = useCallback((tool: PromptEngineerTool, instruction: string) => {
+     if (!input.trim() || !selectedModel || streaming) return;
+     
+     const fullMessage = `${instruction}\n\n"${input.trim()}"`;
+     const sourceId = currentSourceMessageId;
+     setInput('');
+     setCurrentSourceMessageId(null);
+     
+     // Prepare memory context
+     const memoryContext = chunks.map(chunk => ({
+       content: chunk.content,
+       chunk_type: chunk.chunk_type,
+       metadata: chunk.metadata as Record<string, unknown> | undefined,
+     }));
+     
+     sendQuery(fullMessage, 'promptengineer', selectedModel, sourceId, true, memoryContext);
+   }, [input, selectedModel, streaming, currentSourceMessageId, chunks, sendQuery]);
    
    // Load saved input height
    useEffect(() => {
@@ -460,6 +480,16 @@ export function ConsultantPanel({
         </div>
       </div>
 
+       {/* Prompt Engineer Tools - show only when mode is promptengineer */}
+       {selectedMode === 'promptengineer' && (
+         <PromptEngineerTools
+           onSelectTool={handlePromptEngineerTool}
+           disabled={streaming}
+           isLoading={streaming}
+           hasInput={!!input.trim()}
+         />
+       )}
+ 
       {/* Model selector */}
       <div className="p-2 border-b border-border">
         <Select value={selectedModel} onValueChange={setSelectedModel}>
