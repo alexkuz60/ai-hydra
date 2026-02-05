@@ -426,6 +426,18 @@ export function ChatInputArea({
                         <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground">
                           {t('consultant.selectModel')}
                         </div>
+                        {selectedConsultant && (
+                          <>
+                            <button
+                              onClick={() => onSelectConsultant(null)}
+                              className="w-full flex items-center gap-2 px-2 py-2 rounded-md text-sm transition-colors hover:bg-destructive/10 text-muted-foreground hover:text-destructive"
+                            >
+                              <X className="h-4 w-4" />
+                              <span>{t('consultant.deselect')}</span>
+                            </button>
+                            <div className="h-px bg-border my-1" />
+                          </>
+                        )}
                         {availableModels.map((model) => (
                           <button
                             key={model.id}
@@ -468,23 +480,6 @@ export function ChatInputArea({
                       <TooltipContent side="left">
                         {t('consultant.askOnly')}: {availableModels.find(m => m.id === selectedConsultant)?.name}
                       </TooltipContent>
-                    </Tooltip>
-                  )}
-
-                  {/* Clear consultant selection */}
-                  {selectedConsultant && (
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          onClick={() => onSelectConsultant(null)}
-                          size="icon"
-                          variant="ghost"
-                          className="h-9 w-9 text-muted-foreground hover:text-foreground"
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent side="left">{t('consultant.deselect')}</TooltipContent>
                     </Tooltip>
                   )}
                 </div>
