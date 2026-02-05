@@ -283,6 +283,34 @@ export default function ExpertPanel() {
     toast.warning(`Модель ${modelId.split('/').pop()} удалена из сессии`);
   }, [setSelectedModels, currentTask?.id, incrementDismissal]);
 
+  // Handler for requesting more details about specific proposals
+  const handleRequestProposalDetails = useCallback(async (messageId: string, proposalIds: string[]) => {
+    // Find the source message to get context
+    const sourceMessage = messages.find(m => m.id === messageId);
+    if (!sourceMessage) {
+      toast.error('Исходное сообщение не найдено');
+      return;
+    }
+
+    // Extract proposal titles for context
+    const metadata = sourceMessage.metadata as { proposals?: { id: string; title: string }[] } | null;
+    const proposals = metadata?.proposals || [];
+    const selectedProposals = proposals.filter(p => proposalIds.includes(p.id));
+    const proposalTitles = selectedProposals.map(p => `"${p.title}"`).join(', ');
+
+    // Build follow-up message
+    const followUpMessage = `Прошу подробнее раскрыть следующие предложения: ${proposalTitles || proposalIds.join(', ')}. 
+
+Для каждого из них:
+1. Детально опиши шаги реализации
+2. Укажи потенциальные риски и способы их минимизации
+3. Оцени необходимые ресурсы и сроки`;
+
+    // Set the input with the follow-up message
+    setInput(followUpMessage);
+    toast.success('Запрос деталей подготовлен. Нажмите отправить.');
+  }, [messages, setInput]);
+
   // Persistent collapse state per message
   const { isCollapsed, toggleCollapsed, collapseAll, expandAll, collapsedCount } = useMessageCollapseState(currentTask?.id || null);
   const allCollapsed = messages.length > 0 && collapsedCount === messages.length;
@@ -845,6 +873,7 @@ export default function ExpertPanel() {
                 onRemoveModel={handleRemoveModel}
                 onStopStreaming={stopStreaming}
                 onUpdateProposals={handleUpdateProposals}
+                onRequestProposalDetails={handleRequestProposalDetails}
               />
 
               {/* Input Area */}
