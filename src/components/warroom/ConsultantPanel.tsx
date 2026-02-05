@@ -494,9 +494,9 @@ export function ConsultantPanel({
       )}
 
       {/* Input area */}
-      <div className="p-2 border-t border-border">
+      <div className="border-t border-border bg-card/50">
          {inputCollapsed ? (
-           <div className="flex items-center gap-2">
+           <div className="flex items-center gap-2 px-3 py-3 h-14">
              <Tooltip>
                <TooltipTrigger asChild>
                  <Button
@@ -530,7 +530,7 @@ export function ConsultantPanel({
              </Button>
            </div>
          ) : (
-           <>
+           <div className="px-3 py-3">
              {/* Resize handle */}
              <div
                onMouseDown={handleResizeStart}
@@ -592,7 +592,7 @@ export function ConsultantPanel({
                   )}
                 </Button>
               </div>
-           </>
+           </div>
          )}
       </div>
     </div>
