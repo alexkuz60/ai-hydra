@@ -189,10 +189,12 @@
   .hydra-glow-sm {
     box-shadow: 0 0 10px hsl(var(--hydra-glow) / 0.25),
                 0 0 20px hsl(var(--hydra-glow) / 0.1);
-    transition: box-shadow 0.2s ease, filter 0.2s ease;
+    transition: box-shadow 0.2s ease, filter 0.2s ease, background-color 0.2s ease;
   }
 
   .hydra-glow-sm:hover:not(:disabled) {
+    /* Make hover on primary send buttons visibly change color (not just glow) */
+    background-color: hsl(var(--primary) / 0.85);
     box-shadow: 0 0 15px hsl(var(--hydra-glow) / 0.4),
                 0 0 30px hsl(var(--hydra-glow) / 0.2);
     filter: brightness(1.1);
