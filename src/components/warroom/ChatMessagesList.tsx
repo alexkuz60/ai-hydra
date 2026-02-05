@@ -7,6 +7,7 @@ import { StreamingMessageCard } from '@/components/warroom/StreamingMessageCard'
 import { Message } from '@/types/messages';
 import { PendingResponseState } from '@/types/pending';
 import type { StreamingResponse } from '@/hooks/useStreamingResponses';
+import type { Proposal } from '@/types/patterns';
 import { isSameDay } from 'date-fns';
 import { Sparkles } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -40,6 +41,9 @@ interface ChatMessagesListProps {
   onRemoveModel?: (modelId: string) => void;
   // Streaming handlers
   onStopStreaming?: (modelId: string) => void;
+  // Proposal approval handlers
+  onUpdateProposals?: (messageId: string, proposals: Proposal[]) => void;
+  onRequestProposalDetails?: (messageId: string, proposalIds: string[]) => void;
 }
 
 export function ChatMessagesList({
@@ -63,6 +67,8 @@ export function ChatMessagesList({
   onDismissTimeout,
   onRemoveModel,
   onStopStreaming,
+  onUpdateProposals,
+  onRequestProposalDetails,
 }: ChatMessagesListProps) {
   if (messages.length === 0) {
     return (
@@ -108,6 +114,8 @@ export function ChatMessagesList({
                   onSaveToMemory={onSaveToMemory}
                   isSavingToMemory={isSavingToMemory}
                   isAlreadySavedToMemory={savedMessageIds?.has(message.id)}
+                  onUpdateProposals={onUpdateProposals}
+                  onRequestProposalDetails={onRequestProposalDetails}
                 />
               </div>
             </React.Fragment>

@@ -132,6 +132,7 @@ export default function ExpertPanel() {
     handleDeleteMessage,
     handleDeleteMessageGroup,
     handleRatingChange,
+    handleUpdateProposals,
     fetchMessages,
   } = useMessages({ 
     sessionId: currentTask?.id || null,
@@ -843,6 +844,7 @@ export default function ExpertPanel() {
                 onDismissTimeout={handleDismissTimeout}
                 onRemoveModel={handleRemoveModel}
                 onStopStreaming={stopStreaming}
+                onUpdateProposals={handleUpdateProposals}
               />
 
               {/* Input Area */}
