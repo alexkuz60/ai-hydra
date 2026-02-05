@@ -576,17 +576,17 @@ export function ConsultantPanel({
                   disabled={streaming}
                 />
                 <Button
-                  onClick={handleSend}
-                  disabled={streaming || !input.trim() || !selectedModel}
-                  size="icon"
-                  className="self-end shrink-0"
-                >
-                  {streaming ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Send className="h-4 w-4" />
-                  )}
-                </Button>
+                   onClick={handleSend}
+                   disabled={streaming || !input.trim() || !selectedModel}
+                   size="icon"
+                   className="self-end shrink-0 hydra-glow-sm"
+                 >
+                   {streaming ? (
+                     <Loader2 className="h-4 w-4 animate-spin" />
+                   ) : (
+                     <Send className="h-4 w-4" />
+                   )}
+                 </Button>
               </div>
            </div>
          )}
