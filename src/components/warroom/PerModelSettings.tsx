@@ -193,6 +193,33 @@ export function PerModelSettings({ selectedModels, settings, onChange, className
     fetchAllApprovalSettings().then(setRoleApprovalMap);
   }, [fetchAllApprovalSettings]);
 
+  // Sync requiresApproval for all selected models when roleApprovalMap is loaded
+  useEffect(() => {
+    if (roleApprovalMap.size === 0) return;
+    
+    let hasChanges = false;
+    const updatedSettings = { ...settings };
+    
+    selectedModels.forEach(modelId => {
+      const modelSettings = settings[modelId] || DEFAULT_MODEL_SETTINGS;
+      const currentRole = modelSettings.role || 'assistant';
+      const shouldRequireApproval = roleApprovalMap.get(currentRole) ?? false;
+      
+      // Only update if the value differs or is undefined
+      if (modelSettings.requiresApproval !== shouldRequireApproval) {
+        hasChanges = true;
+        updatedSettings[modelId] = {
+          ...modelSettings,
+          requiresApproval: shouldRequireApproval,
+        };
+      }
+    });
+    
+    if (hasChanges) {
+      onChange(updatedSettings);
+    }
+  }, [roleApprovalMap, selectedModels]);
+
   // Ensure active tab is always valid when selection changes
   React.useEffect(() => {
     setActiveTab((prev) => {
