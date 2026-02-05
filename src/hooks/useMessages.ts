@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Message } from '@/types/messages';
+import { Message, MessageMetadata } from '@/types/messages';
+import type { Proposal } from '@/types/patterns';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 interface UseMessagesProps {
@@ -20,6 +21,7 @@ interface UseMessagesReturn {
   handleDeleteMessage: (messageId: string) => Promise<void>;
   handleDeleteMessageGroup: (userMessageId: string) => Promise<void>;
   handleRatingChange: (messageId: string, rating: number) => Promise<void>;
+  handleUpdateProposals: (messageId: string, proposals: Proposal[]) => Promise<void>;
   fetchMessages: (taskId: string) => Promise<void>;
 }
 
@@ -163,12 +165,12 @@ export function useMessages({ sessionId, onBeforeDeleteMessage }: UseMessagesPro
   const handleRatingChange = useCallback(async (messageId: string, rating: number) => {
     try {
       const message = messages.find(m => m.id === messageId);
-      const currentMetadata = (message?.metadata as Record<string, unknown>) || {};
+      const currentMetadata = (message?.metadata as MessageMetadata) || {};
 
       const { error } = await supabase
         .from('messages')
         .update({
-          metadata: { ...currentMetadata, rating }
+          metadata: { ...currentMetadata, rating } as unknown as Record<string, never>
         })
         .eq('id', messageId);
 
@@ -181,6 +183,44 @@ export function useMessages({ sessionId, onBeforeDeleteMessage }: UseMessagesPro
       ));
     } catch (error: any) {
       toast.error(error.message);
+    }
+  }, [messages]);
+
+  // Update message proposals (for Supervisor Approval feature)
+  const handleUpdateProposals = useCallback(async (messageId: string, proposals: Proposal[]) => {
+    try {
+      const message = messages.find(m => m.id === messageId);
+      const currentMetadata = (message?.metadata as MessageMetadata) || {};
+
+      const updatedMetadata = { ...currentMetadata, proposals, proposals_updated_at: new Date().toISOString() };
+
+      const { error } = await supabase
+        .from('messages')
+        .update({ metadata: updatedMetadata as unknown as Record<string, never> })
+        .eq('id', messageId);
+
+      if (error) throw error;
+
+      // Update local state
+      setMessages(msgs => msgs.map(m =>
+        m.id === messageId
+          ? { ...m, metadata: updatedMetadata }
+          : m
+      ));
+      
+      // Count approved/rejected
+      const approved = proposals.filter(p => p.status === 'approved').length;
+      const rejected = proposals.filter(p => p.status === 'rejected').length;
+      
+      if (approved > 0 || rejected > 0) {
+        const parts: string[] = [];
+        if (approved > 0) parts.push(`${approved} утв.`);
+        if (rejected > 0) parts.push(`${rejected} откл.`);
+        toast.success(`Предложения обновлены: ${parts.join(', ')}`);
+      }
+    } catch (error: any) {
+      console.error('[Messages] Failed to update proposals:', error);
+      toast.error('Ошибка сохранения предложений');
     }
   }, [messages]);
 
@@ -209,6 +249,7 @@ export function useMessages({ sessionId, onBeforeDeleteMessage }: UseMessagesPro
     handleDeleteMessage,
     handleDeleteMessageGroup,
     handleRatingChange,
+    handleUpdateProposals,
     fetchMessages,
   };
 }
