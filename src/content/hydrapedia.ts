@@ -4680,5 +4680,1795 @@ Stages:
 2. **Embedding Generation** — vectorization
 3. **Compactification** (@archivist) — memory compression`
     }
+  },
+  // NEW SECTIONS: Technical Staff Roles
+  {
+    id: 'technical-staff',
+    titleKey: 'hydrapedia.sections.technicalStaff',
+    icon: 'Wrench',
+    content: {
+      ru: `# Технический персонал
+
+Технический персонал — это специализированные AI-агенты для решения узкопрофильных задач. В отличие от экспертов, они **не участвуют в коллегиальных обсуждениях**, а работают как персональные помощники.
+
+## Штатное расписание
+
+| Роль | Иконка | Специализация |
+|------|--------|---------------|
+| @analyst | \`LineChart\` | Аналитика, формирование ТЗ |
+| @promptengineer | \`Wand2\` | Оптимизация промптов |
+| @flowregulator | \`Route\` | Проектирование потоков |
+| @archivist | \`Archive\` | Управление памятью |
+| @toolsmith | \`Wrench\` | Разработка инструментов |
+
+## Промпт-Инженер (@promptengineer)
+
+Специалист по созданию и оптимизации инструкций для AI-систем.
+
+### Ключевые компетенции
+
+- **Анализ промптов**: Выявление слабых мест в существующих инструкциях
+- **Структурирование**: Организация промптов по секциям и блокам
+- **Оптимизация**: Улучшение ясности, уменьшение токенов без потери смысла
+- **Техники**: Chain-of-thought, few-shot examples, role-playing
+
+### Типичные задачи
+
+| Запрос | Что делает |
+|--------|------------|
+| «Улучши этот системный промпт» | Анализирует и оптимизирует структуру |
+| «Добавь примеры в промпт» | Внедряет few-shot learning |
+| «Сделай промпт короче» | Компрессия без потери качества |
+| «Создай шаблон для резюмирования» | Проектирует параметризованный промпт |
+
+### Как вызвать
+
+1. Откройте диалог **«Вызов техника»** (\`Wrench\`) в шапке чата
+2. Выберите **Промпт-Инженер** из списка
+3. Опишите задачу или вставьте промпт для анализа
+
+## Логистик (@flowregulator)
+
+Эксперт по проектированию data-flow диаграмм и оптимизации пайплайнов.
+
+### Ключевые компетенции
+
+- **Архитектура потоков**: Проектирование эффективных цепочек обработки
+- **Оптимизация**: Устранение узких мест и избыточных шагов
+- **Валидация**: Проверка корректности диаграмм перед запуском
+- **Параллелизм**: Настройка Split/Merge для параллельной обработки
+
+### Типичные задачи
+
+| Запрос | Что делает |
+|--------|------------|
+| «Проверь мою диаграмму» | Анализирует структуру и находит проблемы |
+| «Оптимизируй поток» | Предлагает улучшения архитектуры |
+| «Добавь обработку ошибок» | Внедряет Condition-узлы для fallback |
+| «Настрой параллельное выполнение» | Проектирует Split/Merge ветки |
+
+## Инструменталист (@toolsmith)
+
+Специалист по разработке пользовательских инструментов для AI-агентов.
+
+### Ключевые компетенции
+
+- **Prompt-инструменты**: Создание шаблонов с параметрами
+- **HTTP-интеграции**: Настройка API-запросов и заголовков
+- **JSONPath**: Извлечение данных из ответов API
+- **Документирование**: Оптимизация описаний для AI
+
+### Типичные задачи
+
+| Запрос | Что делает |
+|--------|------------|
+| «Создай инструмент для Telegram» | Настраивает HTTP POST с токеном бота |
+| «Помоги извлечь данные из JSON» | Составляет JSONPath-выражение |
+| «Оптимизируй описание инструмента» | Улучшает name/description |
+| «Настрой авторизацию для API» | Добавляет заголовки Authorization |
+
+### Пример диалога
+
+\`\`\`
+👤 Пользователь:
+Создай инструмент для отправки сообщений в Slack
+
+🔧 Инструменталист:
+Для Slack webhook нужен HTTP POST инструмент:
+
+**Конфигурация:**
+- URL: https://hooks.slack.com/services/YOUR/WEBHOOK/URL
+- Method: POST
+- Headers: Content-Type: application/json
+- Body: {"text": "{{message}}"}
+
+**Параметры:**
+- message (string, required): Текст сообщения
+
+**JSONPath для проверки:** $.ok
+\`\`\`
+
+## Архивариус (@archivist)
+
+Хранитель памяти системы, отвечает за организацию и поиск контекста.
+
+### Ключевые компетенции
+
+- **Сессионная память**: Управление session_memory
+- **Ролевая память**: Накопление опыта агентов в role_memory
+- **Векторный поиск**: Semantic search по эмбеддингам
+- **Компактификация**: Сжатие и дедупликация данных
+
+### Типичные задачи
+
+| Запрос | Что делает |
+|--------|------------|
+| «Найди релевантный контекст» | Семантический поиск по памяти |
+| «Сохрани ключевые факты» | Добавление в долгосрочную память |
+| «Очисти устаревшие записи» | Компактификация и дедупликация |
+
+## Аналитик (@analyst)
+
+Готовит структурированные технические задания и спецификации.
+
+### Ключевые компетенции
+
+- **Декомпозиция**: Разбиение сложных задач на шаги
+- **Формализация**: Преобразование требований в спецификации
+- **Документация**: Создание ТЗ и user stories
+
+### Типичные задачи
+
+| Запрос | Что делает |
+|--------|------------|
+| «Подготовь ТЗ для оптимизации» | Формирует brief для Промпт-Инженера |
+| «Проанализируй требования» | Структурирует input |
+
+## Вызов технического персонала
+
+Все технические роли доступны через единый интерфейс:
+
+1. Нажмите \`Wrench\` в шапке чата (кнопка «Вызов техника»)
+2. Выберите нужного специалиста из списка
+3. Опишите задачу — откроется D-Chat с выбранным агентом
+
+> **Совет**: Технический персонал работает изолированно от основного чата. Используйте их для специализированных задач, не засоряя основную историю.`,
+
+      en: `# Technical Staff
+
+Technical staff are specialized AI agents for narrow-focused tasks. Unlike experts, they **do not participate in collegial discussions** but work as personal assistants.
+
+## Staff Roster
+
+| Role | Icon | Specialization |
+|------|------|----------------|
+| @analyst | \`LineChart\` | Analytics, requirements formation |
+| @promptengineer | \`Wand2\` | Prompt optimization |
+| @flowregulator | \`Route\` | Flow design |
+| @archivist | \`Archive\` | Memory management |
+| @toolsmith | \`Wrench\` | Tool development |
+
+## Prompt Engineer (@promptengineer)
+
+Specialist in creating and optimizing instructions for AI systems.
+
+### Key Competencies
+
+- **Prompt analysis**: Identifying weaknesses in existing instructions
+- **Structuring**: Organizing prompts into sections and blocks
+- **Optimization**: Improving clarity, reducing tokens without losing meaning
+- **Techniques**: Chain-of-thought, few-shot examples, role-playing
+
+### Typical Tasks
+
+| Request | Action |
+|---------|--------|
+| "Improve this system prompt" | Analyzes and optimizes structure |
+| "Add examples to the prompt" | Implements few-shot learning |
+| "Make the prompt shorter" | Compression without quality loss |
+| "Create a summarization template" | Designs parameterized prompt |
+
+### How to Call
+
+1. Open the **"Call Tech"** dialog (\`Wrench\`) in the chat header
+2. Select **Prompt Engineer** from the list
+3. Describe the task or paste the prompt for analysis
+
+## Flow Regulator (@flowregulator)
+
+Expert in designing data-flow diagrams and optimizing pipelines.
+
+### Key Competencies
+
+- **Flow architecture**: Designing efficient processing chains
+- **Optimization**: Eliminating bottlenecks and redundant steps
+- **Validation**: Checking diagram correctness before execution
+- **Parallelism**: Configuring Split/Merge for parallel processing
+
+### Typical Tasks
+
+| Request | Action |
+|---------|--------|
+| "Check my diagram" | Analyzes structure and finds issues |
+| "Optimize the flow" | Suggests architecture improvements |
+| "Add error handling" | Implements Condition nodes for fallback |
+| "Set up parallel execution" | Designs Split/Merge branches |
+
+## Toolsmith (@toolsmith)
+
+Specialist in developing custom tools for AI agents.
+
+### Key Competencies
+
+- **Prompt tools**: Creating templates with parameters
+- **HTTP integrations**: Configuring API requests and headers
+- **JSONPath**: Extracting data from API responses
+- **Documentation**: Optimizing descriptions for AI
+
+### Typical Tasks
+
+| Request | Action |
+|---------|--------|
+| "Create a Telegram tool" | Configures HTTP POST with bot token |
+| "Help extract data from JSON" | Composes JSONPath expression |
+| "Optimize tool description" | Improves name/description |
+| "Set up API authorization" | Adds Authorization headers |
+
+### Example Dialog
+
+\`\`\`
+👤 User:
+Create a tool for sending Slack messages
+
+🔧 Toolsmith:
+For Slack webhook, you need an HTTP POST tool:
+
+**Configuration:**
+- URL: https://hooks.slack.com/services/YOUR/WEBHOOK/URL
+- Method: POST
+- Headers: Content-Type: application/json
+- Body: {"text": "{{message}}"}
+
+**Parameters:**
+- message (string, required): Message text
+
+**JSONPath for verification:** $.ok
+\`\`\`
+
+## Archivist (@archivist)
+
+System memory keeper, responsible for organizing and searching context.
+
+### Key Competencies
+
+- **Session memory**: Managing session_memory
+- **Role memory**: Accumulating agent experience in role_memory
+- **Vector search**: Semantic search via embeddings
+- **Compactification**: Compression and deduplication
+
+### Typical Tasks
+
+| Request | Action |
+|---------|--------|
+| "Find relevant context" | Semantic search through memory |
+| "Save key facts" | Adding to long-term memory |
+| "Clean outdated entries" | Compactification and deduplication |
+
+## Analyst (@analyst)
+
+Prepares structured technical specifications and requirements.
+
+### Key Competencies
+
+- **Decomposition**: Breaking complex tasks into steps
+- **Formalization**: Converting requirements into specifications
+- **Documentation**: Creating specs and user stories
+
+### Typical Tasks
+
+| Request | Action |
+|---------|--------|
+| "Prepare specs for optimization" | Forms brief for Prompt Engineer |
+| "Analyze requirements" | Structures input |
+
+## Calling Technical Staff
+
+All technical roles are available through a unified interface:
+
+1. Click \`Wrench\` in the chat header ("Call Tech" button)
+2. Select the needed specialist from the list
+3. Describe the task — D-Chat opens with the selected agent
+
+> **Tip**: Technical staff work in isolation from the main chat. Use them for specialized tasks without cluttering the main history.`
+    }
+  },
+  // NEW SECTION: Flow Editor Comprehensive Guide
+  {
+    id: 'flow-editor-guide',
+    titleKey: 'hydrapedia.sections.flowEditorGuide',
+    icon: 'GitBranch',
+    content: {
+      ru: `# Редактор потоков
+
+Редактор потоков (Flow Editor) — визуальная среда для проектирования логики обработки данных и автоматизации AI-пайплайнов.
+
+## Концепция
+
+Flow-диаграмма — это **направленный ациклический граф (DAG)**, где:
+- **Узлы** — операции обработки (модели, условия, трансформации)
+- **Связи** — потоки данных между операциями
+- **Группы** — контейнеры для логической организации
+
+\`\`\`mermaid
+graph TD
+    subgraph "Flow-диаграмма"
+        I[Input] --> P[Prompt]
+        P --> M[Model]
+        M --> C{Condition}
+        C -->|Да| T[Transform]
+        C -->|Нет| O1[Output 1]
+        T --> O2[Output 2]
+    end
+\`\`\`
+
+## Интерфейс редактора
+
+### Верхняя панель инструментов
+
+| Элемент | Иконка | Описание |
+|---------|--------|----------|
+| **Новая диаграмма** | \`FilePlus\` | Создать пустую диаграмму |
+| **Открыть** | \`Folder\` | Загрузить сохранённую диаграмму |
+| **Сохранить** | \`Save\` | Сохранить текущую диаграмму |
+| **История** | \`History\` | Просмотр версий диаграммы |
+| **Авто-раскладка** | \`LayoutGrid\` | Автоматическое выравнивание (Dagre) |
+| **Отменить** | \`Undo\` | Отмена последнего действия |
+| **Повторить** | \`Redo\` | Повтор отменённого действия |
+| **Экспорт** | \`Download\` | Экспорт в JSON/PDF/PNG |
+
+### Левая панель — Палитра узлов
+
+Перетаскивайте узлы из палитры на холст:
+
+#### Базовые узлы
+
+| Узел | Иконка | Назначение |
+|------|--------|------------|
+| **Input** | \`ArrowDownToLine\` | Точка входа данных |
+| **Output** | \`ArrowUpFromLine\` | Финальный результат |
+| **Prompt** | \`FileText\` | Системный промпт |
+| **Model** | \`Brain\` | Вызов AI-модели |
+
+#### Логические узлы
+
+| Узел | Иконка | Назначение |
+|------|--------|------------|
+| **Condition** | \`GitBranch\` | Ветвление по условию |
+| **Switch** | \`GitMerge\` | Множественное ветвление |
+| **Loop** | \`Repeat\` | Итерация по массиву |
+
+#### Узлы данных
+
+| Узел | Иконка | Назначение |
+|------|--------|------------|
+| **Transform** | \`Shuffle\` | JSONPath, regex, маппинг |
+| **Filter** | \`Filter\` | Фильтрация по условию |
+| **Merge** | \`Combine\` | Объединение потоков |
+| **Split** | \`Split\` | Разделение на ветки |
+
+#### Интеграции
+
+| Узел | Иконка | Назначение |
+|------|--------|------------|
+| **API** | \`Globe\` | HTTP-запросы |
+| **Database** | \`Database\` | CRUD-операции |
+| **Storage** | \`HardDrive\` | Файловые операции |
+| **Tool** | \`Wrench\` | Кастомный инструмент |
+
+#### Специальные
+
+| Узел | Иконка | Назначение |
+|------|--------|------------|
+| **Delay** | \`Clock\` | Задержка выполнения |
+| **Checkpoint** | \`UserCheck\` | Ожидание подтверждения |
+| **Memory** | \`Brain\` | Работа с памятью |
+| **Embedding** | \`Sparkles\` | Генерация векторов |
+| **Classifier** | \`Tag\` | AI-классификация |
+| **Group** | \`Square\` | Контейнер-группа |
+
+### Правая панель — Свойства
+
+При выборе узла отображаются его настройки:
+
+#### Общие свойства
+
+| Поле | Описание |
+|------|----------|
+| **Label** | Отображаемое имя узла |
+| **Description** | Подробное описание |
+| **Bypass** | Пропустить при выполнении |
+
+## Типы связей (Edges)
+
+Связи соединяют выходы узлов с входами других узлов.
+
+### Типы данных
+
+| Тип | Цвет | Описание |
+|-----|------|----------|
+| **Text** | Голубой | Текстовые данные |
+| **JSON** | Зелёный | Структурированные объекты |
+| **File** | Оранжевый | Файловые ссылки |
+| **Signal** | Серый | Управляющие сигналы |
+
+### Стили связей
+
+| Стиль | Описание |
+|-------|----------|
+| **Bezier** | Плавные кривые (по умолчанию) |
+| **Step** | Прямоугольные повороты |
+| **Smoothstep** | Скруглённые прямоугольники |
+| **Straight** | Прямые линии |
+
+### Обратные связи (Loops)
+
+Связи, направленные «вверх» по графу, отображаются:
+- Оранжевым цветом
+- Пунктирной линией
+- С увеличенной толщиной
+
+## Выполнение потоков
+
+### Режимы выполнения
+
+| Режим | Описание |
+|-------|----------|
+| **Run** | Полное выполнение от Input до Output |
+| **Step** | Пошаговое выполнение с паузами |
+| **Debug** | Выполнение с детальным логированием |
+
+### Визуальная обратная связь
+
+| Индикатор | Описание |
+|-----------|----------|
+| **Пульсация узла** | Узел выполняется |
+| **Зелёная галочка** | Успешное завершение |
+| **Красный крест** | Ошибка выполнения |
+| **Жёлтая пауза** | Ожидание (Checkpoint) |
+| **Данные на связи** | Превью передаваемых данных |
+
+### Панель выполнения
+
+| Элемент | Описание |
+|---------|----------|
+| **Start** | Запуск выполнения |
+| **Stop** | Остановка выполнения |
+| **Reset** | Сброс результатов |
+| **Continue** | Продолжить после Checkpoint |
+| **Лог событий** | Список SSE-событий в реальном времени |
+
+## Узел Tool
+
+Узел Tool позволяет вызывать пользовательские инструменты в пайплайне.
+
+### Конфигурация
+
+| Поле | Описание |
+|------|----------|
+| **Tool** | Выбор инструмента из библиотеки |
+| **Parameter Mapping** | Маппинг параметров |
+
+### Маппинг параметров
+
+Каждый параметр инструмента можно связать с:
+
+| Источник | Синтаксис | Пример |
+|----------|-----------|--------|
+| **Статическое значение** | Текст | \`"Привет"\` |
+| **JSONPath из входа** | \`$.path\` | \`$.user.name\` |
+| **Весь входной объект** | \`$\` | Передать всё |
+
+### Пример использования
+
+\`\`\`mermaid
+graph LR
+    M[Model] --> T[Transform: извлечь email]
+    T --> TL[Tool: Send Email]
+    TL --> O[Output]
+\`\`\`
+
+1. Model генерирует ответ с email
+2. Transform извлекает email через JSONPath
+3. Tool отправляет письмо через HTTP API
+4. Output возвращает результат
+
+## История версий
+
+Каждое сохранение создаёт новую версию диаграммы.
+
+### Просмотр истории
+
+1. Нажмите \`History\` в тулбаре
+2. Выберите версию из списка
+3. Просмотрите или восстановите
+
+### Восстановление версии
+
+| Действие | Описание |
+|----------|----------|
+| **Просмотр** | Открыть версию для просмотра |
+| **Восстановить** | Заменить текущую версию выбранной |
+
+## Экспорт диаграмм
+
+| Формат | Описание |
+|--------|----------|
+| **JSON** | Полная структура (nodes + edges) |
+| **PNG** | Растровое изображение |
+| **PDF** | Документ для печати |
+
+## Горячие клавиши
+
+| Комбинация | Действие |
+|------------|----------|
+| \`Ctrl+Z\` | Отмена |
+| \`Ctrl+Y\` | Повтор |
+| \`Ctrl+S\` | Сохранить |
+| \`Delete\` | Удалить выбранное |
+| \`Ctrl+A\` | Выделить всё |
+
+> **Совет**: Используйте Group-узлы для организации сложных диаграмм по логическим блокам.`,
+
+      en: `# Flow Editor
+
+The Flow Editor is a visual environment for designing data processing logic and automating AI pipelines.
+
+## Concept
+
+A flow diagram is a **Directed Acyclic Graph (DAG)** where:
+- **Nodes** — processing operations (models, conditions, transformations)
+- **Edges** — data flows between operations
+- **Groups** — containers for logical organization
+
+\`\`\`mermaid
+graph TD
+    subgraph "Flow Diagram"
+        I[Input] --> P[Prompt]
+        P --> M[Model]
+        M --> C{Condition}
+        C -->|Yes| T[Transform]
+        C -->|No| O1[Output 1]
+        T --> O2[Output 2]
+    end
+\`\`\`
+
+## Editor Interface
+
+### Top Toolbar
+
+| Element | Icon | Description |
+|---------|------|-------------|
+| **New Diagram** | \`FilePlus\` | Create empty diagram |
+| **Open** | \`Folder\` | Load saved diagram |
+| **Save** | \`Save\` | Save current diagram |
+| **History** | \`History\` | View diagram versions |
+| **Auto-layout** | \`LayoutGrid\` | Automatic alignment (Dagre) |
+| **Undo** | \`Undo\` | Undo last action |
+| **Redo** | \`Redo\` | Redo undone action |
+| **Export** | \`Download\` | Export to JSON/PDF/PNG |
+
+### Left Panel — Node Palette
+
+Drag nodes from the palette to the canvas:
+
+#### Basic Nodes
+
+| Node | Icon | Purpose |
+|------|------|---------|
+| **Input** | \`ArrowDownToLine\` | Data entry point |
+| **Output** | \`ArrowUpFromLine\` | Final result |
+| **Prompt** | \`FileText\` | System prompt |
+| **Model** | \`Brain\` | AI model call |
+
+#### Logic Nodes
+
+| Node | Icon | Purpose |
+|------|------|---------|
+| **Condition** | \`GitBranch\` | Conditional branching |
+| **Switch** | \`GitMerge\` | Multiple branching |
+| **Loop** | \`Repeat\` | Array iteration |
+
+#### Data Nodes
+
+| Node | Icon | Purpose |
+|------|------|---------|
+| **Transform** | \`Shuffle\` | JSONPath, regex, mapping |
+| **Filter** | \`Filter\` | Condition-based filtering |
+| **Merge** | \`Combine\` | Stream merging |
+| **Split** | \`Split\` | Branch splitting |
+
+#### Integrations
+
+| Node | Icon | Purpose |
+|------|------|---------|
+| **API** | \`Globe\` | HTTP requests |
+| **Database** | \`Database\` | CRUD operations |
+| **Storage** | \`HardDrive\` | File operations |
+| **Tool** | \`Wrench\` | Custom tool |
+
+#### Special
+
+| Node | Icon | Purpose |
+|------|------|---------|
+| **Delay** | \`Clock\` | Execution delay |
+| **Checkpoint** | \`UserCheck\` | Awaiting confirmation |
+| **Memory** | \`Brain\` | Memory operations |
+| **Embedding** | \`Sparkles\` | Vector generation |
+| **Classifier** | \`Tag\` | AI classification |
+| **Group** | \`Square\` | Container group |
+
+### Right Panel — Properties
+
+When a node is selected, its settings are displayed:
+
+#### Common Properties
+
+| Field | Description |
+|-------|-------------|
+| **Label** | Displayed node name |
+| **Description** | Detailed description |
+| **Bypass** | Skip during execution |
+
+## Edge Types
+
+Edges connect node outputs to other node inputs.
+
+### Data Types
+
+| Type | Color | Description |
+|------|-------|-------------|
+| **Text** | Blue | Text data |
+| **JSON** | Green | Structured objects |
+| **File** | Orange | File references |
+| **Signal** | Gray | Control signals |
+
+### Edge Styles
+
+| Style | Description |
+|-------|-------------|
+| **Bezier** | Smooth curves (default) |
+| **Step** | Rectangular turns |
+| **Smoothstep** | Rounded rectangles |
+| **Straight** | Straight lines |
+
+### Feedback Loops
+
+Edges directed "up" the graph are displayed with:
+- Orange color
+- Dashed line
+- Increased thickness
+
+## Flow Execution
+
+### Execution Modes
+
+| Mode | Description |
+|------|-------------|
+| **Run** | Full execution from Input to Output |
+| **Step** | Step-by-step execution with pauses |
+| **Debug** | Execution with detailed logging |
+
+### Visual Feedback
+
+| Indicator | Description |
+|-----------|-------------|
+| **Node pulsing** | Node is executing |
+| **Green check** | Successful completion |
+| **Red cross** | Execution error |
+| **Yellow pause** | Waiting (Checkpoint) |
+| **Data on edge** | Preview of transmitted data |
+
+### Execution Panel
+
+| Element | Description |
+|---------|-------------|
+| **Start** | Start execution |
+| **Stop** | Stop execution |
+| **Reset** | Reset results |
+| **Continue** | Continue after Checkpoint |
+| **Event log** | Real-time SSE events list |
+
+## Tool Node
+
+The Tool node allows calling custom tools in the pipeline.
+
+### Configuration
+
+| Field | Description |
+|-------|-------------|
+| **Tool** | Select tool from library |
+| **Parameter Mapping** | Parameter mapping |
+
+### Parameter Mapping
+
+Each tool parameter can be linked to:
+
+| Source | Syntax | Example |
+|--------|--------|---------|
+| **Static value** | Text | \`"Hello"\` |
+| **JSONPath from input** | \`$.path\` | \`$.user.name\` |
+| **Entire input object** | \`$\` | Pass everything |
+
+### Usage Example
+
+\`\`\`mermaid
+graph LR
+    M[Model] --> T[Transform: extract email]
+    T --> TL[Tool: Send Email]
+    TL --> O[Output]
+\`\`\`
+
+1. Model generates response with email
+2. Transform extracts email via JSONPath
+3. Tool sends email via HTTP API
+4. Output returns result
+
+## Version History
+
+Each save creates a new diagram version.
+
+### Viewing History
+
+1. Click \`History\` in the toolbar
+2. Select version from the list
+3. View or restore
+
+### Restoring Version
+
+| Action | Description |
+|--------|-------------|
+| **View** | Open version for viewing |
+| **Restore** | Replace current version with selected |
+
+## Export Diagrams
+
+| Format | Description |
+|--------|-------------|
+| **JSON** | Full structure (nodes + edges) |
+| **PNG** | Raster image |
+| **PDF** | Document for printing |
+
+## Keyboard Shortcuts
+
+| Shortcut | Action |
+|----------|--------|
+| \`Ctrl+Z\` | Undo |
+| \`Ctrl+Y\` | Redo |
+| \`Ctrl+S\` | Save |
+| \`Delete\` | Delete selected |
+| \`Ctrl+A\` | Select all |
+
+> **Tip**: Use Group nodes to organize complex diagrams into logical blocks.`
+    }
+  },
+  // NEW SECTION: API Integrations & Tools
+  {
+    id: 'api-integrations',
+    titleKey: 'hydrapedia.sections.apiIntegrations',
+    icon: 'Globe',
+    content: {
+      ru: `# Интеграции и API
+
+AI-Hydra поддерживает интеграцию с внешними сервисами через систему пользовательских инструментов и узлы API в редакторе потоков.
+
+## Библиотека инструментов
+
+Инструменты (Tools) — это переиспользуемые блоки для расширения возможностей AI-агентов.
+
+### Типы инструментов
+
+| Тип | Иконка | Описание |
+|-----|--------|----------|
+| **Prompt** | \`FileText\` | Шаблонные промпты с параметрами |
+| **HTTP API** | \`Globe\` | Интеграция с внешними API |
+
+## Prompt-инструменты
+
+Параметризованные шаблоны промптов для типовых задач.
+
+### Структура
+
+| Поле | Описание |
+|------|----------|
+| **Имя** | Уникальный идентификатор (snake_case) |
+| **Отображаемое имя** | Человекочитаемое название |
+| **Описание** | Что делает инструмент |
+| **Шаблон** | Промпт с плейсхолдерами \`{{param}}\` |
+| **Параметры** | Входные переменные |
+
+### Пример: Резюмирование
+
+\`\`\`
+Название: summarize_text
+Шаблон:
+Кратко изложи основные тезисы следующего текста:
+
+{{text}}
+
+Формат: маркированный список, не более {{max_points}} пунктов.
+\`\`\`
+
+### Параметры
+
+| Имя | Тип | Обязательный | Описание |
+|-----|-----|--------------|----------|
+| text | string | ✓ | Текст для резюмирования |
+| max_points | number | — | Макс. пунктов (по умолчанию 5) |
+
+## HTTP-инструменты
+
+Интеграция с внешними REST API.
+
+### Конфигурация
+
+| Поле | Описание |
+|------|----------|
+| **URL** | Endpoint API |
+| **Method** | GET, POST, PUT, DELETE, PATCH |
+| **Headers** | Заголовки (включая авторизацию) |
+| **Body Template** | Тело запроса с плейсхолдерами |
+| **Response JSONPath** | Путь для извлечения данных |
+
+### Безопасность
+
+| Ограничение | Значение |
+|-------------|----------|
+| **Приватные IP** | Заблокированы (SSRF-защита) |
+| **Таймаут** | 30 секунд |
+| **Размер ответа** | Максимум 1 МБ |
+
+### Пример: OpenWeatherMap
+
+\`\`\`json
+{
+  "url": "https://api.openweathermap.org/data/2.5/weather",
+  "method": "GET",
+  "headers": {},
+  "queryParams": {
+    "q": "{{city}}",
+    "appid": "{{API_KEY}}",
+    "units": "metric",
+    "lang": "ru"
+  },
+  "responseMapping": "$.main.temp"
+}
+\`\`\`
+
+### JSONPath-выражения
+
+Извлечение данных из ответов API:
+
+| Выражение | Описание | Пример |
+|-----------|----------|--------|
+| \`$.data\` | Поле data | \`{"data": "value"}\` → \`"value"\` |
+| \`$.items[0]\` | Первый элемент | \`{"items": [1,2,3]}\` → \`1\` |
+| \`$.user.name\` | Вложенное поле | \`{"user": {"name": "John"}}\` → \`"John"\` |
+| \`$..price\` | Все поля price | Рекурсивный поиск |
+
+## Тестирование инструментов
+
+### Prompt Tool Tester
+
+1. Откройте инструмент в библиотеке
+2. Нажмите **«Тестировать»** (\`Play\`)
+3. Заполните параметры
+4. Нажмите **«Выполнить»**
+5. Просмотрите результат
+
+### HTTP Tool Tester
+
+1. Откройте HTTP-инструмент
+2. Нажмите **«Тестировать»**
+3. Заполните параметры
+4. Нажмите **«Отправить запрос»**
+5. Просмотрите:
+   - HTTP-статус
+   - Заголовки ответа
+   - Тело ответа
+   - Извлечённые данные (если настроен JSONPath)
+
+## Узел API в Flow Editor
+
+Для более сложных интеграций используйте узел API в редакторе потоков.
+
+### Возможности
+
+| Функция | Описание |
+|---------|----------|
+| **Динамические заголовки** | Подстановка из входных данных |
+| **Цепочки запросов** | Последовательные вызовы API |
+| **Обработка ошибок** | Condition-узлы для fallback |
+| **Параллельные запросы** | Split/Merge для batch-операций |
+
+### Пример: Цепочка API-запросов
+
+\`\`\`mermaid
+graph LR
+    I[Input: user_id] --> A1[API: Get User]
+    A1 --> T[Transform: extract orders]
+    T --> A2[API: Get Order Details]
+    A2 --> O[Output]
+\`\`\`
+
+## Узел Database
+
+Прямое взаимодействие с базой данных.
+
+### Операции
+
+| Операция | Описание |
+|----------|----------|
+| **Select** | Чтение данных с фильтрацией |
+| **Insert** | Добавление записей |
+| **Update** | Обновление записей |
+| **Delete** | Удаление записей |
+| **Upsert** | Вставка или обновление |
+
+### Фильтрация (PostgREST)
+
+| Оператор | Описание | Пример |
+|----------|----------|--------|
+| \`eq\` | Равно | \`status=eq.active\` |
+| \`neq\` | Не равно | \`type=neq.draft\` |
+| \`gt\` | Больше | \`price=gt.100\` |
+| \`lt\` | Меньше | \`count=lt.10\` |
+| \`ilike\` | Нечёткий поиск | \`name=ilike.*john*\` |
+
+## Узел Storage
+
+Работа с файловым хранилищем.
+
+### Операции
+
+| Операция | Описание |
+|----------|----------|
+| **Upload** | Загрузка файла в bucket |
+| **Download** | Получение файла |
+| **List** | Список файлов в папке |
+| **Delete** | Удаление файла |
+| **Signed URL** | Генерация временной ссылки |
+
+### Пример использования
+
+\`\`\`mermaid
+graph LR
+    I[Input: file] --> U[Storage: Upload]
+    U --> S[Storage: Signed URL]
+    S --> O[Output: public link]
+\`\`\`
+
+## Практические примеры
+
+### Telegram-бот уведомлений
+
+\`\`\`json
+{
+  "url": "https://api.telegram.org/bot{{BOT_TOKEN}}/sendMessage",
+  "method": "POST",
+  "headers": {
+    "Content-Type": "application/json"
+  },
+  "body": {
+    "chat_id": "{{chat_id}}",
+    "text": "{{message}}",
+    "parse_mode": "Markdown"
+  }
+}
+\`\`\`
+
+### Slack Webhook
+
+\`\`\`json
+{
+  "url": "https://hooks.slack.com/services/YOUR/WEBHOOK/URL",
+  "method": "POST",
+  "headers": {
+    "Content-Type": "application/json"
+  },
+  "body": {
+    "text": "{{message}}",
+    "channel": "{{channel}}"
+  }
+}
+\`\`\`
+
+### GitHub API (создание issue)
+
+\`\`\`json
+{
+  "url": "https://api.github.com/repos/{{owner}}/{{repo}}/issues",
+  "method": "POST",
+  "headers": {
+    "Authorization": "Bearer {{GITHUB_TOKEN}}",
+    "Accept": "application/vnd.github.v3+json"
+  },
+  "body": {
+    "title": "{{title}}",
+    "body": "{{body}}",
+    "labels": ["bug"]
+  },
+  "responseMapping": "$.html_url"
+}
+\`\`\`
+
+> **Важно**: Храните API-ключи и токены в секретах, а не в открытом виде в конфигурации инструментов.`,
+
+      en: `# Integrations & API
+
+AI-Hydra supports integration with external services through the custom tools system and API nodes in the flow editor.
+
+## Tools Library
+
+Tools are reusable blocks for extending AI agent capabilities.
+
+### Tool Types
+
+| Type | Icon | Description |
+|------|------|-------------|
+| **Prompt** | \`FileText\` | Template prompts with parameters |
+| **HTTP API** | \`Globe\` | Integration with external APIs |
+
+## Prompt Tools
+
+Parameterized prompt templates for typical tasks.
+
+### Structure
+
+| Field | Description |
+|-------|-------------|
+| **Name** | Unique identifier (snake_case) |
+| **Display Name** | Human-readable name |
+| **Description** | What the tool does |
+| **Template** | Prompt with \`{{param}}\` placeholders |
+| **Parameters** | Input variables |
+
+### Example: Summarization
+
+\`\`\`
+Name: summarize_text
+Template:
+Briefly summarize the main points of the following text:
+
+{{text}}
+
+Format: bulleted list, no more than {{max_points}} points.
+\`\`\`
+
+### Parameters
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| text | string | ✓ | Text to summarize |
+| max_points | number | — | Max points (default 5) |
+
+## HTTP Tools
+
+Integration with external REST APIs.
+
+### Configuration
+
+| Field | Description |
+|-------|-------------|
+| **URL** | API endpoint |
+| **Method** | GET, POST, PUT, DELETE, PATCH |
+| **Headers** | Headers (including authorization) |
+| **Body Template** | Request body with placeholders |
+| **Response JSONPath** | Path for data extraction |
+
+### Security
+
+| Restriction | Value |
+|-------------|-------|
+| **Private IPs** | Blocked (SSRF protection) |
+| **Timeout** | 30 seconds |
+| **Response Size** | Maximum 1 MB |
+
+### Example: OpenWeatherMap
+
+\`\`\`json
+{
+  "url": "https://api.openweathermap.org/data/2.5/weather",
+  "method": "GET",
+  "headers": {},
+  "queryParams": {
+    "q": "{{city}}",
+    "appid": "{{API_KEY}}",
+    "units": "metric",
+    "lang": "en"
+  },
+  "responseMapping": "$.main.temp"
+}
+\`\`\`
+
+### JSONPath Expressions
+
+Extracting data from API responses:
+
+| Expression | Description | Example |
+|------------|-------------|---------|
+| \`$.data\` | data field | \`{"data": "value"}\` → \`"value"\` |
+| \`$.items[0]\` | First element | \`{"items": [1,2,3]}\` → \`1\` |
+| \`$.user.name\` | Nested field | \`{"user": {"name": "John"}}\` → \`"John"\` |
+| \`$..price\` | All price fields | Recursive search |
+
+## Testing Tools
+
+### Prompt Tool Tester
+
+1. Open the tool in the library
+2. Click **"Test"** (\`Play\`)
+3. Fill in parameters
+4. Click **"Execute"**
+5. View the result
+
+### HTTP Tool Tester
+
+1. Open the HTTP tool
+2. Click **"Test"**
+3. Fill in parameters
+4. Click **"Send Request"**
+5. View:
+   - HTTP status
+   - Response headers
+   - Response body
+   - Extracted data (if JSONPath configured)
+
+## API Node in Flow Editor
+
+For more complex integrations, use the API node in the flow editor.
+
+### Features
+
+| Feature | Description |
+|---------|-------------|
+| **Dynamic headers** | Substitution from input data |
+| **Request chains** | Sequential API calls |
+| **Error handling** | Condition nodes for fallback |
+| **Parallel requests** | Split/Merge for batch operations |
+
+### Example: API Request Chain
+
+\`\`\`mermaid
+graph LR
+    I[Input: user_id] --> A1[API: Get User]
+    A1 --> T[Transform: extract orders]
+    T --> A2[API: Get Order Details]
+    A2 --> O[Output]
+\`\`\`
+
+## Database Node
+
+Direct database interaction.
+
+### Operations
+
+| Operation | Description |
+|-----------|-------------|
+| **Select** | Read data with filtering |
+| **Insert** | Add records |
+| **Update** | Update records |
+| **Delete** | Delete records |
+| **Upsert** | Insert or update |
+
+### Filtering (PostgREST)
+
+| Operator | Description | Example |
+|----------|-------------|---------|
+| \`eq\` | Equals | \`status=eq.active\` |
+| \`neq\` | Not equals | \`type=neq.draft\` |
+| \`gt\` | Greater than | \`price=gt.100\` |
+| \`lt\` | Less than | \`count=lt.10\` |
+| \`ilike\` | Fuzzy search | \`name=ilike.*john*\` |
+
+## Storage Node
+
+File storage operations.
+
+### Operations
+
+| Operation | Description |
+|-----------|-------------|
+| **Upload** | Upload file to bucket |
+| **Download** | Get file |
+| **List** | List files in folder |
+| **Delete** | Delete file |
+| **Signed URL** | Generate temporary link |
+
+### Usage Example
+
+\`\`\`mermaid
+graph LR
+    I[Input: file] --> U[Storage: Upload]
+    U --> S[Storage: Signed URL]
+    S --> O[Output: public link]
+\`\`\`
+
+## Practical Examples
+
+### Telegram Notification Bot
+
+\`\`\`json
+{
+  "url": "https://api.telegram.org/bot{{BOT_TOKEN}}/sendMessage",
+  "method": "POST",
+  "headers": {
+    "Content-Type": "application/json"
+  },
+  "body": {
+    "chat_id": "{{chat_id}}",
+    "text": "{{message}}",
+    "parse_mode": "Markdown"
+  }
+}
+\`\`\`
+
+### Slack Webhook
+
+\`\`\`json
+{
+  "url": "https://hooks.slack.com/services/YOUR/WEBHOOK/URL",
+  "method": "POST",
+  "headers": {
+    "Content-Type": "application/json"
+  },
+  "body": {
+    "text": "{{message}}",
+    "channel": "{{channel}}"
+  }
+}
+\`\`\`
+
+### GitHub API (create issue)
+
+\`\`\`json
+{
+  "url": "https://api.github.com/repos/{{owner}}/{{repo}}/issues",
+  "method": "POST",
+  "headers": {
+    "Authorization": "Bearer {{GITHUB_TOKEN}}",
+    "Accept": "application/vnd.github.v3+json"
+  },
+  "body": {
+    "title": "{{title}}",
+    "body": "{{body}}",
+    "labels": ["bug"]
+  },
+  "responseMapping": "$.html_url"
+}
+\`\`\`
+
+> **Important**: Store API keys and tokens in secrets, not in plain text in tool configurations.`
+    }
+  },
+  // NEW SECTION: Advanced Patterns & Workflows
+  {
+    id: 'advanced-patterns',
+    titleKey: 'hydrapedia.sections.advancedPatterns',
+    icon: 'Layers',
+    content: {
+      ru: `# Продвинутые паттерны
+
+Продвинутые сценарии использования AI-Hydra для сложных задач автоматизации и многоагентного взаимодействия.
+
+## Мультиагентные дебаты
+
+Паттерн для глубокого анализа через столкновение позиций.
+
+\`\`\`mermaid
+graph TD
+    U[Пользователь: тезис] --> E1[Эксперт 1: аргументы ЗА]
+    U --> E2[Эксперт 2: аргументы ПРОТИВ]
+    E1 --> C[Критик: анализ слабых мест]
+    E2 --> C
+    C --> A[Арбитр: синтез]
+    A --> R[Финальное заключение]
+\`\`\`
+
+### Этапы
+
+| # | Роль | Задача |
+|---|------|--------|
+| 1 | @assistant | Развёрнутые аргументы в защиту тезиса |
+| 2 | @critic | Контраргументы и опровержения |
+| 3 | @moderator | Выделение ключевых расхождений |
+| 4 | @arbiter | Взвешенное финальное решение |
+
+### Когда использовать
+
+- Принятие стратегических решений
+- Анализ рисков и возможностей
+- Проверка гипотез
+- Юридическая экспертиза
+
+## Каскадная верификация
+
+Паттерн для критически важных задач с многоуровневой проверкой.
+
+\`\`\`mermaid
+graph LR
+    I[Запрос] --> G1[Генерация: Эксперт]
+    G1 --> V1[Верификация 1: Критик]
+    V1 --> V2[Верификация 2: Советник]
+    V2 --> F[Финализация: Арбитр]
+    F --> O[Результат]
+\`\`\`
+
+### Структура
+
+| Этап | Роль | Проверяет |
+|------|------|-----------|
+| Генерация | @assistant | Создание первичного решения |
+| Верификация 1 | @critic | Логическая корректность |
+| Верификация 2 | @advisor | Практическая применимость |
+| Финализация | @arbiter | Итоговое качество |
+
+### Применение
+
+- Генерация кода для продакшена
+- Создание юридических документов
+- Медицинские рекомендации
+- Финансовые расчёты
+
+## Параллельные эксперты
+
+Паттерн для получения разнообразных точек зрения.
+
+\`\`\`mermaid
+graph TD
+    Q[Вопрос] --> E1[Эксперт: GPT-5]
+    Q --> E2[Эксперт: Claude]
+    Q --> E3[Эксперт: Gemini]
+    E1 --> M[Merge: объединение]
+    E2 --> M
+    E3 --> M
+    M --> A[Арбитр: синтез]
+    A --> R[Консенсус]
+\`\`\`
+
+### Преимущества
+
+| Аспект | Описание |
+|--------|----------|
+| **Разнообразие** | Разные модели = разные перспективы |
+| **Надёжность** | Консенсус снижает вероятность ошибок |
+| **Скорость** | Параллельная обработка экономит время |
+
+### Реализация в Flow Editor
+
+1. **Input** → данные запроса
+2. **Split** → разветвление на N потоков
+3. **Model** (×N) → параллельные вызовы моделей
+4. **Merge** → объединение ответов
+5. **Model** (Арбитр) → синтез консенсуса
+6. **Output** → финальный результат
+
+## Итеративная оптимизация
+
+Паттерн для пошагового улучшения результата.
+
+\`\`\`mermaid
+graph TD
+    I[Начальный вариант] --> E[Оценка: Критик]
+    E --> C{Качество OK?}
+    C -->|Нет| O[Оптимизация: Эксперт]
+    O --> E
+    C -->|Да| F[Финальный результат]
+\`\`\`
+
+### Компоненты
+
+| Этап | Узел | Описание |
+|------|------|----------|
+| Оценка | Model + Condition | Критик оценивает качество |
+| Оптимизация | Model | Эксперт улучшает по фидбеку |
+| Выход | Condition | Проверка критериев качества |
+
+### Применение
+
+- Оптимизация промптов
+- Рефакторинг кода
+- Редактирование текстов
+- Улучшение дизайна
+
+## Контекстная маршрутизация
+
+Паттерн для интеллектуального направления запросов.
+
+\`\`\`mermaid
+graph TD
+    I[Запрос] --> CL[Classifier: тип задачи]
+    CL --> S{Switch}
+    S -->|Код| E1[Эксперт: разработка]
+    S -->|Текст| E2[Эксперт: редактура]
+    S -->|Данные| E3[Эксперт: аналитика]
+    S -->|Другое| E4[Эксперт: общий]
+    E1 --> O[Output]
+    E2 --> O
+    E3 --> O
+    E4 --> O
+\`\`\`
+
+### Реализация
+
+1. **Classifier** — определяет категорию запроса
+2. **Switch** — направляет в соответствующую ветку
+3. **Специализированные эксперты** — обрабатывают по профилю
+4. **Output** — единая точка выхода
+
+## Пайплайн обработки документов
+
+Комплексная обработка документов с извлечением данных.
+
+\`\`\`mermaid
+graph LR
+    U[Upload] --> S[Storage: сохранение]
+    S --> E[Embedding: векторизация]
+    E --> M[Memory: индексация]
+    M --> Q[Готов к поиску]
+\`\`\`
+
+### Этапы
+
+| # | Узел | Действие |
+|---|------|----------|
+| 1 | Storage | Загрузка файла в bucket |
+| 2 | Transform | Извлечение текста |
+| 3 | Embedding | Генерация векторов |
+| 4 | Memory | Сохранение в session_memory |
+
+### Поиск по документам
+
+\`\`\`mermaid
+graph LR
+    Q[Вопрос] --> E[Embedding: вектор запроса]
+    E --> M[Memory: семантический поиск]
+    M --> C[Контекст: топ-K чанков]
+    C --> MODEL[Model: ответ с контекстом]
+    MODEL --> O[Ответ]
+\`\`\`
+
+## Автономный агент с инструментами
+
+Паттерн для самостоятельного решения задач с использованием инструментов.
+
+\`\`\`mermaid
+graph TD
+    I[Задача] --> P[Planner: декомпозиция]
+    P --> L{Loop: шаги}
+    L --> A[Selector: выбор инструмента]
+    A --> T[Tool: выполнение]
+    T --> E[Evaluator: проверка]
+    E --> C{Готово?}
+    C -->|Нет| L
+    C -->|Да| O[Результат]
+\`\`\`
+
+### Компоненты
+
+| Роль | Описание |
+|------|----------|
+| **Planner** | Разбивает задачу на подзадачи |
+| **Selector** | Выбирает подходящий инструмент |
+| **Executor** | Вызывает Tool-узел |
+| **Evaluator** | Проверяет результат шага |
+
+### Пример: Исследование темы
+
+1. Planner формирует план: поиск → анализ → синтез
+2. Selector выбирает инструмент веб-поиска
+3. Tool выполняет поиск
+4. Evaluator проверяет релевантность
+5. Цикл повторяется до выполнения плана
+
+## Чейны с памятью
+
+Паттерн для задач, требующих накопления контекста.
+
+\`\`\`mermaid
+graph TD
+    I[Сессия] --> M1[Model: шаг 1]
+    M1 --> MEM1[Memory: сохранить]
+    MEM1 --> M2[Model: шаг 2 + контекст]
+    M2 --> MEM2[Memory: обновить]
+    MEM2 --> M3[Model: шаг 3 + полный контекст]
+    M3 --> O[Финал]
+\`\`\`
+
+### Применение
+
+- Длинные творческие проекты
+- Сложные исследования
+- Многошаговые вычисления
+- Диалоги с накоплением фактов
+
+## Рекомендации
+
+### Проектирование потоков
+
+| Принцип | Описание |
+|---------|----------|
+| **Модульность** | Разбивайте на переиспользуемые блоки |
+| **Обработка ошибок** | Добавляйте Condition для fallback |
+| **Логирование** | Используйте Transform для дебага |
+| **Тестирование** | Проверяйте ветки изолированно |
+
+### Оптимизация производительности
+
+| Техника | Эффект |
+|---------|--------|
+| **Параллелизм** | Split/Merge для независимых операций |
+| **Кэширование** | Memory для повторяющихся запросов |
+| **Ранний выход** | Condition для быстрого завершения |
+| **Batch-обработка** | Loop для массовых операций |
+
+> **Совет**: Начинайте с простых линейных потоков, постепенно добавляя ветвления и циклы по мере необходимости.`,
+
+      en: `# Advanced Patterns
+
+Advanced AI-Hydra usage scenarios for complex automation tasks and multi-agent interaction.
+
+## Multi-Agent Debates
+
+Pattern for deep analysis through position confrontation.
+
+\`\`\`mermaid
+graph TD
+    U[User: thesis] --> E1[Expert 1: arguments FOR]
+    U --> E2[Expert 2: arguments AGAINST]
+    E1 --> C[Critic: weakness analysis]
+    E2 --> C
+    C --> A[Arbiter: synthesis]
+    A --> R[Final conclusion]
+\`\`\`
+
+### Stages
+
+| # | Role | Task |
+|---|------|------|
+| 1 | @assistant | Detailed arguments in defense of thesis |
+| 2 | @critic | Counterarguments and refutations |
+| 3 | @moderator | Highlight key disagreements |
+| 4 | @arbiter | Balanced final decision |
+
+### When to Use
+
+- Strategic decision making
+- Risk and opportunity analysis
+- Hypothesis testing
+- Legal expertise
+
+## Cascade Verification
+
+Pattern for critical tasks with multi-level verification.
+
+\`\`\`mermaid
+graph LR
+    I[Request] --> G1[Generation: Expert]
+    G1 --> V1[Verification 1: Critic]
+    V1 --> V2[Verification 2: Advisor]
+    V2 --> F[Finalization: Arbiter]
+    F --> O[Result]
+\`\`\`
+
+### Structure
+
+| Stage | Role | Verifies |
+|-------|------|----------|
+| Generation | @assistant | Primary solution creation |
+| Verification 1 | @critic | Logical correctness |
+| Verification 2 | @advisor | Practical applicability |
+| Finalization | @arbiter | Final quality |
+
+### Application
+
+- Production code generation
+- Legal document creation
+- Medical recommendations
+- Financial calculations
+
+## Parallel Experts
+
+Pattern for obtaining diverse viewpoints.
+
+\`\`\`mermaid
+graph TD
+    Q[Question] --> E1[Expert: GPT-5]
+    Q --> E2[Expert: Claude]
+    Q --> E3[Expert: Gemini]
+    E1 --> M[Merge: combine]
+    E2 --> M
+    E3 --> M
+    M --> A[Arbiter: synthesis]
+    A --> R[Consensus]
+\`\`\`
+
+### Advantages
+
+| Aspect | Description |
+|--------|-------------|
+| **Diversity** | Different models = different perspectives |
+| **Reliability** | Consensus reduces error probability |
+| **Speed** | Parallel processing saves time |
+
+### Implementation in Flow Editor
+
+1. **Input** → request data
+2. **Split** → branch into N streams
+3. **Model** (×N) → parallel model calls
+4. **Merge** → combine responses
+5. **Model** (Arbiter) → consensus synthesis
+6. **Output** → final result
+
+## Iterative Optimization
+
+Pattern for step-by-step result improvement.
+
+\`\`\`mermaid
+graph TD
+    I[Initial version] --> E[Evaluation: Critic]
+    E --> C{Quality OK?}
+    C -->|No| O[Optimization: Expert]
+    O --> E
+    C -->|Yes| F[Final result]
+\`\`\`
+
+### Components
+
+| Stage | Node | Description |
+|-------|------|-------------|
+| Evaluation | Model + Condition | Critic evaluates quality |
+| Optimization | Model | Expert improves based on feedback |
+| Exit | Condition | Quality criteria check |
+
+### Application
+
+- Prompt optimization
+- Code refactoring
+- Text editing
+- Design improvement
+
+## Contextual Routing
+
+Pattern for intelligent request routing.
+
+\`\`\`mermaid
+graph TD
+    I[Request] --> CL[Classifier: task type]
+    CL --> S{Switch}
+    S -->|Code| E1[Expert: development]
+    S -->|Text| E2[Expert: editing]
+    S -->|Data| E3[Expert: analytics]
+    S -->|Other| E4[Expert: general]
+    E1 --> O[Output]
+    E2 --> O
+    E3 --> O
+    E4 --> O
+\`\`\`
+
+### Implementation
+
+1. **Classifier** — determines request category
+2. **Switch** — routes to appropriate branch
+3. **Specialized experts** — process by profile
+4. **Output** — single exit point
+
+## Document Processing Pipeline
+
+Comprehensive document processing with data extraction.
+
+\`\`\`mermaid
+graph LR
+    U[Upload] --> S[Storage: save]
+    S --> E[Embedding: vectorize]
+    E --> M[Memory: index]
+    M --> Q[Ready for search]
+\`\`\`
+
+### Stages
+
+| # | Node | Action |
+|---|------|--------|
+| 1 | Storage | Upload file to bucket |
+| 2 | Transform | Extract text |
+| 3 | Embedding | Generate vectors |
+| 4 | Memory | Save to session_memory |
+
+### Document Search
+
+\`\`\`mermaid
+graph LR
+    Q[Question] --> E[Embedding: query vector]
+    E --> M[Memory: semantic search]
+    M --> C[Context: top-K chunks]
+    C --> MODEL[Model: answer with context]
+    MODEL --> O[Answer]
+\`\`\`
+
+## Autonomous Agent with Tools
+
+Pattern for independent task solving using tools.
+
+\`\`\`mermaid
+graph TD
+    I[Task] --> P[Planner: decomposition]
+    P --> L{Loop: steps}
+    L --> A[Selector: choose tool]
+    A --> T[Tool: execute]
+    T --> E[Evaluator: verify]
+    E --> C{Done?}
+    C -->|No| L
+    C -->|Yes| O[Result]
+\`\`\`
+
+### Components
+
+| Role | Description |
+|------|-------------|
+| **Planner** | Breaks task into subtasks |
+| **Selector** | Chooses appropriate tool |
+| **Executor** | Calls Tool node |
+| **Evaluator** | Verifies step result |
+
+### Example: Topic Research
+
+1. Planner forms plan: search → analyze → synthesize
+2. Selector chooses web search tool
+3. Tool executes search
+4. Evaluator checks relevance
+5. Loop repeats until plan is complete
+
+## Chains with Memory
+
+Pattern for tasks requiring context accumulation.
+
+\`\`\`mermaid
+graph TD
+    I[Session] --> M1[Model: step 1]
+    M1 --> MEM1[Memory: save]
+    MEM1 --> M2[Model: step 2 + context]
+    M2 --> MEM2[Memory: update]
+    MEM2 --> M3[Model: step 3 + full context]
+    M3 --> O[Final]
+\`\`\`
+
+### Application
+
+- Long creative projects
+- Complex research
+- Multi-step calculations
+- Dialogues with fact accumulation
+
+## Recommendations
+
+### Flow Design
+
+| Principle | Description |
+|-----------|-------------|
+| **Modularity** | Break into reusable blocks |
+| **Error handling** | Add Condition for fallback |
+| **Logging** | Use Transform for debug |
+| **Testing** | Test branches in isolation |
+
+### Performance Optimization
+
+| Technique | Effect |
+|-----------|--------|
+| **Parallelism** | Split/Merge for independent operations |
+| **Caching** | Memory for recurring requests |
+| **Early exit** | Condition for fast completion |
+| **Batch processing** | Loop for bulk operations |
+
+> **Tip**: Start with simple linear flows, gradually adding branches and loops as needed.`
+    }
   }
 ];
