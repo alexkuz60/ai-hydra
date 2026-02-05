@@ -520,7 +520,7 @@ export function ConsultantPanel({
                onClick={handleSend}
                disabled={streaming || !input.trim() || !selectedModel}
                size="icon"
-               className="h-9 w-9 shrink-0 hydra-glow-sm"
+               className="h-9 w-9 shrink-0 hydra-glow-sm hover:bg-primary/80 transition-colors"
              >
                {streaming ? (
                  <Loader2 className="h-4 w-4 animate-spin" />
