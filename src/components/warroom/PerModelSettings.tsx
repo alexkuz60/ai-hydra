@@ -35,6 +35,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useCustomTools, CustomTool } from '@/hooks/useCustomTools';
 import { RoleSelectOptions, RoleDisplay } from '@/components/ui/RoleSelectItem';
 import { AgentRole, DEFAULT_SYSTEM_PROMPTS } from '@/config/roles';
+import { useRoleBehavior } from '@/hooks/useRoleBehavior';
 
 export type { AgentRole };
 
@@ -126,6 +127,7 @@ export interface SingleModelSettings {
   enabledTools?: ToolId[]; // Built-in tools enabled for this model
   enabledCustomTools?: string[]; // Custom tool IDs enabled for this model
   searchProvider?: SearchProvider; // Provider for web_search tool
+  requiresApproval?: boolean; // Whether supervisor approval is enabled for this role
 }
 
 export interface PerModelSettingsData {
@@ -172,6 +174,8 @@ export function PerModelSettings({ selectedModels, settings, onChange, className
   const { t } = useLanguage();
   const { user } = useAuth();
   const { tools: customTools, loading: customToolsLoading } = useCustomTools();
+  const { fetchAllApprovalSettings } = useRoleBehavior(null);
+  const [roleApprovalMap, setRoleApprovalMap] = useState<Map<AgentRole, boolean>>(new Map());
   const [isOpen, setIsOpen] = useState(true);
   const [activeTab, setActiveTab] = useState<string>(() => selectedModels[0] || '');
   const [editingPromptModel, setEditingPromptModel] = useState<string | null>(null);
@@ -183,6 +187,11 @@ export function PerModelSettings({ selectedModels, settings, onChange, className
   const [libraryOpen, setLibraryOpen] = useState(false);
   const [libraryTargetModel, setLibraryTargetModel] = useState<string | null>(null);
   const [expandedPrompts, setExpandedPrompts] = useState<Record<string, boolean>>({});
+
+  // Load requires_approval settings for all roles on mount
+  useEffect(() => {
+    fetchAllApprovalSettings().then(setRoleApprovalMap);
+  }, [fetchAllApprovalSettings]);
 
   // Ensure active tab is always valid when selection changes
   React.useEffect(() => {
@@ -212,9 +221,11 @@ export function PerModelSettings({ selectedModels, settings, onChange, className
   };
 
   const handleRoleChange = (modelId: string, role: AgentRole) => {
+    const requiresApproval = roleApprovalMap.get(role) ?? false;
     updateModelSettings(modelId, {
       role,
       systemPrompt: DEFAULT_SYSTEM_PROMPTS[role],
+      requiresApproval,
     });
   };
 
