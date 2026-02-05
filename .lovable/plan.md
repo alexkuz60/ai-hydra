@@ -1,123 +1,108 @@
 
 
-## Коллапсируемые секции запроса с изменяемым размером
+## План: Унификация кнопок в настройках моделей
 
-### Обзор
-Добавление сворачиваемых секций ввода с шевронами и возможностью изменения высоты для обоих чатов: основной панели экспертов и D-чата (консультант). Настройки размера будут сохраняться в localStorage.
+### Что изменится
 
----
+В секции настроек моделей (PerModelSettings) кнопки будут приведены к единому стилю:
 
-### Поведение UI
+1. **Фиксированная ширина** для всех кнопок в группе
+2. **Иконки с тултипами** для "Вернуть" и "Сбросить" (текст убирается, остаётся только иконка)
+3. **Единая высота h-9** для всех кнопок (соответствие дизайн-системе Hydra)
 
-**Состояния секции:**
-- **Развёрнута** — отображает textarea + тулбар, шеврон смотрит вниз
-- **Свёрнута** — скрывает textarea, шеврон смотрит вверх, показывает компактную строку с подсказкой
+### Визуальный результат
 
-**Изменение размера:**
-- Резиновый ресайз высоты textarea через `ResizablePanelGroup` с вертикальным направлением
-- Минимальная высота: 60px (текущая)
-- Максимальная высота: ~300px
-- Сохранение последнего размера в localStorage отдельно для каждого чата
-
----
-
-### Технический план
-
-#### 1. Создание хука `useInputAreaSize`
-
-Новый файл: `src/hooks/useInputAreaSize.ts`
-
-```text
-┌─────────────────────────────────────────────────────┐
-│ useInputAreaSize(storageKey: string)                │
-├─────────────────────────────────────────────────────┤
-│ • height: number (в пикселях или %)                 │
-│ • isCollapsed: boolean                              │
-│ • setHeight: (h: number) => void                    │
-│ • toggleCollapsed: () => void                       │
-│ • Персистенция в localStorage                       │
-└─────────────────────────────────────────────────────┘
+**До:**
+```
+[📚 Из библиотеки] [↩ Вернуть]
+[💾 Сохранить в библиотеку     ]
+[↺ Сбросить    ] [📋 Копировать на все]
 ```
 
-Ключи localStorage:
-- `hydra-main-input-height` — основной чат
-- `hydra-dchat-input-height` — D-чат
-
-#### 2. Модификация `ChatInputArea.tsx`
-
-**Изменения:**
-- Обернуть секцию в `Collapsible` из Radix
-- Добавить кнопку-шеврон в заголовок секции
-- Интегрировать вертикальный `ResizablePanelGroup` для textarea
-- Принимать новые пропсы: `isCollapsed`, `onToggleCollapse`, `height`, `onHeightChange`
-
-**Визуальная структура развёрнутого состояния:**
-```text
-┌────────────────────────────────────────────────────────────────┐
-│ [▼ Chevron]  [FileUpload] [Timeout] [PromptEng]  ─── Header    │
-├────────────────────────────────────────────────────────────────┤
-│                                                                │
-│   Textarea (resizable height)                                  │
-│                                                                │
-├────═══════════════════════════════════════════════════════════─┤ ← resize handle
-│                                                         [Send] │
-└────────────────────────────────────────────────────────────────┘
+**После:**
+```
+[📚 Из библиотеки] [💾 В библиотеку] [↩] [↺]
+[📋 Копировать на все                   ]
 ```
 
-**Свёрнутое состояние:**
-```text
-┌────────────────────────────────────────────────────────────────┐
-│ [▲]  "Нажмите для ввода сообщения..."              [Send]      │
-└────────────────────────────────────────────────────────────────┘
-```
-
-#### 3. Модификация `ConsultantPanel.tsx`
-
-**Изменения:**
-- Аналогичная обёртка секции ввода в `Collapsible`
-- Добавить кнопку-шеврон между заголовком и textarea
-- Интегрировать вертикальный ресайз
-- Использовать `useInputAreaSize` с ключом `'hydra-dchat-input-height'`
-
-#### 4. Обновление `ExpertPanel.tsx`
-
-**Изменения:**
-- Добавить состояние и хук для основного чата
-- Передать пропсы в `ChatInputArea`
+Кнопки "Вернуть" (↩) и "Сбросить" (↺) станут квадратными иконками с тултипами (по аналогии с другими секциями Hydra).
 
 ---
 
-### Компоненты и зависимости
+### Технические детали
 
-| Компонент | Новые пропсы | Зависимости |
-|-----------|-------------|-------------|
-| `ChatInputArea` | `isCollapsed`, `onToggleCollapse`, `height`, `onHeightChange` | `Collapsible`, `ResizablePanelGroup` |
-| `ConsultantPanel` | — (внутреннее состояние) | `useInputAreaSize` |
-| `ExpertPanel` | — | `useInputAreaSize` |
+**Файл:** `src/components/warroom/PerModelSettings.tsx`
 
----
+**Изменения:**
 
-### Детали реализации
+1. **Добавить импорт Tooltip** (если отсутствует):
+   ```tsx
+   import {
+     Tooltip,
+     TooltipContent,
+     TooltipProvider,
+     TooltipTrigger,
+   } from '@/components/ui/tooltip';
+   ```
 
-**Анимация Collapsible:**
-- Использовать `CollapsibleContent` с встроенной анимацией Radix
-- Шеврон анимируется через `rotate-180` при смене состояния
+2. **Переделать блок prompt library buttons (строки 793-822)**:
+   - Все кнопки в одной строке с фиксированной шириной
+   - "Из библиотеки" - полная кнопка с текстом
+   - "В библиотеку" - полная кнопка с текстом  
+   - "Вернуть" - иконка с тултипом (h-9 w-9)
 
-**Ресайз высоты:**
-- Вертикальный `ResizablePanelGroup` с `direction="vertical"`
-- Верхняя панель — сообщения/контент, нижняя — инпут
-- `onResize` сохраняет в localStorage через `useInputAreaSize`
+3. **Переделать action buttons (строки 827-849)**:
+   - "Сбросить" - иконка с тултипом (h-9 w-9)
+   - "Копировать на все" - полная кнопка с текстом (занимает оставшееся место)
 
-**Локализация:**
-- `expertPanel.collapseInput` / `expertPanel.expandInput`
-- `dchat.collapseInput` / `dchat.expandInput`
+4. **Унифицировать структуру**:
+   ```tsx
+   {/* Prompt library и action buttons */}
+   <div className="flex items-center gap-1.5">
+     <Button variant="outline" size="sm" className="flex-1 h-9">
+       <Library className="h-4 w-4 mr-2" />
+       {t('settings.loadFromLibrary')}
+     </Button>
+     <Button variant="default" size="sm" className="flex-1 h-9">
+       <Save className="h-4 w-4 mr-2" />
+       {t('settings.savePrompt')}
+     </Button>
+     <TooltipProvider delayDuration={300}>
+       <Tooltip>
+         <TooltipTrigger asChild>
+           <Button variant="outline" size="icon" className="h-9 w-9">
+             <Undo2 className="h-4 w-4" />
+           </Button>
+         </TooltipTrigger>
+         <TooltipContent>{t('settings.revertPrompt')}</TooltipContent>
+       </Tooltip>
+     </TooltipProvider>
+     <TooltipProvider delayDuration={300}>
+       <Tooltip>
+         <TooltipTrigger asChild>
+           <Button variant="outline" size="icon" className="h-9 w-9">
+             <RotateCcw className="h-4 w-4" />
+           </Button>
+         </TooltipTrigger>
+         <TooltipContent>{t('settings.reset')}</TooltipContent>
+       </Tooltip>
+     </TooltipProvider>
+   </div>
+   
+   {/* Copy to All - отдельная строка, только если моделей > 1 */}
+   {selectedModels.length > 1 && (
+     <Button variant="outline" size="sm" className="w-full h-9">
+       <Copy className="h-4 w-4 mr-2" />
+       {t('settings.copyToAll')}
+     </Button>
+   )}
+   ```
 
 ---
 
 ### Файлы для изменения
 
-1. **Создать:** `src/hooks/useInputAreaSize.ts`
-2. **Изменить:** `src/components/warroom/ChatInputArea.tsx`
-3. **Изменить:** `src/components/warroom/ConsultantPanel.tsx`  
-4. **Изменить:** `src/pages/ExpertPanel.tsx`
+| Файл | Изменения |
+|------|-----------|
+| `src/components/warroom/PerModelSettings.tsx` | Добавить импорт Tooltip, переделать блоки кнопок на фиксированную ширину с иконками-тултипами |
 
