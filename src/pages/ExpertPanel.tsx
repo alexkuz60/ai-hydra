@@ -644,6 +644,7 @@ export default function ExpertPanel() {
               filteredParticipant={filteredParticipant}
               allCollapsed={allCollapsed}
               onCollapseAllToggle={handleCollapseAllToggle}
+              supervisorDisplayName={profile?.displayName}
             />
           </ResizablePanel>
 
@@ -877,7 +878,8 @@ export default function ExpertPanel() {
                   return (settings?.role || 'assistant') as import('@/config/roles').MessageRole;
                 })}
                  isCollapsed={isInputCollapsed}
-                 onToggleCollapse={toggleInputCollapse}
+                onToggleCollapse={toggleInputCollapse}
+                supervisorDisplayName={profile?.displayName}
               />
             </div>
           </ResizablePanel>

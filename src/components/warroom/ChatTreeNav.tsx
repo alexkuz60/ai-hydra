@@ -72,6 +72,7 @@ interface ChatTreeNavProps {
   filteredParticipant?: string | null;
   allCollapsed?: boolean;
   onCollapseAllToggle?: () => void;
+  supervisorDisplayName?: string | null;
 }
 
 // ==================== Constants ====================
@@ -84,9 +85,9 @@ function getModelShortName(modelId: string | null): string {
 }
 
 // Get role label for moderator context
-function getRoleLabelForModerator(role: string): string {
+function getRoleLabelForModerator(role: string, supervisorName?: string | null): string {
   const labels: Record<string, string> = {
-    user: 'Супервизор',
+    user: supervisorName || 'Супервизор',
     assistant: 'Эксперт',
     critic: 'Критик',
     arbiter: 'Арбитр',
@@ -101,12 +102,13 @@ function getRoleLabelForModerator(role: string): string {
 }
 
 // Format messages for moderator analysis
-function formatForModerator(sourceMessages: SourceMessage[]): string {
+function formatForModerator(sourceMessages: SourceMessage[], supervisorName?: string | null): string {
   const sections = sourceMessages.map((msg, idx) => {
     if (msg.role === 'user') {
-      return `## ЗАПРОС СУПЕРВИЗОРА\n${msg.content}`;
+      const label = supervisorName ? `ЗАПРОС: ${supervisorName}` : 'ЗАПРОС СУПЕРВИЗОРА';
+      return `## ${label.toUpperCase()}\n${msg.content}`;
     }
-    const roleLabel = getRoleLabelForModerator(msg.role);
+    const roleLabel = getRoleLabelForModerator(msg.role, supervisorName);
     const modelLabel = msg.model_name?.split('/').pop() || 'Unknown';
     return `## ОТВЕТ ${idx}: ${roleLabel} (${modelLabel})\n${msg.content}`;
   });
@@ -233,6 +235,7 @@ interface SupervisorNodeProps {
   messages: Message[];
   isTreeCollapsed: boolean;
   onToggleTreeCollapse: (blockId: string) => void;
+  supervisorDisplayName?: string | null;
 }
 
 const SupervisorNode = memo(function SupervisorNode({
@@ -248,6 +251,7 @@ const SupervisorNode = memo(function SupervisorNode({
   messages,
   isTreeCollapsed,
   onToggleTreeCollapse,
+  supervisorDisplayName,
 }: SupervisorNodeProps) {
   const { t } = useLanguage();
   
@@ -278,10 +282,10 @@ const SupervisorNode = memo(function SupervisorNode({
     ];
     
     // Format aggregated content for moderator
-    const aggregatedContent = formatForModerator(sourceMessages);
+    const aggregatedContent = formatForModerator(sourceMessages, supervisorDisplayName);
     
     onSendToDChat?.(block.id, aggregatedContent, sourceMessages);
-  }, [onSendToDChat, block, messages]);
+  }, [onSendToDChat, block, messages, supervisorDisplayName]);
   
   const hasResponses = block.aiResponses.length > 0;
   
@@ -318,7 +322,7 @@ const SupervisorNode = memo(function SupervisorNode({
             )}
             <Crown className="h-4 w-4 text-hydra-supervisor shrink-0" />
             <span className="flex-1 text-sm truncate text-sidebar-foreground">
-              {t('role.supervisor')} #{index}
+              {supervisorDisplayName || t('role.supervisor')} #{index}
             </span>
             {block.responseCount > 0 && isTreeCollapsed && (
               <span className="text-xs text-muted-foreground">
@@ -493,6 +497,7 @@ export const ChatTreeNav = memo(function ChatTreeNav({
   filteredParticipant,
   allCollapsed,
   onCollapseAllToggle,
+  supervisorDisplayName,
 }: ChatTreeNavProps) {
   const { t } = useLanguage();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -657,6 +662,7 @@ export const ChatTreeNav = memo(function ChatTreeNav({
                   messages={messages}
                   isTreeCollapsed={isTreeBlockCollapsed(block.id)}
                   onToggleTreeCollapse={toggleTreeCollapse}
+                  supervisorDisplayName={supervisorDisplayName}
                 />
               );
             } else {

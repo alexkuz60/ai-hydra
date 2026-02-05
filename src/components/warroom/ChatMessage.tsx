@@ -199,7 +199,7 @@ export function ChatMessage({ message, userDisplayInfo, onDelete, onRatingChange
         <Icon className={cn('h-5 w-5', isUserMessage && userDisplayInfo?.isSupervisor ? 'text-hydra-supervisor' : config.color)} />
         <HydraCardTitle className={isUserMessage && userDisplayInfo?.isSupervisor ? 'text-hydra-supervisor' : config.color}>
           {isUserMessage && userDisplayInfo?.isSupervisor 
-            ? `${t('role.supervisor')}${userDisplayInfo.displayName ? ` (${userDisplayInfo.displayName})` : ''}`
+            ? (userDisplayInfo.displayName || t('role.supervisor'))
             : t(config.label)
           }
           {message.model_name && (
