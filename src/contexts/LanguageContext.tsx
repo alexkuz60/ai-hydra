@@ -194,7 +194,11 @@ const translations: Translations = {
   'hydrapedia.sections.security': { ru: 'Безопасность', en: 'Security' },
   'hydrapedia.sections.behavioralPatterns': { ru: 'Паттерны поведения', en: 'Behavioral Patterns' },
   'hydrapedia.sections.hydraTraining': { ru: 'Дрессировка Гидры', en: 'Hydra Training' },
-  
+  'hydrapedia.sections.technicalStaff': { ru: 'Технический персонал', en: 'Technical Staff' },
+  'hydrapedia.sections.flowEditorGuide': { ru: 'Руководство по Flow Editor', en: 'Flow Editor Guide' },
+  'hydrapedia.sections.apiIntegrations': { ru: 'Интеграции и API', en: 'Integrations & API' },
+  'hydrapedia.sections.advancedPatterns': { ru: 'Продвинутые паттерны', en: 'Advanced Patterns' },
+
   // Patterns groups
   'patterns.expertGroup': { ru: 'Эксперты', en: 'Experts' },
   'patterns.technicalGroup': { ru: 'Технический персонал', en: 'Technical Staff' },
