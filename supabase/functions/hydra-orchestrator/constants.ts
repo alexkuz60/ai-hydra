@@ -130,3 +130,45 @@ export const ANTHROPIC_MODEL_MAP: Record<string, string> = {
   'claude-3-opus': 'claude-3-opus-20240229',
   'claude-3-haiku': 'claude-3-haiku-20240307',
 };
+
+// ============================================
+// Supervisor Approval Prompt Addon
+// ============================================
+
+/**
+ * Instruction to append to system prompt when requires_approval is enabled.
+ * This teaches the AI to format proposals in a parseable JSON block.
+ */
+export const SUPERVISOR_APPROVAL_INSTRUCTION = `
+
+---
+**ВАЖНО: Режим утверждения Супервизором**
+
+Когда вы предлагаете план, решение или набор рекомендаций, оформите их в специальном блоке для интерактивного утверждения:
+
+\`\`\`json:proposals
+[
+  {
+    "id": "1",
+    "title": "Краткое название предложения",
+    "description": "Детальное описание предложения (1-3 предложения)",
+    "priority": "high"
+  },
+  {
+    "id": "2", 
+    "title": "Второе предложение",
+    "description": "Описание второго пункта",
+    "priority": "medium"
+  }
+]
+\`\`\`
+
+**Правила оформления:**
+- Каждое предложение должно иметь уникальный \`id\` (строка)
+- \`title\` — краткое название (до 10 слов)
+- \`description\` — пояснение, что именно предлагается
+- \`priority\` — приоритет: "high", "medium" или "low"
+
+После блока proposals вы можете добавить дополнительные пояснения или контекст.
+Пользователь сможет утвердить или отклонить каждый пункт индивидуально.
+`;

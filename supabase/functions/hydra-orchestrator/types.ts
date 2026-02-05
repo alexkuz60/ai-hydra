@@ -87,6 +87,8 @@ export interface ModelRequest {
   enabled_custom_tools?: string[];
   /** Search provider for web_search tool: tavily, perplexity, or both */
   search_provider?: 'tavily' | 'perplexity' | 'both';
+  /** Whether this role requires supervisor approval for proposals */
+  requires_approval?: boolean;
   // Fallback metadata - passed when model was rate-limited or used orchestrator fallback
   fallback_metadata?: {
     used_fallback: boolean;

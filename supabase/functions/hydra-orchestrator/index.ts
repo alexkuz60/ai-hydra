@@ -38,6 +38,7 @@ import {
   THINKING_MODEL_TOKEN_MULTIPLIER,
   DEFAULT_PROMPTS,
   ANTHROPIC_MODEL_MAP,
+  SUPERVISOR_APPROVAL_INSTRUCTION,
 } from "./constants.ts";
 
 // ============================================
@@ -877,7 +878,13 @@ serve(async (req) => {
     const modelPromises = models.map(async (modelReq: ModelRequest) => {
       const temperature = modelReq.temperature ?? 0.7;
       const role = modelReq.role ?? 'assistant';
-      const systemPrompt = modelReq.system_prompt || DEFAULT_PROMPTS[role] || DEFAULT_PROMPTS.assistant;
+      
+      // Build system prompt with optional supervisor approval instruction
+      let systemPrompt = modelReq.system_prompt || DEFAULT_PROMPTS[role] || DEFAULT_PROMPTS.assistant;
+      if (modelReq.requires_approval) {
+        systemPrompt += SUPERVISOR_APPROVAL_INSTRUCTION;
+        console.log(`[${modelReq.model_id}] Supervisor approval mode enabled - adding proposals instruction`);
+      }
 
       const isThinkingModel = THINKING_MODELS.some(tm => modelReq.model_id.includes(tm));
       const baseMaxTokens = modelReq.max_tokens ?? 2048;

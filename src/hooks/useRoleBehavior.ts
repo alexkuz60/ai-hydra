@@ -20,6 +20,12 @@ export interface RoleBehaviorData {
   requires_approval: boolean;
 }
 
+/** Minimal role approval data for PerModelSettings integration */
+export interface RoleApprovalData {
+  role: AgentRole;
+  requires_approval: boolean;
+}
+
 interface UseRoleBehaviorResult {
   behavior: RoleBehaviorData | null;
   isLoading: boolean;
@@ -28,6 +34,7 @@ interface UseRoleBehaviorResult {
   saveRequiresApproval: (requiresApproval: boolean) => Promise<boolean>;
   refetch: () => Promise<void>;
   fetchAllBehaviors: () => Promise<Map<AgentRole, RoleInteractions>>;
+  fetchAllApprovalSettings: () => Promise<Map<AgentRole, boolean>>;
 }
 
 const DEFAULT_INTERACTIONS: RoleInteractions = {
@@ -330,6 +337,53 @@ export function useRoleBehavior(role: AgentRole | null): UseRoleBehaviorResult {
     return behaviorsMap;
   }, [user]);
 
+  /** Fetch requires_approval setting for all roles */
+  const fetchAllApprovalSettings = useCallback(async (): Promise<Map<AgentRole, boolean>> => {
+    const approvalMap = new Map<AgentRole, boolean>();
+
+    try {
+      const { data, error } = await supabase
+        .from('role_behaviors')
+        .select('role, requires_approval, user_id, is_system')
+        .order('is_system', { ascending: true });
+
+      if (error) throw error;
+
+      if (data) {
+        // Group by role, prioritizing user's own behavior > shared > system
+        const roleGroups = new Map<string, typeof data>();
+        
+        for (const behavior of data) {
+          const existing = roleGroups.get(behavior.role) || [];
+          existing.push(behavior);
+          roleGroups.set(behavior.role, existing);
+        }
+
+        // For each role, pick the best behavior
+        for (const [roleKey, behaviors] of roleGroups) {
+          const sorted = behaviors.sort((a, b) => {
+            // User's own behavior first
+            if (user && a.user_id === user.id) return -1;
+            if (user && b.user_id === user.id) return 1;
+            // Then non-system (shared behaviors)
+            if (!a.is_system && b.is_system) return -1;
+            if (a.is_system && !b.is_system) return 1;
+            return 0;
+          });
+
+          const selected = sorted[0];
+          if (selected && AGENT_ROLES.includes(roleKey as AgentRole)) {
+            approvalMap.set(roleKey as AgentRole, selected.requires_approval ?? false);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Failed to fetch approval settings:', error);
+    }
+
+    return approvalMap;
+  }, [user]);
+
   return {
     behavior,
     isLoading,
@@ -338,5 +392,6 @@ export function useRoleBehavior(role: AgentRole | null): UseRoleBehaviorResult {
     saveRequiresApproval,
     refetch: fetchBehavior,
     fetchAllBehaviors,
+    fetchAllApprovalSettings,
   };
 }
