@@ -1,97 +1,75 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Json } from '@/integrations/supabase/types';
-import { useAuth } from '@/contexts/AuthContext';
-import { useLanguage } from '@/contexts/LanguageContext';
-import { Layout } from '@/components/layout/Layout';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { HydraCard, HydraCardHeader, HydraCardTitle, HydraCardContent } from '@/components/ui/hydra-card';
-import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
-import { Plus, Trash2, MessageSquare, Loader2, Calendar, Settings, Pencil, Check, X } from 'lucide-react';
-import { format } from 'date-fns';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from '@/components/ui/sheet';
-import { MultiModelSelector } from '@/components/warroom/MultiModelSelector';
-import { PerModelSettings, PerModelSettingsData, DEFAULT_MODEL_SETTINGS } from '@/components/warroom/PerModelSettings';
-import { SessionSettings } from '@/components/warroom/SessionSettings';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { useAvailableModels, ModelOption, LOVABLE_AI_MODELS, PERSONAL_KEY_MODELS, ALL_VALID_MODEL_IDS, getModelInfo, getModelDisplayName } from '@/hooks/useAvailableModels';
-import { Bot, Sparkles, Cpu } from 'lucide-react';
-
-interface Task {
-  id: string;
-  title: string;
-  description: string | null;
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
-  session_config: {
-    selectedModels?: string[];
-    perModelSettings?: PerModelSettingsData;
-    useHybridStreaming?: boolean;
-  } | null;
-}
-
-// Filter out deprecated/unavailable model IDs
-const filterValidModels = (modelIds: string[]): string[] => {
-  return modelIds.filter(id => ALL_VALID_MODEL_IDS.includes(id));
-};
-
-// Get model icon based on provider
-const getModelIcon = (modelId: string) => {
-  const { isLovable, model } = getModelInfo(modelId);
-  
-  if (!model) return <Bot className="h-4 w-4 text-muted-foreground" />;
-  
-  if (isLovable) {
-    return <Sparkles className="h-4 w-4 text-primary" />;
-  }
-  return <Cpu className="h-4 w-4 text-accent-foreground" />;
-};
+ import React, { useState, useEffect, useMemo } from 'react';
+ import { useNavigate } from 'react-router-dom';
+ import { useAuth } from '@/contexts/AuthContext';
+ import { useLanguage } from '@/contexts/LanguageContext';
+ import { Layout } from '@/components/layout/Layout';
+ import { Button } from '@/components/ui/button';
+ import { Input } from '@/components/ui/input';
+ import { Table, TableBody } from '@/components/ui/table';
+ import { supabase } from '@/integrations/supabase/client';
+ import { toast } from 'sonner';
+ import { Plus, Loader2, MessageSquare, Search, ListTodo } from 'lucide-react';
+ import {
+   AlertDialog,
+   AlertDialogAction,
+   AlertDialogCancel,
+   AlertDialogContent,
+   AlertDialogDescription,
+   AlertDialogFooter,
+   AlertDialogHeader,
+   AlertDialogTitle,
+ } from '@/components/ui/alert-dialog';
+ import {
+   ResizablePanelGroup,
+   ResizablePanel,
+   ResizableHandle,
+ } from '@/components/ui/resizable';
+ import { MultiModelSelector } from '@/components/warroom/MultiModelSelector';
+ import { PerModelSettingsData, DEFAULT_MODEL_SETTINGS } from '@/components/warroom/PerModelSettings';
+ import { ALL_VALID_MODEL_IDS, getModelDisplayName, getModelInfo } from '@/hooks/useAvailableModels';
+ import { TaskRow, Task } from '@/components/tasks/TaskRow';
+ import { TaskDetailsPanel } from '@/components/tasks/TaskDetailsPanel';
+ import { Bot, Sparkles, Cpu } from 'lucide-react';
+ 
+ // Filter out deprecated/unavailable model IDs
+ const filterValidModels = (modelIds: string[]): string[] => {
+   return modelIds.filter(id => ALL_VALID_MODEL_IDS.includes(id));
+ };
+ 
+ // Get model icon based on provider
+ const getModelIcon = (modelId: string) => {
+   const { isLovable, model } = getModelInfo(modelId);
+   
+   if (!model) return <Bot className="h-4 w-4 text-muted-foreground" />;
+   
+   if (isLovable) {
+     return <Sparkles className="h-4 w-4 text-primary" />;
+   }
+   return <Cpu className="h-4 w-4 text-accent-foreground" />;
+ };
 
 export default function Tasks() {
   const { user, loading: authLoading } = useAuth();
   const { t } = useLanguage();
   const navigate = useNavigate();
-  const { lovableModels, personalModels } = useAvailableModels();
 
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [taskToDelete, setTaskToDelete] = useState<Task | null>(null);
+   const [saving, setSaving] = useState(false);
   
-  // Inline editing state
-  const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
-  const [editedTaskTitle, setEditedTaskTitle] = useState('');
+   // Search
+   const [searchQuery, setSearchQuery] = useState('');
   
+   // Selected task
+   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+ 
   // Model configuration state for new task
   const [selectedModels, setSelectedModels] = useState<string[]>([]);
   const [perModelSettings, setPerModelSettings] = useState<PerModelSettingsData>({});
   const [useHybridStreaming, setUseHybridStreaming] = useState(true);
-  const [settingsOpen, setSettingsOpen] = useState(false);
-  
-  // Editing existing task's models
-  const [editingTask, setEditingTask] = useState<Task | null>(null);
-  const [editingModels, setEditingModels] = useState<string[]>([]);
-  const [editingModelSettings, setEditingModelSettings] = useState<PerModelSettingsData>({});
-  const [editingHybridStreaming, setEditingHybridStreaming] = useState(true);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -104,6 +82,14 @@ export default function Tasks() {
     }
   }, [user, authLoading, navigate]);
 
+   // Filter tasks
+   const filteredTasks = useMemo(() => {
+     if (!searchQuery.trim()) return tasks;
+     return tasks.filter(task => 
+       task.title.toLowerCase().includes(searchQuery.toLowerCase())
+     );
+   }, [tasks, searchQuery]);
+ 
   const fetchTasks = async () => {
     if (!user) return;
 
@@ -197,122 +183,97 @@ export default function Tasks() {
     }
   };
 
-  const handleOpenTask = (task: Task) => {
-    // Load saved configuration from task, filtering out deprecated models
-    const savedModels = filterValidModels(task.session_config?.selectedModels || []);
-    const savedSettings = task.session_config?.perModelSettings || {};
-    const savedHybridStreaming = task.session_config?.useHybridStreaming ?? true;
-    
-    navigate(`/expert-panel?task=${task.id}`, {
-      state: {
-        selectedModels: savedModels,
-        perModelSettings: savedSettings,
-        useHybridStreaming: savedHybridStreaming,
-      }
-    });
-  };
-
-  // Inline editing handlers
-  const handleStartEditTitle = (task: Task, e: React.MouseEvent) => {
-    e.stopPropagation();
-    setEditingTaskId(task.id);
-    setEditedTaskTitle(task.title);
-  };
-
-  const handleSaveTitle = async (taskId: string, e?: React.MouseEvent) => {
-    e?.stopPropagation();
-    if (!editedTaskTitle.trim()) return;
-    
-    const newTitle = editedTaskTitle.trim().slice(0, 100);
-    
+   const handleUpdateTitle = async (taskId: string, newTitle: string) => {
+     setSaving(true);
     try {
       const { error } = await supabase
         .from('sessions')
-        .update({ title: newTitle })
+         .update({ title: newTitle.slice(0, 100) })
         .eq('id', taskId);
 
       if (error) throw error;
 
       setTasks(tasks.map(t => t.id === taskId ? { ...t, title: newTitle } : t));
-      setEditingTaskId(null);
-      setEditedTaskTitle('');
+       if (selectedTask?.id === taskId) {
+         setSelectedTask({ ...selectedTask, title: newTitle });
+       }
       toast.success(t('tasks.titleSaved'));
     } catch (error: any) {
       toast.error(error.message);
+     } finally {
+       setSaving(false);
     }
   };
 
-  const handleCancelEditTitle = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setEditingTaskId(null);
-    setEditedTaskTitle('');
-  };
-
-  // Get role label for a model (for new task form)
-  const getModelRole = (modelId: string) => {
-    const settings = perModelSettings[modelId];
-    const role = settings?.role || DEFAULT_MODEL_SETTINGS.role;
-    return t(`role.${role}`);
-  };
-
-  // Get role label for a model in existing task
-  const getTaskModelRole = (task: Task, modelId: string) => {
-    const settings = task.session_config?.perModelSettings?.[modelId];
-    const role = settings?.role || DEFAULT_MODEL_SETTINGS.role;
-    return t(`role.${role}`);
-  };
-
-  // Start editing existing task's models
-  const handleStartEditModels = (task: Task, e: React.MouseEvent) => {
-    e.stopPropagation();
-    setEditingTask(task);
-    // Filter out deprecated models when loading for editing
-    setEditingModels(filterValidModels(task.session_config?.selectedModels || []));
-    setEditingModelSettings(task.session_config?.perModelSettings || {});
-    setEditingHybridStreaming(task.session_config?.useHybridStreaming ?? true);
-  };
-
-  // Save edited models for existing task
-  const handleSaveEditedModels = async () => {
-    if (!editingTask) return;
-    
+   const handleUpdateConfig = async (taskId: string, config: Task['session_config']) => {
+     setSaving(true);
     try {
-      const sessionConfig = {
-        selectedModels: editingModels,
-        perModelSettings: editingModelSettings,
-        useHybridStreaming: editingHybridStreaming,
-      };
-
       const { error } = await supabase
         .from('sessions')
         .update({ 
-          session_config: JSON.parse(JSON.stringify(sessionConfig)),
+           session_config: JSON.parse(JSON.stringify(config)),
           updated_at: new Date().toISOString()
         })
-        .eq('id', editingTask.id);
+         .eq('id', taskId);
 
       if (error) throw error;
 
       setTasks(tasks.map(t => 
-        t.id === editingTask.id 
-          ? { ...t, session_config: sessionConfig, updated_at: new Date().toISOString() } 
+         t.id === taskId 
+           ? { ...t, session_config: config, updated_at: new Date().toISOString() } 
           : t
       ));
+       if (selectedTask?.id === taskId) {
+         setSelectedTask({ ...selectedTask, session_config: config, updated_at: new Date().toISOString() });
+       }
       
       toast.success(t('tasks.configSaved'));
-      setEditingTask(null);
     } catch (error: any) {
       toast.error(error.message);
+     } finally {
+       setSaving(false);
     }
   };
 
-  // Cancel editing existing task's models
-  const handleCancelEditModels = () => {
-    setEditingTask(null);
-    setEditingModels([]);
-    setEditingModelSettings({});
+   const handleSelectTask = (task: Task) => {
+     setSelectedTask(task);
+   };
+ 
+   const handleDeleteClick = (task: Task, e: React.MouseEvent) => {
+     e.stopPropagation();
+     setTaskToDelete(task);
   };
 
+   const handleConfirmDelete = async () => {
+     if (!taskToDelete) return;
+     
+     try {
+       const { error } = await supabase
+         .from('sessions')
+         .delete()
+         .eq('id', taskToDelete.id);
+ 
+       if (error) throw error;
+ 
+       setTasks(tasks.filter(t => t.id !== taskToDelete.id));
+       if (selectedTask?.id === taskToDelete.id) {
+         setSelectedTask(null);
+       }
+       toast.success(t('common.success'));
+     } catch (error: any) {
+       toast.error(error.message);
+     } finally {
+       setTaskToDelete(null);
+     }
+   };
+ 
+   // Get role label for a model (for new task form)
+   const getModelRole = (modelId: string) => {
+     const settings = perModelSettings[modelId];
+     const role = settings?.role || DEFAULT_MODEL_SETTINGS.role;
+     return t(`role.${role}`);
+   };
+ 
   if (authLoading || loading) {
     return (
       <Layout>
@@ -325,266 +286,131 @@ export default function Tasks() {
 
   return (
     <Layout>
-      <div className="container max-w-4xl px-4 py-8">
-        <div className="flex items-center justify-between mb-8">
-          <h1 className="text-3xl font-bold">{t('tasks.title')}</h1>
-        </div>
-
-        {/* Create New Task */}
-        <HydraCard variant="glass" className="p-6 mb-8">
-          <HydraCardHeader>
-            <Plus className="h-5 w-5 text-primary" />
-            <HydraCardTitle>{t('tasks.new')}</HydraCardTitle>
-          </HydraCardHeader>
-          <HydraCardContent>
-            <div className="space-y-4">
-              {/* Task title input */}
-              <div className="flex gap-3">
-                <Input
-                  value={newTaskTitle}
-                  onChange={(e) => setNewTaskTitle(e.target.value)}
-                  placeholder="Название задачи..."
-                  className="flex-1"
-                  onKeyDown={(e) => e.key === 'Enter' && handleCreateTask()}
-                />
-                <Button 
-                  onClick={handleCreateTask} 
-                  disabled={creating || !newTaskTitle.trim() || selectedModels.length === 0}
-                  className="hydra-glow-sm"
-                >
-                  {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
-                </Button>
-              </div>
-              
-              {/* Model selector and settings button */}
-              <div className="flex items-center gap-3">
-                <MultiModelSelector 
-                  value={selectedModels} 
-                  onChange={setSelectedModels}
-                  className="flex-1"
-                />
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => setSettingsOpen(true)}
-                  disabled={selectedModels.length === 0}
-                  title={t('tasks.modelConfig')}
-                >
-                  <Settings className="h-4 w-4" />
-                </Button>
-              </div>
-              
-              {/* Selected models preview */}
-              {selectedModels.length > 0 && (
-                <div className="space-y-2 pt-2 border-t border-border/50">
-                  {selectedModels.map((modelId) => (
-                    <div 
-                      key={modelId}
-                      className="flex items-center gap-3 text-sm py-1.5 px-2 rounded-md bg-muted/30"
-                    >
-                      {getModelIcon(modelId)}
-                      <span className="font-medium flex-1 truncate">{getModelDisplayName(modelId)}</span>
-                      <span className="text-xs text-muted-foreground px-2 py-0.5 rounded bg-background/50">
-                        {getModelRole(modelId)}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
-              
-              {selectedModels.length === 0 && (
-                <p className="text-xs text-muted-foreground">
-                  {t('tasks.selectModelsFirst')}
-                </p>
-              )}
+       <div className="h-[calc(100vh-4rem)] flex flex-col">
+         {/* Header */}
+         <div className="px-6 py-4 border-b flex items-center justify-between shrink-0">
+           <div>
+             <div className="flex items-center gap-3">
+               <ListTodo className="h-6 w-6 text-primary" />
+               <h1 className="text-2xl font-bold">{t('tasks.title')}</h1>
             </div>
-          </HydraCardContent>
-        </HydraCard>
-        
-        {/* Model Settings Sheet for New Task */}
-        <Sheet open={settingsOpen} onOpenChange={setSettingsOpen}>
-          <SheetContent side="right" className="w-full sm:max-w-lg p-0 flex flex-col">
-            <SheetHeader className="p-4 border-b">
-              <SheetTitle>{t('tasks.modelConfig')}</SheetTitle>
-            </SheetHeader>
-            <ScrollArea className="flex-1">
-              {/* Session-level settings */}
-              <SessionSettings
-                useHybridStreaming={useHybridStreaming}
-                onHybridStreamingChange={setUseHybridStreaming}
-                className="p-4 border-b"
-              />
-              <PerModelSettings
-                selectedModels={selectedModels}
-                settings={perModelSettings}
-                onChange={setPerModelSettings}
-                className="border-t-0"
-              />
-            </ScrollArea>
-          </SheetContent>
-        </Sheet>
+             <p className="text-sm text-muted-foreground mt-1">{t('tasks.pageDescription')}</p>
+           </div>
+         </div>
 
-        {/* Model Settings Sheet for Existing Task */}
-        <Sheet open={!!editingTask} onOpenChange={(open) => !open && handleCancelEditModels()}>
-          <SheetContent side="right" className="w-full sm:max-w-lg p-0 flex flex-col">
-            <SheetHeader className="p-4 border-b">
-              <SheetTitle className="flex items-center gap-2">
-                <Settings className="h-5 w-5" />
-                {editingTask?.title}
-              </SheetTitle>
-            </SheetHeader>
-            
-            {/* Model Selector */}
-            <div className="p-4 border-b">
-              <MultiModelSelector 
-                value={editingModels} 
-                onChange={setEditingModels}
-                className="w-full"
-              />
-            </div>
-            
-            <ScrollArea className="flex-1">
-              {/* Session-level settings */}
-              <SessionSettings
-                useHybridStreaming={editingHybridStreaming}
-                onHybridStreamingChange={setEditingHybridStreaming}
-                className="p-4 border-b"
-              />
-              <PerModelSettings
-                selectedModels={editingModels}
-                settings={editingModelSettings}
-                onChange={setEditingModelSettings}
-                className="border-t-0"
-              />
-            </ScrollArea>
-            
-            {/* Save/Cancel buttons */}
-            <div className="p-4 border-t flex justify-end gap-2">
-              <Button variant="outline" onClick={handleCancelEditModels}>
-                {t('common.cancel')}
-              </Button>
-              <Button onClick={handleSaveEditedModels} disabled={editingModels.length === 0}>
-                {t('common.save')}
-              </Button>
-            </div>
-          </SheetContent>
-        </Sheet>
-
-        {/* Tasks List */}
-        <div className="space-y-4">
-          {tasks.length === 0 ? (
-            <HydraCard variant="glass" className="p-8 text-center">
-              <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <p className="text-muted-foreground">{t('tasks.empty')}</p>
-            </HydraCard>
-          ) : (
-            tasks.map((task) => (
-              <HydraCard 
-                key={task.id} 
-                variant="glass" 
-                glow 
-                className="p-4 cursor-pointer hover:border-primary/50 transition-colors group"
-                onClick={() => editingTaskId !== task.id && handleOpenTask(task)}
-              >
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1 min-w-0">
-                    {editingTaskId === task.id ? (
-                      <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-                        <Input
-                          value={editedTaskTitle}
-                          onChange={(e) => setEditedTaskTitle(e.target.value)}
-                          className="h-8 text-sm flex-1"
-                          maxLength={100}
-                          autoFocus
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') handleSaveTitle(task.id);
-                            if (e.key === 'Escape') handleCancelEditTitle(e as any);
-                          }}
-                        />
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-7 w-7 text-primary hover:text-primary/80 shrink-0"
-                          onClick={(e) => handleSaveTitle(task.id, e)}
-                        >
-                          <Check className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-7 w-7 text-muted-foreground hover:text-hydra-critical shrink-0"
-                          onClick={handleCancelEditTitle}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    ) : (
-                      <h3 className="font-semibold truncate">{task.title}</h3>
-                    )}
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
-                      <Calendar className="h-3 w-3" />
-                      <span>{format(new Date(task.updated_at), 'dd.MM.yyyy HH:mm')}</span>
-                    </div>
-                    
-                    {/* Saved models preview - filter out deprecated models */}
-                    {task.session_config?.selectedModels && task.session_config.selectedModels.length > 0 && (
-                      <div className="flex flex-wrap gap-1.5 mt-2">
-                        {filterValidModels(task.session_config.selectedModels).map((modelId) => (
-                          <div 
-                            key={modelId}
-                            className="flex items-center gap-1.5 text-xs py-0.5 px-2 rounded-full bg-muted/50"
-                          >
-                            {getModelIcon(modelId)}
-                            <span className="truncate max-w-[100px]">{getModelDisplayName(modelId)}</span>
-                            <span className="text-muted-foreground">•</span>
-                            <span className="text-muted-foreground">{getTaskModelRole(task, modelId)}</span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-1 shrink-0">
-                    {editingTaskId !== task.id && (
-                      <>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-muted-foreground hover:text-primary opacity-0 group-hover:opacity-100 transition-opacity"
-                          onClick={(e) => handleStartEditModels(task, e)}
-                          title={t('tasks.modelConfig')}
-                        >
-                          <Settings className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-muted-foreground hover:text-primary opacity-0 group-hover:opacity-100 transition-opacity"
-                          onClick={(e) => handleStartEditTitle(task, e)}
-                          title={t('tasks.editTitle')}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                      </>
-                    )}
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-muted-foreground hover:text-hydra-critical opacity-0 group-hover:opacity-100 transition-opacity"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setTaskToDelete(task);
-                      }}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              </HydraCard>
-            ))
-          )}
-        </div>
-      </div>
-
+         {/* Main content */}
+         <ResizablePanelGroup direction="horizontal" className="flex-1">
+           {/* Left panel - List */}
+           <ResizablePanel defaultSize={40} minSize={30} maxSize={60}>
+             <div className="h-full flex flex-col">
+               {/* Search and Create */}
+               <div className="p-4 border-b space-y-3">
+                 <div className="relative">
+                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                   <Input
+                     value={searchQuery}
+                     onChange={(e) => setSearchQuery(e.target.value)}
+                     placeholder={t('tasks.search')}
+                     className="pl-9"
+                   />
+                 </div>
+                 
+                 {/* Create new task inline */}
+                 <div className="space-y-2">
+                   <div className="flex gap-2">
+                     <Input
+                       value={newTaskTitle}
+                       onChange={(e) => setNewTaskTitle(e.target.value)}
+                       placeholder={t('tasks.newPlaceholder')}
+                       className="flex-1"
+                       onKeyDown={(e) => e.key === 'Enter' && handleCreateTask()}
+                     />
+                     <Button 
+                       onClick={handleCreateTask} 
+                       disabled={creating || !newTaskTitle.trim() || selectedModels.length === 0}
+                       size="icon"
+                     >
+                       {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+                     </Button>
+                   </div>
+                   <MultiModelSelector 
+                     value={selectedModels} 
+                     onChange={setSelectedModels}
+                     className="w-full"
+                   />
+                   {selectedModels.length === 0 && (
+                     <p className="text-xs text-muted-foreground">
+                       {t('tasks.selectModelsFirst')}
+                     </p>
+                   )}
+                   {selectedModels.length > 0 && (
+                     <div className="flex flex-wrap gap-1">
+                       {selectedModels.slice(0, 3).map((modelId) => (
+                         <div 
+                           key={modelId}
+                           className="flex items-center gap-1 text-[10px] py-0.5 px-1.5 rounded bg-muted/50"
+                         >
+                           {getModelIcon(modelId)}
+                           <span className="truncate max-w-[80px]">{getModelDisplayName(modelId)}</span>
+                         </div>
+                       ))}
+                       {selectedModels.length > 3 && (
+                         <span className="text-[10px] text-muted-foreground py-0.5 px-1.5">
+                           +{selectedModels.length - 3}
+                         </span>
+                       )}
+                     </div>
+                   )}
+                 </div>
+               </div>
+ 
+               {/* Tasks list */}
+               <div className="flex-1 overflow-auto">
+                 {filteredTasks.length === 0 ? (
+                   <div className="h-full flex items-center justify-center text-muted-foreground p-8">
+                     <div className="text-center">
+                       <MessageSquare className="h-12 w-12 mx-auto mb-4 opacity-30" />
+                       <p>
+                         {tasks.length === 0
+                           ? t('tasks.empty')
+                           : t('tasks.noResults')}
+                       </p>
+                     </div>
+                   </div>
+                 ) : (
+                   <Table>
+                     <TableBody>
+                       {filteredTasks.map((task) => (
+                         <TaskRow
+                           key={task.id}
+                           task={task}
+                           isSelected={selectedTask?.id === task.id}
+                           validModels={filterValidModels(task.session_config?.selectedModels || [])}
+                           onSelect={handleSelectTask}
+                           onDelete={handleDeleteClick}
+                         />
+                       ))}
+                     </TableBody>
+                   </Table>
+                 )}
+               </div>
+             </div>
+           </ResizablePanel>
+ 
+           <ResizableHandle withHandle />
+ 
+           {/* Right panel - Details */}
+           <ResizablePanel defaultSize={60} minSize={40}>
+             <TaskDetailsPanel
+               task={selectedTask}
+               onUpdateTitle={handleUpdateTitle}
+               onUpdateConfig={handleUpdateConfig}
+               onDelete={() => selectedTask && setTaskToDelete(selectedTask)}
+               saving={saving}
+             />
+           </ResizablePanel>
+         </ResizablePanelGroup>
+       </div>
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={!!taskToDelete} onOpenChange={(open) => !open && setTaskToDelete(null)}>
         <AlertDialogContent>
@@ -602,7 +428,7 @@ export default function Tasks() {
           <AlertDialogFooter>
             <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction 
-              onClick={handleDeleteTask}
+               onClick={handleConfirmDelete}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {t('tasks.delete')}

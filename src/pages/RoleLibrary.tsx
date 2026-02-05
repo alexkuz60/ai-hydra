@@ -1,597 +1,466 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
-import { useLanguage } from '@/contexts/LanguageContext';
-import { Layout } from '@/components/layout/Layout';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
-import { Badge } from '@/components/ui/badge';
-import { HydraCard, HydraCardHeader, HydraCardTitle, HydraCardContent } from '@/components/ui/hydra-card';
-import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
-import { 
-  Plus, 
-  Trash2, 
-  Loader2, 
-  Search, 
-  Pencil, 
-  Users, 
-  BookOpen,
-  Filter,
-  Library
-} from 'lucide-react';
-import { format } from 'date-fns';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetFooter,
-} from '@/components/ui/sheet';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { AgentRole, AGENT_ROLES, getRoleBadgeColor } from '@/config/roles';
-import { RoleSelectOptions, RoleDisplay } from '@/components/ui/RoleSelectItem';
+ import React, { useState, useEffect, useMemo } from 'react';
+ import { useNavigate } from 'react-router-dom';
+ import { useAuth } from '@/contexts/AuthContext';
+ import { useLanguage } from '@/contexts/LanguageContext';
+ import { Layout } from '@/components/layout/Layout';
+ import { Button } from '@/components/ui/button';
+ import { Input } from '@/components/ui/input';
+ import { Table, TableBody } from '@/components/ui/table';
+ import { Loader2, Search, Plus, Library, ChevronDown, ChevronRight, FileText } from 'lucide-react';
+ import {
+   Select,
+   SelectContent,
+   SelectItem,
+   SelectTrigger,
+   SelectValue,
+ } from '@/components/ui/select';
+ import {
+   AlertDialog,
+   AlertDialogAction,
+   AlertDialogCancel,
+   AlertDialogContent,
+   AlertDialogDescription,
+   AlertDialogFooter,
+   AlertDialogHeader,
+   AlertDialogTitle,
+ } from '@/components/ui/alert-dialog';
+ import {
+   ResizablePanelGroup,
+   ResizablePanel,
+   ResizableHandle,
+ } from '@/components/ui/resizable';
+ import { UnsavedChangesDialog } from '@/components/ui/unsaved-changes-dialog';
+ import { usePromptsCRUD, RolePrompt, PromptFormData, getEmptyPromptFormData, promptToFormData } from '@/hooks/usePromptsCRUD';
+ import { useUnsavedChanges } from '@/hooks/useUnsavedChanges';
+ import { PromptRow } from '@/components/prompts/PromptRow';
+ import { PromptDetailsPanel } from '@/components/prompts/PromptDetailsPanel';
+ import { PromptEditor } from '@/components/prompts/PromptEditor';
+ import { RoleSelectOptions } from '@/components/ui/RoleSelectItem';
+ 
+ type OwnerFilter = 'all' | 'own' | 'shared' | 'system';
+ 
+ // Group prompts by language
+ type LanguageGroup = 'ru' | 'en' | 'auto';
+ 
+ const LANGUAGE_ORDER: LanguageGroup[] = ['ru', 'en', 'auto'];
+ 
+ export default function RoleLibrary() {
+   const { user, loading: authLoading } = useAuth();
+   const { t } = useLanguage();
+   const navigate = useNavigate();
+ 
+   // CRUD hook
+   const { prompts, loading, saving, createPrompt, updatePrompt, deletePrompt } = usePromptsCRUD();
+ 
+   // Filters
+   const [searchQuery, setSearchQuery] = useState('');
+   const [roleFilter, setRoleFilter] = useState<string>('all');
+   const [ownerFilter, setOwnerFilter] = useState<OwnerFilter>('all');
+ 
+   // Selected prompt
+   const [selectedPrompt, setSelectedPrompt] = useState<RolePrompt | null>(null);
+   const [editingPrompt, setEditingPrompt] = useState<RolePrompt | null>(null);
+ 
+   const [isEditing, setIsEditing] = useState(false);
+   const [isCreating, setIsCreating] = useState(false);
+   const [formData, setFormData] = useState<PromptFormData>(getEmptyPromptFormData());
+ 
+   // Delete dialog
+   const [promptToDelete, setPromptToDelete] = useState<RolePrompt | null>(null);
+ 
+   // Collapsed groups
+   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
+ 
+   // Unsaved changes protection
+   const unsavedChanges = useUnsavedChanges();
+ 
+   // Auth redirect
+   useEffect(() => {
+     if (!authLoading && !user) {
+       navigate('/login');
+     }
+   }, [user, authLoading, navigate]);
+ 
+   // Filter prompts
+   const filteredPrompts = useMemo(() => {
+     return prompts.filter((prompt) => {
+       const matchesSearch =
+         prompt.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+         prompt.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
+         (prompt.description?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false);
+ 
+       if (!matchesSearch) return false;
+ 
+       // Role filter
+       if (roleFilter !== 'all' && prompt.role !== roleFilter) return false;
+ 
+       // Owner filter
+       if (ownerFilter === 'own' && !prompt.is_owner) return false;
+       if (ownerFilter === 'shared' && !prompt.is_shared) return false;
+       if (ownerFilter === 'system' && !prompt.is_default) return false;
+ 
+       return true;
+     });
+   }, [prompts, searchQuery, roleFilter, ownerFilter]);
+ 
+   // Group by language
+   const groupedPrompts = useMemo(() => {
+     const groups: Record<LanguageGroup, RolePrompt[]> = { ru: [], en: [], auto: [] };
+     
+     for (const prompt of filteredPrompts) {
+       const lang = (prompt.language as LanguageGroup) || 'auto';
+       groups[lang].push(prompt);
+     }
+     
+     return groups;
+   }, [filteredPrompts]);
+ 
+   const toggleGroup = (group: string) => {
+     setCollapsedGroups(prev => {
+       const next = new Set(prev);
+       if (next.has(group)) {
+         next.delete(group);
+       } else {
+         next.add(group);
+       }
+       return next;
+     });
+   };
+ 
+   const getLanguageLabel = (lang: LanguageGroup) => {
+     switch (lang) {
+       case 'ru': return t('roleLibrary.languageRu');
+       case 'en': return t('roleLibrary.languageEn');
+       default: return t('roleLibrary.languageAuto');
+     }
+   };
+ 
+   // Handlers
+   const handleSelectPrompt = (prompt: RolePrompt) => {
+     if (isEditing || isCreating) {
+       unsavedChanges.withConfirmation(() => {
+         setSelectedPrompt(prompt);
+         setEditingPrompt(null);
+         setIsEditing(false);
+         setIsCreating(false);
+         unsavedChanges.markSaved();
+       });
+     } else {
+       setSelectedPrompt(prompt);
+       setEditingPrompt(null);
+       setIsEditing(false);
+     }
+   };
+ 
+   const handleStartCreate = () => {
+     if (isEditing || isCreating) {
+       unsavedChanges.withConfirmation(() => {
+         setFormData(getEmptyPromptFormData());
+         setIsCreating(true);
+         setIsEditing(false);
+         setSelectedPrompt(null);
+         setEditingPrompt(null);
+         unsavedChanges.markSaved();
+       });
+     } else {
+       setFormData(getEmptyPromptFormData());
+       setIsCreating(true);
+       setIsEditing(false);
+       setSelectedPrompt(null);
+       setEditingPrompt(null);
+     }
+   };
+ 
+   const handleStartEdit = (prompt: RolePrompt, e?: React.MouseEvent) => {
+     e?.stopPropagation();
+     if (isEditing || isCreating) {
+       unsavedChanges.withConfirmation(() => {
+         setSelectedPrompt(prompt);
+         setEditingPrompt(prompt);
+         setFormData(promptToFormData(prompt));
+         setIsEditing(true);
+         setIsCreating(false);
+         unsavedChanges.markSaved();
+       });
+     } else {
+       setSelectedPrompt(prompt);
+       setEditingPrompt(prompt);
+       setFormData(promptToFormData(prompt));
+       setIsEditing(true);
+       setIsCreating(false);
+     }
+   };
+ 
+   const handleCancelEdit = () => {
+     if (unsavedChanges.hasUnsavedChanges) {
+       unsavedChanges.withConfirmation(() => {
+         setIsEditing(false);
+         setIsCreating(false);
+         setEditingPrompt(null);
+         unsavedChanges.markSaved();
+       });
+     } else {
+       setIsEditing(false);
+       setIsCreating(false);
+       setEditingPrompt(null);
+     }
+   };
+ 
+   const handleFormChange = (data: PromptFormData) => {
+     setFormData(data);
+     unsavedChanges.setHasUnsavedChanges(true);
+   };
+ 
+   const handleSave = async () => {
+     if (isCreating) {
+       const newPrompt = await createPrompt(formData);
+       if (newPrompt) {
+         setIsCreating(false);
+         setSelectedPrompt(newPrompt);
+         setEditingPrompt(null);
+         unsavedChanges.markSaved();
+       }
+     } else if (isEditing && editingPrompt) {
+       const success = await updatePrompt(editingPrompt.id, formData);
+       if (success) {
+         setIsEditing(false);
+         // Update selected prompt with new data
+         const updatedPrompt: RolePrompt = {
+           ...editingPrompt,
+           name: formData.name,
+           description: formData.description || null,
+           content: formData.content,
+           role: formData.role,
+           is_shared: formData.is_shared,
+           language: formData.language,
+         };
+         setSelectedPrompt(updatedPrompt);
+         setEditingPrompt(null);
+         unsavedChanges.markSaved();
+       }
+     }
+   };
+ 
+   const handleDeleteClick = (prompt: RolePrompt, e?: React.MouseEvent) => {
+     e?.stopPropagation();
+     setPromptToDelete(prompt);
+   };
+ 
+   const handleDuplicate = (prompt: RolePrompt, e?: React.MouseEvent) => {
+     e?.stopPropagation();
+     const duplicateFormData = promptToFormData(prompt);
+     duplicateFormData.name = `${prompt.name} (копия)`;
+     duplicateFormData.is_shared = false;
+     
+     setFormData(duplicateFormData);
+     setIsCreating(true);
+     setIsEditing(false);
+     setSelectedPrompt(null);
+     setEditingPrompt(null);
+   };
+ 
+   const handleConfirmDelete = async () => {
+     if (!promptToDelete) return;
+     const success = await deletePrompt(promptToDelete.id);
+     if (success) {
+       if (selectedPrompt?.id === promptToDelete.id) {
+         setSelectedPrompt(null);
+         setEditingPrompt(null);
+         setIsEditing(false);
+       }
+     }
+     setPromptToDelete(null);
+   };
+ 
+   // Loading state
+   if (authLoading || loading) {
+     return (
+       <Layout>
+         <div className="flex items-center justify-center min-h-[60vh]">
+           <Loader2 className="h-8 w-8 animate-spin text-primary" />
+         </div>
+       </Layout>
+     );
+   }
+ 
+   return (
+     <Layout>
+       <div className="h-[calc(100vh-4rem)] flex flex-col">
+         {/* Header */}
+         <div className="px-6 py-4 border-b flex items-center justify-between shrink-0">
+           <div>
+             <div className="flex items-center gap-3">
+               <Library className="h-6 w-6 text-primary" />
+               <h1 className="text-2xl font-bold">{t('roleLibrary.title')}</h1>
+             </div>
+             <p className="text-sm text-muted-foreground mt-1">{t('roleLibrary.pageDescription')}</p>
+           </div>
+           <Button onClick={handleStartCreate}>
+             <Plus className="h-4 w-4 mr-2" />
+             {t('roleLibrary.new')}
+           </Button>
+         </div>
+ 
+         {/* Main content */}
+         <ResizablePanelGroup direction="horizontal" className="flex-1">
+           {/* Left panel - List */}
+           <ResizablePanel defaultSize={40} minSize={30} maxSize={60}>
+             <div className="h-full flex flex-col">
+               {/* Filters */}
+               <div className="p-4 border-b space-y-3">
+                 <div className="relative">
+                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                   <Input
+                     value={searchQuery}
+                     onChange={(e) => setSearchQuery(e.target.value)}
+                     placeholder={t('roleLibrary.search')}
+                     className="pl-9"
+                   />
+                 </div>
+                 <div className="flex gap-2">
+                   <Select value={roleFilter} onValueChange={setRoleFilter}>
+                     <SelectTrigger className="flex-1">
+                       <SelectValue placeholder={t('roleLibrary.filterAll')} />
+                     </SelectTrigger>
+                     <SelectContent className="bg-popover border border-border z-50">
+                       <SelectItem value="all">{t('roleLibrary.filterAll')}</SelectItem>
+                       <RoleSelectOptions />
+                     </SelectContent>
+                   </Select>
+                   <Select value={ownerFilter} onValueChange={(v) => setOwnerFilter(v as OwnerFilter)}>
+                     <SelectTrigger className="w-[120px]">
+                       <SelectValue />
+                     </SelectTrigger>
+                     <SelectContent className="bg-popover border border-border z-50">
+                       <SelectItem value="all">{t('roleLibrary.filterAll')}</SelectItem>
+                       <SelectItem value="own">{t('roleLibrary.filterOwn')}</SelectItem>
+                       <SelectItem value="shared">{t('roleLibrary.filterShared')}</SelectItem>
+                       <SelectItem value="system">{t('roleLibrary.filterSystem')}</SelectItem>
+                     </SelectContent>
+                   </Select>
+                 </div>
+               </div>
+ 
+               {/* Prompts list */}
+               <div className="flex-1 overflow-auto">
+                 {filteredPrompts.length === 0 ? (
+                   <div className="h-full flex items-center justify-center text-muted-foreground p-8">
+                     <div className="text-center">
+                       <FileText className="h-12 w-12 mx-auto mb-4 opacity-30" />
+                       <p>
+                         {prompts.length === 0
+                           ? t('roleLibrary.empty')
+                           : t('roleLibrary.noResults')}
+                       </p>
+                     </div>
+                   </div>
+                 ) : (
+                   <div className="divide-y">
+                     {LANGUAGE_ORDER
+                       .filter(lang => groupedPrompts[lang].length > 0)
+                       .map((lang) => {
+                         const promptsInGroup = groupedPrompts[lang];
+                         const isCollapsed = collapsedGroups.has(lang);
+ 
+                         return (
+                           <div key={lang}>
+                             <button
+                               onClick={() => toggleGroup(lang)}
+                               className="w-full flex items-center gap-2 px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-muted/50 transition-colors"
+                             >
+                               {isCollapsed ? (
+                                 <ChevronRight className="h-4 w-4" />
+                               ) : (
+                                 <ChevronDown className="h-4 w-4" />
+                               )}
+                               <span>{getLanguageLabel(lang)}</span>
+                               <span className="ml-auto text-xs bg-muted px-1.5 py-0.5 rounded">
+                                 {promptsInGroup.length}
+                               </span>
+                             </button>
+                             {!isCollapsed && (
+                               <Table>
+                                 <TableBody>
+                                   {promptsInGroup.map((prompt) => (
+                                     <PromptRow
+                                       key={prompt.id}
+                                       prompt={prompt}
+                                       isSelected={selectedPrompt?.id === prompt.id}
+                                       onSelect={handleSelectPrompt}
+                                       onEdit={handleStartEdit}
+                                       onDelete={handleDeleteClick}
+                                       onDuplicate={handleDuplicate}
+                                     />
+                                   ))}
+                                 </TableBody>
+                               </Table>
+                             )}
+                           </div>
+                         );
+                       })}
+                   </div>
+                 )}
+               </div>
+             </div>
+           </ResizablePanel>
+ 
+           <ResizableHandle withHandle />
+ 
+           {/* Right panel - Details or Editor */}
+           <ResizablePanel defaultSize={60} minSize={40}>
+             {isCreating || isEditing ? (
+               <PromptEditor
+                 formData={formData}
+                 onChange={handleFormChange}
+                 onSave={handleSave}
+                 onCancel={handleCancelEdit}
+                 saving={saving}
+                 isEditing={isEditing}
+               />
+             ) : (
+               <PromptDetailsPanel
+                 prompt={selectedPrompt}
+                 onEdit={() => selectedPrompt && handleStartEdit(selectedPrompt)}
+                 onDelete={() => selectedPrompt && setPromptToDelete(selectedPrompt)}
+                 onDuplicate={() => selectedPrompt && handleDuplicate(selectedPrompt)}
+               />
+             )}
+           </ResizablePanel>
+         </ResizablePanelGroup>
+       </div>
 
-type OwnerFilter = 'all' | 'own' | 'shared';
-type PromptLanguage = 'ru' | 'en' | 'auto';
-
-interface RolePrompt {
-  id: string;
-  name: string;
-  description: string | null;
-  content: string;
-  role: string;
-  is_shared: boolean;
-  is_default: boolean;
-  usage_count: number;
-  is_owner: boolean; // computed server-side (privacy-safe)
-  language?: PromptLanguage;
-  created_at: string;
-  updated_at: string;
-}
-
-export default function RoleLibrary() {
-  const { user, loading: authLoading } = useAuth();
-  const { t } = useLanguage();
-  const navigate = useNavigate();
-
-  // Data state
-  const [prompts, setPrompts] = useState<RolePrompt[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  // Filters
-  const [searchQuery, setSearchQuery] = useState('');
-  const [roleFilter, setRoleFilter] = useState<string>('all');
-  const [ownerFilter, setOwnerFilter] = useState<OwnerFilter>('all');
-
-  // Create form
-  const [newName, setNewName] = useState('');
-  const [newDescription, setNewDescription] = useState('');
-  const [newContent, setNewContent] = useState('');
-  const [newRole, setNewRole] = useState<AgentRole>('assistant');
-  const [newIsShared, setNewIsShared] = useState(false);
-  const [newLanguage, setNewLanguage] = useState<PromptLanguage>('auto');
-  const [creating, setCreating] = useState(false);
-
-  // Edit sheet
-  const [editSheet, setEditSheet] = useState(false);
-  const [editingPrompt, setEditingPrompt] = useState<RolePrompt | null>(null);
-  const [editName, setEditName] = useState('');
-  const [editDescription, setEditDescription] = useState('');
-  const [editContent, setEditContent] = useState('');
-  const [editRole, setEditRole] = useState<AgentRole>('assistant');
-  const [editIsShared, setEditIsShared] = useState(false);
-  const [editLanguage, setEditLanguage] = useState<PromptLanguage>('auto');
-  const [updating, setUpdating] = useState(false);
-
-  // Delete dialog
-  const [promptToDelete, setPromptToDelete] = useState<RolePrompt | null>(null);
-
-  useEffect(() => {
-    if (!authLoading && !user) {
-      navigate('/login');
-      return;
-    }
-
-    if (user) {
-      fetchPrompts();
-    }
-  }, [user, authLoading, navigate]);
-
-  const fetchPrompts = async () => {
-    if (!user) return;
-
-    try {
-      // Read via backend RPC that never returns user_id for shared prompts
-      const { data, error } = await supabase.rpc('get_prompt_library_safe');
-
-      if (error) throw error;
-      setPrompts((data || []) as unknown as RolePrompt[]);
-    } catch (error: any) {
-      toast.error(error.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleCreate = async () => {
-    if (!user || !newName.trim() || !newContent.trim()) return;
-    setCreating(true);
-
-    try {
-      const { error } = await supabase
-        .from('prompt_library')
-        .insert([{
-          user_id: user.id,
-          name: newName.trim(),
-          description: newDescription.trim() || null,
-          content: newContent.trim(),
-          role: newRole,
-          is_shared: newIsShared,
-          language: newLanguage,
-        }]);
-
-      if (error) throw error;
-
-      // Refresh from backend (direct SELECT on base table is intentionally blocked)
-      await fetchPrompts();
-      setNewName('');
-      setNewDescription('');
-      setNewContent('');
-      setNewRole('assistant');
-      setNewIsShared(false);
-      setNewLanguage('auto');
-      toast.success(t('roleLibrary.created'));
-    } catch (error: any) {
-      toast.error(error.message);
-    } finally {
-      setCreating(false);
-    }
-  };
-
-  const openEditSheet = (prompt: RolePrompt) => {
-    setEditingPrompt(prompt);
-    setEditName(prompt.name);
-    setEditDescription(prompt.description || '');
-    setEditContent(prompt.content);
-    setEditRole(prompt.role as AgentRole);
-    setEditIsShared(prompt.is_shared);
-    setEditLanguage(prompt.language || 'auto');
-    setEditSheet(true);
-  };
-
-  const handleUpdate = async () => {
-    if (!editingPrompt || !editName.trim() || !editContent.trim()) return;
-    setUpdating(true);
-
-    try {
-      const { error } = await supabase
-        .from('prompt_library')
-        .update({
-          name: editName.trim(),
-          description: editDescription.trim() || null,
-          content: editContent.trim(),
-          role: editRole,
-          is_shared: editIsShared,
-          language: editLanguage,
-        })
-        .eq('id', editingPrompt.id);
-
-      if (error) throw error;
-
-      // Refresh to keep ordering/derived flags consistent
-      await fetchPrompts();
-      
-      setEditSheet(false);
-      setEditingPrompt(null);
-      toast.success(t('roleLibrary.updated'));
-    } catch (error: any) {
-      toast.error(error.message);
-    } finally {
-      setUpdating(false);
-    }
-  };
-
-  const handleDelete = async () => {
-    if (!promptToDelete) return;
-
-    try {
-      const { error } = await supabase
-        .from('prompt_library')
-        .delete()
-        .eq('id', promptToDelete.id);
-
-      if (error) throw error;
-
-      setPrompts(prompts.filter(p => p.id !== promptToDelete.id));
-      toast.success(t('roleLibrary.deleted'));
-    } catch (error: any) {
-      toast.error(error.message);
-    } finally {
-      setPromptToDelete(null);
-    }
-  };
-
-  // Filter prompts
-  const filteredPrompts = prompts.filter(prompt => {
-    // Search
-    const matchesSearch = 
-      prompt.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      prompt.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (prompt.description?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false);
-    
-    // Role filter
-    const matchesRole = roleFilter === 'all' || prompt.role === roleFilter;
-    
-    // Owner filter - use is_owner from security view instead of comparing user_id
-    const matchesOwner = 
-      ownerFilter === 'all' ||
-      (ownerFilter === 'own' && prompt.is_owner) ||
-      (ownerFilter === 'shared' && prompt.is_shared);
-    
-    return matchesSearch && matchesRole && matchesOwner;
-  });
-
-  if (authLoading || loading) {
-    return (
-      <Layout>
-        <div className="flex items-center justify-center min-h-[60vh]">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </div>
-      </Layout>
-    );
-  }
-
-  return (
-    <Layout>
-      <div className="container max-w-4xl px-4 py-8">
-        {/* Header with icon and description */}
-        <div className="mb-8">
-          <div className="flex items-center gap-3 mb-3">
-            <Library className="h-8 w-8 text-primary" />
-            <h1 className="text-3xl font-bold">{t('roleLibrary.title')}</h1>
-          </div>
-          <p className="text-muted-foreground">
-            {t('roleLibrary.pageDescription')}
-          </p>
-        </div>
-
-        {/* Create New Prompt */}
-        <HydraCard variant="glass" className="p-6 mb-8">
-          <HydraCardHeader>
-            <Plus className="h-5 w-5 text-primary" />
-            <HydraCardTitle>{t('roleLibrary.new')}</HydraCardTitle>
-          </HydraCardHeader>
-          <HydraCardContent>
-            <div className="space-y-4">
-              {/* Name and Role row */}
-              <div className="flex gap-3">
-                <Input
-                  value={newName}
-                  onChange={(e) => setNewName(e.target.value)}
-                  placeholder={t('roleLibrary.namePlaceholder')}
-                  className="flex-1"
-                />
-                <Select value={newRole} onValueChange={(v) => setNewRole(v as AgentRole)}>
-                  <SelectTrigger className="w-[160px]">
-                    <SelectValue>
-                      <RoleDisplay role={newRole} />
-                    </SelectValue>
-                  </SelectTrigger>
-                  <SelectContent className="bg-popover border border-border z-50">
-                    <RoleSelectOptions />
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Description */}
-              <Input
-                value={newDescription}
-                onChange={(e) => setNewDescription(e.target.value)}
-                placeholder={t('roleLibrary.descriptionPlaceholder')}
-              />
-
-              {/* Content */}
-              <Textarea
-                value={newContent}
-                onChange={(e) => setNewContent(e.target.value)}
-                placeholder={t('roleLibrary.contentPlaceholder')}
-                className="min-h-[120px]"
-              />
-
-              {/* Footer with switches and button */}
-              <div className="flex items-center justify-between pt-2 flex-wrap gap-3">
-                <div className="flex items-center gap-4">
-                  {/* Language selector */}
-                  <Select value={newLanguage} onValueChange={(v) => setNewLanguage(v as PromptLanguage)}>
-                    <SelectTrigger className="w-[110px] h-8">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="bg-popover border border-border z-50">
-                      <SelectItem value="auto">{t('roleLibrary.languageAuto')}</SelectItem>
-                      <SelectItem value="ru">{t('roleLibrary.languageRu')}</SelectItem>
-                      <SelectItem value="en">{t('roleLibrary.languageEn')}</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  
-                  <div className="flex items-center gap-2">
-                    <Switch
-                      id="new-shared"
-                      checked={newIsShared}
-                      onCheckedChange={setNewIsShared}
-                    />
-                    <Label htmlFor="new-shared" className="text-sm cursor-pointer">
-                      {t('roleLibrary.isShared')}
-                    </Label>
-                  </div>
-                </div>
-                <Button 
-                  onClick={handleCreate} 
-                  disabled={creating || !newName.trim() || !newContent.trim()}
-                  className="hydra-glow-sm"
-                >
-                  {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4 mr-2" />}
-                  {t('roleLibrary.create')}
-                </Button>
-              </div>
-            </div>
-          </HydraCardContent>
-        </HydraCard>
-
-        {/* Filters */}
-        <div className="flex flex-wrap gap-3 mb-6">
-          <div className="relative flex-1 min-w-[200px]">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder={t('roleLibrary.search')}
-              className="pl-9"
-            />
-          </div>
-          
-          <Select value={roleFilter} onValueChange={setRoleFilter}>
-            <SelectTrigger className="w-[160px]">
-              <Filter className="h-4 w-4 mr-2" />
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent className="bg-popover border border-border z-50">
-              <SelectItem value="all">{t('roleLibrary.filterAll')}</SelectItem>
-              <RoleSelectOptions />
-            </SelectContent>
-          </Select>
-
-          <Select value={ownerFilter} onValueChange={(v) => setOwnerFilter(v as OwnerFilter)}>
-            <SelectTrigger className="w-[140px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent className="bg-popover border border-border z-50">
-              <SelectItem value="all">{t('roleLibrary.filterAll')}</SelectItem>
-              <SelectItem value="own">{t('roleLibrary.filterOwn')}</SelectItem>
-              <SelectItem value="shared">{t('roleLibrary.filterShared')}</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Prompts List */}
-        <div className="space-y-4">
-          {filteredPrompts.length === 0 ? (
-            <HydraCard variant="glass" className="p-8 text-center">
-              <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <p className="text-muted-foreground">
-                {prompts.length === 0 ? t('roleLibrary.empty') : t('roleLibrary.noResults')}
-              </p>
-            </HydraCard>
-          ) : (
-            filteredPrompts.map((prompt) => (
-              <HydraCard 
-                key={prompt.id} 
-                variant="glass" 
-                glow 
-                className="p-4"
-              >
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1 min-w-0">
-                    {/* Header */}
-                    <div className="flex items-center gap-2 mb-1 flex-wrap">
-                      <h3 className="font-medium truncate">{prompt.name}</h3>
-                      <Badge className={getRoleBadgeColor(prompt.role)}>
-                        {t(`role.${prompt.role}`)}
-                      </Badge>
-                      {prompt.is_shared && (
-                        <span title={t('roleLibrary.filterShared')}>
-                          <Users className="h-3.5 w-3.5 text-muted-foreground" />
-                        </span>
-                      )}
-                    </div>
-                    
-                    {/* Description */}
-                    {prompt.description && (
-                      <p className="text-sm text-muted-foreground mb-2">{prompt.description}</p>
-                    )}
-                    
-                    {/* Content preview */}
-                    <p className="text-xs text-muted-foreground/70 line-clamp-2">
-                      {prompt.content}
-                    </p>
-                    
-                    {/* Metadata */}
-                    <div className="flex items-center gap-4 mt-2 text-[10px] text-muted-foreground">
-                      <span>{t('roleLibrary.usedCount').replace('{count}', String(prompt.usage_count))}</span>
-                      <span>{format(new Date(prompt.updated_at), 'dd.MM.yyyy')}</span>
-                    </div>
-                  </div>
-                  
-                  {/* Actions (only for own prompts) - use is_owner from security view */}
-                  {prompt.is_owner && (
-                    <div className="flex items-center gap-1 shrink-0">
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        onClick={() => openEditSheet(prompt)}
-                        className="h-8 w-8"
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        onClick={() => setPromptToDelete(prompt)}
-                        className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              </HydraCard>
-            ))
-          )}
-        </div>
-
-        {/* Edit Sheet */}
-        <Sheet open={editSheet} onOpenChange={setEditSheet}>
-          <SheetContent side="right" className="w-full sm:max-w-lg p-0 flex flex-col">
-            <SheetHeader className="p-4 border-b">
-              <SheetTitle>{t('roleLibrary.edit')}</SheetTitle>
-            </SheetHeader>
-            
-            <ScrollArea className="flex-1 p-4">
-              <div className="space-y-4">
-                {/* Name */}
-                <div className="space-y-2">
-                  <Label>{t('roleLibrary.name')}</Label>
-                  <Input
-                    value={editName}
-                    onChange={(e) => setEditName(e.target.value)}
-                    placeholder={t('roleLibrary.namePlaceholder')}
-                  />
-                </div>
-
-                {/* Role */}
-                <div className="space-y-2">
-                  <Label>{t('roleLibrary.role')}</Label>
-                  <Select value={editRole} onValueChange={(v) => setEditRole(v as AgentRole)}>
-                    <SelectTrigger>
-                      <SelectValue>
-                        <RoleDisplay role={editRole} />
-                      </SelectValue>
-                    </SelectTrigger>
-                    <SelectContent className="bg-popover border border-border z-50">
-                      <RoleSelectOptions />
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Description */}
-                <div className="space-y-2">
-                  <Label>{t('roleLibrary.description')}</Label>
-                  <Input
-                    value={editDescription}
-                    onChange={(e) => setEditDescription(e.target.value)}
-                    placeholder={t('roleLibrary.descriptionPlaceholder')}
-                  />
-                </div>
-
-                {/* Content */}
-                <div className="space-y-2">
-                  <Label>{t('roleLibrary.content')}</Label>
-                  <Textarea
-                    value={editContent}
-                    onChange={(e) => setEditContent(e.target.value)}
-                    placeholder={t('roleLibrary.contentPlaceholder')}
-                    className="min-h-[200px]"
-                  />
-                </div>
-
-                {/* Language and Shared */}
-                <div className="flex items-center gap-4 flex-wrap">
-                  {/* Language selector */}
-                  <div className="space-y-2">
-                    <Label>{t('roleLibrary.language')}</Label>
-                    <Select value={editLanguage} onValueChange={(v) => setEditLanguage(v as PromptLanguage)}>
-                      <SelectTrigger className="w-[120px]">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent className="bg-popover border border-border z-50">
-                        <SelectItem value="auto">{t('roleLibrary.languageAuto')}</SelectItem>
-                        <SelectItem value="ru">{t('roleLibrary.languageRu')}</SelectItem>
-                        <SelectItem value="en">{t('roleLibrary.languageEn')}</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  {/* Shared switch */}
-                  <div className="flex items-center gap-2 pt-6">
-                    <Switch
-                      id="edit-shared"
-                      checked={editIsShared}
-                      onCheckedChange={setEditIsShared}
-                    />
-                    <Label htmlFor="edit-shared" className="cursor-pointer">
-                      {t('roleLibrary.isShared')}
-                    </Label>
-                  </div>
-                </div>
-              </div>
-            </ScrollArea>
-            
-            <SheetFooter className="p-4 border-t">
-              <Button variant="outline" onClick={() => setEditSheet(false)}>
-                {t('common.cancel')}
-              </Button>
-              <Button 
-                onClick={handleUpdate} 
-                disabled={updating || !editName.trim() || !editContent.trim()}
-              >
-                {updating && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-                {t('common.save')}
-              </Button>
-            </SheetFooter>
-          </SheetContent>
-        </Sheet>
-
-        {/* Delete Confirmation Dialog */}
-        <AlertDialog open={!!promptToDelete} onOpenChange={(open) => !open && setPromptToDelete(null)}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>{t('roleLibrary.deleteConfirmTitle')}</AlertDialogTitle>
-              <AlertDialogDescription>
-                {t('roleLibrary.deleteConfirmDescription')}
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
-              <AlertDialogAction 
-                onClick={handleDelete}
-                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              >
-                {t('common.delete')}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-      </div>
+       {/* Unsaved changes dialog */}
+       <UnsavedChangesDialog
+         open={unsavedChanges.showConfirmDialog}
+         onConfirm={unsavedChanges.confirmAndProceed}
+         onCancel={unsavedChanges.cancelNavigation}
+       />
+ 
+       {/* Delete Confirmation Dialog */}
+       <AlertDialog open={!!promptToDelete} onOpenChange={(open) => !open && setPromptToDelete(null)}>
+         <AlertDialogContent>
+           <AlertDialogHeader>
+             <AlertDialogTitle>{t('roleLibrary.deleteConfirmTitle')}</AlertDialogTitle>
+             <AlertDialogDescription>
+               {t('roleLibrary.deleteConfirmDescription')}
+               {promptToDelete && (
+                 <span className="block mt-2 font-medium text-foreground">
+                   "{promptToDelete.name}"
+                 </span>
+               )}
+             </AlertDialogDescription>
+           </AlertDialogHeader>
+           <AlertDialogFooter>
+             <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+             <AlertDialogAction 
+               onClick={handleConfirmDelete}
+               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+             >
+               {t('common.delete')}
+             </AlertDialogAction>
+           </AlertDialogFooter>
+         </AlertDialogContent>
+       </AlertDialog>
     </Layout>
   );
 }
