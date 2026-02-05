@@ -11,7 +11,7 @@ import {
   getSupervisorWishesForRole,
   type SupervisorWish,
 } from '@/config/behaviorDictionaries';
-import type { MessageRole } from '@/config/roles';
+import { ROLE_CONFIG, type MessageRole } from '@/config/roles';
 
 interface SupervisorWishesPickerProps {
   selectedWishes: string[];
@@ -82,10 +82,31 @@ export function SupervisorWishesPicker({
     .map((key) => SUPERVISOR_WISHES_DICTIONARY.find((w) => w.key === key))
     .filter(Boolean) as SupervisorWish[];
 
+  // Dynamic title based on active roles
+  const dynamicRoleNames = useMemo(() => {
+    if (activeRoles.length === 0) return '';
+    
+    const roleNames = activeRoles
+      .map((role) => {
+        const config = ROLE_CONFIG[role as MessageRole];
+        return config ? t(config.label) : role;
+      })
+      .filter(Boolean);
+    
+    if (roleNames.length === 1) return roleNames[0];
+    if (roleNames.length === 2) return `${roleNames[0]} ${t('common.and')} ${roleNames[1]}`;
+    return `${roleNames.slice(0, 2).join(', ')} +${roleNames.length - 2}`;
+  }, [activeRoles, t]);
+
   const triggerTitle =
     activeRoles.length === 0
       ? t('supervisorWishes.noRolesSelected')
-      : t('supervisorWishes.selectWishes');
+      : `${t('supervisorWishes.wishesFor')}: ${dynamicRoleNames}`;
+
+  const popoverTitle =
+    activeRoles.length === 0
+      ? t('supervisorWishes.title')
+      : `${t('supervisorWishes.wishesFor')}: ${dynamicRoleNames}`;
 
   const isDisabled = disabled || activeRoles.length === 0;
 
@@ -122,7 +143,7 @@ export function SupervisorWishesPicker({
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="font-medium text-sm">
-                  {t('supervisorWishes.title')}
+                  {popoverTitle}
                 </h3>
                 <p className="text-xs text-muted-foreground mt-0.5">
                   {t('supervisorWishes.description')}
