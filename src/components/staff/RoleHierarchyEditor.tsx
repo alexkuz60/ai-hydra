@@ -1,16 +1,14 @@
 import React from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { 
-  Equal, 
   ArrowUp, 
-  ArrowDown, 
   ArrowLeftRight,
   Swords,
+  Plus,
+  X,
 } from 'lucide-react';
 import { 
   ROLE_CONFIG, 
@@ -65,8 +63,8 @@ const RoleHierarchyEditor: React.FC<RoleHierarchyEditorProps> = ({
     const newChallenges = (interactions.challenges || []).filter(r => r !== role);
     const newCollaborates = (interactions.collaborates || []).filter(r => r !== role);
     
-    // Add to new list if not toggling off
-    if (!isInList || type !== getTypeForRole(role)) {
+    // Add to new list only if not already in this list
+    if (!isInList) {
       if (type === 'defers_to') newDefers.push(role);
       if (type === 'challenges') newChallenges.push(role);
       if (type === 'collaborates') newCollaborates.push(role);
@@ -79,106 +77,77 @@ const RoleHierarchyEditor: React.FC<RoleHierarchyEditorProps> = ({
     });
   };
 
-  const getTypeForRole = (role: AgentRole): InteractionType | null => {
-    if (interactions.defers_to?.includes(role)) return 'defers_to';
-    if (interactions.challenges?.includes(role)) return 'challenges';
-    if (interactions.collaborates?.includes(role)) return 'collaborates';
-    return null;
-  };
-
-  const renderRoleItem = (role: AgentRole, showControls = true) => {
+  // Render role badge for view mode
+  const renderRoleBadge = (role: AgentRole) => {
     const config = ROLE_CONFIG[role];
     const IconComponent = config.icon;
-    const relation = getRoleRelation(role);
+    return (
+      <Badge 
+        key={role}
+        variant="outline" 
+        className={cn("gap-1", config.color)}
+      >
+        <IconComponent className="h-3 w-3" />
+        {t(config.label)}
+      </Badge>
+    );
+  };
+
+  // Render editable role item with checkbox
+  const renderEditableRoleItem = (role: AgentRole, type: InteractionType) => {
+    const config = ROLE_CONFIG[role];
+    const IconComponent = config.icon;
+    const isInList = interactions[type]?.includes(role) || false;
     
     return (
-      <div 
+      <label
         key={role}
         className={cn(
-          "flex items-center gap-2 p-2 rounded-lg transition-colors",
-          isEditing ? "hover:bg-muted/50" : ""
+          "flex items-center gap-2 p-2 rounded-lg cursor-pointer transition-colors",
+          "hover:bg-muted/50",
+          isInList && "bg-primary/5"
         )}
       >
+        <Checkbox
+          checked={isInList}
+          onCheckedChange={() => toggleRoleInList(role, type)}
+          className="h-4 w-4"
+        />
         <div className={cn(
-          "w-7 h-7 rounded-md flex items-center justify-center shrink-0",
+          "w-6 h-6 rounded-md flex items-center justify-center shrink-0",
           `bg-${config.color.replace('text-', '')}/10`
         )}>
-          <IconComponent className={cn("h-4 w-4", config.color)} />
+          <IconComponent className={cn("h-3.5 w-3.5", config.color)} />
         </div>
         <span className={cn("text-sm flex-1 truncate", config.color)}>
           {t(config.label)}
         </span>
-        
-        {isEditing && showControls && (
-          <div className="flex items-center gap-1">
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant={relation === 'superior' ? 'default' : 'ghost'}
-                    size="icon"
-                    className="h-6 w-6"
-                    onClick={() => toggleRoleInList(role, 'defers_to')}
-                  >
-                    <ArrowUp className="h-3 w-3" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="top">{t('staffRoles.hierarchy.superior')}</TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-            
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant={relation === 'equal' ? 'default' : 'ghost'}
-                    size="icon"
-                    className="h-6 w-6"
-                    onClick={() => toggleRoleInList(role, 'collaborates')}
-                  >
-                    <Equal className="h-3 w-3" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="top">{t('staffRoles.hierarchy.equal')}</TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-            
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant={relation === 'subordinate' ? 'default' : 'ghost'}
-                    size="icon"
-                    className="h-6 w-6"
-                    onClick={() => toggleRoleInList(role, 'challenges')}
-                  >
-                    <ArrowDown className="h-3 w-3" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="top">{t('staffRoles.hierarchy.subordinate')}</TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          </div>
+        {isInList ? (
+          <X className="h-3 w-3 text-muted-foreground" />
+        ) : (
+          <Plus className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100" />
         )}
-        
-        {!isEditing && (
-          <Badge 
-            variant="outline" 
-            className={cn(
-              "text-xs shrink-0",
-              relation === 'superior' && "border-yellow-500/50 text-yellow-600",
-              relation === 'equal' && "border-blue-500/50 text-blue-600",
-              relation === 'subordinate' && "border-green-500/50 text-green-600",
-              relation === 'none' && "border-muted-foreground/30 text-muted-foreground"
-            )}
-          >
-            {relation === 'superior' && <ArrowUp className="h-3 w-3 mr-1" />}
-            {relation === 'equal' && <Equal className="h-3 w-3 mr-1" />}
-            {relation === 'subordinate' && <ArrowDown className="h-3 w-3 mr-1" />}
-            {relation === 'none' && <ArrowLeftRight className="h-3 w-3 mr-1" />}
-            {t(`staffRoles.hierarchy.${relation}`)}
-          </Badge>
-        )}
+      </label>
+    );
+  };
+
+  // View mode content for a tab
+  const renderViewContent = (roles: AgentRole[]) => {
+    if (roles.length === 0) {
+      return <p className="text-xs text-muted-foreground italic py-2">{t('staffRoles.hierarchy.noRelations')}</p>;
+    }
+    return (
+      <div className="flex flex-wrap gap-1.5">
+        {roles.map(renderRoleBadge)}
+      </div>
+    );
+  };
+
+  // Edit mode content for a tab
+  const renderEditContent = (type: InteractionType) => {
+    return (
+      <div className="space-y-0.5 max-h-[180px] overflow-y-auto">
+        {otherRoles.map(role => renderEditableRoleItem(role, type))}
       </div>
     );
   };
@@ -212,88 +181,29 @@ const RoleHierarchyEditor: React.FC<RoleHierarchyEditorProps> = ({
         </TabsList>
         
         <TabsContent value="defers_to" className="mt-2">
-          {groupedRoles.superior.length > 0 ? (
-            <div className="flex flex-wrap gap-1.5">
-              {groupedRoles.superior.map(role => {
-                const config = ROLE_CONFIG[role];
-                const IconComponent = config.icon;
-                return (
-                  <Badge 
-                    key={role}
-                    variant="outline" 
-                    className={cn("gap-1", config.color)}
-                  >
-                    <IconComponent className="h-3 w-3" />
-                    {t(config.label)}
-                  </Badge>
-                );
-              })}
-            </div>
+          {isEditing ? (
+            renderEditContent('defers_to')
           ) : (
-            <p className="text-xs text-muted-foreground italic">{t('staffRoles.hierarchy.noRelations')}</p>
+            renderViewContent(groupedRoles.superior)
           )}
         </TabsContent>
         
         <TabsContent value="collaborates" className="mt-2">
-          {groupedRoles.equal.length > 0 ? (
-            <div className="flex flex-wrap gap-1.5">
-              {groupedRoles.equal.map(role => {
-                const config = ROLE_CONFIG[role];
-                const IconComponent = config.icon;
-                return (
-                  <Badge 
-                    key={role}
-                    variant="outline" 
-                    className={cn("gap-1", config.color)}
-                  >
-                    <IconComponent className="h-3 w-3" />
-                    {t(config.label)}
-                  </Badge>
-                );
-              })}
-            </div>
+          {isEditing ? (
+            renderEditContent('collaborates')
           ) : (
-            <p className="text-xs text-muted-foreground italic">{t('staffRoles.hierarchy.noRelations')}</p>
+            renderViewContent(groupedRoles.equal)
           )}
         </TabsContent>
         
         <TabsContent value="challenges" className="mt-2">
-          {groupedRoles.subordinate.length > 0 ? (
-            <div className="flex flex-wrap gap-1.5">
-              {groupedRoles.subordinate.map(role => {
-                const config = ROLE_CONFIG[role];
-                const IconComponent = config.icon;
-                return (
-                  <Badge 
-                    key={role}
-                    variant="outline" 
-                    className={cn("gap-1", config.color)}
-                  >
-                    <IconComponent className="h-3 w-3" />
-                    {t(config.label)}
-                  </Badge>
-                );
-              })}
-            </div>
+          {isEditing ? (
+            renderEditContent('challenges')
           ) : (
-            <p className="text-xs text-muted-foreground italic">{t('staffRoles.hierarchy.noRelations')}</p>
+            renderViewContent(groupedRoles.subordinate)
           )}
         </TabsContent>
       </Tabs>
-
-      {/* Edit list */}
-      {isEditing && (
-        <div className="space-y-2">
-          <h4 className="text-sm font-medium text-muted-foreground">
-            {t('staffRoles.hierarchy.editRelations')}
-          </h4>
-          <ScrollArea className="h-[200px] border border-border rounded-lg">
-            <div className="p-2 space-y-1">
-              {otherRoles.map(role => renderRoleItem(role))}
-            </div>
-          </ScrollArea>
-        </div>
-      )}
     </div>
   );
 };
