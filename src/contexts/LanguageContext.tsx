@@ -1095,8 +1095,16 @@ const translations: Translations = {
   'tools.category.integration': { ru: 'Интеграции', en: 'Integrations' },
   'tools.category.ai': { ru: 'AI / ML', en: 'AI / ML' },
   'tools.category.automation': { ru: 'Автоматизация', en: 'Automation' },
-  'tools.category.utility': { ru: 'Утилиты', en: 'Utilities' },
-  'tools.systemTools': { ru: 'Системные', en: 'System' },
+   'tools.category.utility': { ru: 'Утилиты', en: 'Utilities' },
+   'tools.systemTools': { ru: 'Системные', en: 'System' },
+
+   // Supervisor Wishes Picker
+   'supervisorWishes.selectWishes': { ru: 'Пожелания Супервизора', en: 'Supervisor Wishes' },
+   'supervisorWishes.title': { ru: 'Пожелания Супервизора', en: 'Supervisor Wishes' },
+   'supervisorWishes.description': { ru: 'Выберите типичные указания для текущей сессии', en: 'Select typical instructions for this session' },
+   'supervisorWishes.selected': { ru: 'Выбрано', en: 'Selected' },
+   'supervisorWishes.noRolesSelected': { ru: 'Выберите роли для активации', en: 'Select roles to activate' },
+   'supervisorWishes.noWishesForRoles': { ru: 'Для выбранных ролей нет доступных пожеланий', en: 'No wishes available for selected roles' },
 };
 
 interface LanguageContextType {

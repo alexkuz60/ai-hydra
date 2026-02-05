@@ -1,4 +1,4 @@
- import React, { useCallback, useState, useRef, useEffect } from 'react';
+import React, { useCallback, useState, useRef, useEffect } from 'react';
 import { Textarea } from '@/components/ui/textarea';
 import { FileUpload, MERMAID_TEMPLATE, AttachedFile } from '@/components/warroom/FileUpload';
 import { FlowDiagramPickerDialog } from '@/components/warroom/FlowDiagramPickerDialog';
@@ -6,19 +6,21 @@ import { TimeoutSlider } from '@/components/warroom/TimeoutSlider';
 import { MermaidPreview } from '@/components/warroom/MermaidPreview';
 import { MermaidBlock } from '@/components/warroom/MermaidBlock';
 import { PromptEngineerButton } from '@/components/warroom/PromptEngineerButton';
+import { SupervisorWishesPicker } from '@/components/warroom/SupervisorWishesPicker';
 import { ModelOption } from '@/hooks/useAvailableModels';
 import { cn } from '@/lib/utils';
- import { Loader2, GitBranch, ChevronDown, ChevronUp, Send, Users, Lightbulb, X } from 'lucide-react';
+import { Loader2, GitBranch, ChevronDown, ChevronUp, Send, Users, Lightbulb, X } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
- import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
- import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
- import { Button } from '@/components/ui/button';
- import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
+import type { MessageRole } from '@/config/roles';
 
 // Re-export AttachedFile for external use
 export type { AttachedFile };
@@ -49,9 +51,13 @@ interface ChatInputAreaProps {
   onTimeoutChange: (value: number) => void;
   // Model count for send button
   selectedModelsCount: number;
-   // Collapsible & resizable
-   isCollapsed?: boolean;
-   onToggleCollapse?: () => void;
+  // Supervisor Wishes
+  selectedWishes: string[];
+  onWishesChange: (wishes: string[]) => void;
+  activeRoles: MessageRole[];
+  // Collapsible & resizable
+  isCollapsed?: boolean;
+  onToggleCollapse?: () => void;
 }
 
 export function ChatInputArea({
@@ -71,8 +77,11 @@ export function ChatInputArea({
   timeoutSeconds,
   onTimeoutChange,
   selectedModelsCount,
-   isCollapsed = false,
-   onToggleCollapse,
+  selectedWishes,
+  onWishesChange,
+  activeRoles,
+  isCollapsed = false,
+  onToggleCollapse,
 }: ChatInputAreaProps) {
   const { t } = useLanguage();
   const [flowPickerOpen, setFlowPickerOpen] = useState(false);
@@ -345,14 +354,22 @@ export function ChatInputArea({
                     disabled={sending}
                   />
 
-                  {/* Timeout setting */}
-                  <TimeoutSlider
-                    value={timeoutSeconds}
-                    onChange={onTimeoutChange}
-                    disabled={sending}
-                  />
+                   {/* Timeout setting */}
+                   <TimeoutSlider
+                     value={timeoutSeconds}
+                     onChange={onTimeoutChange}
+                     disabled={sending}
+                   />
 
-                  {/* Prompt Engineer button */}
+                   {/* Supervisor Wishes Picker */}
+                   <SupervisorWishesPicker
+                     selectedWishes={selectedWishes}
+                     onWishesChange={onWishesChange}
+                     activeRoles={activeRoles}
+                     disabled={sending}
+                   />
+
+                   {/* Prompt Engineer button */}
                   <PromptEngineerButton
                     currentInput={input}
                     onOptimizedPrompt={onInputChange}
