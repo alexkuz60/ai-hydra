@@ -41,6 +41,69 @@ import {
 } from "./constants.ts";
 
 // ============================================
+// Proposal Parsing (Supervisor Approval)
+// ============================================
+
+interface ParsedProposal {
+  id: string;
+  title: string;
+  description: string;
+  priority?: 'high' | 'medium' | 'low';
+  status: 'pending' | 'approved' | 'rejected' | 'needs_clarification';
+}
+
+/**
+ * Parse ```json:proposals block from AI response content
+ * Returns array of proposals if found, undefined otherwise
+ */
+function parseProposalsFromContent(content: string): ParsedProposal[] | undefined {
+  // Match ```json:proposals ... ``` block
+  const proposalBlockRegex = /```json:proposals\s*\n([\s\S]*?)\n```/;
+  const match = content.match(proposalBlockRegex);
+  
+  if (!match || !match[1]) {
+    return undefined;
+  }
+  
+  try {
+    const rawProposals = JSON.parse(match[1]);
+    
+    if (!Array.isArray(rawProposals)) {
+      console.warn('[Proposals] Parsed content is not an array');
+      return undefined;
+    }
+    
+    // Validate and normalize proposals
+    const proposals: ParsedProposal[] = rawProposals
+      .filter((p: unknown) => {
+        if (typeof p !== 'object' || p === null) return false;
+        const obj = p as Record<string, unknown>;
+        return typeof obj.id === 'string' && typeof obj.title === 'string';
+      })
+      .map((p: Record<string, unknown>) => ({
+        id: String(p.id),
+        title: String(p.title),
+        description: typeof p.description === 'string' ? p.description : '',
+        priority: ['high', 'medium', 'low'].includes(String(p.priority)) 
+          ? p.priority as 'high' | 'medium' | 'low' 
+          : undefined,
+        status: 'pending' as const, // Always start as pending
+      }));
+    
+    if (proposals.length === 0) {
+      console.warn('[Proposals] No valid proposals found in block');
+      return undefined;
+    }
+    
+    console.log(`[Proposals] Parsed ${proposals.length} proposals from response`);
+    return proposals;
+  } catch (error) {
+    console.error('[Proposals] Failed to parse proposals JSON:', error);
+    return undefined;
+  }
+}
+
+// ============================================
 // Multimodal Content Builder
 // ============================================
 
@@ -905,25 +968,32 @@ serve(async (req) => {
 
     // Save all successful responses to database
     if (successResults.length > 0) {
-      const messagesToInsert = successResults.map((result: SuccessResult & { fallback_metadata?: { used_fallback: boolean; fallback_reason: string } }) => ({
-        session_id,
-        user_id: user.id,
-        role: result.role as 'assistant' | 'critic' | 'arbiter',
-        model_name: result.model,
-        content: result.content,
-        reasoning_path: result.reasoning || null,
-        metadata: { 
-          provider: result.provider,
-          prompt_tokens: result.usage?.prompt_tokens || 0,
-          completion_tokens: result.usage?.completion_tokens || 0,
-          total_tokens: result.usage?.total_tokens || 0,
-          tool_calls: result.tool_calls || undefined,
-          tool_results: result.tool_results || undefined,
-          // Include fallback information if present
-          used_fallback: result.fallback_metadata?.used_fallback || undefined,
-          fallback_reason: result.fallback_metadata?.fallback_reason || undefined,
-        },
-      }));
+      const messagesToInsert = successResults.map((result: SuccessResult & { fallback_metadata?: { used_fallback: boolean; fallback_reason: string } }) => {
+        // Parse proposals from response content (Supervisor Approval feature)
+        const proposals = parseProposalsFromContent(result.content);
+        
+        return {
+          session_id,
+          user_id: user.id,
+          role: result.role as 'assistant' | 'critic' | 'arbiter',
+          model_name: result.model,
+          content: result.content,
+          reasoning_path: result.reasoning || null,
+          metadata: { 
+            provider: result.provider,
+            prompt_tokens: result.usage?.prompt_tokens || 0,
+            completion_tokens: result.usage?.completion_tokens || 0,
+            total_tokens: result.usage?.total_tokens || 0,
+            tool_calls: result.tool_calls || undefined,
+            tool_results: result.tool_results || undefined,
+            // Include fallback information if present
+            used_fallback: result.fallback_metadata?.used_fallback || undefined,
+            fallback_reason: result.fallback_metadata?.fallback_reason || undefined,
+            // Include parsed proposals if found
+            proposals: proposals,
+          },
+        };
+      });
 
       await supabase.from("messages").insert(messagesToInsert);
 
