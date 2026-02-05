@@ -1,7 +1,8 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Sparkles, X } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
@@ -26,6 +27,7 @@ export function SupervisorWishesPicker({
   disabled = false,
 }: SupervisorWishesPickerProps) {
   const { t, language } = useLanguage();
+  const [isOpen, setIsOpen] = useState(false);
 
   // Get applicable wishes for current active roles
   const applicableWishes = useMemo(() => {
@@ -65,23 +67,35 @@ export function SupervisorWishesPicker({
       : t('supervisorWishes.selectWishes');
 
   return (
-    <Popover>
+    <Popover open={isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger asChild>
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          title={triggerTitle}
-          aria-label={triggerTitle}
-          className={cn(
-            'h-9 w-9',
-            selectedWishes.length > 0 &&
-              'bg-hydra-promptengineer/20 text-hydra-promptengineer hover:bg-hydra-promptengineer/30'
+        <div className="relative">
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            title={triggerTitle}
+            aria-label={triggerTitle}
+            className={cn(
+              'h-9 w-9',
+              selectedWishes.length > 0 &&
+                'bg-hydra-promptengineer/20 text-hydra-promptengineer hover:bg-hydra-promptengineer/30'
+            )}
+            disabled={disabled || activeRoles.length === 0}
+          >
+            <Sparkles className="h-4 w-4" />
+          </Button>
+          
+          {/* Badge with count */}
+          {selectedWishes.length > 0 && (
+            <Badge 
+              variant="default"
+              className="absolute -top-2 -right-2 h-5 min-w-5 flex items-center justify-center px-1 text-xs bg-hydra-promptengineer text-white"
+            >
+              {selectedWishes.length}
+            </Badge>
           )}
-          disabled={disabled || activeRoles.length === 0}
-        >
-          <Sparkles className="h-4 w-4" />
-        </Button>
+        </div>
       </PopoverTrigger>
 
       <PopoverContent className="w-80 p-3" align="end" side="top">
