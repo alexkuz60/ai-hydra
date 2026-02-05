@@ -1,23 +1,23 @@
- import React, { useState } from 'react';
- import { useNavigate } from 'react-router-dom';
- import { useLanguage } from '@/contexts/LanguageContext';
- import { Button } from '@/components/ui/button';
- import { Input } from '@/components/ui/input';
- import { ScrollArea } from '@/components/ui/scroll-area';
- import { Badge } from '@/components/ui/badge';
- import { MessageSquare, Play, Trash2, Pencil, Check, X, Bot, Sparkles, Cpu, Loader2 } from 'lucide-react';
- import { cn } from '@/lib/utils';
- import { format } from 'date-fns';
- import { MultiModelSelector } from '@/components/warroom/MultiModelSelector';
- import { PerModelSettings, PerModelSettingsData, DEFAULT_MODEL_SETTINGS } from '@/components/warroom/PerModelSettings';
- import { SessionSettings } from '@/components/warroom/SessionSettings';
- import { getModelInfo, getModelDisplayName, ALL_VALID_MODEL_IDS } from '@/hooks/useAvailableModels';
- import type { Task } from './TaskRow';
- 
- // Filter out deprecated/unavailable model IDs
- const filterValidModels = (modelIds: string[]): string[] => {
-   return modelIds.filter(id => ALL_VALID_MODEL_IDS.includes(id));
- };
+import React, { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Badge } from '@/components/ui/badge';
+import { MessageSquare, Play, Trash2, Pencil, Check, X, Bot, Sparkles, Cpu, Loader2 } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { format } from 'date-fns';
+import { MultiModelSelector } from '@/components/warroom/MultiModelSelector';
+import { PerModelSettings, PerModelSettingsData, DEFAULT_MODEL_SETTINGS } from '@/components/warroom/PerModelSettings';
+import { SessionSettings } from '@/components/warroom/SessionSettings';
+import { getModelInfo, getModelDisplayName, ALL_VALID_MODEL_IDS } from '@/hooks/useAvailableModels';
+import type { Task } from './TaskRow';
+
+// Filter out deprecated/unavailable model IDs
+const filterValidModels = (modelIds: string[]): string[] => {
+  return modelIds.filter(id => ALL_VALID_MODEL_IDS.includes(id));
+};
  
  function getModelIcon(modelId: string) {
    const { isLovable, model } = getModelInfo(modelId);
@@ -58,15 +58,21 @@
    const [useHybridStreaming, setUseHybridStreaming] = useState(true);
    const [hasChanges, setHasChanges] = useState(false);
  
-   // Initialize state when task changes
-   React.useEffect(() => {
-     if (task) {
-       setSelectedModels(filterValidModels(task.session_config?.selectedModels || []));
-       setPerModelSettings(task.session_config?.perModelSettings || {});
-       setUseHybridStreaming(task.session_config?.useHybridStreaming ?? true);
-       setHasChanges(false);
-     }
-   }, [task?.id]);
+  // Stable serialization key for deep comparison of session_config
+  const configKey = useMemo(() => 
+    task ? JSON.stringify(task.session_config) : '', 
+    [task?.session_config]
+  );
+
+  // Initialize state when task changes or when config is updated
+  React.useEffect(() => {
+    if (task) {
+      setSelectedModels(filterValidModels(task.session_config?.selectedModels || []));
+      setPerModelSettings(task.session_config?.perModelSettings || {});
+      setUseHybridStreaming(task.session_config?.useHybridStreaming ?? true);
+      setHasChanges(false);
+    }
+  }, [task?.id, configKey]);
  
    if (!task) {
      return (
