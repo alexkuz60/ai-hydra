@@ -96,6 +96,7 @@ export function ChatInputArea({
   const MAX_TEXTAREA_HEIGHT = 300;
 
   const [textareaHeight, setTextareaHeight] = useState(80);
+  const [isResizingState, setIsResizingState] = useState(false);
   const textareaHeightRef = useRef(80);
   const isResizing = useRef(false);
 
@@ -108,6 +109,7 @@ export function ChatInputArea({
   const handleResizeStart = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     isResizing.current = true;
+    setIsResizingState(true);
 
     const startY = e.clientY;
     const startHeight = textareaHeightRef.current;
@@ -126,6 +128,7 @@ export function ChatInputArea({
 
     const handleMouseUp = () => {
       isResizing.current = false;
+      setIsResizingState(false);
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
 
@@ -345,8 +348,13 @@ export function ChatInputArea({
           </div>
         )}
 
-              {/* Resize handle */}
-              <HorizontalResizeHandle onResizeStart={handleResizeStart} className="mb-1" />
+               {/* Resize handle */}
+               <HorizontalResizeHandle 
+                 onResizeStart={handleResizeStart} 
+                 className="mb-1"
+                 isResizing={isResizingState}
+                 currentHeight={textareaHeight}
+               />
  
               <div className="flex gap-2 items-stretch">
                 {/* Left toolbar - vertical column */}
