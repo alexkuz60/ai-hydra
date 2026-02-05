@@ -323,7 +323,7 @@ export function ChatInputArea({
         )}
 
               {/* Resize handle */}
-              <HorizontalResizeHandle onResizeStart={handleResizeStart} className="mb-2" />
+              <HorizontalResizeHandle onResizeStart={handleResizeStart} className="mb-1" />
  
               <div className="flex gap-2 items-stretch">
                 {/* Left toolbar - vertical column */}
