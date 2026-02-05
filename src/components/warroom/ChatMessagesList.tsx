@@ -44,6 +44,8 @@ interface ChatMessagesListProps {
   // Proposal approval handlers
   onUpdateProposals?: (messageId: string, proposals: Proposal[]) => void;
   onRequestProposalDetails?: (messageId: string, proposalIds: string[]) => void;
+  // D-Chat consultation
+  onConsultInDChat?: (messageId: string, content: string) => void;
 }
 
 export function ChatMessagesList({
@@ -69,6 +71,7 @@ export function ChatMessagesList({
   onStopStreaming,
   onUpdateProposals,
   onRequestProposalDetails,
+  onConsultInDChat,
 }: ChatMessagesListProps) {
   if (messages.length === 0) {
     return (
@@ -116,6 +119,7 @@ export function ChatMessagesList({
                   isAlreadySavedToMemory={savedMessageIds?.has(message.id)}
                   onUpdateProposals={onUpdateProposals}
                   onRequestProposalDetails={onRequestProposalDetails}
+                  onConsultInDChat={onConsultInDChat}
                 />
               </div>
             </React.Fragment>

@@ -518,6 +518,12 @@ export default function ExpertPanel() {
     handleDChatExpand(); // Expand D-Chat using imperative API
   }, [handleDChatExpand]);
 
+  // D-Chat: Consult on a specific AI message
+  const handleConsultInDChat = useCallback((messageId: string, content: string) => {
+    setDChatContext({ messageId, content });
+    handleDChatExpand();
+  }, [handleDChatExpand]);
+
   // D-Chat: Copy response to main chat
   const handleCopyToMainChat = useCallback(async (content: string, sourceMessageId: string | null) => {
     await copyConsultantResponse(content, sourceMessageId);
@@ -813,6 +819,7 @@ export default function ExpertPanel() {
                 onStopStreaming={stopStreaming}
                 onUpdateProposals={handleUpdateProposals}
                 onRequestProposalDetails={handleRequestProposalDetails}
+                onConsultInDChat={handleConsultInDChat}
               />
 
               {/* Input Area */}

@@ -841,6 +841,7 @@ const translations: Translations = {
   'dchat.contextAggregated': { ru: 'Анализ {count} ответов', en: 'Analyzing {count} responses' },
   'dchat.clarifyWithSpecialist': { ru: 'Уточнить у Специалиста', en: 'Clarify with Specialist' },
   'dchat.promptEngineer': { ru: 'Промпт-Инженер', en: 'Prompt Engineer' },
+  'dchat.consultOnMessage': { ru: 'Обсудить в D-чате', en: 'Discuss in D-Chat' },
 
    // Prompt Engineer Tools
    'promptEngineer.tools.title': { ru: 'Инструменты ПИ', en: 'PE Tools' },

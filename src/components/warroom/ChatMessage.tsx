@@ -17,7 +17,8 @@ import {
   Brain,
   RefreshCw,
   Archive,
-  Check
+  Check,
+  Lightbulb
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -100,11 +101,12 @@ interface ChatMessageProps {
   isAlreadySavedToMemory?: boolean;
   onUpdateProposals?: (messageId: string, proposals: Proposal[]) => void;
   onRequestProposalDetails?: (messageId: string, proposalIds: string[]) => void;
+  onConsultInDChat?: (messageId: string, content: string) => void;
 }
 
 const MAX_COLLAPSED_LINES = 3;
 
-export function ChatMessage({ message, userDisplayInfo, onDelete, onRatingChange, isCollapsed, onToggleCollapse, onClarifyWithSpecialist, onSaveToMemory, isSavingToMemory, isAlreadySavedToMemory, onUpdateProposals, onRequestProposalDetails }: ChatMessageProps) {
+export function ChatMessage({ message, userDisplayInfo, onDelete, onRatingChange, isCollapsed, onToggleCollapse, onClarifyWithSpecialist, onSaveToMemory, isSavingToMemory, isAlreadySavedToMemory, onUpdateProposals, onRequestProposalDetails, onConsultInDChat }: ChatMessageProps) {
   const { t } = useLanguage();
   const contentRef = useRef<HTMLDivElement>(null);
   const [savedToMemory, setSavedToMemory] = useState(isAlreadySavedToMemory || false);
@@ -306,6 +308,27 @@ export function ChatMessage({ message, userDisplayInfo, onDelete, onRatingChange
 
       {/* Message controls */}
       <div className="absolute bottom-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+        {/* Consult in D-Chat button for AI messages */}
+        {isAiMessage && onConsultInDChat && (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 text-hydra-consultant hover:text-hydra-consultant hover:bg-hydra-consultant/10"
+                  onClick={() => onConsultInDChat(message.id, message.content)}
+                >
+                  <Lightbulb className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="top">
+                <p className="text-xs">{t('dchat.consultOnMessage')}</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        )}
+        
         {/* Save to memory button for AI messages */}
         {isAiMessage && onSaveToMemory && (
           <TooltipProvider>
