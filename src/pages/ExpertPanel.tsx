@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useCallback, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Layout } from '@/components/layout/Layout';
+import { MemoryControls } from '@/components/layout/MemoryControls';
 import { cn } from '@/lib/utils';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 import type { ImperativePanelHandle } from 'react-resizable-panels';
@@ -24,7 +25,7 @@ import { useStreamingResponses } from '@/hooks/useStreamingResponses';
 import { useMemoryIntegration } from '@/hooks/useMemoryIntegration';
 import { useSessionMemory } from '@/hooks/useSessionMemory';
 import { PendingResponseState, RequestStartInfo } from '@/types/pending';
-import { Loader2, Target, Zap, ZapOff, Square, Circle, Brain, RefreshCw, Check, Settings2, Wrench } from 'lucide-react';
+import { Loader2, Target, Zap, ZapOff, Square, Circle, Wrench } from 'lucide-react';
 import { SessionMemoryDialog } from '@/components/warroom/SessionMemoryDialog';
 import { TechSupportDialog } from '@/components/warroom/TechSupportDialog';
 import { Button } from '@/components/ui/button';
@@ -556,7 +557,7 @@ export default function ExpertPanel() {
 
   if (!currentTask) {
     return (
-      <Layout>
+      <Layout headerActions={null}>
         <div className="flex items-center justify-center min-h-[60vh]">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
@@ -564,8 +565,19 @@ export default function ExpertPanel() {
     );
   }
 
+  // Header actions with memory controls
+  const headerActions = (
+    <MemoryControls
+      memoryStats={memoryStats}
+      isLoading={memoryLoading}
+      isRefreshed={memoryRefreshed}
+      onRefresh={handleRefreshMemory}
+      onOpenDialog={() => setMemoryDialogOpen(true)}
+    />
+  );
+
   return (
-    <Layout>
+    <Layout headerActions={headerActions}>
       <div className="h-[calc(100vh-4rem)] flex overflow-hidden">
         <ResizablePanelGroup direction="horizontal">
           {/* Navigation Panel - resizable */}
@@ -600,95 +612,6 @@ export default function ExpertPanel() {
                 <div className="flex items-center gap-2 text-sm min-w-0 flex-1">
                   <Target className="h-4 w-4 text-muted-foreground shrink-0" />
                   <span className="font-medium truncate">{currentTask.title}</span>
-                  
-                  {/* Memory Stats Indicator */}
-                  {memoryStats && memoryStats.total > 0 && (
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Badge 
-                            variant="secondary" 
-                            className="ml-2 gap-1 bg-hydra-memory/20 text-hydra-memory border-hydra-memory/30 cursor-help"
-                          >
-                            <Brain className="h-3 w-3" />
-                            <span className="text-xs">{memoryStats.total}</span>
-                          </Badge>
-                        </TooltipTrigger>
-                        <TooltipContent side="bottom">
-                          <div className="text-xs space-y-1">
-                            <p className="font-medium">{t('memory.savedChunks')}</p>
-                            {memoryStats.byType.decision > 0 && (
-                              <p>• {t('memory.decisions')}: {memoryStats.byType.decision}</p>
-                            )}
-                            {memoryStats.byType.context > 0 && (
-                              <p>• {t('memory.context')}: {memoryStats.byType.context}</p>
-                            )}
-                            {memoryStats.byType.instruction > 0 && (
-                              <p>• {t('memory.instructions')}: {memoryStats.byType.instruction}</p>
-                            )}
-                          </div>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  )}
-                  
-                  {/* Memory Controls */}
-                  {memoryStats && memoryStats.total > 0 && (
-                    <div className="flex items-center gap-1">
-                      {/* Refresh Memory Button */}
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <motion.button
-                              onClick={handleRefreshMemory}
-                              className="h-6 w-6 rounded flex items-center justify-center text-hydra-memory/80 hover:text-hydra-memory hover:bg-hydra-memory/10 transition-colors focus:outline-none focus:ring-2 focus:ring-hydra-memory/50"
-                              whileTap={{ scale: 0.9 }}
-                            >
-                              <AnimatePresence mode="wait">
-                                <motion.span
-                                  key={memoryRefreshed ? 'check' : 'refresh'}
-                                  initial={{ opacity: 0, scale: 0.5, rotate: -90 }}
-                                  animate={{ opacity: 1, scale: 1, rotate: 0 }}
-                                  exit={{ opacity: 0, scale: 0.5, rotate: 90 }}
-                                  transition={{ duration: 0.2 }}
-                                >
-                                  {memoryRefreshed ? (
-                                    <Check className="h-3.5 w-3.5 text-hydra-success" />
-                                  ) : (
-                                    <RefreshCw className="h-3.5 w-3.5" />
-                                  )}
-                                </motion.span>
-                              </AnimatePresence>
-                            </motion.button>
-                          </TooltipTrigger>
-                          <TooltipContent side="bottom">
-                            <p className="text-xs">
-                              {memoryRefreshed ? t('memory.refreshed') : t('memory.refresh')}
-                            </p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                      
-                      {/* Manage Memory Button */}
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-6 w-6 text-hydra-memory/80 hover:text-hydra-memory hover:bg-hydra-memory/10"
-                              onClick={() => setMemoryDialogOpen(true)}
-                            >
-                              <Settings2 className="h-3.5 w-3.5" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent side="bottom">
-                            <p className="text-xs">{t('memory.manageMemory')}</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    </div>
-                  )}
                 </div>
                 {/* Header Actions */}
                 <div className="flex items-center gap-2">

@@ -7,12 +7,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Badge } from '@/components/ui/badge';
 import { StreamingMessage } from '@/components/warroom/StreamingMessage';
-import { SessionMemoryDialog } from '@/components/warroom/SessionMemoryDialog';
 import { ModelOption } from '@/hooks/useAvailableModels';
 import { useStreamingChat, ConsultantMode } from '@/hooks/useStreamingChat';
 import { useSessionMemory } from '@/hooks/useSessionMemory';
 import { cn } from '@/lib/utils';
-import { motion, AnimatePresence } from 'framer-motion';
 import { PromptEngineerTools, PromptEngineerTool } from './PromptEngineerTools';
 import {
   Lightbulb,
@@ -28,10 +26,6 @@ import {
    ChevronDown,
   Trash2,
   Users,
-  Archive,
-  RefreshCw,
-  Check,
-  Settings2,
   Wand2,
 } from 'lucide-react';
 
@@ -103,23 +97,11 @@ export function ConsultantPanel({
   // Memory integration
   const { 
     chunks, 
-    isLoading: memoryLoading, 
-    refetch: refetchMemory, 
-    getStats,
-    deleteChunk,
-    clearSessionMemory,
-    isDeleting: memoryDeleting,
-    isClearing: memoryClearing,
-    semanticSearch,
-    isSearching: memorySearching,
   } = useSessionMemory(sessionId);
-  const [memoryRefreshed, setMemoryRefreshed] = useState(false);
-  const [memoryDialogOpen, setMemoryDialogOpen] = useState(false);
    const [inputCollapsed, setInputCollapsed] = useState(false);
    const [inputHeight, setInputHeight] = useState(60);
    const isResizing = useRef(false);
    const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const memoryStats = getStats();
    
    // Handle prompt engineer tool selection
    const handlePromptEngineerTool = useCallback((tool: PromptEngineerTool, instruction: string) => {
@@ -201,13 +183,6 @@ export function ConsultantPanel({
        textareaRef.current.focus();
      }
    }, [inputCollapsed]);
-
-  // Handle memory refresh
-  const handleRefreshMemory = useCallback(async () => {
-    await refetchMemory();
-    setMemoryRefreshed(true);
-    setTimeout(() => setMemoryRefreshed(false), 2000);
-  }, [refetchMemory]);
 
   // Handle initial query from navigator - auto-trigger moderator if multiple AI responses
   useEffect(() => {
@@ -343,98 +318,9 @@ export function ConsultantPanel({
         <div className="flex items-center gap-2">
           <Lightbulb className="h-4 w-4 text-hydra-consultant" />
           <span className="font-medium text-sm">{t('dchat.title')}</span>
-          
-          {/* Memory Status Indicator */}
-          {memoryStats.total > 0 && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Badge 
-                  variant="outline" 
-                  className="h-5 px-1.5 text-[10px] font-medium bg-hydra-memory/10 text-hydra-memory border-hydra-memory/30 cursor-default"
-                >
-                  <Archive className="h-3 w-3 mr-1" />
-                  {memoryStats.total}
-                </Badge>
-              </TooltipTrigger>
-              <TooltipContent side="bottom" className="text-xs">
-                <div className="space-y-1">
-                  <p className="font-medium">{t('memory.savedChunks')}: {memoryStats.total}</p>
-                  {memoryStats.byType.decision > 0 && <p>• {t('memory.decisions')}: {memoryStats.byType.decision}</p>}
-                  {memoryStats.byType.context > 0 && <p>• {t('memory.context')}: {memoryStats.byType.context}</p>}
-                  {memoryStats.byType.instruction > 0 && <p>• {t('memory.instructions')}: {memoryStats.byType.instruction}</p>}
-                </div>
-              </TooltipContent>
-            </Tooltip>
-          )}
         </div>
         
         <div className="flex items-center gap-1">
-          {/* Refresh Memory Button */}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <motion.button
-                onClick={handleRefreshMemory}
-                disabled={memoryLoading}
-                className={cn(
-                  "h-7 w-7 rounded-md flex items-center justify-center transition-colors",
-                  memoryRefreshed 
-                    ? "bg-hydra-success/20 text-hydra-success"
-                    : "hover:bg-hydra-archivist/10 text-hydra-archivist hover:text-hydra-archivist"
-                )}
-                whileTap={!memoryLoading ? { scale: 0.9 } : undefined}
-              >
-                <AnimatePresence mode="wait">
-                  {memoryRefreshed ? (
-                    <motion.span
-                      key="refreshed"
-                      initial={{ scale: 0, rotate: -180 }}
-                      animate={{ scale: 1, rotate: 0 }}
-                      exit={{ scale: 0, opacity: 0 }}
-                      transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                    >
-                      <Check className="h-3.5 w-3.5" />
-                    </motion.span>
-                  ) : memoryLoading ? (
-                    <motion.span
-                      key="loading"
-                      animate={{ rotate: 360 }}
-                      transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                    >
-                      <RefreshCw className="h-3.5 w-3.5" />
-                    </motion.span>
-                  ) : (
-                    <motion.span
-                      key="idle"
-                      initial={{ scale: 0.8, opacity: 0 }}
-                      animate={{ scale: 1, opacity: 1 }}
-                      exit={{ scale: 0.8, opacity: 0 }}
-                    >
-                      <RefreshCw className="h-3.5 w-3.5" />
-                    </motion.span>
-                  )}
-                </AnimatePresence>
-              </motion.button>
-            </TooltipTrigger>
-            <TooltipContent side="bottom">
-              {memoryRefreshed ? t('memory.refreshed') : t('memory.refresh')}
-            </TooltipContent>
-          </Tooltip>
-          
-          {/* Manage Memory Button */}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="h-7 w-7 text-hydra-memory hover:text-hydra-memory/80"
-                onClick={() => setMemoryDialogOpen(true)}
-              >
-                <Settings2 className="h-3.5 w-3.5" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="bottom">{t('memory.manageMemory')}</TooltipContent>
-          </Tooltip>
-          
           {messages.length > 0 && (
             <Tooltip>
               <TooltipTrigger asChild>
@@ -650,20 +536,6 @@ export function ConsultantPanel({
            </>
          )}
       </div>
-      
-      {/* Session Memory Dialog */}
-      <SessionMemoryDialog
-        open={memoryDialogOpen}
-        onOpenChange={setMemoryDialogOpen}
-        chunks={chunks}
-        isLoading={memoryLoading}
-        isDeleting={memoryDeleting}
-        onDeleteChunk={deleteChunk}
-        onClearAll={clearSessionMemory}
-        isClearing={memoryClearing}
-        onSemanticSearch={semanticSearch}
-        isSearching={memorySearching}
-      />
     </div>
   );
 }
