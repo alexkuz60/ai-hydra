@@ -45,9 +45,10 @@ export default function ExpertPanel() {
   const { isSupervisor } = useUserRoles();
   const messageRefs = useRef<Map<string, HTMLDivElement>>(new Map());
   const dChatPanelRef = useRef<ImperativePanelHandle>(null);
-  const selectedModelsRef = useRef<string[]>([]);
-  const [input, setInput] = useState('');
-  const [selectedConsultant, setSelectedConsultant] = useState<string | null>(null);
+   const selectedModelsRef = useRef<string[]>([]);
+   const [input, setInput] = useState('');
+   const [selectedConsultant, setSelectedConsultant] = useState<string | null>(null);
+   const [selectedWishes, setSelectedWishes] = useState<string[]>([]);
   const [dChatContext, setDChatContext] = useState<{
     messageId: string;
     content: string;
@@ -832,6 +833,12 @@ export default function ExpertPanel() {
                 timeoutSeconds={timeoutSeconds}
                 onTimeoutChange={setTimeoutSeconds}
                 selectedModelsCount={selectedModels.length}
+                selectedWishes={selectedWishes}
+                onWishesChange={setSelectedWishes}
+                activeRoles={selectedModels.map(modelId => {
+                  const settings = perModelSettings[modelId];
+                  return (settings?.role || 'assistant') as import('@/config/roles').MessageRole;
+                })}
                  isCollapsed={isInputCollapsed}
                  onToggleCollapse={toggleInputCollapse}
               />
