@@ -836,6 +836,18 @@ const translations: Translations = {
   'dchat.clarifyWithSpecialist': { ru: 'Уточнить у Специалиста', en: 'Clarify with Specialist' },
   'dchat.promptEngineer': { ru: 'Промпт-Инженер', en: 'Prompt Engineer' },
 
+   // Prompt Engineer Tools
+   'promptEngineer.tools.title': { ru: 'Инструменты ПИ', en: 'PE Tools' },
+   'promptEngineer.tools.enterPromptFirst': { ru: 'Введите промпт', en: 'Enter prompt' },
+   'promptEngineer.tools.analyze': { ru: 'Анализ', en: 'Analyze' },
+   'promptEngineer.tools.analyzeDesc': { ru: 'Детальная оценка сильных и слабых сторон промпта', en: 'Detailed assessment of prompt strengths and weaknesses' },
+   'promptEngineer.tools.variations': { ru: 'Варианты', en: 'Variations' },
+   'promptEngineer.tools.variationsDesc': { ru: 'Генерация 3-5 альтернативных версий промпта', en: 'Generate 3-5 alternative versions of the prompt' },
+   'promptEngineer.tools.enhance': { ru: 'Улучшить', en: 'Enhance' },
+   'promptEngineer.tools.enhanceDesc': { ru: 'Оптимизация структуры и добавление деталей', en: 'Optimize structure and add details' },
+   'promptEngineer.tools.clarify': { ru: 'Уточнить', en: 'Clarify' },
+   'promptEngineer.tools.clarifyDesc': { ru: 'Выявление недостающей информации и вопросов', en: 'Identify missing information and questions' },
+ 
   // Role Library
   'roleLibrary.title': { ru: 'Библиотека промптов', en: 'Prompt Library' },
   'roleLibrary.pageDescription': { ru: 'Создавайте и управляйте системными промптами для ИИ-ролей. Сохранённые промпты можно использовать в настройках моделей на панели экспертов.', en: 'Create and manage system prompts for AI roles. Saved prompts can be used in model settings on the Expert Panel.' },
