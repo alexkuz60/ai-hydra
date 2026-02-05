@@ -592,6 +592,8 @@ const translations: Translations = {
    'tasks.model': { ru: 'модель', en: 'model' },
    'tasks.models': { ru: 'модели', en: 'models' },
    'tasks.open': { ru: 'Открыть', en: 'Open' },
+   'tasks.activeSession': { ru: 'Активная задача', en: 'Active Task' },
+   'tasks.clickToManage': { ru: 'Нажмите для управления задачами', en: 'Click to manage tasks' },
   
   // Models
   'model.gemini': { ru: 'Gemini Pro', en: 'Gemini Pro' },

@@ -3,6 +3,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Layout } from '@/components/layout/Layout';
 import { MemoryControls } from '@/components/layout/MemoryControls';
+ import { TaskIndicator } from '@/components/layout/TaskIndicator';
 import { cn } from '@/lib/utils';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 import type { ImperativePanelHandle } from 'react-resizable-panels';
@@ -567,13 +568,20 @@ export default function ExpertPanel() {
 
   // Header actions with memory controls
   const headerActions = (
-    <MemoryControls
-      memoryStats={memoryStats}
-      isLoading={memoryLoading}
-      isRefreshed={memoryRefreshed}
-      onRefresh={handleRefreshMemory}
-      onOpenDialog={() => setMemoryDialogOpen(true)}
-    />
+    <>
+      <TaskIndicator
+        taskId={currentTask?.id || null}
+        taskTitle={currentTask?.title || null}
+        loading={loading}
+      />
+      <MemoryControls
+        memoryStats={memoryStats}
+        isLoading={memoryLoading}
+        isRefreshed={memoryRefreshed}
+        onRefresh={handleRefreshMemory}
+        onOpenDialog={() => setMemoryDialogOpen(true)}
+      />
+    </>
   );
 
   return (
