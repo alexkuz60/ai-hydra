@@ -846,23 +846,21 @@ export function PerModelSettings({ selectedModels, settings, onChange, className
                                 <TooltipContent>{t('settings.reset')}</TooltipContent>
                               </Tooltip>
                             </TooltipProvider>
+                            {selectedModels.length > 1 && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-9"
+                                onClick={() => handleCopyToAll(modelId)}
+                              >
+                                <Copy className="h-4 w-4 mr-2" />
+                                {t('settings.copyToAll')}
+                              </Button>
+                            )}
                           </div>
                         </div>
                       );
                     })()}
-
-                    {/* Copy to All - separate row, only if multiple models */}
-                    {selectedModels.length > 1 && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="w-full h-9"
-                        onClick={() => handleCopyToAll(modelId)}
-                      >
-                        <Copy className="h-4 w-4 mr-2" />
-                        {t('settings.copyToAll')}
-                      </Button>
-                    )}
                   </div>
                 </ScrollArea>
               </TabsContent>
