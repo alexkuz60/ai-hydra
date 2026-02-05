@@ -20,6 +20,10 @@ function buildModelConfig(
   const { isLovable, provider } = getModelInfo(modelId);
   const settings = perModelSettings[modelId] || DEFAULT_MODEL_SETTINGS;
   
+  // Build tool settings from the new format or legacy format
+  const toolSettings = settings.toolSettings || {};
+  const enabledTools = settings.enabledTools ?? ['calculator', 'current_datetime', 'web_search'];
+  
   return {
     model_id: modelId,
     use_lovable_ai: isLovable,
@@ -29,7 +33,8 @@ function buildModelConfig(
     system_prompt: settings.systemPrompt || (roleOverride === 'consultant' ? DEFAULT_MODEL_SETTINGS.systemPrompt : settings.systemPrompt),
     role: roleOverride || settings.role,
     enable_tools: settings.enableTools ?? true,
-    enabled_tools: settings.enabledTools ?? ['calculator', 'current_datetime', 'web_search'],
+    enabled_tools: enabledTools,
+    tool_settings: toolSettings, // New: includes usage modes
     enabled_custom_tools: settings.enabledCustomTools ?? [],
     search_provider: settings.searchProvider ?? 'tavily',
     requires_approval: settings.requiresApproval ?? false,

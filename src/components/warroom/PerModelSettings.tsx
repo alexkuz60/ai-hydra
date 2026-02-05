@@ -104,6 +104,37 @@ function calculateRequestCost(
 export const AVAILABLE_TOOL_IDS = ['calculator', 'current_datetime', 'web_search'] as const;
 export type ToolId = typeof AVAILABLE_TOOL_IDS[number];
 
+// Tool usage modes
+export type ToolUsageMode = 'always' | 'auto' | 'on_request';
+
+export const TOOL_USAGE_MODE_INFO: Record<ToolUsageMode, { label: { ru: string; en: string }; description: { ru: string; en: string } }> = {
+  always: { 
+    label: { ru: 'Всегда', en: 'Always' },
+    description: { ru: 'Инструмент вызывается автоматически при каждом запросе', en: 'Tool is called automatically with every request' }
+  },
+  auto: { 
+    label: { ru: 'При необходимости', en: 'When needed' },
+    description: { ru: 'ИИ-роль сама решает, нужен ли инструмент', en: 'AI decides when the tool is needed' }
+  },
+  on_request: { 
+    label: { ru: 'По просьбе', en: 'On request' },
+    description: { ru: 'Только когда пользователь явно просит', en: 'Only when user explicitly asks' }
+  },
+};
+
+// Default usage modes for built-in tools
+export const DEFAULT_TOOL_USAGE_MODES: Record<ToolId, ToolUsageMode> = {
+  calculator: 'on_request',
+  current_datetime: 'always',
+  web_search: 'auto',
+};
+
+// Tool settings with enabled state and usage mode
+export interface ToolSettings {
+  enabled: boolean;
+  usageMode: ToolUsageMode;
+}
+
 // Search provider options for web_search tool
 export type SearchProvider = 'tavily' | 'perplexity' | 'both';
 
@@ -125,7 +156,8 @@ export interface SingleModelSettings {
   systemPrompt: string;
   role: AgentRole;
   enableTools: boolean;
-  enabledTools?: ToolId[]; // Built-in tools enabled for this model
+  enabledTools?: ToolId[]; // Built-in tools enabled for this model (legacy, kept for compatibility)
+  toolSettings?: Record<ToolId | string, ToolSettings>; // New format with usage modes
   enabledCustomTools?: string[]; // Custom tool IDs enabled for this model
   searchProvider?: SearchProvider; // Provider for web_search tool
   requiresApproval?: boolean; // Whether supervisor approval is enabled for this role
@@ -143,16 +175,46 @@ interface PerModelSettingsProps {
   currentMessage?: string; // Current message text for cost estimation
 }
 
+// Build default tool settings from available tools
+function buildDefaultToolSettings(): Record<ToolId, ToolSettings> {
+  const settings: Record<ToolId, ToolSettings> = {} as Record<ToolId, ToolSettings>;
+  for (const toolId of AVAILABLE_TOOL_IDS) {
+    settings[toolId] = {
+      enabled: true,
+      usageMode: DEFAULT_TOOL_USAGE_MODES[toolId],
+    };
+  }
+  return settings;
+}
+
 export const DEFAULT_MODEL_SETTINGS: SingleModelSettings = {
   temperature: 0.7,
   maxTokens: 2048,
   systemPrompt: DEFAULT_SYSTEM_PROMPTS.assistant,
   role: 'assistant',
   enableTools: true,
-  enabledTools: [...AVAILABLE_TOOL_IDS], // All built-in tools enabled by default
+  enabledTools: [...AVAILABLE_TOOL_IDS], // Legacy: kept for compatibility
+  toolSettings: buildDefaultToolSettings(), // New: with usage modes
   enabledCustomTools: [], // No custom tools enabled by default
   searchProvider: 'tavily', // Default to Tavily (free tier available)
 };
+
+// Helper to get tool settings with fallback to legacy format
+function getToolSettingsForModel(modelSettings: SingleModelSettings): Record<ToolId | string, ToolSettings> {
+  if (modelSettings.toolSettings) {
+    return modelSettings.toolSettings;
+  }
+  // Migrate from legacy enabledTools array
+  const settings: Record<ToolId | string, ToolSettings> = {};
+  const enabledTools = modelSettings.enabledTools ?? [...AVAILABLE_TOOL_IDS];
+  for (const toolId of AVAILABLE_TOOL_IDS) {
+    settings[toolId] = {
+      enabled: enabledTools.includes(toolId),
+      usageMode: DEFAULT_TOOL_USAGE_MODES[toolId],
+    };
+  }
+  return settings;
+}
 
 // Get short display name for model
 function getModelShortName(modelId: string): string {
@@ -466,8 +528,9 @@ export function PerModelSettings({ selectedModels, settings, onChange, className
                           <Label className="text-xs text-muted-foreground">Доступные инструменты</Label>
                           {AVAILABLE_TOOL_IDS.map((toolId) => {
                             const toolInfo = TOOL_INFO[toolId];
-                            const enabledTools = modelSettings.enabledTools ?? [...AVAILABLE_TOOL_IDS];
-                            const isEnabled = enabledTools.includes(toolId);
+                            const toolSettings = getToolSettingsForModel(modelSettings);
+                            const currentToolSettings = toolSettings[toolId] || { enabled: true, usageMode: DEFAULT_TOOL_USAGE_MODES[toolId] };
+                            const isEnabled = currentToolSettings.enabled;
                             
                             return (
                               <div key={toolId} className="space-y-2">
@@ -484,14 +547,61 @@ export function PerModelSettings({ selectedModels, settings, onChange, className
                                   <Switch
                                     checked={isEnabled}
                                     onCheckedChange={(checked) => {
-                                      const newEnabledTools = checked
-                                        ? [...enabledTools, toolId]
-                                        : enabledTools.filter(t => t !== toolId);
-                                      updateModelSettings(modelId, { enabledTools: newEnabledTools });
+                                      const newToolSettings = {
+                                        ...toolSettings,
+                                        [toolId]: { ...currentToolSettings, enabled: checked },
+                                      };
+                                      updateModelSettings(modelId, { 
+                                        toolSettings: newToolSettings,
+                                        // Also update legacy format for compatibility
+                                        enabledTools: AVAILABLE_TOOL_IDS.filter(t => newToolSettings[t]?.enabled ?? true),
+                                      });
                                     }}
                                     className="scale-75"
                                   />
                                 </div>
+                                
+                                {/* Tool Usage Mode Selector - only when enabled */}
+                                {isEnabled && (
+                                  <div className="ml-6 pl-3 border-l-2 border-primary/30 space-y-1.5">
+                                    <Label className="text-[10px] text-muted-foreground">
+                                      {t('language') === 'ru' ? 'Режим использования' : 'Usage mode'}
+                                    </Label>
+                                    <div className="flex flex-wrap gap-1.5">
+                                      {(Object.keys(TOOL_USAGE_MODE_INFO) as ToolUsageMode[]).map((mode) => {
+                                        const info = TOOL_USAGE_MODE_INFO[mode];
+                                        const lang = t('language') === 'ru' ? 'ru' : 'en';
+                                        const isSelected = currentToolSettings.usageMode === mode;
+                                        
+                                        return (
+                                          <button
+                                            key={mode}
+                                            type="button"
+                                            onClick={() => {
+                                              const newToolSettings = {
+                                                ...toolSettings,
+                                                [toolId]: { ...currentToolSettings, usageMode: mode },
+                                              };
+                                              updateModelSettings(modelId, { toolSettings: newToolSettings });
+                                            }}
+                                            className={cn(
+                                              "px-2 py-1 rounded text-[10px] border transition-all",
+                                              isSelected
+                                                ? "bg-primary text-primary-foreground border-primary"
+                                                : "bg-background/50 text-muted-foreground border-border/50 hover:border-primary/50"
+                                            )}
+                                            title={info.description[lang]}
+                                          >
+                                            {info.label[lang]}
+                                          </button>
+                                        );
+                                      })}
+                                    </div>
+                                    <p className="text-[9px] text-muted-foreground">
+                                      {TOOL_USAGE_MODE_INFO[currentToolSettings.usageMode][t('language') === 'ru' ? 'description' : 'description'][t('language') === 'ru' ? 'ru' : 'en']}
+                                    </p>
+                                  </div>
+                                )}
                                 
                                 {/* Search Provider Selector - only for web_search when enabled */}
                                 {toolId === 'web_search' && isEnabled && (
