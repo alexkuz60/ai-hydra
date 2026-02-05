@@ -583,6 +583,15 @@ const translations: Translations = {
   'tasks.editTitle': { ru: 'Редактировать название', en: 'Edit title' },
   'tasks.titleSaved': { ru: 'Название сохранено', en: 'Title saved' },
   'tasks.configSaved': { ru: 'Настройки сохранены', en: 'Settings saved' },
+   'tasks.pageDescription': { ru: 'Управляйте задачами и настройками экспертных моделей', en: 'Manage tasks and expert model settings' },
+   'tasks.selectTask': { ru: 'Выберите задачу для просмотра', en: 'Select a task to view' },
+   'tasks.selectModels': { ru: 'Выберите модели', en: 'Select models' },
+   'tasks.selectedModels': { ru: 'Выбранные модели', en: 'Selected models' },
+   'tasks.saveConfig': { ru: 'Сохранить настройки', en: 'Save settings' },
+   'tasks.newPlaceholder': { ru: 'Название задачи...', en: 'Task name...' },
+   'tasks.model': { ru: 'модель', en: 'model' },
+   'tasks.models': { ru: 'модели', en: 'models' },
+   'tasks.open': { ru: 'Открыть', en: 'Open' },
   
   // Models
   'model.gemini': { ru: 'Gemini Pro', en: 'Gemini Pro' },
@@ -850,6 +859,13 @@ const translations: Translations = {
   'roleLibrary.languageAuto': { ru: 'Авто', en: 'Auto' },
   'roleLibrary.languageRu': { ru: 'Русский', en: 'Russian' },
   'roleLibrary.languageEn': { ru: 'English', en: 'English' },
+   'roleLibrary.selectPrompt': { ru: 'Выберите промпт для просмотра', en: 'Select a prompt to view' },
+   'roleLibrary.systemPrompt': { ru: 'Системный', en: 'System' },
+   'roleLibrary.systemPromptNote': { ru: 'Это системный промпт. Его нельзя редактировать или удалить, но можно скопировать.', en: 'This is a system prompt. It cannot be edited or deleted, but you can duplicate it.' },
+   'roleLibrary.filterSystem': { ru: 'Системные', en: 'System' },
+   'roleLibrary.validation.nameRequired': { ru: 'Название обязательно', en: 'Name is required' },
+   'roleLibrary.validation.nameTooLong': { ru: 'Название слишком длинное', en: 'Name is too long' },
+   'roleLibrary.validation.contentRequired': { ru: 'Содержимое обязательно', en: 'Content is required' },
   
   // Skeleton indicators for pending responses
   'skeleton.requestSent': { ru: 'Запрос отправлен...', en: 'Request sent...' },
