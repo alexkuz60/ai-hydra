@@ -96,7 +96,7 @@
     --popover-foreground: 190 30% 92%;
 
     --primary: 190 95% 50%;
-    --primary-foreground: 225 35% 8%;
+    --primary-foreground: 0 0% 100%;
 
     --secondary: 225 25% 18%;
     --secondary-foreground: 190 30% 90%;
@@ -250,8 +250,8 @@
   }
 
   .hydra-card-user {
-    border-left: 3px solid hsl(var(--hydra-supervisor));
-    background: linear-gradient(90deg, hsl(var(--hydra-supervisor) / 0.12), hsl(var(--hydra-supervisor) / 0.04));
+    border-left: 3px solid hsl(var(--hydra-user));
+    background: linear-gradient(90deg, hsl(var(--hydra-user) / 0.08), transparent);
   }
 
   /* New AI role card variants */
