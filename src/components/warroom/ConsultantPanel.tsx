@@ -502,17 +502,17 @@ export function ConsultantPanel({
                  <Button
                    variant="ghost"
                    size="icon"
-                   className="h-7 w-7 shrink-0"
+                   className="h-8 w-8 shrink-0"
                    onClick={toggleInputCollapse}
                  >
-                   <ChevronUp className="h-3.5 w-3.5" />
+                   <ChevronUp className="h-4 w-4" />
                  </Button>
                </TooltipTrigger>
                <TooltipContent>{t('dchat.expandInput')}</TooltipContent>
              </Tooltip>
              <button
                onClick={toggleInputCollapse}
-               className="flex-1 text-left text-xs text-muted-foreground hover:text-foreground transition-colors px-2 py-1.5 rounded hover:bg-muted/50"
+               className="flex-1 text-left text-sm text-muted-foreground hover:text-foreground transition-colors px-3 py-2 rounded-md hover:bg-muted/50"
              >
                {t('dchat.clickToType')}
              </button>
@@ -520,12 +520,12 @@ export function ConsultantPanel({
                onClick={handleSend}
                disabled={streaming || !input.trim() || !selectedModel}
                size="icon"
-               className="h-7 w-7 shrink-0"
+               className="h-9 w-9 shrink-0 hydra-glow-sm"
              >
                {streaming ? (
-                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                 <Loader2 className="h-4 w-4 animate-spin" />
                ) : (
-                 <Send className="h-3.5 w-3.5" />
+                 <Send className="h-4 w-4" />
                )}
              </Button>
            </div>
