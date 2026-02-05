@@ -26,6 +26,12 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { Settings, ChevronDown, ChevronUp, RotateCcw, Copy, DollarSign, Pencil, Save, Undo2, Library, Clipboard, Trash2, Wrench, User, ShieldCheck } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { PromptLibraryPicker } from './PromptLibraryPicker';
@@ -790,63 +796,73 @@ export function PerModelSettings({ selectedModels, settings, onChange, className
                             </Button>
                           </div>
                           
-                          {/* Prompt library buttons */}
-                          <div className="grid grid-cols-2 gap-1.5">
+                          {/* Prompt library and action buttons */}
+                          <div className="flex items-center gap-1.5">
                             <Button
                               variant="outline"
                               size="sm"
-                              className="h-7 text-xs"
+                              className="flex-1 h-9"
                               onClick={() => handleOpenLibrary(modelId)}
                             >
-                              <Library className="h-3 w-3 mr-1" />
+                              <Library className="h-4 w-4 mr-2" />
                               {t('settings.loadFromLibrary')}
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="h-7 text-xs"
-                              onClick={() => handleRevertPrompt(modelId)}
-                            >
-                              <Undo2 className="h-3 w-3 mr-1" />
-                              {t('settings.revertPrompt')}
                             </Button>
                             <Button
                               variant="default"
                               size="sm"
-                              className="col-span-2 h-7 text-xs"
+                              className="flex-1 h-9"
                               onClick={() => handleOpenSaveDialog(modelId)}
                             >
-                              <Save className="h-3 w-3 mr-1" />
+                              <Save className="h-4 w-4 mr-2" />
                               {t('settings.savePrompt')}
                             </Button>
+                            <TooltipProvider delayDuration={300}>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="outline"
+                                    size="icon"
+                                    className="h-9 w-9 shrink-0"
+                                    onClick={() => handleRevertPrompt(modelId)}
+                                  >
+                                    <Undo2 className="h-4 w-4" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>{t('settings.revertPrompt')}</TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                            <TooltipProvider delayDuration={300}>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="outline"
+                                    size="icon"
+                                    className="h-9 w-9 shrink-0"
+                                    onClick={() => handleReset(modelId)}
+                                  >
+                                    <RotateCcw className="h-4 w-4" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>{t('settings.reset')}</TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
                           </div>
                         </div>
                       );
                     })()}
 
-                    {/* Action Buttons */}
-                    <div className="flex gap-2">
+                    {/* Copy to All - separate row, only if multiple models */}
+                    {selectedModels.length > 1 && (
                       <Button
                         variant="outline"
                         size="sm"
-                        className="flex-1"
-                        onClick={() => handleReset(modelId)}
+                        className="w-full h-9"
+                        onClick={() => handleCopyToAll(modelId)}
                       >
-                        <RotateCcw className="h-3 w-3 mr-1" />
-                        {t('settings.reset')}
+                        <Copy className="h-4 w-4 mr-2" />
+                        {t('settings.copyToAll')}
                       </Button>
-                      {selectedModels.length > 1 && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="flex-1"
-                          onClick={() => handleCopyToAll(modelId)}
-                        >
-                          <Copy className="h-3 w-3 mr-1" />
-                          {t('settings.copyToAll')}
-                        </Button>
-                      )}
-                    </div>
+                    )}
                   </div>
                 </ScrollArea>
               </TabsContent>
