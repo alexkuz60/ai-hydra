@@ -639,42 +639,44 @@ export function PerModelSettings({ selectedModels, settings, onChange, className
                             );
                           })}
                           
-                          {/* Custom Tools Section */}
+                          {/* Custom Tools Section - 2 columns */}
                           {customTools.length > 0 && (
                             <>
                               <div className="flex items-center gap-2 mt-3 pt-2 border-t border-border/30">
                                 <User className="h-3 w-3 text-muted-foreground" />
                                 <Label className="text-xs text-muted-foreground">Пользовательские инструменты</Label>
                               </div>
-                              {customTools.map((tool) => {
-                                const enabledCustomTools = modelSettings.enabledCustomTools ?? [];
-                                const isEnabled = enabledCustomTools.includes(tool.id);
-                                
-                                return (
-                                  <div
-                                    key={tool.id}
-                                    className="flex items-center justify-between py-1.5 px-2 rounded bg-background/50 border border-border/30"
-                                  >
-                                    <div className="flex items-center gap-2 min-w-0">
-                                      <Wrench className="h-3.5 w-3.5 text-primary shrink-0" />
-                                      <div className="min-w-0">
-                                        <span className="text-xs font-medium truncate block">{tool.display_name}</span>
-                                        <p className="text-[10px] text-muted-foreground truncate">{tool.description}</p>
+                              <div className="grid grid-cols-2 gap-2">
+                                {customTools.map((tool) => {
+                                  const enabledCustomTools = modelSettings.enabledCustomTools ?? [];
+                                  const isEnabled = enabledCustomTools.includes(tool.id);
+                                  
+                                  return (
+                                    <div
+                                      key={tool.id}
+                                      className="flex items-center justify-between py-1.5 px-2 rounded bg-background/50 border border-border/30"
+                                    >
+                                      <div className="flex items-center gap-2 min-w-0 flex-1">
+                                        <Wrench className="h-3.5 w-3.5 text-primary shrink-0" />
+                                        <div className="min-w-0 flex-1">
+                                          <span className="text-xs font-medium truncate block">{tool.display_name}</span>
+                                          <p className="text-[10px] text-muted-foreground truncate">{tool.description}</p>
+                                        </div>
                                       </div>
+                                      <Switch
+                                        checked={isEnabled}
+                                        onCheckedChange={(checked) => {
+                                          const newEnabledCustomTools = checked
+                                            ? [...enabledCustomTools, tool.id]
+                                            : enabledCustomTools.filter(id => id !== tool.id);
+                                          updateModelSettings(modelId, { enabledCustomTools: newEnabledCustomTools });
+                                        }}
+                                        className="scale-75 shrink-0"
+                                      />
                                     </div>
-                                    <Switch
-                                      checked={isEnabled}
-                                      onCheckedChange={(checked) => {
-                                        const newEnabledCustomTools = checked
-                                          ? [...enabledCustomTools, tool.id]
-                                          : enabledCustomTools.filter(id => id !== tool.id);
-                                        updateModelSettings(modelId, { enabledCustomTools: newEnabledCustomTools });
-                                      }}
-                                      className="scale-75 shrink-0"
-                                    />
-                                  </div>
-                                );
-                              })}
+                                  );
+                                })}
+                              </div>
                             </>
                           )}
                         </div>
@@ -742,40 +744,47 @@ export function PerModelSettings({ selectedModels, settings, onChange, className
                       );
                     })()}
 
-                    {/* Temperature */}
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <Label className="text-xs text-muted-foreground">{t('settings.temperature')}</Label>
-                        <span className="text-xs font-mono text-primary">{modelSettings.temperature.toFixed(2)}</span>
+                    {/* Temperature & Max Tokens in one row */}
+                    <div className="grid grid-cols-2 gap-4">
+                      {/* Temperature */}
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <Label className="text-xs text-muted-foreground">{t('settings.temperature')}</Label>
+                          <span className="text-xs font-mono text-primary">{modelSettings.temperature.toFixed(2)}</span>
+                        </div>
+                        <Slider
+                          value={[modelSettings.temperature]}
+                          onValueChange={([v]) => updateModelSettings(modelId, { temperature: v })}
+                          min={0}
+                          max={2}
+                          step={0.1}
+                          className="w-full"
+                        />
+                        <div className="flex justify-between text-[10px] text-muted-foreground">
+                          <span>{t('settings.precise')}</span>
+                          <span>{t('settings.creative')}</span>
+                        </div>
                       </div>
-                      <Slider
-                        value={[modelSettings.temperature]}
-                        onValueChange={([v]) => updateModelSettings(modelId, { temperature: v })}
-                        min={0}
-                        max={2}
-                        step={0.1}
-                        className="w-full"
-                      />
-                      <div className="flex justify-between text-[10px] text-muted-foreground">
-                        <span>{t('settings.precise')}</span>
-                        <span>{t('settings.creative')}</span>
-                      </div>
-                    </div>
 
-                    {/* Max Tokens */}
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <Label className="text-xs text-muted-foreground">{t('settings.maxTokens')}</Label>
-                        <span className="text-xs font-mono text-primary">{modelSettings.maxTokens}</span>
+                      {/* Max Tokens */}
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <Label className="text-xs text-muted-foreground">{t('settings.maxTokens')}</Label>
+                          <span className="text-xs font-mono text-primary">{modelSettings.maxTokens}</span>
+                        </div>
+                        <Slider
+                          value={[modelSettings.maxTokens]}
+                          onValueChange={([v]) => updateModelSettings(modelId, { maxTokens: v })}
+                          min={256}
+                          max={8192}
+                          step={256}
+                          className="w-full"
+                        />
+                        <div className="flex justify-between text-[10px] text-muted-foreground">
+                          <span>256</span>
+                          <span>8192</span>
+                        </div>
                       </div>
-                      <Slider
-                        value={[modelSettings.maxTokens]}
-                        onValueChange={([v]) => updateModelSettings(modelId, { maxTokens: v })}
-                        min={256}
-                        max={8192}
-                        step={256}
-                        className="w-full"
-                      />
                     </div>
 
                     {/* Role Prompt */}

@@ -5,13 +5,15 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
-import { MessageSquare, Play, Trash2, Pencil, Check, X, Bot, Sparkles, Cpu, Loader2 } from 'lucide-react';
+import { MessageSquare, Play, Trash2, Pencil, Check, X, Bot, Sparkles, Cpu, Loader2, Save } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { MultiModelSelector } from '@/components/warroom/MultiModelSelector';
 import { PerModelSettings, PerModelSettingsData, DEFAULT_MODEL_SETTINGS } from '@/components/warroom/PerModelSettings';
 import { SessionSettings } from '@/components/warroom/SessionSettings';
 import { getModelInfo, getModelDisplayName, ALL_VALID_MODEL_IDS } from '@/hooks/useAvailableModels';
+import { useUnsavedChanges } from '@/hooks/useUnsavedChanges';
+import { UnsavedChangesDialog } from '@/components/ui/unsaved-changes-dialog';
 import type { Task } from './TaskRow';
 
 // Filter out deprecated/unavailable model IDs
@@ -30,39 +32,55 @@ const filterValidModels = (modelIds: string[]): string[] => {
    return <Cpu className="h-4 w-4 text-accent-foreground" />;
  }
  
- interface TaskDetailsPanelProps {
-   task: Task | null;
-   onUpdateTitle: (taskId: string, title: string) => Promise<void>;
-   onUpdateConfig: (taskId: string, config: Task['session_config']) => Promise<void>;
-   onDelete: () => void;
-   saving?: boolean;
- }
+interface TaskDetailsPanelProps {
+  task: Task | null;
+  onUpdateTitle: (taskId: string, title: string) => Promise<void>;
+  onUpdateConfig: (taskId: string, config: Task['session_config']) => Promise<void>;
+  onDelete: () => void;
+  onRequestTaskChange?: (task: Task) => void;
+  saving?: boolean;
+  hasUnsavedChangesRef?: React.MutableRefObject<boolean>;
+}
  
- export function TaskDetailsPanel({
-   task,
-   onUpdateTitle,
-   onUpdateConfig,
-   onDelete,
-   saving = false,
- }: TaskDetailsPanelProps) {
-   const { t } = useLanguage();
-   const navigate = useNavigate();
- 
-   // Editing title state
-   const [editingTitle, setEditingTitle] = useState(false);
-   const [editedTitle, setEditedTitle] = useState('');
- 
-   // Model configuration state
-   const [selectedModels, setSelectedModels] = useState<string[]>([]);
-   const [perModelSettings, setPerModelSettings] = useState<PerModelSettingsData>({});
-   const [useHybridStreaming, setUseHybridStreaming] = useState(true);
-   const [hasChanges, setHasChanges] = useState(false);
- 
+export function TaskDetailsPanel({
+  task,
+  onUpdateTitle,
+  onUpdateConfig,
+  onDelete,
+  onRequestTaskChange,
+  saving = false,
+  hasUnsavedChangesRef,
+}: TaskDetailsPanelProps) {
+  const { t } = useLanguage();
+  const navigate = useNavigate();
+
+  // Editing title state
+  const [editingTitle, setEditingTitle] = useState(false);
+  const [editedTitle, setEditedTitle] = useState('');
+
+  // Model configuration state
+  const [selectedModels, setSelectedModels] = useState<string[]>([]);
+  const [perModelSettings, setPerModelSettings] = useState<PerModelSettingsData>({});
+  const [useHybridStreaming, setUseHybridStreaming] = useState(true);
+  const [hasChanges, setHasChanges] = useState(false);
+
+  // Unsaved changes protection
+  const unsavedChanges = useUnsavedChanges(false);
+  const [pendingTaskSwitch, setPendingTaskSwitch] = useState<Task | null>(null);
+
   // Stable serialization key for deep comparison of session_config
   const configKey = useMemo(() => 
     task ? JSON.stringify(task.session_config) : '', 
     [task?.session_config]
   );
+
+  // Sync hasChanges with unsavedChanges hook and ref
+  React.useEffect(() => {
+    unsavedChanges.setHasUnsavedChanges(hasChanges);
+    if (hasUnsavedChangesRef) {
+      hasUnsavedChangesRef.current = hasChanges;
+    }
+  }, [hasChanges, hasUnsavedChangesRef]);
 
   // Initialize state when task changes or when config is updated
   React.useEffect(() => {
@@ -214,27 +232,45 @@ const filterValidModels = (modelIds: string[]): string[] => {
              </div>
            </div>
            
-           {/* Actions */}
-           <div className="flex items-center gap-2">
-             <Button
-               variant="destructive"
-               size="icon"
-               className="h-9 w-9"
-               onClick={onDelete}
-             >
-               <Trash2 className="h-4 w-4" />
-             </Button>
-             <Button
-               onClick={handleOpenTask}
-               disabled={selectedModels.length === 0}
-               className="hydra-glow-sm"
-             >
-               <Play className="h-4 w-4 mr-2" />
-               {t('tasks.open')}
-             </Button>
-           </div>
-         </div>
-       </div>
+            {/* Actions */}
+            <div className="flex items-center gap-2">
+              {hasChanges && (
+                <Button 
+                  onClick={handleSaveConfig}
+                  size="sm"
+                  className="min-w-[140px] h-9"
+                  disabled={saving}
+                >
+                  {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
+                  {t('tasks.saveConfig')}
+                </Button>
+              )}
+              <Button
+                variant="destructive"
+                size="icon"
+                className="h-9 w-9"
+                onClick={onDelete}
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+              <Button
+                onClick={handleOpenTask}
+                disabled={selectedModels.length === 0}
+                className="hydra-glow-sm"
+              >
+                <Play className="h-4 w-4 mr-2" />
+                {t('tasks.open')}
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        {/* Unsaved Changes Dialog */}
+        <UnsavedChangesDialog
+          open={unsavedChanges.showConfirmDialog}
+          onConfirm={unsavedChanges.confirmAndProceed}
+          onCancel={unsavedChanges.cancelNavigation}
+        />
  
        <ScrollArea className="flex-1">
          <div className="p-4 space-y-6">
@@ -286,21 +322,8 @@ const filterValidModels = (modelIds: string[]): string[] => {
              />
            )}
  
-           {/* Save changes button */}
-           {hasChanges && (
-             <div className="sticky bottom-0 pt-4 pb-2 bg-background border-t">
-               <Button 
-                 onClick={handleSaveConfig} 
-                 className="w-full"
-                 disabled={saving}
-               >
-                 {saving && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-                 {t('tasks.saveConfig')}
-               </Button>
-             </div>
-           )}
-         </div>
-       </ScrollArea>
-     </div>
-   );
- }
+          </div>
+        </ScrollArea>
+      </div>
+    );
+  }

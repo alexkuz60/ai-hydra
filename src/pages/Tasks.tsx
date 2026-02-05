@@ -1,4 +1,4 @@
- import React, { useState, useEffect, useMemo } from 'react';
+ import React, { useState, useEffect, useMemo, useRef } from 'react';
  import { useNavigate } from 'react-router-dom';
  import { useAuth } from '@/contexts/AuthContext';
  import { useLanguage } from '@/contexts/LanguageContext';
@@ -29,6 +29,7 @@
  import { ALL_VALID_MODEL_IDS, getModelDisplayName, getModelInfo } from '@/hooks/useAvailableModels';
  import { TaskRow, Task } from '@/components/tasks/TaskRow';
  import { TaskDetailsPanel } from '@/components/tasks/TaskDetailsPanel';
+ import { UnsavedChangesDialog } from '@/components/ui/unsaved-changes-dialog';
  import { Bot, Sparkles, Cpu } from 'lucide-react';
  
  // Filter out deprecated/unavailable model IDs
@@ -65,7 +66,12 @@ export default function Tasks() {
   
    // Selected task
    const [selectedTask, setSelectedTask] = useState<Task | null>(null);
- 
+   
+   // Unsaved changes protection
+   const hasUnsavedChangesRef = useRef(false);
+   const [pendingTask, setPendingTask] = useState<Task | null>(null);
+   const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
+
   // Model configuration state for new task
   const [selectedModels, setSelectedModels] = useState<string[]>([]);
   const [perModelSettings, setPerModelSettings] = useState<PerModelSettingsData>({});
@@ -236,13 +242,32 @@ export default function Tasks() {
   };
 
    const handleSelectTask = (task: Task) => {
+     // Check for unsaved changes before switching
+     if (hasUnsavedChangesRef.current && selectedTask?.id !== task.id) {
+       setPendingTask(task);
+       setShowUnsavedDialog(true);
+       return;
+     }
      setSelectedTask(task);
    };
- 
+
+   const handleConfirmTaskSwitch = () => {
+     setShowUnsavedDialog(false);
+     if (pendingTask) {
+       setSelectedTask(pendingTask);
+       setPendingTask(null);
+     }
+   };
+
+   const handleCancelTaskSwitch = () => {
+     setShowUnsavedDialog(false);
+     setPendingTask(null);
+   };
+  
    const handleDeleteClick = (task: Task, e: React.MouseEvent) => {
      e.stopPropagation();
      setTaskToDelete(task);
-  };
+   };
 
    const handleConfirmDelete = async () => {
      if (!taskToDelete) return;
@@ -401,14 +426,15 @@ export default function Tasks() {
  
            {/* Right panel - Details */}
            <ResizablePanel defaultSize={60} minSize={40}>
-             <TaskDetailsPanel
-               task={selectedTask}
-               onUpdateTitle={handleUpdateTitle}
-               onUpdateConfig={handleUpdateConfig}
-               onDelete={() => selectedTask && setTaskToDelete(selectedTask)}
-               saving={saving}
-             />
-           </ResizablePanel>
+              <TaskDetailsPanel
+                task={selectedTask}
+                onUpdateTitle={handleUpdateTitle}
+                onUpdateConfig={handleUpdateConfig}
+                onDelete={() => selectedTask && setTaskToDelete(selectedTask)}
+                saving={saving}
+                hasUnsavedChangesRef={hasUnsavedChangesRef}
+              />
+            </ResizablePanel>
          </ResizablePanelGroup>
        </div>
       {/* Delete Confirmation Dialog */}
@@ -436,6 +462,13 @@ export default function Tasks() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      
+      {/* Unsaved Changes Dialog */}
+      <UnsavedChangesDialog
+        open={showUnsavedDialog}
+        onConfirm={handleConfirmTaskSwitch}
+        onCancel={handleCancelTaskSwitch}
+      />
     </Layout>
   );
 }
