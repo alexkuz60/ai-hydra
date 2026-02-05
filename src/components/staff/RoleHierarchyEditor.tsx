@@ -225,23 +225,6 @@ const RoleHierarchyEditor: React.FC<RoleHierarchyEditorProps> = ({
           </div>
         )}
 
-        {/* Current role (center) */}
-        <div className="flex items-center justify-center py-2">
-          <div className={cn(
-            "flex items-center gap-2 px-4 py-2 rounded-lg border-2",
-            `border-${ROLE_CONFIG[selectedRole].color.replace('text-', '')}/50`,
-            `bg-${ROLE_CONFIG[selectedRole].color.replace('text-', '')}/10`
-          )}>
-            {(() => {
-              const Icon = ROLE_CONFIG[selectedRole].icon;
-              return <Icon className={cn("h-5 w-5", ROLE_CONFIG[selectedRole].color)} />;
-            })()}
-            <span className={cn("font-medium", ROLE_CONFIG[selectedRole].color)}>
-              {t(ROLE_CONFIG[selectedRole].label)}
-            </span>
-          </div>
-        </div>
-
         {/* Equals */}
         {groupedRoles.equal.length > 0 && (
           <div className="space-y-1">
