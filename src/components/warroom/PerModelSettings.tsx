@@ -26,7 +26,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
-import { Settings, ChevronDown, ChevronUp, RotateCcw, Copy, DollarSign, Pencil, Save, Undo2, Library, Clipboard, Trash2, Wrench, User } from 'lucide-react';
+import { Settings, ChevronDown, ChevronUp, RotateCcw, Copy, DollarSign, Pencil, Save, Undo2, Library, Clipboard, Trash2, Wrench, User, ShieldCheck } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { PromptLibraryPicker } from './PromptLibraryPicker';
 import { cn } from '@/lib/utils';
@@ -400,6 +400,21 @@ export function PerModelSettings({ selectedModels, settings, onChange, className
                         </SelectContent>
                       </Select>
                     </div>
+
+                    {/* Supervisor Approval Indicator */}
+                    {modelSettings.requiresApproval && (
+                      <div className="flex items-center gap-2 py-2 px-3 rounded-lg bg-warning/10 border border-warning/30">
+                        <ShieldCheck className="h-4 w-4 text-warning" />
+                        <div>
+                          <span className="text-xs font-medium text-warning">
+                            {t('settings.supervisorApproval')}
+                          </span>
+                          <p className="text-[10px] text-muted-foreground">
+                            {t('settings.supervisorApprovalDesc')}
+                          </p>
+                        </div>
+                      </div>
+                    )}
 
                     {/* Enable Tools Toggle */}
                     <div className="space-y-3">
