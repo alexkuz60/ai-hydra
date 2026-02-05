@@ -193,11 +193,11 @@
   }
 
   .hydra-glow-sm:hover:not(:disabled) {
-    /* Make hover on primary send buttons visibly change color (not just glow) */
-    background-color: hsl(var(--primary) / 0.85);
-    box-shadow: 0 0 15px hsl(var(--hydra-glow) / 0.4),
-                0 0 30px hsl(var(--hydra-glow) / 0.2);
-    filter: brightness(1.1);
+    /* Make hover on primary send buttons visibly change color */
+    box-shadow: 0 0 18px hsl(var(--hydra-glow) / 0.5),
+                0 0 35px hsl(var(--hydra-glow) / 0.25);
+    filter: brightness(1.15);
+    transform: translateY(-1px);
   }
 
   .hydra-text-glow {
