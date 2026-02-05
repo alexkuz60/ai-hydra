@@ -162,11 +162,11 @@ export function ChatInputArea({
   }, [onFilesChange]);
 
   return (
-     <div ref={containerRef} className="border-t border-border bg-background/80 backdrop-blur-sm">
+     <div ref={containerRef} className="border-t border-border bg-card/50">
       <div className="max-w-4xl mx-auto">
          {/* Collapsed state - compact bar */}
          {isCollapsed ? (
-           <div className="flex items-center gap-2 p-3">
+           <div className="flex items-center gap-2 px-4 py-3 h-14">
              <Tooltip>
                <TooltipTrigger asChild>
                  <Button
