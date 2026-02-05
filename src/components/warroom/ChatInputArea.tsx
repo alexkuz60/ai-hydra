@@ -91,13 +91,14 @@ export function ChatInputArea({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // UI sizing
-  const MIN_TEXTAREA_HEIGHT = 60;
+  // UI sizing - min must accommodate toolbar buttons (3 buttons × 36px + gaps)
+  const MIN_TEXTAREA_HEIGHT = 100;
   const MAX_TEXTAREA_HEIGHT = 300;
+  const DEFAULT_TEXTAREA_HEIGHT = 100;
 
-  const [textareaHeight, setTextareaHeight] = useState(80);
+  const [textareaHeight, setTextareaHeight] = useState(DEFAULT_TEXTAREA_HEIGHT);
   const [isResizingState, setIsResizingState] = useState(false);
-  const textareaHeightRef = useRef(80);
+  const textareaHeightRef = useRef(DEFAULT_TEXTAREA_HEIGHT);
   const isResizing = useRef(false);
 
   // Keep ref in sync (mouse handlers shouldn't rely on stale closures)
@@ -356,9 +357,13 @@ export function ChatInputArea({
                  currentHeight={textareaHeight}
                />
  
-              <div className="flex gap-2 items-stretch">
+              {/* Input row - height applied to container, not textarea */}
+              <div 
+                className="flex gap-2 items-stretch"
+                style={{ height: textareaHeight }}
+              >
                 {/* Left toolbar - vertical column */}
-                <div className="flex flex-col gap-1 justify-end">
+                <div className="flex flex-col gap-1 justify-end shrink-0">
                   {/* Collapse toggle */}
                   <Tooltip>
                     <TooltipTrigger asChild>
@@ -407,14 +412,13 @@ export function ChatInputArea({
                   />
                 </div>
 
-                {/* Textarea - center */}
+                {/* Textarea - fills container height */}
                 <Textarea
                   value={input}
                   onChange={(e) => onInputChange(e.target.value)}
                   placeholder={t('expertPanel.placeholder')}
                   ref={textareaRef}
-                  style={{ height: textareaHeight }}
-                  className="flex-1 resize-none min-h-[60px]"
+                  className="flex-1 resize-none h-full min-h-0"
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && !e.shiftKey) {
                       e.preventDefault();
@@ -425,7 +429,7 @@ export function ChatInputArea({
                 />
 
                 {/* Right toolbar - vertical column */}
-                <div className="flex flex-col gap-1 justify-end">
+                <div className="flex flex-col gap-1 justify-end shrink-0">
                   {/* Send to all experts */}
                   <Tooltip>
                     <TooltipTrigger asChild>
