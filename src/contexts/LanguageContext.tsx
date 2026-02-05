@@ -714,6 +714,8 @@ const translations: Translations = {
   'settings.reset': { ru: 'Сбросить', en: 'Reset' },
   'settings.copyToAll': { ru: 'Копировать на все', en: 'Copy to All' },
   'settings.copiedToAll': { ru: 'Настройки скопированы', en: 'Settings copied' },
+  'settings.supervisorApproval': { ru: 'Утверждение супервизором', en: 'Supervisor Approval' },
+  'settings.supervisorApprovalDesc': { ru: 'Ответы будут содержать пункты для утверждения', en: 'Responses will contain items for approval' },
   'settings.precise': { ru: 'Точность', en: 'Precise' },
   'settings.creative': { ru: 'Креатив', en: 'Creative' },
   'settings.pricing': { ru: 'Стоимость', en: 'Pricing' },
