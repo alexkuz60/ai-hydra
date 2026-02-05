@@ -88,51 +88,74 @@ export function ChatInputArea({
 }: ChatInputAreaProps) {
   const { t } = useLanguage();
   const [flowPickerOpen, setFlowPickerOpen] = useState(false);
-   const textareaRef = useRef<HTMLTextAreaElement>(null);
-   const containerRef = useRef<HTMLDivElement>(null);
-   const [textareaHeight, setTextareaHeight] = useState(80);
-   const isResizing = useRef(false);
- 
-   // Handle resize drag
-   const handleResizeStart = useCallback((e: React.MouseEvent) => {
-     e.preventDefault();
-     isResizing.current = true;
-     const startY = e.clientY;
-     const startHeight = textareaHeight;
- 
-     const handleMouseMove = (moveEvent: MouseEvent) => {
-       if (!isResizing.current) return;
-       const delta = startY - moveEvent.clientY;
-       const newHeight = Math.max(60, Math.min(300, startHeight + delta));
-       setTextareaHeight(newHeight);
-     };
- 
-     const handleMouseUp = () => {
-       isResizing.current = false;
-       document.removeEventListener('mousemove', handleMouseMove);
-       document.removeEventListener('mouseup', handleMouseUp);
-       // Save to localStorage
-       try {
-         localStorage.setItem('hydra-main-input-textarea-height', String(textareaHeight));
-       } catch { /* ignore */ }
-     };
- 
-     document.addEventListener('mousemove', handleMouseMove);
-     document.addEventListener('mouseup', handleMouseUp);
-   }, [textareaHeight]);
- 
-   // Load saved height on mount
-   useEffect(() => {
-     try {
-       const saved = localStorage.getItem('hydra-main-input-textarea-height');
-       if (saved) {
-         const h = parseInt(saved, 10);
-         if (!isNaN(h) && h >= 60 && h <= 300) {
-           setTextareaHeight(h);
-         }
-       }
-     } catch { /* ignore */ }
-   }, []);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // UI sizing
+  const MIN_TEXTAREA_HEIGHT = 60;
+  const MAX_TEXTAREA_HEIGHT = 300;
+
+  const [textareaHeight, setTextareaHeight] = useState(80);
+  const textareaHeightRef = useRef(80);
+  const isResizing = useRef(false);
+
+  // Keep ref in sync (mouse handlers shouldn't rely on stale closures)
+  useEffect(() => {
+    textareaHeightRef.current = textareaHeight;
+  }, [textareaHeight]);
+
+  // Handle resize drag
+  const handleResizeStart = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    isResizing.current = true;
+
+    const startY = e.clientY;
+    const startHeight = textareaHeightRef.current;
+
+    const handleMouseMove = (moveEvent: MouseEvent) => {
+      if (!isResizing.current) return;
+      const delta = startY - moveEvent.clientY;
+      const newHeight = Math.max(
+        MIN_TEXTAREA_HEIGHT,
+        Math.min(MAX_TEXTAREA_HEIGHT, startHeight + delta),
+      );
+
+      textareaHeightRef.current = newHeight;
+      setTextareaHeight(newHeight);
+    };
+
+    const handleMouseUp = () => {
+      isResizing.current = false;
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+
+      // Save to localStorage (use ref to avoid saving a stale height)
+      try {
+        localStorage.setItem('hydra-main-input-textarea-height', String(textareaHeightRef.current));
+      } catch {
+        /* ignore */
+      }
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+  }, []);
+
+  // Load saved height on mount
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('hydra-main-input-textarea-height');
+      if (saved) {
+        const h = parseInt(saved, 10);
+        if (!isNaN(h) && h >= MIN_TEXTAREA_HEIGHT && h <= MAX_TEXTAREA_HEIGHT) {
+          textareaHeightRef.current = h;
+          setTextareaHeight(h);
+        }
+      }
+    } catch {
+      /* ignore */
+    }
+  }, []);
  
    // Focus textarea when expanding
    useEffect(() => {
@@ -383,7 +406,7 @@ export function ChatInputArea({
                   placeholder={t('expertPanel.placeholder')}
                   ref={textareaRef}
                   style={{ height: textareaHeight }}
-                  className="flex-1 resize-none"
+                  className="flex-1 resize-none min-h-[60px]"
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && !e.shiftKey) {
                       e.preventDefault();
