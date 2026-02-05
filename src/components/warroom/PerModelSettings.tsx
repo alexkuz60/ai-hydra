@@ -790,63 +790,67 @@ export function PerModelSettings({ selectedModels, settings, onChange, className
                             </Button>
                           </div>
                           
-                          {/* Prompt library buttons */}
-                          <div className="grid grid-cols-2 gap-1.5">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="h-7 text-xs"
-                              onClick={() => handleOpenLibrary(modelId)}
-                            >
-                              <Library className="h-3 w-3 mr-1" />
-                              {t('settings.loadFromLibrary')}
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="h-7 text-xs"
-                              onClick={() => handleRevertPrompt(modelId)}
-                            >
-                              <Undo2 className="h-3 w-3 mr-1" />
-                              {t('settings.revertPrompt')}
-                            </Button>
+                          {/* Unified bottom action buttons */}
+                          <div className="space-y-1.5 pt-2 border-t border-border/50">
+                            {/* Row 1: From Library + Revert */}
+                            <div className="grid grid-cols-2 gap-1.5">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-9 text-xs"
+                                onClick={() => handleOpenLibrary(modelId)}
+                              >
+                                <Library className="h-4 w-4 mr-1.5" />
+                                {t('settings.loadFromLibrary')}
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-9 text-xs"
+                                onClick={() => handleRevertPrompt(modelId)}
+                              >
+                                <Undo2 className="h-4 w-4 mr-1.5" />
+                                {t('settings.revertPrompt')}
+                              </Button>
+                            </div>
+                            
+                            {/* Row 2: Save to Library (full width, primary) */}
                             <Button
                               variant="default"
                               size="sm"
-                              className="col-span-2 h-7 text-xs"
+                              className="w-full h-9 text-xs"
                               onClick={() => handleOpenSaveDialog(modelId)}
                             >
-                              <Save className="h-3 w-3 mr-1" />
+                              <Save className="h-4 w-4 mr-1.5" />
                               {t('settings.savePrompt')}
                             </Button>
+                            
+                            {/* Row 3: Reset + Copy to All */}
+                            <div className="grid grid-cols-2 gap-1.5">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-9 text-xs"
+                                onClick={() => handleReset(modelId)}
+                              >
+                                <RotateCcw className="h-4 w-4 mr-1.5" />
+                                {t('settings.reset')}
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className={cn("h-9 text-xs", selectedModels.length <= 1 && "invisible")}
+                                onClick={() => handleCopyToAll(modelId)}
+                                disabled={selectedModels.length <= 1}
+                              >
+                                <Copy className="h-4 w-4 mr-1.5" />
+                                {t('settings.copyToAll')}
+                              </Button>
+                            </div>
                           </div>
                         </div>
                       );
                     })()}
-
-                    {/* Action Buttons */}
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="flex-1"
-                        onClick={() => handleReset(modelId)}
-                      >
-                        <RotateCcw className="h-3 w-3 mr-1" />
-                        {t('settings.reset')}
-                      </Button>
-                      {selectedModels.length > 1 && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="flex-1"
-                          onClick={() => handleCopyToAll(modelId)}
-                        >
-                          <Copy className="h-3 w-3 mr-1" />
-                          {t('settings.copyToAll')}
-                        </Button>
-                      )}
-                    </div>
                   </div>
                 </ScrollArea>
               </TabsContent>
