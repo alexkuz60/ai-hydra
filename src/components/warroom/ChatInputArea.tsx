@@ -193,7 +193,7 @@ export function ChatInputArea({
                     onClick={onSend}
                     disabled={disabled}
                     size="icon"
-                    className="h-9 w-9 hydra-glow-sm"
+                    className="h-9 w-9 hydra-glow-sm hover:bg-primary/80 transition-colors"
                   >
                     {sending ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
@@ -406,7 +406,7 @@ export function ChatInputArea({
                         onClick={onSend}
                         disabled={disabled}
                         size="icon"
-                        className="h-9 w-9 hydra-glow-sm"
+                        className="h-9 w-9 hydra-glow-sm hover:bg-primary/80 transition-colors"
                       >
                         {sending ? (
                           <Loader2 className="h-4 w-4 animate-spin" />
