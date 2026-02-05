@@ -97,6 +97,36 @@ export default function ExpertPanel() {
     setUseHybridStreaming,
   } = useSession({ userId: user?.id, authLoading });
 
+  // Load supervisor wishes from localStorage on session change
+  useEffect(() => {
+    if (!currentTask?.id) return;
+    
+    try {
+      const key = `hydra-supervisor-wishes-${currentTask.id}`;
+      const saved = localStorage.getItem(key);
+      if (saved) {
+        const wishes = JSON.parse(saved);
+        if (Array.isArray(wishes)) {
+          setSelectedWishes(wishes);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to load supervisor wishes from localStorage:', error);
+    }
+  }, [currentTask?.id]);
+  
+  // Save supervisor wishes to localStorage when they change
+  useEffect(() => {
+    if (!currentTask?.id) return;
+    
+    try {
+      const key = `hydra-supervisor-wishes-${currentTask.id}`;
+      localStorage.setItem(key, JSON.stringify(selectedWishes));
+    } catch (error) {
+      console.error('Failed to save supervisor wishes to localStorage:', error);
+    }
+  }, [selectedWishes, currentTask?.id]);
+
   // Model statistics hook for tracking dismissals
   const { incrementDismissal } = useModelStatistics(user?.id);
 
