@@ -3,18 +3,22 @@ import { Textarea } from '@/components/ui/textarea';
 import { FileUpload, MERMAID_TEMPLATE, AttachedFile } from '@/components/warroom/FileUpload';
 import { FlowDiagramPickerDialog } from '@/components/warroom/FlowDiagramPickerDialog';
 import { TimeoutSlider } from '@/components/warroom/TimeoutSlider';
-import { UnifiedSendButton } from '@/components/warroom/UnifiedSendButton';
 import { MermaidPreview } from '@/components/warroom/MermaidPreview';
 import { MermaidBlock } from '@/components/warroom/MermaidBlock';
 import { PromptEngineerButton } from '@/components/warroom/PromptEngineerButton';
 import { ModelOption } from '@/hooks/useAvailableModels';
 import { cn } from '@/lib/utils';
- import { Loader2, GitBranch, ChevronDown, ChevronUp } from 'lucide-react';
+ import { Loader2, GitBranch, ChevronDown, ChevronUp, Send, Users, Lightbulb, X } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
  import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
  import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
  import { Button } from '@/components/ui/button';
  import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 
 // Re-export AttachedFile for external use
 export type { AttachedFile };
@@ -171,17 +175,24 @@ export function ChatInputArea({
              >
                {t('expertPanel.clickToType')}
              </button>
-             <UnifiedSendButton
-               onSendToAll={onSend}
-               onSendToConsultant={onSendToConsultant}
-               sending={sending}
-               disabled={disabled}
-               hasMessage={!!input.trim() || attachedFiles.length > 0}
-               selectedModelsCount={selectedModelsCount}
-               availableModels={availableModels}
-               selectedConsultant={selectedConsultant}
-               onSelectConsultant={onSelectConsultant}
-             />
+              {/* Simple send button in collapsed mode */}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    onClick={onSend}
+                    disabled={disabled}
+                    size="icon"
+                    className="h-9 w-9 hydra-glow-sm"
+                  >
+                    {sending ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Send className="h-4 w-4" />
+                    )}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>{t('send.toAllExperts')} ({selectedModelsCount})</TooltipContent>
+              </Tooltip>
            </div>
          ) : (
            <div className="p-4">
@@ -307,74 +318,177 @@ export function ChatInputArea({
                <div className="h-0.5 w-12 bg-border group-hover:bg-primary/40 rounded-full transition-colors" />
              </div>
  
-             <div className="flex gap-3 items-end">
-          {/* Attach button */}
-               {/* Collapse toggle */}
-               <Tooltip>
-                 <TooltipTrigger asChild>
-                   <Button
-                     variant="ghost"
-                     size="icon"
-                     className="h-9 w-9 shrink-0"
-                     onClick={onToggleCollapse}
-                   >
-                     <ChevronDown className="h-4 w-4" />
-                   </Button>
-                 </TooltipTrigger>
-                 <TooltipContent>{t('expertPanel.collapseInput')}</TooltipContent>
-               </Tooltip>
- 
-          <FileUpload
-            files={attachedFiles}
-            onFilesChange={onFilesChange}
-            onAttachMermaid={handleAttachMermaid}
-            onSelectFlowDiagram={() => setFlowPickerOpen(true)}
-            disabled={sending}
-          />
+              <div className="flex gap-2 items-stretch">
+                {/* Left toolbar - vertical column */}
+                <div className="flex flex-col gap-1 justify-end">
+                  {/* Collapse toggle */}
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-9 w-9"
+                        onClick={onToggleCollapse}
+                      >
+                        <ChevronDown className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="right">{t('expertPanel.collapseInput')}</TooltipContent>
+                  </Tooltip>
 
-          {/* Timeout setting */}
-          <TimeoutSlider
-            value={timeoutSeconds}
-            onChange={onTimeoutChange}
-            disabled={sending}
-          />
+                  {/* File upload */}
+                  <FileUpload
+                    files={attachedFiles}
+                    onFilesChange={onFilesChange}
+                    onAttachMermaid={handleAttachMermaid}
+                    onSelectFlowDiagram={() => setFlowPickerOpen(true)}
+                    disabled={sending}
+                  />
 
-          {/* Prompt Engineer button */}
-          <PromptEngineerButton
-            currentInput={input}
-            onOptimizedPrompt={onInputChange}
-            disabled={sending}
-          />
+                  {/* Timeout setting */}
+                  <TimeoutSlider
+                    value={timeoutSeconds}
+                    onChange={onTimeoutChange}
+                    disabled={sending}
+                  />
 
-          <Textarea
-            value={input}
-            onChange={(e) => onInputChange(e.target.value)}
-            placeholder={t('expertPanel.placeholder')}
-               ref={textareaRef}
-               style={{ height: textareaHeight }}
-               className="flex-1 resize-none"
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                onSend();
-              }
-            }}
-            onPaste={onPaste}
-          />
+                  {/* Prompt Engineer button */}
+                  <PromptEngineerButton
+                    currentInput={input}
+                    onOptimizedPrompt={onInputChange}
+                    disabled={sending}
+                  />
+                </div>
 
-          {/* Unified send button */}
-          <UnifiedSendButton
-            onSendToAll={onSend}
-            onSendToConsultant={onSendToConsultant}
-            sending={sending}
-            disabled={disabled}
-            hasMessage={!!input.trim() || attachedFiles.length > 0}
-            selectedModelsCount={selectedModelsCount}
-            availableModels={availableModels}
-            selectedConsultant={selectedConsultant}
-            onSelectConsultant={onSelectConsultant}
-          />
-        </div>
+                {/* Textarea - center */}
+                <Textarea
+                  value={input}
+                  onChange={(e) => onInputChange(e.target.value)}
+                  placeholder={t('expertPanel.placeholder')}
+                  ref={textareaRef}
+                  style={{ height: textareaHeight }}
+                  className="flex-1 resize-none"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      onSend();
+                    }
+                  }}
+                  onPaste={onPaste}
+                />
+
+                {/* Right toolbar - vertical column */}
+                <div className="flex flex-col gap-1 justify-end">
+                  {/* Send to all experts */}
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        onClick={onSend}
+                        disabled={disabled}
+                        size="icon"
+                        className="h-9 w-9 hydra-glow-sm"
+                      >
+                        {sending ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <>
+                            <Users className="h-3 w-3 absolute top-1 right-1 opacity-60" />
+                            <Send className="h-4 w-4" />
+                          </>
+                        )}
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="left">{t('send.toAllExperts')} ({selectedModelsCount})</TooltipContent>
+                  </Tooltip>
+
+                  {/* Consultant selector */}
+                  <Popover>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className={cn(
+                              "h-9 w-9 border-amber-500/30 hover:border-amber-500/50 hover:bg-amber-500/10",
+                              selectedConsultant && "bg-amber-500/20 border-amber-500/50"
+                            )}
+                            disabled={sending}
+                          >
+                            <Lightbulb className="h-4 w-4 text-amber-400" />
+                          </Button>
+                        </PopoverTrigger>
+                      </TooltipTrigger>
+                      <TooltipContent side="left">{t('consultant.selectModel')}</TooltipContent>
+                    </Tooltip>
+                    <PopoverContent className="w-64 p-2" align="end" side="top">
+                      <div className="space-y-1">
+                        <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground">
+                          {t('consultant.selectModel')}
+                        </div>
+                        {availableModels.map((model) => (
+                          <button
+                            key={model.id}
+                            onClick={() => onSelectConsultant(selectedConsultant === model.id ? null : model.id)}
+                            className={cn(
+                              "w-full flex items-center gap-2 px-2 py-2 rounded-md text-sm transition-colors",
+                              "hover:bg-amber-500/10",
+                              selectedConsultant === model.id && "bg-amber-500/20 text-amber-400"
+                            )}
+                          >
+                            <Lightbulb className="h-4 w-4 text-amber-400" />
+                            <span className="truncate">{model.name}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+
+                  {/* Send to consultant (only when selected) */}
+                  {selectedConsultant && (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          onClick={onSendToConsultant}
+                          disabled={sending || (!input.trim() && attachedFiles.length === 0)}
+                          size="icon"
+                          className="h-9 w-9 bg-amber-500/20 hover:bg-amber-500/30 text-amber-400 border border-amber-500/30"
+                          variant="outline"
+                        >
+                          {sending ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <>
+                              <Lightbulb className="h-3 w-3 absolute top-1 right-1 opacity-60" />
+                              <Send className="h-4 w-4" />
+                            </>
+                          )}
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent side="left">
+                        {t('consultant.askOnly')}: {availableModels.find(m => m.id === selectedConsultant)?.name}
+                      </TooltipContent>
+                    </Tooltip>
+                  )}
+
+                  {/* Clear consultant selection */}
+                  {selectedConsultant && (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          onClick={() => onSelectConsultant(null)}
+                          size="icon"
+                          variant="ghost"
+                          className="h-9 w-9 text-muted-foreground hover:text-foreground"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent side="left">{t('consultant.deselect')}</TooltipContent>
+                    </Tooltip>
+                  )}
+                </div>
+              </div>
            </div>
          )}
       </div>
