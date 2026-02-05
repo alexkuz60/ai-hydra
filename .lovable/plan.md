@@ -1,7 +1,7 @@
 
-# План: Унификация размеров кнопок по стандарту Flow Editor
+# ✅ Завершено: Унификация размеров кнопок по стандарту Flow Editor
 
-## Проблема
+## Проблема (решена)
 
 На скриншоте показан референс — компактная панель инструментов Flow Editor с кнопками:
 - `h-7` для header-кнопок (Open, Save, New, Export)
@@ -19,7 +19,7 @@
 | `FileUpload` | `h-9 w-9` | Близко к стандарту |
 | `Index.tsx` (CTA) | `size="lg"` | Допустимо для landing page |
 
-## Целевой стандарт
+## Принятый стандарт
 
 Основываясь на FlowToolbar и принципе высокой плотности UI:
 
@@ -38,67 +38,29 @@
 └─────────────────────────────────────────────────────┘
 ```
 
-## Изменения
+## Выполненные изменения
 
-### 1. UnifiedSendButton.tsx
-- Заменить `size="lg"` → `size="sm"` с `h-9`
-- Уменьшить иконки с `h-5 w-5` до `h-4 w-4`
-- Сделать dropdown-триггер компактным (`px-2 h-9`)
+### 1. UnifiedSendButton.tsx ✅
+- ~~Заменить `size="lg"` → `size="sm"` с `h-9`~~ Готово
+- ~~Уменьшить иконки с `h-5 w-5` до `h-4 w-4`~~ Готово
+- ~~Сделать dropdown-триггер компактным (`px-2 h-9`)~~ Готово
 
-### 2. PromptEngineerButton.tsx
-- Заменить `h-10 w-10` → `h-9 w-9`
-- Уменьшить иконку с `h-5 w-5` до `h-4 w-4`
+### 2. PromptEngineerButton.tsx ✅
+- ~~Заменить `h-10 w-10` → `h-9 w-9`~~ Готово
+- ~~Уменьшить иконку с `h-5 w-5` → `h-4 w-4`~~ Готово
 
-### 3. ConsultantSelector.tsx
-- Уже близок к стандарту (`h-9`)
-- Унифицировать стиль с другими селекторами
+### 3. ConsultantSelector.tsx ✅
+- Уже соответствует стандарту (`h-9`)
 
-### 4. FileUpload.tsx
-- Уже использует `h-9 w-9` ✓
+### 4. FileUpload.tsx ✅
+- Уже соответствует стандарту (`h-9 w-9`)
 
-### 5. TimeoutSlider.tsx
-- Уже использует `h-9` ✓
+### 5. TimeoutSlider.tsx ✅
+- Уже соответствует стандарту (`h-9`)
 
-### 6. Index.tsx (Landing)
-- Оставить `size="lg"` для CTA кнопок — это маркетинговая страница
-- Большие кнопки уместны для привлечения внимания
-
-## Технические детали
-
-### Файлы для изменения
-
-1. **`src/components/warroom/UnifiedSendButton.tsx`**
-   - Строки 70, 86, 140, 156: `size="lg"` → `size="sm"` + `className="h-9"`
-   - Иконки: `h-5 w-5` → `h-4 w-4`
-
-2. **`src/components/warroom/PromptEngineerButton.tsx`**
-   - Строка 192-194: `h-10 w-10` → `h-9 w-9`
-   - Строка 197: `h-5 w-5` → `h-4 w-4`
-
-### Примеры кода
-
-**UnifiedSendButton (до):**
-```tsx
-<Button
-  onClick={onSendToAll}
-  disabled={disabled}
-  className="hydra-glow-sm rounded-r-none"
-  size="lg"
->
-  <Loader2 className="h-5 w-5 animate-spin" />
-```
-
-**UnifiedSendButton (после):**
-```tsx
-<Button
-  onClick={onSendToAll}
-  disabled={disabled}
-  className="hydra-glow-sm rounded-r-none h-9"
-  size="sm"
->
-  <Loader2 className="h-4 w-4 animate-spin" />
-```
+### 6. Index.tsx (Landing) ✅
+- Оставлено `size="lg"` для CTA — маркетинговая страница
 
 ## Результат
 
-После изменений все интерактивные элементы в области ввода чата будут иметь единообразную высоту `h-9` (36px), что соответствует стилю `size="sm"` в button.tsx и создаёт визуально сбалансированный, компактный интерфейс.
+Все интерактивные элементы в области ввода чата имеют единообразную высоту `h-9` (36px), что соответствует стилю `size="sm"` и создаёт визуально сбалансированный, компактный интерфейс в стиле Flow Editor.
