@@ -133,20 +133,30 @@ export function ModelSettings({ settings, onChange, className }: ModelSettingsPr
         <CollapsibleContent>
           <ScrollArea className="max-h-[400px]">
             <div className="p-4 space-y-5">
-              {/* Presets Section */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label className="text-xs text-muted-foreground">
-                    {t('presets.title')}
-                  </Label>
-                  <IconButtonWithTooltip
-                    icon={Save}
-                    tooltip={t('presets.save')}
-                    onClick={() => setSaveDialogOpen(true)}
-                    variant="ghost"
-                    side="left"
-                  />
-                </div>
+            {/* Actions Row */}
+            <div className="flex items-center gap-2">
+              <IconButtonWithTooltip
+                icon={Save}
+                tooltip={t('presets.save')}
+                onClick={() => setSaveDialogOpen(true)}
+                variant="ghost"
+                side="bottom"
+              />
+              <div className="flex-1" />
+              <IconButtonWithTooltip
+                icon={RotateCcw}
+                tooltip={t('settings.resetDefaults')}
+                onClick={handleReset}
+                variant="ghost"
+                side="bottom"
+              />
+            </div>
+
+            {/* Presets Section */}
+            <div className="space-y-2">
+              <Label className="text-xs text-muted-foreground">
+                {t('presets.title')}
+              </Label>
                 
                 {loading ? (
                   <div className="flex items-center justify-center py-2">
@@ -249,16 +259,6 @@ export function ModelSettings({ settings, onChange, className }: ModelSettingsPr
                 />
               </div>
 
-              {/* Reset Button */}
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full h-9"
-                onClick={handleReset}
-              >
-                <RotateCcw className="h-4 w-4 mr-2" />
-                {t('settings.resetDefaults')}
-              </Button>
             </div>
           </ScrollArea>
         </CollapsibleContent>
