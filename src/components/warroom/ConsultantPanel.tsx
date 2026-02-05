@@ -31,6 +31,7 @@ import {
   RefreshCw,
   Check,
   Settings2,
+  Wand2,
 } from 'lucide-react';
 
 // Source message structure for moderator context
@@ -71,7 +72,7 @@ const MODES: ModeConfig[] = [
   { id: 'critic', icon: Shield, labelKey: 'dchat.critic', color: 'text-hydra-critical' },
   { id: 'arbiter', icon: Scale, labelKey: 'dchat.arbiter', color: 'text-hydra-expert' },
   { id: 'moderator', icon: Users, labelKey: 'dchat.moderator', color: 'text-hydra-consultant' },
-  // Технический персонал (archivist, analyst, promptengineer, flowregulator) намеренно исключён
+  { id: 'promptengineer', icon: Wand2, labelKey: 'dchat.promptEngineer', color: 'text-hydra-promptengineer' },
 ];
 
 export function ConsultantPanel({
@@ -437,7 +438,7 @@ export function ConsultantPanel({
 
       {/* Mode selector */}
       <div className="p-2 border-b border-border">
-        <div className="grid grid-cols-4 gap-1">
+        <div className="grid grid-cols-6 gap-1">
           {MODES.map((mode) => (
             <Tooltip key={mode.id}>
               <TooltipTrigger asChild>
