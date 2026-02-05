@@ -7,6 +7,7 @@ import { MermaidPreview } from '@/components/warroom/MermaidPreview';
 import { MermaidBlock } from '@/components/warroom/MermaidBlock';
 import { PromptEngineerButton } from '@/components/warroom/PromptEngineerButton';
 import { SupervisorWishesPicker } from '@/components/warroom/SupervisorWishesPicker';
+import { HorizontalResizeHandle } from '@/components/ui/horizontal-resize-handle';
 import { ModelOption } from '@/hooks/useAvailableModels';
 import { cn } from '@/lib/utils';
 import { Loader2, GitBranch, ChevronDown, ChevronUp, Send, Users, Lightbulb, X } from 'lucide-react';
@@ -193,7 +194,7 @@ export function ChatInputArea({
                     onClick={onSend}
                     disabled={disabled}
                     size="icon"
-                    className="h-9 w-9 hydra-glow-sm hover:bg-primary/80 transition-colors"
+                    className="h-9 w-9 hydra-glow-sm"
                   >
                     {sending ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
@@ -321,13 +322,8 @@ export function ChatInputArea({
           </div>
         )}
 
-             {/* Resize handle */}
-             <div
-               onMouseDown={handleResizeStart}
-               className="h-1 w-full cursor-ns-resize flex items-center justify-center group hover:bg-primary/10 transition-colors mb-2"
-             >
-               <div className="h-0.5 w-12 bg-border group-hover:bg-primary/40 rounded-full transition-colors" />
-             </div>
+              {/* Resize handle */}
+              <HorizontalResizeHandle onResizeStart={handleResizeStart} className="mb-2" />
  
               <div className="flex gap-2 items-stretch">
                 {/* Left toolbar - vertical column */}
@@ -406,7 +402,7 @@ export function ChatInputArea({
                         onClick={onSend}
                         disabled={disabled}
                         size="icon"
-                        className="h-9 w-9 hydra-glow-sm hover:bg-primary/80 transition-colors"
+                        className="h-9 w-9 hydra-glow-sm"
                       >
                         {sending ? (
                           <Loader2 className="h-4 w-4 animate-spin" />
