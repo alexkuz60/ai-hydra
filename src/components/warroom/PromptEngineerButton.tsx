@@ -190,11 +190,11 @@ export function PromptEngineerButton({
             onClick={handleOpenDialog}
             disabled={disabled || !currentInput.trim()}
             className={cn(
-              "h-10 w-10 shrink-0",
+              "h-9 w-9 shrink-0",
               currentInput.trim() && "text-hydra-promptengineer hover:text-hydra-promptengineer/80 hover:bg-hydra-promptengineer/10"
             )}
           >
-            <Wand2 className="h-5 w-5" />
+            <Wand2 className="h-4 w-4" />
           </Button>
         </TooltipTrigger>
         <TooltipContent side="top">

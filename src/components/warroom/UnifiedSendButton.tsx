@@ -66,15 +66,15 @@ export function UnifiedSendButton({
         <Button
           onClick={onSendToAll}
           disabled={disabled}
-          className="hydra-glow-sm rounded-r-none"
-          size="lg"
+      className="hydra-glow-sm rounded-r-none h-9"
+      size="sm"
         >
           {sending ? (
-            <Loader2 className="h-5 w-5 animate-spin" />
+        <Loader2 className="h-4 w-4 animate-spin" />
           ) : (
             <>
-              <Users className="h-4 w-4 mr-2" />
-              <Send className="h-5 w-5" />
+          <Users className="h-3.5 w-3.5 mr-1.5" />
+          <Send className="h-4 w-4" />
             </>
           )}
         </Button>
@@ -83,11 +83,11 @@ export function UnifiedSendButton({
           <DropdownMenuTrigger asChild>
             <Button
               variant="default"
-              size="lg"
-              className="rounded-l-none border-l border-primary-foreground/20 px-2"
+            size="sm"
+            className="rounded-l-none border-l border-primary-foreground/20 px-2 h-9"
               disabled={sending}
             >
-              <ChevronDown className="h-4 w-4" />
+            <ChevronDown className="h-3.5 w-3.5" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
@@ -133,18 +133,18 @@ export function UnifiedSendButton({
         onClick={handleSendToConsultant}
         disabled={sending || !hasMessage}
         className={cn(
-          "rounded-r-none gap-2",
+          "rounded-r-none gap-1.5 h-9",
           "bg-amber-500/20 hover:bg-amber-500/30 text-amber-400 border border-amber-500/30"
         )}
         variant="outline"
-        size="lg"
+        size="sm"
       >
         {sending ? (
-          <Loader2 className="h-5 w-5 animate-spin" />
+          <Loader2 className="h-4 w-4 animate-spin" />
         ) : (
           <>
-            <Lightbulb className="h-4 w-4" />
-            <Send className="h-5 w-5" />
+            <Lightbulb className="h-3.5 w-3.5" />
+            <Send className="h-4 w-4" />
           </>
         )}
       </Button>
@@ -153,14 +153,14 @@ export function UnifiedSendButton({
         <DropdownMenuTrigger asChild>
           <Button
             variant="outline"
-            size="lg"
+            size="sm"
             className={cn(
-              "rounded-l-none border-l-0 px-2",
+              "rounded-l-none border-l-0 px-2 h-9",
               "bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30"
             )}
             disabled={sending}
           >
-            <ChevronDown className="h-4 w-4" />
+            <ChevronDown className="h-3.5 w-3.5" />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-56">
