@@ -1102,10 +1102,14 @@ const translations: Translations = {
    // Supervisor Wishes Picker
    'supervisorWishes.selectWishes': { ru: 'Пожелания Супервизора', en: 'Supervisor Wishes' },
    'supervisorWishes.title': { ru: 'Пожелания Супервизора', en: 'Supervisor Wishes' },
+   'supervisorWishes.wishesFor': { ru: 'Пожелания для', en: 'Wishes for' },
    'supervisorWishes.description': { ru: 'Выберите типичные указания для текущей сессии', en: 'Select typical instructions for this session' },
    'supervisorWishes.selected': { ru: 'Выбрано', en: 'Selected' },
    'supervisorWishes.noRolesSelected': { ru: 'Выберите роли для активации', en: 'Select roles to activate' },
    'supervisorWishes.noWishesForRoles': { ru: 'Для выбранных ролей нет доступных пожеланий', en: 'No wishes available for selected roles' },
+   
+   // Common
+   'common.and': { ru: 'и', en: 'and' },
 };
 
 interface LanguageContextType {
