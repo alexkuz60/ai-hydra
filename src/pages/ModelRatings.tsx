@@ -10,6 +10,7 @@ import { cn } from '@/lib/utils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AGENT_ROLES, ROLE_CONFIG, type AgentRole } from '@/config/roles';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
+import { ModelStatsChart } from '@/components/ratings/ModelStatsChart';
 interface ModelRoleStat {
   model_name: string;
   role: string;
@@ -156,7 +157,11 @@ export default function ModelRatings() {
             </HydraCardContent>
           </HydraCard>
         ) : (
-          <Tabs defaultValue="overall" className="space-y-6">
+          <>
+            {/* Stats Chart Component */}
+            <ModelStatsChart stats={stats} />
+
+            <Tabs defaultValue="overall" className="space-y-6">
             <ScrollArea className="w-full whitespace-nowrap pb-2">
               <TabsList className="inline-flex w-max gap-1">
                 <TabsTrigger value="overall" className="px-4">{t('ratings.overall')}</TabsTrigger>
@@ -239,7 +244,8 @@ export default function ModelRatings() {
                 </TabsContent>
               );
             })}
-          </Tabs>
+            </Tabs>
+          </>
         )}
       </div>
     </Layout>
