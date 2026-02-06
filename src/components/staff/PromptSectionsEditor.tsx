@@ -30,14 +30,7 @@ import {
   PROMPT_DICTIONARIES,
   type PromptDictionaryKey,
 } from '@/config/promptDictionaries';
-import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
-import { 
-  getCachedTranslation, 
-  cacheTranslation,
-  getCachedTranslations,
-  cacheTranslations 
-} from '@/lib/translationCache';
+import { usePromptTranslation } from '@/hooks/usePromptTranslation';
 
 interface PromptSectionsEditorProps {
   title: string;
@@ -64,165 +57,22 @@ const PromptSectionsEditor: React.FC<PromptSectionsEditorProps> = ({
   const [newSectionTitle, setNewSectionTitle] = useState('');
   const [tipsOpen, setTipsOpen] = useState(false);
   const [snippetsOpen, setSnippetsOpen] = useState(true);
-  const [isTranslating, setIsTranslating] = useState(false);
-  const [originalContent, setOriginalContent] = useState<{
-    title: string;
-    sections: PromptSection[];
-  } | null>(null);
   const textareaRefs = useRef<Record<string, HTMLTextAreaElement | null>>({});
   const lang = (language === 'ru' || language === 'en') ? language : 'ru';
 
-  // Detect if content is primarily Russian
-  const isRussianContent = useCallback(() => {
-    const allContent = title + ' ' + sections.map(s => s.content).join(' ');
-    return /[а-яА-ЯёЁ]/.test(allContent);
-  }, [title, sections]);
-
-  // Restore original content
-  const handleRestoreOriginal = useCallback(() => {
-    if (!originalContent) return;
-    
-    const currentIsRussian = isRussianContent();
-    
-    onTitleChange(originalContent.title);
-    onSectionsChange(originalContent.sections);
-    setOriginalContent(null);
-    
-    // Notify parent to reverse language name change
-    const currentLang: 'ru' | 'en' = currentIsRussian ? 'ru' : 'en';
-    const originalLang: 'ru' | 'en' = currentIsRussian ? 'en' : 'ru';
-    onRestoreOriginal?.(currentLang, originalLang);
-    
-    toast.success(t('staffRoles.originalRestored'));
-  }, [originalContent, isRussianContent, onTitleChange, onSectionsChange, onRestoreOriginal, t]);
-
-  // Translate entire prompt (title + all sections) with caching
-  const handleTranslateAll = useCallback(async () => {
-    const isRussian = isRussianContent();
-    const targetLang = isRussian ? 'English' : 'Russian';
-    
-    // Save original before translating
-    setOriginalContent({
-      title,
-      sections: sections.map(s => ({ ...s })),
-    });
-    
-    // Check cache for all texts
-    const textsToCheck = [title, ...sections.filter(s => s.content.trim()).map(s => s.content)];
-    const cachedResults = getCachedTranslations(textsToCheck, targetLang);
-    
-    // If all are cached, use them instantly
-    const allCached = textsToCheck.every(text => cachedResults.has(text));
-    
-    if (allCached) {
-      // Apply cached translations instantly
-      const cachedTitle = cachedResults.get(title);
-      if (cachedTitle) {
-        onTitleChange(cachedTitle);
-      }
-      
-      const updatedSections = sections.map(section => {
-        if (section.content.trim()) {
-          const cached = cachedResults.get(section.content);
-          if (cached) {
-            return { ...section, content: cached };
-          }
-        }
-        return section;
-      });
-      
-      onSectionsChange(updatedSections);
-      
-      // Notify parent about language switch
-      const fromLang: 'ru' | 'en' = isRussian ? 'ru' : 'en';
-      const toLang: 'ru' | 'en' = isRussian ? 'en' : 'ru';
-      onLanguageSwitch?.(fromLang, toLang);
-      
-      toast.success(t('staffRoles.translatedSuccess'));
-      return;
-    }
-    
-    setIsTranslating(true);
-    try {
-      // Translate only non-cached items
-      let translatedTitle = cachedResults.get(title);
-      if (!translatedTitle) {
-        const titleResult = await supabase.functions.invoke('translate-text', {
-          body: { text: title, targetLang },
-        });
-        if (titleResult.error) throw titleResult.error;
-        translatedTitle = titleResult.data?.translation;
-        if (translatedTitle) {
-          cacheTranslation(title, translatedTitle, targetLang);
-        }
-      }
-      
-      // Translate non-cached sections in parallel
-      const sectionsToTranslate = sections.filter(s => s.content.trim() && !cachedResults.has(s.content));
-      const translationPromises = sectionsToTranslate.map(section =>
-        supabase.functions.invoke('translate-text', {
-          body: { text: section.content, targetLang },
-        })
-      );
-      
-      const results = await Promise.all(translationPromises);
-      
-      // Check for errors
-      const hasErrors = results.some(r => r.error);
-      if (hasErrors) throw new Error('Some translations failed');
-      
-      // Cache new translations
-      const newTranslations: Array<{ original: string; translation: string }> = [];
-      sectionsToTranslate.forEach((section, idx) => {
-        if (results[idx].data?.translation) {
-          newTranslations.push({ original: section.content, translation: results[idx].data.translation });
-        }
-      });
-      if (newTranslations.length > 0) {
-        cacheTranslations(newTranslations, targetLang);
-      }
-      
-      // Update title
-      if (translatedTitle) {
-        onTitleChange(translatedTitle);
-      }
-      
-      // Update sections (use cached or new translations)
-      const updatedSections = sections.map(section => {
-        if (!section.content.trim()) return section;
-        
-        // Check cache first
-        const cached = cachedResults.get(section.content);
-        if (cached) {
-          return { ...section, content: cached };
-        }
-        
-        // Check new translations
-        const idx = sectionsToTranslate.findIndex(s => s.key === section.key);
-        if (idx >= 0 && results[idx].data?.translation) {
-          return { ...section, content: results[idx].data.translation };
-        }
-        
-        return section;
-      });
-      
-      onSectionsChange(updatedSections);
-      
-      // Notify parent about language switch
-      const fromLang: 'ru' | 'en' = isRussian ? 'ru' : 'en';
-      const toLang: 'ru' | 'en' = isRussian ? 'en' : 'ru';
-      onLanguageSwitch?.(fromLang, toLang);
-      
-      toast.success(t('staffRoles.translatedSuccess'));
-    } catch (error) {
-      console.error('Translation error:', error);
-      toast.error(t('staffRoles.translationError'));
-      // Clear saved original on error
-      setOriginalContent(null);
-    } finally {
-      setIsTranslating(false);
-    }
-  }, [title, sections, isRussianContent, onTitleChange, onSectionsChange, onLanguageSwitch, t]);
+  // Translation hook
+  const {
+    isTranslating,
+    isRussianContent,
+    originalContent,
+    handleTranslateAll,
+    handleRestoreOriginal,
+  } = usePromptTranslation(title, sections, {
+    onTitleChange,
+    onSectionsChange,
+    onLanguageSwitch,
+    onRestoreOriginal,
+  });
 
   // Get tips for current section
   const currentSection = sections.find(s => s.key === activeTab);
@@ -274,7 +124,7 @@ const PromptSectionsEditor: React.FC<PromptSectionsEditorProps> = ({
       s => s.title.toLowerCase() === newSectionTitle.trim().toLowerCase()
     );
     if (isDuplicate) {
-      return; // Could show toast here
+      return;
     }
     
     const newSection = createEmptySection(newSectionTitle.trim());
@@ -286,13 +136,11 @@ const PromptSectionsEditor: React.FC<PromptSectionsEditorProps> = ({
 
   const handleRemoveSection = useCallback((key: string) => {
     const section = sections.find(s => s.key === key);
-    // Only allow removing custom sections
     if (!section?.isCustom) return;
     
     const updated = sections.filter(s => s.key !== key);
     onSectionsChange(updated);
     
-    // Switch to first section if current was removed
     if (activeTab === key && updated.length > 0) {
       setActiveTab(updated[0].key);
     }

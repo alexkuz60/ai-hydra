@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -10,8 +10,8 @@ import { Button } from '@/components/ui/button';
 import { Copy, Check, Languages, Loader2 } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
-import { getCachedTranslation, cacheTranslation } from '@/lib/translationCache';
+import { useState } from 'react';
+import { useContentTranslation } from '@/hooks/usePromptTranslation';
 
 interface PromptPreviewDialogProps {
   open: boolean;
@@ -29,14 +29,19 @@ const PromptPreviewDialog: React.FC<PromptPreviewDialogProps> = ({
   const { language, t } = useLanguage();
   const lang = (language === 'ru' || language === 'en') ? language : 'ru';
   const [copied, setCopied] = useState(false);
-  const [isTranslating, setIsTranslating] = useState(false);
-  const [translatedContent, setTranslatedContent] = useState<string | null>(null);
-  const [isShowingTranslation, setIsShowingTranslation] = useState(false);
+  
+  const {
+    isTranslating,
+    isRussianContent,
+    isShowingTranslation,
+    displayContent,
+    handleTranslate,
+    reset,
+  } = useContentTranslation(content);
 
   const handleCopy = async () => {
     try {
-      const textToCopy = isShowingTranslation && translatedContent ? translatedContent : content;
-      await navigator.clipboard.writeText(textToCopy);
+      await navigator.clipboard.writeText(displayContent);
       setCopied(true);
       toast.success(lang === 'ru' ? 'Скопировано в буфер обмена' : 'Copied to clipboard');
       setTimeout(() => setCopied(false), 2000);
@@ -45,64 +50,12 @@ const PromptPreviewDialog: React.FC<PromptPreviewDialogProps> = ({
     }
   };
 
-  const handleTranslate = useCallback(async () => {
-    // If already have translation in state, toggle view
-    if (translatedContent) {
-      setIsShowingTranslation(!isShowingTranslation);
-      return;
-    }
-
-    // Detect source language and set target
-    const isRussian = /[а-яА-ЯёЁ]/.test(content);
-    const targetLang = isRussian ? 'English' : 'Russian';
-
-    // Check cache first
-    const cached = getCachedTranslation(content, targetLang);
-    if (cached) {
-      setTranslatedContent(cached);
-      setIsShowingTranslation(true);
-      return;
-    }
-
-    setIsTranslating(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('translate-text', {
-        body: { text: content, targetLang },
-      });
-
-      if (error) throw error;
-      if (data?.translation) {
-        // Cache the translation
-        cacheTranslation(content, data.translation, targetLang);
-        
-        setTranslatedContent(data.translation);
-        setIsShowingTranslation(true);
-        toast.success(
-          lang === 'ru' 
-            ? `Переведено на ${isRussian ? 'английский' : 'русский'}` 
-            : `Translated to ${isRussian ? 'English' : 'Russian'}`
-        );
-      }
-    } catch (error: any) {
-      console.error('Translation error:', error);
-      toast.error(
-        lang === 'ru' ? 'Ошибка перевода' : 'Translation failed'
-      );
-    } finally {
-      setIsTranslating(false);
-    }
-  }, [content, translatedContent, isShowingTranslation, lang]);
-
-  // Reset translation state when dialog closes (cache remains)
-  React.useEffect(() => {
+  // Reset translation state when dialog closes
+  useEffect(() => {
     if (!open) {
-      setTranslatedContent(null);
-      setIsShowingTranslation(false);
+      reset();
     }
-  }, [open]);
-
-  const displayContent = isShowingTranslation && translatedContent ? translatedContent : content;
-  const isRussianContent = /[а-яА-ЯёЁ]/.test(content);
+  }, [open, reset]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
