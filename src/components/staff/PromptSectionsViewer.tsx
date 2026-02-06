@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { MarkdownRenderer } from '@/components/warroom/MarkdownRenderer';
 import type { PromptSection } from '@/lib/promptSectionParser';
 
 interface PromptSectionsViewerProps {
@@ -88,9 +89,10 @@ const PromptSectionsViewer: React.FC<PromptSectionsViewerProps> = ({
             >
               <ScrollArea className="max-h-[300px]">
                 {section.content.trim() ? (
-                  <pre className="text-sm font-mono whitespace-pre-wrap leading-relaxed text-foreground/90 pr-4">
-                    {section.content}
-                  </pre>
+                  <MarkdownRenderer 
+                    content={section.content} 
+                    className="text-sm pr-4"
+                  />
                 ) : (
                   <p className="text-sm text-muted-foreground italic">
                     {lang === 'ru' ? 'Секция пуста' : 'Section is empty'}
