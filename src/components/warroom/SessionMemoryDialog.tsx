@@ -31,6 +31,7 @@ import {
   Copy,
   Sparkles,
   Text,
+  Star,
 } from 'lucide-react';
 
 interface SessionMemoryDialogProps {
@@ -55,6 +56,7 @@ const CHUNK_TYPE_CONFIG: Record<ChunkType, { icon: React.ElementType; color: str
   decision: { icon: Lightbulb, color: 'text-hydra-success', labelKey: 'memory.decisions' },
   context: { icon: BookOpen, color: 'text-hydra-expert', labelKey: 'memory.context' },
   instruction: { icon: ListChecks, color: 'text-hydra-critical', labelKey: 'memory.instructions' },
+  evaluation: { icon: Star, color: 'text-yellow-500', labelKey: 'memory.evaluations' },
 };
 
 // Find duplicate chunks based on content similarity
