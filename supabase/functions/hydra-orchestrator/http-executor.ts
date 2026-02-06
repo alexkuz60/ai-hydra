@@ -19,25 +19,36 @@ export function isInternalUrl(url: string): boolean {
     const parsed = new URL(url);
     const hostname = parsed.hostname.toLowerCase();
     
-    // Block internal addresses
+    // Block URLs with embedded credentials (bypass technique)
+    if (parsed.username || parsed.password) {
+      return true;
+    }
+    
+    // Block internal IPv4 addresses
     if (
       hostname === 'localhost' ||
       hostname === '127.0.0.1' ||
       hostname === '0.0.0.0' ||
       hostname.startsWith('10.') ||
       hostname.startsWith('192.168.') ||
-      hostname.startsWith('172.16.') ||
-      hostname.startsWith('172.17.') ||
-      hostname.startsWith('172.18.') ||
-      hostname.startsWith('172.19.') ||
-      hostname.startsWith('172.2') ||
-      hostname.startsWith('172.30.') ||
-      hostname.startsWith('172.31.') ||
+      hostname.startsWith('169.254.') ||  // AWS/Azure metadata service
+      hostname.match(/^172\.(1[6-9]|2[0-9]|3[0-1])\./) ||
       hostname.endsWith('.local') ||
       hostname.endsWith('.internal')
     ) {
       return true;
     }
+    
+    // Block internal IPv6 addresses
+    if (
+      hostname === '[::1]' ||       // IPv6 localhost
+      hostname.startsWith('[fc') || // fc00::/7 unique local
+      hostname.startsWith('[fd') || // fc00::/7 unique local
+      hostname.startsWith('[fe80:') // fe80::/10 link-local
+    ) {
+      return true;
+    }
+    
     return false;
   } catch {
     return true; // Invalid URL, block it

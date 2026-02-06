@@ -128,14 +128,16 @@ export function useSendMessage({
         .upload(filePath, fileToUpload);
 
       if (!uploadError) {
-        const { data: urlData } = supabase.storage
+        const { data: signedData, error: signedError } = await supabase.storage
           .from('message-files')
-          .getPublicUrl(filePath);
-        attachmentUrls.push({
-          name: attached.file.name,
-          url: urlData.publicUrl,
-          type: attached.file.type,
-        });
+          .createSignedUrl(filePath, 60 * 60 * 24 * 365); // 1 year
+        if (signedData && !signedError) {
+          attachmentUrls.push({
+            name: attached.file.name,
+            url: signedData.signedUrl,
+            type: attached.file.type,
+          });
+        }
       } else {
         console.error('Upload error:', uploadError);
         toast.error(`${t('files.uploadError')}: ${attached.file.name}`);

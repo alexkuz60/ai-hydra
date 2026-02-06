@@ -27,21 +27,20 @@ export function useToolsCRUD() {
 
     try {
       const { data, error } = await supabase
-        .from('custom_tools')
-        .select('*')
-        .order('updated_at', { ascending: false });
+        .rpc('get_custom_tools_safe');
 
       if (error) throw error;
 
       const parsed = (data || []).map((tool) => ({
         ...tool,
+        user_id: tool.is_owner ? user!.id : '',
         parameters: (Array.isArray(tool.parameters) ? tool.parameters : []) as ToolParameter[],
         tool_type: (tool.tool_type || 'prompt') as ToolType,
         category: (tool.category || 'general') as ToolCategory,
         http_config: (tool.http_config as unknown) as HttpConfig | null,
       }));
 
-      setTools(parsed as CustomTool[]);
+      setTools(parsed as unknown as CustomTool[]);
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Failed to fetch tools';
       toast.error(message);

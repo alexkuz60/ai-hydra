@@ -47,14 +47,13 @@ export function useCustomTools() {
     const fetchTools = async () => {
       try {
         const { data, error } = await supabase
-          .from('custom_tools')
-          .select('id, name, display_name, description, prompt_template, parameters, is_shared, user_id, tool_type, http_config')
-          .order('display_name');
+          .rpc('get_custom_tools_safe');
 
         if (error) throw error;
 
         const parsed = (data || []).map(tool => ({
           ...tool,
+          user_id: (tool as Record<string, unknown>).user_id as string || '',
           parameters: (Array.isArray(tool.parameters) 
             ? tool.parameters 
             : []) as unknown as ToolParameter[],

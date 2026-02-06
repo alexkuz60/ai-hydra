@@ -647,6 +647,25 @@ export type Database = {
     }
     Functions: {
       delete_user_secret: { Args: { p_secret_id: string }; Returns: undefined }
+      get_custom_tools_safe: {
+        Args: never
+        Returns: {
+          category: string
+          created_at: string
+          description: string
+          display_name: string
+          http_config: Json
+          id: string
+          is_owner: boolean
+          is_shared: boolean
+          name: string
+          parameters: Json
+          prompt_template: string
+          tool_type: string
+          updated_at: string
+          usage_count: number
+        }[]
+      }
       get_decrypted_secret: { Args: { p_secret_id: string }; Returns: string }
       get_my_api_key_status: {
         Args: never
