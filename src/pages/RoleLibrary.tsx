@@ -30,7 +30,7 @@
    ResizableHandle,
  } from '@/components/ui/resizable';
  import { UnsavedChangesDialog } from '@/components/ui/unsaved-changes-dialog';
- import { usePromptsCRUD, RolePrompt, PromptFormData, getEmptyPromptFormData, promptToFormData } from '@/hooks/usePromptsCRUD';
+ import { usePromptsCRUD, RolePrompt, PromptFormData, getEmptyPromptFormData, promptToFormData, generatePromptName } from '@/hooks/usePromptsCRUD';
  import { useUnsavedChanges } from '@/hooks/useUnsavedChanges';
  import { PromptRow } from '@/components/prompts/PromptRow';
  import { PromptDetailsPanel } from '@/components/prompts/PromptDetailsPanel';
@@ -246,18 +246,25 @@
      setPromptToDelete(prompt);
    };
  
-   const handleDuplicate = (prompt: RolePrompt, e?: React.MouseEvent) => {
-     e?.stopPropagation();
-     const duplicateFormData = promptToFormData(prompt);
-     duplicateFormData.name = `${prompt.name} (копия)`;
-     duplicateFormData.is_shared = false;
-     
-     setFormData(duplicateFormData);
-     setIsCreating(true);
-     setIsEditing(false);
-     setSelectedPrompt(null);
-     setEditingPrompt(null);
-   };
+    const handleDuplicate = (prompt: RolePrompt, e?: React.MouseEvent) => {
+      e?.stopPropagation();
+      const duplicateFormData = promptToFormData(prompt);
+      // Add "(копия)" to nickname and regenerate name
+      duplicateFormData.nickname = `${duplicateFormData.nickname} (копия)`;
+      duplicateFormData.name = generatePromptName(
+        duplicateFormData.nickname,
+        duplicateFormData.role,
+        duplicateFormData.language,
+        false
+      );
+      duplicateFormData.is_shared = false;
+      
+      setFormData(duplicateFormData);
+      setIsCreating(true);
+      setIsEditing(false);
+      setSelectedPrompt(null);
+      setEditingPrompt(null);
+    };
  
    const handleConfirmDelete = async () => {
      if (!promptToDelete) return;
