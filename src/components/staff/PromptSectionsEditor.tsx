@@ -249,7 +249,7 @@ const PromptSectionsEditor: React.FC<PromptSectionsEditorProps> = ({
                 onClick={() => setIsAddingSection(true)}
               >
                 <Plus className="h-3 w-3" />
-                {t('staffRoles.addSection') || 'Добавить секцию'}
+                {lang === 'ru' ? 'Добавить секцию' : 'Add section'}
               </Button>
             )}
           </div>
