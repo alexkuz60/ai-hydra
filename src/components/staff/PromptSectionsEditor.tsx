@@ -225,7 +225,7 @@ const PromptSectionsEditor: React.FC<PromptSectionsEditorProps> = ({
                   value={newSectionTitle}
                   onChange={(e) => setNewSectionTitle(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  placeholder="Название секции"
+                  placeholder={lang === 'ru' ? 'Название секции' : 'Section name'}
                   className="h-8 text-xs"
                   autoFocus
                 />
