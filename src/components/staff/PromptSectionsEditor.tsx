@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -10,14 +10,26 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
-import { Plus, Lightbulb, ChevronDown, X, Trash2 } from 'lucide-react';
+import { Plus, Lightbulb, ChevronDown, X, Trash2, Sparkles } from 'lucide-react';
 import { 
   type PromptSection, 
   createEmptySection, 
   SECTION_TIPS 
 } from '@/lib/promptSectionParser';
 import { useLanguage } from '@/contexts/LanguageContext';
+import {
+  getDictionariesForSection,
+  getDictionaryLabel,
+  PROMPT_DICTIONARIES,
+  type PromptDictionaryKey,
+} from '@/config/promptDictionaries';
 
 interface PromptSectionsEditorProps {
   title: string;
@@ -34,17 +46,49 @@ const PromptSectionsEditor: React.FC<PromptSectionsEditorProps> = ({
   onSectionsChange,
   className,
 }) => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [activeTab, setActiveTab] = useState(sections[0]?.key || '');
   const [isAddingSection, setIsAddingSection] = useState(false);
   const [newSectionTitle, setNewSectionTitle] = useState('');
   const [tipsOpen, setTipsOpen] = useState(false);
+  const [snippetsOpen, setSnippetsOpen] = useState(true);
+  const textareaRefs = useRef<Record<string, HTMLTextAreaElement | null>>({});
+  const lang = (language === 'ru' || language === 'en') ? language : 'ru';
 
   // Get tips for current section
   const currentSection = sections.find(s => s.key === activeTab);
   const currentTips = currentSection
     ? SECTION_TIPS[currentSection.key] || SECTION_TIPS.custom
     : null;
+  
+  // Get dictionaries for current section
+  const currentDictionaries = currentSection
+    ? getDictionariesForSection(currentSection.key)
+    : [];
+
+  // Insert snippet into current section's textarea
+  const handleInsertSnippet = useCallback((text: string) => {
+    const textarea = textareaRefs.current[activeTab];
+    if (!textarea) return;
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const currentContent = currentSection?.content || '';
+    
+    // Insert at cursor or append with newline
+    const prefix = start > 0 && currentContent[start - 1] !== '\n' ? '\n' : '';
+    const suffix = end < currentContent.length && currentContent[end] !== '\n' ? '' : '';
+    const newContent = currentContent.slice(0, start) + prefix + text + suffix + currentContent.slice(end);
+    
+    handleSectionContentChange(activeTab, newContent);
+    
+    // Focus back and set cursor position
+    setTimeout(() => {
+      textarea.focus();
+      const newPos = start + prefix.length + text.length;
+      textarea.setSelectionRange(newPos, newPos);
+    }, 0);
+  }, [activeTab, currentSection?.content]);
 
   const handleSectionContentChange = useCallback((key: string, content: string) => {
     const updated = sections.map(section =>
@@ -220,6 +264,7 @@ const PromptSectionsEditor: React.FC<PromptSectionsEditorProps> = ({
               className="m-0 flex-1 flex flex-col gap-3"
             >
               <Textarea
+                ref={(el) => { textareaRefs.current[section.key] = el; }}
                 value={section.content}
                 onChange={(e) => handleSectionContentChange(section.key, e.target.value)}
                 placeholder={`Содержимое секции «${section.title}»...`}
@@ -227,6 +272,59 @@ const PromptSectionsEditor: React.FC<PromptSectionsEditorProps> = ({
               />
             </TabsContent>
           ))}
+
+          {/* Quick snippets from dictionaries */}
+          {currentDictionaries.length > 0 && (
+            <Collapsible open={snippetsOpen} onOpenChange={setSnippetsOpen}>
+              <CollapsibleTrigger className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors">
+                <ChevronDown className={cn(
+                  "h-3 w-3 transition-transform",
+                  !snippetsOpen && "-rotate-90"
+                )} />
+                <Sparkles className="h-3 w-3" />
+                <span>{lang === 'ru' ? 'Быстрые вставки' : 'Quick snippets'}</span>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="pt-2">
+                <div className="space-y-3">
+                  <TooltipProvider delayDuration={200}>
+                    {currentDictionaries.map((dictKey) => {
+                      const dict = PROMPT_DICTIONARIES[dictKey];
+                      const entries = dict.entries.slice(0, 8); // Show first 8 items
+                      
+                      return (
+                        <div key={dictKey} className="space-y-1.5">
+                          <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
+                            {getDictionaryLabel(dictKey, lang)}
+                          </span>
+                          <div className="flex flex-wrap gap-1.5">
+                            {entries.map((entry) => (
+                              <Tooltip key={entry.key}>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="h-6 px-2 text-xs font-normal hover:bg-primary/10 hover:text-primary hover:border-primary/50"
+                                    onClick={() => handleInsertSnippet(entry.label[lang])}
+                                  >
+                                    {entry.label[lang]}
+                                  </Button>
+                                </TooltipTrigger>
+                                {entry.description && (
+                                  <TooltipContent side="top" className="max-w-xs">
+                                    <p className="text-xs">{entry.description[lang]}</p>
+                                  </TooltipContent>
+                                )}
+                              </Tooltip>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </TooltipProvider>
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+          )}
 
           {/* Contextual tips */}
           {currentTips && (
