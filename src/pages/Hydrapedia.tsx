@@ -31,7 +31,8 @@ import {
   Link2,
   Home,
   ArrowUp,
-  HelpCircle
+  HelpCircle,
+  BrainCircuit
 } from 'lucide-react';
 import {
   Breadcrumb,
@@ -53,6 +54,7 @@ const iconMap: Record<string, React.ElementType> = {
   BarChart3,
   Star,
   HelpCircle,
+  BrainCircuit,
 };
 
 interface TocItem {

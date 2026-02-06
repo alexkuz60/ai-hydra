@@ -6581,6 +6581,261 @@ graph TD
 > **Tip**: Start with simple linear flows, gradually adding branches and loops as needed.`
     }
   },
+  // Role Memory
+  {
+    id: 'roleMemory',
+    titleKey: 'hydrapedia.sections.roleMemory',
+    icon: 'BrainCircuit',
+    content: {
+      ru: `# Ролевая память
+
+**Ролевая память** — это система долгосрочного накопления опыта для технических ролей AI-Hydra. В отличие от **памяти сессии**, которая живёт в рамках одного диалога, ролевая память сохраняется **между сессиями**, позволяя агентам становиться умнее с каждым взаимодействием.
+
+---
+
+## Концепция
+
+Каждая техническая роль (Архивариус, Аналитик, Промпт-инженер и др.) имеет собственное «хранилище опыта». Когда роль выполняет задачу — успешно или нет — этот опыт можно сохранить, и в следующий раз агент учтёт его при формировании ответа.
+
+\`\`\`mermaid
+graph LR
+    S1[Сессия 1] -->|опыт| RM[(Ролевая память)]
+    S2[Сессия 2] -->|опыт| RM
+    RM -->|контекст| S3[Сессия 3]
+    RM -->|контекст| S4[Сессия N]
+\`\`\`
+
+---
+
+## Типы воспоминаний
+
+| Тип | Иконка | Описание | Пример |
+|-----|--------|----------|--------|
+| **experience** | 🧠 | Общий накопленный опыт | «Для задач перевода лучше работает цепочка analyst → assistant» |
+| **preference** | ⚙️ | Предпочтения и настройки | «Пользователь предпочитает лаконичные ответы без вступлений» |
+| **skill** | 🎯 | Освоенный навык или паттерн | «Умею оптимизировать промпты с техникой chain-of-thought» |
+| **mistake** | ⚠️ | Ошибка, которую не стоит повторять | «Не отправлять запросы к Perplexity без Tavily API ключа» |
+| **success** | ✅ | Успешно решённая задача | «Стратегия декомпозиции задач повысила точность на 30%» |
+
+---
+
+## Как это работает
+
+### 1. Сохранение опыта
+
+Опыт сохраняется автоматически или вручную:
+
+- **Автоматически**: Технические роли могут записывать результаты своей работы
+- **Вручную**: Через интерфейс управления ролевой памятью
+
+При сохранении для каждой записи генерируется **векторный эмбеддинг** (text-embedding-3-small), что позволяет искать релевантный опыт семантически, а не по ключевым словам.
+
+### 2. Поиск релевантного опыта
+
+Перед выполнением задачи система ищет в памяти роли опыт, похожий на текущий контекст:
+
+\`\`\`
+Запрос: "Оптимизируй промпт для анализа кода"
+↓
+Семантический поиск по role_memory
+↓
+Найдено: "При оптимизации промптов для кода добавляй примеры input/output"
+(similarity: 0.89)
+\`\`\`
+
+### 3. Использование в контексте
+
+Найденные воспоминания встраиваются в системный промпт роли, обогащая её инструкции реальным опытом.
+
+---
+
+## Атрибуты записи
+
+Каждое воспоминание содержит:
+
+| Атрибут | Описание |
+|---------|----------|
+| **content** | Текст опыта |
+| **memory_type** | Тип: experience / preference / skill / mistake / success |
+| **confidence_score** | Уровень уверенности (0.0 — 1.0), по умолчанию 0.7 |
+| **tags** | Теги для категоризации |
+| **usage_count** | Сколько раз опыт был использован |
+| **last_used_at** | Когда опыт использовался последний раз |
+
+---
+
+## Управление памятью
+
+### Просмотр
+
+Ролевая память доступна через индикатор \`Brain\` в интерфейсе технических ролей. Бейдж показывает общее количество сохранённых воспоминаний.
+
+### Обновление
+
+Можно обновить текст, теги, уровень уверенности. При изменении текста эмбеддинг пересчитывается автоматически.
+
+### Удаление
+
+Неактуальные или ошибочные записи можно удалить — они исчезнут из поиска мгновенно.
+
+### Статистика
+
+Доступна сводка по каждой роли:
+- Общее количество воспоминаний
+- Распределение по типам
+- Средний уровень уверенности
+- Самое часто используемое воспоминание
+
+---
+
+## Отличие от памяти сессии
+
+| Параметр | Память сессии | Ролевая память |
+|----------|--------------|----------------|
+| **Область** | Один диалог | Все сессии |
+| **Привязка** | К сессии | К роли |
+| **Цель** | Контекст диалога | Накопление экспертизы |
+| **Кто пишет** | Авто (рейтинг ≥7) + вручную | Технические роли |
+| **Поиск** | По сессии | По роли + семантический |
+| **Жизненный цикл** | Удаляется с сессией | Живёт пока не удалят |
+
+---
+
+## Советы по использованию
+
+> **Фиксируйте ошибки**: Записывайте неудачные подходы как \`mistake\` — это самый ценный тип опыта, предотвращающий повторение ошибок.
+
+> **Ведите теги**: Используйте теги для группировки опыта по проектам или доменам. Это улучшает релевантность поиска.
+
+> **Следите за уверенностью**: Понижайте confidence_score для спорных выводов и повышайте для проверенных практик.
+
+> **Проверяйте актуальность**: Периодически просматривайте записи — устаревший опыт может навредить.`,
+
+      en: `# Role Memory
+
+**Role Memory** is a long-term experience accumulation system for AI-Hydra's technical roles. Unlike **session memory**, which lives within a single conversation, role memory persists **across sessions**, allowing agents to become smarter with every interaction.
+
+---
+
+## Concept
+
+Each technical role (Archivist, Analyst, Prompt Engineer, etc.) has its own "experience store." When a role completes a task — successfully or not — that experience can be saved, and next time the agent will consider it when forming a response.
+
+\`\`\`mermaid
+graph LR
+    S1[Session 1] -->|experience| RM[(Role Memory)]
+    S2[Session 2] -->|experience| RM
+    RM -->|context| S3[Session 3]
+    RM -->|context| S4[Session N]
+\`\`\`
+
+---
+
+## Memory Types
+
+| Type | Icon | Description | Example |
+|------|------|-------------|---------|
+| **experience** | 🧠 | General accumulated experience | "For translation tasks, analyst → assistant chain works best" |
+| **preference** | ⚙️ | Preferences and settings | "User prefers concise answers without introductions" |
+| **skill** | 🎯 | Mastered skill or pattern | "Can optimize prompts with chain-of-thought technique" |
+| **mistake** | ⚠️ | Error not to repeat | "Don't send requests to Perplexity without Tavily API key" |
+| **success** | ✅ | Successfully solved task | "Task decomposition strategy improved accuracy by 30%" |
+
+---
+
+## How It Works
+
+### 1. Saving Experience
+
+Experience is saved automatically or manually:
+
+- **Automatically**: Technical roles can record results of their work
+- **Manually**: Through the role memory management interface
+
+When saving, a **vector embedding** (text-embedding-3-small) is generated for each entry, enabling semantic search rather than keyword-based lookup.
+
+### 2. Finding Relevant Experience
+
+Before executing a task, the system searches the role's memory for experience similar to the current context:
+
+\`\`\`
+Query: "Optimize prompt for code analysis"
+↓
+Semantic search in role_memory
+↓
+Found: "When optimizing code prompts, add input/output examples"
+(similarity: 0.89)
+\`\`\`
+
+### 3. Using in Context
+
+Found memories are embedded into the role's system prompt, enriching its instructions with real experience.
+
+---
+
+## Entry Attributes
+
+Each memory entry contains:
+
+| Attribute | Description |
+|-----------|-------------|
+| **content** | Experience text |
+| **memory_type** | Type: experience / preference / skill / mistake / success |
+| **confidence_score** | Confidence level (0.0 — 1.0), default 0.7 |
+| **tags** | Tags for categorization |
+| **usage_count** | How many times the experience was used |
+| **last_used_at** | When the experience was last used |
+
+---
+
+## Memory Management
+
+### Viewing
+
+Role memory is accessible via the \`Brain\` indicator in the technical roles interface. The badge shows the total number of saved memories.
+
+### Updating
+
+You can update text, tags, and confidence level. When text changes, the embedding is recalculated automatically.
+
+### Deleting
+
+Outdated or incorrect entries can be deleted — they disappear from search immediately.
+
+### Statistics
+
+A summary is available for each role:
+- Total memory count
+- Distribution by type
+- Average confidence level
+- Most frequently used memory
+
+---
+
+## Difference from Session Memory
+
+| Parameter | Session Memory | Role Memory |
+|-----------|---------------|-------------|
+| **Scope** | Single conversation | All sessions |
+| **Binding** | To session | To role |
+| **Purpose** | Conversation context | Expertise accumulation |
+| **Who writes** | Auto (rating ≥7) + manual | Technical roles |
+| **Search** | By session | By role + semantic |
+| **Lifecycle** | Deleted with session | Lives until removed |
+
+---
+
+## Usage Tips
+
+> **Record mistakes**: Save failed approaches as \`mistake\` — this is the most valuable experience type, preventing repeated errors.
+
+> **Use tags**: Tag experience by project or domain. This improves search relevance.
+
+> **Monitor confidence**: Lower confidence_score for debatable conclusions and raise it for proven practices.
+
+> **Check relevance**: Periodically review entries — outdated experience can be harmful.`
+    }
+  },
   // FAQ & Troubleshooting
   {
     id: 'faq',
