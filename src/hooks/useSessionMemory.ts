@@ -164,7 +164,27 @@ export function useSessionMemory(sessionId: string | null) {
     },
   });
 
-  // Delete all memory for a session
+  // Delete multiple chunks at once (for duplicate removal)
+  const deleteChunksBatchMutation = useMutation({
+    mutationFn: async (chunkIds: string[]) => {
+      if (!user) throw new Error('User not authenticated');
+      if (chunkIds.length === 0) return;
+
+      const { error } = await supabase
+        .from('session_memory')
+        .delete()
+        .in('id', chunkIds);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey });
+    },
+    onError: (error) => {
+      console.error('Failed to delete memory chunks batch:', error);
+      toast.error('Не удалось удалить фрагменты');
+    },
+  });
   const clearSessionMemoryMutation = useMutation({
     mutationFn: async () => {
       if (!user || !sessionId) throw new Error('Session not available');
@@ -409,6 +429,7 @@ export function useSessionMemory(sessionId: string | null) {
     createChunk: createChunkMutation.mutateAsync,
     updateChunk: updateChunkMutation.mutateAsync,
     deleteChunk: deleteChunkMutation.mutateAsync,
+    deleteChunksBatch: deleteChunksBatchMutation.mutateAsync,
     deleteByMessageId: deleteByMessageIdMutation.mutateAsync,
     clearSessionMemory: clearSessionMemoryMutation.mutateAsync,
     createChunksBatch,
@@ -417,6 +438,7 @@ export function useSessionMemory(sessionId: string | null) {
     isCreating: createChunkMutation.isPending,
     isUpdating: updateChunkMutation.isPending,
     isDeleting: deleteChunkMutation.isPending,
+    isDeletingBatch: deleteChunksBatchMutation.isPending,
     isDeletingByMessageId: deleteByMessageIdMutation.isPending,
     isClearing: clearSessionMemoryMutation.isPending,
 

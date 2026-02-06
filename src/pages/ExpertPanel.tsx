@@ -137,8 +137,10 @@ export default function ExpertPanel() {
     refetch: refetchMemory,
     isLoading: memoryLoading,
     deleteChunk,
+    deleteChunksBatch,
     clearSessionMemory,
     isDeleting: memoryDeleting,
+    isDeletingBatch: memoryDeletingBatch,
     isClearing: memoryClearing,
     semanticSearch,
     isSearching: memorySearching,
@@ -916,6 +918,8 @@ export default function ExpertPanel() {
         isLoading={memoryLoading}
         isDeleting={memoryDeleting}
         onDeleteChunk={deleteChunk}
+        onDeleteDuplicates={deleteChunksBatch}
+        isDeletingDuplicates={memoryDeletingBatch}
         onClearAll={clearSessionMemory}
         isClearing={memoryClearing}
         onSemanticSearch={semanticSearch}

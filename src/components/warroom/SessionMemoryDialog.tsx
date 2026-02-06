@@ -40,6 +40,8 @@ interface SessionMemoryDialogProps {
   isLoading: boolean;
   isDeleting: boolean;
   onDeleteChunk: (chunkId: string) => Promise<void>;
+  onDeleteDuplicates?: (chunkIds: string[]) => Promise<void>;
+  isDeletingDuplicates?: boolean;
   onClearAll: () => Promise<void>;
   isClearing: boolean;
   // Optional: for semantic search
@@ -87,6 +89,8 @@ export function SessionMemoryDialog({
   isLoading,
   isDeleting,
   onDeleteChunk,
+  onDeleteDuplicates,
+  isDeletingDuplicates = false,
   onClearAll,
   isClearing,
   onSemanticSearch,
@@ -97,6 +101,7 @@ export function SessionMemoryDialog({
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [confirmClearAll, setConfirmClearAll] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [confirmDeleteDuplicates, setConfirmDeleteDuplicates] = useState(false);
   const [useSemanticSearch, setUseSemanticSearch] = useState(false);
   const [semanticResults, setSemanticResults] = useState<SearchResult[]>([]);
   const [isSearchingInternal, setIsSearchingInternal] = useState(false);
@@ -146,6 +151,32 @@ export function SessionMemoryDialog({
     });
     return count;
   }, [duplicateMap]);
+
+  // Get IDs to delete (keep oldest in each group, delete rest)
+  const duplicateIdsToDelete = useMemo(() => {
+    const toDelete: string[] = [];
+    const seen = new Set<string>();
+    
+    // Get all duplicate groups
+    duplicateMap.forEach((others, id) => {
+      const groupKey = [id, ...others].sort().join(',');
+      if (!seen.has(groupKey)) {
+        seen.add(groupKey);
+        // Find all chunks in this group and sort by created_at
+        const groupIds = [id, ...others];
+        const groupChunks = chunks
+          .filter(c => groupIds.includes(c.id))
+          .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+        
+        // Keep the oldest, delete the rest
+        if (groupChunks.length > 1) {
+          groupChunks.slice(1).forEach(c => toDelete.push(c.id));
+        }
+      }
+    });
+    
+    return toDelete;
+  }, [duplicateMap, chunks]);
 
   // Determine which items to display
   const displayItems = useMemo(() => {
@@ -204,6 +235,19 @@ export function SessionMemoryDialog({
     }
     await onClearAll();
     setConfirmClearAll(false);
+  };
+
+  const handleDeleteDuplicates = async () => {
+    if (!onDeleteDuplicates || duplicateIdsToDelete.length === 0) return;
+    
+    if (!confirmDeleteDuplicates) {
+      setConfirmDeleteDuplicates(true);
+      return;
+    }
+    
+    await onDeleteDuplicates(duplicateIdsToDelete);
+    setConfirmDeleteDuplicates(false);
+    setActiveFilter('all'); // Reset filter after deletion
   };
 
   return (
@@ -298,18 +342,46 @@ export function SessionMemoryDialog({
             </Badge>
           </Button>
           {duplicateCount > 0 && (
-            <Button
-              variant={activeFilter === 'duplicates' ? 'secondary' : 'ghost'}
-              size="sm"
-              onClick={() => setActiveFilter('duplicates')}
-              className={cn('h-7', activeFilter === 'duplicates' && 'text-amber-500')}
-            >
-              <Copy className="h-3.5 w-3.5 mr-1" />
-              {t('memory.duplicates')}
-              <Badge variant="outline" className="ml-1 h-5 px-1.5 text-[10px] text-amber-500 border-amber-500/50">
-                {duplicateCount}
-              </Badge>
-            </Button>
+            <>
+              <Button
+                variant={activeFilter === 'duplicates' ? 'secondary' : 'ghost'}
+                size="sm"
+                onClick={() => setActiveFilter('duplicates')}
+                className={cn('h-7', activeFilter === 'duplicates' && 'text-hydra-critical')}
+              >
+                <Copy className="h-3.5 w-3.5 mr-1" />
+                {t('memory.duplicates')}
+                <Badge variant="outline" className="ml-1 h-5 px-1.5 text-[10px] text-hydra-critical border-hydra-critical/50">
+                  {duplicateCount}
+                </Badge>
+              </Button>
+              
+              {/* Delete duplicates button - show when duplicates filter is active */}
+              {activeFilter === 'duplicates' && onDeleteDuplicates && duplicateIdsToDelete.length > 0 && (
+                <Button
+                  variant={confirmDeleteDuplicates ? 'destructive' : 'outline'}
+                  size="sm"
+                  onClick={handleDeleteDuplicates}
+                  disabled={isDeletingDuplicates}
+                  className={cn(
+                    'h-7 ml-auto',
+                    confirmDeleteDuplicates && 'animate-pulse'
+                  )}
+                >
+                  {isDeletingDuplicates ? (
+                    <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />
+                  ) : confirmDeleteDuplicates ? (
+                    <AlertTriangle className="h-3.5 w-3.5 mr-1" />
+                  ) : (
+                    <Trash2 className="h-3.5 w-3.5 mr-1" />
+                  )}
+                  {confirmDeleteDuplicates 
+                    ? t('memory.confirmDeleteDuplicates')
+                    : `${t('memory.deleteDuplicates')} (${duplicateIdsToDelete.length})`
+                  }
+                </Button>
+              )}
+            </>
           )}
           {(Object.keys(CHUNK_TYPE_CONFIG) as ChunkType[]).map((type) => {
             const config = CHUNK_TYPE_CONFIG[type];
