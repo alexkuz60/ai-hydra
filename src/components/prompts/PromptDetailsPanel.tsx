@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -10,6 +10,8 @@ import { getRoleBadgeColor } from '@/config/roles';
 import { format } from 'date-fns';
 import type { RolePrompt } from '@/hooks/usePromptsCRUD';
 import { parsePromptNickname } from '@/hooks/usePromptsCRUD';
+import { parsePromptSections } from '@/lib/promptSectionParser';
+import PromptSectionsViewer from '@/components/staff/PromptSectionsViewer';
  
  interface PromptDetailsPanelProps {
    prompt: RolePrompt | null;
@@ -134,13 +136,16 @@ import { parsePromptNickname } from '@/hooks/usePromptsCRUD';
            </section>
          )}
  
-         {/* Content */}
-         <section>
-           <h3 className="text-sm font-medium text-muted-foreground mb-2">{t('roleLibrary.content')}</h3>
-           <pre className="text-sm bg-muted p-4 rounded-lg overflow-auto max-h-[400px] whitespace-pre-wrap font-mono">
-             {prompt.content}
-           </pre>
-         </section>
+          {/* Content - Sectioned view */}
+          <section>
+            <h3 className="text-sm font-medium text-muted-foreground mb-3">{t('roleLibrary.content')}</h3>
+            <div className="bg-muted/30 p-4 rounded-lg border border-border">
+              <PromptSectionsViewer
+                title=""
+                sections={parsePromptSections(prompt.content).sections}
+              />
+            </div>
+          </section>
  
          {/* Metadata */}
          <section className="flex items-center gap-4 text-sm text-muted-foreground pt-4 border-t">
