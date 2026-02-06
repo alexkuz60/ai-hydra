@@ -3,6 +3,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
+import { useLanguage } from '@/contexts/LanguageContext';
 import type { PromptSection } from '@/lib/promptSectionParser';
 
 interface PromptSectionsViewerProps {
@@ -16,12 +17,14 @@ const PromptSectionsViewer: React.FC<PromptSectionsViewerProps> = ({
   sections,
   className,
 }) => {
+  const { t, language } = useLanguage();
   const [activeTab, setActiveTab] = useState(sections[0]?.key || '');
+  const lang = (language === 'ru' || language === 'en') ? language : 'ru';
 
   if (sections.length === 0) {
     return (
       <div className={cn("text-sm text-muted-foreground italic", className)}>
-        Промпт не содержит структурированных секций
+        {lang === 'ru' ? 'Промпт не содержит структурированных секций' : 'The prompt has no structured sections'}
       </div>
     );
   }
@@ -90,7 +93,7 @@ const PromptSectionsViewer: React.FC<PromptSectionsViewerProps> = ({
                   </pre>
                 ) : (
                   <p className="text-sm text-muted-foreground italic">
-                    Секция пуста
+                    {lang === 'ru' ? 'Секция пуста' : 'Section is empty'}
                   </p>
                 )}
               </ScrollArea>
