@@ -223,6 +223,63 @@ export function createEmptySection(title: string): PromptSection {
 }
 
 /**
+ * Returns default empty sections for a new prompt
+ */
+export function getDefaultSections(): PromptSection[] {
+  return [
+    {
+      key: 'identity',
+      title: 'Идентичность',
+      content: '',
+      icon: UserCircle,
+      isCustom: false,
+    },
+    {
+      key: 'competencies',
+      title: 'Компетенции',
+      content: '',
+      icon: GraduationCap,
+      isCustom: false,
+    },
+    {
+      key: 'methodology',
+      title: 'Методология',
+      content: '',
+      icon: ListChecks,
+      isCustom: false,
+    },
+    {
+      key: 'format',
+      title: 'Формат ответов',
+      content: '',
+      icon: FileText,
+      isCustom: false,
+    },
+    {
+      key: 'teamwork',
+      title: 'Взаимодействие',
+      content: '',
+      icon: Users,
+      isCustom: false,
+    },
+    {
+      key: 'limitations',
+      title: 'Ограничения',
+      content: '',
+      icon: AlertTriangle,
+      isCustom: false,
+    },
+    {
+      key: 'supervisor',
+      title: 'Пожелания Супервизора',
+      content: '',
+      icon: Crown,
+      isCustom: false,
+    },
+  ];
+}
+
+/**
  * Section writing tips for contextual help
  */
 export const SECTION_TIPS: Record<string, { title: string; tips: string[] }> = {

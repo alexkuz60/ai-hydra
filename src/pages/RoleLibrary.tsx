@@ -34,7 +34,7 @@
  import { useUnsavedChanges } from '@/hooks/useUnsavedChanges';
  import { PromptRow } from '@/components/prompts/PromptRow';
  import { PromptDetailsPanel } from '@/components/prompts/PromptDetailsPanel';
- import { PromptEditor } from '@/components/prompts/PromptEditor';
+ import { AdvancedPromptEditor } from '@/components/prompts/AdvancedPromptEditor';
  import { RoleSelectOptions } from '@/components/ui/RoleSelectItem';
  
  type OwnerFilter = 'all' | 'own' | 'shared' | 'system';
@@ -415,15 +415,15 @@
  
            {/* Right panel - Details or Editor */}
            <ResizablePanel defaultSize={60} minSize={40}>
-             {isCreating || isEditing ? (
-               <PromptEditor
-                 formData={formData}
-                 onChange={handleFormChange}
-                 onSave={handleSave}
-                 onCancel={handleCancelEdit}
-                 saving={saving}
-                 isEditing={isEditing}
-               />
+            {isCreating || isEditing ? (
+                <AdvancedPromptEditor
+                  formData={formData}
+                  onChange={handleFormChange}
+                  onSave={handleSave}
+                  onCancel={handleCancelEdit}
+                  saving={saving}
+                  isEditing={isEditing}
+                />
              ) : (
                <PromptDetailsPanel
                  prompt={selectedPrompt}
