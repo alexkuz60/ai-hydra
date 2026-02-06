@@ -25,7 +25,7 @@ const PromptPreviewDialog: React.FC<PromptPreviewDialogProps> = ({
   title,
   content,
 }) => {
-  const { language } = useLanguage();
+  const { language, t } = useLanguage();
   const lang = (language === 'ru' || language === 'en') ? language : 'ru';
   const [copied, setCopied] = useState(false);
   const [isTranslating, setIsTranslating] = useState(false);
@@ -128,11 +128,11 @@ const PromptPreviewDialog: React.FC<PromptPreviewDialogProps> = ({
                 className="gap-1.5 h-7 text-xs"
               >
                 {copied ? (
-                  <Check className="h-3 w-3 text-primary" />
-                ) : (
-                  <Copy className="h-3 w-3" />
-                )}
-                {lang === 'ru' ? 'Копировать' : 'Copy'}
+                   <Check className="h-3 w-3 text-primary" />
+                 ) : (
+                   <Copy className="h-3 w-3" />
+                 )}
+                 {copied ? t('common.copied') : t('common.copy')}
               </Button>
             </div>
           </div>
