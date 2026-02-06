@@ -339,7 +339,7 @@ const PromptSectionsEditor: React.FC<PromptSectionsEditorProps> = ({
             <TabsContent
               key={section.key}
               value={section.key}
-              className="m-0 flex-1 flex flex-col gap-3"
+              className="m-0 flex-1 flex flex-col gap-3 data-[state=inactive]:hidden"
             >
               <Textarea
                 ref={(el) => { textareaRefs.current[section.key] = el; }}
