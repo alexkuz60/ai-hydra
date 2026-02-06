@@ -224,6 +224,12 @@ const RoleDetailsPanel = forwardRef<HTMLDivElement, RoleDetailsPanelProps>(
       return parsePromptSections(DEFAULT_SYSTEM_PROMPTS[selectedRole]);
     }, [selectedRole]);
 
+    // Check if prompt has been modified from default
+    const isPromptModified = useMemo(() => {
+      const defaultPrompt = selectedRole ? DEFAULT_SYSTEM_PROMPTS[selectedRole] : '';
+      return editedPrompt.trim() !== defaultPrompt.trim();
+    }, [editedPrompt, selectedRole]);
+
     const handleSaveToLibrary = async () => {
       if (!user || !selectedRole || !promptName.trim() || !editedPrompt.trim()) {
         toast.error(t('common.error'));
@@ -368,24 +374,29 @@ const RoleDetailsPanel = forwardRef<HTMLDivElement, RoleDetailsPanelProps>(
 
             <Separator />
 
-            {/* System Prompt */}
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-medium text-muted-foreground">
-                  {t('staffRoles.systemPrompt')}
-                </h3>
-                {!isEditing && user && (
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={handleStartEdit}
-                    className="gap-1.5 h-7 text-xs"
-                  >
-                    <Pencil className="h-3 w-3" />
-                    {t('staffRoles.editAndSave')}
-                  </Button>
-                )}
-              </div>
+             {/* System Prompt */}
+             <div className="space-y-3">
+               <div className="flex items-center justify-between">
+                 <div className="flex items-center gap-2">
+                   <h3 className="text-sm font-medium text-muted-foreground">
+                     {t('staffRoles.systemPrompt')}
+                   </h3>
+                   {isEditing && isPromptModified && (
+                     <span className="inline-flex items-center justify-center w-2 h-2 bg-primary rounded-full" title={t('common.unsavedChanges.title')} />
+                   )}
+                 </div>
+                 {!isEditing && user && (
+                   <Button 
+                     variant="ghost" 
+                     size="sm" 
+                     onClick={handleStartEdit}
+                     className="gap-1.5 h-7 text-xs"
+                   >
+                     <Pencil className="h-3 w-3" />
+                     {t('staffRoles.editAndSave')}
+                   </Button>
+                 )}
+               </div>
 
               {isEditing ? (
                 <div className="space-y-4">
@@ -421,20 +432,23 @@ const RoleDetailsPanel = forwardRef<HTMLDivElement, RoleDetailsPanelProps>(
                     </Label>
                   </div>
 
-                  {/* Action buttons */}
-                  <div className="flex items-center gap-2 pt-2">
-                    <Button
-                      onClick={handleSaveToLibrary}
-                      disabled={isSaving || !promptName.trim() || !editedPrompt.trim()}
-                      className="gap-1.5"
-                    >
-                      {isSavingPrompt ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <Save className="h-4 w-4" />
-                      )}
-                      {t('staffRoles.saveToLibrary')}
-                    </Button>
+                   {/* Action buttons */}
+                   <div className="flex items-center gap-2 pt-2">
+                     <Button
+                       onClick={handleSaveToLibrary}
+                       disabled={isSaving || !promptName.trim() || !editedPrompt.trim()}
+                       className={cn(
+                         "gap-1.5 transition-all",
+                         isPromptModified && "ring-2 ring-primary/50"
+                       )}
+                     >
+                       {isSavingPrompt ? (
+                         <Loader2 className="h-4 w-4 animate-spin" />
+                       ) : (
+                         <Save className="h-4 w-4" />
+                       )}
+                       {t('staffRoles.saveToLibrary')}
+                     </Button>
                     <Button
                       variant="ghost"
                       onClick={handleCancelEdit}
