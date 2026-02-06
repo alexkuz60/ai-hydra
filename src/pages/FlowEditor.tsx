@@ -525,6 +525,11 @@ function FlowEditorContent() {
               edgeSettings={edgeSettings}
               nodeStatuses={flowRuntime.nodeStatuses}
               nodeOutputs={flowRuntime.nodeOutputs}
+              onAskLogistics={(nodeId, nodeLabel) => {
+                setSelectedNode(nodes.find(n => n.id === nodeId) || null);
+                setLogisticsInitialQuestion(`Расскажи подробнее об узле «${nodeLabel}» (${nodes.find(n => n.id === nodeId)?.type}): его назначение, параметры и рекомендации по использованию.`);
+                setShowLogisticsPanel(true);
+              }}
             />
             {selectedNode && !showExecutionPanel && (
               <NodePropertiesPanel
