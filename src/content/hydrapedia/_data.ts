@@ -1,15 +1,6 @@
-export interface HydrapediaSection {
-  id: string;
-  titleKey: string;
-  icon: string;
-  adminOnly?: boolean;
-  content: {
-    ru: string;
-    en: string;
-  };
-}
+import type { HydrapediaSection } from './types';
 
-export const hydrapediaSections: HydrapediaSection[] = [
+export const allHydrapediaSections: HydrapediaSection[] = [
   {
     id: 'intro',
     titleKey: 'hydrapedia.sections.intro',
