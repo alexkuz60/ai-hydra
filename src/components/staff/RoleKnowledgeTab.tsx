@@ -109,6 +109,7 @@ export default function RoleKnowledgeTab({ role }: RoleKnowledgeTabProps) {
   const [isScraping, setIsScraping] = useState(false);
   const [scrapedContent, setScrapedContent] = useState<string | null>(null);
   const [scrapedTitle, setScrapedTitle] = useState('');
+  const [saveProgress, setSaveProgress] = useState<{ current: number; total: number } | null>(null);
 
   // Add form state
   const [newContent, setNewContent] = useState('');
@@ -271,10 +272,13 @@ export default function RoleKnowledgeTab({ role }: RoleKnowledgeTabProps) {
   const handleSaveScraped = useCallback(async () => {
     if (!scrapedContent) return;
     setIsSaving(true);
+    setSaveProgress(null);
     try {
       const chunks = chunkText(scrapedContent);
       let saved = 0;
+      setSaveProgress({ current: 0, total: chunks.length });
       for (let i = 0; i < chunks.length; i++) {
+        setSaveProgress({ current: i + 1, total: chunks.length });
         const id = await saveEntry({
           content: chunks[i],
           source_title: scrapedTitle || firecrawlUrl.trim(),
@@ -301,6 +305,7 @@ export default function RoleKnowledgeTab({ role }: RoleKnowledgeTabProps) {
       toast.error(language === 'ru' ? 'Ошибка сохранения' : 'Save failed');
     } finally {
       setIsSaving(false);
+      setSaveProgress(null);
     }
   }, [scrapedContent, scrapedTitle, firecrawlUrl, firecrawlCategory, firecrawlVersion, saveEntry, language]);
 
@@ -710,13 +715,30 @@ export default function RoleKnowledgeTab({ role }: RoleKnowledgeTabProps) {
             )}
           </div>
 
+          {saveProgress && (
+            <div className="space-y-1.5 w-full">
+              <div className="flex items-center justify-between text-xs text-muted-foreground">
+                <span>{language === 'ru' ? 'Сохранение чанков...' : 'Saving chunks...'}</span>
+                <span>{saveProgress.current}/{saveProgress.total}</span>
+              </div>
+              <div className="w-full h-2 rounded-full bg-muted overflow-hidden">
+                <div
+                  className="h-full bg-primary rounded-full transition-all duration-300"
+                  style={{ width: `${(saveProgress.current / saveProgress.total) * 100}%` }}
+                />
+              </div>
+            </div>
+          )}
+
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowFirecrawlDialog(false)}>
+            <Button variant="outline" onClick={() => setShowFirecrawlDialog(false)} disabled={isSaving}>
               {language === 'ru' ? 'Отмена' : 'Cancel'}
             </Button>
             <Button onClick={handleSaveScraped} disabled={isSaving || !scrapedContent}>
               {isSaving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <BookOpen className="h-4 w-4 mr-2" />}
-              {language === 'ru' ? 'Сохранить знание' : 'Save Knowledge'}
+              {isSaving && saveProgress
+                ? `${saveProgress.current}/${saveProgress.total}`
+                : language === 'ru' ? 'Сохранить знание' : 'Save Knowledge'}
             </Button>
           </DialogFooter>
         </DialogContent>
