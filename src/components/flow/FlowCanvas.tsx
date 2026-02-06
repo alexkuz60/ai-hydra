@@ -1,4 +1,4 @@
-import React, { useCallback, useRef, useMemo } from 'react';
+import React, { useCallback, useRef, useMemo, useState } from 'react';
 import {
   ReactFlow,
   MiniMap,
@@ -45,6 +45,7 @@ import { validateConnection, getSuggestedDataType } from './connectionRules';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { toast } from 'sonner';
+import { Route } from 'lucide-react';
 
 const nodeTypes = {
   input: InputNode,
@@ -105,6 +106,7 @@ interface FlowCanvasProps {
   edgeSettings: EdgeStyleSettings;
   nodeStatuses?: Map<string, NodeStatus>;
   nodeOutputs?: Map<string, unknown>;
+  onAskLogistics?: (nodeId: string, nodeLabel: string) => void;
 }
 
 export function FlowCanvas({
@@ -121,10 +123,19 @@ export function FlowCanvas({
   edgeSettings,
   nodeStatuses,
   nodeOutputs,
+  onAskLogistics,
 }: FlowCanvasProps) {
   const { theme } = useTheme();
   const { t, language } = useLanguage();
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
+
+  // Context menu state
+  const [contextMenu, setContextMenu] = useState<{
+    x: number;
+    y: number;
+    nodeId: string;
+    nodeLabel: string;
+  } | null>(null);
 
   // Enrich nodes with execution status for visual feedback
   const enrichedNodes = useMemo(() => {
@@ -265,8 +276,34 @@ export function FlowCanvas({
     [setNodes, t]
   );
 
+  const onNodeContextMenu = useCallback(
+    (event: React.MouseEvent, node: Node) => {
+      event.preventDefault();
+      const label = (node.data?.label as string) || node.id;
+      setContextMenu({
+        x: event.clientX,
+        y: event.clientY,
+        nodeId: node.id,
+        nodeLabel: label,
+      });
+    },
+    []
+  );
+
+  const handlePaneClickWithMenu = useCallback(() => {
+    setContextMenu(null);
+    onPaneClick?.();
+  }, [onPaneClick]);
+
+  const handleAskLogisticsFromMenu = useCallback(() => {
+    if (contextMenu && onAskLogistics) {
+      onAskLogistics(contextMenu.nodeId, contextMenu.nodeLabel);
+    }
+    setContextMenu(null);
+  }, [contextMenu, onAskLogistics]);
+
   return (
-    <div ref={reactFlowWrapper} className="flex-1 h-full">
+    <div ref={reactFlowWrapper} className="flex-1 h-full relative">
       <ReactFlow
         nodes={enrichedNodes}
         edges={enrichedEdges}
@@ -276,9 +313,10 @@ export function FlowCanvas({
         onDrop={onDrop}
         onDragOver={onDragOver}
         onInit={onInit}
-        onNodeClick={onNodeClick}
-        onEdgeClick={onEdgeClick}
-        onPaneClick={onPaneClick}
+        onNodeClick={(e, n) => { setContextMenu(null); onNodeClick?.(e, n); }}
+        onEdgeClick={(e, edge) => { setContextMenu(null); onEdgeClick?.(e, edge); }}
+        onPaneClick={handlePaneClickWithMenu}
+        onNodeContextMenu={onNodeContextMenu}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
         connectionMode={ConnectionMode.Loose}
@@ -331,6 +369,22 @@ export function FlowCanvas({
           color={theme === 'dark' ? 'hsl(var(--border))' : 'hsl(var(--muted-foreground) / 0.2)'}
         />
       </ReactFlow>
+
+      {/* Node context menu */}
+      {contextMenu && onAskLogistics && (
+        <div
+          className="absolute z-50 bg-popover border border-border rounded-lg shadow-lg py-1 min-w-[200px]"
+          style={{ left: contextMenu.x, top: contextMenu.y, position: 'fixed' }}
+        >
+          <button
+            className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground transition-colors text-left"
+            onClick={handleAskLogisticsFromMenu}
+          >
+            <Route className="h-4 w-4 text-hydra-flowregulator" />
+            {t('flowEditor.logistics.askAboutNode')}
+          </button>
+        </div>
+      )}
     </div>
   );
 }
