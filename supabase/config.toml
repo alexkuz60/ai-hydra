@@ -17,3 +17,6 @@ verify_jwt = false
 
 [functions.flow-logistics]
 verify_jwt = false
+
+[functions.firecrawl-scrape]
+verify_jwt = false
