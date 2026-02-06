@@ -6,16 +6,17 @@
  import { Brain, RefreshCw, Check, Settings2 } from 'lucide-react';
  import { motion, AnimatePresence } from 'framer-motion';
  
- interface MemoryStats {
-   total: number;
-   byType: {
-     decision: number;
-     context: number;
-     instruction: number;
-     summary?: number;
-     message?: number;
-   };
- }
+interface MemoryStats {
+  total: number;
+  byType: {
+    decision: number;
+    context: number;
+    instruction: number;
+    evaluation?: number;
+    summary?: number;
+    message?: number;
+  };
+}
  
  interface MemoryControlsProps {
    memoryStats: MemoryStats | null;
@@ -55,16 +56,19 @@
            </TooltipTrigger>
            <TooltipContent side="bottom">
              <div className="text-xs space-y-1">
-               <p className="font-medium">{t('memory.savedChunks')}</p>
-               {memoryStats.byType.decision > 0 && (
-                 <p>• {t('memory.decisions')}: {memoryStats.byType.decision}</p>
-               )}
-               {memoryStats.byType.context > 0 && (
-                 <p>• {t('memory.context')}: {memoryStats.byType.context}</p>
-               )}
-               {memoryStats.byType.instruction > 0 && (
-                 <p>• {t('memory.instructions')}: {memoryStats.byType.instruction}</p>
-               )}
+                <p className="font-medium">{t('memory.savedChunks')}</p>
+                {memoryStats.byType.decision > 0 && (
+                  <p>• {t('memory.decisions')}: {memoryStats.byType.decision}</p>
+                )}
+                {memoryStats.byType.context > 0 && (
+                  <p>• {t('memory.context')}: {memoryStats.byType.context}</p>
+                )}
+                {memoryStats.byType.instruction > 0 && (
+                  <p>• {t('memory.instructions')}: {memoryStats.byType.instruction}</p>
+                )}
+                {memoryStats.byType.evaluation > 0 && (
+                  <p>• {t('memory.evaluations')}: {memoryStats.byType.evaluation}</p>
+                )}
              </div>
            </TooltipContent>
          </Tooltip>

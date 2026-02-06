@@ -948,6 +948,7 @@ const translations: Translations = {
   'memory.decisions': { ru: 'Решения', en: 'Decisions' },
   'memory.context': { ru: 'Контекст', en: 'Context' },
   'memory.instructions': { ru: 'Инструкции', en: 'Instructions' },
+  'memory.evaluations': { ru: 'Оценки', en: 'Evaluations' },
   'memory.autoSaved': { ru: 'Авто-сохранено в память', en: 'Auto-saved to memory' },
   'memory.saveToMemory': { ru: 'Сохранить в память', en: 'Save to memory' },
   'memory.saved': { ru: 'Сохранено!', en: 'Saved!' },
