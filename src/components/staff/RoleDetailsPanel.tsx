@@ -52,7 +52,13 @@ interface PromptLibraryItem {
   role: string;
   is_shared: boolean;
   user_id: string;
+  language: string | null;
 }
+
+// Detect if content is primarily Russian
+const detectContentLanguage = (text: string): 'ru' | 'en' => {
+  return /[а-яА-ЯёЁ]/.test(text) ? 'ru' : 'en';
+};
 
 interface RoleDetailsPanelProps {
   selectedRole: AgentRole | null;
@@ -156,7 +162,7 @@ const RoleDetailsPanel = forwardRef<HTMLDivElement, RoleDetailsPanelProps>(
         try {
           const { data, error } = await supabase
             .from('prompt_library')
-            .select('id, name, content, role, is_shared, user_id')
+            .select('id, name, content, role, is_shared, user_id, language')
             .or(`user_id.eq.${user.id},is_shared.eq.true`)
             .eq('role', selectedRole)
             .order('name');
@@ -243,6 +249,9 @@ const RoleDetailsPanel = forwardRef<HTMLDivElement, RoleDetailsPanelProps>(
 
       setIsSavingPrompt(true);
       try {
+        // Auto-detect language from content
+        const detectedLanguage = detectContentLanguage(editedPrompt);
+        
         const { error } = await supabase
           .from('prompt_library')
           .insert([{
@@ -252,6 +261,7 @@ const RoleDetailsPanel = forwardRef<HTMLDivElement, RoleDetailsPanelProps>(
             content: editedPrompt.trim(),
             role: selectedRole,
             is_shared: isShared,
+            language: detectedLanguage,
           }]);
 
         if (error) throw error;
@@ -261,7 +271,7 @@ const RoleDetailsPanel = forwardRef<HTMLDivElement, RoleDetailsPanelProps>(
         // Refresh library prompts
         const { data } = await supabase
           .from('prompt_library')
-          .select('id, name, content, role, is_shared, user_id')
+          .select('id, name, content, role, is_shared, user_id, language')
           .or(`user_id.eq.${user.id},is_shared.eq.true`)
           .eq('role', selectedRole)
           .order('name');
@@ -363,6 +373,11 @@ const RoleDetailsPanel = forwardRef<HTMLDivElement, RoleDetailsPanelProps>(
                         <SelectItem key={prompt.id} value={prompt.id}>
                           <div className="flex items-center gap-2">
                             <span>{prompt.name}</span>
+                            {prompt.language && (
+                              <Badge variant="secondary" className="text-[10px] px-1 py-0 h-4 uppercase">
+                                {prompt.language}
+                              </Badge>
+                            )}
                             {prompt.is_shared && prompt.user_id !== user?.id && (
                               <Badge variant="outline" className="text-xs py-0">
                                 {t('roleLibrary.shared')}
