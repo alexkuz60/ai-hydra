@@ -187,11 +187,14 @@ export default function RoleKnowledgeTab({ role }: RoleKnowledgeTabProps) {
     }
 
     setIsSaving(true);
+    setSaveProgress(null);
     try {
       const chunks = chunkText(newContent);
       let saved = 0;
+      setSaveProgress({ current: 0, total: chunks.length });
 
       for (let i = 0; i < chunks.length; i++) {
+        setSaveProgress({ current: i + 1, total: chunks.length });
         const id = await saveEntry({
           content: chunks[i],
           source_title: newTitle.trim() || undefined,
@@ -222,6 +225,7 @@ export default function RoleKnowledgeTab({ role }: RoleKnowledgeTabProps) {
       toast.error('Ошибка сохранения');
     } finally {
       setIsSaving(false);
+      setSaveProgress(null);
     }
   }, [newContent, newTitle, newUrl, newCategory, newVersion, saveEntry, language]);
 
@@ -585,17 +589,30 @@ export default function RoleKnowledgeTab({ role }: RoleKnowledgeTabProps) {
             </div>
           </div>
 
+          {saveProgress && (
+            <div className="space-y-1.5 w-full">
+              <div className="flex items-center justify-between text-xs text-muted-foreground">
+                <span>{language === 'ru' ? 'Сохранение чанков...' : 'Saving chunks...'}</span>
+                <span>{saveProgress.current}/{saveProgress.total}</span>
+              </div>
+              <div className="w-full h-2 rounded-full bg-muted overflow-hidden">
+                <div
+                  className="h-full bg-primary rounded-full transition-all duration-300"
+                  style={{ width: `${(saveProgress.current / saveProgress.total) * 100}%` }}
+                />
+              </div>
+            </div>
+          )}
+
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowAddDialog(false)}>
+            <Button variant="outline" onClick={() => setShowAddDialog(false)} disabled={isSaving}>
               {language === 'ru' ? 'Отмена' : 'Cancel'}
             </Button>
             <Button onClick={handleAdd} disabled={isSaving || !newContent.trim()}>
-              {isSaving ? (
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />
-              ) : (
-                <Plus className="h-4 w-4 mr-2" />
-              )}
-              {language === 'ru' ? 'Сохранить' : 'Save'}
+              {isSaving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Plus className="h-4 w-4 mr-2" />}
+              {isSaving && saveProgress
+                ? `${saveProgress.current}/${saveProgress.total}`
+                : language === 'ru' ? 'Сохранить' : 'Save'}
             </Button>
           </DialogFooter>
         </DialogContent>
