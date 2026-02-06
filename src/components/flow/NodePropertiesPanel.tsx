@@ -140,13 +140,17 @@ export function NodePropertiesPanel({
       setLoadingTools(true);
       try {
         const { data, error } = await supabase
-          .from('custom_tools')
-          .select('id, name, display_name, description, tool_type, parameters')
-          .or(`user_id.eq.${user.id},is_shared.eq.true`)
-          .order('display_name');
+          .rpc('get_custom_tools_safe');
         
         if (error) throw error;
-        setTools(data || []);
+        setTools((data || []).map(t => ({
+          id: t.id,
+          name: t.name,
+          display_name: t.display_name,
+          description: t.description,
+          tool_type: t.tool_type,
+          parameters: t.parameters,
+        })));
       } catch (error) {
         console.error('Failed to load tools:', error);
       } finally {
