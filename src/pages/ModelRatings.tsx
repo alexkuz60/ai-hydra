@@ -10,7 +10,8 @@ import { cn } from '@/lib/utils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AGENT_ROLES, ROLE_CONFIG, type AgentRole } from '@/config/roles';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
-import { ModelStatsChart } from '@/components/ratings/ModelStatsChart';
+import { ModelStatsChart, TimePeriod } from '@/components/ratings/ModelStatsChart';
+import { subDays, isAfter } from 'date-fns';
 interface ModelRoleStat {
   model_name: string;
   role: string;
@@ -40,6 +41,8 @@ export default function ModelRatings() {
   const { t } = useLanguage();
   const navigate = useNavigate();
   const [stats, setStats] = useState<AggregatedModelStat[]>([]);
+  const [allMessages, setAllMessages] = useState<Array<{ model_name: string | null; role: string; created_at: string; metadata: unknown }>>([]);
+  const [selectedPeriod, setSelectedPeriod] = useState<TimePeriod>('all');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -49,87 +52,108 @@ export default function ModelRatings() {
     }
 
     if (user) {
-      fetchStats();
+      fetchMessages();
     }
   }, [user, authLoading, navigate]);
 
-  const fetchStats = async () => {
+  const fetchMessages = async () => {
     if (!user) return;
 
     try {
       // Fetch all AI messages with ratings for the user
       const { data, error } = await supabase
         .from('messages')
-        .select('model_name, role, metadata')
+        .select('model_name, role, metadata, created_at')
         .eq('user_id', user.id)
         .neq('role', 'user')
         .not('model_name', 'is', null);
 
       if (error) throw error;
-
-      // Aggregate stats by model and role
-      const modelMap = new Map<string, {
-        total: number;
-        count: number;
-        byRole: Map<string, { total: number; count: number }>;
-      }>();
-
-      data?.forEach(message => {
-        const modelName = message.model_name;
-        const role = message.role;
-        if (!modelName) return;
-
-        const metadata = message.metadata as Record<string, unknown> | null;
-        const rating = typeof metadata?.rating === 'number' ? metadata.rating : 0;
-
-        let modelData = modelMap.get(modelName);
-        if (!modelData) {
-          modelData = { total: 0, count: 0, byRole: new Map() };
-          modelMap.set(modelName, modelData);
-        }
-
-        modelData.total += rating;
-        modelData.count += 1;
-
-        // Role-specific stats
-        let roleData = modelData.byRole.get(role);
-        if (!roleData) {
-          roleData = { total: 0, count: 0 };
-          modelData.byRole.set(role, roleData);
-        }
-        roleData.total += rating;
-        roleData.count += 1;
-      });
-
-      // Convert to array
-      const statsArray: AggregatedModelStat[] = Array.from(modelMap.entries())
-        .map(([model_name, data]) => {
-          const by_role: AggregatedModelStat['by_role'] = {};
-          data.byRole.forEach((roleData, role) => {
-            by_role[role] = {
-              total_brains: roleData.total,
-              response_count: roleData.count,
-              average_rating: roleData.count > 0 ? roleData.total / roleData.count : 0,
-            };
-          });
-
-          return {
-            model_name,
-            total_brains: data.total,
-            response_count: data.count,
-            average_rating: data.count > 0 ? data.total / data.count : 0,
-            by_role,
-          };
-        })
-        .sort((a, b) => b.average_rating - a.average_rating);
-
-      setStats(statsArray);
+      
+      setAllMessages(data || []);
     } catch (error) {
-      console.error('Failed to fetch model stats:', error);
+      console.error('Failed to fetch messages:', error);
     } finally {
       setLoading(false);
     }
   };
+
+  // Calculate stats based on selected period
+  useEffect(() => {
+    if (allMessages.length === 0) return;
+
+    // Filter by period
+    const now = new Date();
+    let cutoffDate: Date | null = null;
+    
+    if (selectedPeriod === 'week') {
+      cutoffDate = subDays(now, 7);
+    } else if (selectedPeriod === 'month') {
+      cutoffDate = subDays(now, 30);
+    }
+
+    const filteredMessages = cutoffDate 
+      ? allMessages.filter(msg => isAfter(new Date(msg.created_at), cutoffDate!))
+      : allMessages;
+
+    // Aggregate stats by model and role
+    const modelMap = new Map<string, {
+      total: number;
+      count: number;
+      byRole: Map<string, { total: number; count: number }>;
+    }>();
+
+    filteredMessages.forEach(message => {
+      const modelName = message.model_name;
+      const role = message.role;
+      if (!modelName) return;
+
+      const metadata = message.metadata as Record<string, unknown> | null;
+      const rating = typeof metadata?.rating === 'number' ? metadata.rating : 0;
+
+      let modelData = modelMap.get(modelName);
+      if (!modelData) {
+        modelData = { total: 0, count: 0, byRole: new Map() };
+        modelMap.set(modelName, modelData);
+      }
+
+      modelData.total += rating;
+      modelData.count += 1;
+
+      // Role-specific stats
+      let roleData = modelData.byRole.get(role);
+      if (!roleData) {
+        roleData = { total: 0, count: 0 };
+        modelData.byRole.set(role, roleData);
+      }
+      roleData.total += rating;
+      roleData.count += 1;
+    });
+
+    // Convert to array
+    const statsArray: AggregatedModelStat[] = Array.from(modelMap.entries())
+      .map(([model_name, data]) => {
+        const by_role: AggregatedModelStat['by_role'] = {};
+        data.byRole.forEach((roleData, role) => {
+          by_role[role] = {
+            total_brains: roleData.total,
+            response_count: roleData.count,
+            average_rating: roleData.count > 0 ? roleData.total / roleData.count : 0,
+          };
+        });
+
+        return {
+          model_name,
+          total_brains: data.total,
+          response_count: data.count,
+          average_rating: data.count > 0 ? data.total / data.count : 0,
+          by_role,
+        };
+      })
+      .sort((a, b) => b.average_rating - a.average_rating);
+
+    setStats(statsArray);
+  }, [allMessages, selectedPeriod]);
 
   if (authLoading || loading) {
     return (
@@ -159,7 +183,11 @@ export default function ModelRatings() {
         ) : (
           <>
             {/* Stats Chart Component */}
-            <ModelStatsChart stats={stats} />
+            <ModelStatsChart 
+              stats={stats} 
+              selectedPeriod={selectedPeriod}
+              onPeriodChange={setSelectedPeriod}
+            />
 
             <Tabs defaultValue="overall" className="space-y-6">
             <ScrollArea className="w-full whitespace-nowrap pb-2">

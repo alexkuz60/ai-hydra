@@ -126,7 +126,7 @@ export function useMemoryIntegration({
     return null;
   }, []);
 
-  // Auto-save high-rated messages as decisions
+  // Auto-save high-rated messages as decisions and arbiter evaluations
   useEffect(() => {
     if (!enabled || !sessionId || messages.length === 0) return;
 
@@ -145,27 +145,67 @@ export function useMemoryIntegration({
         const metadata = msg.metadata as { rating?: number } | null;
         const rating = metadata?.rating ?? 0;
 
-        if (rating >= MEMORY_TRIGGERS.MIN_RATING_FOR_DECISION) {
-          // Check if chunk already exists for this message
-          const existingChunk = chunks.find(c => c.source_message_id === msg.id);
-          if (!existingChunk) {
+        // Check if chunk already exists for this message
+        const existingChunk = chunks.find(c => c.source_message_id === msg.id);
+        
+        // Auto-save arbiter evaluations
+        if (msg.role === 'arbiter' && !existingChunk) {
+          const detectedType = detectChunkType(msg.content);
+          if (detectedType === 'evaluation') {
             try {
+              // Parse evaluation data from content
+              const parsedData = parseEvaluationFromContent(msg.content, msg.model_name);
+              
+              // Convert to JSON-compatible format
+              const jsonMetadata = {
+                evaluation_data: {
+                  scores: parsedData.scores?.map(s => ({
+                    criterion: s.criterion,
+                    score: s.score,
+                    maxScore: s.maxScore,
+                    justification: s.justification || null,
+                  })) || [],
+                  totalScore: parsedData.totalScore || 0,
+                  maxTotalScore: parsedData.maxTotalScore || 40,
+                  evaluatorModel: parsedData.evaluatorModel || null,
+                  evaluatedAt: parsedData.evaluatedAt || new Date().toISOString(),
+                },
+                model_name: msg.model_name,
+                auto_saved: true,
+                saved_at: new Date().toISOString(),
+              };
+              
               await createChunk({
                 session_id: sessionId,
-                content: msg.content.slice(0, 2000), // Limit content size
-                chunk_type: 'decision',
+                content: msg.content.slice(0, 3000),
+                chunk_type: 'evaluation',
                 source_message_id: msg.id,
-                metadata: {
-                  model_name: msg.model_name,
-                  rating,
-                  auto_saved: true,
-                  saved_at: new Date().toISOString(),
-                },
+                metadata: jsonMetadata,
               });
-              console.log(`[Memory] Auto-saved decision from message ${msg.id} (rating: ${rating})`);
+              console.log(`[Memory] Auto-saved arbiter evaluation from message ${msg.id}`);
             } catch (error) {
-              console.error('[Memory] Failed to auto-save decision:', error);
+              console.error('[Memory] Failed to auto-save evaluation:', error);
             }
+          }
+        }
+        // Auto-save high-rated messages as decisions
+        else if (rating >= MEMORY_TRIGGERS.MIN_RATING_FOR_DECISION && !existingChunk) {
+          try {
+            await createChunk({
+              session_id: sessionId,
+              content: msg.content.slice(0, 2000), // Limit content size
+              chunk_type: 'decision',
+              source_message_id: msg.id,
+              metadata: {
+                model_name: msg.model_name,
+                rating,
+                auto_saved: true,
+                saved_at: new Date().toISOString(),
+              },
+            });
+            console.log(`[Memory] Auto-saved decision from message ${msg.id} (rating: ${rating})`);
+          } catch (error) {
+            console.error('[Memory] Failed to auto-save decision:', error);
           }
         }
 
@@ -174,7 +214,57 @@ export function useMemoryIntegration({
     };
 
     processNewMessages();
-  }, [enabled, sessionId, messages, chunks, createChunk]);
+  }, [enabled, sessionId, messages, chunks, createChunk, detectChunkType]);
+
+  // Parse evaluation scores from content
+  const parseEvaluationFromContent = (content: string, evaluatorModel: string | null): Partial<EvaluationData> => {
+    const scores: EvaluationScore[] = [];
+    let totalScore = 0;
+    let maxTotalScore = 0;
+
+    // Try to parse table format: | Criterion | Score | Justification |
+    const tableRowRegex = /\|\s*([^|]+)\s*\|\s*(\d+(?:\.\d+)?)\s*(?:\/\s*10)?\s*\|([^|]*)\|?/g;
+    let match;
+    
+    while ((match = tableRowRegex.exec(content)) !== null) {
+      const criterion = match[1].trim();
+      const score = parseFloat(match[2]);
+      const justification = match[3]?.trim();
+      
+      // Skip header rows
+      if (criterion.toLowerCase().includes('критерий') || criterion.toLowerCase().includes('criterion') || criterion === '---') {
+        continue;
+      }
+      
+      if (!isNaN(score) && score >= 0 && score <= 10) {
+        scores.push({
+          criterion,
+          score,
+          maxScore: 10,
+          justification: justification || undefined,
+        });
+        totalScore += score;
+        maxTotalScore += 10;
+      }
+    }
+
+    // Try to find total score
+    const totalMatch = content.match(/итоговая оценка[:\s]*(\d+(?:\.\d+)?)\s*\/?\s*10/i) ||
+                       content.match(/total score[:\s]*(\d+(?:\.\d+)?)\s*\/?\s*10/i) ||
+                       content.match(/(\d+(?:\.\d+)?)\s*\/\s*10\s*(?:баллов|points)?/i);
+    
+    if (totalMatch) {
+      totalScore = parseFloat(totalMatch[1]);
+    }
+
+    return {
+      scores,
+      totalScore,
+      maxTotalScore: maxTotalScore || 40, // Default 4 criteria * 10
+      evaluatorModel: evaluatorModel || undefined,
+      evaluatedAt: new Date().toISOString(),
+    };
+  };
 
   // Manual save as decision
   const saveDecision = useCallback(async (messageId: string, content: string) => {
