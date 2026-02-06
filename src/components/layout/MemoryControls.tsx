@@ -1,10 +1,11 @@
- import React from 'react';
+ import React, { useMemo } from 'react';
  import { useLanguage } from '@/contexts/LanguageContext';
  import { Button } from '@/components/ui/button';
  import { Badge } from '@/components/ui/badge';
  import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
  import { Brain, RefreshCw, Check, Settings2, BookOpen } from 'lucide-react';
  import { motion, AnimatePresence } from 'framer-motion';
+ import { ROLE_CONFIG, type AgentRole } from '@/config/roles';
  
 interface MemoryStats {
   total: number;
@@ -20,7 +21,7 @@ interface MemoryStats {
  
  interface MemoryControlsProps {
    memoryStats: MemoryStats | null;
-   knowledgeCount?: number;
+   knowledgeByRole?: Record<string, number>;
    isLoading?: boolean;
    isRefreshed?: boolean;
    onRefresh: () => void;
@@ -29,16 +30,21 @@ interface MemoryStats {
  
  export function MemoryControls({
    memoryStats,
-   knowledgeCount = 0,
+   knowledgeByRole = {},
    isLoading = false,
    isRefreshed = false,
    onRefresh,
    onOpenDialog,
  }: MemoryControlsProps) {
    const { t, language } = useLanguage();
+
+   const knowledgeTotal = useMemo(() => 
+     Object.values(knowledgeByRole).reduce((s, n) => s + n, 0),
+     [knowledgeByRole]
+   );
  
    // Don't render if no memory data and no knowledge
-   if ((!memoryStats || memoryStats.total === 0) && knowledgeCount === 0) {
+   if ((!memoryStats || memoryStats.total === 0) && knowledgeTotal === 0) {
      return null;
    }
  
@@ -79,7 +85,7 @@ interface MemoryStats {
        )}
 
        {/* Knowledge Stats Badge */}
-       {knowledgeCount > 0 && (
+       {knowledgeTotal > 0 && (
          <TooltipProvider>
            <Tooltip>
              <TooltipTrigger asChild>
@@ -88,13 +94,26 @@ interface MemoryStats {
                  className="gap-1 bg-primary/15 text-primary border-primary/25 cursor-help h-6 px-2"
                >
                  <BookOpen className="h-3 w-3" />
-                 <span className="text-xs font-medium">{knowledgeCount}</span>
+                 <span className="text-xs font-medium">{knowledgeTotal}</span>
                </Badge>
              </TooltipTrigger>
              <TooltipContent side="bottom">
-               <p className="text-xs font-medium">
-                 {language === 'ru' ? 'Профильные знания (RAG)' : 'Domain Knowledge (RAG)'}
-               </p>
+               <div className="text-xs space-y-1">
+                 <p className="font-medium">
+                   {language === 'ru' ? 'Профильные знания (RAG)' : 'Domain Knowledge (RAG)'}
+                 </p>
+                 {Object.entries(knowledgeByRole).map(([role, count]) => {
+                   const config = ROLE_CONFIG[role as AgentRole];
+                   if (!config) return null;
+                   const Icon = config.icon;
+                   return (
+                     <div key={role} className="flex items-center gap-1.5">
+                       <Icon className={`h-3 w-3 ${config.color}`} />
+                       <span>{t(config.label)}: {count}</span>
+                     </div>
+                   );
+                 })}
+               </div>
              </TooltipContent>
            </Tooltip>
          </TooltipProvider>
