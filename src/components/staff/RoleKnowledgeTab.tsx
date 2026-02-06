@@ -3,6 +3,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useRoleKnowledge, type RoleKnowledgeEntry } from '@/hooks/useRoleKnowledge';
 import type { AgentRole } from '@/config/roles';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -36,7 +37,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
-import { Plus, Trash2, Search, BookOpen, FileText, Loader2, ExternalLink, Sparkles } from 'lucide-react';
+import { Plus, Trash2, Search, BookOpen, FileText, Loader2, ExternalLink, Sparkles, Globe } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const CATEGORIES = [
@@ -99,6 +100,15 @@ export default function RoleKnowledgeTab({ role }: RoleKnowledgeTabProps) {
   const [filterCategory, setFilterCategory] = useState<string>('all');
   const [isSaving, setIsSaving] = useState(false);
   const [isSeeding, setIsSeeding] = useState(false);
+
+  // Firecrawl state
+  const [showFirecrawlDialog, setShowFirecrawlDialog] = useState(false);
+  const [firecrawlUrl, setFirecrawlUrl] = useState('');
+  const [firecrawlCategory, setFirecrawlCategory] = useState('documentation');
+  const [firecrawlVersion, setFirecrawlVersion] = useState('');
+  const [isScraping, setIsScraping] = useState(false);
+  const [scrapedContent, setScrapedContent] = useState<string | null>(null);
+  const [scrapedTitle, setScrapedTitle] = useState('');
 
   // Add form state
   const [newContent, setNewContent] = useState('');
@@ -230,6 +240,70 @@ export default function RoleKnowledgeTab({ role }: RoleKnowledgeTabProps) {
     setDeleteConfirm(null);
   }, [deleteConfirm, deleteEntry, deleteBySource, language]);
 
+  // Firecrawl: scrape URL
+  const handleScrape = useCallback(async () => {
+    if (!firecrawlUrl.trim()) return;
+    setIsScraping(true);
+    setScrapedContent(null);
+    try {
+      const { data, error } = await supabase.functions.invoke('firecrawl-scrape', {
+        body: { url: firecrawlUrl.trim(), options: { formats: ['markdown'], onlyMainContent: true } },
+      });
+      if (error) throw error;
+      const markdown = data?.data?.markdown || data?.markdown;
+      const title = data?.data?.metadata?.title || data?.metadata?.title || firecrawlUrl.trim();
+      if (!markdown) {
+        toast.error(language === 'ru' ? 'Не удалось извлечь контент' : 'Failed to extract content');
+        return;
+      }
+      setScrapedContent(markdown);
+      setScrapedTitle(title);
+      toast.success(language === 'ru' ? `Извлечено ${markdown.length} символов` : `Extracted ${markdown.length} chars`);
+    } catch (err) {
+      console.error('[Firecrawl] Scrape error:', err);
+      toast.error(language === 'ru' ? 'Ошибка скрейпинга' : 'Scrape failed');
+    } finally {
+      setIsScraping(false);
+    }
+  }, [firecrawlUrl, language]);
+
+  // Firecrawl: save scraped content as knowledge
+  const handleSaveScraped = useCallback(async () => {
+    if (!scrapedContent) return;
+    setIsSaving(true);
+    try {
+      const chunks = chunkText(scrapedContent);
+      let saved = 0;
+      for (let i = 0; i < chunks.length; i++) {
+        const id = await saveEntry({
+          content: chunks[i],
+          source_title: scrapedTitle || firecrawlUrl.trim(),
+          source_url: firecrawlUrl.trim(),
+          category: firecrawlCategory,
+          version: firecrawlVersion.trim() || undefined,
+          chunk_index: i,
+          chunk_total: chunks.length,
+        });
+        if (id) saved++;
+      }
+      toast.success(
+        language === 'ru'
+          ? `Сохранено ${saved} фрагмент(ов) из «${scrapedTitle}»`
+          : `Saved ${saved} chunk(s) from "${scrapedTitle}"`
+      );
+      setShowFirecrawlDialog(false);
+      setFirecrawlUrl('');
+      setScrapedContent(null);
+      setScrapedTitle('');
+      setFirecrawlVersion('');
+    } catch (err) {
+      console.error('[Firecrawl] Save error:', err);
+      toast.error(language === 'ru' ? 'Ошибка сохранения' : 'Save failed');
+    } finally {
+      setIsSaving(false);
+    }
+  }, [scrapedContent, scrapedTitle, firecrawlUrl, firecrawlCategory, firecrawlVersion, saveEntry, language]);
+
   return (
     <div className="space-y-4">
       {/* Header with stats */}
@@ -273,6 +347,15 @@ export default function RoleKnowledgeTab({ role }: RoleKnowledgeTabProps) {
               {isSeeding ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
             </Button>
           )}
+          <Button
+            size="sm"
+            variant="outline"
+            className="gap-1.5 h-7 text-xs"
+            onClick={() => setShowFirecrawlDialog(true)}
+          >
+            <Globe className="h-3 w-3" />
+            {language === 'ru' ? 'С веб-страницы' : 'From URL'}
+          </Button>
           <Button
             size="sm"
             variant="outline"
@@ -329,6 +412,15 @@ export default function RoleKnowledgeTab({ role }: RoleKnowledgeTabProps) {
             >
               {isSeeding ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
               {language === 'ru' ? 'Загрузить из Гидропедии' : 'Seed from Hydrapedia'}
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              className="gap-1.5"
+              onClick={() => setShowFirecrawlDialog(true)}
+            >
+              <Globe className="h-4 w-4" />
+              {language === 'ru' ? 'С веб-страницы' : 'From URL'}
             </Button>
             <Button
               size="sm"
@@ -530,6 +622,105 @@ export default function RoleKnowledgeTab({ role }: RoleKnowledgeTabProps) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Firecrawl Import Dialog */}
+      <Dialog open={showFirecrawlDialog} onOpenChange={(open) => {
+        setShowFirecrawlDialog(open);
+        if (!open) { setScrapedContent(null); setScrapedTitle(''); }
+      }}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Globe className="h-4 w-4" />
+              {language === 'ru' ? 'Импорт с веб-страницы' : 'Import from Web Page'}
+            </DialogTitle>
+            <DialogDescription>
+              {language === 'ru'
+                ? 'Укажите URL — содержимое страницы будет извлечено и сохранено как профильное знание'
+                : 'Enter a URL — the page content will be extracted and saved as domain knowledge'}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            {/* URL input */}
+            <div className="flex gap-2">
+              <Input
+                value={firecrawlUrl}
+                onChange={e => setFirecrawlUrl(e.target.value)}
+                placeholder="https://docs.example.com/guide"
+                className="text-sm flex-1"
+                onKeyDown={e => e.key === 'Enter' && !isScraping && handleScrape()}
+              />
+              <Button
+                onClick={handleScrape}
+                disabled={isScraping || !firecrawlUrl.trim()}
+                className="gap-1.5"
+              >
+                {isScraping ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+                {language === 'ru' ? 'Извлечь' : 'Scrape'}
+              </Button>
+            </div>
+
+            {/* Category & Version */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs">{language === 'ru' ? 'Категория' : 'Category'}</Label>
+                <Select value={firecrawlCategory} onValueChange={setFirecrawlCategory}>
+                  <SelectTrigger className="text-sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {CATEGORIES.map(c => (
+                      <SelectItem key={c.value} value={c.value}>{c.labelKey}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">{language === 'ru' ? 'Версия' : 'Version'}</Label>
+                <Input
+                  value={firecrawlVersion}
+                  onChange={e => setFirecrawlVersion(e.target.value)}
+                  placeholder="1.0"
+                  className="text-sm"
+                />
+              </div>
+            </div>
+
+            {/* Scraped content preview */}
+            {scrapedContent && (
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs">
+                    {language === 'ru' ? 'Извлечённый контент' : 'Extracted Content'}
+                    {' · '}{scrapedTitle}
+                  </Label>
+                  <span className="text-[10px] text-muted-foreground">
+                    ~{chunkText(scrapedContent).length} {language === 'ru' ? 'фрагм.' : 'chunks'}
+                    {' · '}{scrapedContent.length} {language === 'ru' ? 'символов' : 'chars'}
+                  </span>
+                </div>
+                <ScrollArea className="max-h-[200px] rounded-md border p-3">
+                  <pre className="text-xs whitespace-pre-wrap font-mono text-muted-foreground">
+                    {scrapedContent.slice(0, 3000)}
+                    {scrapedContent.length > 3000 && '\n\n... (truncated preview)'}
+                  </pre>
+                </ScrollArea>
+              </div>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowFirecrawlDialog(false)}>
+              {language === 'ru' ? 'Отмена' : 'Cancel'}
+            </Button>
+            <Button onClick={handleSaveScraped} disabled={isSaving || !scrapedContent}>
+              {isSaving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <BookOpen className="h-4 w-4 mr-2" />}
+              {language === 'ru' ? 'Сохранить знание' : 'Save Knowledge'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
