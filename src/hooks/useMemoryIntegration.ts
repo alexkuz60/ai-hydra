@@ -3,6 +3,25 @@ import { useSessionMemory, ChunkType } from './useSessionMemory';
 import { Message } from '@/types/messages';
 import { supabase } from '@/integrations/supabase/client';
 
+// Evaluation score structure for arbiter assessments
+export interface EvaluationScore {
+  criterion: string;
+  score: number;
+  maxScore: number;
+  justification?: string;
+}
+
+export interface EvaluationData {
+  evaluatedMessageId: string;
+  evaluatedModel: string | null;
+  scores: EvaluationScore[];
+  totalScore: number;
+  maxTotalScore: number;
+  recommendation?: string;
+  evaluatorModel?: string;
+  evaluatedAt: string;
+}
+
 // Criteria for auto-saving messages to memory
 const MEMORY_TRIGGERS = {
   // Minimum rating to auto-save as decision
@@ -23,6 +42,13 @@ const MEMORY_TRIGGERS = {
     'инструкция:', 'алгоритм:', 'шаги:', 'порядок:',
     'процедура:', 'workflow:', 'как сделать:',
   ],
+  // Keywords for arbiter evaluations
+  EVALUATION_KEYWORDS: [
+    '| критерий |', '| criterion |',
+    'фактологичность', 'релевантность', 'полнота',
+    'итоговая оценка:', 'total score:', 'рекомендация:',
+    '/10', 'баллов из',
+  ],
 };
 
 interface UseMemoryIntegrationProps {
@@ -36,6 +62,7 @@ interface UseMemoryIntegrationReturn {
   saveDecision: (messageId: string, content: string) => Promise<void>;
   saveContext: (content: string) => Promise<void>;
   saveInstruction: (content: string) => Promise<void>;
+  saveEvaluation: (messageId: string, evaluatedMessageId: string, content: string, evaluationData: EvaluationData) => Promise<void>;
   // Check if message is saved
   savedMessageIds: Set<string>;
   // Delete memory by message ID
@@ -44,6 +71,10 @@ interface UseMemoryIntegrationReturn {
   memoryStats: { total: number; byType: Record<ChunkType, number> } | null;
   // Search
   searchByText: (query: string) => Promise<any[]>;
+  // Get evaluations for a specific model
+  getModelEvaluations: (modelName: string) => EvaluationData[];
+  // Get all evaluations
+  getAllEvaluations: () => EvaluationData[];
   // Loading states
   isLoading: boolean;
   isSaving: boolean;
@@ -71,6 +102,11 @@ export function useMemoryIntegration({
   // Detect chunk type based on content keywords
   const detectChunkType = useCallback((content: string): ChunkType | null => {
     const lowerContent = content.toLowerCase();
+
+    // Check for evaluation keywords (arbiter assessments)
+    if (MEMORY_TRIGGERS.EVALUATION_KEYWORDS.some(kw => lowerContent.includes(kw))) {
+      return 'evaluation';
+    }
 
     // Check for instruction keywords
     if (MEMORY_TRIGGERS.INSTRUCTION_KEYWORDS.some(kw => lowerContent.includes(kw))) {
@@ -186,6 +222,69 @@ export function useMemoryIntegration({
     });
   }, [sessionId, createChunk]);
 
+  // Save arbiter evaluation
+  const saveEvaluation = useCallback(async (
+    messageId: string,
+    evaluatedMessageId: string,
+    content: string,
+    evaluationData: EvaluationData
+  ) => {
+    if (!sessionId) return;
+
+    // Convert EvaluationData to Json-compatible format
+    const jsonMetadata = {
+      evaluation_data: {
+        evaluatedMessageId: evaluationData.evaluatedMessageId,
+        evaluatedModel: evaluationData.evaluatedModel,
+        scores: evaluationData.scores.map(s => ({
+          criterion: s.criterion,
+          score: s.score,
+          maxScore: s.maxScore,
+          justification: s.justification || null,
+        })),
+        totalScore: evaluationData.totalScore,
+        maxTotalScore: evaluationData.maxTotalScore,
+        recommendation: evaluationData.recommendation || null,
+        evaluatorModel: evaluationData.evaluatorModel || null,
+        evaluatedAt: evaluationData.evaluatedAt,
+      },
+      evaluated_message_id: evaluatedMessageId,
+      saved_at: new Date().toISOString(),
+    };
+
+    await createChunk({
+      session_id: sessionId,
+      content: content.slice(0, 3000), // Evaluations can be longer
+      chunk_type: 'evaluation',
+      source_message_id: messageId,
+      metadata: jsonMetadata,
+    });
+  }, [sessionId, createChunk]);
+
+  // Get evaluations for a specific model
+  const getModelEvaluations = useCallback((modelName: string): EvaluationData[] => {
+    return chunks
+      .filter(chunk => chunk.chunk_type === 'evaluation')
+      .map(chunk => {
+        const metadata = chunk.metadata as { evaluation_data?: EvaluationData } | null;
+        return metadata?.evaluation_data;
+      })
+      .filter((data): data is EvaluationData => 
+        data !== undefined && data.evaluatedModel === modelName
+      );
+  }, [chunks]);
+
+  // Get all evaluations
+  const getAllEvaluations = useCallback((): EvaluationData[] => {
+    return chunks
+      .filter(chunk => chunk.chunk_type === 'evaluation')
+      .map(chunk => {
+        const metadata = chunk.metadata as { evaluation_data?: EvaluationData } | null;
+        return metadata?.evaluation_data;
+      })
+      .filter((data): data is EvaluationData => data !== undefined);
+  }, [chunks]);
+
   // Text-based search wrapper
   const handleSearchByText = useCallback(async (query: string) => {
     return searchByText(query, { limit: 20 });
@@ -195,10 +294,13 @@ export function useMemoryIntegration({
     saveDecision,
     saveContext,
     saveInstruction,
+    saveEvaluation,
     savedMessageIds,
     deleteMemoryByMessageId: deleteByMessageId,
     memoryStats: chunks.length > 0 ? getStats() : null,
     searchByText: handleSearchByText,
+    getModelEvaluations,
+    getAllEvaluations,
     isLoading,
     isSaving: isCreating,
   };

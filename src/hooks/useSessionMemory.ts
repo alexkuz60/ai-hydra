@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 import type { Json } from '@/integrations/supabase/types';
 
 // Types for session memory
-export type ChunkType = 'message' | 'summary' | 'decision' | 'context' | 'instruction';
+export type ChunkType = 'message' | 'summary' | 'decision' | 'context' | 'instruction' | 'evaluation';
 
 export interface SessionMemoryChunk {
   id: string;
@@ -367,6 +367,7 @@ export function useSessionMemory(sessionId: string | null) {
       decision: 0,
       context: 0,
       instruction: 0,
+      evaluation: 0,
     };
 
     chunks.forEach((chunk) => {
