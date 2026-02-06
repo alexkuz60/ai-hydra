@@ -21,36 +21,72 @@
    updated_at: string;
  }
  
- export interface PromptFormData {
-   name: string;
-   description: string;
-   content: string;
-   role: AgentRole;
-   is_shared: boolean;
-   language: PromptLanguage;
- }
+export interface PromptFormData {
+  nickname: string;       // Display name for users
+  name: string;           // Technical name: [nickname]_[role]_[lang]_[custom]
+  description: string;
+  content: string;
+  role: AgentRole;
+  is_shared: boolean;
+  language: PromptLanguage;
+}
+
+// Generate technical name from parts
+export function generatePromptName(
+  nickname: string, 
+  role: AgentRole, 
+  language: PromptLanguage, 
+  isDefault: boolean = false
+): string {
+  const lang = language === 'auto' ? 'ru' : language;
+  const suffix = isDefault ? 'default' : 'custom';
+  const cleanNickname = nickname.trim().toLowerCase().replace(/\s+/g, '-');
+  return `${cleanNickname}_${role}_${lang}_${suffix}`;
+}
+
+// Parse technical name to extract nickname for display
+export function parsePromptNickname(name: string): string {
+  // Pattern: [nickname]_[role]_[lang]_[default|custom]
+  const parts = name.split('_');
+  if (parts.length >= 4) {
+    // Everything before role is nickname
+    const suffix = parts[parts.length - 1];
+    const lang = parts[parts.length - 2];
+    const role = parts[parts.length - 3];
+    
+    // Validate it's a proper pattern
+    if (['default', 'custom'].includes(suffix) && ['ru', 'en'].includes(lang)) {
+      const nicknameIdx = parts.length - 3;
+      return parts.slice(0, nicknameIdx).join('_').replace(/-/g, ' ');
+    }
+  }
+  // Fallback: return original name
+  return name;
+}
  
- export function getEmptyPromptFormData(): PromptFormData {
-   return {
-     name: '',
-     description: '',
-     content: '',
-     role: 'assistant',
-     is_shared: false,
-     language: 'auto',
-   };
- }
+export function getEmptyPromptFormData(): PromptFormData {
+  return {
+    nickname: '',
+    name: '',
+    description: '',
+    content: '',
+    role: 'assistant',
+    is_shared: false,
+    language: 'auto',
+  };
+}
  
- export function promptToFormData(prompt: RolePrompt): PromptFormData {
-   return {
-     name: prompt.name,
-     description: prompt.description || '',
-     content: prompt.content,
-     role: prompt.role as AgentRole,
-     is_shared: prompt.is_shared,
-     language: (prompt.language as PromptLanguage) || 'auto',
-   };
- }
+export function promptToFormData(prompt: RolePrompt): PromptFormData {
+  return {
+    nickname: parsePromptNickname(prompt.name),
+    name: prompt.name,
+    description: prompt.description || '',
+    content: prompt.content,
+    role: prompt.role as AgentRole,
+    is_shared: prompt.is_shared,
+    language: (prompt.language as PromptLanguage) || 'auto',
+  };
+}
  
  export function usePromptsCRUD() {
    const { user } = useAuth();
@@ -82,13 +118,13 @@
      fetchPrompts();
    }, [fetchPrompts]);
  
-   const createPrompt = useCallback(async (formData: PromptFormData): Promise<RolePrompt | null> => {
-     if (!user) return null;
- 
-     if (!formData.name.trim() || !formData.content.trim()) {
-       toast.error('Имя и содержимое обязательны');
-       return null;
-     }
+    const createPrompt = useCallback(async (formData: PromptFormData): Promise<RolePrompt | null> => {
+      if (!user) return null;
+
+      if (!formData.nickname.trim() || !formData.content.trim()) {
+        toast.error('Псевдоним и содержимое обязательны');
+        return null;
+      }
  
      setSaving(true);
  
@@ -126,11 +162,11 @@
      }
    }, [user, fetchPrompts]);
  
-   const updatePrompt = useCallback(async (promptId: string, formData: PromptFormData): Promise<boolean> => {
-     if (!formData.name.trim() || !formData.content.trim()) {
-       toast.error('Имя и содержимое обязательны');
-       return false;
-     }
+    const updatePrompt = useCallback(async (promptId: string, formData: PromptFormData): Promise<boolean> => {
+      if (!formData.nickname.trim() || !formData.content.trim()) {
+        toast.error('Псевдоним и содержимое обязательны');
+        return false;
+      }
  
      setSaving(true);
  

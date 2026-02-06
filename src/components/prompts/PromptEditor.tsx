@@ -14,31 +14,32 @@
    SelectValue,
  } from '@/components/ui/select';
  import { Loader2, Save } from 'lucide-react';
- import { cn } from '@/lib/utils';
- import { AgentRole } from '@/config/roles';
- import { RoleSelectOptions, RoleDisplay } from '@/components/ui/RoleSelectItem';
- import type { PromptFormData, PromptLanguage } from '@/hooks/usePromptsCRUD';
+import { cn } from '@/lib/utils';
+import { AgentRole } from '@/config/roles';
+import { RoleSelectOptions, RoleDisplay } from '@/components/ui/RoleSelectItem';
+import type { PromptFormData, PromptLanguage } from '@/hooks/usePromptsCRUD';
+import { generatePromptName } from '@/hooks/usePromptsCRUD';
  
- interface ValidationErrors {
-   name?: string;
-   content?: string;
- }
+interface ValidationErrors {
+  nickname?: string;
+  content?: string;
+}
  
- function validateForm(formData: PromptFormData, t: (key: string) => string): ValidationErrors {
-   const errors: ValidationErrors = {};
-   
-   if (!formData.name.trim()) {
-     errors.name = t('roleLibrary.validation.nameRequired');
-   } else if (formData.name.length > 100) {
-     errors.name = t('roleLibrary.validation.nameTooLong');
-   }
-   
-   if (!formData.content.trim()) {
-     errors.content = t('roleLibrary.validation.contentRequired');
-   }
-   
-   return errors;
- }
+function validateForm(formData: PromptFormData, t: (key: string) => string): ValidationErrors {
+  const errors: ValidationErrors = {};
+  
+  if (!formData.nickname.trim()) {
+    errors.nickname = t('roleLibrary.validation.nameRequired');
+  } else if (formData.nickname.length > 50) {
+    errors.nickname = t('roleLibrary.validation.nameTooLong');
+  }
+  
+  if (!formData.content.trim()) {
+    errors.content = t('roleLibrary.validation.contentRequired');
+  }
+  
+  return errors;
+}
  
  function FieldError({ error }: { error?: string }) {
    if (!error) return null;
@@ -77,9 +78,19 @@
      }
    };
  
-   const updateField = <K extends keyof PromptFormData>(field: K, value: PromptFormData[K]) => {
-     onChange({ ...formData, [field]: value });
-   };
+    const updateField = <K extends keyof PromptFormData>(field: K, value: PromptFormData[K]) => {
+      const updated = { ...formData, [field]: value };
+      
+      // Auto-generate technical name when nickname, role or language changes
+      if (field === 'nickname' || field === 'role' || field === 'language') {
+        const nickname = field === 'nickname' ? (value as string) : updated.nickname;
+        const role = field === 'role' ? (value as AgentRole) : updated.role;
+        const language = field === 'language' ? (value as PromptLanguage) : updated.language;
+        updated.name = generatePromptName(nickname, role, language, false);
+      }
+      
+      onChange(updated);
+    };
  
    const handleSave = () => {
      setSubmitAttempted(true);
@@ -109,20 +120,26 @@
  
        <ScrollArea className="flex-1">
          <div className="p-4 space-y-4">
-           {/* Name */}
-           <div className="space-y-2">
-             <Label>{t('roleLibrary.name')} <span className="text-destructive">*</span></Label>
-             <Input
-               value={formData.name}
-               onChange={(e) => updateField('name', e.target.value)}
-               onBlur={() => markTouched('name')}
-               placeholder={t('roleLibrary.namePlaceholder')}
-               className={cn(
-                 shouldShowError('name') && errors.name && 'border-destructive focus-visible:ring-destructive'
-               )}
-             />
-             {shouldShowError('name') && <FieldError error={errors.name} />}
-           </div>
+            {/* Nickname (display name) */}
+            <div className="space-y-2">
+              <Label>{t('roleLibrary.nickname')} <span className="text-destructive">*</span></Label>
+              <Input
+                value={formData.nickname}
+                onChange={(e) => updateField('nickname', e.target.value)}
+                onBlur={() => markTouched('nickname')}
+                placeholder={t('roleLibrary.nicknamePlaceholder')}
+                className={cn(
+                  shouldShowError('nickname') && errors.nickname && 'border-destructive focus-visible:ring-destructive'
+                )}
+              />
+              {shouldShowError('nickname') && <FieldError error={errors.nickname} />}
+              {/* Show generated technical name */}
+              {formData.nickname.trim() && (
+                <p className="text-xs text-muted-foreground">
+                  {t('roleLibrary.technicalName')}: <code className="bg-muted px-1 rounded">{formData.name}</code>
+                </p>
+              )}
+            </div>
  
            {/* Role */}
            <div className="space-y-2">

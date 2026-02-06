@@ -1,14 +1,15 @@
- import React from 'react';
- import { useLanguage } from '@/contexts/LanguageContext';
- import { TableRow, TableCell } from '@/components/ui/table';
- import { Badge } from '@/components/ui/badge';
- import { Button } from '@/components/ui/button';
- import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
- import { Pencil, Trash2, Users, Lock, Copy, FileText } from 'lucide-react';
- import { cn } from '@/lib/utils';
- import { format } from 'date-fns';
- import { getRoleBadgeColor } from '@/config/roles';
- import type { RolePrompt } from '@/hooks/usePromptsCRUD';
+import React from 'react';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { TableRow, TableCell } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Pencil, Trash2, Users, Lock, Copy, FileText } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { format } from 'date-fns';
+import { getRoleBadgeColor } from '@/config/roles';
+import type { RolePrompt } from '@/hooks/usePromptsCRUD';
+import { parsePromptNickname } from '@/hooks/usePromptsCRUD';
  
  interface PromptRowProps {
    prompt: RolePrompt;
@@ -56,17 +57,17 @@
            )} />
          </div>
        </TableCell>
-       <TableCell>
-         <div className="flex items-center justify-between gap-2">
-           <div className="flex flex-col gap-1 flex-1 min-w-0">
-             <div className="flex items-center gap-2 flex-wrap">
-               <span className="font-medium truncate">{prompt.name}</span>
-               <Badge className={getRoleBadgeColor(prompt.role)}>
-                 {t(`role.${prompt.role}`)}
-               </Badge>
-               <Badge variant="outline" className="text-[10px]">
-                 {getLanguageLabel(prompt.language)}
-               </Badge>
+        <TableCell>
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex flex-col gap-1 flex-1 min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="font-medium truncate">{parsePromptNickname(prompt.name)}</span>
+                <Badge className={getRoleBadgeColor(prompt.role)}>
+                  {t(`role.${prompt.role}`)}
+                </Badge>
+                <Badge variant="outline" className="text-[10px]">
+                  {getLanguageLabel(prompt.language)}
+                </Badge>
                {prompt.is_default && (
                  <Tooltip>
                    <TooltipTrigger asChild>

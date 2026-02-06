@@ -907,6 +907,9 @@ const translations: Translations = {
    'roleLibrary.validation.nameRequired': { ru: 'Название обязательно', en: 'Name is required' },
    'roleLibrary.validation.nameTooLong': { ru: 'Название слишком длинное', en: 'Name is too long' },
    'roleLibrary.validation.contentRequired': { ru: 'Содержимое обязательно', en: 'Content is required' },
+   'roleLibrary.nickname': { ru: 'Псевдоним', en: 'Nickname' },
+   'roleLibrary.nicknamePlaceholder': { ru: 'Короткое название для отображения...', en: 'Short display name...' },
+   'roleLibrary.technicalName': { ru: 'Техническое имя', en: 'Technical name' },
   
   // Skeleton indicators for pending responses
   'skeleton.requestSent': { ru: 'Запрос отправлен...', en: 'Request sent...' },
