@@ -213,6 +213,7 @@ const translations: Translations = {
   'hydrapedia.sections.flowEditorGuide': { ru: 'Руководство по Flow Editor', en: 'Flow Editor Guide' },
   'hydrapedia.sections.apiIntegrations': { ru: 'Интеграции и API', en: 'Integrations & API' },
   'hydrapedia.sections.advancedPatterns': { ru: 'Продвинутые паттерны', en: 'Advanced Patterns' },
+  'hydrapedia.sections.faq': { ru: 'FAQ и решение проблем', en: 'FAQ & Troubleshooting' },
 
   // Patterns groups
   'patterns.expertGroup': { ru: 'Эксперты', en: 'Experts' },
