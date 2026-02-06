@@ -79,15 +79,15 @@ const PromptSectionsViewer: React.FC<PromptSectionsViewerProps> = ({
           })}
         </TabsList>
 
-        {/* Content area */}
-        <div className="flex-1 min-w-0 border-l border-border pl-4">
+        {/* Content area - synced height with navigation */}
+        <div className="flex-1 min-w-0 border-l border-border pl-4 flex flex-col">
           {sections.map((section) => (
             <TabsContent
               key={section.key}
               value={section.key}
-              className="m-0 h-full flex flex-col data-[state=inactive]:hidden"
+              className="m-0 flex-1 flex flex-col data-[state=inactive]:hidden"
             >
-              <ScrollArea className="max-h-[300px]">
+              <ScrollArea className="flex-1">
                 {section.content.trim() ? (
                   <MarkdownRenderer 
                     content={section.content} 
