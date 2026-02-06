@@ -358,28 +358,41 @@ export function SessionMemoryDialog({
               
               {/* Delete duplicates button - show when duplicates filter is active */}
               {activeFilter === 'duplicates' && onDeleteDuplicates && duplicateIdsToDelete.length > 0 && (
-                <Button
-                  variant={confirmDeleteDuplicates ? 'destructive' : 'outline'}
-                  size="sm"
-                  onClick={handleDeleteDuplicates}
-                  disabled={isDeletingDuplicates}
-                  className={cn(
-                    'h-7 ml-auto',
-                    confirmDeleteDuplicates && 'animate-pulse'
+                <div className="flex gap-2 ml-auto">
+                  {confirmDeleteDuplicates && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setConfirmDeleteDuplicates(false)}
+                      disabled={isDeletingDuplicates}
+                      className="h-7"
+                    >
+                      {t('common.cancel')}
+                    </Button>
                   )}
-                >
-                  {isDeletingDuplicates ? (
-                    <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />
-                  ) : confirmDeleteDuplicates ? (
-                    <AlertTriangle className="h-3.5 w-3.5 mr-1" />
-                  ) : (
-                    <Trash2 className="h-3.5 w-3.5 mr-1" />
-                  )}
-                  {confirmDeleteDuplicates 
-                    ? t('memory.confirmDeleteDuplicates')
-                    : `${t('memory.deleteDuplicates')} (${duplicateIdsToDelete.length})`
-                  }
-                </Button>
+                  <Button
+                    variant={confirmDeleteDuplicates ? 'destructive' : 'outline'}
+                    size="sm"
+                    onClick={handleDeleteDuplicates}
+                    disabled={isDeletingDuplicates}
+                    className={cn(
+                      'h-7',
+                      confirmDeleteDuplicates && 'animate-pulse'
+                    )}
+                  >
+                    {isDeletingDuplicates ? (
+                      <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />
+                    ) : confirmDeleteDuplicates ? (
+                      <AlertTriangle className="h-3.5 w-3.5 mr-1" />
+                    ) : (
+                      <Trash2 className="h-3.5 w-3.5 mr-1" />
+                    )}
+                    {confirmDeleteDuplicates 
+                      ? t('memory.confirmDeleteDuplicates')
+                      : `${t('memory.deleteDuplicates')} (${duplicateIdsToDelete.length})`
+                    }
+                  </Button>
+                </div>
               )}
             </>
           )}
