@@ -100,19 +100,19 @@ export const SYSTEM_TOOLS: SystemTool[] = [
 Входные данные:
 {{input}}`,
   },
-  {
-    id: 'builtin_transliterator',
-    name: 'transliterator',
-    display_name: 'Транслитератор',
-    description: 'Конвертирует текст между форматами: кириллица↔латиница, CamelCase↔snake_case↔kebab-case и др.',
-    parameters: [
-      { name: 'text', type: 'string', description: 'Текст для преобразования', required: true },
-      { name: 'format', type: 'string', description: 'Целевой формат: latin, cyrillic, camelCase, snake_case, kebab-case, UPPER_CASE, Title Case', required: true },
-    ],
-    tool_type: 'prompt',
-    is_system: true,
-    category: 'utility',
-    prompt_template: `Преобразуй следующий текст в формат: {{format}}
+   {
+     id: 'builtin_transliterator',
+     name: 'transliterator',
+     display_name: 'Транслитератор',
+     description: 'Конвертирует текст между форматами: кириллица↔латиница, CamelCase↔snake_case↔kebab-case и др.',
+     parameters: [
+       { name: 'text', type: 'string', description: 'Текст для преобразования', required: true },
+       { name: 'format', type: 'string', description: 'Целевой формат: latin, cyrillic, camelCase, snake_case, kebab-case, UPPER_CASE, Title Case', required: true },
+     ],
+     tool_type: 'prompt',
+     is_system: true,
+     category: 'utility',
+     prompt_template: `Преобразуй следующий текст в формат: {{format}}
 
 Текст: {{text}}
 
@@ -125,8 +125,46 @@ export const SYSTEM_TOOLS: SystemTool[] = [
 - Для Title Case — каждое слово с заглавной буквы
 
 Верни ТОЛЬКО преобразованный текст без пояснений.`,
-  },
-];
+   },
+   {
+     id: 'builtin_html_to_markdown',
+     name: 'html_to_markdown',
+     display_name: 'HTML → Markdown',
+     description: 'Конвертирует HTML-разметку в Markdown. Сохраняет заголовки, списки, ссылки, таблицы, выделение текста и блоковые элементы.',
+     parameters: [
+       { name: 'html', type: 'string', description: 'HTML-код для конвертации', required: true },
+     ],
+     tool_type: 'prompt',
+     is_system: true,
+     category: 'data',
+     prompt_template: `Преобразуй следующий HTML-код в Markdown.
+
+Правила конвертации:
+- <h1>...</h1> → # Заголовок
+- <h2>...</h2> → ## Подзаголовок
+- <h3>...</h3> → ### Подзаголовок 3-го уровня и т.д.
+- <p>...</p> → Абзац (пустая строка между абзацами)
+- <b>...</b> или <strong>...</strong> → **жирный текст**
+- <i>...</i> или <em>...</em> → *курсивный текст*
+- <u>...</u> → __подчёркнутый текст__
+- <a href="url">текст</a> → [текст](url)
+- <ul>...</ul> → неупорядоченный список
+- <ol>...</ol> → упорядоченный список
+- <li>...</li> → - элемент списка (для ul) или 1. элемент списка (для ol)
+- <blockquote>...</blockquote> → > цитата
+- <code>...</code> → \`код\`
+- <pre>...</pre> → многостроковый код блок
+- <table>...</table> → Markdown таблица
+- <img src="url" alt="текст"> → ![текст](url)
+- Удали все атрибуты HTML (class, id, style и т.д.), кроме href и src
+- Удали все комментарии HTML
+- Удали пустые элементы и переносы строк
+- Верни ТОЛЬКО Markdown без объяснений
+
+HTML-код:
+{{html}}`,
+   },
+ ];
 
 export interface HttpConfig {
   url: string;

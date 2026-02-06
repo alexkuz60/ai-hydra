@@ -4,7 +4,7 @@ import { TableRow, TableCell } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { Globe, FileText, Pencil, Trash2, Users, Lock, Calculator, Clock, Search, Copy } from 'lucide-react';
+import { Globe, FileText, Pencil, Trash2, Users, Lock, Calculator, Clock, Search, Copy, Code2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import type { CustomTool, SystemTool } from '@/types/customTools';
@@ -21,6 +21,7 @@ function getToolIcon(tool: ToolItem) {
       case 'calculator': return Calculator;
       case 'current_datetime': return Clock;
       case 'web_search': return Search;
+      case 'html_to_markdown': return Code2;
       default: return Lock;
     }
   }
