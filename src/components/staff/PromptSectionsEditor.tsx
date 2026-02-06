@@ -17,7 +17,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
-import { Plus, Lightbulb, ChevronDown, X, Trash2, Sparkles, Languages, Loader2 } from 'lucide-react';
+import { Plus, Lightbulb, ChevronDown, X, Trash2, Sparkles, Languages, Loader2, Undo2 } from 'lucide-react';
 import { 
   type PromptSection, 
   createEmptySection, 
@@ -55,6 +55,10 @@ const PromptSectionsEditor: React.FC<PromptSectionsEditorProps> = ({
   const [tipsOpen, setTipsOpen] = useState(false);
   const [snippetsOpen, setSnippetsOpen] = useState(true);
   const [isTranslating, setIsTranslating] = useState(false);
+  const [originalContent, setOriginalContent] = useState<{
+    title: string;
+    sections: PromptSection[];
+  } | null>(null);
   const textareaRefs = useRef<Record<string, HTMLTextAreaElement | null>>({});
   const lang = (language === 'ru' || language === 'en') ? language : 'ru';
 
@@ -64,10 +68,29 @@ const PromptSectionsEditor: React.FC<PromptSectionsEditorProps> = ({
     return /[а-яА-ЯёЁ]/.test(allContent);
   }, [title, sections]);
 
+  // Restore original content
+  const handleRestoreOriginal = useCallback(() => {
+    if (!originalContent) return;
+    
+    onTitleChange(originalContent.title);
+    onSectionsChange(originalContent.sections);
+    setOriginalContent(null);
+    
+    toast.success(
+      lang === 'ru' ? 'Оригинал восстановлен' : 'Original restored'
+    );
+  }, [originalContent, onTitleChange, onSectionsChange, lang]);
+
   // Translate entire prompt (title + all sections)
   const handleTranslateAll = useCallback(async () => {
     const isRussian = isRussianContent();
     const targetLang = isRussian ? 'English' : 'Russian';
+    
+    // Save original before translating
+    setOriginalContent({
+      title,
+      sections: sections.map(s => ({ ...s })),
+    });
     
     setIsTranslating(true);
     try {
@@ -116,6 +139,8 @@ const PromptSectionsEditor: React.FC<PromptSectionsEditorProps> = ({
     } catch (error) {
       console.error('Translation error:', error);
       toast.error(lang === 'ru' ? 'Ошибка перевода' : 'Translation failed');
+      // Clear saved original on error
+      setOriginalContent(null);
     } finally {
       setIsTranslating(false);
     }
@@ -213,36 +238,62 @@ const PromptSectionsEditor: React.FC<PromptSectionsEditorProps> = ({
           <label className="text-xs font-medium text-muted-foreground">
             {t('staffRoles.promptTitle') || 'Заголовок промпта'}
           </label>
-          <TooltipProvider delayDuration={200}>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleTranslateAll}
-                  disabled={isTranslating}
-                  className="gap-1.5 h-7 text-xs text-muted-foreground hover:text-foreground"
-                >
-                  {isTranslating ? (
-                    <Loader2 className="h-3 w-3 animate-spin" />
-                  ) : (
-                    <Languages className="h-3 w-3" />
-                  )}
-                  {isRussianContent()
-                    ? (lang === 'ru' ? 'На английский' : 'To English')
-                    : (lang === 'ru' ? 'На русский' : 'To Russian')
-                  }
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="left">
-                <p className="text-xs">
-                  {lang === 'ru' 
-                    ? 'Перевести заголовок и все секции промпта' 
-                    : 'Translate title and all prompt sections'}
-                </p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+          <div className="flex items-center gap-1">
+            {originalContent && (
+              <TooltipProvider delayDuration={200}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleRestoreOriginal}
+                      className="gap-1.5 h-7 text-xs text-warning hover:text-warning/80 hover:bg-warning/10"
+                    >
+                      <Undo2 className="h-3 w-3" />
+                      {lang === 'ru' ? 'Вернуть оригинал' : 'Restore original'}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="left">
+                    <p className="text-xs">
+                      {lang === 'ru' 
+                        ? 'Отменить перевод и восстановить оригинальный текст' 
+                        : 'Undo translation and restore original text'}
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
+            <TooltipProvider delayDuration={200}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleTranslateAll}
+                    disabled={isTranslating}
+                    className="gap-1.5 h-7 text-xs text-muted-foreground hover:text-foreground"
+                  >
+                    {isTranslating ? (
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                    ) : (
+                      <Languages className="h-3 w-3" />
+                    )}
+                    {isRussianContent()
+                      ? (lang === 'ru' ? 'На английский' : 'To English')
+                      : (lang === 'ru' ? 'На русский' : 'To Russian')
+                    }
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="left">
+                  <p className="text-xs">
+                    {lang === 'ru' 
+                      ? 'Перевести заголовок и все секции промпта' 
+                      : 'Translate title and all prompt sections'}
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
         </div>
         <Input
           value={title}
