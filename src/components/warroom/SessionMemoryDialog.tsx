@@ -508,37 +508,49 @@ export function SessionMemoryDialog({
         </div>
 
         {/* Footer with Clear All */}
-        {chunks.length > 0 && (
-          <div className="flex justify-between items-center pt-2 border-t">
-            <span className="text-xs text-muted-foreground">
-              {t('memory.totalChunks')}: {chunks.length}
-              {duplicateCount > 0 && (
-                <span className="ml-2 text-amber-500">
-                  ({duplicateCount} {t('memory.duplicateGroups')})
-                </span>
-              )}
-            </span>
-            <Button
-              variant={confirmClearAll ? 'destructive' : 'outline'}
-              size="sm"
-              onClick={handleClearAll}
-              disabled={isClearing}
-              className={cn(
-                'transition-all',
-                confirmClearAll && 'animate-pulse'
-              )}
-            >
-              {isClearing ? (
-                <Loader2 className="h-4 w-4 mr-1 animate-spin" />
-              ) : confirmClearAll ? (
-                <AlertTriangle className="h-4 w-4 mr-1" />
-              ) : (
-                <Trash2 className="h-4 w-4 mr-1" />
-              )}
-              {confirmClearAll ? t('memory.confirmClearAll') : t('memory.clearAll')}
-            </Button>
-          </div>
-        )}
+         {chunks.length > 0 && (
+           <div className="flex justify-between items-center pt-2 border-t">
+             <span className="text-xs text-muted-foreground">
+               {t('memory.totalChunks')}: {chunks.length}
+               {duplicateCount > 0 && (
+                 <span className="ml-2 text-amber-500">
+                   ({duplicateCount} {t('memory.duplicateGroups')})
+                 </span>
+               )}
+             </span>
+             <div className="flex gap-2">
+               {confirmClearAll && (
+                 <Button
+                   variant="ghost"
+                   size="sm"
+                   onClick={() => setConfirmClearAll(false)}
+                   disabled={isClearing}
+                 >
+                   {t('common.cancel')}
+                 </Button>
+               )}
+               <Button
+                 variant={confirmClearAll ? 'destructive' : 'outline'}
+                 size="sm"
+                 onClick={handleClearAll}
+                 disabled={isClearing}
+                 className={cn(
+                   'transition-all',
+                   confirmClearAll && 'animate-pulse'
+                 )}
+               >
+                 {isClearing ? (
+                   <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                 ) : confirmClearAll ? (
+                   <AlertTriangle className="h-4 w-4 mr-1" />
+                 ) : (
+                   <Trash2 className="h-4 w-4 mr-1" />
+                 )}
+                 {confirmClearAll ? t('memory.confirmClearAll') : t('memory.clearAll')}
+               </Button>
+             </div>
+           </div>
+         )}
       </DialogContent>
     </Dialog>
   );
