@@ -946,6 +946,13 @@ const translations: Translations = {
   // Memory
   'memory.savedChunks': { ru: 'Сохранённые фрагменты', en: 'Saved chunks' },
   'memory.decisions': { ru: 'Решения', en: 'Decisions' },
+  // Model Ratings Charts
+  'ratings.statsOverview': { ru: 'Обзор статистики', en: 'Statistics Overview' },
+  'ratings.modelsUsed': { ru: 'Моделей использовано', en: 'Models Used' },
+  'ratings.overallAvg': { ru: 'Общий средний балл', en: 'Overall Avg Rating' },
+  'ratings.barChart': { ru: 'Столбчатая', en: 'Bar Chart' },
+  'ratings.pieChart': { ru: 'Круговая', en: 'Pie Chart' },
+  'ratings.avgRating': { ru: 'Средний балл', en: 'Avg Rating' },
   'memory.context': { ru: 'Контекст', en: 'Context' },
   'memory.instructions': { ru: 'Инструкции', en: 'Instructions' },
   'memory.evaluations': { ru: 'Оценки', en: 'Evaluations' },
