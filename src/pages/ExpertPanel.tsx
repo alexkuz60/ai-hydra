@@ -5,6 +5,7 @@ import { Layout } from '@/components/layout/Layout';
 import { MemoryControls } from '@/components/layout/MemoryControls';
  import { TaskIndicator } from '@/components/layout/TaskIndicator';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/integrations/supabase/client';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 import type { ImperativePanelHandle } from 'react-resizable-panels';
 import { ConsultantPanel } from '@/components/warroom/ConsultantPanel';
@@ -149,6 +150,22 @@ export default function ExpertPanel() {
   // Memory management state
   const [memoryRefreshed, setMemoryRefreshed] = useState(false);
   const [memoryDialogOpen, setMemoryDialogOpen] = useState(false);
+  const [knowledgeCount, setKnowledgeCount] = useState(0);
+
+  // Fetch knowledge count for the current user
+  useEffect(() => {
+    if (!user?.id) return;
+    const fetchKnowledgeCount = async () => {
+      try {
+        const { count, error } = await supabase
+          .from('role_knowledge')
+          .select('id', { count: 'exact', head: true })
+          .eq('user_id', user.id);
+        if (!error && count != null) setKnowledgeCount(count);
+      } catch { /* ignore */ }
+    };
+    fetchKnowledgeCount();
+  }, [user?.id]);
    
    // Input area collapse state
    const { 
@@ -648,6 +665,7 @@ ${content.slice(0, 2000)}${content.length > 2000 ? '\n...(сокращено)' :
       />
       <MemoryControls
         memoryStats={memoryStats}
+        knowledgeCount={knowledgeCount}
         isLoading={memoryLoading}
         isRefreshed={memoryRefreshed}
         onRefresh={handleRefreshMemory}
