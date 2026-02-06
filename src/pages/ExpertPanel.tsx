@@ -585,6 +585,39 @@ export default function ExpertPanel() {
     handleDChatExpand();
   }, [messages, handleDChatExpand]);
 
+  // Request Arbiter evaluation for a specific AI message
+  const handleRequestEvaluation = useCallback((messageId: string, content: string, modelName: string | null) => {
+    // Build evaluation request with Arbiter context
+    const evaluationPrompt = `Оцени следующий ответ модели ${modelName || 'ИИ'} по критериям:
+1. **Точность** (0-10): насколько ответ корректен и соответствует запросу
+2. **Полнота** (0-10): насколько ответ исчерпывающий
+3. **Ясность** (0-10): насколько ответ понятен и хорошо структурирован
+4. **Практичность** (0-10): насколько ответ применим
+
+Формат ответа:
+| Критерий | Балл | Обоснование |
+|----------|------|-------------|
+...
+
+**Итоговая оценка:** X/10
+
+---
+**Ответ для оценки:**
+${content.slice(0, 2000)}${content.length > 2000 ? '\n...(сокращено)' : ''}`;
+
+    setDChatContext({
+      messageId,
+      content: evaluationPrompt,
+      sourceMessages: [{
+        role: 'assistant',
+        model_name: modelName,
+        content: content
+      }]
+    });
+    handleDChatExpand();
+    toast.info(t('dchat.evaluationRequested'));
+  }, [handleDChatExpand, t]);
+
   if (authLoading || loading) {
     return (
       <Layout>
@@ -853,6 +886,7 @@ export default function ExpertPanel() {
                 onUpdateProposals={handleUpdateProposals}
                 onRequestProposalDetails={handleRequestProposalDetails}
                 onConsultInDChat={handleConsultInDChat}
+                onRequestEvaluation={handleRequestEvaluation}
               />
 
               {/* Input Area */}

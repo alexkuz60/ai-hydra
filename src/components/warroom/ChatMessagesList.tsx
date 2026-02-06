@@ -46,6 +46,8 @@ interface ChatMessagesListProps {
   onRequestProposalDetails?: (messageId: string, proposalIds: string[]) => void;
   // D-Chat consultation
   onConsultInDChat?: (messageId: string, content: string) => void;
+  // Evaluation request
+  onRequestEvaluation?: (messageId: string, content: string, modelName: string | null) => void;
 }
 
 export function ChatMessagesList({
@@ -72,6 +74,7 @@ export function ChatMessagesList({
   onUpdateProposals,
   onRequestProposalDetails,
   onConsultInDChat,
+  onRequestEvaluation,
 }: ChatMessagesListProps) {
   if (messages.length === 0) {
     return (
@@ -120,6 +123,7 @@ export function ChatMessagesList({
                   onUpdateProposals={onUpdateProposals}
                   onRequestProposalDetails={onRequestProposalDetails}
                   onConsultInDChat={onConsultInDChat}
+                  onRequestEvaluation={onRequestEvaluation}
                 />
               </div>
             </React.Fragment>
