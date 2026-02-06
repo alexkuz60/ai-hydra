@@ -30,7 +30,8 @@ import {
   FileText,
   Link2,
   Home,
-  ArrowUp
+  ArrowUp,
+  HelpCircle
 } from 'lucide-react';
 import {
   Breadcrumb,
@@ -51,6 +52,7 @@ const iconMap: Record<string, React.ElementType> = {
   GitBranch,
   BarChart3,
   Star,
+  HelpCircle,
 };
 
 interface TocItem {

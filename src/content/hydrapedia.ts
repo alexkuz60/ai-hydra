@@ -6580,5 +6580,470 @@ graph TD
 
 > **Tip**: Start with simple linear flows, gradually adding branches and loops as needed.`
     }
+  },
+  // FAQ & Troubleshooting
+  {
+    id: 'faq',
+    titleKey: 'hydrapedia.sections.faq',
+    icon: 'HelpCircle',
+    content: {
+      ru: `# FAQ и решение проблем
+
+Часто задаваемые вопросы и типичные проблемы при работе с AI-Hydra.
+
+---
+
+## 🔑 API-ключи и доступ к моделям
+
+### Модели отображаются серыми и недоступны для выбора
+
+**Причина**: Не настроен API-ключ соответствующего провайдера.
+
+**Решение**:
+1. Перейдите в **Профиль** → **API Ключи**
+2. Введите ключ для нужного провайдера (OpenAI, Anthropic, Google и т.д.)
+3. Нажмите **Сохранить**
+4. Вернитесь в Панель экспертов — модели станут доступны
+
+> **Совет**: Начните с OpenRouter — один ключ даёт доступ к сотням моделей.
+
+### Модель была доступна, но исчезла из списка
+
+**Причина**: Модель временно недоступна или кэш доступности пометил её как неактивную (ошибки 402/404).
+
+**Решение**:
+1. Откройте **Профиль** → **API Ключи**
+2. Нажмите кнопку **Сбросить кэш моделей** (иконка \`RefreshCw\`)
+3. Кэш хранится в браузере (localStorage) с TTL = 1 час — модель появится автоматически через час
+
+### Ошибка 402 — недостаточно средств
+
+**Причина**: На аккаунте провайдера закончился баланс.
+
+**Решение**: Пополните баланс на сайте провайдера (OpenAI, Anthropic и т.д.). После пополнения модель автоматически станет доступна (или сбросьте кэш вручную).
+
+### Ошибка 401 — неверный API-ключ
+
+**Причина**: Ключ введён неправильно, отозван или истёк.
+
+**Решение**:
+1. Проверьте ключ на сайте провайдера
+2. Перейдите в **Профиль** → **API Ключи**
+3. Обновите ключ и сохраните
+
+---
+
+## 💬 Чат и сообщения
+
+### Ответ модели не приходит (бесконечная загрузка)
+
+**Возможные причины**:
+- Превышен таймаут ожидания
+- Проблемы на стороне провайдера
+- Слишком длинный контекст
+
+**Решение**:
+1. Увеличьте **таймаут** (иконка \`Clock\`) — по умолчанию 60 секунд, максимум 4 минуты
+2. Попробуйте другую модель
+3. Сократите контекст: создайте новую сессию (\`Plus\`) или сократите сообщение
+
+### Ответ обрывается на середине
+
+**Причина**: Достигнут лимит **Max Tokens**.
+
+**Решение**:
+1. Откройте **Настройки модели** (иконка \`Settings\`)
+2. Увеличьте **Max Tokens** (до 16384)
+3. Или добавьте в промпт инструкцию: «Дай полный ответ, не сокращай»
+
+### Модель даёт слишком короткие/длинные ответы
+
+**Решение через параметры**:
+
+| Проблема | Параметр | Действие |
+|----------|----------|----------|
+| Слишком кратко | Max Tokens | Увеличить (8192+) |
+| Слишком длинно | Max Tokens | Уменьшить (1024–2048) |
+| Нет деталей | Temperature | Повысить (0.7–1.0) |
+| Слишком «творчески» | Temperature | Понизить (0.1–0.3) |
+
+### Как удалить отдельное сообщение?
+
+В текущей версии удаление отдельных сообщений не поддерживается. Вы можете:
+- Создать **новую сессию** для чистого старта
+- Использовать **D-Chat** для уточнения без засорения основного чата
+
+---
+
+## 🎭 Роли и промпты
+
+### Роль не влияет на ответ модели
+
+**Возможные причины**:
+- Не назначен системный промпт для роли
+- Промпт слишком общий
+
+**Решение**:
+1. Откройте **Библиотеку промптов**
+2. Найдите промпт для нужной роли
+3. Выберите его через **Селектор промптов** (\`BookOpen\`) в верхней панели
+4. Или создайте специализированный промпт с чёткими инструкциями
+
+### Пожелания Супервизора не применяются
+
+**Проверьте**:
+1. Пожелания активированы (отмечены галочкой)
+2. Пожелания совместимы с текущей ролью (фильтруются автоматически)
+3. Выбранные пожелания отображаются как бейджи в селекторе
+
+---
+
+## 📊 D-Chat и Консультант
+
+### D-Chat не открывается
+
+**Решение**:
+1. Нажмите иконку \`MessageSquare\` в ответе модели — откроется D-Chat с этой моделью
+2. Или используйте иконку \`Lightbulb\` в правом тулбаре панели ввода
+
+### Режим Модератор не показывает резюме
+
+**Причина**: Для работы модератора нужны сообщения в текущей сессии.
+
+**Решение**: Убедитесь, что в сессии есть хотя бы несколько ответов моделей. Модератор агрегирует контекст из существующей переписки.
+
+---
+
+## 🔄 Стриминг и производительность
+
+### Стриминг-ответ «подвисает»
+
+**Решение**:
+1. Дождитесь завершения (некоторые модели обрабатывают запрос перед стримингом)
+2. Увеличьте таймаут
+3. Если зависание повторяется — попробуйте другую модель
+
+### Интерфейс работает медленно
+
+**Возможные причины**:
+- Слишком длинная история чата (100+ сообщений)
+- Много открытых развёрнутых ответов
+
+**Решение**:
+1. Сверните длинные ответы (кнопка \`BookOpen\`)
+2. Создайте новую сессию для нового контекста
+3. Используйте **Память сессии** для сохранения важных фактов между сессиями
+
+---
+
+## 🧠 Память и контекст
+
+### Память сессии не работает
+
+**Проверьте**:
+1. Активна ли опция памяти для сессии
+2. Есть ли сообщения, обработанные системой памяти
+3. Память индексируется автоматически — дайте время на обработку
+
+### Как передать контекст между сессиями?
+
+Используйте **Ролевую память** — она сохраняет опыт ролей между разными сессиями. Технические специалисты (\`@analyst\`, \`@archivist\`) могут сохранять и извлекать накопленные знания.
+
+---
+
+## 🛠 Инструменты (Tools)
+
+### HTTP-инструмент возвращает ошибку
+
+**Частые причины**:
+
+| Ошибка | Причина | Решение |
+|--------|---------|---------|
+| **Timeout** | API не отвечает за 30 секунд | Проверьте URL и доступность API |
+| **SSRF blocked** | Попытка обращения к локальному адресу | Используйте только публичные API |
+| **Response too large** | Ответ превышает 1 МБ | Используйте JSONPath для извлечения нужных данных |
+| **Invalid JSON** | API возвращает не-JSON | Проверьте Content-Type и формат ответа |
+
+### Как протестировать инструмент?
+
+Каждый инструмент имеет встроенный тестер:
+1. Откройте инструмент в **Библиотеке инструментов**
+2. Нажмите **Тестировать** (\`Play\`)
+3. Заполните параметры (для Prompt-Template плейсхолдеры определяются автоматически)
+4. Результат отобразится в панели тестирования
+
+---
+
+## 📐 Редактор потоков (Flow Editor)
+
+### Узлы не соединяются
+
+**Причина**: Нарушены правила соединения.
+
+**Правила**:
+- Output-порт → Input-порт (не наоборот)
+- Нельзя создать цикл без явного Loop-узла
+- Некоторые узлы ограничены в количестве входов/выходов
+
+### Как экспортировать диаграмму?
+
+Используйте панель экспорта (иконка \`Download\`):
+
+| Формат | Назначение |
+|--------|------------|
+| **PNG** | Изображение для документации |
+| **SVG** | Векторная графика для масштабирования |
+| **JSON** | Полная сериализация для импорта |
+| **PDF** | Документ для печати |
+
+---
+
+## 🌐 Общие вопросы
+
+### Как переключить язык интерфейса?
+
+Нажмите иконку \`Globe\` в шапке приложения для переключения между RU и EN. Настройка сохраняется в профиле.
+
+### Как сменить тему (тёмная/светлая)?
+
+Нажмите иконку \`Sun\` / \`Moon\` в шапке. Предпочтение сохраняется автоматически.
+
+### Данные сохраняются автоматически?
+
+Да. Все сообщения, настройки сессий и конфигурации сохраняются в облачной базе данных. API-ключи хранятся в зашифрованном хранилище (Vault).
+
+### Есть ли лимиты на использование?
+
+Лимиты зависят от вашего тарифного плана у AI-провайдеров. AI-Hydra не вводит собственных ограничений на количество запросов — лимитирует только провайдер модели.`,
+
+      en: `# FAQ & Troubleshooting
+
+Frequently asked questions and common issues when working with AI-Hydra.
+
+---
+
+## 🔑 API Keys & Model Access
+
+### Models appear grayed out and cannot be selected
+
+**Cause**: API key for the corresponding provider is not configured.
+
+**Solution**:
+1. Go to **Profile** → **API Keys**
+2. Enter the key for the needed provider (OpenAI, Anthropic, Google, etc.)
+3. Click **Save**
+4. Return to the Expert Panel — models will become available
+
+> **Tip**: Start with OpenRouter — one key gives access to hundreds of models.
+
+### A model was available but disappeared from the list
+
+**Cause**: The model is temporarily unavailable or the availability cache marked it as inactive (402/404 errors).
+
+**Solution**:
+1. Open **Profile** → **API Keys**
+2. Click the **Reset model cache** button (icon \`RefreshCw\`)
+3. Cache is stored in browser (localStorage) with TTL = 1 hour — the model will reappear automatically after an hour
+
+### Error 402 — insufficient funds
+
+**Cause**: The provider account balance is depleted.
+
+**Solution**: Top up your balance on the provider's website (OpenAI, Anthropic, etc.). After topping up, the model will automatically become available (or reset the cache manually).
+
+### Error 401 — invalid API key
+
+**Cause**: The key was entered incorrectly, revoked, or expired.
+
+**Solution**:
+1. Verify the key on the provider's website
+2. Go to **Profile** → **API Keys**
+3. Update the key and save
+
+---
+
+## 💬 Chat & Messages
+
+### Model response doesn't arrive (infinite loading)
+
+**Possible causes**:
+- Response timeout exceeded
+- Provider-side issues
+- Context too long
+
+**Solution**:
+1. Increase **timeout** (icon \`Clock\`) — default is 60 seconds, maximum 4 minutes
+2. Try a different model
+3. Reduce context: create a new session (\`Plus\`) or shorten your message
+
+### Response cuts off mid-sentence
+
+**Cause**: **Max Tokens** limit reached.
+
+**Solution**:
+1. Open **Model Settings** (icon \`Settings\`)
+2. Increase **Max Tokens** (up to 16384)
+3. Or add to your prompt: "Give a complete answer, don't truncate"
+
+### Model gives too short/long responses
+
+**Solution via parameters**:
+
+| Problem | Parameter | Action |
+|---------|-----------|--------|
+| Too brief | Max Tokens | Increase (8192+) |
+| Too long | Max Tokens | Decrease (1024–2048) |
+| Lacks detail | Temperature | Increase (0.7–1.0) |
+| Too "creative" | Temperature | Decrease (0.1–0.3) |
+
+### How to delete an individual message?
+
+In the current version, deleting individual messages is not supported. You can:
+- Create a **new session** for a clean start
+- Use **D-Chat** for clarifications without cluttering the main chat
+
+---
+
+## 🎭 Roles & Prompts
+
+### Role doesn't affect model response
+
+**Possible causes**:
+- No system prompt assigned for the role
+- Prompt is too generic
+
+**Solution**:
+1. Open the **Prompt Library**
+2. Find a prompt for the desired role
+3. Select it via **Prompt Selector** (\`BookOpen\`) in the top toolbar
+4. Or create a specialized prompt with clear instructions
+
+### Supervisor Wishes are not being applied
+
+**Check**:
+1. Wishes are activated (checked)
+2. Wishes are compatible with the current role (filtered automatically)
+3. Selected wishes appear as badges in the selector
+
+---
+
+## 📊 D-Chat & Consultant
+
+### D-Chat doesn't open
+
+**Solution**:
+1. Click the \`MessageSquare\` icon in a model's response — D-Chat opens with that model
+2. Or use the \`Lightbulb\` icon in the right toolbar of the input area
+
+### Moderator mode doesn't show summary
+
+**Cause**: The moderator needs messages in the current session to work.
+
+**Solution**: Make sure there are at least several model responses in the session. The moderator aggregates context from existing conversation.
+
+---
+
+## 🔄 Streaming & Performance
+
+### Streaming response "freezes"
+
+**Solution**:
+1. Wait for completion (some models process the request before streaming)
+2. Increase timeout
+3. If freezing persists — try a different model
+
+### Interface is slow
+
+**Possible causes**:
+- Very long chat history (100+ messages)
+- Many expanded responses open
+
+**Solution**:
+1. Collapse long responses (button \`BookOpen\`)
+2. Create a new session for fresh context
+3. Use **Session Memory** to preserve important facts between sessions
+
+---
+
+## 🧠 Memory & Context
+
+### Session memory doesn't work
+
+**Check**:
+1. Is memory option active for the session
+2. Are there messages processed by the memory system
+3. Memory is indexed automatically — allow time for processing
+
+### How to transfer context between sessions?
+
+Use **Role Memory** — it preserves role experience across different sessions. Technical specialists (\`@analyst\`, \`@archivist\`) can save and retrieve accumulated knowledge.
+
+---
+
+## 🛠 Tools
+
+### HTTP tool returns an error
+
+**Common causes**:
+
+| Error | Cause | Solution |
+|-------|-------|----------|
+| **Timeout** | API doesn't respond within 30 seconds | Check URL and API availability |
+| **SSRF blocked** | Attempt to access local address | Use only public APIs |
+| **Response too large** | Response exceeds 1 MB | Use JSONPath to extract needed data |
+| **Invalid JSON** | API returns non-JSON | Check Content-Type and response format |
+
+### How to test a tool?
+
+Each tool has a built-in tester:
+1. Open the tool in the **Tools Library**
+2. Click **Test** (\`Play\`)
+3. Fill in parameters (for Prompt-Template, placeholders are detected automatically)
+4. Results will appear in the testing panel
+
+---
+
+## 📐 Flow Editor
+
+### Nodes won't connect
+
+**Cause**: Connection rules violated.
+
+**Rules**:
+- Output port → Input port (not the other way)
+- Cannot create cycles without an explicit Loop node
+- Some nodes have limited input/output counts
+
+### How to export a diagram?
+
+Use the export panel (icon \`Download\`):
+
+| Format | Purpose |
+|--------|---------|
+| **PNG** | Image for documentation |
+| **SVG** | Vector graphics for scaling |
+| **JSON** | Full serialization for import |
+| **PDF** | Document for printing |
+
+---
+
+## 🌐 General Questions
+
+### How to switch interface language?
+
+Click the \`Globe\` icon in the app header to switch between RU and EN. The setting is saved to your profile.
+
+### How to change theme (dark/light)?
+
+Click the \`Sun\` / \`Moon\` icon in the header. Preference is saved automatically.
+
+### Is data saved automatically?
+
+Yes. All messages, session settings, and configurations are saved in the cloud database. API keys are stored in encrypted storage (Vault).
+
+### Are there usage limits?
+
+Limits depend on your plan with AI providers. AI-Hydra does not impose its own request limits — only the model provider sets limits.`
+    }
   }
 ];
