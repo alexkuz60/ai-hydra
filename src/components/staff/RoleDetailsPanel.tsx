@@ -1,4 +1,4 @@
-import React, { forwardRef, useState, useEffect, useCallback } from 'react';
+import React, { forwardRef, useState, useEffect, useCallback, useMemo } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { Badge } from '@/components/ui/badge';
@@ -8,7 +8,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Switch } from '@/components/ui/switch';
-import { Textarea } from '@/components/ui/textarea';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import {
   Select,
@@ -35,10 +34,13 @@ import {
 import { cn } from '@/lib/utils';
 import RoleHierarchyEditor from './RoleHierarchyEditor';
 import { ConflictResolutionDialog } from './ConflictResolutionDialog';
+import PromptSectionsViewer from './PromptSectionsViewer';
+import PromptSectionsEditor from './PromptSectionsEditor';
 import { useRoleBehavior } from '@/hooks/useRoleBehavior';
 import { useUnsavedChanges } from '@/hooks/useUnsavedChanges';
 import { UnsavedChangesDialog } from '@/components/ui/unsaved-changes-dialog';
 import { detectConflicts, generateSyncOperations, applyOperationToInteractions, groupOperationsByRole, type HierarchyConflict } from '@/lib/hierarchyConflictDetector';
+import { parsePromptSections, sectionsToPrompt, type PromptSection } from '@/lib/promptSectionParser';
 import type { RoleInteractions } from '@/types/patterns';
 import type { Json } from '@/integrations/supabase/types';
 
@@ -70,6 +72,10 @@ const RoleDetailsPanel = forwardRef<HTMLDivElement, RoleDetailsPanelProps>(
     const [promptName, setPromptName] = useState('');
     const [isShared, setIsShared] = useState(false);
     const [isSavingPrompt, setIsSavingPrompt] = useState(false);
+    
+    // Parsed sections state for structured editing
+    const [editedTitle, setEditedTitle] = useState('');
+    const [editedSections, setEditedSections] = useState<PromptSection[]>([]);
     
     // Library state
     const [libraryPrompts, setLibraryPrompts] = useState<PromptLibraryItem[]>([]);
@@ -165,7 +171,10 @@ const RoleDetailsPanel = forwardRef<HTMLDivElement, RoleDetailsPanelProps>(
     const handleStartEdit = () => {
       if (!selectedRole) return;
       const defaultPrompt = DEFAULT_SYSTEM_PROMPTS[selectedRole];
+      const parsed = parsePromptSections(defaultPrompt);
       setEditedPrompt(defaultPrompt);
+      setEditedTitle(parsed.title);
+      setEditedSections(parsed.sections);
       setPromptName(`${t(ROLE_CONFIG[selectedRole].label)} - Custom`);
       setIsEditing(true);
     };
@@ -173,6 +182,8 @@ const RoleDetailsPanel = forwardRef<HTMLDivElement, RoleDetailsPanelProps>(
     const handleCancelEdit = () => {
       setIsEditing(false);
       setEditedPrompt('');
+      setEditedTitle('');
+      setEditedSections([]);
       setPromptName('');
       setIsShared(false);
     };
@@ -180,7 +191,10 @@ const RoleDetailsPanel = forwardRef<HTMLDivElement, RoleDetailsPanelProps>(
     const handleLoadFromLibrary = (promptId: string) => {
       const prompt = libraryPrompts.find(p => p.id === promptId);
       if (prompt) {
+        const parsed = parsePromptSections(prompt.content);
         setEditedPrompt(prompt.content);
+        setEditedTitle(parsed.title);
+        setEditedSections(parsed.sections);
         setPromptName(prompt.name);
         setIsShared(prompt.is_shared);
         setSelectedLibraryPrompt(promptId);
@@ -188,6 +202,23 @@ const RoleDetailsPanel = forwardRef<HTMLDivElement, RoleDetailsPanelProps>(
         toast.success(t('staffRoles.promptLoaded'));
       }
     };
+
+    // Sync sections back to editedPrompt when sections change
+    const handleSectionsChange = useCallback((sections: PromptSection[]) => {
+      setEditedSections(sections);
+      setEditedPrompt(sectionsToPrompt(editedTitle, sections));
+    }, [editedTitle]);
+
+    const handleTitleChange = useCallback((title: string) => {
+      setEditedTitle(title);
+      setEditedPrompt(sectionsToPrompt(title, editedSections));
+    }, [editedSections]);
+
+    // Parse system prompt for viewing
+    const parsedSystemPrompt = useMemo(() => {
+      if (!selectedRole) return { title: '', sections: [] };
+      return parsePromptSections(DEFAULT_SYSTEM_PROMPTS[selectedRole]);
+    }, [selectedRole]);
 
     const handleSaveToLibrary = async () => {
       if (!user || !selectedRole || !promptName.trim() || !editedPrompt.trim()) {
@@ -354,7 +385,7 @@ const RoleDetailsPanel = forwardRef<HTMLDivElement, RoleDetailsPanelProps>(
 
               {isEditing ? (
                 <div className="space-y-4">
-                  {/* Prompt Name */}
+                  {/* Prompt Name for Library */}
                   <div className="space-y-2">
                     <Label className="text-xs">{t('staffRoles.promptName')}</Label>
                     <Input
@@ -364,13 +395,15 @@ const RoleDetailsPanel = forwardRef<HTMLDivElement, RoleDetailsPanelProps>(
                     />
                   </div>
 
-                  {/* Editable Prompt */}
-                  <Textarea
-                    value={editedPrompt}
-                    onChange={(e) => setEditedPrompt(e.target.value)}
-                    className="min-h-[200px] font-mono text-sm"
-                    placeholder={t('roleLibrary.contentPlaceholder')}
-                  />
+                  {/* Structured Sections Editor */}
+                  <div className="rounded-lg border border-border bg-muted/10 p-4">
+                    <PromptSectionsEditor
+                      title={editedTitle}
+                      sections={editedSections}
+                      onTitleChange={handleTitleChange}
+                      onSectionsChange={handleSectionsChange}
+                    />
+                  </div>
 
                   {/* Shared toggle */}
                   <div className="flex items-center gap-2">
@@ -409,10 +442,11 @@ const RoleDetailsPanel = forwardRef<HTMLDivElement, RoleDetailsPanelProps>(
                   </div>
                 </div>
               ) : (
-                <div className="rounded-lg border border-border bg-muted/30 p-4 max-h-[7.5rem] overflow-y-auto">
-                  <pre className="text-sm whitespace-pre-wrap font-mono leading-relaxed line-clamp-5">
-                    {systemPrompt}
-                  </pre>
+                <div className="rounded-lg border border-border bg-muted/30 p-4">
+                  <PromptSectionsViewer
+                    title={parsedSystemPrompt.title}
+                    sections={parsedSystemPrompt.sections}
+                  />
                 </div>
               )}
             </div>
