@@ -32,6 +32,12 @@ import {
 } from '@/config/promptDictionaries';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { 
+  getCachedTranslation, 
+  cacheTranslation,
+  getCachedTranslations,
+  cacheTranslations 
+} from '@/lib/translationCache';
 
 interface PromptSectionsEditorProps {
   title: string;
@@ -90,7 +96,7 @@ const PromptSectionsEditor: React.FC<PromptSectionsEditorProps> = ({
     toast.success(t('staffRoles.originalRestored'));
   }, [originalContent, isRussianContent, onTitleChange, onSectionsChange, onRestoreOriginal, t]);
 
-  // Translate entire prompt (title + all sections)
+  // Translate entire prompt (title + all sections) with caching
   const handleTranslateAll = useCallback(async () => {
     const isRussian = isRussianContent();
     const targetLang = isRussian ? 'English' : 'Russian';
@@ -101,17 +107,58 @@ const PromptSectionsEditor: React.FC<PromptSectionsEditorProps> = ({
       sections: sections.map(s => ({ ...s })),
     });
     
-    setIsTranslating(true);
-    try {
-      // Translate title
-      const titleResult = await supabase.functions.invoke('translate-text', {
-        body: { text: title, targetLang },
+    // Check cache for all texts
+    const textsToCheck = [title, ...sections.filter(s => s.content.trim()).map(s => s.content)];
+    const cachedResults = getCachedTranslations(textsToCheck, targetLang);
+    
+    // If all are cached, use them instantly
+    const allCached = textsToCheck.every(text => cachedResults.has(text));
+    
+    if (allCached) {
+      // Apply cached translations instantly
+      const cachedTitle = cachedResults.get(title);
+      if (cachedTitle) {
+        onTitleChange(cachedTitle);
+      }
+      
+      const updatedSections = sections.map(section => {
+        if (section.content.trim()) {
+          const cached = cachedResults.get(section.content);
+          if (cached) {
+            return { ...section, content: cached };
+          }
+        }
+        return section;
       });
       
-      if (titleResult.error) throw titleResult.error;
+      onSectionsChange(updatedSections);
       
-      // Translate all non-empty sections in parallel
-      const sectionsToTranslate = sections.filter(s => s.content.trim());
+      // Notify parent about language switch
+      const fromLang: 'ru' | 'en' = isRussian ? 'ru' : 'en';
+      const toLang: 'ru' | 'en' = isRussian ? 'en' : 'ru';
+      onLanguageSwitch?.(fromLang, toLang);
+      
+      toast.success(t('staffRoles.translatedSuccess'));
+      return;
+    }
+    
+    setIsTranslating(true);
+    try {
+      // Translate only non-cached items
+      let translatedTitle = cachedResults.get(title);
+      if (!translatedTitle) {
+        const titleResult = await supabase.functions.invoke('translate-text', {
+          body: { text: title, targetLang },
+        });
+        if (titleResult.error) throw titleResult.error;
+        translatedTitle = titleResult.data?.translation;
+        if (translatedTitle) {
+          cacheTranslation(title, translatedTitle, targetLang);
+        }
+      }
+      
+      // Translate non-cached sections in parallel
+      const sectionsToTranslate = sections.filter(s => s.content.trim() && !cachedResults.has(s.content));
       const translationPromises = sectionsToTranslate.map(section =>
         supabase.functions.invoke('translate-text', {
           body: { text: section.content, targetLang },
@@ -124,17 +171,38 @@ const PromptSectionsEditor: React.FC<PromptSectionsEditorProps> = ({
       const hasErrors = results.some(r => r.error);
       if (hasErrors) throw new Error('Some translations failed');
       
-      // Update title
-      if (titleResult.data?.translation) {
-        onTitleChange(titleResult.data.translation);
+      // Cache new translations
+      const newTranslations: Array<{ original: string; translation: string }> = [];
+      sectionsToTranslate.forEach((section, idx) => {
+        if (results[idx].data?.translation) {
+          newTranslations.push({ original: section.content, translation: results[idx].data.translation });
+        }
+      });
+      if (newTranslations.length > 0) {
+        cacheTranslations(newTranslations, targetLang);
       }
       
-      // Update sections
+      // Update title
+      if (translatedTitle) {
+        onTitleChange(translatedTitle);
+      }
+      
+      // Update sections (use cached or new translations)
       const updatedSections = sections.map(section => {
+        if (!section.content.trim()) return section;
+        
+        // Check cache first
+        const cached = cachedResults.get(section.content);
+        if (cached) {
+          return { ...section, content: cached };
+        }
+        
+        // Check new translations
         const idx = sectionsToTranslate.findIndex(s => s.key === section.key);
         if (idx >= 0 && results[idx].data?.translation) {
           return { ...section, content: results[idx].data.translation };
         }
+        
         return section;
       });
       

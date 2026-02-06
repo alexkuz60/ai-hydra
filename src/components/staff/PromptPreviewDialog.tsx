@@ -11,6 +11,7 @@ import { Copy, Check, Languages, Loader2 } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { getCachedTranslation, cacheTranslation } from '@/lib/translationCache';
 
 interface PromptPreviewDialogProps {
   open: boolean;
@@ -45,7 +46,7 @@ const PromptPreviewDialog: React.FC<PromptPreviewDialogProps> = ({
   };
 
   const handleTranslate = useCallback(async () => {
-    // If already have translation, toggle view
+    // If already have translation in state, toggle view
     if (translatedContent) {
       setIsShowingTranslation(!isShowingTranslation);
       return;
@@ -55,6 +56,14 @@ const PromptPreviewDialog: React.FC<PromptPreviewDialogProps> = ({
     const isRussian = /[а-яА-ЯёЁ]/.test(content);
     const targetLang = isRussian ? 'English' : 'Russian';
 
+    // Check cache first
+    const cached = getCachedTranslation(content, targetLang);
+    if (cached) {
+      setTranslatedContent(cached);
+      setIsShowingTranslation(true);
+      return;
+    }
+
     setIsTranslating(true);
     try {
       const { data, error } = await supabase.functions.invoke('translate-text', {
@@ -63,6 +72,9 @@ const PromptPreviewDialog: React.FC<PromptPreviewDialogProps> = ({
 
       if (error) throw error;
       if (data?.translation) {
+        // Cache the translation
+        cacheTranslation(content, data.translation, targetLang);
+        
         setTranslatedContent(data.translation);
         setIsShowingTranslation(true);
         toast.success(
@@ -81,7 +93,7 @@ const PromptPreviewDialog: React.FC<PromptPreviewDialogProps> = ({
     }
   }, [content, translatedContent, isShowingTranslation, lang]);
 
-  // Reset translation when dialog closes or content changes
+  // Reset translation state when dialog closes (cache remains)
   React.useEffect(() => {
     if (!open) {
       setTranslatedContent(null);
