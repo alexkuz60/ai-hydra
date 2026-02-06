@@ -86,7 +86,7 @@ const PromptSectionsViewer: React.FC<PromptSectionsViewerProps> = ({
               value={section.key}
               className="m-0 h-full flex flex-col"
             >
-              <ScrollArea className="flex-1">
+              <ScrollArea className="max-h-[300px]">
                 {section.content.trim() ? (
                   <pre className="text-sm font-mono whitespace-pre-wrap leading-relaxed text-foreground/90 pr-4">
                     {section.content}
