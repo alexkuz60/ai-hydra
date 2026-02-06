@@ -24,8 +24,9 @@ import {
 import { Separator } from '@/components/ui/separator';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Wrench, Pencil, X, Save, Loader2, Library, ChevronDown, Network, FileText } from 'lucide-react';
+import { Wrench, Pencil, X, Save, Loader2, Library, ChevronDown, Network, FileText, Maximize2 } from 'lucide-react';
 import { ClipboardCheck } from 'lucide-react';
+import PromptPreviewDialog from './PromptPreviewDialog';
 import { 
   ROLE_CONFIG, 
   DEFAULT_SYSTEM_PROMPTS, 
@@ -84,6 +85,7 @@ const RoleDetailsPanel = forwardRef<HTMLDivElement, RoleDetailsPanelProps>(
     
     // Prompt viewer state
     const [promptOpen, setPromptOpen] = useState(true);
+    const [promptPreviewOpen, setPromptPreviewOpen] = useState(false);
     
     // Hierarchy state
     const [hierarchyOpen, setHierarchyOpen] = useState(true);
@@ -494,17 +496,36 @@ const RoleDetailsPanel = forwardRef<HTMLDivElement, RoleDetailsPanelProps>(
                       )}
                     </div>
                   </CollapsibleTrigger>
-                  {user && (
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      onClick={handleStartEdit}
-                      className="gap-1.5 h-7 text-xs"
-                    >
-                      <Pencil className="h-3 w-3" />
-                      {t('staffRoles.editAndSave')}
-                    </Button>
-                  )}
+                  <div className="flex items-center gap-1">
+                    <TooltipProvider delayDuration={200}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setPromptPreviewOpen(true)}
+                            className="h-7 w-7"
+                          >
+                            <Maximize2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent side="top">
+                          {t('staffRoles.fullPreview') || 'Полный просмотр'}
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                    {user && (
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={handleStartEdit}
+                        className="gap-1.5 h-7 text-xs"
+                      >
+                        <Pencil className="h-3 w-3" />
+                        {t('staffRoles.editAndSave')}
+                      </Button>
+                    )}
+                  </div>
                 </div>
                 <CollapsibleContent className="pt-3">
                   <div className="rounded-lg border border-border bg-muted/30 p-4">
@@ -516,6 +537,14 @@ const RoleDetailsPanel = forwardRef<HTMLDivElement, RoleDetailsPanelProps>(
                 </CollapsibleContent>
               </Collapsible>
             )}
+
+            {/* Full Prompt Preview Dialog */}
+            <PromptPreviewDialog
+              open={promptPreviewOpen}
+              onOpenChange={setPromptPreviewOpen}
+              title={parsedSystemPrompt.title}
+              content={systemPrompt}
+            />
 
             <Separator />
 
