@@ -39,6 +39,7 @@ import {
   Play,
   Square,
   Loader2,
+  Route,
 } from 'lucide-react';
 import {
   Tooltip,
@@ -80,6 +81,9 @@ interface FlowToolbarProps {
   onStartExecution?: () => void;
   onStopExecution?: () => void;
   canExecute?: boolean;
+  // Logistics
+  onToggleLogistics?: () => void;
+  isLogisticsOpen?: boolean;
 }
 
 // Header actions component for Layout header slot
@@ -304,10 +308,13 @@ export function FlowToolbar({
   onStartExecution,
   onStopExecution,
   canExecute,
+  onToggleLogistics,
+  isLogisticsOpen,
 }: Pick<FlowToolbarProps, 
   'diagramName' | 'onNameChange' | 'edgeSettings' | 'onEdgeSettingsChange' |
   'canUndo' | 'canRedo' | 'onUndo' | 'onRedo' | 'onAutoLayout' | 'hasChanges' |
-  'isExecuting' | 'onStartExecution' | 'onStopExecution' | 'canExecute'
+  'isExecuting' | 'onStartExecution' | 'onStopExecution' | 'canExecute' |
+  'onToggleLogistics' | 'isLogisticsOpen'
 >) {
   const { t } = useLanguage();
 
@@ -384,6 +391,25 @@ export function FlowToolbar({
           </TooltipTrigger>
           <TooltipContent>
             <p>{isExecuting ? t('flowEditor.stopExecution') : t('flowEditor.runDiagram')}</p>
+          </TooltipContent>
+        </Tooltip>
+      )}
+
+      {/* Logistics button */}
+      {onToggleLogistics && (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant={isLogisticsOpen ? 'secondary' : 'ghost'}
+              size="icon"
+              className="h-8 w-8"
+              onClick={onToggleLogistics}
+            >
+              <Route className="h-4 w-4 text-hydra-flowregulator" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>{t('flowEditor.logistics.title')}</p>
           </TooltipContent>
         </Tooltip>
       )}

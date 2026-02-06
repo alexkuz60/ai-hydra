@@ -8,6 +8,7 @@ import { NodePropertiesPanel } from '@/components/flow/NodePropertiesPanel';
 import { EdgePropertiesPanel } from '@/components/flow/EdgePropertiesPanel';
 import { FlowExecutionPanel } from '@/components/flow/FlowExecutionPanel';
 import { FlowCheckpointDialog } from '@/components/flow/FlowCheckpointDialog';
+import { FlowLogisticsPanel } from '@/components/flow/FlowLogisticsPanel';
 import { useFlowDiagrams, exportToMermaid } from '@/hooks/useFlowDiagrams';
 import { useFlowExport } from '@/hooks/useFlowExport';
 import { useFlowHistoryExtended, HistoryState } from '@/hooks/useFlowHistory';
@@ -63,6 +64,8 @@ function FlowEditorContent() {
   const [selectedEdge, setSelectedEdge] = useState<Edge | null>(null);
   const [edgeSettings, setEdgeSettings] = useState<EdgeStyleSettings>(loadEdgeSettings);
   const [showExecutionPanel, setShowExecutionPanel] = useState(false);
+  const [showLogisticsPanel, setShowLogisticsPanel] = useState(false);
+  const [logisticsInitialQuestion, setLogisticsInitialQuestion] = useState<string | undefined>();
   const reactFlowInstance = useRef<ReactFlowInstance | null>(null);
 
   // Flow runtime for execution
@@ -500,6 +503,11 @@ function FlowEditorContent() {
             onStartExecution={handleStartExecution}
             onStopExecution={handleStopExecution}
             canExecute={canExecute}
+            onToggleLogistics={() => {
+              setShowLogisticsPanel(prev => !prev);
+              setLogisticsInitialQuestion(undefined);
+            }}
+            isLogisticsOpen={showLogisticsPanel}
           />
           <div className="flex flex-1 overflow-hidden">
             <FlowSidebar onDragStart={onDragStart} />
@@ -540,6 +548,16 @@ function FlowEditorContent() {
                 onCancel={handleStopExecution}
                 onClose={() => setShowExecutionPanel(false)}
                 onClearResults={flowRuntime.clearResults}
+              />
+            )}
+            {showLogisticsPanel && !showExecutionPanel && (
+              <FlowLogisticsPanel
+                nodes={nodes}
+                edges={edges}
+                diagramName={diagramName}
+                selectedNodeId={selectedNode?.id || null}
+                onClose={() => setShowLogisticsPanel(false)}
+                initialQuestion={logisticsInitialQuestion}
               />
             )}
           </div>

@@ -516,6 +516,15 @@ const translations: Translations = {
   'flowEditor.bypassEnabled': { ru: 'Bypass включён', en: 'Bypass enabled' },
   'flowEditor.bypassDisabled': { ru: 'Bypass отключён', en: 'Bypass disabled' },
   
+  // Flow Logistics
+  'flowEditor.logistics.title': { ru: 'Логистик', en: 'Logistics' },
+  'flowEditor.logistics.clear': { ru: 'Очистить чат', en: 'Clear chat' },
+  'flowEditor.logistics.nodes': { ru: 'узлов', en: 'nodes' },
+  'flowEditor.logistics.edges': { ru: 'связей', en: 'edges' },
+  'flowEditor.logistics.hint': { ru: 'Спросите о узлах, связях, оптимизации диаграммы или опишите задачу для новой', en: 'Ask about nodes, connections, diagram optimization, or describe a task for a new one' },
+  'flowEditor.logistics.placeholder': { ru: 'Спросите Логистика...', en: 'Ask Logistics...' },
+  'flowEditor.logistics.askAboutNode': { ru: 'Спросить Логистика об этом узле', en: 'Ask Logistics about this node' },
+  
   // Auth
   'auth.email': { ru: 'Email', en: 'Email' },
   'auth.password': { ru: 'Пароль', en: 'Password' },
