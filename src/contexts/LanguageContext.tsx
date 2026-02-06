@@ -679,6 +679,12 @@ const translations: Translations = {
   'common.collapse': { ru: 'Свернуть', en: 'Collapse' },
   'common.expand': { ru: 'Развернуть', en: 'Expand' },
   'common.saved': { ru: 'Сохранено', en: 'Saved' },
+  'common.duplicate': { ru: 'Дублировать', en: 'Duplicate' },
+  'common.copy': { ru: 'Копировать', en: 'Copy' },
+  'common.copied': { ru: 'Скопировано', en: 'Copied' },
+  'common.updated': { ru: 'Обновлено', en: 'Updated' },
+  'common.yes': { ru: 'Да', en: 'Yes' },
+  'common.no': { ru: 'Нет', en: 'No' },
   
   // Messages
   'messages.deleteTitle': { ru: 'Удалить сообщение?', en: 'Delete message?' },
