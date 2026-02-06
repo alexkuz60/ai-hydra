@@ -6,16 +6,17 @@ import {
   XAxis, 
   YAxis, 
   Tooltip, 
-  ResponsiveContainer,
   Cell,
   PieChart,
   Pie,
-  Legend
 } from 'recharts';
-import { ChartContainer, ChartTooltipContent, ChartConfig } from '@/components/ui/chart';
+import { ChartContainer, ChartConfig } from '@/components/ui/chart';
 import { HydraCard, HydraCardHeader, HydraCardTitle, HydraCardContent } from '@/components/ui/hydra-card';
-import { TrendingUp, PieChart as PieChartIcon, BarChart3 } from 'lucide-react';
+import { TrendingUp, PieChart as PieChartIcon, BarChart3, Calendar } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+
+export type TimePeriod = 'week' | 'month' | 'all';
 
 interface ModelStat {
   model_name: string;
@@ -26,6 +27,8 @@ interface ModelStat {
 
 interface ModelStatsChartProps {
   stats: ModelStat[];
+  selectedPeriod: TimePeriod;
+  onPeriodChange: (period: TimePeriod) => void;
 }
 
 // Generate colors based on position
@@ -38,7 +41,7 @@ const COLORS = [
   'hsl(var(--muted-foreground))',
 ];
 
-export function ModelStatsChart({ stats }: ModelStatsChartProps) {
+export function ModelStatsChart({ stats, selectedPeriod, onPeriodChange }: ModelStatsChartProps) {
   const { t } = useLanguage();
 
   if (stats.length === 0) return null;
@@ -81,9 +84,32 @@ export function ModelStatsChart({ stats }: ModelStatsChartProps) {
 
   return (
     <HydraCard variant="default" className="mb-6">
-      <HydraCardHeader>
-        <TrendingUp className="h-5 w-5 text-primary" />
-        <HydraCardTitle>{t('ratings.statsOverview')}</HydraCardTitle>
+      <HydraCardHeader className="flex-wrap gap-2">
+        <div className="flex items-center gap-2">
+          <TrendingUp className="h-5 w-5 text-primary" />
+          <HydraCardTitle>{t('ratings.statsOverview')}</HydraCardTitle>
+        </div>
+        
+        {/* Period Filter */}
+        <div className="flex items-center gap-2 ml-auto">
+          <Calendar className="h-4 w-4 text-muted-foreground" />
+          <ToggleGroup 
+            type="single" 
+            value={selectedPeriod} 
+            onValueChange={(value) => value && onPeriodChange(value as TimePeriod)}
+            className="gap-0"
+          >
+            <ToggleGroupItem value="week" size="sm" className="text-xs px-2 h-7">
+              {t('ratings.periodWeek')}
+            </ToggleGroupItem>
+            <ToggleGroupItem value="month" size="sm" className="text-xs px-2 h-7">
+              {t('ratings.periodMonth')}
+            </ToggleGroupItem>
+            <ToggleGroupItem value="all" size="sm" className="text-xs px-2 h-7">
+              {t('ratings.periodAll')}
+            </ToggleGroupItem>
+          </ToggleGroup>
+        </div>
       </HydraCardHeader>
       <HydraCardContent>
         {/* Summary Stats */}

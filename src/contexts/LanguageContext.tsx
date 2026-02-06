@@ -955,6 +955,10 @@ const translations: Translations = {
   'ratings.avgRating': { ru: 'Средний балл', en: 'Avg Rating' },
   'dchat.requestEvaluation': { ru: 'Запросить оценку ответа', en: 'Request response evaluation' },
   'dchat.evaluationRequested': { ru: 'Запрос оценки отправлен в D-Chat', en: 'Evaluation request sent to D-Chat' },
+  // Period filters
+  'ratings.periodWeek': { ru: 'Неделя', en: 'Week' },
+  'ratings.periodMonth': { ru: 'Месяц', en: 'Month' },
+  'ratings.periodAll': { ru: 'Всё время', en: 'All time' },
   'memory.context': { ru: 'Контекст', en: 'Context' },
   'memory.instructions': { ru: 'Инструкции', en: 'Instructions' },
   'memory.evaluations': { ru: 'Оценки', en: 'Evaluations' },
