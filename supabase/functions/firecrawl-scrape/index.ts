@@ -1,7 +1,31 @@
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
+
+async function getUserFirecrawlKey(authHeader: string | null): Promise<string | null> {
+  if (!authHeader) return null;
+
+  const supabaseUrl = Deno.env.get('SUPABASE_URL');
+  const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY');
+  if (!supabaseUrl || !supabaseAnonKey) return null;
+
+  try {
+    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+
+    const { data } = await supabase.rpc('get_my_api_keys');
+    if (data && data.length > 0 && data[0].firecrawl_api_key) {
+      return data[0].firecrawl_api_key;
+    }
+  } catch (e) {
+    console.error('Error fetching user Firecrawl key:', e);
+  }
+  return null;
+}
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -18,13 +42,23 @@ Deno.serve(async (req) => {
       );
     }
 
-    const apiKey = Deno.env.get('FIRECRAWL_API_KEY');
+    // Priority: personal key > system key
+    const authHeader = req.headers.get('Authorization');
+    const personalKey = await getUserFirecrawlKey(authHeader);
+    const apiKey = personalKey || Deno.env.get('FIRECRAWL_API_KEY');
+
     if (!apiKey) {
-      console.error('FIRECRAWL_API_KEY not configured');
+      console.error('No Firecrawl API key available');
       return new Response(
-        JSON.stringify({ success: false, error: 'Firecrawl connector not configured' }),
+        JSON.stringify({ success: false, error: 'Firecrawl не настроен. Добавьте персональный ключ в Профиле или обратитесь к администратору.' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
+    }
+
+    if (personalKey) {
+      console.log('Using personal Firecrawl API key');
+    } else {
+      console.log('Using system Firecrawl API key');
     }
 
     let formattedUrl = url.trim();
