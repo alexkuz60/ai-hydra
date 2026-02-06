@@ -25,12 +25,13 @@ import {
   Loader2,
   ChevronLeft,
   ChevronRight,
-   ChevronUp,
-   ChevronDown,
+  ChevronUp,
+  ChevronDown,
   Trash2,
   Users,
   Wand2,
   Sparkles,
+  Swords,
 } from 'lucide-react';
 
 // Source message structure for moderator context
@@ -72,6 +73,7 @@ const MODES: ModeConfig[] = [
   { id: 'arbiter', icon: Scale, labelKey: 'dchat.arbiter', color: 'text-hydra-expert' },
   { id: 'moderator', icon: Users, labelKey: 'dchat.moderator', color: 'text-hydra-consultant' },
   { id: 'promptengineer', icon: Wand2, labelKey: 'dchat.promptEngineer', color: 'text-hydra-promptengineer' },
+  { id: 'duel', icon: Swords, labelKey: 'dchat.duel', color: 'text-hydra-critical' },
 ];
 
 export function ConsultantPanel({
@@ -148,6 +150,7 @@ export function ConsultantPanel({
        'arbiter': 'arbiter',
        'moderator': 'moderator',
        'promptengineer': 'promptengineer',
+       'duel': 'arbiter', // Duel mode placeholder
      };
      return [modeToRole[selectedMode]];
    }, [selectedMode]);
@@ -393,7 +396,7 @@ export function ConsultantPanel({
 
       {/* Mode selector */}
       <div className="p-2 border-b border-border">
-        <div className="grid grid-cols-6 gap-1">
+        <div className="grid grid-cols-7 gap-1">
           {MODES.map((mode) => (
             <Tooltip key={mode.id}>
               <TooltipTrigger asChild>

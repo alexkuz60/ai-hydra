@@ -2,7 +2,7 @@ import { useState, useCallback, useRef } from 'react';
 import { toast } from 'sonner';
 import { DEFAULT_SYSTEM_PROMPTS, type AgentRole } from '@/config/roles';
 import { supabase } from '@/integrations/supabase/client';
-export type ConsultantMode = 'web_search' | 'expert' | 'critic' | 'arbiter' | 'moderator' | 'promptengineer';
+export type ConsultantMode = 'web_search' | 'expert' | 'critic' | 'arbiter' | 'moderator' | 'promptengineer' | 'duel';
 
 export interface StreamingMessage {
   id: string;
@@ -48,6 +48,7 @@ const modeToRole: Record<ConsultantMode, string> = {
   critic: 'critic',
   arbiter: 'arbiter',
   moderator: 'moderator',
+  duel: 'arbiter', // Duel mode uses arbiter role for now (placeholder)
   promptengineer: 'promptengineer',
 };
 
