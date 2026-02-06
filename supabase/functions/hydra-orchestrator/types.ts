@@ -307,6 +307,16 @@ export interface SaveRoleExperienceArgs {
   tags?: string[];
 }
 
+/** Args for search_role_knowledge tool (technical roles) */
+export interface SearchRoleKnowledgeArgs {
+  /** Search query for semantic search in role knowledge base */
+  query: string;
+  /** Filter by categories */
+  categories?: string[];
+  /** Maximum number of results */
+  limit?: number;
+}
+
 // ============================================
 // Tool Execution Context
 // ============================================

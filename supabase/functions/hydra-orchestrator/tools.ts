@@ -19,6 +19,7 @@ import {
   SearchSessionMemoryArgs,
   ValidateFlowDiagramArgs,
   SaveRoleExperienceArgs,
+  SearchRoleKnowledgeArgs,
   ToolExecutionContext,
 } from "./types.ts";
 
@@ -251,6 +252,31 @@ export const AVAILABLE_TOOLS: ToolDefinition[] = [
           }
         },
         required: ["content", "memory_type"]
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "search_role_knowledge",
+      description: "Выполняет семантический поиск по базе профильных знаний текущей роли. Возвращает релевантные фрагменты документации, мануалов и справочных материалов. Используй для поиска технической информации, стандартов, процедур и лучших практик.",
+      parameters: {
+        type: "object",
+        properties: {
+          query: {
+            type: "string",
+            description: "Поисковый запрос для семантического поиска по профильным знаниям"
+          },
+          categories: {
+            type: "string",
+            description: "Фильтр по категориям через запятую, например: 'documentation,procedure,standard'"
+          },
+          limit: {
+            type: "number",
+            description: "Максимальное количество результатов (по умолчанию 5)"
+          }
+        },
+        required: ["query"]
       }
     }
   }
@@ -1482,6 +1508,217 @@ async function executeSaveRoleExperience(args: SaveRoleExperienceArgs): Promise<
 }
 
 //
+// Search Role Knowledge Tool Implementation
+// ============================================
+
+/** Execute search_role_knowledge tool (technical roles) */
+async function executeSearchRoleKnowledge(args: SearchRoleKnowledgeArgs): Promise<string> {
+  if (!currentExecutionContext) {
+    return JSON.stringify({ success: false, error: "Контекст сессии недоступен" });
+  }
+  
+  const { supabaseUrl, supabaseKey, currentRole } = currentExecutionContext;
+  const { query, categories, limit = 5 } = args;
+  
+  if (!query || query.trim().length === 0) {
+    return JSON.stringify({ success: false, error: "Поисковый запрос не может быть пустым" });
+  }
+  
+  if (!currentRole) {
+    return JSON.stringify({ success: false, error: "Роль не определена в контексте" });
+  }
+  
+  try {
+    const supabase = createClient(supabaseUrl, supabaseKey);
+    
+    // Generate embedding for the query
+    const embeddingResponse = await fetch(`${supabaseUrl}/functions/v1/generate-embeddings`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${supabaseKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ texts: [query] }),
+    });
+    
+    if (!embeddingResponse.ok) {
+      // Fallback to text search
+      console.warn('[Tool] Embedding failed for knowledge search, falling back to text search');
+      
+      let queryBuilder = supabase
+        .from('role_knowledge')
+        .select('id, content, source_title, category, tags, metadata')
+        .eq('role', currentRole)
+        .ilike('content', `%${query}%`)
+        .order('created_at', { ascending: false })
+        .limit(limit);
+      
+      const { data, error } = await queryBuilder;
+      
+      if (error) {
+        return JSON.stringify({ success: false, error: `Ошибка поиска: ${error.message}` });
+      }
+      
+      return JSON.stringify({
+        success: true,
+        search_type: 'text',
+        role: currentRole,
+        query,
+        results_count: data?.length || 0,
+        results: data || [],
+      });
+    }
+    
+    const embData = await embeddingResponse.json();
+    
+    if (embData.skipped || !embData.embeddings?.[0]) {
+      return JSON.stringify({ success: false, error: "Не удалось сгенерировать embedding (API-ключ не настроен?)" });
+    }
+    
+    const queryEmbedding = embData.embeddings[0];
+    
+    // Parse categories
+    let categoriesArray: string[] | null = null;
+    if (categories) {
+      if (typeof categories === 'string') {
+        categoriesArray = (categories as string).split(',').map(c => c.trim()).filter(c => c.length > 0);
+      } else if (Array.isArray(categories)) {
+        categoriesArray = categories;
+      }
+    }
+    
+    // Call semantic search RPC
+    const { data, error } = await supabase.rpc('search_role_knowledge', {
+      p_role: currentRole,
+      p_query_embedding: `[${queryEmbedding.join(',')}]`,
+      p_limit: limit,
+      p_categories: categoriesArray,
+    });
+    
+    if (error) {
+      console.error('[Tool] search_role_knowledge RPC error:', error);
+      return JSON.stringify({ success: false, error: `Ошибка поиска: ${error.message}` });
+    }
+    
+    console.log(`[Tool] Role knowledge search found ${data?.length || 0} results for role "${currentRole}", query: "${query}"`);
+    
+    return JSON.stringify({
+      success: true,
+      search_type: 'semantic',
+      role: currentRole,
+      query,
+      results_count: data?.length || 0,
+      results: data?.map((r: { id: string; content: string; source_title: string; category: string; tags: string[]; metadata: unknown; similarity: number }) => ({
+        id: r.id,
+        content: r.content,
+        source_title: r.source_title,
+        category: r.category,
+        tags: r.tags,
+        similarity: Math.round(r.similarity * 100) / 100,
+      })) || [],
+    });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    console.error('[Tool] search_role_knowledge exception:', message);
+    return JSON.stringify({ success: false, error: message });
+  }
+}
+
+// ============================================
+// Auto-RAG: Fetch Role Knowledge Context
+// ============================================
+
+/** Technical roles that support domain knowledge */
+const TECHNICAL_ROLES = ['analyst', 'promptengineer', 'flowregulator', 'archivist', 'webhunter', 'toolsmith'];
+
+/**
+ * Fetch relevant knowledge from role_knowledge for a technical role.
+ * Used for automatic RAG injection into system prompt.
+ * Returns formatted knowledge context string or null.
+ */
+export async function fetchRoleKnowledgeContext(
+  role: string,
+  userMessage: string,
+  supabaseUrl: string,
+  supabaseKey: string,
+  userId: string,
+  maxResults: number = 3,
+): Promise<string | null> {
+  if (!TECHNICAL_ROLES.includes(role)) {
+    return null;
+  }
+  
+  try {
+    const supabase = createClient(supabaseUrl, supabaseKey);
+    
+    // Check if user has any knowledge entries for this role
+    const { count, error: countError } = await supabase
+      .from('role_knowledge')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', userId)
+      .eq('role', role);
+    
+    if (countError || !count || count === 0) {
+      return null;
+    }
+    
+    // Generate embedding for the user message
+    const embeddingResponse = await fetch(`${supabaseUrl}/functions/v1/generate-embeddings`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${supabaseKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ texts: [userMessage] }),
+    });
+    
+    if (!embeddingResponse.ok) {
+      console.warn('[RAG] Embedding generation failed for auto-RAG');
+      return null;
+    }
+    
+    const embData = await embeddingResponse.json();
+    if (embData.skipped || !embData.embeddings?.[0]) {
+      return null;
+    }
+    
+    const queryEmbedding = embData.embeddings[0];
+    
+    // Search for relevant knowledge
+    const { data, error } = await supabase.rpc('search_role_knowledge', {
+      p_role: role,
+      p_query_embedding: `[${queryEmbedding.join(',')}]`,
+      p_limit: maxResults,
+    });
+    
+    if (error || !data || data.length === 0) {
+      return null;
+    }
+    
+    // Filter by minimum similarity threshold
+    const relevant = data.filter((r: { similarity: number }) => r.similarity > 0.3);
+    if (relevant.length === 0) {
+      return null;
+    }
+    
+    // Format as context block
+    const knowledgeBlocks = relevant.map((r: { content: string; source_title: string | null; category: string; similarity: number }, i: number) => {
+      const source = r.source_title ? ` (Источник: ${r.source_title})` : '';
+      return `[${i + 1}] ${r.content}${source}`;
+    });
+    
+    const context = `\n\n---\n📚 **Профильные знания** (автоматический RAG-контекст):\n\n${knowledgeBlocks.join('\n\n')}\n\nИспользуйте эту информацию как справочный контекст при ответе.\n---`;
+    
+    console.log(`[RAG] Injected ${relevant.length} knowledge chunks for role "${role}" (similarity: ${relevant.map((r: { similarity: number }) => r.similarity.toFixed(2)).join(', ')})`);
+    
+    return context;
+  } catch (error) {
+    console.error('[RAG] Auto-RAG error:', error);
+    return null;
+  }
+}
+
+//
 // Prompt Tool Execution
 // ============================================
 
@@ -1582,6 +1819,9 @@ export async function executeToolCall(toolCall: ToolCall): Promise<ToolResult> {
         break;
       case "save_role_experience":
         result = await executeSaveRoleExperience(args as unknown as SaveRoleExperienceArgs);
+        break;
+      case "search_role_knowledge":
+        result = await executeSearchRoleKnowledge(args as unknown as SearchRoleKnowledgeArgs);
         break;
       default:
         result = JSON.stringify({ success: false, error: `Unknown tool: ${funcName}` });

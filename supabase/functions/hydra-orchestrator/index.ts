@@ -10,6 +10,8 @@ import {
   setSearchProviderKeys,
   getAvailableSearchProviders,
   setExecutionContext,
+  setCurrentRole,
+  fetchRoleKnowledgeContext,
 } from "./tools.ts";
 
 import type {
@@ -879,11 +881,27 @@ serve(async (req) => {
       const temperature = modelReq.temperature ?? 0.7;
       const role = modelReq.role ?? 'assistant';
       
+      // Set current role for tools context
+      setCurrentRole(role);
+      
       // Build system prompt with optional supervisor approval instruction
       let systemPrompt = modelReq.system_prompt || DEFAULT_PROMPTS[role] || DEFAULT_PROMPTS.assistant;
       if (modelReq.requires_approval) {
         systemPrompt += SUPERVISOR_APPROVAL_INSTRUCTION;
         console.log(`[${modelReq.model_id}] Supervisor approval mode enabled - adding proposals instruction`);
+      }
+      
+      // Auto-RAG: inject relevant role knowledge for technical roles
+      try {
+        const knowledgeContext = await fetchRoleKnowledgeContext(
+          role, enhancedMessage, supabaseUrl, supabaseServiceKey, user.id
+        );
+        if (knowledgeContext) {
+          systemPrompt += knowledgeContext;
+          console.log(`[${modelReq.model_id}] RAG knowledge context injected for role "${role}"`);
+        }
+      } catch (ragError) {
+        console.warn(`[${modelReq.model_id}] RAG knowledge fetch failed:`, ragError);
       }
 
       const isThinkingModel = THINKING_MODELS.some(tm => modelReq.model_id.includes(tm));
