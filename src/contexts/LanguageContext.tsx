@@ -953,6 +953,8 @@ const translations: Translations = {
   'ratings.barChart': { ru: 'Столбчатая', en: 'Bar Chart' },
   'ratings.pieChart': { ru: 'Круговая', en: 'Pie Chart' },
   'ratings.avgRating': { ru: 'Средний балл', en: 'Avg Rating' },
+  'dchat.requestEvaluation': { ru: 'Запросить оценку ответа', en: 'Request response evaluation' },
+  'dchat.evaluationRequested': { ru: 'Запрос оценки отправлен в D-Chat', en: 'Evaluation request sent to D-Chat' },
   'memory.context': { ru: 'Контекст', en: 'Context' },
   'memory.instructions': { ru: 'Инструкции', en: 'Instructions' },
   'memory.evaluations': { ru: 'Оценки', en: 'Evaluations' },
