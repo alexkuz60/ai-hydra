@@ -150,21 +150,27 @@ export default function ExpertPanel() {
   // Memory management state
   const [memoryRefreshed, setMemoryRefreshed] = useState(false);
   const [memoryDialogOpen, setMemoryDialogOpen] = useState(false);
-  const [knowledgeCount, setKnowledgeCount] = useState(0);
+  const [knowledgeByRole, setKnowledgeByRole] = useState<Record<string, number>>({});
 
-  // Fetch knowledge count for the current user
+  // Fetch knowledge counts grouped by role
   useEffect(() => {
     if (!user?.id) return;
-    const fetchKnowledgeCount = async () => {
+    const fetchKnowledgeCounts = async () => {
       try {
-        const { count, error } = await supabase
+        const { data, error } = await supabase
           .from('role_knowledge')
-          .select('id', { count: 'exact', head: true })
+          .select('role')
           .eq('user_id', user.id);
-        if (!error && count != null) setKnowledgeCount(count);
+        if (!error && data) {
+          const counts: Record<string, number> = {};
+          for (const row of data) {
+            counts[row.role] = (counts[row.role] || 0) + 1;
+          }
+          setKnowledgeByRole(counts);
+        }
       } catch { /* ignore */ }
     };
-    fetchKnowledgeCount();
+    fetchKnowledgeCounts();
   }, [user?.id]);
    
    // Input area collapse state
@@ -665,7 +671,7 @@ ${content.slice(0, 2000)}${content.length > 2000 ? '\n...(сокращено)' :
       />
       <MemoryControls
         memoryStats={memoryStats}
-        knowledgeCount={knowledgeCount}
+        knowledgeByRole={knowledgeByRole}
         isLoading={memoryLoading}
         isRefreshed={memoryRefreshed}
         onRefresh={handleRefreshMemory}
