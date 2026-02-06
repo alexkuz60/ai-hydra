@@ -235,9 +235,16 @@ const PromptSectionsEditor: React.FC<PromptSectionsEditorProps> = ({
       {/* Title editor with translate button */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <label className="text-xs font-medium text-muted-foreground">
-            {t('staffRoles.promptTitle') || 'Заголовок промпта'}
-          </label>
+          <div className="flex items-center gap-2">
+            <label className="text-xs font-medium text-muted-foreground">
+              {t('staffRoles.promptTitle') || 'Заголовок промпта'}
+            </label>
+            {originalContent && (
+              <Badge variant="secondary" className="text-xs">
+                {isRussianContent() ? 'Оригинал: РУ' : 'Оригинал: EN'}
+              </Badge>
+            )}
+          </div>
           <div className="flex items-center gap-1">
             {originalContent && (
               <TooltipProvider delayDuration={200}>
