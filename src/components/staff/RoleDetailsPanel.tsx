@@ -253,6 +253,28 @@ const RoleDetailsPanel = forwardRef<HTMLDivElement, RoleDetailsPanelProps>(
       });
     }, []);
 
+    // Handle restore original from translation - reverse prompt name
+    const handleRestoreOriginal = useCallback((fromLang: 'ru' | 'en', toLang: 'ru' | 'en') => {
+      setPromptName(prevName => {
+        // Same logic as handleLanguageSwitch but in reverse
+        const fromPattern = `_${fromLang}_`;
+        const toPattern = `_${toLang}_`;
+        
+        if (prevName.includes(fromPattern)) {
+          return prevName.replace(fromPattern, toPattern);
+        }
+        
+        const fromSuffix = ` (${fromLang.toUpperCase()})`;
+        const toSuffix = ` (${toLang.toUpperCase()})`;
+        
+        if (prevName.includes(fromSuffix)) {
+          return prevName.replace(fromSuffix, toSuffix);
+        }
+        
+        return prevName;
+      });
+    }, []);
+
     // Parse system prompt for viewing
     const parsedSystemPrompt = useMemo(() => {
       if (!selectedRole) return { title: '', sections: [] };
@@ -450,6 +472,7 @@ const RoleDetailsPanel = forwardRef<HTMLDivElement, RoleDetailsPanelProps>(
                     onTitleChange={handleTitleChange}
                     onSectionsChange={handleSectionsChange}
                     onLanguageSwitch={handleLanguageSwitch}
+                    onRestoreOriginal={handleRestoreOriginal}
                   />
                 </div>
 
