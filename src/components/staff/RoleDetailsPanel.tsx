@@ -207,12 +207,16 @@ const RoleDetailsPanel = forwardRef<HTMLDivElement, RoleDetailsPanelProps>(
     const handleSectionsChange = useCallback((sections: PromptSection[]) => {
       setEditedSections(sections);
       setEditedPrompt(sectionsToPrompt(editedTitle, sections));
-    }, [editedTitle]);
+      // Mark as unsaved when editing prompt
+      unsavedChanges.setHasUnsavedChanges(true);
+    }, [editedTitle, unsavedChanges]);
 
     const handleTitleChange = useCallback((title: string) => {
       setEditedTitle(title);
       setEditedPrompt(sectionsToPrompt(title, editedSections));
-    }, [editedSections]);
+      // Mark as unsaved when editing prompt
+      unsavedChanges.setHasUnsavedChanges(true);
+    }, [editedSections, unsavedChanges]);
 
     // Parse system prompt for viewing
     const parsedSystemPrompt = useMemo(() => {
