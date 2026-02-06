@@ -17,7 +17,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
-import { Plus, Lightbulb, ChevronDown, X, Trash2, Sparkles } from 'lucide-react';
+import { Plus, Lightbulb, ChevronDown, X, Trash2, Sparkles, Languages, Loader2 } from 'lucide-react';
 import { 
   type PromptSection, 
   createEmptySection, 
@@ -30,6 +30,8 @@ import {
   PROMPT_DICTIONARIES,
   type PromptDictionaryKey,
 } from '@/config/promptDictionaries';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 interface PromptSectionsEditorProps {
   title: string;
@@ -52,8 +54,72 @@ const PromptSectionsEditor: React.FC<PromptSectionsEditorProps> = ({
   const [newSectionTitle, setNewSectionTitle] = useState('');
   const [tipsOpen, setTipsOpen] = useState(false);
   const [snippetsOpen, setSnippetsOpen] = useState(true);
+  const [isTranslating, setIsTranslating] = useState(false);
   const textareaRefs = useRef<Record<string, HTMLTextAreaElement | null>>({});
   const lang = (language === 'ru' || language === 'en') ? language : 'ru';
+
+  // Detect if content is primarily Russian
+  const isRussianContent = useCallback(() => {
+    const allContent = title + ' ' + sections.map(s => s.content).join(' ');
+    return /[а-яА-ЯёЁ]/.test(allContent);
+  }, [title, sections]);
+
+  // Translate entire prompt (title + all sections)
+  const handleTranslateAll = useCallback(async () => {
+    const isRussian = isRussianContent();
+    const targetLang = isRussian ? 'English' : 'Russian';
+    
+    setIsTranslating(true);
+    try {
+      // Translate title
+      const titleResult = await supabase.functions.invoke('translate-text', {
+        body: { text: title, targetLang },
+      });
+      
+      if (titleResult.error) throw titleResult.error;
+      
+      // Translate all non-empty sections in parallel
+      const sectionsToTranslate = sections.filter(s => s.content.trim());
+      const translationPromises = sectionsToTranslate.map(section =>
+        supabase.functions.invoke('translate-text', {
+          body: { text: section.content, targetLang },
+        })
+      );
+      
+      const results = await Promise.all(translationPromises);
+      
+      // Check for errors
+      const hasErrors = results.some(r => r.error);
+      if (hasErrors) throw new Error('Some translations failed');
+      
+      // Update title
+      if (titleResult.data?.translation) {
+        onTitleChange(titleResult.data.translation);
+      }
+      
+      // Update sections
+      const updatedSections = sections.map(section => {
+        const idx = sectionsToTranslate.findIndex(s => s.key === section.key);
+        if (idx >= 0 && results[idx].data?.translation) {
+          return { ...section, content: results[idx].data.translation };
+        }
+        return section;
+      });
+      
+      onSectionsChange(updatedSections);
+      
+      toast.success(
+        lang === 'ru'
+          ? `Промпт переведён на ${isRussian ? 'английский' : 'русский'}`
+          : `Prompt translated to ${isRussian ? 'English' : 'Russian'}`
+      );
+    } catch (error) {
+      console.error('Translation error:', error);
+      toast.error(lang === 'ru' ? 'Ошибка перевода' : 'Translation failed');
+    } finally {
+      setIsTranslating(false);
+    }
+  }, [title, sections, isRussianContent, onTitleChange, onSectionsChange, lang]);
 
   // Get tips for current section
   const currentSection = sections.find(s => s.key === activeTab);
@@ -141,11 +207,43 @@ const PromptSectionsEditor: React.FC<PromptSectionsEditorProps> = ({
 
   return (
     <div className={cn("flex flex-col gap-4", className)}>
-      {/* Title editor */}
+      {/* Title editor with translate button */}
       <div className="space-y-2">
-        <label className="text-xs font-medium text-muted-foreground">
-          {t('staffRoles.promptTitle') || 'Заголовок промпта'}
-        </label>
+        <div className="flex items-center justify-between">
+          <label className="text-xs font-medium text-muted-foreground">
+            {t('staffRoles.promptTitle') || 'Заголовок промпта'}
+          </label>
+          <TooltipProvider delayDuration={200}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleTranslateAll}
+                  disabled={isTranslating}
+                  className="gap-1.5 h-7 text-xs text-muted-foreground hover:text-foreground"
+                >
+                  {isTranslating ? (
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                  ) : (
+                    <Languages className="h-3 w-3" />
+                  )}
+                  {isRussianContent()
+                    ? (lang === 'ru' ? 'На английский' : 'To English')
+                    : (lang === 'ru' ? 'На русский' : 'To Russian')
+                  }
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="left">
+                <p className="text-xs">
+                  {lang === 'ru' 
+                    ? 'Перевести заголовок и все секции промпта' 
+                    : 'Translate title and all prompt sections'}
+                </p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
         <Input
           value={title}
           onChange={(e) => onTitleChange(e.target.value)}
