@@ -41,8 +41,8 @@ const PromptPreviewDialog: React.FC<PromptPreviewDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[85vh] flex flex-col">
-        <DialogHeader className="flex-shrink-0">
+      <DialogContent className="max-w-3xl h-[85vh] flex flex-col gap-0">
+        <DialogHeader className="flex-shrink-0 pb-4">
           <div className="flex items-center justify-between pr-8">
             <DialogTitle className="text-base font-semibold">
               {title || (lang === 'ru' ? 'Полный текст промпта' : 'Full Prompt Text')}
@@ -53,7 +53,7 @@ const PromptPreviewDialog: React.FC<PromptPreviewDialogProps> = ({
               onClick={handleCopy}
               className="gap-1.5 h-7 text-xs"
             >
-            {copied ? (
+              {copied ? (
                 <Check className="h-3 w-3 text-primary" />
               ) : (
                 <Copy className="h-3 w-3" />
@@ -62,11 +62,13 @@ const PromptPreviewDialog: React.FC<PromptPreviewDialogProps> = ({
             </Button>
           </div>
         </DialogHeader>
-        <ScrollArea className="flex-1 mt-4">
-          <pre className="text-sm font-mono whitespace-pre-wrap leading-relaxed text-foreground/90 p-4 bg-muted/30 rounded-md border border-border">
-            {content}
-          </pre>
-        </ScrollArea>
+        <div className="flex-1 min-h-0 border-t border-border">
+          <ScrollArea className="h-full w-full">
+            <pre className="text-sm font-mono whitespace-pre-wrap leading-relaxed text-foreground/90 p-4">
+              {content}
+            </pre>
+          </ScrollArea>
+        </div>
       </DialogContent>
     </Dialog>
   );
