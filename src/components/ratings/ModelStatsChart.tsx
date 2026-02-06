@@ -37,8 +37,12 @@ const COLORS = [
   'hsl(var(--hydra-cyan))',
   'hsl(var(--hydra-purple))',
   'hsl(var(--hydra-amber))',
-  'hsl(var(--accent))',
-  'hsl(var(--muted-foreground))',
+  'hsl(160, 70%, 50%)',
+  'hsl(200, 60%, 60%)',
+  'hsl(330, 65%, 55%)',
+  'hsl(45, 80%, 55%)',
+  'hsl(280, 55%, 60%)',
+  'hsl(15, 75%, 55%)',
 ];
 
 export function ModelStatsChart({ stats, selectedPeriod, onPeriodChange }: ModelStatsChartProps) {
