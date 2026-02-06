@@ -39,6 +39,7 @@ interface PromptSectionsEditorProps {
   onTitleChange: (title: string) => void;
   onSectionsChange: (sections: PromptSection[]) => void;
   onLanguageSwitch?: (fromLang: 'ru' | 'en', toLang: 'ru' | 'en') => void;
+  onRestoreOriginal?: (fromLang: 'ru' | 'en', toLang: 'ru' | 'en') => void;
   className?: string;
 }
 
@@ -48,6 +49,7 @@ const PromptSectionsEditor: React.FC<PromptSectionsEditorProps> = ({
   onTitleChange,
   onSectionsChange,
   onLanguageSwitch,
+  onRestoreOriginal,
   className,
 }) => {
   const { t, language } = useLanguage();
@@ -74,12 +76,19 @@ const PromptSectionsEditor: React.FC<PromptSectionsEditorProps> = ({
   const handleRestoreOriginal = useCallback(() => {
     if (!originalContent) return;
     
+    const currentIsRussian = isRussianContent();
+    
     onTitleChange(originalContent.title);
     onSectionsChange(originalContent.sections);
     setOriginalContent(null);
     
+    // Notify parent to reverse language name change
+    const currentLang: 'ru' | 'en' = currentIsRussian ? 'ru' : 'en';
+    const originalLang: 'ru' | 'en' = currentIsRussian ? 'en' : 'ru';
+    onRestoreOriginal?.(currentLang, originalLang);
+    
     toast.success(t('staffRoles.originalRestored'));
-  }, [originalContent, onTitleChange, onSectionsChange, lang]);
+  }, [originalContent, isRussianContent, onTitleChange, onSectionsChange, onRestoreOriginal, t]);
 
   // Translate entire prompt (title + all sections)
   const handleTranslateAll = useCallback(async () => {
@@ -145,7 +154,7 @@ const PromptSectionsEditor: React.FC<PromptSectionsEditorProps> = ({
     } finally {
       setIsTranslating(false);
     }
-  }, [title, sections, isRussianContent, onTitleChange, onSectionsChange, lang]);
+  }, [title, sections, isRussianContent, onTitleChange, onSectionsChange, onLanguageSwitch, t]);
 
   // Get tips for current section
   const currentSection = sections.find(s => s.key === activeTab);
