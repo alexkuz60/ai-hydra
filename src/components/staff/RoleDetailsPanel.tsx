@@ -24,7 +24,7 @@ import {
 import { Separator } from '@/components/ui/separator';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Wrench, Pencil, X, Save, Loader2, Library, ChevronDown, Network } from 'lucide-react';
+import { Wrench, Pencil, X, Save, Loader2, Library, ChevronDown, Network, FileText } from 'lucide-react';
 import { ClipboardCheck } from 'lucide-react';
 import { 
   ROLE_CONFIG, 
@@ -81,6 +81,9 @@ const RoleDetailsPanel = forwardRef<HTMLDivElement, RoleDetailsPanelProps>(
     const [libraryPrompts, setLibraryPrompts] = useState<PromptLibraryItem[]>([]);
     const [isLoadingLibrary, setIsLoadingLibrary] = useState(false);
     const [selectedLibraryPrompt, setSelectedLibraryPrompt] = useState<string>('');
+    
+    // Prompt viewer state
+    const [promptOpen, setPromptOpen] = useState(true);
     
     // Hierarchy state
     const [hierarchyOpen, setHierarchyOpen] = useState(true);
@@ -374,100 +377,145 @@ const RoleDetailsPanel = forwardRef<HTMLDivElement, RoleDetailsPanelProps>(
 
             <Separator />
 
-             {/* System Prompt */}
-             <div className="space-y-3">
-               <div className="flex items-center justify-between">
-                 <div className="flex items-center gap-2">
-                   <h3 className="text-sm font-medium text-muted-foreground">
-                     {t('staffRoles.systemPrompt')}
-                   </h3>
-                   {isEditing && isPromptModified && (
-                     <span className="inline-flex items-center justify-center w-2 h-2 bg-primary rounded-full" title={t('common.unsavedChanges.title')} />
-                   )}
-                 </div>
-                 {!isEditing && user && (
-                   <Button 
-                     variant="ghost" 
-                     size="sm" 
-                     onClick={handleStartEdit}
-                     className="gap-1.5 h-7 text-xs"
-                   >
-                     <Pencil className="h-3 w-3" />
-                     {t('staffRoles.editAndSave')}
-                   </Button>
-                 )}
-               </div>
-
-              {isEditing ? (
-                <div className="space-y-4">
-                  {/* Prompt Name for Library */}
-                  <div className="space-y-2">
-                    <Label className="text-xs">{t('staffRoles.promptName')}</Label>
-                    <Input
-                      value={promptName}
-                      onChange={(e) => setPromptName(e.target.value)}
-                      placeholder={t('roleLibrary.namePlaceholder')}
-                    />
-                  </div>
-
-                  {/* Structured Sections Editor */}
-                  <div className="rounded-lg border border-border bg-muted/10 p-4">
-                    <PromptSectionsEditor
-                      title={editedTitle}
-                      sections={editedSections}
-                      onTitleChange={handleTitleChange}
-                      onSectionsChange={handleSectionsChange}
-                    />
-                  </div>
-
-                  {/* Shared toggle */}
+            {/* System Prompt */}
+            {isEditing ? (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <Switch
-                      id="prompt-shared"
-                      checked={isShared}
-                      onCheckedChange={setIsShared}
-                    />
-                    <Label htmlFor="prompt-shared" className="text-sm cursor-pointer">
-                      {t('roleLibrary.isShared')}
-                    </Label>
-                  </div>
-
-                   {/* Action buttons */}
-                   <div className="flex items-center gap-2 pt-2">
-                     <Button
-                       onClick={handleSaveToLibrary}
-                       disabled={isSaving || !promptName.trim() || !editedPrompt.trim()}
-                       className={cn(
-                         "gap-1.5 transition-all",
-                         isPromptModified && "ring-2 ring-primary/50"
-                       )}
-                     >
-                       {isSavingPrompt ? (
-                         <Loader2 className="h-4 w-4 animate-spin" />
-                       ) : (
-                         <Save className="h-4 w-4" />
-                       )}
-                       {t('staffRoles.saveToLibrary')}
-                     </Button>
-                    <Button
-                      variant="ghost"
-                      onClick={handleCancelEdit}
-                      className="gap-1.5"
-                    >
-                      <X className="h-4 w-4" />
-                      {t('common.cancel')}
-                    </Button>
+                    <h3 className="text-sm font-medium text-muted-foreground">
+                      {t('staffRoles.systemPrompt')}
+                    </h3>
+                    {isPromptModified && (
+                      <span className="inline-flex items-center justify-center w-2 h-2 bg-primary rounded-full" title={t('common.unsavedChanges.title')} />
+                    )}
                   </div>
                 </div>
-              ) : (
-                <div className="rounded-lg border border-border bg-muted/30 p-4">
-                  <PromptSectionsViewer
-                    title={parsedSystemPrompt.title}
-                    sections={parsedSystemPrompt.sections}
+
+                {/* Prompt Name for Library */}
+                <div className="space-y-2">
+                  <Label className="text-xs">{t('staffRoles.promptName')}</Label>
+                  <Input
+                    value={promptName}
+                    onChange={(e) => setPromptName(e.target.value)}
+                    placeholder={t('roleLibrary.namePlaceholder')}
                   />
                 </div>
-              )}
-            </div>
+
+                {/* Structured Sections Editor */}
+                <div className="rounded-lg border border-border bg-muted/10 p-4">
+                  <PromptSectionsEditor
+                    title={editedTitle}
+                    sections={editedSections}
+                    onTitleChange={handleTitleChange}
+                    onSectionsChange={handleSectionsChange}
+                  />
+                </div>
+
+                {/* Shared toggle */}
+                <div className="flex items-center gap-2">
+                  <Switch
+                    id="prompt-shared"
+                    checked={isShared}
+                    onCheckedChange={setIsShared}
+                  />
+                  <Label htmlFor="prompt-shared" className="text-sm cursor-pointer">
+                    {t('roleLibrary.isShared')}
+                  </Label>
+                </div>
+
+                {/* Action buttons */}
+                <div className="flex items-center gap-2 pt-2">
+                  <Button
+                    onClick={handleSaveToLibrary}
+                    disabled={isSaving || !promptName.trim() || !editedPrompt.trim()}
+                    className={cn(
+                      "gap-1.5 transition-all",
+                      isPromptModified && "ring-2 ring-primary/50"
+                    )}
+                  >
+                    {isSavingPrompt ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Save className="h-4 w-4" />
+                    )}
+                    {t('staffRoles.saveToLibrary')}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    onClick={handleCancelEdit}
+                    className="gap-1.5"
+                  >
+                    <X className="h-4 w-4" />
+                    {t('common.cancel')}
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <Collapsible open={promptOpen} onOpenChange={setPromptOpen}>
+                <div className="flex items-center justify-between">
+                  <CollapsibleTrigger className="flex items-center gap-2 hover:text-foreground transition-colors">
+                    <ChevronDown className={cn(
+                      "h-4 w-4 transition-transform",
+                      !promptOpen && "-rotate-90"
+                    )} />
+                    <FileText className="h-4 w-4 text-muted-foreground" />
+                    <h3 className="text-sm font-medium text-muted-foreground">
+                      {t('staffRoles.systemPrompt')}
+                    </h3>
+                    {/* Section badges */}
+                    <div className="flex items-center gap-1 ml-2">
+                      {parsedSystemPrompt.sections
+                        .filter(s => s.content.trim())
+                        .slice(0, 4)
+                        .map((section) => {
+                          const Icon = section.icon;
+                          return (
+                            <TooltipProvider key={section.key} delayDuration={200}>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Badge 
+                                    variant="outline" 
+                                    className="h-5 px-1.5 gap-1 text-[10px] font-normal"
+                                  >
+                                    <Icon className="h-3 w-3" />
+                                  </Badge>
+                                </TooltipTrigger>
+                                <TooltipContent side="top" className="text-xs">
+                                  {section.title}
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          );
+                        })}
+                      {parsedSystemPrompt.sections.filter(s => s.content.trim()).length > 4 && (
+                        <Badge variant="outline" className="h-5 px-1.5 text-[10px] font-normal">
+                          +{parsedSystemPrompt.sections.filter(s => s.content.trim()).length - 4}
+                        </Badge>
+                      )}
+                    </div>
+                  </CollapsibleTrigger>
+                  {user && (
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={handleStartEdit}
+                      className="gap-1.5 h-7 text-xs"
+                    >
+                      <Pencil className="h-3 w-3" />
+                      {t('staffRoles.editAndSave')}
+                    </Button>
+                  )}
+                </div>
+                <CollapsibleContent className="pt-3">
+                  <div className="rounded-lg border border-border bg-muted/30 p-4">
+                    <PromptSectionsViewer
+                      title={parsedSystemPrompt.title}
+                      sections={parsedSystemPrompt.sections}
+                    />
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
+            )}
 
             <Separator />
 
