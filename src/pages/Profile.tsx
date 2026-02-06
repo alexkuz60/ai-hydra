@@ -36,6 +36,7 @@ interface ApiKeys {
   tavily_api_key: string | null;
   perplexity_api_key: string | null;
   deepseek_api_key: string | null;
+  firecrawl_api_key: string | null;
 }
 
 export default function Profile() {
@@ -58,6 +59,7 @@ export default function Profile() {
     tavily: false,
     perplexity: false,
     deepseek: false,
+    firecrawl: false,
   });
 
   // Form states
@@ -72,6 +74,7 @@ export default function Profile() {
   const [tavilyKey, setTavilyKey] = useState('');
   const [perplexityKey, setPerplexityKey] = useState('');
   const [deepseekKey, setDeepseekKey] = useState('');
+  const [firecrawlKey, setFirecrawlKey] = useState('');
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -119,6 +122,7 @@ export default function Profile() {
           tavily_api_key?: string;
           perplexity_api_key?: string;
           deepseek_api_key?: string;
+          firecrawl_api_key?: string;
         };
         setOpenaiKey(keys.openai_api_key || '');
         setGeminiKey(keys.google_gemini_api_key || '');
@@ -129,6 +133,7 @@ export default function Profile() {
         setTavilyKey(keys.tavily_api_key || '');
         setPerplexityKey(keys.perplexity_api_key || '');
         setDeepseekKey(keys.deepseek_api_key || '');
+        setFirecrawlKey(keys.firecrawl_api_key || '');
       }
     } catch (error: any) {
       toast.error(error.message);
@@ -177,6 +182,7 @@ export default function Profile() {
         supabase.rpc('save_api_key', { p_provider: 'tavily', p_api_key: tavilyKey || '' }),
         supabase.rpc('save_api_key', { p_provider: 'perplexity', p_api_key: perplexityKey || '' }),
         supabase.rpc('save_api_key', { p_provider: 'deepseek', p_api_key: deepseekKey || '' }),
+        supabase.rpc('save_api_key', { p_provider: 'firecrawl', p_api_key: firecrawlKey || '' }),
       ];
 
       const results = await Promise.all(savePromises);
@@ -519,6 +525,41 @@ export default function Profile() {
                   </div>
                   <p className="text-xs text-muted-foreground">
                     Получите ключ на <a href="https://platform.deepseek.com/api_keys" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">platform.deepseek.com</a> — DeepSeek-V3, DeepSeek-R1 (reasoning)
+                  </p>
+                </div>
+
+                {/* Tools Section */}
+                <Separator className="my-6" />
+                
+                <div className="flex items-center gap-2 mb-4">
+                  <Globe className="h-5 w-5 text-primary" />
+                  <h3 className="text-lg font-semibold">Инструменты</h3>
+                </div>
+
+                {/* Firecrawl */}
+                <div className="space-y-2">
+                  <Label htmlFor="firecrawl">Firecrawl (Web Scraping)</Label>
+                  <div className="relative">
+                    <Input
+                      id="firecrawl"
+                      type={showKeys.firecrawl ? 'text' : 'password'}
+                      value={firecrawlKey}
+                      onChange={(e) => setFirecrawlKey(e.target.value)}
+                      placeholder="fc-..."
+                      className="pr-10"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="absolute right-0 top-0 h-full px-3"
+                      onClick={() => setShowKeys({ ...showKeys, firecrawl: !showKeys.firecrawl })}
+                    >
+                      {showKeys.firecrawl ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Получите ключ на <a href="https://firecrawl.dev/app/api-keys" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">firecrawl.dev</a> — персональный ключ имеет приоритет над системным
                   </p>
                 </div>
 

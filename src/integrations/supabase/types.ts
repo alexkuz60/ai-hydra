@@ -631,6 +631,7 @@ export type Database = {
           anthropic_vault_id: string | null
           created_at: string
           deepseek_vault_id: string | null
+          firecrawl_vault_id: string | null
           gemini_vault_id: string | null
           groq_vault_id: string | null
           id: string
@@ -646,6 +647,7 @@ export type Database = {
           anthropic_vault_id?: string | null
           created_at?: string
           deepseek_vault_id?: string | null
+          firecrawl_vault_id?: string | null
           gemini_vault_id?: string | null
           groq_vault_id?: string | null
           id?: string
@@ -661,6 +663,7 @@ export type Database = {
           anthropic_vault_id?: string | null
           created_at?: string
           deepseek_vault_id?: string | null
+          firecrawl_vault_id?: string | null
           gemini_vault_id?: string | null
           groq_vault_id?: string | null
           id?: string
@@ -726,6 +729,7 @@ export type Database = {
         Returns: {
           has_anthropic: boolean
           has_deepseek: boolean
+          has_firecrawl: boolean
           has_gemini: boolean
           has_groq: boolean
           has_openai: boolean
@@ -740,6 +744,7 @@ export type Database = {
         Returns: {
           anthropic_api_key: string
           deepseek_api_key: string
+          firecrawl_api_key: string
           google_gemini_api_key: string
           groq_api_key: string
           openai_api_key: string
