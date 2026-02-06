@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { getCachedTranslation, cacheTranslation } from '@/lib/translationCache';
 
 interface ThinkingBlockProps {
   reasoning: string;
@@ -38,15 +39,22 @@ export function ThinkingBlock({
   const handleTranslate = async () => {
     if (isTranslating) return;
     
-    // If already have translation, toggle to original
+    // If already have translation in state, toggle to original
     if (translatedText) {
       setTranslatedText(null);
       return;
     }
     
-    // If saved translation exists, load it
+    // If saved translation in DB exists, load it
     if (savedTranslation) {
       setTranslatedText(savedTranslation);
+      return;
+    }
+    
+    // Check sessionStorage cache (instant if found)
+    const cached = getCachedTranslation(reasoning, 'Russian');
+    if (cached) {
+      setTranslatedText(cached);
       return;
     }
     
@@ -58,12 +66,12 @@ export function ThinkingBlock({
 
       if (error) throw error;
       
-      console.log("Translation response:", data);
-      
       if (data?.translation) {
+        // Cache in sessionStorage for instant re-access
+        cacheTranslation(reasoning, data.translation, 'Russian');
         setTranslatedText(data.translation);
         
-        // Save translation to database
+        // Persist to database for future sessions
         const { error: updateError } = await supabase
           .from('messages')
           .update({ reasoning_translated: data.translation })
