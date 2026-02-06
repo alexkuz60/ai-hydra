@@ -163,7 +163,7 @@ const PromptSectionsEditor: React.FC<PromptSectionsEditorProps> = ({
       >
         {/* Vertical tabs list */}
         <div className="flex flex-col shrink-0 w-44">
-          <TabsList className="flex flex-col h-auto bg-transparent p-0 gap-1">
+          <TabsList className="flex flex-col h-auto bg-transparent p-0 gap-0.5 items-stretch">
             {sections.map((section) => {
               const Icon = section.icon;
               const isEmpty = !section.content.trim();
@@ -174,21 +174,21 @@ const PromptSectionsEditor: React.FC<PromptSectionsEditorProps> = ({
                   <TabsTrigger
                     value={section.key}
                     className={cn(
-                      "w-full justify-start gap-2 px-3 py-2 h-auto text-left",
+                      "w-full justify-start gap-2 pl-2 pr-3 py-1.5 h-auto text-left",
                       "data-[state=active]:bg-primary/10 data-[state=active]:text-primary",
                       "hover:bg-muted/50 transition-colors rounded-md",
                       isEmpty && !isIdentity && "opacity-60"
                     )}
                   >
-                    <Icon className="h-4 w-4 shrink-0" />
-                    <span className="text-xs truncate flex-1">{section.title}</span>
+                    <Icon className="h-3.5 w-3.5 shrink-0" />
+                    <span className="text-xs truncate flex-1 text-left">{section.title}</span>
                     {isIdentity && (
-                      <Badge variant="destructive" className="text-[10px] px-1 py-0 h-4">
+                      <Badge variant="destructive" className="text-[10px] px-1 py-0 h-4 ml-auto">
                         *
                       </Badge>
                     )}
                     {section.isCustom && (
-                      <Badge variant="secondary" className="text-[10px] px-1 py-0 h-4">
+                      <Badge variant="secondary" className="text-[10px] px-1 py-0 h-4 ml-auto">
                         +
                       </Badge>
                     )}
