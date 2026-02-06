@@ -76,9 +76,7 @@ const PromptSectionsEditor: React.FC<PromptSectionsEditorProps> = ({
     onSectionsChange(originalContent.sections);
     setOriginalContent(null);
     
-    toast.success(
-      lang === 'ru' ? 'Оригинал восстановлен' : 'Original restored'
-    );
+    toast.success(t('staffRoles.originalRestored'));
   }, [originalContent, onTitleChange, onSectionsChange, lang]);
 
   // Translate entire prompt (title + all sections)
@@ -131,14 +129,10 @@ const PromptSectionsEditor: React.FC<PromptSectionsEditorProps> = ({
       
       onSectionsChange(updatedSections);
       
-      toast.success(
-        lang === 'ru'
-          ? `Промпт переведён на ${isRussian ? 'английский' : 'русский'}`
-          : `Prompt translated to ${isRussian ? 'English' : 'Russian'}`
-      );
+      toast.success(t('staffRoles.translatedSuccess'));
     } catch (error) {
       console.error('Translation error:', error);
-      toast.error(lang === 'ru' ? 'Ошибка перевода' : 'Translation failed');
+      toast.error(t('staffRoles.translationError'));
       // Clear saved original on error
       setOriginalContent(null);
     } finally {
@@ -237,11 +231,11 @@ const PromptSectionsEditor: React.FC<PromptSectionsEditorProps> = ({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <label className="text-xs font-medium text-muted-foreground">
-              {t('staffRoles.promptTitle') || 'Заголовок промпта'}
+              {t('staffRoles.promptTitle')}
             </label>
             {originalContent && (
               <Badge variant="secondary" className="text-xs">
-                {isRussianContent() ? 'Оригинал: РУ' : 'Оригинал: EN'}
+                {isRussianContent() ? t('staffRoles.originalRu') : t('staffRoles.originalEn')}
               </Badge>
             )}
           </div>
@@ -257,14 +251,12 @@ const PromptSectionsEditor: React.FC<PromptSectionsEditorProps> = ({
                       className="gap-1.5 h-7 text-xs text-warning hover:text-warning/80 hover:bg-warning/10"
                     >
                       <Undo2 className="h-3 w-3" />
-                      {lang === 'ru' ? 'Вернуть оригинал' : 'Restore original'}
+                      {t('staffRoles.restoreOriginal')}
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent side="left">
                     <p className="text-xs">
-                      {lang === 'ru' 
-                        ? 'Отменить перевод и восстановить оригинальный текст' 
-                        : 'Undo translation and restore original text'}
+                      {t('staffRoles.restoreOriginalHint')}
                     </p>
                   </TooltipContent>
                 </Tooltip>
@@ -286,16 +278,14 @@ const PromptSectionsEditor: React.FC<PromptSectionsEditorProps> = ({
                       <Languages className="h-3 w-3" />
                     )}
                     {isRussianContent()
-                      ? (lang === 'ru' ? 'На английский' : 'To English')
-                      : (lang === 'ru' ? 'На русский' : 'To Russian')
+                      ? t('staffRoles.translateToEnglish')
+                      : t('staffRoles.translateToRussian')
                     }
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent side="left">
                   <p className="text-xs">
-                    {lang === 'ru' 
-                      ? 'Перевести заголовок и все секции промпта' 
-                      : 'Translate title and all prompt sections'}
+                    {t('staffRoles.translateAllSections')}
                   </p>
                 </TooltipContent>
               </Tooltip>
@@ -381,7 +371,7 @@ const PromptSectionsEditor: React.FC<PromptSectionsEditorProps> = ({
                   value={newSectionTitle}
                   onChange={(e) => setNewSectionTitle(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  placeholder={lang === 'ru' ? 'Название секции' : 'Section name'}
+                  placeholder={t('staffRoles.sectionName')}
                   className="h-8 text-xs"
                   autoFocus
                 />
@@ -405,7 +395,7 @@ const PromptSectionsEditor: React.FC<PromptSectionsEditorProps> = ({
                 onClick={() => setIsAddingSection(true)}
               >
                 <Plus className="h-3 w-3" />
-                {lang === 'ru' ? 'Добавить секцию' : 'Add section'}
+                {t('staffRoles.addSection')}
               </Button>
             )}
           </div>
@@ -438,7 +428,7 @@ const PromptSectionsEditor: React.FC<PromptSectionsEditorProps> = ({
                   !snippetsOpen && "-rotate-90"
                 )} />
                 <Sparkles className="h-3 w-3" />
-                <span>{lang === 'ru' ? 'Быстрые вставки' : 'Quick snippets'}</span>
+                <span>{t('staffRoles.quickSnippets')}</span>
               </CollapsibleTrigger>
               <CollapsibleContent className="pt-2">
                 <div className="space-y-3">
@@ -491,7 +481,7 @@ const PromptSectionsEditor: React.FC<PromptSectionsEditorProps> = ({
                   !tipsOpen && "-rotate-90"
                 )} />
                 <Lightbulb className="h-3 w-3" />
-                <span>Советы по написанию секции «{currentTips.title}»</span>
+                <span>{t('staffRoles.sectionTips')} «{currentTips.title}»</span>
               </CollapsibleTrigger>
               <CollapsibleContent className="pt-2">
                 <div className="rounded-md border border-border bg-muted/30 p-3">
