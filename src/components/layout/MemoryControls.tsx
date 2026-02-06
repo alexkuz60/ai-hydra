@@ -3,7 +3,7 @@
  import { Button } from '@/components/ui/button';
  import { Badge } from '@/components/ui/badge';
  import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
- import { Brain, RefreshCw, Check, Settings2 } from 'lucide-react';
+ import { Brain, RefreshCw, Check, Settings2, BookOpen } from 'lucide-react';
  import { motion, AnimatePresence } from 'framer-motion';
  
 interface MemoryStats {
@@ -20,6 +20,7 @@ interface MemoryStats {
  
  interface MemoryControlsProps {
    memoryStats: MemoryStats | null;
+   knowledgeCount?: number;
    isLoading?: boolean;
    isRefreshed?: boolean;
    onRefresh: () => void;
@@ -28,51 +29,76 @@ interface MemoryStats {
  
  export function MemoryControls({
    memoryStats,
+   knowledgeCount = 0,
    isLoading = false,
    isRefreshed = false,
    onRefresh,
    onOpenDialog,
  }: MemoryControlsProps) {
-   const { t } = useLanguage();
+   const { t, language } = useLanguage();
  
-   // Don't render if no memory data
-   if (!memoryStats || memoryStats.total === 0) {
+   // Don't render if no memory data and no knowledge
+   if ((!memoryStats || memoryStats.total === 0) && knowledgeCount === 0) {
      return null;
    }
  
    return (
      <div className="flex items-center gap-1.5">
        {/* Memory Stats Badge */}
-       <TooltipProvider>
-         <Tooltip>
-           <TooltipTrigger asChild>
-             <Badge 
-               variant="secondary" 
-               className="gap-1 bg-hydra-memory/20 text-hydra-memory border-hydra-memory/30 cursor-help h-6 px-2"
-             >
-               <Brain className="h-3 w-3" />
-               <span className="text-xs font-medium">{memoryStats.total}</span>
-             </Badge>
-           </TooltipTrigger>
-           <TooltipContent side="bottom">
-             <div className="text-xs space-y-1">
-                <p className="font-medium">{t('memory.savedChunks')}</p>
-                {memoryStats.byType.decision > 0 && (
-                  <p>• {t('memory.decisions')}: {memoryStats.byType.decision}</p>
-                )}
-                {memoryStats.byType.context > 0 && (
-                  <p>• {t('memory.context')}: {memoryStats.byType.context}</p>
-                )}
-                {memoryStats.byType.instruction > 0 && (
-                  <p>• {t('memory.instructions')}: {memoryStats.byType.instruction}</p>
-                )}
-                {memoryStats.byType.evaluation > 0 && (
-                  <p>• {t('memory.evaluations')}: {memoryStats.byType.evaluation}</p>
-                )}
-             </div>
-           </TooltipContent>
-         </Tooltip>
-       </TooltipProvider>
+       {memoryStats && memoryStats.total > 0 && (
+         <TooltipProvider>
+           <Tooltip>
+             <TooltipTrigger asChild>
+               <Badge 
+                 variant="secondary" 
+                 className="gap-1 bg-hydra-memory/20 text-hydra-memory border-hydra-memory/30 cursor-help h-6 px-2"
+               >
+                 <Brain className="h-3 w-3" />
+                 <span className="text-xs font-medium">{memoryStats.total}</span>
+               </Badge>
+             </TooltipTrigger>
+             <TooltipContent side="bottom">
+               <div className="text-xs space-y-1">
+                  <p className="font-medium">{t('memory.savedChunks')}</p>
+                  {memoryStats.byType.decision > 0 && (
+                    <p>• {t('memory.decisions')}: {memoryStats.byType.decision}</p>
+                  )}
+                  {memoryStats.byType.context > 0 && (
+                    <p>• {t('memory.context')}: {memoryStats.byType.context}</p>
+                  )}
+                  {memoryStats.byType.instruction > 0 && (
+                    <p>• {t('memory.instructions')}: {memoryStats.byType.instruction}</p>
+                  )}
+                  {memoryStats.byType.evaluation > 0 && (
+                    <p>• {t('memory.evaluations')}: {memoryStats.byType.evaluation}</p>
+                  )}
+               </div>
+             </TooltipContent>
+           </Tooltip>
+         </TooltipProvider>
+       )}
+
+       {/* Knowledge Stats Badge */}
+       {knowledgeCount > 0 && (
+         <TooltipProvider>
+           <Tooltip>
+             <TooltipTrigger asChild>
+               <Badge 
+                 variant="secondary" 
+                 className="gap-1 bg-primary/15 text-primary border-primary/25 cursor-help h-6 px-2"
+               >
+                 <BookOpen className="h-3 w-3" />
+                 <span className="text-xs font-medium">{knowledgeCount}</span>
+               </Badge>
+             </TooltipTrigger>
+             <TooltipContent side="bottom">
+               <p className="text-xs font-medium">
+                 {language === 'ru' ? 'Профильные знания (RAG)' : 'Domain Knowledge (RAG)'}
+               </p>
+             </TooltipContent>
+           </Tooltip>
+         </TooltipProvider>
+       )}
  
        {/* Refresh Button */}
        <TooltipProvider>
