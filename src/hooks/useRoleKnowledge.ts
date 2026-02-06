@@ -92,9 +92,11 @@ export function useRoleKnowledge(role: AgentRole) {
       let embedding = null;
       try {
         const resp = await supabase.functions.invoke('generate-embeddings', {
-          body: { text: params.content },
+          body: { texts: [params.content] },
         });
-        if (!resp.error) embedding = resp.data?.embedding || null;
+        if (!resp.error && !resp.data?.skipped) {
+          embedding = resp.data?.embeddings?.[0] || null;
+        }
       } catch {
         console.warn('[useRoleKnowledge] Embedding generation skipped');
       }
@@ -189,17 +191,17 @@ export function useRoleKnowledge(role: AgentRole) {
 
     try {
       const embResp = await supabase.functions.invoke('generate-embeddings', {
-        body: { text: query },
+        body: { texts: [query] },
       });
 
-      if (embResp.error || !embResp.data?.embedding) {
+      if (embResp.error || embResp.data?.skipped || !embResp.data?.embeddings?.[0]) {
         console.warn('[useRoleKnowledge] Query embedding failed');
         return [];
       }
 
       const { data, error } = await supabase.rpc('search_role_knowledge', {
         p_role: role,
-        p_query_embedding: embResp.data.embedding,
+        p_query_embedding: embResp.data.embeddings[0],
         p_limit: limit,
         p_categories: categories ?? null,
       });
