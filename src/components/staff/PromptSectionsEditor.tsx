@@ -38,6 +38,7 @@ interface PromptSectionsEditorProps {
   sections: PromptSection[];
   onTitleChange: (title: string) => void;
   onSectionsChange: (sections: PromptSection[]) => void;
+  onLanguageSwitch?: (fromLang: 'ru' | 'en', toLang: 'ru' | 'en') => void;
   className?: string;
 }
 
@@ -46,6 +47,7 @@ const PromptSectionsEditor: React.FC<PromptSectionsEditorProps> = ({
   sections,
   onTitleChange,
   onSectionsChange,
+  onLanguageSwitch,
   className,
 }) => {
   const { t, language } = useLanguage();
@@ -128,6 +130,11 @@ const PromptSectionsEditor: React.FC<PromptSectionsEditorProps> = ({
       });
       
       onSectionsChange(updatedSections);
+      
+      // Notify parent about language switch
+      const fromLang: 'ru' | 'en' = isRussian ? 'ru' : 'en';
+      const toLang: 'ru' | 'en' = isRussian ? 'en' : 'ru';
+      onLanguageSwitch?.(fromLang, toLang);
       
       toast.success(t('staffRoles.translatedSuccess'));
     } catch (error) {

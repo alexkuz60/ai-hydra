@@ -229,6 +229,30 @@ const RoleDetailsPanel = forwardRef<HTMLDivElement, RoleDetailsPanelProps>(
       unsavedChanges.setHasUnsavedChanges(true);
     }, [editedSections, unsavedChanges]);
 
+    // Handle language switch from translation - update prompt name
+    const handleLanguageSwitch = useCallback((fromLang: 'ru' | 'en', toLang: 'ru' | 'en') => {
+      setPromptName(prevName => {
+        // Replace _ru_ with _en_ or vice versa
+        const fromPattern = `_${fromLang}_`;
+        const toPattern = `_${toLang}_`;
+        
+        if (prevName.includes(fromPattern)) {
+          return prevName.replace(fromPattern, toPattern);
+        }
+        
+        // Also handle (RU) / (EN) suffix pattern
+        const fromSuffix = ` (${fromLang.toUpperCase()})`;
+        const toSuffix = ` (${toLang.toUpperCase()})`;
+        
+        if (prevName.includes(fromSuffix)) {
+          return prevName.replace(fromSuffix, toSuffix);
+        }
+        
+        // If no pattern found, append language suffix
+        return `${prevName} (${toLang.toUpperCase()})`;
+      });
+    }, []);
+
     // Parse system prompt for viewing
     const parsedSystemPrompt = useMemo(() => {
       if (!selectedRole) return { title: '', sections: [] };
@@ -425,6 +449,7 @@ const RoleDetailsPanel = forwardRef<HTMLDivElement, RoleDetailsPanelProps>(
                     sections={editedSections}
                     onTitleChange={handleTitleChange}
                     onSectionsChange={handleSectionsChange}
+                    onLanguageSwitch={handleLanguageSwitch}
                   />
                 </div>
 
