@@ -200,7 +200,11 @@ export function ModelStatsChart({ stats, selectedPeriod, onPeriodChange }: Model
                   outerRadius={100}
                   innerRadius={40}
                   paddingAngle={2}
-                  label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
+                  label={({ name, percent, x, y, textAnchor }) => (
+                    <text x={x} y={y} textAnchor={textAnchor} fill="hsl(var(--foreground))" fontSize={12}>
+                      {`${name} (${(percent * 100).toFixed(0)}%)`}
+                    </text>
+                  )}
                   labelLine={{ stroke: 'hsl(var(--muted-foreground))', strokeWidth: 1 }}
                 >
                   {pieData.map((entry, index) => (
