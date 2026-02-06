@@ -394,9 +394,6 @@
                                        prompt={prompt}
                                        isSelected={selectedPrompt?.id === prompt.id}
                                        onSelect={handleSelectPrompt}
-                                       onEdit={handleStartEdit}
-                                       onDelete={handleDeleteClick}
-                                       onDuplicate={handleDuplicate}
                                      />
                                    ))}
                                  </TableBody>
