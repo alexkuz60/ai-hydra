@@ -24,8 +24,9 @@ import {
 import { Separator } from '@/components/ui/separator';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Wrench, Pencil, X, Save, Loader2, Library, ChevronDown, Network, FileText, Maximize2 } from 'lucide-react';
+import { Wrench, Pencil, X, Save, Loader2, Library, ChevronDown, Network, FileText, Maximize2, BookOpen } from 'lucide-react';
 import { ClipboardCheck } from 'lucide-react';
+import RoleKnowledgeTab from './RoleKnowledgeTab';
 import PromptPreviewDialog from './PromptPreviewDialog';
 import { 
   ROLE_CONFIG, 
@@ -725,6 +726,14 @@ const RoleDetailsPanel = forwardRef<HTMLDivElement, RoleDetailsPanelProps>(
                 )}
               </CollapsibleContent>
             </Collapsible>
+
+            {/* Role Knowledge - only for technical staff */}
+            {config.isTechnicalStaff && (
+              <>
+                <Separator />
+                <RoleKnowledgeTab role={selectedRole} />
+              </>
+            )}
 
             <Separator />
 

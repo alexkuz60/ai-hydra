@@ -378,6 +378,60 @@ export type Database = {
         }
         Relationships: []
       }
+      role_knowledge: {
+        Row: {
+          category: string
+          chunk_index: number
+          chunk_total: number
+          content: string
+          created_at: string
+          embedding: string | null
+          id: string
+          metadata: Json | null
+          role: string
+          source_title: string | null
+          source_url: string | null
+          tags: string[] | null
+          updated_at: string
+          user_id: string
+          version: string | null
+        }
+        Insert: {
+          category?: string
+          chunk_index?: number
+          chunk_total?: number
+          content: string
+          created_at?: string
+          embedding?: string | null
+          id?: string
+          metadata?: Json | null
+          role: string
+          source_title?: string | null
+          source_url?: string | null
+          tags?: string[] | null
+          updated_at?: string
+          user_id: string
+          version?: string | null
+        }
+        Update: {
+          category?: string
+          chunk_index?: number
+          chunk_total?: number
+          content?: string
+          created_at?: string
+          embedding?: string | null
+          id?: string
+          metadata?: Json | null
+          role?: string
+          source_title?: string | null
+          source_url?: string | null
+          tags?: string[] | null
+          updated_at?: string
+          user_id?: string
+          version?: string | null
+        }
+        Relationships: []
+      }
       role_memory: {
         Row: {
           confidence_score: number | null
@@ -728,6 +782,25 @@ export type Database = {
       save_api_key: {
         Args: { p_api_key: string; p_provider: string }
         Returns: undefined
+      }
+      search_role_knowledge: {
+        Args: {
+          p_categories?: string[]
+          p_limit?: number
+          p_query_embedding: string
+          p_role: string
+        }
+        Returns: {
+          category: string
+          content: string
+          id: string
+          metadata: Json
+          similarity: number
+          source_title: string
+          source_url: string
+          tags: string[]
+          version: string
+        }[]
       }
       search_role_memory: {
         Args: {
