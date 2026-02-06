@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useRoleKnowledge, type RoleKnowledgeEntry } from '@/hooks/useRoleKnowledge';
 import type { AgentRole } from '@/config/roles';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -19,6 +20,7 @@ import {
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogFooter,
@@ -34,12 +36,15 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
-import { Plus, Trash2, Search, BookOpen, FileText, Loader2, ExternalLink } from 'lucide-react';
+import { Plus, Trash2, Search, BookOpen, FileText, Loader2, ExternalLink, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const CATEGORIES = [
   { value: 'general', labelKey: 'Общее' },
   { value: 'documentation', labelKey: 'Документация' },
+  { value: 'standard', labelKey: 'Стандарты' },
+  { value: 'procedure', labelKey: 'Процедуры' },
+  { value: 'system_prompt', labelKey: 'Системный промпт' },
   { value: 'best-practices', labelKey: 'Лучшие практики' },
   { value: 'architecture', labelKey: 'Архитектура' },
   { value: 'api-reference', labelKey: 'API Reference' },
@@ -93,6 +98,7 @@ export default function RoleKnowledgeTab({ role }: RoleKnowledgeTabProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterCategory, setFilterCategory] = useState<string>('all');
   const [isSaving, setIsSaving] = useState(false);
+  const [isSeeding, setIsSeeding] = useState(false);
 
   // Add form state
   const [newContent, setNewContent] = useState('');
@@ -106,6 +112,44 @@ export default function RoleKnowledgeTab({ role }: RoleKnowledgeTabProps) {
   }, [fetchEntries]);
 
   const stats = getStats();
+
+  // Seed knowledge from Hydrapedia
+  const handleSeed = useCallback(async (force = false) => {
+    setIsSeeding(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('seed-role-knowledge', {
+        body: { role, include_system_prompt: true, force },
+      });
+      
+      if (error) throw error;
+      
+      if (data?.skipped) {
+        toast.info(
+          language === 'ru'
+            ? `У роли уже есть ${data.existing_count} документов. Используйте пересидинг для обновления.`
+            : `Role already has ${data.existing_count} docs. Use re-seed to update.`
+        );
+      } else if (data?.seeded > 0) {
+        toast.success(
+          language === 'ru'
+            ? `Загружено ${data.seeded} фрагментов из ${data.sources?.length || 0} источников`
+            : `Loaded ${data.seeded} chunks from ${data.sources?.length || 0} sources`
+        );
+        await fetchEntries();
+      } else {
+        toast.info(
+          language === 'ru'
+            ? 'Нет доступных знаний для этой роли'
+            : 'No knowledge available for this role'
+        );
+      }
+    } catch (error) {
+      console.error('[RoleKnowledgeTab] Seed error:', error);
+      toast.error(language === 'ru' ? 'Ошибка загрузки знаний' : 'Failed to seed knowledge');
+    } finally {
+      setIsSeeding(false);
+    }
+  }, [role, language, fetchEntries]);
 
   // Group entries by source
   const groupedEntries = entries.reduce((acc, entry) => {
@@ -204,15 +248,41 @@ export default function RoleKnowledgeTab({ role }: RoleKnowledgeTabProps) {
             </Badge>
           )}
         </div>
-        <Button
-          size="sm"
-          variant="outline"
-          className="gap-1.5 h-7 text-xs"
-          onClick={() => setShowAddDialog(true)}
-        >
-          <Plus className="h-3 w-3" />
-          {language === 'ru' ? 'Добавить' : 'Add'}
-        </Button>
+        <div className="flex items-center gap-1.5">
+          {stats.total === 0 && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="gap-1.5 h-7 text-xs"
+              onClick={() => handleSeed(false)}
+              disabled={isSeeding}
+            >
+              {isSeeding ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
+              {language === 'ru' ? 'Из Гидропедии' : 'From Hydrapedia'}
+            </Button>
+          )}
+          {stats.total > 0 && (
+            <Button
+              size="sm"
+              variant="ghost"
+              className="gap-1.5 h-7 text-xs text-muted-foreground"
+              onClick={() => handleSeed(true)}
+              disabled={isSeeding}
+              title={language === 'ru' ? 'Пересидить знания из Гидропедии (заменит существующие)' : 'Re-seed from Hydrapedia (replaces existing)'}
+            >
+              {isSeeding ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
+            </Button>
+          )}
+          <Button
+            size="sm"
+            variant="outline"
+            className="gap-1.5 h-7 text-xs"
+            onClick={() => setShowAddDialog(true)}
+          >
+            <Plus className="h-3 w-3" />
+            {language === 'ru' ? 'Добавить' : 'Add'}
+          </Button>
+        </div>
       </div>
 
       {/* Filters */}
@@ -244,12 +314,36 @@ export default function RoleKnowledgeTab({ role }: RoleKnowledgeTabProps) {
         <div className="flex items-center justify-center py-8">
           <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
         </div>
+      ) : filteredGroups.length === 0 && entries.length === 0 ? (
+        <div className="text-center py-8 space-y-3">
+          <p className="text-sm text-muted-foreground">
+            {language === 'ru' ? 'Нет загруженных знаний.' : 'No knowledge loaded.'}
+          </p>
+          <div className="flex items-center justify-center gap-2">
+            <Button
+              size="sm"
+              variant="default"
+              className="gap-1.5"
+              onClick={() => handleSeed(false)}
+              disabled={isSeeding}
+            >
+              {isSeeding ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+              {language === 'ru' ? 'Загрузить из Гидропедии' : 'Seed from Hydrapedia'}
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              className="gap-1.5"
+              onClick={() => setShowAddDialog(true)}
+            >
+              <Plus className="h-4 w-4" />
+              {language === 'ru' ? 'Добавить вручную' : 'Add manually'}
+            </Button>
+          </div>
+        </div>
       ) : filteredGroups.length === 0 ? (
         <div className="text-center py-8 text-sm text-muted-foreground">
-          {entries.length === 0
-            ? (language === 'ru' ? 'Нет загруженных знаний. Добавьте документацию или материалы.' : 'No knowledge loaded. Add documentation or materials.')
-            : (language === 'ru' ? 'Ничего не найдено' : 'Nothing found')
-          }
+          {language === 'ru' ? 'Ничего не найдено' : 'Nothing found'}
         </div>
       ) : (
         <ScrollArea className="max-h-[400px]">
@@ -314,6 +408,9 @@ export default function RoleKnowledgeTab({ role }: RoleKnowledgeTabProps) {
             <DialogTitle>
               {language === 'ru' ? 'Добавить профильное знание' : 'Add Domain Knowledge'}
             </DialogTitle>
+            <DialogDescription>
+              {language === 'ru' ? 'Вставьте текст документации для обучения роли' : 'Paste documentation text to train the role'}
+            </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4">
