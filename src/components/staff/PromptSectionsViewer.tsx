@@ -80,15 +80,15 @@ const PromptSectionsViewer: React.FC<PromptSectionsViewerProps> = ({
 
         {/* Content area */}
         <div className="flex-1 min-w-0 border-l border-border pl-4">
-          {sections.map((section) => (
+         {sections.map((section) => (
             <TabsContent
               key={section.key}
               value={section.key}
-              className="m-0 h-full"
+              className="m-0 h-full flex flex-col"
             >
-              <ScrollArea className="h-[200px]">
+              <ScrollArea className="flex-1">
                 {section.content.trim() ? (
-                  <pre className="text-sm font-mono whitespace-pre-wrap leading-relaxed text-foreground/90">
+                  <pre className="text-sm font-mono whitespace-pre-wrap leading-relaxed text-foreground/90 pr-4">
                     {section.content}
                   </pre>
                 ) : (
