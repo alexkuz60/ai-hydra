@@ -97,10 +97,14 @@ export function ConsultantPanel({
   const [isModeratingContext, setIsModeratingContext] = useState(false);
   const [selectedWishes, setSelectedWishes] = useState<string[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesRef = useRef<typeof messages>([]);
 
   const { messages, streaming, sendQuery, stopStreaming, clearMessages } = useStreamingChat({
     sessionId,
   });
+  
+  // Keep ref in sync for async access
+  messagesRef.current = messages;
 
   // Memory integration
   const { 
@@ -238,6 +242,7 @@ export function ConsultantPanel({
    }, [inputCollapsed]);
 
   // Handle initial query from navigator - auto-trigger moderator if multiple AI responses
+  // Then chain to the selected mode (e.g., Arbiter) if different from moderator
   useEffect(() => {
     if (!initialQuery || !selectedModel) return;
     
@@ -250,8 +255,11 @@ export function ConsultantPanel({
     
     // Check if we have AI responses (sourceMessages > 1 means supervisor + AI responses)
     if (initialQuery.sourceMessages && initialQuery.sourceMessages.length > 1) {
-      // Has AI responses - auto-trigger moderator (hide user message with aggregated text)
+      // Has AI responses - auto-trigger moderator first (hide user message with aggregated text)
       setIsModeratingContext(true);
+      
+      const targetMode = selectedMode; // Capture current mode before async
+      
       sendQuery(
         initialQuery.content,
         'moderator',
@@ -259,8 +267,28 @@ export function ConsultantPanel({
         initialQuery.messageId,
         true, // hideUserMessage - don't show aggregated text in D-chat
         memoryContext // Pass memory context
-      ).finally(() => {
+      ).then(() => {
         setIsModeratingContext(false);
+        
+        // If user selected a mode other than moderator, auto-forward moderator's summary
+        if (targetMode !== 'moderator' && targetMode !== 'expert' && targetMode !== 'web_search') {
+          // Get the last moderator response content
+          // We need a small delay to let the streaming state settle
+          setTimeout(() => {
+            const moderatorResponse = messagesRef.current.filter(m => m.role === 'consultant' && m.mode === 'moderator').pop();
+            if (moderatorResponse?.content) {
+              sendQuery(
+                moderatorResponse.content,
+                targetMode,
+                selectedModel,
+                initialQuery.messageId,
+                true, // hide the forwarded moderator text
+                memoryContext
+              );
+            }
+          }, 200);
+        }
+      }).finally(() => {
         onClearInitialQuery?.();
       });
     } else {
