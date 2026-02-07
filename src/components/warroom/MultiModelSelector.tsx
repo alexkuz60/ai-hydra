@@ -6,9 +6,10 @@ import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Sparkles, Key, AlertCircle, ChevronDown, Users, Gift, Zap, RefreshCw } from 'lucide-react';
+import { AlertCircle, ChevronDown, Users, Gift, Zap, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getUnavailableModelIds, clearModelCache } from '@/lib/modelAvailabilityCache';
+import { PROVIDER_LOGOS, PROVIDER_COLORS, LovableLogo, GroqLogo, OpenRouterLogo } from '@/components/ui/ProviderLogos';
 
 interface MultiModelSelectorProps {
   value: string[];
@@ -28,6 +29,24 @@ const GROQ_MODELS = PERSONAL_KEY_MODELS.filter(m => m.provider === 'groq');
 const PAID_MODELS = PERSONAL_KEY_MODELS.filter(
   m => m.provider !== 'openrouter' && m.provider !== 'groq'
 );
+
+// Provider display config for paid model subgroups
+const PROVIDER_LABELS: Record<string, string> = {
+  openai: 'OpenAI',
+  anthropic: 'Anthropic',
+  gemini: 'Google Gemini',
+  xai: 'xAI (Grok)',
+  deepseek: 'DeepSeek',
+};
+
+// Order of provider subgroups
+const PROVIDER_ORDER = ['openai', 'anthropic', 'gemini', 'xai', 'deepseek'];
+
+interface ProviderGroup {
+  provider: string;
+  label: string;
+  models: ModelOption[];
+}
 
 export function MultiModelSelector({ value, onChange, className }: MultiModelSelectorProps) {
   const { t } = useLanguage();
@@ -51,6 +70,22 @@ export function MultiModelSelector({ value, onChange, className }: MultiModelSel
   const availablePaidModels = PAID_MODELS
     .filter(m => personalModels.some(p => p.id === m.id))
     .filter(m => !unavailableModelIds.includes(m.id));
+
+  // Group paid models by provider
+  const paidProviderGroups = useMemo<ProviderGroup[]>(() => {
+    const groups: ProviderGroup[] = [];
+    for (const provider of PROVIDER_ORDER) {
+      const models = availablePaidModels.filter(m => m.provider === provider);
+      if (models.length > 0) {
+        groups.push({
+          provider,
+          label: PROVIDER_LABELS[provider] || provider,
+          models,
+        });
+      }
+    }
+    return groups;
+  }, [availablePaidModels]);
 
   // Auto-cleanup deprecated/unavailable model IDs from value
   useEffect(() => {
@@ -113,6 +148,47 @@ export function MultiModelSelector({ value, onChange, className }: MultiModelSel
   const selectedCount = value.length;
   const selectedModels = allModels.filter(m => value.includes(m.id));
 
+  // Render a provider group section
+  const renderProviderGroup = (
+    icon: React.ReactNode,
+    label: string,
+    models: ModelOption[],
+    colorClass: string,
+    badgeContent?: React.ReactNode,
+  ) => (
+    <div className="mb-3">
+      <div className="flex items-center justify-between px-2 py-1.5">
+        <div className={cn('flex items-center gap-2 text-sm font-medium', colorClass)}>
+          {icon}
+          {label}
+        </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-6 text-xs"
+          onClick={() => selectAll(models)}
+        >
+          {models.every(m => value.includes(m.id)) ? t('common.deselectAll') : t('common.selectAll')}
+        </Button>
+      </div>
+      <div className="space-y-1">
+        {models.map((model) => (
+          <label
+            key={model.id}
+            className="flex items-center gap-3 px-2 py-1.5 rounded-md hover:bg-accent cursor-pointer"
+          >
+            <Checkbox
+              checked={value.includes(model.id)}
+              onCheckedChange={() => toggleModel(model.id)}
+            />
+            <span className="text-sm truncate flex-1">{model.name}</span>
+            {badgeContent}
+          </label>
+        ))}
+      </div>
+    </div>
+  );
+
   return (
     <Popover>
       <PopoverTrigger asChild>
@@ -137,146 +213,50 @@ export function MultiModelSelector({ value, onChange, className }: MultiModelSel
         <ScrollArea className="h-[60vh] max-h-[500px]">
           <div className="p-2">
             {/* Lovable AI Models (Admin only) */}
-            {lovableModels.length > 0 && (
-              <div className="mb-3">
-                <div className="flex items-center justify-between px-2 py-1.5">
-                  <div className="flex items-center gap-2 text-sm font-medium text-primary">
-                    <Sparkles className="h-3 w-3" />
-                    Lovable AI
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-6 text-xs"
-                    onClick={() => selectAll(lovableModels)}
-                  >
-                    {lovableModels.every(m => value.includes(m.id)) ? t('common.deselectAll') : t('common.selectAll')}
-                  </Button>
-                </div>
-                <div className="space-y-1">
-                  {lovableModels.map((model) => (
-                    <label
-                      key={model.id}
-                      className="flex items-center gap-3 px-2 py-1.5 rounded-md hover:bg-accent cursor-pointer"
-                    >
-                      <Checkbox
-                        checked={value.includes(model.id)}
-                        onCheckedChange={() => toggleModel(model.id)}
-                      />
-                      <span className="text-sm truncate">{model.name}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
+            {lovableModels.length > 0 && renderProviderGroup(
+              <LovableLogo className="h-4 w-4" />,
+              'Lovable AI',
+              lovableModels,
+              'text-primary',
             )}
 
-            {/* Free OpenRouter Models - Individual Selection */}
-            {availableFreeModels.length > 0 && (
-              <div className="mb-3">
-                <div className="flex items-center justify-between px-2 py-1.5">
-                  <div className="flex items-center gap-2 text-sm font-medium text-hydra-success">
-                    <Gift className="h-3 w-3" />
-                    Free Models
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-6 text-xs"
-                    onClick={() => selectAll(availableFreeModels)}
-                  >
-                    {availableFreeModels.every(m => value.includes(m.id)) ? t('common.deselectAll') : t('common.selectAll')}
-                  </Button>
-                </div>
-                <div className="space-y-1">
-                  {availableFreeModels.map((model) => (
-                    <label
-                      key={model.id}
-                      className="flex items-center gap-3 px-2 py-1.5 rounded-md hover:bg-accent cursor-pointer"
-                    >
-                      <Checkbox
-                        checked={value.includes(model.id)}
-                        onCheckedChange={() => toggleModel(model.id)}
-                      />
-                      <span className="text-sm truncate flex-1">{model.name}</span>
-                      <Badge variant="outline" className="text-[10px] bg-hydra-success/10 text-hydra-success border-hydra-success/30">
-                        FREE
-                      </Badge>
-                    </label>
-                  ))}
-                </div>
-              </div>
+            {/* Free OpenRouter Models */}
+            {availableFreeModels.length > 0 && renderProviderGroup(
+              <OpenRouterLogo className={cn('h-4 w-4', PROVIDER_COLORS.openrouter)} />,
+              'Free Models',
+              availableFreeModels,
+              'text-hydra-success',
+              <Badge variant="outline" className="text-[10px] bg-hydra-success/10 text-hydra-success border-hydra-success/30">
+                FREE
+              </Badge>,
             )}
 
             {/* Groq Models - Ultra Fast */}
-            {availableGroqModels.length > 0 && (
-              <div className="mb-3">
-                <div className="flex items-center justify-between px-2 py-1.5">
-                  <div className="flex items-center gap-2 text-sm font-medium text-hydra-warning">
-                    <Zap className="h-3 w-3" />
-                    Groq (Fast)
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-6 text-xs"
-                    onClick={() => selectAll(availableGroqModels)}
-                  >
-                    {availableGroqModels.every(m => value.includes(m.id)) ? t('common.deselectAll') : t('common.selectAll')}
-                  </Button>
-                </div>
-                <div className="space-y-1">
-                  {availableGroqModels.map((model) => (
-                    <label
-                      key={model.id}
-                      className="flex items-center gap-3 px-2 py-1.5 rounded-md hover:bg-accent cursor-pointer"
-                    >
-                      <Checkbox
-                        checked={value.includes(model.id)}
-                        onCheckedChange={() => toggleModel(model.id)}
-                      />
-                      <span className="text-sm truncate flex-1">{model.name}</span>
-                      <Badge variant="outline" className="text-[10px] bg-hydra-warning/10 text-hydra-warning border-hydra-warning/30">
-                        ⚡ Fast
-                      </Badge>
-                    </label>
-                  ))}
-                </div>
-              </div>
+            {availableGroqModels.length > 0 && renderProviderGroup(
+              <GroqLogo className={cn('h-4 w-4', PROVIDER_COLORS.groq)} />,
+              'Groq (Fast)',
+              availableGroqModels,
+              'text-hydra-warning',
+              <Badge variant="outline" className="text-[10px] bg-hydra-warning/10 text-hydra-warning border-hydra-warning/30">
+                ⚡ Fast
+              </Badge>,
             )}
 
-            {/* Paid Personal API Key Models */}
-            {availablePaidModels.length > 0 && (
-              <div>
-                <div className="flex items-center justify-between px-2 py-1.5">
-                  <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-                    <Key className="h-3 w-3" />
-                    {t('models.personalKeys')}
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-6 text-xs"
-                    onClick={() => selectAll(availablePaidModels)}
-                  >
-                    {availablePaidModels.every(m => value.includes(m.id)) ? t('common.deselectAll') : t('common.selectAll')}
-                  </Button>
-                </div>
-                <div className="space-y-1">
-                  {availablePaidModels.map((model) => (
-                    <label
-                      key={model.id}
-                      className="flex items-center gap-3 px-2 py-1.5 rounded-md hover:bg-accent cursor-pointer"
-                    >
-                      <Checkbox
-                        checked={value.includes(model.id)}
-                        onCheckedChange={() => toggleModel(model.id)}
-                      />
-                      <span className="text-sm truncate">{model.name}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-            )}
+            {/* Paid Personal API Key Models - grouped by provider */}
+            {paidProviderGroups.map((group) => {
+              const Logo = PROVIDER_LOGOS[group.provider];
+              const color = PROVIDER_COLORS[group.provider] || 'text-muted-foreground';
+              return (
+                <React.Fragment key={group.provider}>
+                  {renderProviderGroup(
+                    Logo ? <Logo className={cn('h-4 w-4', color)} /> : null,
+                    group.label,
+                    group.models,
+                    color,
+                  )}
+                </React.Fragment>
+              );
+            })}
           </div>
         </ScrollArea>
 

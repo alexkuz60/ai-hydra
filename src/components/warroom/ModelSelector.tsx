@@ -12,8 +12,9 @@ import {
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
 import { Button } from '@/components/ui/button';
-import { Sparkles, Key, AlertCircle, ChevronDown, Check, Cpu, Brain, Atom, Zap } from 'lucide-react';
+import { Key, AlertCircle, ChevronDown, Check, Zap } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { PROVIDER_LOGOS, PROVIDER_COLORS } from '@/components/ui/ProviderLogos';
 
 interface ModelSelectorProps {
   value: string;
@@ -21,15 +22,16 @@ interface ModelSelectorProps {
   className?: string;
 }
 
-// Provider icons and colors
-const PROVIDER_CONFIG: Record<string, { icon: React.ElementType; color: string; label: string }> = {
-  lovable: { icon: Sparkles, color: 'text-primary', label: 'Lovable AI' },
-  openai: { icon: Brain, color: 'text-green-400', label: 'OpenAI' },
-  anthropic: { icon: Atom, color: 'text-orange-400', label: 'Anthropic' },
-  gemini: { icon: Cpu, color: 'text-blue-400', label: 'Google Gemini' },
-  xai: { icon: Zap, color: 'text-purple-400', label: 'xAI (Grok)' },
-  openrouter: { icon: Sparkles, color: 'text-pink-400', label: 'OpenRouter (Free)' },
-  groq: { icon: Zap, color: 'text-yellow-400', label: 'Groq (Fast)' },
+// Provider labels
+const PROVIDER_LABELS: Record<string, string> = {
+  lovable: 'Lovable AI',
+  openai: 'OpenAI',
+  anthropic: 'Anthropic',
+  gemini: 'Google Gemini',
+  xai: 'xAI (Grok)',
+  openrouter: 'OpenRouter (Free)',
+  groq: 'Groq (Fast)',
+  deepseek: 'DeepSeek',
 };
 
 interface GroupedModels {
@@ -112,9 +114,8 @@ export function ModelSelector({ value, onChange, className }: ModelSelectorProps
     );
   }
 
-  const selectedProviderConfig = selectedModel 
-    ? PROVIDER_CONFIG[selectedModel.provider] 
-    : null;
+  const SelectedLogo = selectedModel ? PROVIDER_LOGOS[selectedModel.provider] : null;
+  const selectedColor = selectedModel ? (PROVIDER_COLORS[selectedModel.provider] || 'text-muted-foreground') : null;
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -126,8 +127,8 @@ export function ModelSelector({ value, onChange, className }: ModelSelectorProps
           className={cn('w-[220px] justify-between', className)}
         >
           <div className="flex items-center gap-2 truncate">
-            {selectedProviderConfig && (
-              <selectedProviderConfig.icon className={cn('h-4 w-4 shrink-0', selectedProviderConfig.color)} />
+            {SelectedLogo && (
+              <SelectedLogo className={cn('h-4 w-4 shrink-0', selectedColor)} />
             )}
             <span className="truncate">
               {selectedModel?.name || t('models.selectModel')}
@@ -139,8 +140,9 @@ export function ModelSelector({ value, onChange, className }: ModelSelectorProps
       <PopoverContent className="w-[280px] p-0 max-h-[400px] overflow-y-auto" align="start">
         <div className="p-1">
           {groupedModels.map((group) => {
-            const config = PROVIDER_CONFIG[group.provider];
-            const Icon = config?.icon || Key;
+            const Logo = PROVIDER_LOGOS[group.provider] || Key;
+            const color = PROVIDER_COLORS[group.provider] || 'text-muted-foreground';
+            const label = PROVIDER_LABELS[group.provider] || group.provider;
             const isExpanded = expandedProviders.has(group.provider);
             
             return (
@@ -151,8 +153,8 @@ export function ModelSelector({ value, onChange, className }: ModelSelectorProps
               >
                 <CollapsibleTrigger className="flex w-full items-center justify-between px-2 py-2 text-sm font-medium hover:bg-accent/50 rounded-md transition-colors">
                   <div className="flex items-center gap-2">
-                    <Icon className={cn('h-4 w-4', config?.color || 'text-muted-foreground')} />
-                    <span>{config?.label || group.provider}</span>
+                    <Logo className={cn('h-4 w-4', color)} />
+                    <span>{label}</span>
                     <span className="text-xs text-muted-foreground">({group.models.length})</span>
                   </div>
                   <ChevronDown className={cn(
