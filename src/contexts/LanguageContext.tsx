@@ -550,6 +550,11 @@ const translations: Translations = {
   'profile.language': { ru: 'Язык интерфейса', en: 'Interface Language' },
   'profile.themeDark': { ru: 'Тёмная', en: 'Dark' },
   'profile.themeLight': { ru: 'Светлая', en: 'Light' },
+  'profile.fontSize': { ru: 'Размер шрифта', en: 'Font Size' },
+  'profile.fontNormal': { ru: 'Обычный', en: 'Normal' },
+  'profile.fontLarge': { ru: 'Крупный', en: 'Large' },
+  'profile.fontXLarge': { ru: 'Очень крупный', en: 'Extra Large' },
+  'profile.fontSizeHint': { ru: 'Увеличивает базовый размер текста во всём интерфейсе', en: 'Increases base text size across the entire interface' },
   'profile.webSearch': { ru: 'Веб-поиск', en: 'Web Search' },
   'profile.webSearchWarning': { 
     ru: 'По умолчанию используется общий ключ Tavily с ограничениями (1000 запросов/мес на всех пользователей). Для полноценной работы Web-Hunter добавьте персональный ключ.',
