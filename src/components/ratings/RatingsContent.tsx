@@ -143,7 +143,7 @@ export function RatingsContent() {
 
   return (
     <ScrollArea className="h-full">
-      <div className="p-4 max-w-3xl mx-auto space-y-6">
+      <div className="p-4 space-y-6">
         <ModelStatsChart
           stats={stats}
           selectedPeriod={selectedPeriod}
