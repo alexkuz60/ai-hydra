@@ -1,161 +1,44 @@
-import React, { useState, useEffect, forwardRef } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Layout } from '@/components/layout/Layout';
-import { supabase } from '@/integrations/supabase/client';
-import { HydraCard, HydraCardHeader, HydraCardTitle, HydraCardContent } from '@/components/ui/hydra-card';
-import { Brain, BarChart3, Loader2, Sparkles } from 'lucide-react';
+import { Loader2, Briefcase, Crown, BarChart3 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { AGENT_ROLES, ROLE_CONFIG, type AgentRole } from '@/config/roles';
-import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
-import { ModelStatsChart, TimePeriod } from '@/components/ratings/ModelStatsChart';
-import { subDays, isAfter } from 'date-fns';
-interface ModelRoleStat {
-  model_name: string;
-  role: string;
-  total_brains: number;
-  response_count: number;
-  average_rating: number;
-}
+import {
+  ResizablePanelGroup,
+  ResizablePanel,
+  ResizableHandle,
+} from '@/components/ui/resizable';
+import { useNavigatorResize } from '@/hooks/useNavigatorResize';
+import { NavigatorHeader } from '@/components/layout/NavigatorHeader';
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
+import { ModelPortfolio } from '@/components/ratings/ModelPortfolio';
+import { BeautyContest } from '@/components/ratings/BeautyContest';
+import { RatingsContent } from '@/components/ratings/RatingsContent';
+import { useEffect } from 'react';
 
-interface AggregatedModelStat {
-  model_name: string;
-  total_brains: number;
-  response_count: number;
-  average_rating: number;
-  by_role: {
-    [role: string]: {
-      total_brains: number;
-      response_count: number;
-      average_rating: number;
-    };
-  };
-}
+type Section = 'portfolio' | 'contest' | 'ratings';
 
-// Use centralized role config for icons and colors
+const SECTIONS: { id: Section; icon: React.ComponentType<{ className?: string }>; labelRu: string; labelEn: string; descRu: string; descEn: string }[] = [
+  { id: 'portfolio', icon: Briefcase, labelRu: 'Портфолио ИИ-моделей', labelEn: 'AI Model Portfolio', descRu: 'Каталог всех доступных моделей', descEn: 'Catalog of all available models' },
+  { id: 'contest', icon: Crown, labelRu: 'Конкурс интеллект-красоты', labelEn: 'Intelligence Contest', descRu: 'Соревнования между моделями', descEn: 'AI model competitions' },
+  { id: 'ratings', icon: BarChart3, labelRu: 'Рейтинги ИИ-моделей', labelEn: 'AI Model Ratings', descRu: 'Статистика и оценки', descEn: 'Stats and evaluations' },
+];
 
 export default function ModelRatings() {
   const { user, loading: authLoading } = useAuth();
-  const { t } = useLanguage();
+  const { language } = useLanguage();
   const navigate = useNavigate();
-  const [stats, setStats] = useState<AggregatedModelStat[]>([]);
-  const [allMessages, setAllMessages] = useState<Array<{ model_name: string | null; role: string; created_at: string; metadata: unknown }>>([]);
-  const [selectedPeriod, setSelectedPeriod] = useState<TimePeriod>('all');
-  const [loading, setLoading] = useState(true);
+  const [activeSection, setActiveSection] = useState<Section>('ratings');
+
+  const nav = useNavigatorResize({ storageKey: 'model-ratings', defaultMaxSize: 20 });
 
   useEffect(() => {
-    if (!authLoading && !user) {
-      navigate('/login');
-      return;
-    }
-
-    if (user) {
-      fetchMessages();
-    }
+    if (!authLoading && !user) navigate('/login');
   }, [user, authLoading, navigate]);
 
-  const fetchMessages = async () => {
-    if (!user) return;
-
-    try {
-      // Fetch all AI messages with ratings for the user
-      const { data, error } = await supabase
-        .from('messages')
-        .select('model_name, role, metadata, created_at')
-        .eq('user_id', user.id)
-        .neq('role', 'user')
-        .not('model_name', 'is', null);
-
-      if (error) throw error;
-      
-      setAllMessages(data || []);
-    } catch (error) {
-      console.error('Failed to fetch messages:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Calculate stats based on selected period
-  useEffect(() => {
-    if (allMessages.length === 0) return;
-
-    // Filter by period
-    const now = new Date();
-    let cutoffDate: Date | null = null;
-    
-    if (selectedPeriod === 'week') {
-      cutoffDate = subDays(now, 7);
-    } else if (selectedPeriod === 'month') {
-      cutoffDate = subDays(now, 30);
-    }
-
-    const filteredMessages = cutoffDate 
-      ? allMessages.filter(msg => isAfter(new Date(msg.created_at), cutoffDate!))
-      : allMessages;
-
-    // Aggregate stats by model and role
-    const modelMap = new Map<string, {
-      total: number;
-      count: number;
-      byRole: Map<string, { total: number; count: number }>;
-    }>();
-
-    filteredMessages.forEach(message => {
-      const modelName = message.model_name;
-      const role = message.role;
-      if (!modelName) return;
-
-      const metadata = message.metadata as Record<string, unknown> | null;
-      const rating = typeof metadata?.rating === 'number' ? metadata.rating : 0;
-
-      let modelData = modelMap.get(modelName);
-      if (!modelData) {
-        modelData = { total: 0, count: 0, byRole: new Map() };
-        modelMap.set(modelName, modelData);
-      }
-
-      modelData.total += rating;
-      modelData.count += 1;
-
-      // Role-specific stats
-      let roleData = modelData.byRole.get(role);
-      if (!roleData) {
-        roleData = { total: 0, count: 0 };
-        modelData.byRole.set(role, roleData);
-      }
-      roleData.total += rating;
-      roleData.count += 1;
-    });
-
-    // Convert to array
-    const statsArray: AggregatedModelStat[] = Array.from(modelMap.entries())
-      .map(([model_name, data]) => {
-        const by_role: AggregatedModelStat['by_role'] = {};
-        data.byRole.forEach((roleData, role) => {
-          by_role[role] = {
-            total_brains: roleData.total,
-            response_count: roleData.count,
-            average_rating: roleData.count > 0 ? roleData.total / roleData.count : 0,
-          };
-        });
-
-        return {
-          model_name,
-          total_brains: data.total,
-          response_count: data.count,
-          average_rating: data.count > 0 ? data.total / data.count : 0,
-          by_role,
-        };
-      })
-      .sort((a, b) => b.average_rating - a.average_rating);
-
-    setStats(statsArray);
-  }, [allMessages, selectedPeriod]);
-
-  if (authLoading || loading) {
+  if (authLoading) {
     return (
       <Layout>
         <div className="flex items-center justify-center min-h-[60vh]">
@@ -167,225 +50,101 @@ export default function ModelRatings() {
 
   return (
     <Layout>
-      <div className="container max-w-4xl mx-auto py-8 px-4">
-        <div className="flex items-center gap-3 mb-8">
-          <BarChart3 className="h-8 w-8 text-primary" />
-          <h1 className="text-3xl font-bold">{t('ratings.title')}</h1>
+      <div className="h-[calc(100vh-4rem)] flex flex-col">
+        <div className="px-4 py-4 border-b border-border">
+          <h1 className="text-2xl font-bold">
+            {language === 'ru' ? 'Подиум ИИ-моделей' : 'AI Model Podium'}
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            {language === 'ru' ? 'Портфолио, конкурсы и рейтинги' : 'Portfolio, contests & ratings'}
+          </p>
         </div>
 
-        {stats.length === 0 ? (
-          <HydraCard variant="default">
-            <HydraCardContent className="py-16 text-center">
-              <Sparkles className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <p className="text-muted-foreground">{t('ratings.empty')}</p>
-            </HydraCardContent>
-          </HydraCard>
-        ) : (
-          <>
-            {/* Stats Chart Component */}
-            <ModelStatsChart 
-              stats={stats} 
-              selectedPeriod={selectedPeriod}
-              onPeriodChange={setSelectedPeriod}
-            />
+        <ResizablePanelGroup direction="horizontal" className="flex-1">
+          <ResizablePanel
+            ref={nav.panelRef}
+            defaultSize={nav.panelSize}
+            minSize={4}
+            maxSize={40}
+            onResize={nav.onPanelResize}
+          >
+            <div className="h-full flex flex-col hydra-nav-surface">
+              <NavigatorHeader
+                title={language === 'ru' ? 'Разделы' : 'Sections'}
+                isMinimized={nav.isMinimized}
+                onToggle={nav.toggle}
+              />
 
-            <Tabs defaultValue="overall" className="space-y-6">
-            <ScrollArea className="w-full whitespace-nowrap pb-2">
-              <TabsList className="inline-flex w-max gap-1">
-                <TabsTrigger value="overall" className="px-4">{t('ratings.overall')}</TabsTrigger>
-                {AGENT_ROLES.map(role => {
-                  const config = ROLE_CONFIG[role];
-                  const Icon = config.icon;
-                  return (
-                    <TabsTrigger key={role} value={role} className="flex items-center gap-1.5 px-3">
-                      <Icon className={cn("h-3.5 w-3.5 shrink-0", config.color)} />
-                      <span className="whitespace-nowrap">{t(config.label)}</span>
-                    </TabsTrigger>
-                  );
-                })}
-              </TabsList>
-              <ScrollBar orientation="horizontal" className="h-2" />
-            </ScrollArea>
+              <TooltipProvider delayDuration={300}>
+                <div className="flex-1 overflow-y-auto p-2 space-y-1">
+                  {SECTIONS.map(section => {
+                    const Icon = section.icon;
+                    const isActive = activeSection === section.id;
+                    const label = language === 'ru' ? section.labelRu : section.labelEn;
 
-            {/* Overall Tab */}
-            <TabsContent value="overall">
-              <HydraCard variant="default">
-                <HydraCardHeader>
-                  <Brain className="h-5 w-5 text-primary" />
-                  <HydraCardTitle>{t('ratings.allModels')}</HydraCardTitle>
-                </HydraCardHeader>
-                <HydraCardContent>
-                  <div className="space-y-3">
-                    {stats.map((stat, index) => (
-                      <ModelStatRow
-                        key={stat.model_name}
-                        stat={stat}
-                        index={index}
-                        t={t}
-                      />
-                    ))}
-                  </div>
-                </HydraCardContent>
-              </HydraCard>
-            </TabsContent>
+                    if (nav.isMinimized) {
+                      return (
+                        <Tooltip key={section.id}>
+                          <TooltipTrigger asChild>
+                            <button
+                              onClick={() => setActiveSection(section.id)}
+                              className={cn(
+                                "w-full flex items-center justify-center p-2 rounded-lg transition-colors",
+                                isActive
+                                  ? "bg-primary/10 text-primary"
+                                  : "hover:bg-muted/30 text-muted-foreground"
+                              )}
+                            >
+                              <Icon className="h-5 w-5" />
+                            </button>
+                          </TooltipTrigger>
+                          <TooltipContent side="right" className="max-w-[200px]">
+                            <div className="font-medium text-sm">{label}</div>
+                            <div className="text-xs text-muted-foreground mt-1">
+                              {language === 'ru' ? section.descRu : section.descEn}
+                            </div>
+                          </TooltipContent>
+                        </Tooltip>
+                      );
+                    }
 
-            {/* Role-specific Tabs */}
-            {AGENT_ROLES.map(role => {
-              const config = ROLE_CONFIG[role];
-              const RoleIcon = config.icon;
-              const roleStats = stats
-                .filter(s => s.by_role[role])
-                .map(s => ({
-                  model_name: s.model_name,
-                  ...s.by_role[role],
-                }))
-                .sort((a, b) => b.average_rating - a.average_rating);
-
-              return (
-                <TabsContent key={role} value={role}>
-                  <HydraCard variant="default">
-                    <HydraCardHeader>
-                      <RoleIcon className={cn("h-5 w-5", config.color)} />
-                      <HydraCardTitle className={config.color}>
-                        {t(config.label)}
-                      </HydraCardTitle>
-                    </HydraCardHeader>
-                    <HydraCardContent>
-                      {roleStats.length === 0 ? (
-                        <p className="text-muted-foreground text-center py-8">
-                          {t('ratings.noDataForRole')}
-                        </p>
-                      ) : (
-                        <div className="space-y-3">
-                          {roleStats.map((stat, index) => (
-                            <RoleStatRow
-                              key={stat.model_name}
-                              stat={stat}
-                              index={index}
-                              t={t}
-                            />
-                          ))}
+                    return (
+                      <button
+                        key={section.id}
+                        onClick={() => setActiveSection(section.id)}
+                        className={cn(
+                          "w-full flex items-center gap-3 p-2.5 rounded-lg transition-colors text-left",
+                          isActive
+                            ? "bg-primary/10 text-primary"
+                            : "hover:bg-muted/30 text-muted-foreground"
+                        )}
+                      >
+                        <Icon className="h-5 w-5 shrink-0" />
+                        <div className="min-w-0">
+                          <div className="text-sm font-medium truncate">{label}</div>
+                          <div className="text-xs opacity-60 truncate">
+                            {language === 'ru' ? section.descRu : section.descEn}
+                          </div>
                         </div>
-                      )}
-                    </HydraCardContent>
-                  </HydraCard>
-                </TabsContent>
-              );
-            })}
-            </Tabs>
-          </>
-        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </TooltipProvider>
+            </div>
+          </ResizablePanel>
+
+          <ResizableHandle withHandle />
+
+          <ResizablePanel defaultSize={100 - nav.panelSize} minSize={50}>
+            <div className="h-full">
+              {activeSection === 'portfolio' && <ModelPortfolio />}
+              {activeSection === 'contest' && <BeautyContest />}
+              {activeSection === 'ratings' && <RatingsContent />}
+            </div>
+          </ResizablePanel>
+        </ResizablePanelGroup>
       </div>
     </Layout>
   );
 }
-
-interface ModelStatRowProps {
-  stat: AggregatedModelStat;
-  index: number;
-  t: (key: string) => string;
-}
-
-function ModelStatRow({ stat, index, t }: ModelStatRowProps) {
-  const rolesInStat = Object.keys(stat.by_role);
-
-  return (
-    <div
-      className={cn(
-        "p-3 rounded-lg",
-        index === 0 && "bg-primary/10 border border-primary/20"
-      )}
-    >
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-2 min-w-0 flex-1">
-          {index === 0 && <span className="text-lg">🏆</span>}
-          <span className="font-medium truncate">{stat.model_name}</span>
-        </div>
-
-        <div className="flex items-center gap-4 text-sm">
-          <div className="flex items-center gap-1" title={t('stats.totalBrains')}>
-            <Brain className="h-4 w-4 text-primary" />
-            <span className="font-bold text-primary">{stat.total_brains}</span>
-          </div>
-
-          <div className="flex items-center gap-1 text-muted-foreground" title={t('stats.avgRating')}>
-            <span className="text-xs">ø</span>
-            <span>{stat.average_rating.toFixed(1)}</span>
-          </div>
-
-          <div className="text-muted-foreground text-xs" title={t('stats.responseCount')}>
-            ({stat.response_count})
-          </div>
-        </div>
-      </div>
-
-      {/* Role breakdown */}
-      <div className="flex flex-wrap gap-3 mt-2 pt-2 border-t border-border/50">
-        {Object.keys(stat.by_role).map(role => {
-          const config = ROLE_CONFIG[role as AgentRole] || ROLE_CONFIG.assistant;
-          const RoleIcon = config.icon;
-          const roleData = stat.by_role[role];
-          return (
-            <div
-              key={role}
-              className="flex items-center gap-1.5 text-xs text-muted-foreground"
-              title={t(config.label)}
-            >
-              <RoleIcon className={cn("h-3 w-3", config.color)} />
-              <span>{roleData.total_brains}</span>
-              <span className="opacity-50">
-                (ø{roleData.average_rating.toFixed(1)})
-              </span>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-interface RoleStatRowProps {
-  stat: {
-    model_name: string;
-    total_brains: number;
-    response_count: number;
-    average_rating: number;
-  };
-  index: number;
-  t: (key: string) => string;
-}
-
-const RoleStatRow = forwardRef<HTMLDivElement, RoleStatRowProps>(
-  function RoleStatRow({ stat, index, t }, ref) {
-    return (
-      <div
-        ref={ref}
-        className={cn(
-          "flex items-center justify-between p-3 rounded-lg",
-          index === 0 && "bg-primary/10 border border-primary/20"
-        )}
-      >
-        <div className="flex items-center gap-2 min-w-0 flex-1">
-          {index === 0 && <span className="text-lg">🏆</span>}
-          <span className="font-medium truncate">{stat.model_name}</span>
-        </div>
-
-        <div className="flex items-center gap-4 text-sm">
-          <div className="flex items-center gap-1" title={t('stats.totalBrains')}>
-            <Brain className="h-4 w-4 text-primary" />
-            <span className="font-bold text-primary">{stat.total_brains}</span>
-          </div>
-
-          <div className="flex items-center gap-1 text-muted-foreground" title={t('stats.avgRating')}>
-            <span className="text-xs">ø</span>
-            <span>{stat.average_rating.toFixed(1)}</span>
-          </div>
-
-          <div className="text-muted-foreground text-xs" title={t('stats.responseCount')}>
-            ({stat.response_count})
-          </div>
-        </div>
-      </div>
-    );
-  }
-);
