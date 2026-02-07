@@ -6,7 +6,7 @@ import rehypeKatex from 'rehype-katex';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { Button } from '@/components/ui/button';
-import { Copy, Check } from 'lucide-react';
+import { Copy, Check, AlertTriangle, Lightbulb, Code2, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { MermaidBlock } from '@/components/warroom/MermaidBlock';
 import { LucideIconInline } from './LucideIconInline';
@@ -14,6 +14,52 @@ import { RoleIconInline, getRoleFromName } from './RoleIconInline';
 import { RolePlayground } from './RolePlayground';
 import 'katex/dist/katex.min.css';
 
+// Callout definitions
+const CALLOUTS = [
+  { marker: '[!WARNING]', label: 'Предупреждение', icon: AlertTriangle, borderColor: 'border-amber-500', bgColor: 'bg-amber-500/10', textColor: 'text-amber-500' },
+  { marker: '[!TIP]', label: 'Совет', icon: Lightbulb, borderColor: 'border-emerald-500', bgColor: 'bg-emerald-500/10', textColor: 'text-emerald-500' },
+  { marker: '[!EXAMPLE]', label: 'Пример', icon: Code2, borderColor: 'border-sky-500', bgColor: 'bg-sky-500/10', textColor: 'text-sky-500' },
+  { marker: '[!CAUTION]', label: 'Внимание!', icon: AlertCircle, borderColor: 'border-red-500', bgColor: 'bg-red-500/10', textColor: 'text-red-500' },
+] as const;
+
+function extractTextFromChildren(children: React.ReactNode): string {
+  if (typeof children === 'string') return children;
+  if (!children) return '';
+  const arr = React.Children.toArray(children);
+  return arr.map(child => {
+    if (typeof child === 'string') return child;
+    if (React.isValidElement(child) && child.props?.children) {
+      return extractTextFromChildren(child.props.children);
+    }
+    return '';
+  }).join('');
+}
+
+function detectCallout(text: string) {
+  for (const c of CALLOUTS) {
+    if (text.trimStart().startsWith(c.marker)) return c;
+  }
+  return null;
+}
+
+function stripCalloutMarker(children: React.ReactNode, marker: string): React.ReactNode {
+  // Remove the marker from the first text node
+  let stripped = false;
+  return React.Children.map(children, child => {
+    if (stripped) return child;
+    if (typeof child === 'string' && child.includes(marker)) {
+      stripped = true;
+      const result = child.replace(marker, '').replace(/^\n/, '');
+      return result || null;
+    }
+    if (React.isValidElement(child) && child.props?.children) {
+      const newChildren = stripCalloutMarker(child.props.children, marker);
+      stripped = true;
+      return React.cloneElement(child, {}, newChildren);
+    }
+    return child;
+  });
+}
 interface HydrapediaMarkdownProps {
   content: string;
   className?: string;
@@ -163,12 +209,36 @@ export function HydrapediaMarkdown({ content, className }: HydrapediaMarkdownPro
           li: ({ children }) => (
             <li className="ml-2 text-base">{children}</li>
           ),
-          // Blockquote
-          blockquote: ({ children }) => (
-            <blockquote className="border-l-3 border-primary pl-4 my-3 italic text-muted-foreground bg-muted/30 py-2 rounded-r">
-              {children}
-            </blockquote>
-          ),
+          // Blockquote with callout support
+          blockquote: ({ children }) => {
+            // Extract text content to detect callout markers
+            const text = extractTextFromChildren(children);
+            const callout = detectCallout(text);
+            
+            if (callout) {
+              return (
+                <div className={cn(
+                  "my-3 rounded-lg border-l-4 px-4 py-3",
+                  callout.borderColor,
+                  callout.bgColor,
+                )}>
+                  <div className={cn("flex items-center gap-2 font-semibold text-sm mb-1", callout.textColor)}>
+                    {React.createElement(callout.icon, { className: "h-4 w-4 shrink-0" })}
+                    {callout.label}
+                  </div>
+                  <div className="text-sm [&>p:first-child]:mt-0">
+                    {stripCalloutMarker(children, callout.marker)}
+                  </div>
+                </div>
+              );
+            }
+            
+            return (
+              <blockquote className="border-l-3 border-primary pl-4 my-3 italic text-muted-foreground bg-muted/30 py-2 rounded-r">
+                {children}
+              </blockquote>
+            );
+          },
           // Links
           a: ({ href, children }) => (
             <a 
