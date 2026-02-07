@@ -53,7 +53,7 @@ function saveEdgeSettings(settings: EdgeStyleSettings) {
 function FlowEditorContent() {
   const { t } = useLanguage();
   const { toast } = useToast();
-  const nav = useNavigatorResize({ storageKey: 'flow-editor', defaultMaxSize: 15, minPanelSize: 4 });
+  const nav = useNavigatorResize({ storageKey: 'flow-editor', defaultMaxSize: 18, minPanelSize: 4 });
   const { user } = useAuth();
   const [searchParams] = useSearchParams();
   const urlDiagramId = searchParams.get('id');

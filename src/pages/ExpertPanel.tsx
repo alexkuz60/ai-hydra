@@ -72,7 +72,7 @@ export default function ExpertPanel() {
    const { width: consultantPanelWidth, saveWidth: saveConsultantPanelWidth, isCollapsed: isDChatCollapsed } = useConsultantPanelWidth();
 
    // Navigator resize
-   const nav = useNavigatorResize({ storageKey: 'expert-panel', defaultMaxSize: 20, minPanelSize: 4 });
+   const nav = useNavigatorResize({ storageKey: 'expert-panel', defaultMaxSize: 25, minPanelSize: 4 });
 
   // D-Chat expand/collapse handlers using imperative API
   const handleDChatExpand = useCallback(() => {
