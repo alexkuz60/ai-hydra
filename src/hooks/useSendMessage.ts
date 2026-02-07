@@ -67,7 +67,7 @@ interface UseSendMessageReturn {
   sendMessage: (messageContent: string) => Promise<void>;
   sendUserMessageOnly: (messageContent: string) => Promise<void>;
   sendToConsultant: (messageContent: string, consultantId: string) => Promise<void>;
-  copyConsultantResponse: (content: string, sourceMessageId: string | null, modelName?: string | null) => Promise<void>;
+  copyConsultantResponse: (content: string, sourceMessageId: string | null, modelName?: string | null, role?: string | null) => Promise<void>;
   retrySingleModel: (modelId: string, messageContent: string) => Promise<void>;
 }
 
@@ -379,7 +379,8 @@ export function useSendMessage({
   const copyConsultantResponse = useCallback(async (
     content: string,
     sourceMessageId: string | null,
-    modelName?: string | null
+    modelName?: string | null,
+    role?: string | null
   ) => {
     if (!userId || !sessionId || !content.trim()) return;
 
@@ -423,10 +424,20 @@ export function useSendMessage({
         ? { source_message_id: sourceMessageId } as unknown as Json
         : undefined;
 
+      // Map consultant mode to message role
+      const ROLE_MAP: Record<string, string> = {
+        expert: 'assistant',
+        web_search: 'consultant',
+        duel: 'consultant',
+      };
+      const validRoles = ['assistant', 'critic', 'arbiter', 'consultant', 'moderator', 'advisor', 'archivist', 'analyst', 'webhunter', 'promptengineer', 'flowregulator', 'toolsmith'];
+      const mapped = role ? (ROLE_MAP[role] || role) : 'consultant';
+      const messageRole = validRoles.includes(mapped) ? mapped : 'consultant';
+
       const insertData: any = {
         session_id: currentSessionId,
         user_id: currentUserId,
-        role: 'consultant' as const,
+        role: messageRole,
         content,
         model_name: modelName || null,
         metadata,
