@@ -1,4 +1,4 @@
-import { Suspense, lazy } from "react";
+import { Suspense, lazy, ComponentType } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -9,22 +9,39 @@ import { LanguageProvider } from "@/contexts/LanguageContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 
-// Lazy load pages to reduce initial bundle size and improve FID
-const Index = lazy(() => import("./pages/Index"));
-const Login = lazy(() => import("./pages/Login"));
-const Signup = lazy(() => import("./pages/Signup"));
-const Profile = lazy(() => import("./pages/Profile"));
-const Tasks = lazy(() => import("./pages/Tasks"));
-const ExpertPanel = lazy(() => import("./pages/ExpertPanel"));
-const ModelRatings = lazy(() => import("./pages/ModelRatings"));
-const RoleLibrary = lazy(() => import("./pages/RoleLibrary"));
-const ToolsLibrary = lazy(() => import("./pages/ToolsLibrary"));
-const FlowEditor = lazy(() => import("./pages/FlowEditor"));
-const Hydrapedia = lazy(() => import("./pages/Hydrapedia"));
-const StaffRoles = lazy(() => import("./pages/StaffRoles"));
-const BehavioralPatterns = lazy(() => import("./pages/BehavioralPatterns"));
-const Admin = lazy(() => import("./pages/Admin"));
-const NotFound = lazy(() => import("./pages/NotFound"));
+// Auto-reload on stale chunk errors (happens after deploys)
+function lazyWithRetry(factory: () => Promise<{ default: ComponentType<any> }>) {
+  return lazy(() =>
+    factory().catch((err) => {
+      const key = 'chunk-reload';
+      const lastReload = sessionStorage.getItem(key);
+      const now = Date.now();
+      // Reload only once per 10 seconds to avoid infinite loops
+      if (!lastReload || now - Number(lastReload) > 10000) {
+        sessionStorage.setItem(key, String(now));
+        window.location.reload();
+      }
+      throw err;
+    })
+  );
+}
+
+// Lazy load pages with auto-retry on stale chunks
+const Index = lazyWithRetry(() => import("./pages/Index"));
+const Login = lazyWithRetry(() => import("./pages/Login"));
+const Signup = lazyWithRetry(() => import("./pages/Signup"));
+const Profile = lazyWithRetry(() => import("./pages/Profile"));
+const Tasks = lazyWithRetry(() => import("./pages/Tasks"));
+const ExpertPanel = lazyWithRetry(() => import("./pages/ExpertPanel"));
+const ModelRatings = lazyWithRetry(() => import("./pages/ModelRatings"));
+const RoleLibrary = lazyWithRetry(() => import("./pages/RoleLibrary"));
+const ToolsLibrary = lazyWithRetry(() => import("./pages/ToolsLibrary"));
+const FlowEditor = lazyWithRetry(() => import("./pages/FlowEditor"));
+const Hydrapedia = lazyWithRetry(() => import("./pages/Hydrapedia"));
+const StaffRoles = lazyWithRetry(() => import("./pages/StaffRoles"));
+const BehavioralPatterns = lazyWithRetry(() => import("./pages/BehavioralPatterns"));
+const Admin = lazyWithRetry(() => import("./pages/Admin"));
+const NotFound = lazyWithRetry(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
 
