@@ -4,7 +4,7 @@ import type { ImperativePanelHandle } from 'react-resizable-panels';
 type NavigatorMode = 'min' | 'max';
 
 const MIN_PANEL_SIZE = 4; // ~60px at typical widths
-const DEFAULT_MAX_SIZE = 25; // default expanded size in %
+const DEFAULT_MAX_SIZE = 30; // default expanded size in %
 
 interface UseNavigatorResizeOptions {
   storageKey: string;

@@ -32,7 +32,7 @@ export default function ModelRatings() {
   const navigate = useNavigate();
   const [activeSection, setActiveSection] = useState<Section>('ratings');
 
-  const nav = useNavigatorResize({ storageKey: 'model-ratings', defaultMaxSize: 20 });
+  const nav = useNavigatorResize({ storageKey: 'model-ratings', defaultMaxSize: 25 });
 
   useEffect(() => {
     if (!authLoading && !user) navigate('/login');
