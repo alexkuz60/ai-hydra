@@ -35,23 +35,25 @@
    return <Cpu className="h-3.5 w-3.5 text-accent-foreground" />;
  }
  
- interface TaskRowProps {
-   task: Task;
-   isSelected: boolean;
-   validModels: string[];
-   onSelect: (task: Task) => void;
-   onConfigure?: (task: Task, e: React.MouseEvent) => void;
-   onDelete?: (task: Task, e: React.MouseEvent) => void;
- }
+interface TaskRowProps {
+  task: Task;
+  isSelected: boolean;
+  validModels: string[];
+  hasUnsavedChanges?: boolean;
+  onSelect: (task: Task) => void;
+  onConfigure?: (task: Task, e: React.MouseEvent) => void;
+  onDelete?: (task: Task, e: React.MouseEvent) => void;
+}
  
- export function TaskRow({
-   task,
-   isSelected,
-   validModels,
-   onSelect,
-   onConfigure,
-   onDelete,
- }: TaskRowProps) {
+export function TaskRow({
+  task,
+  isSelected,
+  validModels,
+  hasUnsavedChanges,
+  onSelect,
+  onConfigure,
+  onDelete,
+}: TaskRowProps) {
    const { t } = useLanguage();
  
    const modelCount = validModels.length;
@@ -78,8 +80,11 @@
        <TableCell>
          <div className="flex items-center justify-between gap-2">
            <div className="flex flex-col gap-1 flex-1 min-w-0">
-             <div className="flex items-center gap-2 flex-wrap">
-               <span className="font-medium truncate">{task.title}</span>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="font-medium truncate">{task.title}</span>
+                {hasUnsavedChanges && (
+                  <span className="w-2 h-2 rounded-full bg-hydra-warning animate-pulse-glow shrink-0" title="Unsaved changes" />
+                )}
                {modelCount > 0 && (
                  <Badge variant="secondary" className="text-[10px]">
                    {modelCount} {modelCount === 1 ? t('tasks.model') : t('tasks.models')}

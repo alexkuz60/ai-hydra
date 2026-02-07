@@ -13,12 +13,14 @@ import { parsePromptNickname } from '@/hooks/usePromptsCRUD';
 interface PromptRowProps {
   prompt: RolePrompt;
   isSelected: boolean;
+  hasUnsavedChanges?: boolean;
   onSelect: (prompt: RolePrompt) => void;
 }
  
  export function PromptRow({
    prompt,
    isSelected,
+   hasUnsavedChanges,
    onSelect,
  }: PromptRowProps) {
    const { t } = useLanguage();
@@ -54,6 +56,9 @@ interface PromptRowProps {
           <div className="flex flex-col gap-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               <span className="font-medium truncate">{parsePromptNickname(prompt.name)}</span>
+              {hasUnsavedChanges && (
+                <span className="w-2 h-2 rounded-full bg-hydra-warning animate-pulse-glow shrink-0" title="Unsaved changes" />
+              )}
               <Badge className={getRoleBadgeColor(prompt.role)}>
                 {t(`role.${prompt.role}`)}
               </Badge>

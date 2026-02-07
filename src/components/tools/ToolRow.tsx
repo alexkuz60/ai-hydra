@@ -33,6 +33,7 @@ interface ToolRowProps {
   tool: ToolItem;
   isSelected: boolean;
   isOwned: boolean;
+  hasUnsavedChanges?: boolean;
   onSelect: (tool: ToolItem) => void;
   onEdit?: (tool: CustomTool, e: React.MouseEvent) => void;
   onDelete?: (tool: CustomTool, e: React.MouseEvent) => void;
@@ -43,6 +44,7 @@ export function ToolRow({
   tool,
   isSelected,
   isOwned,
+  hasUnsavedChanges,
   onSelect,
   onEdit,
   onDelete,
@@ -81,6 +83,9 @@ export function ToolRow({
           <div className="flex flex-col gap-1 flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               <span className="font-medium truncate">{tool.display_name}</span>
+              {hasUnsavedChanges && (
+                <span className="w-2 h-2 rounded-full bg-hydra-warning animate-pulse-glow shrink-0" title="Unsaved changes" />
+              )}
               <code className="text-xs bg-muted px-1.5 py-0.5 rounded font-mono text-muted-foreground">
                 {tool.name}
               </code>

@@ -341,15 +341,18 @@
                        return (
                          <Tooltip key={prompt.id}>
                            <TooltipTrigger asChild>
-                             <div
-                               className={cn(
-                                 "flex items-center justify-center p-2 rounded-lg cursor-pointer transition-colors",
-                                 selectedPrompt?.id === prompt.id ? "bg-primary/10" : "hover:bg-muted/30"
-                               )}
-                               onClick={() => handleSelectPrompt(prompt)}
-                             >
-                               <Icon className={cn("h-5 w-5", config?.color)} />
-                             </div>
+                              <div
+                                className={cn(
+                                  "relative flex items-center justify-center p-2 rounded-lg cursor-pointer transition-colors",
+                                  selectedPrompt?.id === prompt.id ? "bg-primary/10" : "hover:bg-muted/30"
+                                )}
+                                onClick={() => handleSelectPrompt(prompt)}
+                              >
+                                <Icon className={cn("h-5 w-5", config?.color)} />
+                                {selectedPrompt?.id === prompt.id && unsavedChanges.hasUnsavedChanges && (
+                                  <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-hydra-warning animate-pulse-glow" />
+                                )}
+                               </div>
                            </TooltipTrigger>
                            <TooltipContent side="right" className="max-w-[220px]">
                              <div className="space-y-1">
@@ -443,12 +446,13 @@
                                <Table>
                                  <TableBody>
                                    {promptsInGroup.map((prompt) => (
-                                     <PromptRow
-                                       key={prompt.id}
-                                       prompt={prompt}
-                                       isSelected={selectedPrompt?.id === prompt.id}
-                                       onSelect={handleSelectPrompt}
-                                     />
+                                      <PromptRow
+                                        key={prompt.id}
+                                        prompt={prompt}
+                                        isSelected={selectedPrompt?.id === prompt.id}
+                                        hasUnsavedChanges={selectedPrompt?.id === prompt.id && unsavedChanges.hasUnsavedChanges}
+                                        onSelect={handleSelectPrompt}
+                                      />
                                    ))}
                                  </TableBody>
                                </Table>
