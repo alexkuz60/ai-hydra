@@ -333,12 +333,13 @@ export default function Tasks() {
          {/* Main content */}
          <ResizablePanelGroup direction="horizontal" className="flex-1">
            {/* Left panel - List */}
-           <ResizablePanel 
-             defaultSize={nav.panelSize} 
-             minSize={4} 
-             maxSize={60}
-             onResize={nav.onPanelResize}
-           >
+            <ResizablePanel 
+              ref={nav.panelRef}
+              defaultSize={nav.panelSize} 
+              minSize={4} 
+              maxSize={60}
+              onResize={nav.onPanelResize}
+            >
              <div className="h-full flex flex-col hydra-nav-surface">
                <NavigatorHeader
                  title={t('tasks.title')}

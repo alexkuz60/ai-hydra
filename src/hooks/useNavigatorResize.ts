@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
+import type { ImperativePanelHandle } from 'react-resizable-panels';
 
 type NavigatorMode = 'min' | 'max';
 
@@ -20,6 +21,8 @@ interface UseNavigatorResizeReturn {
   mode: NavigatorMode;
   /** Ref to attach to the content container for auto-width measurement */
   contentRef: React.RefObject<HTMLDivElement>;
+  /** Ref to attach to ResizablePanel for imperative resize */
+  panelRef: React.RefObject<ImperativePanelHandle>;
   /** Call when panel is resized manually by user */
   onPanelResize: (size: number) => void;
 }
@@ -51,6 +54,7 @@ export function useNavigatorResize({
   });
 
   const contentRef = useRef<HTMLDivElement>(null!);
+  const panelRef = useRef<ImperativePanelHandle>(null);
 
   // Persist mode
   useEffect(() => {
@@ -67,8 +71,16 @@ export function useNavigatorResize({
   }, [maxSize, storageKey]);
 
   const toggle = useCallback(() => {
-    setMode(prev => prev === 'min' ? 'max' : 'min');
-  }, []);
+    setMode(prev => {
+      const next = prev === 'min' ? 'max' : 'min';
+      // Imperatively resize the panel
+      const targetSize = next === 'min' ? minPanelSize : maxSize;
+      requestAnimationFrame(() => {
+        panelRef.current?.resize(targetSize);
+      });
+      return next;
+    });
+  }, [minPanelSize, maxSize]);
 
   const onPanelResize = useCallback((size: number) => {
     // If user manually resizes while in max mode, remember the size
@@ -85,6 +97,7 @@ export function useNavigatorResize({
     panelSize,
     mode,
     contentRef,
+    panelRef,
     onPanelResize,
   };
 }
