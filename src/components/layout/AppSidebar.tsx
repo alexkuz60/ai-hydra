@@ -124,8 +124,8 @@ export function AppSidebar() {
                     isActive={isActive(item.path)}
                     tooltip={item.label}
                     className={cn(
-                      "hydra-menu-hover transition-all duration-200 active:scale-95 active:opacity-80",
-                      isActive(item.path) && "hydra-menu-active"
+                      "transition-all duration-200 active:scale-95 active:opacity-80 border border-border/40 rounded-md hover:bg-accent/50",
+                      isActive(item.path) && "hydra-menu-active bg-accent/30"
                     )}
                   >
                     <Link to={item.path} className="flex items-center gap-2">
