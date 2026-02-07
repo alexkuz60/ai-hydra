@@ -561,7 +561,10 @@ export default function Profile() {
 
                 {/* Firecrawl */}
                 <div className="space-y-2">
-                  <Label htmlFor="firecrawl">Firecrawl (Web Scraping)</Label>
+                  <Label htmlFor="firecrawl" className="flex items-center gap-2">
+                    {PROVIDER_LOGOS.firecrawl && React.createElement(PROVIDER_LOGOS.firecrawl, { className: cn("h-5 w-5", PROVIDER_COLORS.firecrawl) })}
+                    Firecrawl (Web Scraping)
+                  </Label>
                   <div className="relative">
                     <Input
                       id="firecrawl"
@@ -606,7 +609,10 @@ export default function Profile() {
 
                 {/* Tavily */}
                 <div className="space-y-2">
-                  <Label htmlFor="tavily">{t('profile.tavily')}</Label>
+                  <Label htmlFor="tavily" className="flex items-center gap-2">
+                    {PROVIDER_LOGOS.tavily && React.createElement(PROVIDER_LOGOS.tavily, { className: cn("h-5 w-5", PROVIDER_COLORS.tavily) })}
+                    {t('profile.tavily')}
+                  </Label>
                   <div className="relative">
                     <Input
                       id="tavily"
@@ -633,7 +639,10 @@ export default function Profile() {
 
                 {/* Perplexity */}
                 <div className="space-y-2">
-                  <Label htmlFor="perplexity">{t('profile.perplexity')}</Label>
+                  <Label htmlFor="perplexity" className="flex items-center gap-2">
+                    {PROVIDER_LOGOS.perplexity && React.createElement(PROVIDER_LOGOS.perplexity, { className: cn("h-5 w-5", PROVIDER_COLORS.perplexity) })}
+                    {t('profile.perplexity')}
+                  </Label>
                   <div className="relative">
                     <Input
                       id="perplexity"
