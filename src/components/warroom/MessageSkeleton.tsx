@@ -9,6 +9,7 @@ import { getRoleConfig, type AgentRole } from '@/config/roles';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
 import { PendingResponseState } from '@/types/pending';
+import { ModelNameWithIcon } from '@/components/ui/ModelNameWithIcon';
 
 interface MessageSkeletonProps {
   pending: PendingResponseState;
@@ -55,7 +56,8 @@ export function MessageSkeleton({ pending, timeoutSeconds = 120, onRetry, onDism
           <div className="flex items-center gap-2">
             <Coffee className="h-4 w-4 text-amber-500" />
             <HydraCardTitle className="text-amber-500">
-              {t('skeleton.timedout').replace('{model}', pending.modelName)}
+              {t('skeleton.timedout').replace('{model}', '')}
+              <ModelNameWithIcon modelName={pending.modelName} iconSize="h-3.5 w-3.5" className="ml-1" />
             </HydraCardTitle>
           </div>
         </HydraCardHeader>
@@ -149,7 +151,7 @@ export function MessageSkeleton({ pending, timeoutSeconds = 120, onRetry, onDism
             {t(`role.${pending.role}`)}
           </HydraCardTitle>
           <span className="text-xs text-muted-foreground">
-            ({pending.modelName})
+            (<ModelNameWithIcon modelName={pending.modelName} />)
           </span>
         </div>
         
