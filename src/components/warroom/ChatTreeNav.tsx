@@ -597,8 +597,9 @@ export const ChatTreeNav = memo(function ChatTreeNav({
           responseCount: 0,
         };
       } else {
-        const settings = perModelSettings[msg.model_name || ''];
-        const role = settings?.role || msg.role;
+        // Use the actual message role from DB (not perModelSettings override)
+        // perModelSettings.role is for configuring future requests, not for display
+        const role = msg.role;
         const config = getRoleConfig(role);
 
         const aiResponse: AIResponse = {
