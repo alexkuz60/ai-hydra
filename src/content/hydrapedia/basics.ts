@@ -137,8 +137,6 @@ graph TD
 
 ## 4. Навигация
 
-Боковая панель (сайдбар) обеспечивает доступ ко всем модулям:
-
 - **Панель экспертов** — основной чат с мультиагентным режимом
 - **Библиотека промптов** — шаблоны системных промптов
 - **Инструменты** — пользовательские инструменты
@@ -148,8 +146,6 @@ graph TD
 - **Подиум моделей** — статистика и рейтинги ИИ-моделей
 - **Задачи** — управление задачами
 - **Гидропедия** — эта документация
-
-> [!TIP] Пункты главного меню визуально выделены рамкой и увеличенными отступами, чтобы не теряться среди навигаторов разделов. При нажатии срабатывает тактильный эффект (масштабирование), а при наведении — мягкая подсветка фона.
 
 ## Гостевой доступ
 
@@ -188,8 +184,6 @@ Go to **Profile → API Keys** and add provider keys:
 
 ## 4. Navigation
 
-The sidebar provides access to all modules:
-
 - **Expert Panel** — main chat with multi-agent mode
 - **Prompt Library** — system prompt templates
 - **Tools** — custom tools
@@ -199,8 +193,6 @@ The sidebar provides access to all modules:
 - **Model Podium** — AI model statistics and ratings
 - **Tasks** — task management
 - **Hydrapedia** — this documentation
-
-> [!TIP] Main menu items are visually distinguished with borders and generous padding so they stand out from section navigators. Clicking triggers a tactile press effect (scaling), and hovering adds a soft background highlight.
 
 ## Guest Access
 
