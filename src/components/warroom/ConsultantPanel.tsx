@@ -3,7 +3,8 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { PROVIDER_LOGOS, PROVIDER_COLORS } from '@/components/ui/ProviderLogos';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Badge } from '@/components/ui/badge';
 import { StreamingMessage } from '@/components/warroom/StreamingMessage';
@@ -432,14 +433,57 @@ export function ConsultantPanel({
       <div className="p-2 border-b border-border">
         <Select value={selectedModel} onValueChange={setSelectedModel}>
           <SelectTrigger className="h-8 text-xs">
-            <SelectValue placeholder={t('dchat.selectModel')} />
+            {(() => {
+              const sel = availableModels.find(m => m.id === selectedModel);
+              if (!sel) return <SelectValue placeholder={t('dchat.selectModel')} />;
+              const Logo = PROVIDER_LOGOS[sel.provider];
+              const color = PROVIDER_COLORS[sel.provider] || 'text-muted-foreground';
+              return (
+                <span className="flex items-center gap-1.5 truncate">
+                  {Logo && <Logo className={cn('h-3.5 w-3.5 shrink-0', color)} />}
+                  <span className="truncate">{sel.name}</span>
+                </span>
+              );
+            })()}
           </SelectTrigger>
           <SelectContent>
-            {availableModels.map((model) => (
-              <SelectItem key={model.id} value={model.id} className="text-xs">
-                {model.name}
-              </SelectItem>
-            ))}
+            {(() => {
+              const PROVIDER_LABELS: Record<string, string> = {
+                lovable: 'Lovable AI',
+                openai: 'OpenAI',
+                anthropic: 'Anthropic',
+                gemini: 'Google Gemini',
+                xai: 'xAI (Grok)',
+                openrouter: 'OpenRouter (Free)',
+                groq: 'Groq (Fast)',
+                deepseek: 'DeepSeek',
+              };
+              const ORDER = ['lovable', 'openai', 'anthropic', 'gemini', 'xai', 'groq', 'deepseek', 'openrouter'];
+              const grouped = new Map<string, typeof availableModels>();
+              availableModels.forEach(m => {
+                const list = grouped.get(m.provider) || [];
+                list.push(m);
+                grouped.set(m.provider, list);
+              });
+              return ORDER.filter(p => grouped.has(p)).map(provider => {
+                const models = grouped.get(provider)!;
+                const Logo = PROVIDER_LOGOS[provider];
+                const color = PROVIDER_COLORS[provider] || 'text-muted-foreground';
+                return (
+                  <SelectGroup key={provider}>
+                    <SelectLabel className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                      {Logo && <Logo className={cn('h-3.5 w-3.5', color)} />}
+                      {PROVIDER_LABELS[provider] || provider}
+                    </SelectLabel>
+                    {models.map(model => (
+                      <SelectItem key={model.id} value={model.id} className="text-xs">
+                        {model.name}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                );
+              });
+            })()}
           </SelectContent>
         </Select>
       </div>
