@@ -432,16 +432,16 @@ export function ConsultantPanel({
       {/* Model selector */}
       <div className="p-2 border-b border-border">
         <Select value={selectedModel} onValueChange={setSelectedModel}>
-          <SelectTrigger className="h-8 text-xs">
+          <SelectTrigger className="h-8 text-xs min-w-0">
             {(() => {
               const sel = availableModels.find(m => m.id === selectedModel);
               if (!sel) return <SelectValue placeholder={t('dchat.selectModel')} />;
               const Logo = PROVIDER_LOGOS[sel.provider];
               const color = PROVIDER_COLORS[sel.provider] || 'text-muted-foreground';
               return (
-              <span className="flex items-center gap-1.5 truncate whitespace-nowrap overflow-hidden">
+                <span className="flex items-center gap-1.5 min-w-0 overflow-hidden">
                   {Logo && <Logo className={cn('h-3.5 w-3.5 shrink-0', color)} />}
-                  <span className="truncate">{sel.name}</span>
+                  <span className="truncate whitespace-nowrap">{sel.name}</span>
                 </span>
               );
             })()}
