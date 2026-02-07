@@ -250,11 +250,12 @@ export function ConsultantPanel({
       setIsModeratingContext(true);
       
       const targetMode = selectedMode; // Capture current mode before async
+      const capturedModel = selectedModel; // Capture model to avoid stale closure
       
       sendQuery(
         initialQuery.content,
         'moderator',
-        selectedModel,
+        capturedModel,
         initialQuery.messageId,
         true, // hideUserMessage - don't show aggregated text in D-chat
         currentMemoryContext // Pass memory context
@@ -271,7 +272,7 @@ export function ConsultantPanel({
               sendQuery(
                 moderatorResponse.content,
                 targetMode,
-                selectedModel,
+                capturedModel, // Use captured model, not current selectedModel
                 initialQuery.messageId,
                 true, // hide the forwarded moderator text
                 currentMemoryContext
