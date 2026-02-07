@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { useTheme } from '@/contexts/ThemeContext';
+import { useTheme, type FontSize } from '@/contexts/ThemeContext';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { User, Key, Settings, Loader2, Eye, EyeOff, Check, Moon, Sun, Globe, Shield, BarChart3, Search, AlertTriangle } from 'lucide-react';
+import { User, Key, Settings, Loader2, Eye, EyeOff, Check, Moon, Sun, Globe, Shield, BarChart3, Search, AlertTriangle, Type } from 'lucide-react';
 import { PROVIDER_LOGOS, PROVIDER_COLORS } from '@/components/ui/ProviderLogos';
 import { cn } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
@@ -44,7 +44,7 @@ interface ApiKeys {
 export default function Profile() {
   const { user, loading: authLoading } = useAuth();
   const { t, language, setLanguage, availableLanguages } = useLanguage();
-  const { theme, setTheme } = useTheme();
+  const { theme, setTheme, fontSize, setFontSize } = useTheme();
   const navigate = useNavigate();
 
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -332,6 +332,26 @@ export default function Profile() {
                       ))}
                     </SelectContent>
                   </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2">
+                    <Type className="h-4 w-4" />
+                    {t('profile.fontSize') || 'Размер шрифта'}
+                  </Label>
+                  <Select value={fontSize} onValueChange={(value: FontSize) => setFontSize(value)}>
+                    <SelectTrigger className="w-full max-w-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="normal">{t('profile.fontNormal') || 'Обычный'}</SelectItem>
+                      <SelectItem value="large">{t('profile.fontLarge') || 'Крупный'}</SelectItem>
+                      <SelectItem value="xlarge">{t('profile.fontXLarge') || 'Очень крупный'}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    {t('profile.fontSizeHint') || 'Увеличивает базовый размер текста во всём интерфейсе'}
+                  </p>
                 </div>
 
                 <Button onClick={handleSaveProfile} disabled={saving} className="hydra-glow-sm">

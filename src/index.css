@@ -626,3 +626,14 @@
 .prose-compact .markdown-content hr {
   @apply my-1.5;
 }
+
+/* Font size scaling */
+.hydra-font-normal {
+  font-size: 16px;
+}
+.hydra-font-large {
+  font-size: 18px;
+}
+.hydra-font-xlarge {
+  font-size: 20px;
+}
