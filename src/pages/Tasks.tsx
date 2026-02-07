@@ -31,6 +31,10 @@
  import { TaskDetailsPanel } from '@/components/tasks/TaskDetailsPanel';
  import { UnsavedChangesDialog } from '@/components/ui/unsaved-changes-dialog';
  import { Bot, Sparkles, Cpu } from 'lucide-react';
+ import { useNavigatorResize } from '@/hooks/useNavigatorResize';
+ import { NavigatorHeader } from '@/components/layout/NavigatorHeader';
+ import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
+ import { cn } from '@/lib/utils';
  
  // Filter out deprecated/unavailable model IDs
  const filterValidModels = (modelIds: string[]): string[] => {
@@ -67,10 +71,13 @@ export default function Tasks() {
    // Selected task
    const [selectedTask, setSelectedTask] = useState<Task | null>(null);
    
-   // Unsaved changes protection
+  // Unsaved changes protection
    const hasUnsavedChangesRef = useRef(false);
    const [pendingTask, setPendingTask] = useState<Task | null>(null);
    const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
+
+  // Navigator resize
+  const nav = useNavigatorResize({ storageKey: 'tasks', defaultMaxSize: 40 });
 
   // Model configuration state for new task
   const [selectedModels, setSelectedModels] = useState<string[]>([]);
@@ -326,8 +333,48 @@ export default function Tasks() {
          {/* Main content */}
          <ResizablePanelGroup direction="horizontal" className="flex-1">
            {/* Left panel - List */}
-           <ResizablePanel defaultSize={40} minSize={30} maxSize={60}>
-             <div className="h-full flex flex-col">
+           <ResizablePanel 
+             defaultSize={nav.panelSize} 
+             minSize={4} 
+             maxSize={60}
+             onResize={nav.onPanelResize}
+           >
+             <div className="h-full flex flex-col hydra-nav-surface">
+               <NavigatorHeader
+                 title={t('tasks.title')}
+                 isMinimized={nav.isMinimized}
+                 onToggle={nav.toggle}
+               />
+               {nav.isMinimized ? (
+                 <TooltipProvider delayDuration={200}>
+                   <div className="flex-1 overflow-auto p-1 space-y-1">
+                     {filteredTasks.map((task) => (
+                       <Tooltip key={task.id}>
+                         <TooltipTrigger asChild>
+                           <div
+                             className={cn(
+                               "flex items-center justify-center p-2 rounded-lg cursor-pointer transition-colors",
+                               selectedTask?.id === task.id ? "bg-primary/10" : "hover:bg-muted/30"
+                             )}
+                             onClick={() => handleSelectTask(task)}
+                           >
+                             <MessageSquare className={cn("h-5 w-5", task.is_active ? "text-primary" : "text-muted-foreground")} />
+                           </div>
+                         </TooltipTrigger>
+                         <TooltipContent side="right" className="max-w-[220px]">
+                           <div className="space-y-1">
+                             <span className="font-medium text-sm">{task.title}</span>
+                             <ul className="text-xs text-muted-foreground space-y-0.5">
+                               <li>• {(task.session_config?.selectedModels?.length || 0)} моделей</li>
+                             </ul>
+                           </div>
+                         </TooltipContent>
+                       </Tooltip>
+                     ))}
+                   </div>
+                 </TooltipProvider>
+               ) : (
+               <div className="flex-1 flex flex-col">
                {/* Search and Create */}
                <div className="p-4 border-b space-y-3">
                  <div className="relative">
@@ -418,14 +465,16 @@ export default function Tasks() {
                      </TableBody>
                    </Table>
                  )}
-               </div>
-             </div>
+                </div>
+              </div>
+              )}
+            </div>
            </ResizablePanel>
  
            <ResizableHandle withHandle />
  
            {/* Right panel - Details */}
-           <ResizablePanel defaultSize={60} minSize={40}>
+           <ResizablePanel defaultSize={100 - nav.panelSize} minSize={40} maxSize={96}>
               <TaskDetailsPanel
                 task={selectedTask}
                 onUpdateTitle={handleUpdateTitle}

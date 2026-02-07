@@ -1,7 +1,7 @@
 import React, { useMemo, useState, memo, useCallback, useEffect } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import {
   AlertDialog,
@@ -73,6 +73,7 @@ interface ChatTreeNavProps {
   allCollapsed?: boolean;
   onCollapseAllToggle?: () => void;
   supervisorDisplayName?: string | null;
+  isMinimized?: boolean;
 }
 
 // ==================== Constants ====================
@@ -498,6 +499,7 @@ export const ChatTreeNav = memo(function ChatTreeNav({
   allCollapsed,
   onCollapseAllToggle,
   supervisorDisplayName,
+  isMinimized,
 }: ChatTreeNavProps) {
   const { t } = useLanguage();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -627,6 +629,75 @@ export const ChatTreeNav = memo(function ChatTreeNav({
 
   if (dialogBlocks.length === 0) {
     return <EmptyState />;
+  }
+
+  // Minimized mode - icons only with tooltips
+  if (isMinimized) {
+    return (
+      <div className="flex flex-col h-full">
+        <TooltipProvider delayDuration={200}>
+          <ScrollArea className="flex-1">
+            <div className="p-1 space-y-1">
+              {dialogBlocks.map((block) => {
+                if (block.type === 'supervisor-block') {
+                  return (
+                    <Tooltip key={block.id}>
+                      <TooltipTrigger asChild>
+                        <div
+                          className={cn(
+                            "flex items-center justify-center p-2 rounded-lg cursor-pointer transition-colors",
+                            activeParticipant === block.id ? "bg-hydra-supervisor/20" : "hover:bg-muted/30"
+                          )}
+                          onClick={() => onMessageClick(block.id)}
+                        >
+                          <Crown className="h-5 w-5 text-hydra-supervisor" />
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent side="right" className="max-w-[220px]">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <Crown className="h-4 w-4 text-hydra-supervisor" />
+                            <span className="font-medium text-sm">#{supervisorIndices.get(block.id)}</span>
+                          </div>
+                          <p className="text-xs text-muted-foreground italic">"{block.contentPreview}"</p>
+                          {block.responseCount > 0 && (
+                            <p className="text-xs text-muted-foreground">• {block.responseCount} ответов</p>
+                          )}
+                        </div>
+                      </TooltipContent>
+                    </Tooltip>
+                  );
+                }
+                const ai = block.aiResponses[0];
+                if (!ai) return null;
+                const Icon = ai.icon;
+                return (
+                  <Tooltip key={block.id}>
+                    <TooltipTrigger asChild>
+                      <div
+                        className={cn(
+                          "flex items-center justify-center p-2 rounded-lg cursor-pointer transition-colors",
+                          activeParticipant === ai.id ? "bg-sidebar-accent" : "hover:bg-muted/30"
+                        )}
+                        onClick={() => onMessageClick(ai.id)}
+                      >
+                        <Icon className={cn("h-5 w-5", ai.color)} />
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent side="right" className="max-w-[220px]">
+                      <div className="space-y-1">
+                        <span className="font-medium text-sm">{ai.displayName}</span>
+                        <p className="text-xs text-muted-foreground italic">"{block.contentPreview}"</p>
+                      </div>
+                    </TooltipContent>
+                  </Tooltip>
+                );
+              })}
+            </div>
+          </ScrollArea>
+        </TooltipProvider>
+      </div>
+    );
   }
 
   return (

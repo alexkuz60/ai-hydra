@@ -36,6 +36,8 @@ import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/comp
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
  import { useInputAreaSize } from '@/hooks/useInputAreaSize';
+import { useNavigatorResize } from '@/hooks/useNavigatorResize';
+import { NavigatorHeader } from '@/components/layout/NavigatorHeader';
 
 export default function ExpertPanel() {
   const { user, loading: authLoading } = useAuth();
@@ -66,8 +68,11 @@ export default function ExpertPanel() {
   // Timeout setting (10-240 seconds, default 120)
   const [timeoutSeconds, setTimeoutSeconds] = useState(120);
   
-  // D-Chat panel width persistence
-  const { width: consultantPanelWidth, saveWidth: saveConsultantPanelWidth, isCollapsed: isDChatCollapsed } = useConsultantPanelWidth();
+   // D-Chat panel width persistence
+   const { width: consultantPanelWidth, saveWidth: saveConsultantPanelWidth, isCollapsed: isDChatCollapsed } = useConsultantPanelWidth();
+
+   // Navigator resize
+   const nav = useNavigatorResize({ storageKey: 'expert-panel', defaultMaxSize: 20, minPanelSize: 4 });
 
   // D-Chat expand/collapse handlers using imperative API
   const handleDChatExpand = useCallback(() => {
@@ -686,25 +691,36 @@ ${content.slice(0, 2000)}${content.length > 2000 ? '\n...(сокращено)' :
         <ResizablePanelGroup direction="horizontal">
           {/* Navigation Panel - resizable */}
           <ResizablePanel 
-            defaultSize={20} 
-            minSize={15} 
+            defaultSize={nav.panelSize} 
+            minSize={4} 
             maxSize={35}
-            className="bg-sidebar"
+            className="hydra-nav-surface"
+            onResize={nav.onPanelResize}
           >
-            <ChatTreeNav
-              messages={messages}
-              perModelSettings={perModelSettings}
-              userDisplayInfo={userDisplayInfo}
-              onMessageClick={handleMessageClick}
-              onMessageDoubleClick={handleMessageDoubleClick}
-              onDeleteMessageGroup={handleDeleteMessageGroup}
-              onSendToDChat={handleSendToDChat}
-              activeParticipant={activeParticipant}
-              filteredParticipant={filteredParticipant}
-              allCollapsed={allCollapsed}
-              onCollapseAllToggle={handleCollapseAllToggle}
-              supervisorDisplayName={profile?.displayName}
-            />
+            <div className="h-full flex flex-col">
+              <NavigatorHeader
+                title={t('chat.participants')}
+                isMinimized={nav.isMinimized}
+                onToggle={nav.toggle}
+              />
+              <div className="flex-1 overflow-hidden">
+                <ChatTreeNav
+                  messages={messages}
+                  perModelSettings={perModelSettings}
+                  userDisplayInfo={userDisplayInfo}
+                  onMessageClick={handleMessageClick}
+                  onMessageDoubleClick={handleMessageDoubleClick}
+                  onDeleteMessageGroup={handleDeleteMessageGroup}
+                  onSendToDChat={handleSendToDChat}
+                  activeParticipant={activeParticipant}
+                  filteredParticipant={filteredParticipant}
+                  allCollapsed={allCollapsed}
+                  onCollapseAllToggle={handleCollapseAllToggle}
+                  supervisorDisplayName={profile?.displayName}
+                  isMinimized={nav.isMinimized}
+                />
+              </div>
+            </div>
           </ResizablePanel>
 
           <ResizableHandle withHandle />

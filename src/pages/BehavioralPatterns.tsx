@@ -37,6 +37,10 @@ import type { TaskBlueprint, RoleBehavior } from '@/types/patterns';
 import { useUserRoles } from '@/hooks/useUserRoles';
 import { useUnsavedChanges } from '@/hooks/useUnsavedChanges';
 import { UnsavedChangesDialog } from '@/components/ui/unsaved-changes-dialog';
+import { useNavigatorResize } from '@/hooks/useNavigatorResize';
+import { NavigatorHeader } from '@/components/layout/NavigatorHeader';
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
+import { cn } from '@/lib/utils';
 
 type SelectedPattern = TaskBlueprint | RoleBehavior | null;
 
@@ -102,6 +106,9 @@ const BehavioralPatterns = () => {
   // Delete confirmation
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [patternToDelete, setPatternToDelete] = useState<{ id: string; name: string; type: 'blueprint' | 'behavior' } | null>(null);
+
+  // Navigator resize
+  const nav = useNavigatorResize({ storageKey: 'behavioral-patterns', defaultMaxSize: 35 });
 
   const selectedId = useMemo(() => {
     if (!selectedPattern) return null;
@@ -338,8 +345,83 @@ const BehavioralPatterns = () => {
         </div>
 
         <ResizablePanelGroup direction="horizontal" className="flex-1">
-          <ResizablePanel defaultSize={35} minSize={20} maxSize={50}>
-            <div className="h-full overflow-auto">
+          <ResizablePanel 
+            defaultSize={nav.panelSize} 
+            minSize={4} 
+            maxSize={50}
+            onResize={nav.onPanelResize}
+          >
+            <div className="h-full flex flex-col hydra-nav-surface">
+              <NavigatorHeader
+                title={t('nav.behavioralPatterns')}
+                isMinimized={nav.isMinimized}
+                onToggle={nav.toggle}
+              />
+              <div className="flex-1 overflow-auto">
+              {nav.isMinimized ? (
+                <TooltipProvider delayDuration={200}>
+                  <div className="p-1 space-y-1">
+                    {blueprints.map((pattern) => (
+                      <Tooltip key={pattern.id}>
+                        <TooltipTrigger asChild>
+                          <div
+                            className={cn(
+                              "flex items-center justify-center p-2 rounded-lg cursor-pointer transition-colors",
+                              selectedId === pattern.id ? "bg-primary/10" : "hover:bg-muted/30"
+                            )}
+                            onClick={() => handleSelectPattern(pattern)}
+                          >
+                            <Target className="h-5 w-5 text-primary" />
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent side="right" className="max-w-[220px]">
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2">
+                              <Target className="h-4 w-4 text-primary" />
+                              <span className="font-medium text-sm">{pattern.name}</span>
+                            </div>
+                            <ul className="text-xs text-muted-foreground space-y-0.5">
+                              <li>• {t(`patterns.category.${pattern.category}`)}</li>
+                              <li>• {pattern.stages?.length || 0} {t('patterns.stages')}</li>
+                            </ul>
+                          </div>
+                        </TooltipContent>
+                      </Tooltip>
+                    ))}
+                    {behaviors.map((pattern) => {
+                      const config = ROLE_CONFIG[pattern.role];
+                      const Icon = config?.icon || Sparkles;
+                      return (
+                        <Tooltip key={pattern.id}>
+                          <TooltipTrigger asChild>
+                            <div
+                              className={cn(
+                                "flex items-center justify-center p-2 rounded-lg cursor-pointer transition-colors",
+                                selectedId === pattern.id ? "bg-primary/10" : "hover:bg-muted/30"
+                              )}
+                              onClick={() => handleSelectPattern(pattern)}
+                            >
+                              <Icon className={cn("h-5 w-5", config?.color)} />
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent side="right" className="max-w-[220px]">
+                            <div className="space-y-1">
+                              <div className="flex items-center gap-2">
+                                <Icon className={cn("h-4 w-4", config?.color)} />
+                                <span className="font-medium text-sm">{t(config?.label || pattern.role)}</span>
+                              </div>
+                              <ul className="text-xs text-muted-foreground space-y-0.5">
+                                <li>• {config?.isTechnicalStaff ? t('patterns.technicalGroup') : t('patterns.expertGroup')}</li>
+                                <li>• {pattern.role}</li>
+                              </ul>
+                            </div>
+                          </TooltipContent>
+                        </Tooltip>
+                      );
+                    })}
+                  </div>
+                </TooltipProvider>
+              ) : (
               <Table>
                 <TableHeader>
                   <TableRow className="bg-muted/50">
@@ -484,12 +566,14 @@ const BehavioralPatterns = () => {
                   ))}
                 </TableBody>
               </Table>
+              )}
+              </div>
             </div>
           </ResizablePanel>
 
           <ResizableHandle withHandle />
 
-          <ResizablePanel defaultSize={65} minSize={50} maxSize={80}>
+          <ResizablePanel defaultSize={100 - nav.panelSize} minSize={50} maxSize={96}>
             <div className="h-full border-l border-border bg-card">
               <PatternDetailsPanel 
                 selectedPattern={selectedPattern} 
