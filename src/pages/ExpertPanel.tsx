@@ -587,12 +587,8 @@ export default function ExpertPanel() {
   // D-Chat: Copy response to main chat
   const handleCopyToMainChat = useCallback(async (content: string, sourceMessageId: string | null, modelName?: string | null, role?: string | null) => {
     await copyConsultantResponse(content, sourceMessageId, modelName, role);
-    // Refresh messages to ensure copied response appears (realtime may have race conditions)
-    if (currentTask?.id) {
-      setTimeout(() => fetchMessages(currentTask.id), 300);
-    }
     toast.success(t('dchat.copiedToChat'));
-  }, [copyConsultantResponse, t, currentTask?.id, fetchMessages]);
+  }, [copyConsultantResponse, t]);
 
   // D-Chat: Clear initial query after it's been used
   const handleClearDChatContext = useCallback(() => {

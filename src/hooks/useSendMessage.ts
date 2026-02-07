@@ -375,7 +375,7 @@ export function useSendMessage({
     }
   }, [userId, sessionId, perModelSettings, attachedFiles, uploadFiles, callOrchestrator]);
 
-  // Copy consultant response to main chat - insert after the block of AI responses
+  // Copy consultant response to main chat - always append at the end
   const copyConsultantResponse = useCallback(async (
     content: string,
     sourceMessageId: string | null,
@@ -388,38 +388,6 @@ export function useSendMessage({
     const currentUserId = userId;
 
     try {
-      let insertTimestamp: string | undefined;
-
-      // If we have a source message ID, find the right position to insert
-      if (sourceMessageId) {
-        // Fetch all messages for this session to find the correct position
-        const { data: allMessages } = await supabase
-          .from('messages')
-          .select('id, role, created_at')
-          .eq('session_id', currentSessionId)
-          .order('created_at', { ascending: true });
-
-        if (allMessages) {
-          // Find the source (supervisor) message index
-          const sourceIndex = allMessages.findIndex(m => m.id === sourceMessageId);
-          
-          if (sourceIndex !== -1) {
-            // Find the last AI response in this block (before next user message)
-            let lastAiResponseIndex = sourceIndex;
-            for (let i = sourceIndex + 1; i < allMessages.length; i++) {
-              if (allMessages[i].role === 'user') break;
-              lastAiResponseIndex = i;
-            }
-
-            // Set timestamp just after the last AI response (add 1 millisecond)
-            const lastAiResponse = allMessages[lastAiResponseIndex];
-            const lastTimestamp = new Date(lastAiResponse.created_at);
-            lastTimestamp.setMilliseconds(lastTimestamp.getMilliseconds() + 1);
-            insertTimestamp = lastTimestamp.toISOString();
-          }
-        }
-      }
-
       const metadata: Json | undefined = sourceMessageId 
         ? { source_message_id: sourceMessageId } as unknown as Json
         : undefined;
@@ -434,21 +402,14 @@ export function useSendMessage({
       const mapped = role ? (ROLE_MAP[role] || role) : 'consultant';
       const messageRole = validRoles.includes(mapped) ? mapped : 'consultant';
 
-      const insertData: any = {
+      const { error } = await supabase.from('messages').insert([{
         session_id: currentSessionId,
         user_id: currentUserId,
-        role: messageRole,
+        role: messageRole as any,
         content,
         model_name: modelName || null,
         metadata,
-      };
-
-      // Set custom created_at to position the message correctly
-      if (insertTimestamp) {
-        insertData.created_at = insertTimestamp;
-      }
-
-      const { error } = await supabase.from('messages').insert(insertData);
+      }]);
 
       if (error) throw error;
     } catch (error: any) {
