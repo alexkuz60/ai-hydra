@@ -691,6 +691,7 @@ ${content.slice(0, 2000)}${content.length > 2000 ? '\n...(сокращено)' :
         <ResizablePanelGroup direction="horizontal">
           {/* Navigation Panel - resizable */}
           <ResizablePanel 
+            ref={nav.panelRef}
             defaultSize={nav.panelSize} 
             minSize={4} 
             maxSize={35}

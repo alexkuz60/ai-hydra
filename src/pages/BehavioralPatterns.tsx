@@ -346,6 +346,7 @@ const BehavioralPatterns = () => {
 
         <ResizablePanelGroup direction="horizontal" className="flex-1">
           <ResizablePanel 
+            ref={nav.panelRef}
             defaultSize={nav.panelSize} 
             minSize={4} 
             maxSize={50}

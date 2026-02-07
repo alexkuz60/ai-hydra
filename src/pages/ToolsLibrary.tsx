@@ -407,6 +407,7 @@ export default function ToolsLibrary() {
         <ResizablePanelGroup direction="horizontal" className="flex-1">
           {/* Left panel - List */}
           <ResizablePanel 
+            ref={nav.panelRef}
             defaultSize={nav.panelSize} 
             minSize={4} 
             maxSize={60}
