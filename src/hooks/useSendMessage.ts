@@ -67,7 +67,7 @@ interface UseSendMessageReturn {
   sendMessage: (messageContent: string) => Promise<void>;
   sendUserMessageOnly: (messageContent: string) => Promise<void>;
   sendToConsultant: (messageContent: string, consultantId: string) => Promise<void>;
-  copyConsultantResponse: (content: string, sourceMessageId: string | null) => Promise<void>;
+  copyConsultantResponse: (content: string, sourceMessageId: string | null, modelName?: string | null) => Promise<void>;
   retrySingleModel: (modelId: string, messageContent: string) => Promise<void>;
 }
 
@@ -378,7 +378,8 @@ export function useSendMessage({
   // Copy consultant response to main chat - insert after the block of AI responses
   const copyConsultantResponse = useCallback(async (
     content: string,
-    sourceMessageId: string | null
+    sourceMessageId: string | null,
+    modelName?: string | null
   ) => {
     if (!userId || !sessionId || !content.trim()) return;
 
@@ -427,6 +428,7 @@ export function useSendMessage({
         user_id: currentUserId,
         role: 'consultant' as const,
         content,
+        model_name: modelName || null,
         metadata,
       };
 

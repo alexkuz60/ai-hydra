@@ -585,8 +585,8 @@ export default function ExpertPanel() {
   }, [handleDChatExpand]);
 
   // D-Chat: Copy response to main chat
-  const handleCopyToMainChat = useCallback(async (content: string, sourceMessageId: string | null) => {
-    await copyConsultantResponse(content, sourceMessageId);
+  const handleCopyToMainChat = useCallback(async (content: string, sourceMessageId: string | null, modelName?: string | null) => {
+    await copyConsultantResponse(content, sourceMessageId, modelName);
     toast.success(t('dchat.copiedToChat'));
   }, [copyConsultantResponse, t]);
 
