@@ -90,7 +90,7 @@ export function ModelPortfolio() {
 
   return (
     <ScrollArea className="h-full">
-      <div className="p-4 space-y-6 max-w-3xl mx-auto">
+      <div className="p-4 space-y-6">
         {/* Summary */}
         {!loading && (
           <div className="grid grid-cols-2 gap-3">
