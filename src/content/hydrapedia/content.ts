@@ -194,7 +194,19 @@ Each tool can be tested directly in the interface:
 |-----|---------------------|---------------|
 | Системные | 🔒 Только дублирование | ✏️ Прямое редактирование |
 | Публичные (\`is_shared\`) | 👁 Просмотр + Copy | ✏️ Полный доступ |
-| Личные | ✏️ Полный доступ | ✏️ Полный доступ |`,
+| Личные | ✏️ Полный доступ | ✏️ Полный доступ |
+
+## Human-in-the-Loop
+
+Стратегические шаблоны поддерживают **контрольные точки** (checkpoints) — моменты, где выполнение приостанавливается и ожидает подтверждения Супервизора.
+
+> [!TIP] ProposalApprovalBlock
+> При достижении контрольной точки отображается блок утверждения с кнопками «Принять» / «Отклонить». Супервизор может добавить комментарий при отклонении.
+
+## UX-словари
+
+> [!EXAMPLE] Упрощение создания паттернов
+> Вместо свободного текстового ввода используются комбо-боксы с локализованными (RU/EN) мини-словарями для триггеров, поведений и предпочтений формата. Вариант «Другое...» позволяет задать произвольное значение. Все записи снабжены тултипами с описаниями.`,
       en: `# Behavioral Patterns
 
 Behavioral Patterns — a system for configuring work strategies and AI role behavior.
@@ -227,7 +239,19 @@ Configuring specific role behavior:
 |------|-------------|---------------|
 | System | 🔒 Duplicate only | ✏️ Direct editing |
 | Public (\`is_shared\`) | 👁 View + Copy | ✏️ Full access |
-| Personal | ✏️ Full access | ✏️ Full access |`,
+| Personal | ✏️ Full access | ✏️ Full access |
+
+## Human-in-the-Loop
+
+Strategic templates support **checkpoints** — moments where execution pauses and awaits Supervisor confirmation.
+
+> [!TIP] ProposalApprovalBlock
+> When a checkpoint is reached, an approval block is displayed with "Accept" / "Reject" buttons. The Supervisor can add a comment when rejecting.
+
+## UX Dictionaries
+
+> [!EXAMPLE] Simplified Pattern Creation
+> Instead of free-text input, combo-boxes with localized (RU/EN) mini-dictionaries are used for triggers, behaviors, and format preferences. An "Other..." option allows custom values. All entries include tooltip descriptions.`,
     },
   },
 ];

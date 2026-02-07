@@ -8,7 +8,24 @@ export const featuresSections: HydrapediaSection[] = [
     content: {
       ru: `# Подиум ИИ-моделей
 
-Подиум моделей — система рейтинга и статистики использования ИИ-моделей в ваших сессиях.
+Подиум моделей — система рейтинга, портфолио и статистики использования ИИ-моделей. Интерфейс построен по принципу мастер-деталь с ResizablePanel и поддерживает режимы навигатора Min/Max.
+
+## Три раздела
+
+### Портфолио ИИ-моделей
+
+Список всех доступных моделей с индикацией провайдеров (OpenAI, Anthropic, Google, DeepSeek и др.).
+
+> [!TIP] Индикатор доступности
+> Модели и провайдеры помечаются зелёной галочкой/точкой при наличии настроенного API-ключа (BYOK) или прав администратора. При отсутствии ключа элементы приглушаются (opacity-50).
+
+### Конкурс интеллект-красоты
+
+Модуль для сравнительного тестирования моделей (в разработке).
+
+### Рейтинги ИИ-моделей
+
+Статистика и аналитика использования моделей с визуализациями.
 
 ## Метрики
 
@@ -19,10 +36,10 @@ export const featuresSections: HydrapediaSection[] = [
 
 ## Визуализация
 
-- Гистограммы по моделям
-- Сравнительные графики
-- Топ моделей по различным критериям
-- История использования за период
+- **Bar/Pie графики** для топ-10 моделей
+- Фильтрация по периодам (неделя, месяц, всё время)
+- Высококонтрастная палетра, адаптированная к тёмной теме
+- Данные объединяют оценки пользователей и автоматические оценки Арбитра
 
 ## Как оценивать
 
@@ -33,7 +50,24 @@ export const featuresSections: HydrapediaSection[] = [
 Эти оценки накапливаются и формируют персональный рейтинг моделей.`,
       en: `# AI Model Podium
 
-The Model Podium — a rating and usage statistics system for AI models in your sessions.
+The Model Podium — a rating, portfolio, and usage statistics system for AI models. The interface follows the master-detail pattern with ResizablePanel and supports Min/Max navigator modes.
+
+## Three Sections
+
+### AI Model Portfolio
+
+A list of all available models with provider indicators (OpenAI, Anthropic, Google, DeepSeek, etc.).
+
+> [!TIP] Availability Indicator
+> Models and providers are marked with a green checkmark/dot when a configured API key (BYOK) or admin rights are present. Without a key, elements are dimmed (opacity-50).
+
+### Intelligence Beauty Contest
+
+A module for comparative model testing (in development).
+
+### AI Model Ratings
+
+Usage statistics and analytics with visualizations.
 
 ## Metrics
 
@@ -44,10 +78,10 @@ The Model Podium — a rating and usage statistics system for AI models in your 
 
 ## Visualization
 
-- Histograms by model
-- Comparative charts
-- Top models by various criteria
-- Usage history for a period
+- **Bar/Pie charts** for top-10 models
+- Filtering by period (week, month, all time)
+- High-contrast palette adapted for dark theme
+- Data combines user ratings and automatic Arbiter evaluations
 
 ## How to Rate
 
@@ -137,6 +171,13 @@ AI-Hydra включает 12 специализированных ИИ-роле�
 - Просматривать ролевую память
 - Настраивать иерархию ролей
 
+## Табель о рангах
+
+Иерархия ролей определяет приоритет и порядок взаимодействия между экспертами. Настраивается через табы взаимодействий в модуле «Штат».
+
+> [!WARNING] Автоматическая валидация конфликтов
+> Система автоматически обнаруживает противоречия в иерархии (циклические зависимости, конфликтующие приоритеты) и предупреждает администратора перед сохранением.
+
 \`\`\`
 :::playground:::
 \`\`\``,
@@ -179,6 +220,13 @@ The "Staff" module allows:
 - Viewing role memory
 - Configuring role hierarchy
 
+## Rank Table
+
+Role hierarchy determines priority and interaction order between experts. Configured via interaction tabs in the "Staff" module.
+
+> [!WARNING] Automatic Conflict Validation
+> The system automatically detects hierarchy contradictions (circular dependencies, conflicting priorities) and warns the administrator before saving.
+
 \`\`\`
 :::playground:::
 \`\`\``,
@@ -220,7 +268,21 @@ The "Staff" module allows:
 Диалог управления памятью позволяет:
 - Просматривать все сохранённые фрагменты
 - Удалять неактуальные
-- Фильтровать по типу`,
+- Фильтровать по типу чанка + специальный фильтр «Дубликаты»
+
+### Обнаружение дубликатов
+
+Система автоматически выявляет дублирующиеся фрагменты через нормализацию текста. При активации фильтра «Дубликаты» появляется кнопка массового удаления.
+
+> [!TIP] Логика удаления дубликатов
+> При массовом удалении сохраняется самый старый фрагмент в группе (по \`created_at\`), а остальные копии удаляются.
+
+> [!CAUTION] Двухэтапное подтверждение
+> Кнопки «Очистить всё» и «Удалить дубликаты» требуют повторного нажатия для подтверждения. Кнопка «Отмена» позволяет сбросить состояние подтверждения.
+
+### Семантический поиск
+
+Поиск фрагментов памяти осуществляется через векторные эмбеддинги — введённый запрос сравнивается с сохранёнными фрагментами по косинусному сходству.`,
       en: `# Session Memory
 
 Session memory preserves key moments of dialogue for contextual enrichment of future queries.
@@ -252,7 +314,21 @@ The application header contains the **MemoryControls** indicator:
 The memory management dialog allows:
 - Viewing all saved fragments
 - Deleting outdated ones
-- Filtering by type`,
+- Filtering by chunk type + special "Duplicates" filter
+
+### Duplicate Detection
+
+The system automatically identifies duplicate fragments via text normalization. When the "Duplicates" filter is active, a mass deletion button appears.
+
+> [!TIP] Duplicate Deletion Logic
+> During mass deletion, the oldest fragment in each group (by \`created_at\`) is preserved, and remaining copies are removed.
+
+> [!CAUTION] Two-Step Confirmation
+> "Clear All" and "Delete Duplicates" buttons require a second press to confirm. A "Cancel" button allows resetting the confirmation state.
+
+### Semantic Search
+
+Memory fragment search is performed via vector embeddings — the entered query is compared against saved fragments by cosine similarity.`,
     },
   },
   {
