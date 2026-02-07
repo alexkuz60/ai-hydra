@@ -124,7 +124,7 @@ export function AppSidebar() {
                     isActive={isActive(item.path)}
                     tooltip={item.label}
                     className={cn(
-                      "hydra-menu-hover transition-all duration-200",
+                      "hydra-menu-hover transition-all duration-200 active:scale-95 active:opacity-80",
                       isActive(item.path) && "hydra-menu-active"
                     )}
                   >
