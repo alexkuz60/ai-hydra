@@ -58,7 +58,29 @@ export const chatSections: HydrapediaSection[] = [
 
 - \`Enter\` — отправить
 - \`Shift+Enter\` — новая строка
-- \`Ctrl+K\` — открыть библиотеку промптов`,
+- \`Ctrl+K\` — открыть библиотеку промптов
+
+## Интерактивные чеклисты
+
+Кнопка \`ListChecks\` в тулбаре ввода активирует режим интерактивных чеклистов. Ответы ИИ наследуют этот режим — чекбоксы (\`- [ ]\`) становятся кликабельными.
+
+> [!TIP] Сохранение состояния
+> Состояние каждого пункта (индекс + статус) сохраняется в \`metadata.checklist_state\` и синхронизируется с базой данных.
+
+## Персонализация
+
+Вместо статичного «Супервизор» в интерфейсе отображается имя пользователя из профиля (\`displayName\`):
+- Заголовки сообщений
+- Навигационное дерево
+- Пожелания супервизора («Пожелания от [Имя]»)
+- Тултипы области ввода
+
+## Кэш недоступных моделей
+
+При получении ошибок 404 (нет эндпоинтов) или 402 (лимиты) модель автоматически скрывается из списков выбора на 1 час.
+
+> [!TIP] Сброс кэша
+> В селекторе моделей предусмотрена кнопка «Сбросить кэш недоступных» для ручного восстановления полного списка.`,
       en: `# Expert Panel
 
 The Expert Panel is AI-Hydra's central module for multi-agent discussions. Multiple AI roles discuss your query in parallel, providing multifaceted analysis.
@@ -111,7 +133,29 @@ When sending to all — the request is processed by the orchestrator, which dist
 
 - \`Enter\` — send
 - \`Shift+Enter\` — new line
-- \`Ctrl+K\` — open prompt library`,
+- \`Ctrl+K\` — open prompt library
+
+## Interactive Checklists
+
+The \`ListChecks\` button in the input toolbar activates interactive checklist mode. AI responses inherit this mode — checkboxes (\`- [ ]\`) become clickable.
+
+> [!TIP] State Persistence
+> Each item's state (index + status) is saved in \`metadata.checklist_state\` and synchronized with the database.
+
+## Personalization
+
+Instead of the static "Supervisor" label, the user's profile name (\`displayName\`) is displayed across the interface:
+- Message headers
+- Navigation tree
+- Supervisor wishes ("Wishes from [Name]")
+- Input area tooltips
+
+## Unavailable Model Cache
+
+When 404 (no endpoints) or 402 (limits) errors are received, the model is automatically hidden from selection lists for 1 hour.
+
+> [!TIP] Cache Reset
+> The model selector includes a "Reset unavailable cache" button for manually restoring the full list.`,
     },
   },
   {
@@ -210,7 +254,15 @@ D-Chat (Directed Chat) — режим прямого общения с конк�
 - \`@toolsmith\` — создание и тестирование инструментов
 - \`@webhunter\` — поиск информации в интернете
 
-Технические роли имеют доступ к специализированным инструментам и ролевой памяти.`,
+Технические роли имеют доступ к специализированным инструментам и ролевой памяти.
+
+## Автоматический чейнинг
+
+D-Chat поддерживает цепочки анализа через Модератора — последовательная обработка запроса несколькими ролями в рамках одного потока.
+
+## Перенос ответов
+
+Ответы из D-Chat переносятся в основной чат с сохранением оригинальной роли и атрибуции модели.`,
       en: `# D-Chat Moderator
 
 D-Chat (Directed Chat) — a mode for direct communication with a specific consultant. Unlike general queries, D-Chat sends a message only to the selected role.
@@ -243,7 +295,15 @@ Special function for technical staff:
 - \`@toolsmith\` — tool creation and testing
 - \`@webhunter\` — internet information search
 
-Technical roles have access to specialized tools and role memory.`,
+Technical roles have access to specialized tools and role memory.
+
+## Automatic Chaining
+
+D-Chat supports analysis chains through the Moderator — sequential processing of a query by multiple roles within a single conversation thread.
+
+## Response Porting
+
+Responses from D-Chat can be ported to the main chat while preserving the original role and model attribution.`,
     },
   },
 ];
