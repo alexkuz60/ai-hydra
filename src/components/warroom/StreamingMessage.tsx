@@ -31,7 +31,7 @@ interface StreamingMessageProps {
   modelName: string | null;
   createdAt: string;
   isStreaming?: boolean;
-  onCopyToMainChat?: (content: string, sourceMessageId: string | null) => void;
+  onCopyToMainChat?: (content: string, sourceMessageId: string | null, modelName?: string | null) => void;
   sourceMessageId?: string | null;
   onStopStreaming?: () => void;
 }
@@ -111,7 +111,7 @@ export function StreamingMessage({
             variant="ghost"
             size="sm"
             className="h-6 text-xs"
-            onClick={() => onCopyToMainChat(content, sourceMessageId || null)}
+            onClick={() => onCopyToMainChat(content, sourceMessageId || null, modelName)}
           >
             <Copy className="h-3 w-3 mr-1" />
             {t('dchat.copyToChat')}

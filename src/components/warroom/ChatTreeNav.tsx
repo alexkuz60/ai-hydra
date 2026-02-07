@@ -217,9 +217,10 @@ const AIResponseNode = memo(function AIResponseNode({
       {/* Tree connector line */}
       <div className="absolute -left-2 top-0 bottom-0 w-px bg-border" />
       <Icon className={cn("h-4 w-4 shrink-0", ai.color)} />
-      <span className="flex-1 text-sm truncate text-sidebar-foreground">
+      <span className="text-sm truncate text-sidebar-foreground">
         {ai.displayName}
       </span>
+      <ModelNameWithIcon modelName={ai.modelName} className="flex-1 text-xs text-muted-foreground" iconSize="h-3 w-3" />
     </div>
   );
 });

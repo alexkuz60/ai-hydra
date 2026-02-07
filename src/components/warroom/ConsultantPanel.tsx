@@ -56,7 +56,7 @@ interface ConsultantPanelProps {
   } | null;
   onClearInitialQuery?: () => void;
   // Copy to main chat
-  onCopyToMainChat?: (content: string, sourceMessageId: string | null) => void;
+  onCopyToMainChat?: (content: string, sourceMessageId: string | null, modelName?: string | null) => void;
 }
 
 interface ModeConfig {
@@ -439,7 +439,7 @@ export function ConsultantPanel({
               const Logo = PROVIDER_LOGOS[sel.provider];
               const color = PROVIDER_COLORS[sel.provider] || 'text-muted-foreground';
               return (
-                <span className="flex items-center gap-1.5 truncate">
+              <span className="flex items-center gap-1.5 truncate whitespace-nowrap overflow-hidden">
                   {Logo && <Logo className={cn('h-3.5 w-3.5 shrink-0', color)} />}
                   <span className="truncate">{sel.name}</span>
                 </span>
@@ -471,7 +471,7 @@ export function ConsultantPanel({
                 const color = PROVIDER_COLORS[provider] || 'text-muted-foreground';
                 return (
                   <SelectGroup key={provider}>
-                    <SelectLabel className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <SelectLabel className="flex items-center gap-1.5 text-xs text-muted-foreground bg-muted/50 rounded-sm mx-1 px-2 py-1">
                       {Logo && <Logo className={cn('h-3.5 w-3.5', color)} />}
                       {PROVIDER_LABELS[provider] || provider}
                     </SelectLabel>
