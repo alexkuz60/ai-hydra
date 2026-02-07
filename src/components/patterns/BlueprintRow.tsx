@@ -11,6 +11,7 @@ import type { TaskBlueprintWithMeta } from '@/hooks/usePatterns';
 interface BlueprintRowProps {
   pattern: TaskBlueprintWithMeta;
   isSelected: boolean;
+  hasUnsavedChanges?: boolean;
   onSelect: (pattern: TaskBlueprintWithMeta) => void;
   onEdit: (pattern: TaskBlueprintWithMeta, e: React.MouseEvent) => void;
   onDuplicate: (pattern: TaskBlueprintWithMeta, e: React.MouseEvent) => void;
@@ -27,6 +28,7 @@ const categoryColors: Record<string, string> = {
 export function BlueprintRow({
   pattern,
   isSelected,
+  hasUnsavedChanges,
   onSelect,
   onEdit,
   onDuplicate,
@@ -52,6 +54,9 @@ export function BlueprintRow({
           <div className="flex flex-col gap-1 flex-1 min-w-0">
             <div className="flex items-center gap-2">
               <span className="font-medium truncate">{pattern.name}</span>
+              {hasUnsavedChanges && (
+                <span className="w-2 h-2 rounded-full bg-hydra-warning animate-pulse-glow shrink-0" title="Unsaved changes" />
+              )}
               {pattern.meta.isSystem && (
                 <Tooltip>
                   <TooltipTrigger asChild>

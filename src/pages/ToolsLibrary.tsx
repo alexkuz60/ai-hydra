@@ -428,15 +428,18 @@ export default function ToolsLibrary() {
                       return (
                         <Tooltip key={tool.id}>
                           <TooltipTrigger asChild>
-                            <div
-                              className={cn(
-                                "flex items-center justify-center p-2 rounded-lg cursor-pointer transition-colors",
-                                selectedTool?.id === tool.id ? "bg-primary/10" : "hover:bg-muted/30"
-                              )}
-                              onClick={() => handleSelectTool(tool)}
-                            >
-                              <CategoryIcon className={cn("h-5 w-5", isSys ? "text-muted-foreground" : "text-primary")} />
-                            </div>
+                             <div
+                               className={cn(
+                                 "relative flex items-center justify-center p-2 rounded-lg cursor-pointer transition-colors",
+                                 selectedTool?.id === tool.id ? "bg-primary/10" : "hover:bg-muted/30"
+                               )}
+                               onClick={() => handleSelectTool(tool)}
+                             >
+                               <CategoryIcon className={cn("h-5 w-5", isSys ? "text-muted-foreground" : "text-primary")} />
+                               {selectedTool?.id === tool.id && unsavedChanges.hasUnsavedChanges && (
+                                 <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-hydra-warning animate-pulse-glow" />
+                               )}
+                              </div>
                           </TooltipTrigger>
                           <TooltipContent side="right" className="max-w-[220px]">
                             <div className="space-y-1">
@@ -530,6 +533,7 @@ export default function ToolsLibrary() {
                                         tool={tool}
                                         isSelected={selectedTool?.id === tool.id}
                                         isOwned={!isSys && (tool as CustomTool).user_id === user?.id}
+                                        hasUnsavedChanges={selectedTool?.id === tool.id && unsavedChanges.hasUnsavedChanges}
                                         onSelect={handleSelectTool}
                                         onEdit={handleStartEdit}
                                         onDelete={handleDeleteClick}

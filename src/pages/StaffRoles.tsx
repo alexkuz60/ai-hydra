@@ -151,6 +151,9 @@ const StaffRoles = () => {
               <span className={cn("font-medium", config.color)}>
                 {t(config.label)}
               </span>
+              {isSelected && unsavedChanges.hasUnsavedChanges && (
+                <span className="w-2 h-2 rounded-full bg-hydra-warning animate-pulse-glow shrink-0" title="Unsaved changes" />
+              )}
               {config.isTechnicalStaff && (
                 <Badge variant="secondary" className="gap-1 text-xs py-0">
                   <Wrench className="h-3 w-3" />
@@ -213,12 +216,15 @@ const StaffRoles = () => {
                           <TooltipTrigger asChild>
                             <div
                               className={cn(
-                                "flex items-center justify-center p-2 rounded-lg cursor-pointer transition-colors",
+                                "relative flex items-center justify-center p-2 rounded-lg cursor-pointer transition-colors",
                                 isSelected ? "bg-primary/10" : "hover:bg-muted/30"
                               )}
                               onClick={() => handleRoleSelect(role)}
                             >
                               <IconComponent className={cn("h-5 w-5", config.color)} />
+                              {isSelected && unsavedChanges.hasUnsavedChanges && (
+                                <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-hydra-warning animate-pulse-glow" />
+                              )}
                             </div>
                           </TooltipTrigger>
                           <TooltipContent side="right" className="max-w-[200px]">

@@ -367,13 +367,16 @@ const BehavioralPatterns = () => {
                         <TooltipTrigger asChild>
                           <div
                             className={cn(
-                              "flex items-center justify-center p-2 rounded-lg cursor-pointer transition-colors",
+                              "relative flex items-center justify-center p-2 rounded-lg cursor-pointer transition-colors",
                               selectedId === pattern.id ? "bg-primary/10" : "hover:bg-muted/30"
                             )}
                             onClick={() => handleSelectPattern(pattern)}
                           >
                             <Target className="h-5 w-5 text-primary" />
-                          </div>
+                            {selectedId === pattern.id && hasUnsavedChanges && (
+                              <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-hydra-warning animate-pulse-glow" />
+                            )}
+                           </div>
                         </TooltipTrigger>
                         <TooltipContent side="right" className="max-w-[220px]">
                           <div className="space-y-1">
@@ -397,13 +400,16 @@ const BehavioralPatterns = () => {
                           <TooltipTrigger asChild>
                             <div
                               className={cn(
-                                "flex items-center justify-center p-2 rounded-lg cursor-pointer transition-colors",
+                                "relative flex items-center justify-center p-2 rounded-lg cursor-pointer transition-colors",
                                 selectedId === pattern.id ? "bg-primary/10" : "hover:bg-muted/30"
                               )}
                               onClick={() => handleSelectPattern(pattern)}
                             >
                               <Icon className={cn("h-5 w-5", config?.color)} />
-                            </div>
+                              {selectedId === pattern.id && hasUnsavedChanges && (
+                                <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-hydra-warning animate-pulse-glow" />
+                              )}
+                             </div>
                           </TooltipTrigger>
                           <TooltipContent side="right" className="max-w-[220px]">
                             <div className="space-y-1">
@@ -459,6 +465,7 @@ const BehavioralPatterns = () => {
                       key={pattern.id}
                       pattern={pattern}
                       isSelected={selectedId === pattern.id}
+                      hasUnsavedChanges={selectedId === pattern.id && hasUnsavedChanges}
                       onSelect={handleSelectPattern}
                       onEdit={handleEditBlueprint}
                       onDuplicate={handleDuplicateBlueprint}
@@ -496,6 +503,7 @@ const BehavioralPatterns = () => {
                       key={pattern.id}
                       pattern={pattern}
                       isSelected={selectedId === pattern.id}
+                      hasUnsavedChanges={selectedId === pattern.id && hasUnsavedChanges}
                       onSelect={handleSelectPattern}
                       onEdit={handleEditBehavior}
                       onDuplicate={handleDuplicateBehavior}
@@ -524,6 +532,7 @@ const BehavioralPatterns = () => {
                       key={pattern.id}
                       pattern={pattern}
                       isSelected={selectedId === pattern.id}
+                      hasUnsavedChanges={selectedId === pattern.id && hasUnsavedChanges}
                       onSelect={handleSelectPattern}
                       onEdit={handleEditBehavior}
                       onDuplicate={handleDuplicateBehavior}
@@ -559,6 +568,7 @@ const BehavioralPatterns = () => {
                       key={pattern.id}
                       pattern={pattern}
                       isSelected={selectedId === pattern.id}
+                      hasUnsavedChanges={selectedId === pattern.id && hasUnsavedChanges}
                       onSelect={handleSelectPattern}
                       onEdit={handleEditBehavior}
                       onDuplicate={handleDuplicateBehavior}

@@ -352,15 +352,18 @@ export default function Tasks() {
                      {filteredTasks.map((task) => (
                        <Tooltip key={task.id}>
                          <TooltipTrigger asChild>
-                           <div
-                             className={cn(
-                               "flex items-center justify-center p-2 rounded-lg cursor-pointer transition-colors",
-                               selectedTask?.id === task.id ? "bg-primary/10" : "hover:bg-muted/30"
-                             )}
-                             onClick={() => handleSelectTask(task)}
-                           >
-                             <MessageSquare className={cn("h-5 w-5", task.is_active ? "text-primary" : "text-muted-foreground")} />
-                           </div>
+                            <div
+                              className={cn(
+                                "relative flex items-center justify-center p-2 rounded-lg cursor-pointer transition-colors",
+                                selectedTask?.id === task.id ? "bg-primary/10" : "hover:bg-muted/30"
+                              )}
+                              onClick={() => handleSelectTask(task)}
+                            >
+                              <MessageSquare className={cn("h-5 w-5", task.is_active ? "text-primary" : "text-muted-foreground")} />
+                              {selectedTask?.id === task.id && hasUnsavedChangesRef.current && (
+                                <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-hydra-warning animate-pulse-glow" />
+                              )}
+                             </div>
                          </TooltipTrigger>
                          <TooltipContent side="right" className="max-w-[220px]">
                            <div className="space-y-1">
@@ -454,14 +457,15 @@ export default function Tasks() {
                    <Table>
                      <TableBody>
                        {filteredTasks.map((task) => (
-                         <TaskRow
-                           key={task.id}
-                           task={task}
-                           isSelected={selectedTask?.id === task.id}
-                           validModels={filterValidModels(task.session_config?.selectedModels || [])}
-                           onSelect={handleSelectTask}
-                           onDelete={handleDeleteClick}
-                         />
+                          <TaskRow
+                            key={task.id}
+                            task={task}
+                            isSelected={selectedTask?.id === task.id}
+                            validModels={filterValidModels(task.session_config?.selectedModels || [])}
+                            hasUnsavedChanges={selectedTask?.id === task.id && hasUnsavedChangesRef.current}
+                            onSelect={handleSelectTask}
+                            onDelete={handleDeleteClick}
+                          />
                        ))}
                      </TableBody>
                    </Table>

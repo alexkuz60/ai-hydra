@@ -11,6 +11,7 @@ import type { RoleBehaviorWithMeta } from '@/hooks/usePatterns';
 interface BehaviorRowProps {
   pattern: RoleBehaviorWithMeta;
   isSelected: boolean;
+  hasUnsavedChanges?: boolean;
   onSelect: (pattern: RoleBehaviorWithMeta) => void;
   onEdit: (pattern: RoleBehaviorWithMeta, e: React.MouseEvent) => void;
   onDuplicate: (pattern: RoleBehaviorWithMeta, e: React.MouseEvent) => void;
@@ -20,6 +21,7 @@ interface BehaviorRowProps {
 export function BehaviorRow({
   pattern,
   isSelected,
+  hasUnsavedChanges,
   onSelect,
   onEdit,
   onDuplicate,
@@ -54,6 +56,9 @@ export function BehaviorRow({
               <span className={cn('font-medium', config?.color)}>
                 {t(config?.label || pattern.role)}
               </span>
+              {hasUnsavedChanges && (
+                <span className="w-2 h-2 rounded-full bg-hydra-warning animate-pulse-glow shrink-0" title="Unsaved changes" />
+              )}
               {pattern.meta.isSystem && (
                 <Tooltip>
                   <TooltipTrigger asChild>
