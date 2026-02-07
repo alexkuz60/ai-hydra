@@ -1,10 +1,10 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { ChatMessage, UserDisplayInfo } from '@/components/warroom/ChatMessage';
 import { DateSeparator } from '@/components/warroom/DateSeparator';
 import { MessageSkeleton } from '@/components/warroom/MessageSkeleton';
 import { StreamingMessageCard } from '@/components/warroom/StreamingMessageCard';
-import { Message } from '@/types/messages';
+import { Message, MessageMetadata } from '@/types/messages';
 import { PendingResponseState } from '@/types/pending';
 import type { StreamingResponse } from '@/hooks/useStreamingResponses';
 import type { Proposal } from '@/types/patterns';
@@ -48,6 +48,8 @@ interface ChatMessagesListProps {
   onConsultInDChat?: (messageId: string, content: string) => void;
   // Evaluation request
   onRequestEvaluation?: (messageId: string, content: string, modelName: string | null) => void;
+  // Interactive checklists
+  onChecklistChange?: (messageId: string, checklistState: Record<number, boolean>) => void;
 }
 
 export function ChatMessagesList({
@@ -75,7 +77,24 @@ export function ChatMessagesList({
   onRequestProposalDetails,
   onConsultInDChat,
   onRequestEvaluation,
+  onChecklistChange,
 }: ChatMessagesListProps) {
+  // Build a set of AI message IDs that should have interactive checklists
+  // based on preceding user message having interactive_checklists: true in metadata
+  const interactiveChecklistIds = useMemo(() => {
+    const ids = new Set<string>();
+    let lastUserHadChecklists = false;
+    for (const msg of messages) {
+      if (msg.role === 'user') {
+        const meta = (typeof msg.metadata === 'object' && msg.metadata !== null ? msg.metadata : {}) as MessageMetadata;
+        lastUserHadChecklists = meta.interactive_checklists === true;
+      } else if (lastUserHadChecklists) {
+        ids.add(msg.id);
+      }
+    }
+    return ids;
+  }, [messages]);
+
   if (messages.length === 0) {
     return (
       <ScrollArea className="flex-1 min-h-0 p-4 hydra-scrollbar">
@@ -124,6 +143,8 @@ export function ChatMessagesList({
                   onRequestProposalDetails={onRequestProposalDetails}
                   onConsultInDChat={onConsultInDChat}
                   onRequestEvaluation={onRequestEvaluation}
+                  onChecklistChange={onChecklistChange}
+                  forceInteractiveChecklists={interactiveChecklistIds.has(message.id)}
                 />
               </div>
             </React.Fragment>

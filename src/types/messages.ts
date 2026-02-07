@@ -27,6 +27,9 @@ export interface MessageMetadata {
   fallback_reason?: 'rate_limit' | 'error' | 'unsupported';
   // Supervisor approval proposals
   proposals?: Proposal[];
+  // Interactive checklists
+  interactive_checklists?: boolean;
+  checklist_state?: Record<number, boolean>;
   [key: string]: unknown;
 }
 

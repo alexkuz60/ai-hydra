@@ -22,6 +22,7 @@ interface UseMessagesReturn {
   handleDeleteMessageGroup: (userMessageId: string) => Promise<void>;
   handleRatingChange: (messageId: string, rating: number) => Promise<void>;
   handleUpdateProposals: (messageId: string, proposals: Proposal[]) => Promise<void>;
+  handleChecklistChange: (messageId: string, checklistState: Record<number, boolean>) => Promise<void>;
   fetchMessages: (taskId: string) => Promise<void>;
 }
 
@@ -224,6 +225,31 @@ export function useMessages({ sessionId, onBeforeDeleteMessage }: UseMessagesPro
     }
   }, [messages]);
 
+  // Update checklist state in message metadata
+  const handleChecklistChange = useCallback(async (messageId: string, checklistState: Record<number, boolean>) => {
+    try {
+      const message = messages.find(m => m.id === messageId);
+      const currentMetadata = (message?.metadata as MessageMetadata) || {};
+
+      const updatedMetadata = { ...currentMetadata, checklist_state: checklistState };
+
+      const { error } = await supabase
+        .from('messages')
+        .update({ metadata: updatedMetadata as unknown as Record<string, never> })
+        .eq('id', messageId);
+
+      if (error) throw error;
+
+      // Update local state immediately
+      setMessages(msgs => msgs.map(m =>
+        m.id === messageId
+          ? { ...m, metadata: updatedMetadata }
+          : m
+      ));
+    } catch (error: any) {
+      console.error('[Messages] Failed to update checklist state:', error);
+    }
+  }, [messages]);
   // Filter messages based on selected participant
   const displayedMessages = useMemo(() => {
     if (!filteredParticipant) return messages;
@@ -250,6 +276,7 @@ export function useMessages({ sessionId, onBeforeDeleteMessage }: UseMessagesPro
     handleDeleteMessageGroup,
     handleRatingChange,
     handleUpdateProposals,
+    handleChecklistChange,
     fetchMessages,
   };
 }

@@ -105,11 +105,14 @@ interface ChatMessageProps {
   onRequestProposalDetails?: (messageId: string, proposalIds: string[]) => void;
   onConsultInDChat?: (messageId: string, content: string) => void;
   onRequestEvaluation?: (messageId: string, content: string, modelName: string | null) => void;
+  onChecklistChange?: (messageId: string, checklistState: Record<number, boolean>) => void;
+  /** Override: force interactive checklists regardless of message metadata */
+  forceInteractiveChecklists?: boolean;
 }
 
 const MAX_COLLAPSED_LINES = 3;
 
-export function ChatMessage({ message, userDisplayInfo, onDelete, onRatingChange, isCollapsed, onToggleCollapse, onClarifyWithSpecialist, onSaveToMemory, isSavingToMemory, isAlreadySavedToMemory, onUpdateProposals, onRequestProposalDetails, onConsultInDChat, onRequestEvaluation }: ChatMessageProps) {
+export function ChatMessage({ message, userDisplayInfo, onDelete, onRatingChange, isCollapsed, onToggleCollapse, onClarifyWithSpecialist, onSaveToMemory, isSavingToMemory, isAlreadySavedToMemory, onUpdateProposals, onRequestProposalDetails, onConsultInDChat, onRequestEvaluation, onChecklistChange, forceInteractiveChecklists }: ChatMessageProps) {
   const { t } = useLanguage();
   const contentRef = useRef<HTMLDivElement>(null);
   const [savedToMemory, setSavedToMemory] = useState(isAlreadySavedToMemory || false);
@@ -164,7 +167,14 @@ export function ChatMessage({ message, userDisplayInfo, onDelete, onRatingChange
   const usedFallback = metadataObj.used_fallback === true;
   const fallbackReason = metadataObj.fallback_reason;
   const proposals = metadataObj.proposals as Proposal[] | undefined;
+  const interactiveChecklists = forceInteractiveChecklists || metadataObj.interactive_checklists === true;
+  const checklistState = (metadataObj.checklist_state as Record<number, boolean>) || {};
 
+  const handleChecklistItemChange = useCallback((index: number, checked: boolean) => {
+    if (!onChecklistChange) return;
+    const newState = { ...checklistState, [index]: checked };
+    onChecklistChange(message.id, newState);
+  }, [onChecklistChange, checklistState, message.id]);
   const handleUpdateProposals = useCallback((updatedProposals: Proposal[]) => {
     if (onUpdateProposals) {
       onUpdateProposals(message.id, updatedProposals);
@@ -266,7 +276,13 @@ export function ChatMessage({ message, userDisplayInfo, onDelete, onRatingChange
           {message.role === 'user' ? (
             <p className="whitespace-pre-wrap">{truncatedContent}</p>
           ) : (
-            <MarkdownRenderer content={truncatedContent} className="text-sm" />
+            <MarkdownRenderer 
+              content={truncatedContent} 
+              className="text-sm"
+              interactiveChecklists={interactiveChecklists}
+              checklistState={checklistState}
+              onChecklistChange={handleChecklistItemChange}
+            />
           )}
         </div>
         

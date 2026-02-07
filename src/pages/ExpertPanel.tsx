@@ -67,6 +67,7 @@ export default function ExpertPanel() {
   
   // Timeout setting (10-240 seconds, default 120)
   const [timeoutSeconds, setTimeoutSeconds] = useState(120);
+  const [interactiveChecklists, setInteractiveChecklists] = useState(false);
   
    // D-Chat panel width persistence
    const { width: consultantPanelWidth, saveWidth: saveConsultantPanelWidth, isCollapsed: isDChatCollapsed } = useConsultantPanelWidth();
@@ -176,6 +177,7 @@ export default function ExpertPanel() {
     handleDeleteMessageGroup,
     handleRatingChange,
     handleUpdateProposals,
+    handleChecklistChange,
     fetchMessages,
   } = useMessages({ 
     sessionId: currentTask?.id || null,
@@ -487,10 +489,11 @@ export default function ExpertPanel() {
     const messageContent = input.trim();
     setInput('');
     
+    // Extra metadata for the user message
+    const extraMeta = interactiveChecklists ? { interactive_checklists: true } : undefined;
+    
     if (useHybridStreaming && selectedModels.length > 0) {
-      // Hybrid mode: save user message first, then start parallel SSE streams
-      // AI responses will be saved by streaming hook when they complete
-      await sendUserMessageOnly(messageContent);
+      await sendUserMessageOnly(messageContent, extraMeta);
       
       const requestInfo: RequestStartInfo[] = selectedModels.map(modelId => {
         const { model } = getModelInfo(modelId);
@@ -502,13 +505,11 @@ export default function ExpertPanel() {
         };
       });
       
-      // Start streaming - this will handle AI responses and save to DB
       startStreaming(requestInfo, messageContent, timeoutSeconds, perModelSettings);
     } else {
-      // Fallback: traditional approach via orchestrator
-      await sendMessage(messageContent);
+      await sendMessage(messageContent, extraMeta);
     }
-  }, [input, sendMessage, sendUserMessageOnly, useHybridStreaming, selectedModels, perModelSettings, startStreaming, timeoutSeconds]);
+  }, [input, sendMessage, sendUserMessageOnly, useHybridStreaming, selectedModels, perModelSettings, startStreaming, timeoutSeconds, interactiveChecklists]);
 
   const handleSendToConsultant = useCallback(async () => {
     if (!input.trim() || !selectedConsultant) return;
@@ -901,6 +902,7 @@ ${content.slice(0, 2000)}${content.length > 2000 ? '\n...(сокращено)' :
                 onRequestProposalDetails={handleRequestProposalDetails}
                 onConsultInDChat={handleConsultInDChat}
                 onRequestEvaluation={handleRequestEvaluation}
+                onChecklistChange={handleChecklistChange}
               />
 
               {/* Input Area */}
@@ -930,6 +932,8 @@ ${content.slice(0, 2000)}${content.length > 2000 ? '\n...(сокращено)' :
                  isCollapsed={isInputCollapsed}
                 onToggleCollapse={toggleInputCollapse}
                 supervisorDisplayName={profile?.displayName}
+                interactiveChecklists={interactiveChecklists}
+                onInteractiveChecklistsChange={setInteractiveChecklists}
               />
             </div>
           </ResizablePanel>

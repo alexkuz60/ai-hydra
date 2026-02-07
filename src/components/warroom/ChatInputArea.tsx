@@ -10,7 +10,7 @@ import { SupervisorWishesPicker } from '@/components/warroom/SupervisorWishesPic
 import { HorizontalResizeHandle } from '@/components/ui/horizontal-resize-handle';
 import { ModelOption } from '@/hooks/useAvailableModels';
 import { cn } from '@/lib/utils';
-import { Loader2, GitBranch, ChevronDown, ChevronUp, Send, Users, Lightbulb, X } from 'lucide-react';
+import { Loader2, GitBranch, ChevronDown, ChevronUp, Send, Users, Lightbulb, X, ListChecks } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -60,6 +60,9 @@ interface ChatInputAreaProps {
   isCollapsed?: boolean;
   onToggleCollapse?: () => void;
   supervisorDisplayName?: string | null;
+  // Interactive checklists toggle
+  interactiveChecklists?: boolean;
+  onInteractiveChecklistsChange?: (value: boolean) => void;
 }
 
 export function ChatInputArea({
@@ -85,6 +88,8 @@ export function ChatInputArea({
   isCollapsed = false,
   onToggleCollapse,
   supervisorDisplayName,
+  interactiveChecklists = false,
+  onInteractiveChecklistsChange,
 }: ChatInputAreaProps) {
   const { t } = useLanguage();
   const [flowPickerOpen, setFlowPickerOpen] = useState(false);
@@ -403,6 +408,31 @@ export function ChatInputArea({
                      disabled={sending}
                      supervisorDisplayName={supervisorDisplayName}
                    />
+
+                   {/* Interactive Checklists toggle */}
+                   {onInteractiveChecklistsChange && (
+                     <Tooltip>
+                       <TooltipTrigger asChild>
+                         <Button
+                           variant={interactiveChecklists ? 'default' : 'ghost'}
+                           size="icon"
+                           className={cn(
+                             "h-9 w-9",
+                             interactiveChecklists && "bg-primary/20 text-primary border border-primary/30"
+                           )}
+                           onClick={() => onInteractiveChecklistsChange(!interactiveChecklists)}
+                           disabled={sending}
+                         >
+                           <ListChecks className="h-4 w-4" />
+                         </Button>
+                       </TooltipTrigger>
+                       <TooltipContent side="right">
+                         {interactiveChecklists 
+                           ? t('checklists.interactive') 
+                           : t('checklists.enable')}
+                       </TooltipContent>
+                     </Tooltip>
+                   )}
 
                    {/* Prompt Engineer button */}
                   <PromptEngineerButton

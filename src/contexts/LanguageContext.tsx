@@ -17,6 +17,9 @@ const translations: Translations = {
   'errors.rateLimit': { ru: 'Превышен лимит запросов. Попробуйте позже.', en: 'Rate limit exceeded. Please try again later.' },
   'errors.paymentRequired': { ru: 'Требуется пополнение баланса Lovable AI.', en: 'Payment required. Please add funds to Lovable AI.' },
   'errors.connectionError': { ru: 'Ошибка подключения', en: 'Connection error' },
+  // Interactive checklists
+  'checklists.enable': { ru: 'Включить интерактивные чеклисты', en: 'Enable interactive checklists' },
+  'checklists.interactive': { ru: 'Чеклисты интерактивны ✓', en: 'Checklists are interactive ✓' },
 
   // Navigation
   'nav.home': { ru: 'Главная', en: 'Home' },
