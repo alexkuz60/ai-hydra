@@ -56,7 +56,7 @@ interface ConsultantPanelProps {
   } | null;
   onClearInitialQuery?: () => void;
   // Copy to main chat
-  onCopyToMainChat?: (content: string, sourceMessageId: string | null, modelName?: string | null) => void;
+  onCopyToMainChat?: (content: string, sourceMessageId: string | null, modelName?: string | null, role?: string | null) => void;
 }
 
 interface ModeConfig {
@@ -516,7 +516,7 @@ export function ConsultantPanel({
                 createdAt={message.created_at}
                 isStreaming={message.isStreaming}
                 sourceMessageId={message.sourceMessageId}
-                onCopyToMainChat={onCopyToMainChat}
+                onCopyToMainChat={onCopyToMainChat ? (c, s, m) => onCopyToMainChat(c, s, m, selectedMode) : undefined}
                 onStopStreaming={message.isStreaming ? stopStreaming : undefined}
               />
             ))
