@@ -32,6 +32,7 @@ import {
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { ROLE_CONFIG, getRoleConfig } from '@/config/roles';
+import { ModelNameWithIcon } from '@/components/ui/ModelNameWithIcon';
 
 // ==================== Types ====================
 
@@ -358,8 +359,21 @@ const SupervisorNode = memo(function SupervisorNode({
             <Info className="h-3.5 w-3.5 text-muted-foreground" />
           </div>
         </TooltipTrigger>
-        <TooltipContent side="right" className="max-w-xs">
-          <p className="text-sm italic">"{block.contentPreview}"</p>
+        <TooltipContent side="right" className="max-w-[280px]">
+          <div className="space-y-1.5">
+            <p className="text-sm italic">"{block.contentPreview}"</p>
+            {block.aiResponses.length > 0 && (
+              <div className="space-y-1 pt-1 border-t border-border/50">
+                {block.aiResponses.map(ai => (
+                  <div key={ai.id} className="flex items-center gap-1.5">
+                    <ai.icon className={cn("h-3 w-3 shrink-0", ai.color)} />
+                    <span className="text-xs">{ai.displayName}:</span>
+                    <ModelNameWithIcon modelName={ai.modelName} className="text-xs text-muted-foreground" iconSize="h-3 w-3" />
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </TooltipContent>
       </Tooltip>
 
@@ -427,8 +441,11 @@ const StandaloneAINode = memo(function StandaloneAINode({
           <Info className="h-3.5 w-3.5 text-muted-foreground" />
         </div>
       </TooltipTrigger>
-      <TooltipContent side="right" className="max-w-xs">
-        <p className="text-sm italic">"{block.contentPreview}"</p>
+      <TooltipContent side="right" className="max-w-[280px]">
+        <div className="space-y-1.5">
+          <ModelNameWithIcon modelName={ai.modelName} className="text-xs text-muted-foreground" iconSize="h-3 w-3" />
+          <p className="text-sm italic">"{block.contentPreview}"</p>
+        </div>
       </TooltipContent>
     </Tooltip>
   );
@@ -653,15 +670,23 @@ export const ChatTreeNav = memo(function ChatTreeNav({
                           <Crown className="h-5 w-5 text-hydra-supervisor" />
                         </div>
                       </TooltipTrigger>
-                      <TooltipContent side="right" className="max-w-[220px]">
-                        <div className="space-y-1">
+                      <TooltipContent side="right" className="max-w-[260px]">
+                        <div className="space-y-1.5">
                           <div className="flex items-center gap-2">
                             <Crown className="h-4 w-4 text-hydra-supervisor" />
                             <span className="font-medium text-sm">#{supervisorIndices.get(block.id)}</span>
                           </div>
                           <p className="text-xs text-muted-foreground italic">"{block.contentPreview}"</p>
-                          {block.responseCount > 0 && (
-                            <p className="text-xs text-muted-foreground">• {block.responseCount} ответов</p>
+                          {block.aiResponses.length > 0 && (
+                            <div className="space-y-1 pt-1 border-t border-border/50">
+                              {block.aiResponses.map(ai => (
+                                <div key={ai.id} className="flex items-center gap-1.5">
+                                  <ai.icon className={cn("h-3 w-3 shrink-0", ai.color)} />
+                                  <span className="text-xs">{ai.displayName}:</span>
+                                  <ModelNameWithIcon modelName={ai.modelName} className="text-xs text-muted-foreground" iconSize="h-3 w-3" />
+                                </div>
+                              ))}
+                            </div>
                           )}
                         </div>
                       </TooltipContent>
@@ -684,9 +709,10 @@ export const ChatTreeNav = memo(function ChatTreeNav({
                         <Icon className={cn("h-5 w-5", ai.color)} />
                       </div>
                     </TooltipTrigger>
-                    <TooltipContent side="right" className="max-w-[220px]">
-                      <div className="space-y-1">
+                    <TooltipContent side="right" className="max-w-[260px]">
+                      <div className="space-y-1.5">
                         <span className="font-medium text-sm">{ai.displayName}</span>
+                        <ModelNameWithIcon modelName={ai.modelName} className="text-xs text-muted-foreground" iconSize="h-3 w-3" />
                         <p className="text-xs text-muted-foreground italic">"{block.contentPreview}"</p>
                       </div>
                     </TooltipContent>
