@@ -25,6 +25,7 @@ import { useConsultantPanelWidth } from '@/hooks/useConsultantPanelWidth';
 import { useModelStatistics } from '@/hooks/useModelStatistics';
 import { useStreamingResponses } from '@/hooks/useStreamingResponses';
 import { useMemoryIntegration } from '@/hooks/useMemoryIntegration';
+import { useSupervisorWishes } from '@/hooks/useSupervisorWishes';
 import { useSessionMemory } from '@/hooks/useSessionMemory';
 import { PendingResponseState, RequestStartInfo } from '@/types/pending';
 import { Loader2, Target, Zap, ZapOff, Square, Circle, Wrench } from 'lucide-react';
@@ -48,10 +49,9 @@ export default function ExpertPanel() {
   const { isSupervisor } = useUserRoles();
   const messageRefs = useRef<Map<string, HTMLDivElement>>(new Map());
   const dChatPanelRef = useRef<ImperativePanelHandle>(null);
-   const selectedModelsRef = useRef<string[]>([]);
-   const [input, setInput] = useState('');
-   const [selectedConsultant, setSelectedConsultant] = useState<string | null>(null);
-   const [selectedWishes, setSelectedWishes] = useState<string[]>([]);
+    const selectedModelsRef = useRef<string[]>([]);
+    const [input, setInput] = useState('');
+    const [selectedConsultant, setSelectedConsultant] = useState<string | null>(null);
   const [dChatContext, setDChatContext] = useState<{
     messageId: string;
     content: string;
@@ -103,35 +103,8 @@ export default function ExpertPanel() {
     setUseHybridStreaming,
   } = useSession({ userId: user?.id, authLoading });
 
-  // Load supervisor wishes from localStorage on session change
-  useEffect(() => {
-    if (!currentTask?.id) return;
-    
-    try {
-      const key = `hydra-supervisor-wishes-${currentTask.id}`;
-      const saved = localStorage.getItem(key);
-      if (saved) {
-        const wishes = JSON.parse(saved);
-        if (Array.isArray(wishes)) {
-          setSelectedWishes(wishes);
-        }
-      }
-    } catch (error) {
-      console.error('Failed to load supervisor wishes from localStorage:', error);
-    }
-  }, [currentTask?.id]);
-  
-  // Save supervisor wishes to localStorage when they change
-  useEffect(() => {
-    if (!currentTask?.id) return;
-    
-    try {
-      const key = `hydra-supervisor-wishes-${currentTask.id}`;
-      localStorage.setItem(key, JSON.stringify(selectedWishes));
-    } catch (error) {
-      console.error('Failed to save supervisor wishes to localStorage:', error);
-    }
-  }, [selectedWishes, currentTask?.id]);
+  // Shared supervisor wishes hook (#3 fix - no duplication with ConsultantPanel)
+  const { selectedWishes, setSelectedWishes } = useSupervisorWishes(currentTask?.id || null);
 
   // Model statistics hook for tracking dismissals
   const { incrementDismissal } = useModelStatistics(user?.id);

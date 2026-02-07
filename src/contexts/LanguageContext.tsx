@@ -13,6 +13,12 @@ interface Translations {
 
 const translations: Translations = {
   // Navigation
+  // Common errors
+  'errors.rateLimit': { ru: 'Превышен лимит запросов. Попробуйте позже.', en: 'Rate limit exceeded. Please try again later.' },
+  'errors.paymentRequired': { ru: 'Требуется пополнение баланса Lovable AI.', en: 'Payment required. Please add funds to Lovable AI.' },
+  'errors.connectionError': { ru: 'Ошибка подключения', en: 'Connection error' },
+
+  // Navigation
   'nav.home': { ru: 'Главная', en: 'Home' },
   'nav.expertPanel': { ru: 'Панель экспертов', en: 'Expert Panel' },
   'nav.tasks': { ru: 'Задачи', en: 'Tasks' },

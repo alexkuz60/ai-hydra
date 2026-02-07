@@ -154,6 +154,39 @@ export const ROLE_CONFIG: Record<MessageRole, RoleConfigItem> = {
   },
 };
 
+// Consultant mode type (D-Chat modes)
+export type ConsultantMode = 'web_search' | 'expert' | 'critic' | 'arbiter' | 'moderator' | 'promptengineer' | 'duel';
+
+// Unified mapping: ConsultantMode -> edge function role string
+// SINGLE SOURCE OF TRUTH for all mode-to-role conversions
+export const CONSULTANT_MODE_TO_ROLE: Record<ConsultantMode, string> = {
+  web_search: 'consultant',
+  expert: 'assistant',
+  critic: 'critic',
+  arbiter: 'arbiter',
+  moderator: 'moderator',
+  promptengineer: 'promptengineer',
+  duel: 'arbiter',
+};
+
+// Unified mapping: ConsultantMode -> AgentRole (for UI display)
+export const CONSULTANT_MODE_TO_AGENT_ROLE: Record<ConsultantMode, AgentRole> = {
+  web_search: 'webhunter',
+  expert: 'assistant',
+  critic: 'critic',
+  arbiter: 'arbiter',
+  moderator: 'moderator',
+  promptengineer: 'promptengineer',
+  duel: 'arbiter',
+};
+
+// Mapping: consultant mode string -> DB message role (for copyConsultantResponse)
+export const CONSULTANT_MODE_TO_MESSAGE_ROLE: Record<string, string> = {
+  expert: 'assistant',
+  web_search: 'consultant',
+  duel: 'consultant',
+};
+
 // Supervisor icon (used for user with supervisor privileges)
 export const SupervisorIcon = Crown;
 export const SupervisorColor = 'text-hydra-supervisor';
@@ -173,6 +206,7 @@ export const AGENT_ROLES: AgentRole[] = [
   'flowregulator',
   'toolsmith',
 ];
+
 
 // Default system prompts for each agent role
 // These are synchronized with prompt_library entries marked as is_default=true

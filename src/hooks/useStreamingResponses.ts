@@ -547,9 +547,9 @@ export function useStreamingResponses({
 
     function handleStreamError(modelId: string, status: number) {
       if (status === 429) {
-        toast.error('Превышен лимит запросов. Попробуйте позже.');
+        toast.error('Превышен лимит запросов. Попробуйте позже.');  // TODO: localize when hook gets language context
       } else if (status === 402) {
-        toast.error('Требуется пополнение баланса Lovable AI.');
+        toast.error('Требуется пополнение баланса Lovable AI.');  // TODO: localize when hook gets language context
       } else {
         toast.error(`Ошибка модели ${modelId}: ${status}`);
       }

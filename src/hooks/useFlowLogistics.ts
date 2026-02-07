@@ -88,8 +88,8 @@ export function useFlowLogistics(): UseFlowLogisticsReturn {
         );
 
         if (!response.ok) {
-          if (response.status === 429) toast.error('Превышен лимит запросов');
-          else if (response.status === 402) toast.error('Требуется пополнение баланса');
+          if (response.status === 429) toast.error('Превышен лимит запросов. Попробуйте позже.');
+          else if (response.status === 402) toast.error('Требуется пополнение баланса Lovable AI.');
           else toast.error(`Ошибка: ${response.status}`);
           setMessages(prev => prev.filter(m => m.id !== assistantId));
           setStreaming(false);
