@@ -13,8 +13,10 @@ import { HorizontalResizeHandle } from '@/components/ui/horizontal-resize-handle
 import { ModelOption } from '@/hooks/useAvailableModels';
 import { useStreamingChat, ConsultantMode } from '@/hooks/useStreamingChat';
 import { useSessionMemory } from '@/hooks/useSessionMemory';
+import { useSupervisorWishes } from '@/hooks/useSupervisorWishes';
 import { cn } from '@/lib/utils';
 import { PromptEngineerTools, PromptEngineerTool } from './PromptEngineerTools';
+import { CONSULTANT_MODE_TO_AGENT_ROLE } from '@/config/roles';
 import type { AgentRole } from '@/config/roles';
 import {
   Lightbulb,
@@ -95,7 +97,6 @@ export function ConsultantPanel({
   );
   const [currentSourceMessageId, setCurrentSourceMessageId] = useState<string | null>(null);
   const [isModeratingContext, setIsModeratingContext] = useState(false);
-  const [selectedWishes, setSelectedWishes] = useState<string[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesRef = useRef<typeof messages>([]);
 
@@ -107,147 +108,137 @@ export function ConsultantPanel({
   messagesRef.current = messages;
 
   // Memory integration
-  const { 
-    chunks, 
-   } = useSessionMemory(sessionId);
+  const { chunks } = useSessionMemory(sessionId);
+  
+  // Use ref for chunks to avoid re-triggering effects (#9 fix)
+  const chunksRef = useRef(chunks);
+  chunksRef.current = chunks;
 
-   // Load supervisor wishes from localStorage on session change
-   useEffect(() => {
-     if (!sessionId) return;
-     
-     try {
-       const key = `hydra-supervisor-wishes-${sessionId}`;
-       const saved = localStorage.getItem(key);
-       if (saved) {
-         const wishes = JSON.parse(saved);
-         if (Array.isArray(wishes)) {
-           setSelectedWishes(wishes);
-         }
-       }
-     } catch (error) {
-       console.error('Failed to load supervisor wishes from localStorage:', error);
-     }
-   }, [sessionId]);
+  // Shared supervisor wishes hook (#3 fix - no duplication)
+  const { selectedWishes, setSelectedWishes } = useSupervisorWishes(sessionId);
 
-   // Save supervisor wishes to localStorage when they change
-   useEffect(() => {
-     if (!sessionId) return;
-     
-     try {
-       const key = `hydra-supervisor-wishes-${sessionId}`;
-       localStorage.setItem(key, JSON.stringify(selectedWishes));
-     } catch (error) {
-       console.error('Failed to save supervisor wishes to localStorage:', error);
-     }
-   }, [selectedWishes, sessionId]);
-   const [inputCollapsed, setInputCollapsed] = useState(false);
-   const [inputHeight, setInputHeight] = useState(60);
-   const isResizing = useRef(false);
-   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [inputCollapsed, setInputCollapsed] = useState(false);
+  const [inputHeight, setInputHeight] = useState(60);
+  const inputHeightRef = useRef(inputHeight); // #8 fix: ref for current height
+  const isResizing = useRef(false);
+  const resizeCleanupRef = useRef<(() => void) | null>(null); // #10 fix: cleanup ref
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  
+  // Keep height ref in sync
+  useEffect(() => {
+    inputHeightRef.current = inputHeight;
+  }, [inputHeight]);
+
+  // Derive active roles from selected mode using centralized mapping (#2 fix)
+  const activeRoles = useMemo((): AgentRole[] => {
+    return [CONSULTANT_MODE_TO_AGENT_ROLE[selectedMode]];
+  }, [selectedMode]);
+
+  // Memoized memory context (#4 fix - single computation instead of 3x)
+  const memoryContext = useMemo(() => {
+    return chunks.map(chunk => ({
+      content: chunk.content,
+      chunk_type: chunk.chunk_type,
+      metadata: chunk.metadata as Record<string, unknown> | undefined,
+    }));
+  }, [chunks]);
    
-   // Derive active roles from selected mode
-   const activeRoles = useMemo((): AgentRole[] => {
-     // Map consultant mode to agent roles
-     const modeToRole: Record<ConsultantMode, AgentRole> = {
-       'web_search': 'webhunter',
-       'expert': 'assistant',
-       'critic': 'critic',
-       'arbiter': 'arbiter',
-       'moderator': 'moderator',
-       'promptengineer': 'promptengineer',
-       'duel': 'arbiter', // Duel mode placeholder
-     };
-     return [modeToRole[selectedMode]];
-   }, [selectedMode]);
+  // Handle prompt engineer tool selection
+  const handlePromptEngineerTool = useCallback((tool: PromptEngineerTool, instruction: string) => {
+    if (!input.trim() || !selectedModel || streaming) return;
+    
+    const fullMessage = `${instruction}\n\n"${input.trim()}"`;
+    const sourceId = currentSourceMessageId;
+    setInput('');
+    setCurrentSourceMessageId(null);
+    
+    sendQuery(fullMessage, 'promptengineer', selectedModel, sourceId, true, memoryContext);
+  }, [input, selectedModel, streaming, currentSourceMessageId, memoryContext, sendQuery]);
    
-   // Handle prompt engineer tool selection
-   const handlePromptEngineerTool = useCallback((tool: PromptEngineerTool, instruction: string) => {
-     if (!input.trim() || !selectedModel || streaming) return;
-     
-     const fullMessage = `${instruction}\n\n"${input.trim()}"`;
-     const sourceId = currentSourceMessageId;
-     setInput('');
-     setCurrentSourceMessageId(null);
-     
-     // Prepare memory context
-     const memoryContext = chunks.map(chunk => ({
-       content: chunk.content,
-       chunk_type: chunk.chunk_type,
-       metadata: chunk.metadata as Record<string, unknown> | undefined,
-     }));
-     
-     sendQuery(fullMessage, 'promptengineer', selectedModel, sourceId, true, memoryContext);
-   }, [input, selectedModel, streaming, currentSourceMessageId, chunks, sendQuery]);
-   
-   // Load saved input height
-   useEffect(() => {
-     try {
-       const saved = localStorage.getItem('hydra-dchat-input-height');
-       if (saved) {
-         const h = parseInt(saved, 10);
-         if (!isNaN(h) && h >= 40 && h <= 200) {
-           setInputHeight(h);
-         }
-       }
-       const collapsedSaved = localStorage.getItem('hydra-dchat-input-collapsed');
-       if (collapsedSaved) {
-         setInputCollapsed(collapsedSaved === 'true');
-       }
-     } catch { /* ignore */ }
-   }, []);
+  // Load saved input height
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('hydra-dchat-input-height');
+      if (saved) {
+        const h = parseInt(saved, 10);
+        if (!isNaN(h) && h >= 40 && h <= 200) {
+          setInputHeight(h);
+        }
+      }
+      const collapsedSaved = localStorage.getItem('hydra-dchat-input-collapsed');
+      if (collapsedSaved) {
+        setInputCollapsed(collapsedSaved === 'true');
+      }
+    } catch { /* ignore */ }
+  }, []);
+
+  // Cleanup resize listeners on unmount (#10 fix)
+  useEffect(() => {
+    return () => {
+      resizeCleanupRef.current?.();
+    };
+  }, []);
  
-   // Handle resize drag
-   const handleResizeStart = useCallback((e: React.MouseEvent) => {
-     e.preventDefault();
-     isResizing.current = true;
-     const startY = e.clientY;
-     const startHeight = inputHeight;
+  // Handle resize drag (#8 fix: use ref for current height in mouseup)
+  const handleResizeStart = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    isResizing.current = true;
+    const startY = e.clientY;
+    const startHeight = inputHeightRef.current;
+
+    const handleMouseMove = (moveEvent: MouseEvent) => {
+      if (!isResizing.current) return;
+      const delta = startY - moveEvent.clientY;
+      const newHeight = Math.max(40, Math.min(200, startHeight + delta));
+      setInputHeight(newHeight);
+    };
+
+    const handleMouseUp = () => {
+      isResizing.current = false;
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+      resizeCleanupRef.current = null;
+      try {
+        localStorage.setItem('hydra-dchat-input-height', String(inputHeightRef.current));
+      } catch { /* ignore */ }
+    };
+
+    // Store cleanup in case component unmounts during drag (#10 fix)
+    resizeCleanupRef.current = () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+  }, []);
  
-     const handleMouseMove = (moveEvent: MouseEvent) => {
-       if (!isResizing.current) return;
-       const delta = startY - moveEvent.clientY;
-       const newHeight = Math.max(40, Math.min(200, startHeight + delta));
-       setInputHeight(newHeight);
-     };
+  // Toggle input collapse
+  const toggleInputCollapse = useCallback(() => {
+    setInputCollapsed(prev => {
+      const next = !prev;
+      try {
+        localStorage.setItem('hydra-dchat-input-collapsed', String(next));
+      } catch { /* ignore */ }
+      return next;
+    });
+  }, []);
  
-     const handleMouseUp = () => {
-       isResizing.current = false;
-       document.removeEventListener('mousemove', handleMouseMove);
-       document.removeEventListener('mouseup', handleMouseUp);
-       try {
-         localStorage.setItem('hydra-dchat-input-height', String(inputHeight));
-       } catch { /* ignore */ }
-     };
- 
-     document.addEventListener('mousemove', handleMouseMove);
-     document.addEventListener('mouseup', handleMouseUp);
-   }, [inputHeight]);
- 
-   // Toggle input collapse
-   const toggleInputCollapse = useCallback(() => {
-     setInputCollapsed(prev => {
-       const next = !prev;
-       try {
-         localStorage.setItem('hydra-dchat-input-collapsed', String(next));
-       } catch { /* ignore */ }
-       return next;
-     });
-   }, []);
- 
-   // Focus textarea when expanding
-   useEffect(() => {
-     if (!inputCollapsed && textareaRef.current) {
-       textareaRef.current.focus();
-     }
-   }, [inputCollapsed]);
+  // Focus textarea when expanding
+  useEffect(() => {
+    if (!inputCollapsed && textareaRef.current) {
+      textareaRef.current.focus();
+    }
+  }, [inputCollapsed]);
 
   // Handle initial query from navigator - auto-trigger moderator if multiple AI responses
   // Then chain to the selected mode (e.g., Arbiter) if different from moderator
+  // #9 fix: use chunksRef instead of chunks in deps to prevent re-triggers
   useEffect(() => {
     if (!initialQuery || !selectedModel) return;
     
-    // Prepare memory context for the request
-    const memoryContext = chunks.map(chunk => ({
+    // Use ref for memory context to avoid re-running on chunks change
+    const currentMemoryContext = chunksRef.current.map(chunk => ({
       content: chunk.content,
       chunk_type: chunk.chunk_type,
       metadata: chunk.metadata as Record<string, unknown> | undefined,
@@ -266,7 +257,7 @@ export function ConsultantPanel({
         selectedModel,
         initialQuery.messageId,
         true, // hideUserMessage - don't show aggregated text in D-chat
-        memoryContext // Pass memory context
+        currentMemoryContext // Pass memory context
       ).then(() => {
         setIsModeratingContext(false);
         
@@ -283,7 +274,7 @@ export function ConsultantPanel({
                 selectedModel,
                 initialQuery.messageId,
                 true, // hide the forwarded moderator text
-                memoryContext
+                currentMemoryContext
               );
             }
           }, 200);
@@ -297,7 +288,7 @@ export function ConsultantPanel({
       setCurrentSourceMessageId(initialQuery.messageId);
       onClearInitialQuery?.();
     }
-  }, [initialQuery, selectedModel, sendQuery, onClearInitialQuery, chunks]);
+  }, [initialQuery, selectedModel, sendQuery, onClearInitialQuery]);
 
   // Update selected model when available models change
   useEffect(() => {
@@ -317,13 +308,6 @@ export function ConsultantPanel({
     const sourceId = currentSourceMessageId;
     setInput('');
     setCurrentSourceMessageId(null);
-    
-    // Prepare memory context for the request
-    const memoryContext = chunks.map(chunk => ({
-      content: chunk.content,
-      chunk_type: chunk.chunk_type,
-      metadata: chunk.metadata as Record<string, unknown> | undefined,
-    }));
     
     await sendQuery(messageContent, selectedMode, selectedModel, sourceId, false, memoryContext);
   };

@@ -1,8 +1,11 @@
 import { useState, useCallback, useRef } from 'react';
 import { toast } from 'sonner';
 import { DEFAULT_SYSTEM_PROMPTS, type AgentRole } from '@/config/roles';
+import { CONSULTANT_MODE_TO_ROLE } from '@/config/roles';
 import { supabase } from '@/integrations/supabase/client';
-export type ConsultantMode = 'web_search' | 'expert' | 'critic' | 'arbiter' | 'moderator' | 'promptengineer' | 'duel';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { type ConsultantMode } from '@/config/roles';
+export type { ConsultantMode } from '@/config/roles';
 
 export interface StreamingMessage {
   id: string;
@@ -41,20 +44,12 @@ interface UseStreamingChatReturn {
   clearMessages: () => void;
 }
 
-// Map consultant mode to role for edge function
-const modeToRole: Record<ConsultantMode, string> = {
-  web_search: 'consultant',
-  expert: 'assistant',
-  critic: 'critic',
-  arbiter: 'arbiter',
-  moderator: 'moderator',
-  duel: 'arbiter', // Duel mode uses arbiter role for now (placeholder)
-  promptengineer: 'promptengineer',
-};
+// Use centralized mapping from config/roles.ts
 
 export function useStreamingChat({
   sessionId,
 }: UseStreamingChatProps): UseStreamingChatReturn {
+  const { t } = useLanguage();
   const [messages, setMessages] = useState<StreamingMessage[]>([]);
   const [streaming, setStreaming] = useState(false);
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -80,7 +75,7 @@ export function useStreamingChat({
       if (!sessionId || !content.trim() || !modelId) return;
       
       // Determine role and system prompt
-      const role = overrideRole || modeToRole[mode];
+      const role = overrideRole || CONSULTANT_MODE_TO_ROLE[mode];
       const systemPrompt = overrideRole ? DEFAULT_SYSTEM_PROMPTS[overrideRole] : undefined;
 
       // Abort any existing stream
@@ -146,9 +141,9 @@ export function useStreamingChat({
         // Handle error responses
         if (!response.ok) {
           if (response.status === 429) {
-            toast.error('Превышен лимит запросов. Попробуйте позже.');
+            toast.error(t('errors.rateLimit'));
           } else if (response.status === 402) {
-            toast.error('Требуется пополнение баланса Lovable AI.');
+            toast.error(t('errors.paymentRequired'));
           } else {
             const errorData = await response.json().catch(() => ({}));
             toast.error(errorData.error || `Ошибка: ${response.status}`);

@@ -5,6 +5,7 @@ import { compressImage } from '@/lib/imageCompression';
 import { sanitizeFileName } from '@/lib/fileUtils';
 import { PerModelSettingsData, DEFAULT_MODEL_SETTINGS } from '@/components/warroom/PerModelSettings';
 import { getModelInfo } from '@/hooks/useAvailableModels';
+import { CONSULTANT_MODE_TO_MESSAGE_ROLE } from '@/config/roles';
 import { AttachedFile } from '@/components/warroom/FileUpload';
 import { useLanguage } from '@/contexts/LanguageContext';
 import type { Json } from '@/integrations/supabase/types';
@@ -30,7 +31,7 @@ function buildModelConfig(
     provider: provider,
     temperature: settings.temperature,
     max_tokens: settings.maxTokens,
-    system_prompt: settings.systemPrompt || (roleOverride === 'consultant' ? DEFAULT_MODEL_SETTINGS.systemPrompt : settings.systemPrompt),
+    system_prompt: roleOverride === 'consultant' ? (settings.systemPrompt || DEFAULT_MODEL_SETTINGS.systemPrompt) : settings.systemPrompt,
     role: roleOverride || settings.role,
     enable_tools: settings.enableTools ?? true,
     enabled_tools: enabledTools,
@@ -183,9 +184,9 @@ export function useSendMessage({
 
     if (!response.ok) {
       if (response.status === 429) {
-        toast.error('Превышен лимит запросов. Попробуйте позже.');
+        toast.error(t('errors.rateLimit'));
       } else if (response.status === 402) {
-        toast.error('Требуется пополнение баланса Lovable AI.');
+        toast.error(t('errors.paymentRequired'));
       } else {
         throw new Error(data.error || 'Failed to get AI response');
       }
@@ -222,7 +223,7 @@ export function useSendMessage({
         onRequestError(failedModelIds);
       }
     }
-  }, [sessionId, onRequestError]);
+  }, [sessionId, onRequestError, selectedModelsRef, selectedModels, t]);
 
   // Send message to selected models
   const sendMessage = useCallback(async (messageContent: string) => {
@@ -392,14 +393,9 @@ export function useSendMessage({
         ? { source_message_id: sourceMessageId } as unknown as Json
         : undefined;
 
-      // Map consultant mode to message role
-      const ROLE_MAP: Record<string, string> = {
-        expert: 'assistant',
-        web_search: 'consultant',
-        duel: 'consultant',
-      };
+      // Map consultant mode to message role using centralized mapping
       const validRoles = ['assistant', 'critic', 'arbiter', 'consultant', 'moderator', 'advisor', 'archivist', 'analyst', 'webhunter', 'promptengineer', 'flowregulator', 'toolsmith'];
-      const mapped = role ? (ROLE_MAP[role] || role) : 'consultant';
+      const mapped = role ? (CONSULTANT_MODE_TO_MESSAGE_ROLE[role] || role) : 'consultant';
       const messageRole = validRoles.includes(mapped) ? mapped : 'consultant';
 
       const { error } = await supabase.from('messages').insert([{
