@@ -116,7 +116,7 @@ export function AppSidebar() {
       <SidebarContent className="hydra-scrollbar">
         <SidebarGroup>
           <SidebarGroupContent>
-            <SidebarMenu>
+            <SidebarMenu className="gap-2">
               {navItems.map((item) => (
                 <SidebarMenuItem key={item.path}>
                   <SidebarMenuButton
@@ -124,7 +124,7 @@ export function AppSidebar() {
                     isActive={isActive(item.path)}
                     tooltip={item.label}
                     className={cn(
-                      "transition-all duration-200 active:scale-95 active:opacity-80 border border-border/40 rounded-md hover:bg-accent/50",
+                      "transition-all duration-200 active:scale-95 active:opacity-80 border-2 border-muted rounded-md hover:bg-accent/50",
                       isActive(item.path) && "hydra-menu-active bg-accent/30"
                     )}
                   >
