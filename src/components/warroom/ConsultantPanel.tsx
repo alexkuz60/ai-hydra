@@ -432,7 +432,7 @@ export function ConsultantPanel({
       {/* Model selector */}
       <div className="p-2 border-b border-border">
         <Select value={selectedModel} onValueChange={setSelectedModel}>
-          <SelectTrigger className="h-8 text-xs min-w-0">
+          <SelectTrigger className="h-8 text-xs min-w-0 [&>span]:!flex [&>span]:items-center [&>span]:gap-1.5 [&>span]:min-w-0 [&>span]:overflow-hidden">
             {(() => {
               const sel = availableModels.find(m => m.id === selectedModel);
               if (!sel) return <SelectValue placeholder={t('dchat.selectModel')} />;
@@ -506,7 +506,7 @@ export function ConsultantPanel({
             </div>
           ) : (
             messages.map((message) => (
-              <StreamingMessage 
+                <StreamingMessage 
                 key={message.id}
                 id={message.id}
                 role={message.role}
@@ -516,7 +516,7 @@ export function ConsultantPanel({
                 createdAt={message.created_at}
                 isStreaming={message.isStreaming}
                 sourceMessageId={message.sourceMessageId}
-                onCopyToMainChat={onCopyToMainChat ? (c, s, m) => onCopyToMainChat(c, s, m, selectedMode) : undefined}
+                onCopyToMainChat={onCopyToMainChat ? (c, s, m) => onCopyToMainChat(c, s, m, message.mode) : undefined}
                 onStopStreaming={message.isStreaming ? stopStreaming : undefined}
               />
             ))
