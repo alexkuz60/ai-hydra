@@ -77,6 +77,30 @@ export function DeepSeekLogo({ className }: { className?: string }) {
   );
 }
 
+export function FirecrawlLogo({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+      <path d="M12 2c-1.5 4-5 6-5 10a5 5 0 0 0 10 0c0-4-3.5-6-5-10zm0 15a2.5 2.5 0 0 1-2.5-2.5c0-1.5 1.5-3 2.5-4.5 1 1.5 2.5 3 2.5 4.5A2.5 2.5 0 0 1 12 17z" />
+    </svg>
+  );
+}
+
+export function TavilyLogo({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+      <path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" />
+    </svg>
+  );
+}
+
+export function PerplexityLogo({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+      <path d="M12 2L4 6v6l8 4 8-4V6l-8-4zm0 2.18L18 7.5v4.32l-6 3-6-3V7.5L12 4.18zM12 16l-6-3v2l6 3 6-3v-2l-6 3z" />
+    </svg>
+  );
+}
+
 export const PROVIDER_LOGOS: Record<string, React.ComponentType<{ className?: string }>> = {
   lovable: LovableLogo,
   openai: OpenAILogo,
@@ -86,6 +110,9 @@ export const PROVIDER_LOGOS: Record<string, React.ComponentType<{ className?: st
   openrouter: OpenRouterLogo,
   groq: GroqLogo,
   deepseek: DeepSeekLogo,
+  firecrawl: FirecrawlLogo,
+  tavily: TavilyLogo,
+  perplexity: PerplexityLogo,
 };
 
 export const PROVIDER_COLORS: Record<string, string> = {
@@ -97,4 +124,7 @@ export const PROVIDER_COLORS: Record<string, string> = {
   openrouter: 'text-hydra-purple',
   groq: 'text-orange-400',
   deepseek: 'text-teal-400',
+  firecrawl: 'text-orange-500',
+  tavily: 'text-emerald-400',
+  perplexity: 'text-sky-400',
 };
