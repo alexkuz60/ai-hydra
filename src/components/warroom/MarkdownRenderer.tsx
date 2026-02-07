@@ -17,6 +17,12 @@ interface MarkdownRendererProps {
   className?: string;
   /** When true, delays rendering of complex elements (tables, mermaid, syntax highlighting) until complete */
   streaming?: boolean;
+  /** When true, checkboxes in task lists are clickable */
+  interactiveChecklists?: boolean;
+  /** Current checklist state (index -> checked) */
+  checklistState?: Record<number, boolean>;
+  /** Called when a checkbox is toggled */
+  onChecklistChange?: (index: number, checked: boolean) => void;
 }
 
 // Streaming placeholder for Mermaid diagrams
@@ -174,7 +180,13 @@ function CodeBlock({
   );
 }
 
-export function MarkdownRenderer({ content, className, streaming = false }: MarkdownRendererProps) {
+export function MarkdownRenderer({ content, className, streaming = false, interactiveChecklists = false, checklistState, onChecklistChange }: MarkdownRendererProps) {
+  // Track checkbox index across the entire render
+  const checkboxIndexRef = React.useRef(0);
+  
+  // Reset counter before each render
+  checkboxIndexRef.current = 0;
+
   // Memoize components to prevent unnecessary re-renders during streaming
   const components = useMemo(() => ({
     code: (props: any) => <CodeBlock {...props} streaming={streaming} />,
@@ -199,9 +211,45 @@ export function MarkdownRenderer({ content, className, streaming = false }: Mark
     ol: ({ children }: { children: React.ReactNode }) => (
       <ol className="list-decimal list-inside my-2 space-y-1">{children}</ol>
     ),
-    li: ({ children }: { children: React.ReactNode }) => (
-      <li className="ml-2">{children}</li>
-    ),
+    li: ({ children, ...props }: any) => {
+      // Check if this is a task list item (has checkbox)
+      const childArray = React.Children.toArray(children);
+      const hasCheckbox = childArray.some(
+        (child: any) => React.isValidElement(child) && (child as any).props?.type === 'checkbox'
+      );
+      if (hasCheckbox) {
+        return <li className="ml-2 list-none flex items-start gap-1.5">{children}</li>;
+      }
+      return <li className="ml-2">{children}</li>;
+    },
+    // Interactive checkbox for task lists
+    input: (props: any) => {
+      if (props.type === 'checkbox') {
+        const idx = checkboxIndexRef.current++;
+        const isChecked = checklistState?.[idx] ?? props.checked ?? false;
+        
+        if (interactiveChecklists && onChecklistChange) {
+          return (
+            <input
+              type="checkbox"
+              checked={isChecked}
+              onChange={() => onChecklistChange(idx, !isChecked)}
+              className="mt-1 h-4 w-4 rounded border-primary text-primary cursor-pointer accent-primary"
+            />
+          );
+        }
+        // Read-only checkbox (default behavior)
+        return (
+          <input
+            type="checkbox"
+            checked={isChecked}
+            disabled
+            className="mt-1 h-4 w-4 rounded opacity-60"
+          />
+        );
+      }
+      return <input {...props} />;
+    },
     // Blockquote
     blockquote: ({ children }: { children: React.ReactNode }) => (
       <blockquote className="border-l-3 border-primary pl-3 my-2 italic text-muted-foreground">
@@ -251,7 +299,7 @@ export function MarkdownRenderer({ content, className, streaming = false }: Mark
     em: ({ children }: { children: React.ReactNode }) => (
       <em className="italic">{children}</em>
     ),
-  }), [streaming]);
+  }), [streaming, interactiveChecklists, checklistState, onChecklistChange]);
 
   return (
     <div className={cn('markdown-content', className)}>

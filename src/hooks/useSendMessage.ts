@@ -65,8 +65,8 @@ interface UseSendMessageReturn {
   uploadProgress: { current: number; total: number } | null;
   attachedFiles: AttachedFile[];
   setAttachedFiles: React.Dispatch<React.SetStateAction<AttachedFile[]>>;
-  sendMessage: (messageContent: string) => Promise<void>;
-  sendUserMessageOnly: (messageContent: string) => Promise<void>;
+  sendMessage: (messageContent: string, extraMetadata?: Record<string, unknown>) => Promise<void>;
+  sendUserMessageOnly: (messageContent: string, extraMetadata?: Record<string, unknown>) => Promise<void>;
   sendToConsultant: (messageContent: string, consultantId: string) => Promise<void>;
   copyConsultantResponse: (content: string, sourceMessageId: string | null, modelName?: string | null, role?: string | null) => Promise<void>;
   retrySingleModel: (modelId: string, messageContent: string) => Promise<void>;
@@ -226,10 +226,9 @@ export function useSendMessage({
   }, [sessionId, onRequestError, selectedModelsRef, selectedModels, t]);
 
   // Send message to selected models
-  const sendMessage = useCallback(async (messageContent: string) => {
+  const sendMessage = useCallback(async (messageContent: string, extraMetadata?: Record<string, unknown>) => {
     if (!userId || !sessionId || !messageContent.trim() || selectedModels.length === 0) return;
     
-    // Narrowed types after guard
     const currentSessionId = sessionId;
     const currentUserId = userId;
     
@@ -241,8 +240,11 @@ export function useSendMessage({
       const attachmentUrls = await uploadFiles(filesToUpload);
 
       // Insert user message
-      const messageMetadata: Json | undefined = attachmentUrls.length > 0 
-        ? { attachments: attachmentUrls as unknown as Json } 
+      const messageMetadata: Json | undefined = (attachmentUrls.length > 0 || extraMetadata)
+        ? { 
+            ...(attachmentUrls.length > 0 ? { attachments: attachmentUrls } : {}),
+            ...extraMetadata,
+          } as unknown as Json
         : undefined;
 
       const insertData = {
@@ -285,7 +287,7 @@ export function useSendMessage({
   }, [userId, sessionId, selectedModels, perModelSettings, attachedFiles, uploadFiles, callOrchestrator, onRequestStart]);
 
   // Send ONLY user message to DB (for hybrid streaming - AI responses handled by streaming hook)
-  const sendUserMessageOnly = useCallback(async (messageContent: string) => {
+  const sendUserMessageOnly = useCallback(async (messageContent: string, extraMetadata?: Record<string, unknown>) => {
     if (!userId || !sessionId || !messageContent.trim()) return;
     
     const currentSessionId = sessionId;
@@ -299,8 +301,11 @@ export function useSendMessage({
       const attachmentUrls = await uploadFiles(filesToUpload);
 
       // Insert user message only - NO orchestrator call
-      const messageMetadata: Json | undefined = attachmentUrls.length > 0 
-        ? { attachments: attachmentUrls as unknown as Json } 
+      const messageMetadata: Json | undefined = (attachmentUrls.length > 0 || extraMetadata)
+        ? { 
+            ...(attachmentUrls.length > 0 ? { attachments: attachmentUrls } : {}),
+            ...extraMetadata,
+          } as unknown as Json
         : undefined;
 
       const { error } = await supabase
