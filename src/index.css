@@ -230,6 +230,15 @@
     animation: gradient-shift 15s ease infinite;
   }
 
+  /* Navigator surface gradient */
+  .hydra-nav-surface {
+    background: linear-gradient(
+      to right,
+      hsl(var(--sidebar-background)),
+      hsl(var(--card))
+    );
+  }
+
   /* Glass morphism */
   .hydra-glass {
     background: hsl(var(--card) / 0.8);

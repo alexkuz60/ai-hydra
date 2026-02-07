@@ -21,6 +21,9 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Navigate, useSearchParams } from 'react-router-dom';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { useToast } from '@/hooks/use-toast';
+import { useNavigatorResize } from '@/hooks/useNavigatorResize';
+import { NavigatorHeader } from '@/components/layout/NavigatorHeader';
+import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 
 const initialNodes: Node[] = [];
 const initialEdges: Edge[] = [];
@@ -50,6 +53,7 @@ function saveEdgeSettings(settings: EdgeStyleSettings) {
 function FlowEditorContent() {
   const { t } = useLanguage();
   const { toast } = useToast();
+  const nav = useNavigatorResize({ storageKey: 'flow-editor', defaultMaxSize: 15, minPanelSize: 4 });
   const { user } = useAuth();
   const [searchParams] = useSearchParams();
   const urlDiagramId = searchParams.get('id');
@@ -510,7 +514,7 @@ function FlowEditorContent() {
             isLogisticsOpen={showLogisticsPanel}
           />
           <div className="flex flex-1 overflow-hidden">
-            <FlowSidebar onDragStart={onDragStart} />
+            <FlowSidebar onDragStart={onDragStart} isMinimized={nav.isMinimized} onToggle={nav.toggle} />
             <FlowCanvas
               nodes={nodes}
               edges={edges}

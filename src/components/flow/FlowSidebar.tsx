@@ -2,6 +2,8 @@ import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import { NODE_PALETTE, FlowNodeType, NodePaletteItem } from '@/types/flow';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
+import { NavigatorHeader } from '@/components/layout/NavigatorHeader';
 import { 
   ArrowDownToLine, 
   FileText, 
@@ -103,9 +105,11 @@ const loadCategoryState = (): Record<string, boolean> => {
 
 interface FlowSidebarProps {
   onDragStart: (event: React.DragEvent, nodeType: FlowNodeType) => void;
+  isMinimized?: boolean;
+  onToggle?: () => void;
 }
 
-export function FlowSidebar({ onDragStart }: FlowSidebarProps) {
+export function FlowSidebar({ onDragStart, isMinimized = false, onToggle }: FlowSidebarProps) {
   const { t, language } = useLanguage();
   
   const [openCategories, setOpenCategories] = useState<Record<string, boolean>>(loadCategoryState);
@@ -177,13 +181,56 @@ export function FlowSidebar({ onDragStart }: FlowSidebarProps) {
   };
 
   return (
-    <div className="w-56 bg-card border-r border-border flex flex-col">
+    <div className={cn("flex flex-col border-r border-border hydra-nav-surface", isMinimized ? "w-14" : "w-56")}>
+      {onToggle && (
+        <NavigatorHeader
+          title={t('flowEditor.sidebar.elements')}
+          isMinimized={isMinimized}
+          onToggle={onToggle}
+        />
+      )}
+      {isMinimized ? (
+        <TooltipProvider delayDuration={200}>
+          <div className="flex-1 overflow-auto p-1 space-y-1">
+            {NODE_PALETTE.map((item) => {
+              const Icon = iconMap[item.icon];
+              const colorClasses = colorMap[item.color] || 'bg-muted text-muted-foreground';
+              return (
+                <Tooltip key={item.type}>
+                  <TooltipTrigger asChild>
+                    <div
+                      draggable
+                      onDragStart={(e) => onDragStart(e, item.type)}
+                      className="flex items-center justify-center p-2 rounded-lg cursor-grab active:cursor-grabbing hover:bg-accent/50 transition-colors"
+                    >
+                      <div className={cn("p-1.5 rounded", colorClasses.split(' ')[0])}>
+                        {Icon && <Icon className={cn("h-4 w-4", colorClasses.split(' ')[1])} />}
+                      </div>
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent side="right" className="max-w-[200px]">
+                    <div className="space-y-1">
+                      <span className="font-medium text-sm">{getNodeLabel(item.type)}</span>
+                      <p className="text-xs text-muted-foreground">
+                        {categoryLabels[item.category]?.[language] || item.category}
+                      </p>
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
+              );
+            })}
+          </div>
+        </TooltipProvider>
+      ) : (
+      <>
+      {!onToggle && (
       <div className="p-3 border-b border-border">
         <h3 className="font-semibold text-sm">{t('flowEditor.sidebar.elements')}</h3>
         <p className="text-xs text-muted-foreground mt-1">
           {t('flowEditor.sidebar.dragHint')}
         </p>
       </div>
+      )}
       
       <div className="flex-1 overflow-auto p-2 space-y-1">
         {categoryOrder.map((category) => {
@@ -220,6 +267,8 @@ export function FlowSidebar({ onDragStart }: FlowSidebarProps) {
           );
         })}
       </div>
+      </>
+      )}
     </div>
   );
 }

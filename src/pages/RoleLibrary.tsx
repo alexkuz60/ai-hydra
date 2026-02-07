@@ -36,6 +36,11 @@
  import { PromptDetailsPanel } from '@/components/prompts/PromptDetailsPanel';
  import { AdvancedPromptEditor } from '@/components/prompts/AdvancedPromptEditor';
  import { RoleSelectOptions } from '@/components/ui/RoleSelectItem';
+ import { useNavigatorResize } from '@/hooks/useNavigatorResize';
+ import { NavigatorHeader } from '@/components/layout/NavigatorHeader';
+ import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
+ import { cn } from '@/lib/utils';
+ import { ROLE_CONFIG } from '@/config/roles';
  
  type OwnerFilter = 'all' | 'own' | 'shared' | 'system';
  
@@ -73,6 +78,9 @@
  
    // Unsaved changes protection
    const unsavedChanges = useUnsavedChanges();
+
+   // Navigator resize
+   const nav = useNavigatorResize({ storageKey: 'role-library', defaultMaxSize: 40 });
  
    // Auth redirect
    useEffect(() => {
@@ -311,8 +319,53 @@
          {/* Main content */}
          <ResizablePanelGroup direction="horizontal" className="flex-1">
            {/* Left panel - List */}
-           <ResizablePanel defaultSize={40} minSize={30} maxSize={60}>
-             <div className="h-full flex flex-col">
+           <ResizablePanel 
+             defaultSize={nav.panelSize} 
+             minSize={4} 
+             maxSize={60}
+             onResize={nav.onPanelResize}
+           >
+             <div className="h-full flex flex-col hydra-nav-surface">
+               <NavigatorHeader
+                 title={t('roleLibrary.title')}
+                 isMinimized={nav.isMinimized}
+                 onToggle={nav.toggle}
+               />
+               {nav.isMinimized ? (
+                 <TooltipProvider delayDuration={200}>
+                   <div className="flex-1 overflow-auto p-1 space-y-1">
+                     {filteredPrompts.map((prompt) => {
+                       const config = ROLE_CONFIG[prompt.role];
+                       const Icon = config?.icon || FileText;
+                       return (
+                         <Tooltip key={prompt.id}>
+                           <TooltipTrigger asChild>
+                             <div
+                               className={cn(
+                                 "flex items-center justify-center p-2 rounded-lg cursor-pointer transition-colors",
+                                 selectedPrompt?.id === prompt.id ? "bg-primary/10" : "hover:bg-muted/30"
+                               )}
+                               onClick={() => handleSelectPrompt(prompt)}
+                             >
+                               <Icon className={cn("h-5 w-5", config?.color)} />
+                             </div>
+                           </TooltipTrigger>
+                           <TooltipContent side="right" className="max-w-[220px]">
+                             <div className="space-y-1">
+                               <span className="font-medium text-sm">{prompt.name}</span>
+                               <ul className="text-xs text-muted-foreground space-y-0.5">
+                                 <li>• {t(`role.${prompt.role}`)}</li>
+                                 <li>• {prompt.language || 'auto'}</li>
+                               </ul>
+                             </div>
+                           </TooltipContent>
+                         </Tooltip>
+                       );
+                     })}
+                   </div>
+                 </TooltipProvider>
+               ) : (
+               <div className="flex-1 flex flex-col">
                {/* Filters */}
                <div className="p-4 border-b space-y-3">
                  <div className="relative">
@@ -405,13 +458,15 @@
                    </div>
                  )}
                </div>
+              </div>
+              )}
              </div>
            </ResizablePanel>
  
            <ResizableHandle withHandle />
  
            {/* Right panel - Details or Editor */}
-           <ResizablePanel defaultSize={60} minSize={40}>
+           <ResizablePanel defaultSize={100 - nav.panelSize} minSize={40} maxSize={96}>
             {isCreating || isEditing ? (
                 <AdvancedPromptEditor
                   formData={formData}

@@ -24,6 +24,9 @@ import { cn } from '@/lib/utils';
 import RoleDetailsPanel from '@/components/staff/RoleDetailsPanel';
 import { useUnsavedChanges } from '@/hooks/useUnsavedChanges';
 import { UnsavedChangesDialog } from '@/components/ui/unsaved-changes-dialog';
+import { useNavigatorResize } from '@/hooks/useNavigatorResize';
+import { NavigatorHeader } from '@/components/layout/NavigatorHeader';
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 
 const TECHNICAL_ROLES: AgentRole[] = ['archivist', 'analyst', 'promptengineer', 'flowregulator', 'toolsmith', 'webhunter'];
 
@@ -36,6 +39,9 @@ const StaffRoles = () => {
   
   // Track unsaved changes from RoleDetailsPanel
   const unsavedChanges = useUnsavedChanges();
+  
+  // Navigator resize
+  const nav = useNavigatorResize({ storageKey: 'staff-roles', defaultMaxSize: 35 });
   
   const handleRoleSelect = useCallback((role: AgentRole) => {
     if (role === selectedRole) return;
@@ -181,8 +187,57 @@ const StaffRoles = () => {
         </div>
 
         <ResizablePanelGroup direction="horizontal" className="flex-1">
-          <ResizablePanel defaultSize={35} minSize={20} maxSize={50}>
-            <div className="h-full overflow-auto">
+          <ResizablePanel 
+            defaultSize={nav.panelSize} 
+            minSize={4} 
+            maxSize={50}
+            onResize={nav.onPanelResize}
+          >
+            <div className="h-full flex flex-col hydra-nav-surface">
+              <NavigatorHeader
+                title={t('nav.staffRoles')}
+                isMinimized={nav.isMinimized}
+                onToggle={nav.toggle}
+              />
+              <div className="flex-1 overflow-auto">
+              {nav.isMinimized ? (
+                <TooltipProvider delayDuration={200}>
+                  <div className="p-1 space-y-1">
+                    {[...expertRoles, ...technicalRoles].map((role) => {
+                      const config = ROLE_CONFIG[role];
+                      const IconComponent = config.icon;
+                      const isSelected = selectedRole === role;
+                      return (
+                        <Tooltip key={role}>
+                          <TooltipTrigger asChild>
+                            <div
+                              className={cn(
+                                "flex items-center justify-center p-2 rounded-lg cursor-pointer transition-colors",
+                                isSelected ? "bg-primary/10" : "hover:bg-muted/30"
+                              )}
+                              onClick={() => handleRoleSelect(role)}
+                            >
+                              <IconComponent className={cn("h-5 w-5", config.color)} />
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent side="right" className="max-w-[200px]">
+                            <div className="space-y-1">
+                              <div className="flex items-center gap-2">
+                                <IconComponent className={cn("h-4 w-4", config.color)} />
+                                <span className="font-medium text-sm">{t(config.label)}</span>
+                              </div>
+                              <ul className="text-xs text-muted-foreground space-y-0.5">
+                                <li>• {config.isTechnicalStaff ? t('staffRoles.technicalGroup') : t('staffRoles.expertsGroup')}</li>
+                                <li>• {role}</li>
+                              </ul>
+                            </div>
+                          </TooltipContent>
+                        </Tooltip>
+                      );
+                    })}
+                  </div>
+                </TooltipProvider>
+              ) : (
               <Table>
                 <TableHeader>
                   <TableRow className="bg-muted/50">
@@ -236,12 +291,14 @@ const StaffRoles = () => {
                   {technicalExpanded && technicalRoles.map(renderRoleRow)}
                 </TableBody>
               </Table>
+              )}
+              </div>
             </div>
           </ResizablePanel>
 
           <ResizableHandle withHandle />
 
-          <ResizablePanel defaultSize={65} minSize={50} maxSize={80}>
+          <ResizablePanel defaultSize={100 - nav.panelSize} minSize={50} maxSize={96}>
             <div className="h-full border-l border-border bg-card">
               <RoleDetailsPanel 
                 selectedRole={selectedRole} 
