@@ -13,6 +13,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { User, Key, Settings, Loader2, Eye, EyeOff, Check, Moon, Sun, Globe, Shield, BarChart3, Search, AlertTriangle } from 'lucide-react';
+import { PROVIDER_LOGOS, PROVIDER_COLORS } from '@/components/ui/ProviderLogos';
+import { cn } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
 import { Link } from 'react-router-dom';
 import { UsageStats } from '@/components/profile/UsageStats';
@@ -353,7 +355,10 @@ export default function Profile() {
 
                 {/* OpenAI */}
                 <div className="space-y-2">
-                  <Label htmlFor="openai">{t('profile.openai')}</Label>
+                  <Label htmlFor="openai" className="flex items-center gap-2">
+                    {PROVIDER_LOGOS.openai && React.createElement(PROVIDER_LOGOS.openai, { className: cn("h-5 w-5", PROVIDER_COLORS.openai) })}
+                    {t('profile.openai')}
+                  </Label>
                   <div className="relative">
                     <Input
                       id="openai"
@@ -377,7 +382,10 @@ export default function Profile() {
 
                 {/* Google Gemini */}
                 <div className="space-y-2">
-                  <Label htmlFor="gemini">{t('profile.gemini')}</Label>
+                  <Label htmlFor="gemini" className="flex items-center gap-2">
+                    {PROVIDER_LOGOS.gemini && React.createElement(PROVIDER_LOGOS.gemini, { className: cn("h-5 w-5", PROVIDER_COLORS.gemini) })}
+                    {t('profile.gemini')}
+                  </Label>
                   <div className="relative">
                     <Input
                       id="gemini"
@@ -401,7 +409,10 @@ export default function Profile() {
 
                 {/* Anthropic */}
                 <div className="space-y-2">
-                  <Label htmlFor="anthropic">{t('profile.anthropic')}</Label>
+                  <Label htmlFor="anthropic" className="flex items-center gap-2">
+                    {PROVIDER_LOGOS.anthropic && React.createElement(PROVIDER_LOGOS.anthropic, { className: cn("h-5 w-5", PROVIDER_COLORS.anthropic) })}
+                    {t('profile.anthropic')}
+                  </Label>
                   <div className="relative">
                     <Input
                       id="anthropic"
@@ -425,7 +436,10 @@ export default function Profile() {
 
                 {/* xAI (Grok) */}
                 <div className="space-y-2">
-                  <Label htmlFor="xai">xAI (Grok)</Label>
+                  <Label htmlFor="xai" className="flex items-center gap-2">
+                    {PROVIDER_LOGOS.xai && React.createElement(PROVIDER_LOGOS.xai, { className: cn("h-5 w-5", PROVIDER_COLORS.xai) })}
+                    xAI (Grok)
+                  </Label>
                   <div className="relative">
                     <Input
                       id="xai"
@@ -449,7 +463,10 @@ export default function Profile() {
 
                 {/* OpenRouter */}
                 <div className="space-y-2">
-                  <Label htmlFor="openrouter">OpenRouter (Free Models)</Label>
+                  <Label htmlFor="openrouter" className="flex items-center gap-2">
+                    {PROVIDER_LOGOS.openrouter && React.createElement(PROVIDER_LOGOS.openrouter, { className: cn("h-5 w-5", PROVIDER_COLORS.openrouter) })}
+                    OpenRouter (Free Models)
+                  </Label>
                   <div className="relative">
                     <Input
                       id="openrouter"
@@ -476,7 +493,10 @@ export default function Profile() {
 
                 {/* Groq */}
                 <div className="space-y-2">
-                  <Label htmlFor="groq">Groq (Ultra-Fast Inference)</Label>
+                  <Label htmlFor="groq" className="flex items-center gap-2">
+                    {PROVIDER_LOGOS.groq && React.createElement(PROVIDER_LOGOS.groq, { className: cn("h-5 w-5", PROVIDER_COLORS.groq) })}
+                    Groq (Ultra-Fast Inference)
+                  </Label>
                   <div className="relative">
                     <Input
                       id="groq"
@@ -503,7 +523,10 @@ export default function Profile() {
 
                 {/* DeepSeek */}
                 <div className="space-y-2">
-                  <Label htmlFor="deepseek">DeepSeek AI</Label>
+                  <Label htmlFor="deepseek" className="flex items-center gap-2">
+                    {PROVIDER_LOGOS.deepseek && React.createElement(PROVIDER_LOGOS.deepseek, { className: cn("h-5 w-5", PROVIDER_COLORS.deepseek) })}
+                    DeepSeek AI
+                  </Label>
                   <div className="relative">
                     <Input
                       id="deepseek"
