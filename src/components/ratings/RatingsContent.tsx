@@ -4,6 +4,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
 import { HydraCard, HydraCardHeader, HydraCardTitle, HydraCardContent } from '@/components/ui/hydra-card';
 import { Brain, Sparkles } from 'lucide-react';
+import { ModelNameWithIcon } from '@/components/ui/ModelNameWithIcon';
 import { cn } from '@/lib/utils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AGENT_ROLES, ROLE_CONFIG, type AgentRole } from '@/config/roles';
@@ -227,7 +228,7 @@ function ModelStatRow({ stat, index, t }: { stat: AggregatedModelStat; index: nu
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2 min-w-0 flex-1">
           {index === 0 && <span className="text-lg">🏆</span>}
-          <span className="font-medium truncate">{stat.model_name}</span>
+          <ModelNameWithIcon modelName={stat.model_name} className="font-medium" iconSize="h-4 w-4" />
         </div>
         <div className="flex items-center gap-4 text-sm">
           <div className="flex items-center gap-1" title={t('stats.totalBrains')}>
@@ -268,7 +269,7 @@ const RoleStatRow = forwardRef<HTMLDivElement, {
     <div ref={ref} className={cn("flex items-center justify-between p-3 rounded-lg", index === 0 && "bg-primary/10 border border-primary/20")}>
       <div className="flex items-center gap-2 min-w-0 flex-1">
         {index === 0 && <span className="text-lg">🏆</span>}
-        <span className="font-medium truncate">{stat.model_name}</span>
+        <ModelNameWithIcon modelName={stat.model_name} className="font-medium" iconSize="h-4 w-4" />
       </div>
       <div className="flex items-center gap-4 text-sm">
         <div className="flex items-center gap-1" title={t('stats.totalBrains')}>

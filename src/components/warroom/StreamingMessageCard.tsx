@@ -10,6 +10,7 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { StreamingResponse } from '@/hooks/useStreamingResponses';
+import { ModelNameWithIcon } from '@/components/ui/ModelNameWithIcon';
 
 interface StreamingMessageCardProps {
   response: StreamingResponse;
@@ -79,7 +80,7 @@ export function StreamingMessageCard({
               {t(`role.${response.role}`)}
             </HydraCardTitle>
             <span className="text-xs text-muted-foreground">
-              ({response.modelName})
+              (<ModelNameWithIcon modelName={response.modelName} />)
             </span>
             {response.isStreaming && (
               <span className="text-xs text-primary animate-pulse">

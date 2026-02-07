@@ -28,6 +28,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { ModelNameWithIcon } from '@/components/ui/ModelNameWithIcon';
 import { cn } from '@/lib/utils';
 import { useLanguage } from '@/contexts/LanguageContext';
 import {
@@ -206,7 +207,7 @@ export function ChatMessage({ message, userDisplayInfo, onDelete, onRatingChange
           }
           {message.model_name && (
             <span className="text-muted-foreground font-normal ml-2">
-              ({message.model_name})
+              (<ModelNameWithIcon modelName={message.model_name} />)
             </span>
           )}
           {/* Fallback indicator */}

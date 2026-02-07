@@ -7,6 +7,7 @@ import { MarkdownRenderer } from './MarkdownRenderer';
 import { cn } from '@/lib/utils';
 import { Copy, User, Search, Shield, Scale, Users, Lightbulb, Square } from 'lucide-react';
 import type { ConsultantMode } from '@/hooks/useStreamingChat';
+import { ModelNameWithIcon } from '@/components/ui/ModelNameWithIcon';
 
 interface ModeConfig {
   id: ConsultantMode;
@@ -69,7 +70,7 @@ export function StreamingMessage({
           <Lightbulb className="h-3 w-3 text-hydra-consultant" />
         )}
         <span>
-          {isUser ? 'Вы' : modelName?.split('/').pop() || 'Консультант'}
+          {isUser ? 'Вы' : modelName ? <ModelNameWithIcon modelName={modelName} iconSize="h-3 w-3" /> : 'Консультант'}
         </span>
         <span className="ml-auto">
           {format(new Date(createdAt), 'HH:mm', {
