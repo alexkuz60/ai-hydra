@@ -727,7 +727,7 @@ ${content.slice(0, 2000)}${content.length > 2000 ? '\n...(сокращено)' :
           <ResizableHandle withHandle />
 
           {/* Main Content */}
-          <ResizablePanel defaultSize={80 - consultantPanelWidth} minSize={40}>
+          <ResizablePanel defaultSize={80 - consultantPanelWidth} minSize={25}>
             <div className="h-full flex flex-col min-w-0">
               {/* Task Header */}
               <div className="border-b border-border p-3 bg-background/50 flex items-center gap-4">
@@ -968,7 +968,7 @@ ${content.slice(0, 2000)}${content.length > 2000 ? '\n...(сокращено)' :
             ref={dChatPanelRef}
             defaultSize={consultantPanelWidth}
             minSize={3}
-            maxSize={30}
+            maxSize={50}
             onResize={saveConsultantPanelWidth}
           >
             <ConsultantPanel
