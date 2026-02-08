@@ -635,6 +635,7 @@ export type Database = {
           gemini_vault_id: string | null
           groq_vault_id: string | null
           id: string
+          key_metadata: Json | null
           openai_vault_id: string | null
           openrouter_vault_id: string | null
           perplexity_vault_id: string | null
@@ -651,6 +652,7 @@ export type Database = {
           gemini_vault_id?: string | null
           groq_vault_id?: string | null
           id?: string
+          key_metadata?: Json | null
           openai_vault_id?: string | null
           openrouter_vault_id?: string | null
           perplexity_vault_id?: string | null
@@ -667,6 +669,7 @@ export type Database = {
           gemini_vault_id?: string | null
           groq_vault_id?: string | null
           id?: string
+          key_metadata?: Json | null
           openai_vault_id?: string | null
           openrouter_vault_id?: string | null
           perplexity_vault_id?: string | null
@@ -756,6 +759,7 @@ export type Database = {
           xai_api_key: string
         }[]
       }
+      get_my_key_metadata: { Args: never; Returns: Json }
       get_prompt_library_safe: {
         Args: never
         Returns: {
@@ -840,6 +844,10 @@ export type Database = {
           metadata: Json
           similarity: number
         }[]
+      }
+      set_api_key_expiration: {
+        Args: { p_expires_at: string; p_provider: string }
+        Returns: undefined
       }
       store_user_secret: {
         Args: {
