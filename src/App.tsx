@@ -8,6 +8,7 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { ApiKeyExpirationNotifier } from "@/components/profile/ApiKeyExpirationNotifier";
 
 // Auto-reload on stale chunk errors (happens after deploys)
 function lazyWithRetry(factory: () => Promise<{ default: ComponentType<any> }>) {
@@ -60,6 +61,7 @@ const App = () => (
           <TooltipProvider>
             <Toaster />
             <Sonner />
+            <ApiKeyExpirationNotifier />
             <BrowserRouter>
               <ErrorBoundary>
                 <Suspense fallback={<PageLoader />}>
