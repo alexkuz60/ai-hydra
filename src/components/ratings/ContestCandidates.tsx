@@ -1,13 +1,22 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { HydraCard, HydraCardHeader, HydraCardTitle, HydraCardContent } from '@/components/ui/hydra-card';
-import { Brain, Key, Check, X } from 'lucide-react';
+import { Brain, Key, Check, X, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import { LOVABLE_AI_MODELS, PERSONAL_KEY_MODELS, useAvailableModels, type ModelOption } from '@/hooks/useAvailableModels';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { PROVIDER_LOGOS, PROVIDER_COLORS } from '@/components/ui/ProviderLogos';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { ChevronDown, ChevronRight } from 'lucide-react';
+import {
+  ResizablePanelGroup,
+  ResizablePanel,
+  ResizableHandle,
+} from '@/components/ui/resizable';
+import { CandidateDetail } from './CandidateDetail';
 
 const PROVIDER_LABELS: Record<string, { ru: string; en: string }> = {
   lovable: { ru: 'Lovable AI', en: 'Lovable AI' },
@@ -21,13 +30,38 @@ const PROVIDER_LABELS: Record<string, { ru: string; en: string }> = {
   mistral: { ru: 'Mistral AI', en: 'Mistral AI' },
 };
 
-function ModelRow({ model, isAvailable }: { model: ModelOption; isAvailable: boolean }) {
+// Build a flat list of all models with availability info
+function useAllModels() {
+  const { isAdmin, personalModels, loading } = useAvailableModels();
+  const availablePersonalIds = new Set(personalModels.map(m => m.id));
+  const isLovableAvailable = isAdmin;
+
+  const allModels: Array<{ model: ModelOption; isAvailable: boolean; section: 'lovable' | 'byok' }> = useMemo(() => {
+    const result: Array<{ model: ModelOption; isAvailable: boolean; section: 'lovable' | 'byok' }> = [];
+    for (const m of LOVABLE_AI_MODELS) {
+      result.push({ model: m, isAvailable: isLovableAvailable, section: 'lovable' });
+    }
+    for (const m of PERSONAL_KEY_MODELS) {
+      result.push({ model: m, isAvailable: availablePersonalIds.has(m.id), section: 'byok' });
+    }
+    return result;
+  }, [isLovableAvailable, availablePersonalIds]);
+
+  return { allModels, loading, isLovableAvailable, availablePersonalIds };
+}
+
+function ModelRow({ model, isAvailable, isActive, onClick }: { model: ModelOption; isAvailable: boolean; isActive: boolean; onClick: () => void }) {
   const providerColor = PROVIDER_COLORS[model.provider] || 'text-muted-foreground';
   return (
-    <div className={cn(
-      "flex items-center justify-between p-2 rounded-lg transition-colors",
-      isAvailable ? "hover:bg-muted/30" : "opacity-50 hover:bg-muted/10"
-    )}>
+    <button
+      onClick={onClick}
+      className={cn(
+        "w-full flex items-center justify-between p-2 rounded-lg transition-colors text-left",
+        isActive
+          ? "bg-primary/10 text-primary"
+          : isAvailable ? "hover:bg-muted/30" : "opacity-50 hover:bg-muted/10"
+      )}
+    >
       <div className="flex items-center gap-2 min-w-0 flex-1">
         <Brain className={cn("h-4 w-4 shrink-0", providerColor)} />
         <span className="text-sm font-medium truncate">{model.name}</span>
@@ -39,7 +73,7 @@ function ModelRow({ model, isAvailable }: { model: ModelOption; isAvailable: boo
           <X className="h-3.5 w-3.5 text-muted-foreground" />
         )}
       </div>
-    </div>
+    </button>
   );
 }
 
@@ -51,18 +85,18 @@ function ProviderHeader({ provider, hasKey, loading, language }: {
   const color = PROVIDER_COLORS[provider];
 
   return (
-    <div className="flex items-center gap-3 mb-3 py-2">
+    <div className="flex items-center gap-2 w-full">
       {Logo && (
         <div className={cn("shrink-0", color)}>
-          <Logo className="h-7 w-7" />
+          <Logo className="h-4 w-4" />
         </div>
       )}
-      <h4 className={cn("text-sm font-semibold tracking-wide", color)}>{label}</h4>
+      <span className={cn("text-xs font-medium uppercase tracking-wider", color)}>{label}</span>
       {!loading && (
         <Tooltip>
           <TooltipTrigger asChild>
             <span className={cn(
-              "w-2.5 h-2.5 rounded-full shrink-0",
+              "w-2 h-2 rounded-full shrink-0",
               hasKey ? "bg-green-500" : "bg-muted-foreground/40"
             )} />
           </TooltipTrigger>
@@ -79,100 +113,134 @@ function ProviderHeader({ provider, hasKey, loading, language }: {
 
 export function ContestCandidates() {
   const { language } = useLanguage();
-  const { isAdmin, personalModels, loading } = useAvailableModels();
+  const { allModels, loading, isLovableAvailable, availablePersonalIds } = useAllModels();
+  const [selectedModelId, setSelectedModelId] = useState<string | null>(null);
+  const [search, setSearch] = useState('');
+  const isRu = language === 'ru';
 
-  const availablePersonalIds = new Set(personalModels.map(m => m.id));
-  const isLovableAvailable = isAdmin;
-  const LovableLogo = PROVIDER_LOGOS.lovable;
+  const selectedEntry = allModels.find(e => e.model.id === selectedModelId);
+
+  // Filter
+  const filtered = useMemo(() => {
+    if (!search) return allModels;
+    const q = search.toLowerCase();
+    return allModels.filter(e => e.model.name.toLowerCase().includes(q) || e.model.id.toLowerCase().includes(q));
+  }, [allModels, search]);
+
+  const lovableModels = filtered.filter(e => e.section === 'lovable');
+  const byokGrouped = useMemo(() => {
+    const groups: Record<string, typeof filtered> = {};
+    for (const e of filtered.filter(e => e.section === 'byok')) {
+      (groups[e.model.provider] ??= []).push(e);
+    }
+    return groups;
+  }, [filtered]);
 
   return (
-    <ScrollArea className="h-full">
-      <div className="p-4 space-y-6">
-        {/* Summary */}
-        {!loading && (
-          <div className="grid grid-cols-2 gap-3">
-            <div className="text-center p-3 rounded-lg bg-muted/50">
-              <div className="text-2xl font-bold text-hydra-cyan">
-                {(isLovableAvailable ? LOVABLE_AI_MODELS.length : 0) + availablePersonalIds.size}
-              </div>
-              <div className="text-xs text-muted-foreground">
-                {language === 'ru' ? 'Доступно вам' : 'Available to you'}
-              </div>
-            </div>
-            <div className="text-center p-3 rounded-lg bg-muted/50">
-              <div className="text-2xl font-bold text-muted-foreground">
-                {LOVABLE_AI_MODELS.length + PERSONAL_KEY_MODELS.length}
-              </div>
-              <div className="text-xs text-muted-foreground">
-                {language === 'ru' ? 'Всего в каталоге' : 'Total in catalog'}
-              </div>
-            </div>
-          </div>
-        )}
-
-        <TooltipProvider delayDuration={300}>
-          {/* Built-in models */}
-          <HydraCard variant="default">
-            <HydraCardHeader className="py-3">
-              <div className="flex items-center gap-3 flex-1">
-                {LovableLogo && <LovableLogo className="h-8 w-8 shrink-0" />}
-                <HydraCardTitle className="text-hydra-cyan">
-                  {language === 'ru' ? 'Встроенные модели — Lovable AI' : 'Built-in Models — Lovable AI'}
-                </HydraCardTitle>
+    <TooltipProvider delayDuration={300}>
+      <ResizablePanelGroup direction="horizontal" className="h-full">
+        {/* Master: candidate list */}
+        <ResizablePanel defaultSize={35} minSize={20} maxSize={50}>
+          <div className="h-full flex flex-col">
+            {/* Search & summary */}
+            <div className="p-3 border-b border-border space-y-2">
+              <div className="relative">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder={isRu ? 'Поиск модели...' : 'Search model...'}
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                  className="pl-9 h-9"
+                />
               </div>
               {!loading && (
-                <Badge variant={isLovableAvailable ? 'default' : 'secondary'} className="ml-auto text-xs">
-                  {isLovableAvailable
-                    ? (language === 'ru' ? 'Доступны' : 'Available')
-                    : (language === 'ru' ? 'Только админ' : 'Admin only')}
-                </Badge>
+                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                  <span>
+                    {isRu ? `${filtered.length} из ${allModels.length}` : `${filtered.length} of ${allModels.length}`}
+                  </span>
+                  <span className="text-hydra-cyan font-medium">
+                    {(isLovableAvailable ? LOVABLE_AI_MODELS.length : 0) + availablePersonalIds.size} {isRu ? 'доступно' : 'available'}
+                  </span>
+                </div>
               )}
-            </HydraCardHeader>
-            <HydraCardContent>
-              <div className="space-y-1">
-                {LOVABLE_AI_MODELS.map(model => (
-                  <ModelRow key={model.id} model={model} isAvailable={isLovableAvailable} />
-                ))}
-              </div>
-            </HydraCardContent>
-          </HydraCard>
+            </div>
 
-          {/* BYOK models grouped by provider */}
-          <HydraCard variant="default">
-            <HydraCardHeader className="py-3">
-              <Key className="h-6 w-6 text-hydra-amber" />
-              <HydraCardTitle>
-                {language === 'ru' ? 'Модели с личным ключом (BYOK)' : 'Personal Key Models (BYOK)'}
-              </HydraCardTitle>
-            </HydraCardHeader>
-            <HydraCardContent>
-              <p className="text-xs text-muted-foreground mb-4">
-                {language === 'ru'
-                  ? 'Добавьте API-ключ провайдера в профиле для активации.'
-                  : 'Add provider API key in your profile to activate.'}
-              </p>
-              {Object.entries(
-                PERSONAL_KEY_MODELS.reduce<Record<string, ModelOption[]>>((acc, m) => {
-                  (acc[m.provider] ??= []).push(m);
-                  return acc;
-                }, {})
-              ).map(([provider, models]) => {
-                const hasKey = models.some(m => availablePersonalIds.has(m.id));
-                return (
-                  <div key={provider} className="mb-5 last:mb-0">
-                    <ProviderHeader provider={provider} hasKey={hasKey} loading={loading} language={language} />
-                    <div className="space-y-1 pl-10">
-                      {models.map(model => (
-                        <ModelRow key={model.id} model={model} isAvailable={availablePersonalIds.has(model.id)} />
+            <ScrollArea className="flex-1">
+              <div className="p-2 space-y-1">
+                {/* Lovable AI section */}
+                {lovableModels.length > 0 && (
+                  <Collapsible defaultOpen>
+                    <CollapsibleTrigger className="flex items-center justify-between w-full px-2 py-1.5 rounded-md hover:bg-accent/50 transition-colors group">
+                      <div className="flex items-center gap-2">
+                        {PROVIDER_LOGOS.lovable && <PROVIDER_LOGOS.lovable className="h-4 w-4 text-hydra-cyan" />}
+                        <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider group-hover:text-foreground">
+                          Lovable AI
+                        </span>
+                      </div>
+                      <span className="text-[10px] text-muted-foreground/70">{lovableModels.length}</span>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="space-y-0.5 pt-0.5 pb-1">
+                      {lovableModels.map(e => (
+                        <div key={e.model.id} className="pl-4">
+                          <ModelRow
+                            model={e.model}
+                            isAvailable={e.isAvailable}
+                            isActive={selectedModelId === e.model.id}
+                            onClick={() => setSelectedModelId(e.model.id)}
+                          />
+                        </div>
                       ))}
-                    </div>
-                  </div>
-                );
-              })}
-            </HydraCardContent>
-          </HydraCard>
-        </TooltipProvider>
-      </div>
-    </ScrollArea>
+                    </CollapsibleContent>
+                  </Collapsible>
+                )}
+
+                {/* BYOK sections by provider */}
+                {Object.entries(byokGrouped).map(([provider, entries]) => {
+                  const hasKey = entries.some(e => e.isAvailable);
+                  return (
+                    <Collapsible key={provider} defaultOpen={hasKey}>
+                      <CollapsibleTrigger className="flex items-center justify-between w-full px-2 py-1.5 rounded-md hover:bg-accent/50 transition-colors group">
+                        <ProviderHeader provider={provider} hasKey={hasKey} loading={loading} language={language} />
+                        <span className="text-[10px] text-muted-foreground/70">{entries.length}</span>
+                      </CollapsibleTrigger>
+                      <CollapsibleContent className="space-y-0.5 pt-0.5 pb-1">
+                        {entries.map(e => (
+                          <div key={e.model.id} className="pl-4">
+                            <ModelRow
+                              model={e.model}
+                              isAvailable={e.isAvailable}
+                              isActive={selectedModelId === e.model.id}
+                              onClick={() => setSelectedModelId(e.model.id)}
+                            />
+                          </div>
+                        ))}
+                      </CollapsibleContent>
+                    </Collapsible>
+                  );
+                })}
+              </div>
+            </ScrollArea>
+          </div>
+        </ResizablePanel>
+
+        <ResizableHandle withHandle />
+
+        {/* Detail panel */}
+        <ResizablePanel defaultSize={65} minSize={40}>
+          {selectedEntry ? (
+            <CandidateDetail model={selectedEntry.model} isAvailable={selectedEntry.isAvailable} />
+          ) : (
+            <div className="h-full flex items-center justify-center text-muted-foreground">
+              <div className="text-center">
+                <Brain className="h-10 w-10 mx-auto mb-3 opacity-30" />
+                <p className="text-sm">
+                  {isRu ? 'Выберите модель для просмотра карточки' : 'Select a model to view details'}
+                </p>
+              </div>
+            </div>
+          )}
+        </ResizablePanel>
+      </ResizablePanelGroup>
+    </TooltipProvider>
   );
 }
