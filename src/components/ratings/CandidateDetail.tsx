@@ -22,6 +22,8 @@ interface CandidateDetailProps {
   contestRole?: string;
   onToggleContest?: (modelId: string) => void;
   onContestRoleChange?: (modelId: string, role: string) => void;
+  /** When true, renders inline without scroll wrapper (for embedding in other scrollable containers) */
+  inline?: boolean;
 }
 
 export function CandidateDetail({
@@ -31,6 +33,7 @@ export function CandidateDetail({
   contestRole = '',
   onToggleContest,
   onContestRoleChange,
+  inline = false,
 }: CandidateDetailProps) {
   const { language } = useLanguage();
   const isRu = language === 'ru';
@@ -50,12 +53,10 @@ export function CandidateDetail({
     try { localStorage.setItem(COLLAPSE_KEY, String(open)); } catch {}
   };
 
-  return (
-    <div className="h-full overflow-hidden relative">
-      <div className="absolute inset-0 overflow-y-auto hydra-scrollbar">
-        <div className="p-4 space-y-4 relative">
-          <HydraCard variant="default">
-            <HydraCardContent className="pt-1">
+  const cardContent = (
+    <>
+      <HydraCard variant="default">
+        <HydraCardContent className="pt-1">
               <Collapsible open={isOpen} onOpenChange={handleOpenChange}>
                 {/* Header: logo + name + badges + chevron */}
                 <CollapsibleTrigger className="flex items-center gap-3 w-full group cursor-pointer py-1">
@@ -178,6 +179,18 @@ export function CandidateDetail({
               </p>
             </div>
           )}
+    </>
+  );
+
+  if (inline) {
+    return cardContent;
+  }
+
+  return (
+    <div className="h-full overflow-hidden relative">
+      <div className="absolute inset-0 overflow-y-auto hydra-scrollbar">
+        <div className="p-4 space-y-4 relative">
+          {cardContent}
         </div>
       </div>
     </div>
