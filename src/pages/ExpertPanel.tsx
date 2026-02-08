@@ -28,6 +28,7 @@ import { useMemoryIntegration } from '@/hooks/useMemoryIntegration';
 import { useSupervisorWishes } from '@/hooks/useSupervisorWishes';
 import { useSessionMemory } from '@/hooks/useSessionMemory';
 import { PendingResponseState, RequestStartInfo } from '@/types/pending';
+import type { Message } from '@/types/messages';
 import { Loader2, Target, Zap, ZapOff, Square, Circle, Wrench } from 'lucide-react';
 import { SessionMemoryDialog } from '@/components/warroom/SessionMemoryDialog';
 import { TechSupportDialog } from '@/components/warroom/TechSupportDialog';
@@ -107,8 +108,8 @@ export default function ExpertPanel() {
   // Shared supervisor wishes hook (#3 fix - no duplication with ConsultantPanel)
   const { selectedWishes, setSelectedWishes } = useSupervisorWishes(currentTask?.id || null);
 
-  // Model statistics hook for tracking dismissals
-  const { incrementDismissal, incrementHallucination } = useModelStatistics(user?.id);
+  // Model statistics hook for tracking responses, dismissals, hallucinations
+  const { incrementResponse, incrementDismissal, incrementHallucination } = useModelStatistics(user?.id);
 
 // Session memory hook - full management capabilities
   const { 
@@ -165,6 +166,12 @@ export default function ExpertPanel() {
     setTimeout(() => setMemoryRefreshed(false), 2000);
   }, [refetchMemory]);
 
+  // Track AI response in model statistics when received via realtime
+  const handleAIMessageReceived = useCallback((message: Message) => {
+    if (!message.model_name || !message.session_id) return;
+    incrementResponse(message.model_name, message.session_id, message.role);
+  }, [incrementResponse]);
+
   // Messages management hook
   const {
     messages,
@@ -182,6 +189,7 @@ export default function ExpertPanel() {
   } = useMessages({ 
     sessionId: currentTask?.id || null,
     onBeforeDeleteMessage: deleteByMessageId,
+    onAIMessageReceived: handleAIMessageReceived,
   });
 
   // Memory integration hook - auto-saves high-rated decisions
