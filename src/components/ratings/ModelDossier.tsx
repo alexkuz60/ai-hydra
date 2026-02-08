@@ -122,6 +122,8 @@ export function ModelDossier({ modelId }: ModelDossierProps) {
                 {statsRoleDistribution.map(rd => {
                   const config = ROLE_CONFIG[rd.role as AgentRole] || ROLE_CONFIG.assistant;
                   const RoleIcon = config.icon;
+                  // Extract CSS variable from Tailwind class: "text-hydra-expert" → "--hydra-expert"
+                  const cssVar = config.color.replace('text-', '--');
                   return (
                     <div key={rd.role} className="flex items-center gap-3">
                       <RoleIcon className={cn("h-4 w-4 shrink-0", config.color)} />
@@ -135,7 +137,7 @@ export function ModelDossier({ modelId }: ModelDossierProps) {
                             className="h-full rounded-full transition-all duration-500"
                             style={{ 
                               width: `${rd.percentage}%`,
-                              backgroundColor: `hsl(var(--primary))`,
+                              backgroundColor: `hsl(var(${cssVar}))`,
                             }}
                           />
                         </div>
