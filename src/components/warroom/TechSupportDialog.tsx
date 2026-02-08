@@ -32,6 +32,7 @@ interface TechSupportDialogProps {
   trigger?: React.ReactNode;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
+  onResponseComplete?: (modelId: string, role: string) => void;
 }
 
 export function TechSupportDialog({
@@ -40,6 +41,7 @@ export function TechSupportDialog({
   trigger,
   open: controlledOpen,
   onOpenChange: controlledOnOpenChange,
+  onResponseComplete,
 }: TechSupportDialogProps) {
   const { t } = useLanguage();
   const [input, setInput] = useState('');
@@ -59,6 +61,7 @@ export function TechSupportDialog({
 
   const { messages, streaming, sendQuery, stopStreaming, clearMessages } = useStreamingChat({
     sessionId,
+    onResponseComplete,
   });
 
   // Update selected model when available models change
