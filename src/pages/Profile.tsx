@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -12,12 +12,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { User, Key, Settings, Loader2, Eye, EyeOff, Check, Moon, Sun, Globe, Shield, BarChart3, Search, AlertTriangle, Type } from 'lucide-react';
-import { PROVIDER_LOGOS, PROVIDER_COLORS } from '@/components/ui/ProviderLogos';
-import { cn } from '@/lib/utils';
+import { User, Key, Settings, Loader2, Check, Moon, Sun, Globe, Shield, BarChart3, Search, AlertTriangle, Type } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { Link } from 'react-router-dom';
 import { UsageStats } from '@/components/profile/UsageStats';
+import { ApiKeyField, type KeyMetadata } from '@/components/profile/ApiKeyField';
 
 interface Profile {
   id: string;
@@ -28,19 +27,41 @@ interface Profile {
   preferred_theme: string;
 }
 
-interface ApiKeys {
-  openai_api_key: string | null;
-  google_gemini_api_key: string | null;
-  anthropic_api_key: string | null;
-  xai_api_key: string | null;
-  openrouter_api_key: string | null;
-  groq_api_key: string | null;
-  tavily_api_key: string | null;
-  perplexity_api_key: string | null;
-  deepseek_api_key: string | null;
-  firecrawl_api_key: string | null;
-  mistral_api_key: string | null;
-}
+// Provider definitions for API keys section
+const LLM_PROVIDERS = [
+  { provider: 'openai', labelKey: 'profile.openai', placeholder: 'sk-...' },
+  { provider: 'gemini', labelKey: 'profile.gemini', placeholder: 'AIza...' },
+  { provider: 'anthropic', labelKey: 'profile.anthropic', placeholder: 'sk-ant-...' },
+  { provider: 'xai', label: 'xAI (Grok)', placeholder: 'xai-...' },
+  { provider: 'openrouter', label: 'OpenRouter (Free Models)', placeholder: 'sk-or-...', hint: { ru: 'openrouter.ai/keys', en: 'openrouter.ai/keys', url: 'https://openrouter.ai/keys' } },
+  { provider: 'groq', label: 'Groq (Ultra-Fast Inference)', placeholder: 'gsk_...', hint: { ru: 'console.groq.com/keys', en: 'console.groq.com/keys', url: 'https://console.groq.com/keys' } },
+  { provider: 'deepseek', label: 'DeepSeek AI', placeholder: 'sk-...', hint: { ru: 'platform.deepseek.com', en: 'platform.deepseek.com', url: 'https://platform.deepseek.com/api_keys' } },
+  { provider: 'mistral', label: 'Mistral AI', placeholder: '...', hint: { ru: 'console.mistral.ai', en: 'console.mistral.ai', url: 'https://console.mistral.ai/api-keys' } },
+] as const;
+
+const TOOL_PROVIDERS = [
+  { provider: 'firecrawl', label: 'Firecrawl (Web Scraping)', placeholder: 'fc-...', hint: { ru: 'firecrawl.dev', en: 'firecrawl.dev', url: 'https://firecrawl.dev/app/api-keys' } },
+] as const;
+
+const SEARCH_PROVIDERS = [
+  { provider: 'tavily', labelKey: 'profile.tavily', placeholder: 'tvly-...', hintKey: 'profile.tavilyHint', hintUrl: 'https://tavily.com/app' },
+  { provider: 'perplexity', labelKey: 'profile.perplexity', placeholder: 'pplx-...', hintKey: 'profile.perplexityHint', hintUrl: 'https://perplexity.ai/settings/api' },
+] as const;
+
+// Map from RPC field names to provider keys
+const RPC_KEY_MAP: Record<string, string> = {
+  openai_api_key: 'openai',
+  google_gemini_api_key: 'gemini',
+  anthropic_api_key: 'anthropic',
+  xai_api_key: 'xai',
+  openrouter_api_key: 'openrouter',
+  groq_api_key: 'groq',
+  tavily_api_key: 'tavily',
+  perplexity_api_key: 'perplexity',
+  deepseek_api_key: 'deepseek',
+  firecrawl_api_key: 'firecrawl',
+  mistral_api_key: 'mistral',
+};
 
 export default function Profile() {
   const { user, loading: authLoading } = useAuth();
@@ -52,34 +73,14 @@ export default function Profile() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [showKeys, setShowKeys] = useState({
-    openai: false,
-    gemini: false,
-    anthropic: false,
-    xai: false,
-    openrouter: false,
-    groq: false,
-    tavily: false,
-    perplexity: false,
-    deepseek: false,
-    firecrawl: false,
-    mistral: false,
-  });
 
   // Form states
   const [displayName, setDisplayName] = useState('');
   const [username, setUsername] = useState('');
-  const [openaiKey, setOpenaiKey] = useState('');
-  const [geminiKey, setGeminiKey] = useState('');
-  const [anthropicKey, setAnthropicKey] = useState('');
-  const [xaiKey, setXaiKey] = useState('');
-  const [openrouterKey, setOpenrouterKey] = useState('');
-  const [groqKey, setGroqKey] = useState('');
-  const [tavilyKey, setTavilyKey] = useState('');
-  const [perplexityKey, setPerplexityKey] = useState('');
-  const [deepseekKey, setDeepseekKey] = useState('');
-  const [firecrawlKey, setFirecrawlKey] = useState('');
-  const [mistralKey, setMistralKey] = useState('');
+  
+  // API keys as a single record
+  const [apiKeys, setApiKeys] = useState<Record<string, string>>({});
+  const [keyMetadata, setKeyMetadata] = useState<Record<string, KeyMetadata>>({});
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -112,35 +113,23 @@ export default function Profile() {
         setIsAdmin(profileData.username === 'AlexKuz');
       }
 
-      // Fetch decrypted API keys from Vault
-      const { data: apiKeysData } = await supabase
-        .rpc('get_my_api_keys');
+      // Fetch decrypted API keys from Vault + metadata in parallel
+      const [apiKeysResult, metadataResult] = await Promise.all([
+        supabase.rpc('get_my_api_keys'),
+        supabase.rpc('get_my_key_metadata'),
+      ]);
 
-      if (apiKeysData && apiKeysData.length > 0) {
-        const keys = apiKeysData[0] as { 
-          openai_api_key?: string; 
-          google_gemini_api_key?: string;
-          anthropic_api_key?: string;
-          xai_api_key?: string;
-          openrouter_api_key?: string;
-          groq_api_key?: string;
-          tavily_api_key?: string;
-          perplexity_api_key?: string;
-          deepseek_api_key?: string;
-          firecrawl_api_key?: string;
-          mistral_api_key?: string;
-        };
-        setOpenaiKey(keys.openai_api_key || '');
-        setGeminiKey(keys.google_gemini_api_key || '');
-        setAnthropicKey(keys.anthropic_api_key || '');
-        setXaiKey(keys.xai_api_key || '');
-        setOpenrouterKey(keys.openrouter_api_key || '');
-        setGroqKey(keys.groq_api_key || '');
-        setTavilyKey(keys.tavily_api_key || '');
-        setPerplexityKey(keys.perplexity_api_key || '');
-        setDeepseekKey(keys.deepseek_api_key || '');
-        setFirecrawlKey(keys.firecrawl_api_key || '');
-        setMistralKey(keys.mistral_api_key || '');
+      if (apiKeysResult.data && apiKeysResult.data.length > 0) {
+        const keys = apiKeysResult.data[0] as Record<string, string | null>;
+        const newApiKeys: Record<string, string> = {};
+        for (const [rpcField, provider] of Object.entries(RPC_KEY_MAP)) {
+          newApiKeys[provider] = keys[rpcField] || '';
+        }
+        setApiKeys(newApiKeys);
+      }
+
+      if (metadataResult.data) {
+        setKeyMetadata(metadataResult.data as Record<string, KeyMetadata>);
       }
     } catch (error: any) {
       toast.error(error.message);
@@ -178,25 +167,22 @@ export default function Profile() {
     setSaving(true);
 
     try {
-      // Save each API key through Vault-backed function
-      const savePromises = [
-        supabase.rpc('save_api_key', { p_provider: 'openai', p_api_key: openaiKey || '' }),
-        supabase.rpc('save_api_key', { p_provider: 'anthropic', p_api_key: anthropicKey || '' }),
-        supabase.rpc('save_api_key', { p_provider: 'gemini', p_api_key: geminiKey || '' }),
-        supabase.rpc('save_api_key', { p_provider: 'xai', p_api_key: xaiKey || '' }),
-        supabase.rpc('save_api_key', { p_provider: 'openrouter', p_api_key: openrouterKey || '' }),
-        supabase.rpc('save_api_key', { p_provider: 'groq', p_api_key: groqKey || '' }),
-        supabase.rpc('save_api_key', { p_provider: 'tavily', p_api_key: tavilyKey || '' }),
-        supabase.rpc('save_api_key', { p_provider: 'perplexity', p_api_key: perplexityKey || '' }),
-        supabase.rpc('save_api_key', { p_provider: 'deepseek', p_api_key: deepseekKey || '' }),
-        supabase.rpc('save_api_key', { p_provider: 'firecrawl', p_api_key: firecrawlKey || '' }),
-        supabase.rpc('save_api_key', { p_provider: 'mistral', p_api_key: mistralKey || '' }),
-      ];
+      const allProviders = [...LLM_PROVIDERS, ...TOOL_PROVIDERS, ...SEARCH_PROVIDERS];
+      const savePromises = allProviders.map(p =>
+        supabase.rpc('save_api_key', { p_provider: p.provider, p_api_key: apiKeys[p.provider] || '' })
+      );
 
       const results = await Promise.all(savePromises);
       const error = results.find(r => r.error)?.error;
 
       if (error) throw error;
+      
+      // Refetch metadata (added_at gets updated on save)
+      const { data: newMeta } = await supabase.rpc('get_my_key_metadata');
+      if (newMeta) {
+        setKeyMetadata(newMeta as Record<string, KeyMetadata>);
+      }
+      
       toast.success(t('profile.saved'));
     } catch (error: any) {
       toast.error(error.message);
@@ -204,6 +190,28 @@ export default function Profile() {
       setSaving(false);
     }
   };
+
+  const handleExpirationChange = useCallback(async (provider: string, date: string | null) => {
+    // Optimistic update
+    setKeyMetadata(prev => ({
+      ...prev,
+      [provider]: { ...prev[provider], expires_at: date },
+    }));
+
+    try {
+      const { error } = await supabase.rpc('set_api_key_expiration', {
+        p_provider: provider,
+        p_expires_at: date || '',
+      });
+      if (error) throw error;
+    } catch (error: any) {
+      toast.error(error.message);
+    }
+  }, []);
+
+  const setKeyValue = useCallback((provider: string, value: string) => {
+    setApiKeys(prev => ({ ...prev, [provider]: value }));
+  }, []);
 
   if (authLoading || loading) {
     return (
@@ -214,6 +222,31 @@ export default function Profile() {
       </Layout>
     );
   }
+
+  const renderProviderHint = (p: Record<string, unknown>) => {
+    const hintKey = p.hintKey as string | undefined;
+    const hintUrl = p.hintUrl as string | undefined;
+    const hint = p.hint as { ru: string; en: string; url: string } | undefined;
+    
+    if (hintKey) {
+      return (
+        <>
+          {t(hintKey)} — <a href={hintUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">{hintUrl?.replace('https://', '')}</a>
+        </>
+      );
+    }
+    if (hint) {
+      return (
+        <>
+          {language === 'ru' ? 'Получите ключ на' : 'Get your key at'}{' '}
+          <a href={hint.url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+            {language === 'ru' ? hint.ru : hint.en}
+          </a>
+        </>
+      );
+    }
+    return null;
+  };
 
   return (
     <Layout>
@@ -376,278 +409,51 @@ export default function Profile() {
               </HydraCardHeader>
               <HydraCardContent className="space-y-4">
                 <p className="text-sm text-muted-foreground mb-4">
-                  Добавьте свои API ключи для использования различных LLM моделей (BYOK — Bring Your Own Key)
+                  {language === 'ru'
+                    ? 'Добавьте свои API ключи для использования различных LLM моделей (BYOK — Bring Your Own Key)'
+                    : 'Add your API keys to use various LLM models (BYOK — Bring Your Own Key)'}
                 </p>
 
-                {/* OpenAI */}
-                <div className="space-y-2">
-                  <Label htmlFor="openai" className="flex items-center gap-2">
-                    {PROVIDER_LOGOS.openai && React.createElement(PROVIDER_LOGOS.openai, { className: cn("h-5 w-5", PROVIDER_COLORS.openai) })}
-                    {t('profile.openai')}
-                  </Label>
-                  <div className="relative">
-                    <Input
-                      id="openai"
-                      type={showKeys.openai ? 'text' : 'password'}
-                      value={openaiKey}
-                      onChange={(e) => setOpenaiKey(e.target.value)}
-                      placeholder="sk-..."
-                      className="pr-10"
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="absolute right-0 top-0 h-full px-3"
-                      onClick={() => setShowKeys({ ...showKeys, openai: !showKeys.openai })}
-                    >
-                      {showKeys.openai ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </Button>
-                  </div>
-                </div>
-
-                {/* Google Gemini */}
-                <div className="space-y-2">
-                  <Label htmlFor="gemini" className="flex items-center gap-2">
-                    {PROVIDER_LOGOS.gemini && React.createElement(PROVIDER_LOGOS.gemini, { className: cn("h-5 w-5", PROVIDER_COLORS.gemini) })}
-                    {t('profile.gemini')}
-                  </Label>
-                  <div className="relative">
-                    <Input
-                      id="gemini"
-                      type={showKeys.gemini ? 'text' : 'password'}
-                      value={geminiKey}
-                      onChange={(e) => setGeminiKey(e.target.value)}
-                      placeholder="AIza..."
-                      className="pr-10"
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="absolute right-0 top-0 h-full px-3"
-                      onClick={() => setShowKeys({ ...showKeys, gemini: !showKeys.gemini })}
-                    >
-                      {showKeys.gemini ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </Button>
-                  </div>
-                </div>
-
-                {/* Anthropic */}
-                <div className="space-y-2">
-                  <Label htmlFor="anthropic" className="flex items-center gap-2">
-                    {PROVIDER_LOGOS.anthropic && React.createElement(PROVIDER_LOGOS.anthropic, { className: cn("h-5 w-5", PROVIDER_COLORS.anthropic) })}
-                    {t('profile.anthropic')}
-                  </Label>
-                  <div className="relative">
-                    <Input
-                      id="anthropic"
-                      type={showKeys.anthropic ? 'text' : 'password'}
-                      value={anthropicKey}
-                      onChange={(e) => setAnthropicKey(e.target.value)}
-                      placeholder="sk-ant-..."
-                      className="pr-10"
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="absolute right-0 top-0 h-full px-3"
-                      onClick={() => setShowKeys({ ...showKeys, anthropic: !showKeys.anthropic })}
-                    >
-                      {showKeys.anthropic ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </Button>
-                  </div>
-                </div>
-
-                {/* xAI (Grok) */}
-                <div className="space-y-2">
-                  <Label htmlFor="xai" className="flex items-center gap-2">
-                    {PROVIDER_LOGOS.xai && React.createElement(PROVIDER_LOGOS.xai, { className: cn("h-5 w-5", PROVIDER_COLORS.xai) })}
-                    xAI (Grok)
-                  </Label>
-                  <div className="relative">
-                    <Input
-                      id="xai"
-                      type={showKeys.xai ? 'text' : 'password'}
-                      value={xaiKey}
-                      onChange={(e) => setXaiKey(e.target.value)}
-                      placeholder="xai-..."
-                      className="pr-10"
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="absolute right-0 top-0 h-full px-3"
-                      onClick={() => setShowKeys({ ...showKeys, xai: !showKeys.xai })}
-                    >
-                      {showKeys.xai ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </Button>
-                  </div>
-                </div>
-
-                {/* OpenRouter */}
-                <div className="space-y-2">
-                  <Label htmlFor="openrouter" className="flex items-center gap-2">
-                    {PROVIDER_LOGOS.openrouter && React.createElement(PROVIDER_LOGOS.openrouter, { className: cn("h-5 w-5", PROVIDER_COLORS.openrouter) })}
-                    OpenRouter (Free Models)
-                  </Label>
-                  <div className="relative">
-                    <Input
-                      id="openrouter"
-                      type={showKeys.openrouter ? 'text' : 'password'}
-                      value={openrouterKey}
-                      onChange={(e) => setOpenrouterKey(e.target.value)}
-                      placeholder="sk-or-..."
-                      className="pr-10"
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="absolute right-0 top-0 h-full px-3"
-                      onClick={() => setShowKeys({ ...showKeys, openrouter: !showKeys.openrouter })}
-                    >
-                      {showKeys.openrouter ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </Button>
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    Получите ключ на <a href="https://openrouter.ai/keys" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">openrouter.ai/keys</a> — доступны бесплатные модели Llama, Gemma, Mistral, Qwen
-                  </p>
-                </div>
-
-                {/* Groq */}
-                <div className="space-y-2">
-                  <Label htmlFor="groq" className="flex items-center gap-2">
-                    {PROVIDER_LOGOS.groq && React.createElement(PROVIDER_LOGOS.groq, { className: cn("h-5 w-5", PROVIDER_COLORS.groq) })}
-                    Groq (Ultra-Fast Inference)
-                  </Label>
-                  <div className="relative">
-                    <Input
-                      id="groq"
-                      type={showKeys.groq ? 'text' : 'password'}
-                      value={groqKey}
-                      onChange={(e) => setGroqKey(e.target.value)}
-                      placeholder="gsk_..."
-                      className="pr-10"
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="absolute right-0 top-0 h-full px-3"
-                      onClick={() => setShowKeys({ ...showKeys, groq: !showKeys.groq })}
-                    >
-                      {showKeys.groq ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </Button>
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    Получите ключ на <a href="https://console.groq.com/keys" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">console.groq.com/keys</a> — сверхбыстрый инференс Llama 3.3, Mixtral, Gemma
-                  </p>
-                </div>
-
-                {/* DeepSeek */}
-                <div className="space-y-2">
-                  <Label htmlFor="deepseek" className="flex items-center gap-2">
-                    {PROVIDER_LOGOS.deepseek && React.createElement(PROVIDER_LOGOS.deepseek, { className: cn("h-5 w-5", PROVIDER_COLORS.deepseek) })}
-                    DeepSeek AI
-                  </Label>
-                  <div className="relative">
-                    <Input
-                      id="deepseek"
-                      type={showKeys.deepseek ? 'text' : 'password'}
-                      value={deepseekKey}
-                      onChange={(e) => setDeepseekKey(e.target.value)}
-                      placeholder="sk-..."
-                      className="pr-10"
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="absolute right-0 top-0 h-full px-3"
-                      onClick={() => setShowKeys({ ...showKeys, deepseek: !showKeys.deepseek })}
-                    >
-                      {showKeys.deepseek ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </Button>
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    Получите ключ на <a href="https://platform.deepseek.com/api_keys" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">platform.deepseek.com</a> — DeepSeek-V3, DeepSeek-R1 (reasoning)
-                  </p>
-                </div>
-
-                {/* Mistral */}
-                <div className="space-y-2">
-                  <Label htmlFor="mistral" className="flex items-center gap-2">
-                    {PROVIDER_LOGOS.mistral && React.createElement(PROVIDER_LOGOS.mistral, { className: cn("h-5 w-5", PROVIDER_COLORS.mistral) })}
-                    Mistral AI
-                  </Label>
-                  <div className="relative">
-                    <Input
-                      id="mistral"
-                      type={showKeys.mistral ? 'text' : 'password'}
-                      value={mistralKey}
-                      onChange={(e) => setMistralKey(e.target.value)}
-                      placeholder="..."
-                      className="pr-10"
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="absolute right-0 top-0 h-full px-3"
-                      onClick={() => setShowKeys({ ...showKeys, mistral: !showKeys.mistral })}
-                    >
-                      {showKeys.mistral ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </Button>
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    Получите ключ на <a href="https://console.mistral.ai/api-keys" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">console.mistral.ai</a> — Mistral Large, Codestral, Mistral Small
-                  </p>
-                </div>
+                {/* LLM Providers */}
+                {LLM_PROVIDERS.map(p => (
+                  <ApiKeyField
+                    key={p.provider}
+                    provider={p.provider}
+                    label={'labelKey' in p ? t(p.labelKey) : p.label}
+                    value={apiKeys[p.provider] || ''}
+                    onChange={(v) => setKeyValue(p.provider, v)}
+                    placeholder={p.placeholder}
+                    metadata={keyMetadata[p.provider]}
+                    onExpirationChange={(date) => handleExpirationChange(p.provider, date)}
+                    hint={renderProviderHint(p)}
+                  />
+                ))}
 
                 {/* Tools Section */}
                 <Separator className="my-6" />
-                
                 <div className="flex items-center gap-2 mb-4">
                   <Globe className="h-5 w-5 text-primary" />
-                  <h3 className="text-lg font-semibold">Инструменты</h3>
+                  <h3 className="text-lg font-semibold">
+                    {language === 'ru' ? 'Инструменты' : 'Tools'}
+                  </h3>
                 </div>
 
-                {/* Firecrawl */}
-                <div className="space-y-2">
-                  <Label htmlFor="firecrawl" className="flex items-center gap-2">
-                    {PROVIDER_LOGOS.firecrawl && React.createElement(PROVIDER_LOGOS.firecrawl, { className: cn("h-5 w-5", PROVIDER_COLORS.firecrawl) })}
-                    Firecrawl (Web Scraping)
-                  </Label>
-                  <div className="relative">
-                    <Input
-                      id="firecrawl"
-                      type={showKeys.firecrawl ? 'text' : 'password'}
-                      value={firecrawlKey}
-                      onChange={(e) => setFirecrawlKey(e.target.value)}
-                      placeholder="fc-..."
-                      className="pr-10"
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="absolute right-0 top-0 h-full px-3"
-                      onClick={() => setShowKeys({ ...showKeys, firecrawl: !showKeys.firecrawl })}
-                    >
-                      {showKeys.firecrawl ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </Button>
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    Получите ключ на <a href="https://firecrawl.dev/app/api-keys" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">firecrawl.dev</a> — персональный ключ имеет приоритет над системным
-                  </p>
-                </div>
+                {TOOL_PROVIDERS.map(p => (
+                  <ApiKeyField
+                    key={p.provider}
+                    provider={p.provider}
+                    label={p.label}
+                    value={apiKeys[p.provider] || ''}
+                    onChange={(v) => setKeyValue(p.provider, v)}
+                    placeholder={p.placeholder}
+                    metadata={keyMetadata[p.provider]}
+                    onExpirationChange={(date) => handleExpirationChange(p.provider, date)}
+                    hint={renderProviderHint(p)}
+                  />
+                ))}
 
                 {/* Web Search Section */}
                 <Separator className="my-6" />
-                
                 <div className="flex items-center gap-2 mb-4">
                   <Search className="h-5 w-5 text-primary" />
                   <h3 className="text-lg font-semibold">{t('profile.webSearch')}</h3>
@@ -663,65 +469,19 @@ export default function Profile() {
                   </div>
                 </div>
 
-                {/* Tavily */}
-                <div className="space-y-2">
-                  <Label htmlFor="tavily" className="flex items-center gap-2">
-                    {PROVIDER_LOGOS.tavily && React.createElement(PROVIDER_LOGOS.tavily, { className: cn("h-5 w-5", PROVIDER_COLORS.tavily) })}
-                    {t('profile.tavily')}
-                  </Label>
-                  <div className="relative">
-                    <Input
-                      id="tavily"
-                      type={showKeys.tavily ? 'text' : 'password'}
-                      value={tavilyKey}
-                      onChange={(e) => setTavilyKey(e.target.value)}
-                      placeholder="tvly-..."
-                      className="pr-10"
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="absolute right-0 top-0 h-full px-3"
-                      onClick={() => setShowKeys({ ...showKeys, tavily: !showKeys.tavily })}
-                    >
-                      {showKeys.tavily ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </Button>
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    {t('profile.tavilyHint')} — <a href="https://tavily.com/app" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">tavily.com/app</a>
-                  </p>
-                </div>
-
-                {/* Perplexity */}
-                <div className="space-y-2">
-                  <Label htmlFor="perplexity" className="flex items-center gap-2">
-                    {PROVIDER_LOGOS.perplexity && React.createElement(PROVIDER_LOGOS.perplexity, { className: cn("h-5 w-5", PROVIDER_COLORS.perplexity) })}
-                    {t('profile.perplexity')}
-                  </Label>
-                  <div className="relative">
-                    <Input
-                      id="perplexity"
-                      type={showKeys.perplexity ? 'text' : 'password'}
-                      value={perplexityKey}
-                      onChange={(e) => setPerplexityKey(e.target.value)}
-                      placeholder="pplx-..."
-                      className="pr-10"
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="absolute right-0 top-0 h-full px-3"
-                      onClick={() => setShowKeys({ ...showKeys, perplexity: !showKeys.perplexity })}
-                    >
-                      {showKeys.perplexity ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </Button>
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    {t('profile.perplexityHint')} — <a href="https://perplexity.ai/settings/api" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">perplexity.ai/settings/api</a>
-                  </p>
-                </div>
+                {SEARCH_PROVIDERS.map(p => (
+                  <ApiKeyField
+                    key={p.provider}
+                    provider={p.provider}
+                    label={t(p.labelKey)}
+                    value={apiKeys[p.provider] || ''}
+                    onChange={(v) => setKeyValue(p.provider, v)}
+                    placeholder={p.placeholder}
+                    metadata={keyMetadata[p.provider]}
+                    onExpirationChange={(date) => handleExpirationChange(p.provider, date)}
+                    hint={renderProviderHint(p)}
+                  />
+                ))}
 
                 <Button onClick={handleSaveApiKeys} disabled={saving} className="hydra-glow-sm">
                   {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Check className="h-4 w-4 mr-2" />}
