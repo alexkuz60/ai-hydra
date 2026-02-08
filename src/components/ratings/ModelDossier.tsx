@@ -19,9 +19,12 @@ import { ru as ruLocale, enUS } from 'date-fns/locale';
 
 interface ModelDossierProps {
   modelId: string;
+  contestModels?: Record<string, string>;
+  onToggleContest?: (modelId: string) => void;
+  onContestRoleChange?: (modelId: string, role: string) => void;
 }
 
-export function ModelDossier({ modelId }: ModelDossierProps) {
+export function ModelDossier({ modelId, contestModels = {}, onToggleContest, onContestRoleChange }: ModelDossierProps) {
   const { language } = useLanguage();
   const dossier = useModelDossier(modelId);
   const isRu = language === 'ru';
@@ -53,6 +56,10 @@ export function ModelDossier({ modelId }: ModelDossierProps) {
         <CandidateDetail
           model={modelOption}
           isAvailable={true}
+          isSelectedForContest={modelId in contestModels}
+          contestRole={contestModels[modelId] || ''}
+          onToggleContest={onToggleContest}
+          onContestRoleChange={onContestRoleChange}
           inline
         />
 
