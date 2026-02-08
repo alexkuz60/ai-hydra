@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { Brain, Check, X, Search, ChevronsUpDown } from 'lucide-react';
+import { Brain, Check, X, Search, ChevronsUpDown, Crown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import { LOVABLE_AI_MODELS, PERSONAL_KEY_MODELS, useAvailableModels, type ModelOption } from '@/hooks/useAvailableModels';
@@ -50,7 +50,7 @@ function useAllModels() {
   return { allModels, loading, isLovableAvailable, availablePersonalIds };
 }
 
-function ModelRow({ model, isAvailable, isActive, onClick }: { model: ModelOption; isAvailable: boolean; isActive: boolean; onClick: () => void }) {
+function ModelRow({ model, isAvailable, isActive, isOnPodium, onClick }: { model: ModelOption; isAvailable: boolean; isActive: boolean; isOnPodium?: boolean; onClick: () => void }) {
   const providerColor = PROVIDER_COLORS[model.provider] || 'text-muted-foreground';
   return (
     <button
@@ -66,7 +66,8 @@ function ModelRow({ model, isAvailable, isActive, onClick }: { model: ModelOptio
         <Brain className={cn("h-4 w-4 shrink-0", providerColor)} />
         <span className="text-sm font-medium truncate">{model.name}</span>
       </div>
-      <div className="flex items-center gap-2 shrink-0">
+      <div className="flex items-center gap-1.5 shrink-0">
+        {isOnPodium && <Crown className="h-3.5 w-3.5 text-amber-400" />}
         {isAvailable ? (
           <Check className="h-3.5 w-3.5 text-green-500" />
         ) : (
@@ -268,6 +269,7 @@ export function ContestCandidates() {
                             model={e.model}
                             isAvailable={e.isAvailable}
                             isActive={selectedModelId === e.model.id}
+                            isOnPodium={e.model.id in contestModels}
                             onClick={() => setSelectedModelId(e.model.id)}
                           />
                         </div>
@@ -292,6 +294,7 @@ export function ContestCandidates() {
                               model={e.model}
                               isAvailable={e.isAvailable}
                               isActive={selectedModelId === e.model.id}
+                              isOnPodium={e.model.id in contestModels}
                               onClick={() => setSelectedModelId(e.model.id)}
                             />
                           </div>
