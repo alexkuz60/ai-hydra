@@ -24,15 +24,14 @@ export function ContestSummary() {
         const rules = localStorage.getItem('hydra-contest-rules');
         if (rules) setRoundCount(JSON.parse(rules).roundCount || 1);
       } catch {}
-      // Task title isn't easily accessible without DB query, show ID hint
       try {
         const taskId = localStorage.getItem('hydra-contest-task-id');
         setTaskTitle(taskId ? (isRu ? 'Выбрана' : 'Selected') : '');
       } catch {}
     };
     sync();
-    const interval = setInterval(sync, 1000);
-    return () => clearInterval(interval);
+    window.addEventListener('storage', sync);
+    return () => window.removeEventListener('storage', sync);
   }, [isRu]);
 
   return (

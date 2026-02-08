@@ -18,11 +18,6 @@ export interface DossierStats {
   critiqueSummary: string | null;
 }
 
-export interface RoleDistribution {
-  role: string;
-  count: number;
-  percentage: number;
-}
 
 export interface TaskHistory {
   sessionId: string;
@@ -48,7 +43,6 @@ export interface ModelDossierData {
   modelId: string;
   registry: ModelRegistryEntry | undefined;
   stats: DossierStats;
-  roleDistribution: RoleDistribution[];
   statsRoleDistribution: StatsRoleDistribution[];
   taskHistory: TaskHistory[];
   duels: DuelRecord[];
@@ -76,7 +70,6 @@ export function useModelDossier(modelId: string | null) {
     modelId: modelId || '',
     registry: undefined,
     stats: EMPTY_STATS,
-    roleDistribution: [],
     statsRoleDistribution: [],
     taskHistory: [],
     duels: [],
@@ -153,14 +146,10 @@ export function useModelDossier(modelId: string | null) {
         }))
         .sort((a, b) => b.responseCount - a.responseCount);
 
-      // Role distribution from messages
-      const roleCounts = new Map<string, number>();
+      // Session-role aggregation for task history
       const sessionRoles = new Map<string, Map<string, number>>();
-
       if (messages) {
         for (const msg of messages) {
-          roleCounts.set(msg.role, (roleCounts.get(msg.role) || 0) + 1);
-          
           if (!sessionRoles.has(msg.session_id)) {
             sessionRoles.set(msg.session_id, new Map());
           }
@@ -168,15 +157,6 @@ export function useModelDossier(modelId: string | null) {
           sMap.set(msg.role, (sMap.get(msg.role) || 0) + 1);
         }
       }
-
-      const totalMsgs = Array.from(roleCounts.values()).reduce((a, b) => a + b, 0);
-      const roleDistribution: RoleDistribution[] = Array.from(roleCounts.entries())
-        .map(([role, count]) => ({
-          role,
-          count,
-          percentage: totalMsgs > 0 ? Math.round((count / totalMsgs) * 100) : 0,
-        }))
-        .sort((a, b) => b.count - a.count);
 
       // Task history: fetch session titles
       const sessionIds = Array.from(sessionRoles.keys());
@@ -263,7 +243,6 @@ export function useModelDossier(modelId: string | null) {
         modelId,
         registry,
         stats,
-        roleDistribution,
         statsRoleDistribution,
         taskHistory,
         duels,
