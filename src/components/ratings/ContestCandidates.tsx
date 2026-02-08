@@ -1,12 +1,9 @@
 import React, { useState, useMemo } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { HydraCard, HydraCardHeader, HydraCardTitle, HydraCardContent } from '@/components/ui/hydra-card';
-import { Brain, Key, Check, X, Search, Filter } from 'lucide-react';
+import { Brain, Check, X, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { LOVABLE_AI_MODELS, PERSONAL_KEY_MODELS, useAvailableModels, type ModelOption } from '@/hooks/useAvailableModels';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { PROVIDER_LOGOS, PROVIDER_COLORS } from '@/components/ui/ProviderLogos';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -161,6 +158,7 @@ export function ContestCandidates() {
   }, [filtered]);
 
   return (
+    <div className="h-full overflow-hidden">
     <TooltipProvider delayDuration={300}>
       <ResizablePanelGroup direction="horizontal" className="h-full">
         <ResizablePanel defaultSize={listSize} minSize={20} maxSize={50} onResize={handleListResize}>
@@ -206,7 +204,7 @@ export function ContestCandidates() {
               </div>
             </div>
 
-            <ScrollArea className="flex-1 min-h-0">
+            <div className="flex-1 overflow-y-auto min-h-0">
               <div className="p-2 space-y-1">
                 {/* Lovable AI section */}
                 {lovableModels.length > 0 && (
@@ -260,7 +258,7 @@ export function ContestCandidates() {
                   );
                 })}
               </div>
-            </ScrollArea>
+            </div>
           </div>
         </ResizablePanel>
 
@@ -283,5 +281,6 @@ export function ContestCandidates() {
         </ResizablePanel>
       </ResizablePanelGroup>
     </TooltipProvider>
+    </div>
   );
 }
