@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Brain, Check, X, Search, ChevronsUpDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -119,7 +119,13 @@ export function ContestCandidates() {
   const [availFilter, setAvailFilter] = useState<'all' | 'available' | 'unavailable'>('all');
   const [allExpanded, setAllExpanded] = useState(true);
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
-  const [contestModels, setContestModels] = useState<Record<string, string>>({});  // modelId -> role
+  const [contestModels, setContestModels] = useState<Record<string, string>>(() => {
+    try {
+      const stored = localStorage.getItem('hydra-contest-models');
+      if (stored) return JSON.parse(stored);
+    } catch {}
+    return {};
+  });  // modelId -> role
   const [listSize, setListSize] = useState<number>(() => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
@@ -130,6 +136,10 @@ export function ContestCandidates() {
     } catch {}
     return DEFAULT_LIST_SIZE;
   });
+
+  useEffect(() => {
+    try { localStorage.setItem('hydra-contest-models', JSON.stringify(contestModels)); } catch {}
+  }, [contestModels]);
 
   const handleListResize = (size: number) => {
     setListSize(size);

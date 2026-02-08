@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { HydraCard, HydraCardContent } from '@/components/ui/hydra-card';
 import { Badge } from '@/components/ui/badge';
@@ -10,7 +10,10 @@ import { Brain, Cpu, Calendar, Scale, DollarSign, Check, X, Crown, KeyRound, Glo
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Separator } from '@/components/ui/separator';
 import { AGENT_ROLES, ROLE_CONFIG, type AgentRole } from '@/config/roles';
+
+const COLLAPSE_KEY = 'hydra-candidate-detail-open';
 
 interface CandidateDetailProps {
   model: ModelOption;
@@ -35,28 +38,56 @@ export function CandidateDetail({
   const Logo = PROVIDER_LOGOS[model.provider];
   const providerColor = PROVIDER_COLORS[model.provider] || 'text-muted-foreground';
 
+  const [isOpen, setIsOpen] = useState(() => {
+    try {
+      const stored = localStorage.getItem(COLLAPSE_KEY);
+      return stored !== 'false';
+    } catch { return true; }
+  });
+
+  const handleOpenChange = (open: boolean) => {
+    setIsOpen(open);
+    try { localStorage.setItem(COLLAPSE_KEY, String(open)); } catch {}
+  };
+
   return (
     <div className="h-full overflow-hidden relative">
       <div className="absolute inset-0 overflow-y-auto hydra-scrollbar">
         <div className="p-4 space-y-4 relative">
           <HydraCard variant="default">
-            <HydraCardContent className="pt-4">
-              <Collapsible defaultOpen>
-                {/* Collapsible header: logo + name + chevron */}
-                <CollapsibleTrigger className="flex items-center gap-4 w-full group cursor-pointer">
+            <HydraCardContent className="pt-2">
+              <Collapsible open={isOpen} onOpenChange={handleOpenChange}>
+                {/* Header: logo + name + badges + chevron */}
+                <CollapsibleTrigger className="flex items-center gap-3 w-full group cursor-pointer py-1">
                   {Logo && (
-                    <div className={cn("shrink-0 p-2 rounded-xl bg-muted/50", providerColor)}>
-                      <Logo className="h-10 w-10" />
+                    <div className={cn("shrink-0 p-1.5 rounded-lg bg-muted/50", providerColor)}>
+                      <Logo className="h-8 w-8" />
                     </div>
                   )}
-                  <h2 className="text-xl font-bold truncate flex-1 text-left">
+                  <h2 className="text-lg font-bold truncate flex-1 text-left">
                     {registry?.displayName || model.name}
                   </h2>
-                  <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0 transition-transform group-data-[state=open]:rotate-180" />
+                  <div className="flex items-center gap-2 shrink-0">
+                    <Badge variant={isAvailable ? 'default' : 'secondary'} className="text-[10px] px-1.5 py-0">
+                      {isAvailable ? (
+                        <><Check className="h-3 w-3 mr-0.5" />{isRu ? 'Доступна' : 'Available'}</>
+                      ) : (
+                        <><X className="h-3 w-3 mr-0.5" />{isRu ? 'Недоступна' : 'Unavailable'}</>
+                      )}
+                    </Badge>
+                    {isSelectedForContest && (
+                      <Badge variant="default" className="text-[10px] px-1.5 py-0 bg-amber-500/20 text-amber-400 border-amber-500/30">
+                        <Crown className="h-3 w-3 mr-0.5" />
+                        {isRu ? 'На подиуме' : 'On podium'}
+                      </Badge>
+                    )}
+                    <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0 transition-transform group-data-[state=open]:rotate-180" />
+                  </div>
                 </CollapsibleTrigger>
 
-                <CollapsibleContent className="mt-4">
-                  <div className="flex gap-0">
+                <CollapsibleContent>
+                  <Separator className="my-2" />
+                  <div className="flex gap-0 pt-2">
                     {/* Column 1: Info rows */}
                     {registry && (
                       <div className="flex-1 min-w-0 pr-4 border-r border-border">
@@ -90,14 +121,6 @@ export function CandidateDetail({
 
                     {/* Column 3: Podium controls */}
                     <div className="w-52 shrink-0 pl-4 space-y-2.5">
-                      <Badge variant={isAvailable ? 'default' : 'secondary'} className="w-fit">
-                        {isAvailable ? (
-                          <><Check className="h-3 w-3 mr-1" />{isRu ? 'Доступна' : 'Available'}</>
-                        ) : (
-                          <><X className="h-3 w-3 mr-1" />{isRu ? 'Недоступна' : 'Unavailable'}</>
-                        )}
-                      </Badge>
-
                       {!isAvailable && model.requiresApiKey && (
                         <p className="text-[10px] text-muted-foreground p-1.5 rounded bg-muted/30">
                           {isRu ? 'Добавьте API-ключ в профиле' : 'Add API key in profile'}
