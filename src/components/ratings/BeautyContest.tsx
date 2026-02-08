@@ -25,7 +25,7 @@ export function BeautyContest() {
           </TabsList>
         </div>
 
-        <TabsContent value="candidates" className="flex-1 mt-0">
+        <TabsContent value="candidates" className="flex-1 mt-0 h-0 min-h-0">
           <ContestCandidates />
         </TabsContent>
 
