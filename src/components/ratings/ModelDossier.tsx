@@ -34,7 +34,7 @@ export function ModelDossier({ modelId }: ModelDossierProps) {
     );
   }
 
-  const { registry, stats, roleDistribution, taskHistory, duels } = dossier;
+  const { registry, stats, statsRoleDistribution, roleDistribution, taskHistory, duels } = dossier;
   const provider = registry?.provider || 'openai';
   const Logo = PROVIDER_LOGOS[provider];
   const providerColor = PROVIDER_COLORS[provider] || 'text-muted-foreground';
@@ -105,16 +105,16 @@ export function ModelDossier({ modelId }: ModelDossierProps) {
           </HydraCardContent>
         </HydraCard>
 
-        {/* ── Role Distribution ── */}
-        {roleDistribution.length > 0 && (
+        {/* ── Role Distribution (from model_statistics) ── */}
+        {statsRoleDistribution.length > 0 && (
           <HydraCard variant="default">
             <HydraCardHeader className="py-3">
               <Sparkles className="h-5 w-5 text-hydra-cyan" />
-              <HydraCardTitle>{isRu ? 'Роли' : 'Roles'}</HydraCardTitle>
+              <HydraCardTitle>{isRu ? 'Распределение ролей' : 'Role Distribution'}</HydraCardTitle>
             </HydraCardHeader>
             <HydraCardContent>
-              <div className="space-y-2">
-                {roleDistribution.map(rd => {
+              <div className="space-y-2.5">
+                {statsRoleDistribution.map(rd => {
                   const config = ROLE_CONFIG[rd.role as AgentRole] || ROLE_CONFIG.assistant;
                   const RoleIcon = config.icon;
                   return (
@@ -123,12 +123,15 @@ export function ModelDossier({ modelId }: ModelDossierProps) {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between text-sm">
                           <span className="truncate">{config.label.replace('role.', '')}</span>
-                          <span className="text-muted-foreground text-xs">{rd.count} ({rd.percentage}%)</span>
+                          <span className="text-muted-foreground text-xs">{rd.responseCount} ({rd.percentage}%)</span>
                         </div>
-                        <div className="h-1.5 rounded-full bg-muted/50 mt-1">
+                        <div className="h-2 rounded-full bg-muted/50 mt-1">
                           <div
-                            className={cn("h-full rounded-full bg-primary")}
-                            style={{ width: `${rd.percentage}%` }}
+                            className="h-full rounded-full transition-all duration-500"
+                            style={{ 
+                              width: `${rd.percentage}%`,
+                              backgroundColor: `hsl(var(--primary))`,
+                            }}
                           />
                         </div>
                       </div>

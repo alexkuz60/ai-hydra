@@ -38,11 +38,18 @@ export interface DuelRecord {
   sessionTitle: string;
 }
 
+export interface StatsRoleDistribution {
+  role: string;
+  responseCount: number;
+  percentage: number;
+}
+
 export interface ModelDossierData {
   modelId: string;
   registry: ModelRegistryEntry | undefined;
   stats: DossierStats;
   roleDistribution: RoleDistribution[];
+  statsRoleDistribution: StatsRoleDistribution[];
   taskHistory: TaskHistory[];
   duels: DuelRecord[];
   loading: boolean;
@@ -70,6 +77,7 @@ export function useModelDossier(modelId: string | null) {
     registry: undefined,
     stats: EMPTY_STATS,
     roleDistribution: [],
+    statsRoleDistribution: [],
     taskHistory: [],
     duels: [],
     loading: true,
@@ -127,6 +135,23 @@ export function useModelDossier(modelId: string | null) {
           ? totalArbiterScore / stats.arbiterEvalCount 
           : 0;
       }
+
+      // Role distribution from model_statistics (role_used)
+      const statsRoleCounts = new Map<string, number>();
+      if (statsRows) {
+        for (const row of statsRows) {
+          const role = row.role_used || 'assistant';
+          statsRoleCounts.set(role, (statsRoleCounts.get(role) || 0) + row.response_count);
+        }
+      }
+      const statsRoleTotal = Array.from(statsRoleCounts.values()).reduce((a, b) => a + b, 0);
+      const statsRoleDistribution: StatsRoleDistribution[] = Array.from(statsRoleCounts.entries())
+        .map(([role, responseCount]) => ({
+          role,
+          responseCount,
+          percentage: statsRoleTotal > 0 ? Math.round((responseCount / statsRoleTotal) * 100) : 0,
+        }))
+        .sort((a, b) => b.responseCount - a.responseCount);
 
       // Role distribution from messages
       const roleCounts = new Map<string, number>();
@@ -239,6 +264,7 @@ export function useModelDossier(modelId: string | null) {
         registry,
         stats,
         roleDistribution,
+        statsRoleDistribution,
         taskHistory,
         duels,
         loading: false,
