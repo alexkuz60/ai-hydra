@@ -235,7 +235,8 @@ export function ContestCandidates() {
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto min-h-0 hydra-scrollbar">
+            <div className="flex-1 relative min-h-0">
+              <div className="absolute inset-0 overflow-y-auto hydra-scrollbar">
               <div className="p-2 space-y-1">
                 {/* Lovable AI section */}
                 {lovableModels.length > 0 && (
@@ -289,6 +290,7 @@ export function ContestCandidates() {
                   );
                 })}
               </div>
+            </div>
             </div>
           </div>
         </ResizablePanel>
