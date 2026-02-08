@@ -204,7 +204,7 @@ export function ContestCandidates() {
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto min-h-0">
+            <div className="flex-1 overflow-y-auto min-h-0 hydra-scrollbar">
               <div className="p-2 space-y-1">
                 {/* Lovable AI section */}
                 {lovableModels.length > 0 && (
@@ -265,7 +265,7 @@ export function ContestCandidates() {
         <ResizableHandle withHandle />
 
         {/* Detail panel */}
-        <ResizablePanel defaultSize={65} minSize={40}>
+        <ResizablePanel defaultSize={100 - listSize} minSize={40}>
           {selectedEntry ? (
             <CandidateDetail model={selectedEntry.model} isAvailable={selectedEntry.isAvailable} />
           ) : (
