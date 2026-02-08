@@ -3,7 +3,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ContestCandidates } from '@/components/ratings/ContestCandidates';
 import { HydraCard, HydraCardContent } from '@/components/ui/hydra-card';
-import { Crown, Users, Swords } from 'lucide-react';
+import { Crown, Users, Trophy } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
 export function BeautyContest() {
@@ -45,8 +45,8 @@ export function BeautyContest() {
               )}
             </TabsTrigger>
             <TabsTrigger value="arena" className="flex-1 flex items-center gap-1.5">
-              <Swords className="h-3.5 w-3.5" />
-              {isRu ? 'Арена' : 'Arena'}
+              <Trophy className="h-3.5 w-3.5" />
+              {isRu ? 'Подиум конкурса' : 'Contest Podium'}
             </TabsTrigger>
           </TabsList>
         </div>
@@ -59,9 +59,9 @@ export function BeautyContest() {
           <div className="h-full flex items-center justify-center p-4">
             <HydraCard variant="default" className="max-w-md w-full">
               <HydraCardContent className="py-16 text-center">
-                <Crown className="h-12 w-12 text-hydra-amber mx-auto mb-4 opacity-50" />
+                <Trophy className="h-12 w-12 text-hydra-amber mx-auto mb-4 opacity-50" />
                 <h2 className="text-lg font-semibold mb-2">
-                  {isRu ? 'Арена соревнований' : 'Competition Arena'}
+                  {isRu ? 'Подиум конкурса' : 'Contest Podium'}
                 </h2>
                 <p className="text-sm text-muted-foreground">
                   {isRu
