@@ -150,7 +150,7 @@ export function RatingsContent() {
           onPeriodChange={setSelectedPeriod}
         />
 
-        <Tabs defaultValue="overall" className="space-y-6">
+        <Tabs defaultValue={localStorage.getItem('ratings-active-tab') || 'overall'} onValueChange={(v) => localStorage.setItem('ratings-active-tab', v)} className="space-y-6">
           <ScrollArea className="w-full whitespace-nowrap pb-2">
             <TabsList className="inline-flex w-max gap-1">
               <TabsTrigger value="overall" className="px-4">{t('ratings.overall')}</TabsTrigger>
