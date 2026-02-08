@@ -30,7 +30,15 @@ export default function ModelRatings() {
   const { user, loading: authLoading } = useAuth();
   const { language } = useLanguage();
   const navigate = useNavigate();
-  const [activeSection, setActiveSection] = useState<Section>('ratings');
+  const [activeSection, setActiveSection] = useState<Section>(() => {
+    const saved = localStorage.getItem('podium-active-section');
+    return (saved === 'portfolio' || saved === 'contest' || saved === 'ratings') ? saved : 'ratings';
+  });
+
+  // Persist active section
+  useEffect(() => {
+    localStorage.setItem('podium-active-section', activeSection);
+  }, [activeSection]);
 
   const nav = useNavigatorResize({ storageKey: 'model-ratings', defaultMaxSize: 25 });
 
