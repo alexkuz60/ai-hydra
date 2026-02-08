@@ -27,7 +27,7 @@ interface UseMessagesReturn {
   fetchMessages: (taskId: string) => Promise<void>;
 }
 
-export function useMessages({ sessionId, onBeforeDeleteMessage, onAIMessageReceived }: UseMessagesProps): UseMessagesReturn {
+export function useMessages({ sessionId, onBeforeDeleteMessage }: UseMessagesProps): UseMessagesReturn {
   const { t } = useLanguage();
   const [messages, setMessages] = useState<Message[]>([]);
   const [filteredParticipant, setFilteredParticipant] = useState<string | null>(null);
@@ -68,10 +68,6 @@ export function useMessages({ sessionId, onBeforeDeleteMessage, onAIMessageRecei
         },
         (payload) => {
           const newMessage = payload.new as Message;
-          // Notify about AI messages for statistics tracking
-          if (newMessage.role !== 'user' && onAIMessageReceived) {
-            onAIMessageReceived(newMessage);
-          }
           // Insert message in correct position based on created_at
           setMessages(prev => {
             // Check if message already exists

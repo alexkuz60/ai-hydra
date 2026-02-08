@@ -1059,9 +1059,11 @@ serve(async (req) => {
 
       await supabase.from("messages").insert(messagesToInsert);
 
-      // Update model statistics - increment response count for each model
+      // Update model statistics - increment response count and track role_used
       for (const result of successResults) {
         try {
+          const role = result.role || 'assistant';
+          
           // Try to find existing stats for this user+model+session
           const { data: existingStats } = await supabase
             .from('model_statistics')
@@ -1072,16 +1074,17 @@ serve(async (req) => {
             .maybeSingle();
 
           if (existingStats) {
-            // Update existing record
+            // Update existing record with role_used
             await supabase
               .from('model_statistics')
               .update({
                 response_count: existingStats.response_count + 1,
                 last_used_at: new Date().toISOString(),
+                role_used: role,
               })
               .eq('id', existingStats.id);
           } else {
-            // Insert new record
+            // Insert new record with role_used
             await supabase
               .from('model_statistics')
               .insert({
@@ -1089,11 +1092,12 @@ serve(async (req) => {
                 model_id: result.model,
                 session_id: session_id,
                 response_count: 1,
+                role_used: role,
                 first_used_at: new Date().toISOString(),
                 last_used_at: new Date().toISOString(),
               });
           }
-          console.log(`[Stats] Incremented response_count for ${result.model}`);
+          console.log(`[Stats] Incremented response_count for ${result.model} (role: ${role})`);
         } catch (statsError) {
           console.error(`[Stats] Error updating stats for ${result.model}:`, statsError);
         }
