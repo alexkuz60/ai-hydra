@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { HydraCard, HydraCardHeader, HydraCardTitle, HydraCardContent } from '@/components/ui/hydra-card';
-import { Brain, Key, Check, X, Search } from 'lucide-react';
+import { Brain, Key, Check, X, Search, Filter } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -119,6 +119,7 @@ export function ContestCandidates() {
   const { allModels, loading, isLovableAvailable, availablePersonalIds } = useAllModels();
   const [selectedModelId, setSelectedModelId] = useState<string | null>(null);
   const [search, setSearch] = useState('');
+  const [availFilter, setAvailFilter] = useState<'all' | 'available' | 'unavailable'>('all');
   const [listSize, setListSize] = useState<number>(() => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
@@ -140,10 +141,15 @@ export function ContestCandidates() {
 
   // Filter
   const filtered = useMemo(() => {
-    if (!search) return allModels;
-    const q = search.toLowerCase();
-    return allModels.filter(e => e.model.name.toLowerCase().includes(q) || e.model.id.toLowerCase().includes(q));
-  }, [allModels, search]);
+    let list = allModels;
+    if (availFilter === 'available') list = list.filter(e => e.isAvailable);
+    else if (availFilter === 'unavailable') list = list.filter(e => !e.isAvailable);
+    if (search) {
+      const q = search.toLowerCase();
+      list = list.filter(e => e.model.name.toLowerCase().includes(q) || e.model.id.toLowerCase().includes(q));
+    }
+    return list;
+  }, [allModels, search, availFilter]);
 
   const lovableModels = filtered.filter(e => e.section === 'lovable');
   const byokGrouped = useMemo(() => {
@@ -180,6 +186,24 @@ export function ContestCandidates() {
                   </span>
                 </div>
               )}
+              <div className="flex gap-1">
+                {(['all', 'available', 'unavailable'] as const).map(f => (
+                  <button
+                    key={f}
+                    onClick={() => setAvailFilter(f)}
+                    className={cn(
+                      "flex-1 text-[11px] py-1 px-1.5 rounded-md transition-colors",
+                      availFilter === f
+                        ? "bg-primary/15 text-primary font-medium"
+                        : "text-muted-foreground hover:bg-muted/40"
+                    )}
+                  >
+                    {f === 'all' ? (isRu ? 'Все' : 'All')
+                      : f === 'available' ? (isRu ? 'Доступные' : 'Available')
+                      : (isRu ? 'Недоступные' : 'Unavailable')}
+                  </button>
+                ))}
+              </div>
             </div>
 
             <ScrollArea className="flex-1">
