@@ -15,7 +15,7 @@ import { NavigatorHeader } from '@/components/layout/NavigatorHeader';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { ModelPortfolio } from '@/components/ratings/ModelPortfolio';
 import { BeautyContest } from '@/components/ratings/BeautyContest';
-import { ContestRulesEditor } from '@/components/ratings/ContestRulesEditor';
+import { ContestPodium } from '@/components/ratings/ContestPodium';
 import { RatingsContent } from '@/components/ratings/RatingsContent';
 import { useEffect } from 'react';
 
@@ -149,11 +149,7 @@ export default function ModelRatings() {
           <ResizablePanel defaultSize={100 - nav.panelSize} minSize={50}>
             <div className="h-full">
               {activeSection === 'portfolio' && <ModelPortfolio />}
-              {activeSection === 'rules' && (
-                <div className="h-full overflow-y-auto p-4 max-w-2xl mx-auto">
-                  <ContestRulesEditor />
-                </div>
-              )}
+              {activeSection === 'rules' && <ContestPodium />}
               {activeSection === 'contest' && <BeautyContest />}
               {activeSection === 'ratings' && <RatingsContent />}
             </div>
