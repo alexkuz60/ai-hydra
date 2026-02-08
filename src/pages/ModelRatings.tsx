@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Layout } from '@/components/layout/Layout';
-import { Loader2, Briefcase, Crown, BarChart3 } from 'lucide-react';
+import { Loader2, Briefcase, Crown, BarChart3, ScrollText } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   ResizablePanelGroup,
@@ -15,13 +15,15 @@ import { NavigatorHeader } from '@/components/layout/NavigatorHeader';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { ModelPortfolio } from '@/components/ratings/ModelPortfolio';
 import { BeautyContest } from '@/components/ratings/BeautyContest';
+import { ContestRulesEditor } from '@/components/ratings/ContestRulesEditor';
 import { RatingsContent } from '@/components/ratings/RatingsContent';
 import { useEffect } from 'react';
 
-type Section = 'portfolio' | 'contest' | 'ratings';
+type Section = 'portfolio' | 'rules' | 'contest' | 'ratings';
 
 const SECTIONS: { id: Section; icon: React.ComponentType<{ className?: string }>; labelRu: string; labelEn: string; descRu: string; descEn: string }[] = [
   { id: 'portfolio', icon: Briefcase, labelRu: 'Портфолио ИИ-моделей', labelEn: 'AI Model Portfolio', descRu: 'Каталог всех доступных моделей', descEn: 'Catalog of all available models' },
+  { id: 'rules', icon: ScrollText, labelRu: 'Правила конкурса', labelEn: 'Contest Rules', descRu: 'Настройка туров и критериев', descEn: 'Rounds and criteria setup' },
   { id: 'contest', icon: Crown, labelRu: 'Конкурс интеллект-красоты', labelEn: 'Intelligence Contest', descRu: 'Соревнования между моделями', descEn: 'AI model competitions' },
   { id: 'ratings', icon: BarChart3, labelRu: 'Рейтинги ИИ-моделей', labelEn: 'AI Model Ratings', descRu: 'Статистика и оценки', descEn: 'Stats and evaluations' },
 ];
@@ -32,7 +34,7 @@ export default function ModelRatings() {
   const navigate = useNavigate();
   const [activeSection, setActiveSection] = useState<Section>(() => {
     const saved = localStorage.getItem('podium-active-section');
-    return (saved === 'portfolio' || saved === 'contest' || saved === 'ratings') ? saved : 'ratings';
+    return (saved === 'portfolio' || saved === 'rules' || saved === 'contest' || saved === 'ratings') ? saved : 'ratings';
   });
 
   // Persist active section
@@ -147,6 +149,11 @@ export default function ModelRatings() {
           <ResizablePanel defaultSize={100 - nav.panelSize} minSize={50}>
             <div className="h-full">
               {activeSection === 'portfolio' && <ModelPortfolio />}
+              {activeSection === 'rules' && (
+                <div className="h-full overflow-y-auto p-4 max-w-2xl mx-auto">
+                  <ContestRulesEditor />
+                </div>
+              )}
               {activeSection === 'contest' && <BeautyContest />}
               {activeSection === 'ratings' && <RatingsContent />}
             </div>
