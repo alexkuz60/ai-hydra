@@ -1,157 +1,49 @@
 
-# Фаза 1: Расширение Портфолио до полноценного Досье модели (обновленный план)
 
-## Ключевые изменения относительно предыдущего плана
+## Plan: Restructure CandidateDetail Card
 
-1. **Портфолио** показывает только модели, уже участвовавшие в Задачах (с фильтром)
-2. **Каталог моделей** (текущий список с "Доступно/Всего") переносится в секцию Конкурс как подсекция "Отборочные кандидаты"
-3. Добавляются колонки `arbiter_score`, `critique_summary` и расширенная статистическая секция сразу
-4. Карточка-досье начинается со справочного блока о модели (лого, создатель, дата, вес, таланты, тарифы)
+### Changes in `src/components/ratings/CandidateDetail.tsx`
 
----
+**1. Text and icon replacements**
+- Replace `Swords` icon import with `Crown` from lucide-react
+- Crown icon gets gold color: `text-amber-400`
+- Button text: "Выбрать для конкурса" -> "Пригласить на подиум" / "Select for contest" -> "Invite to podium"
+- Reverse state text: "Убрать из конкурса" -> "Убрать с подиума" / "Remove from contest" -> "Remove from podium"
 
-## 1. Справочник моделей (Model Registry)
+**2. Strengths badges -> dedicated column in the info grid**
+- Remove the standalone `flex-wrap` strengths block below the info grid
+- Expand the info grid to `grid-cols-[1fr_1fr]` and add strengths as a vertical column of badges in the second column (rows span the full height)
+- Layout: left column keeps Creator, Released, Parameters, Pricing rows; right column shows badges stacked vertically with `flex-wrap` for overflow
 
-Новый файл `src/config/modelRegistry.ts` -- статический каталог метаданных о каждой модели:
+**3. Move "Available/Unavailable" badge to the podium invitation block (right column)**
+- Remove the badge from the title row (next to model name)
+- Place it at the top of the contest/podium section in the right column, before the role selector
 
-```text
-Для каждой модели (по model_id):
-- provider         -- провайдер (OpenAI, Anthropic, Google...)
-- releaseDate      -- дата выпуска ("2024-03", "2025-01" и т.п.)
-- parameterCount   -- количество параметров ("1.76T", "8B", "unknown")
-- strengths        -- массив тегов-талантов ["coding", "math", "creative", "reasoning", "vision"]
-- pricing          -- { input: "$X/1M tokens", output: "$Y/1M tokens" } или "free"
-```
+**4. Move Type and Provider rows into the left info grid**
+- Remove the Access section from the right column
+- Add two new `InfoRow` entries to the left column grid: Type (BYOK / Lovable AI) and Provider
+- The API key hint stays in the right column (podium block) when model is unavailable
 
-Данные заполняются статически (из публичных источников). Это не БД-таблица, а конфигурационный файл, аналогичный `roles.ts` или `patterns.ts`.
-
----
-
-## 2. Расширение схемы БД `model_statistics`
-
-Новые колонки:
-
-| Колонка | Тип | Default | Назначение |
-|---|---|---|---|
-| `role_used` | TEXT | NULL | Роль, в которой модель участвовала |
-| `task_id` | UUID | NULL | Привязка к задаче |
-| `hallucination_count` | INTEGER | 0 | Зафиксированные галлюцинации |
-| `arbiter_score` | NUMERIC | 0 | Средний балл от Арбитра |
-| `arbiter_eval_count` | INTEGER | 0 | Количество оценок Арбитра |
-| `critique_summary` | TEXT | NULL | Последнее краткое резюме критики |
-| `contest_count` | INTEGER | 0 | Количество участий в конкурсах |
-| `contest_total_score` | NUMERIC | 0 | Суммарный балл в отборочных турах |
-
----
-
-## 3. Реорганизация секций Подиума
-
-### 3.1. Портфолио (только "ветераны" -- модели с историей)
-
-Левая панель (Master): список моделей, у которых есть хотя бы одна запись в `model_statistics` или `messages`. Краткая сводка: ответов, brains, роль. Фильтр по провайдеру/роли.
-
-Правая панель (Detail) -- карточка-досье:
+### Resulting layout structure
 
 ```text
-+-------------------------------------------+
-|  СПРАВКА О МОДЕЛИ                         |
-|  [Logo]  GPT-4o                           |
-|  Создатель: OpenAI                        |
-|  Дата выпуска: март 2024                  |
-|  Параметры: ~200B (оценка)                |
-|  Таланты: кодинг, reasoning, vision       |
-|  Тарифы: $2.50 / $10.00 за 1M токенов    |
-+-------------------------------------------+
-|  СТАТИСТИКА УЧАСТИЯ                       |
-|  Ответов в Задачах: 142                   |
-|  Оценок пользователя (brains): 87         |
-|  Оценок Арбитра: 12 (avg: 7.3)           |
-|  Участий в конкурсах: 3                   |
-|  Общий балл конкурсов: 24.5              |
-|  Откл: 5  |  Галлюцинации: 3             |
-+-------------------------------------------+
-|  РОЛИ (распределение)                     |
-|  ████████░░ Эксперт     68 (48%)          |
-|  ████░░░░░░ Консультант 34 (24%)          |
-|  ███░░░░░░░ Критик      22 (15%)          |
-|  ██░░░░░░░░ Арбитр      18 (13%)          |
-+-------------------------------------------+
-|  ДУЭЛИ В Д-ЧАТЕ                           |
-|  vs Claude 3.5 Sonnet -- Победа           |
-|  vs Gemini 2.5 Pro -- Ничья               |
-|  vs GPT-5 -- Поражение                    |
-+-------------------------------------------+
-|  ПОСЛУЖНОЙ СПИСОК                         |
-|  "Анализ рынка" -- Эксперт, 12 отв.      |
-|  "Код ревью" -- Критик, 8 отв.           |
-+-------------------------------------------+
-|  КРИТИКА (последнее резюме)               |
-|  "Склонность к verbose-ответам..."        |
-+-------------------------------------------+
++--------------------------------------------------+------------------+
+| [Logo]  Model Name                               | PODIUM           |
+|                                                   |                  |
+|  Creator: ...    | [Speed]          |              | [Available]      |
+|  Released: ...   | [Multimodal]     |              | Role selector    |
+|  Parameters: ... | [Coding]         |              | [Crown] Invite   |
+|  Pricing: ...    | [Efficiency]     |              |   to podium      |
+|  Type: BYOK      |                  |              |                  |
+|  Provider: xAI   |                  |              |                  |
++--------------------------------------------------+------------------+
 ```
 
-Если данных нет (модель ещё не использовалась в задачах), вместо чисел отображаются нули или прочерки.
+### Technical details
 
-### 3.2. Конкурс -- новая подсекция "Отборочные кандидаты"
+- File: `src/components/ratings/CandidateDetail.tsx`
+- Replace `Swords` import with `Crown`
+- Left column info grid changes to 3-column layout: `grid-cols-[auto_auto_1fr]` where first two columns are label-value InfoRows and third column is a vertical badge strip (using `row-span` or a separate nested flex container beside the grid)
+- Simpler approach: keep the grid `grid-cols-2` for InfoRows, but place the strengths as an adjacent flex column next to the grid using a horizontal flex wrapper: `flex gap-4` -> `[grid of InfoRows]` + `[vertical badge column with flex-wrap]`
+- Right column: remove Access section, add availability badge + keep contest UI renamed to "Podium"
 
-Перенести текущее содержимое `ModelPortfolio` (полный каталог моделей, счетчики "Доступно / Всего в каталоге", группировка по провайдерам, индикация API-ключей) в компонент `ContestCandidates.tsx`, который отображается внутри секции Конкурс.
-
-Секция Конкурс будет иметь табы:
-- **Отборочные кандидаты** -- перенесённый каталог моделей
-- **Арена** (заглушка для Фазы 2)
-
----
-
-## 4. Механизм фиксации галлюцинаций и дуэлей
-
-### Галлюцинации
-- Кнопка AlertTriangle в `ChatMessage.tsx` рядом с brains/dismiss
-- Инкрементирует `hallucination_count` в `model_statistics`
-- Сохраняет `metadata.hallucination = true` в сообщении
-
-### Дуэли в Д-чате
-- Данные агрегируются из таблицы `messages` по сессиям, где участвовали 2+ модели в ролях Консультант/Критик/Эксперт
-- Результат определяется по brains (кто получил больше) или оценке Арбитра
-- Отображается в досье как список с иконками моделей-оппонентов
-
----
-
-## Технические детали
-
-### Файлы для создания
-
-| Файл | Назначение |
-|---|---|
-| `src/config/modelRegistry.ts` | Статический каталог метаданных моделей |
-| `src/components/ratings/ModelDossier.tsx` | Карточка-досье (правая панель) |
-| `src/components/ratings/ContestCandidates.tsx` | Каталог моделей (перенос из Portfolio) |
-| `src/hooks/useModelDossier.ts` | Хук агрегации данных для досье |
-| Миграция SQL | Новые колонки в `model_statistics` |
-
-### Файлы для изменения
-
-| Файл | Изменения |
-|---|---|
-| `src/components/ratings/ModelPortfolio.tsx` | Полный рефакторинг: Master-Detail с фильтром "только участвовавшие в задачах" |
-| `src/components/ratings/BeautyContest.tsx` | Добавить табы, встроить ContestCandidates |
-| `src/hooks/useModelStatistics.ts` | Расширить методы (role_used, task_id, hallucination, arbiter_score, contest) |
-| `src/components/warroom/ChatMessage.tsx` | Кнопка "Галлюцинация" |
-
-### Хук `useModelDossier(modelId)`
-
-Источники данных:
-1. `model_statistics` -- счетчики (responses, brains, dismissals, hallucinations, arbiter_score, contest_count)
-2. `messages` -- послужной список (по каким session_id, с какими ролями, какие оценки)
-3. `modelRegistry` -- справочная информация (статический импорт)
-
-### Последовательность реализации
-
-1. Создать `modelRegistry.ts` (справочник моделей)
-2. Миграция БД (новые колонки)
-3. Обновить `useModelStatistics` (расширенные параметры)
-4. Создать `useModelDossier` хук
-5. Создать `ContestCandidates` (перенос каталога из Portfolio)
-6. Обновить `BeautyContest` (табы + ContestCandidates)
-7. Создать `ModelDossier` компонент
-8. Рефакторинг `ModelPortfolio` (Master-Detail, фильтр участников)
-9. Добавить кнопку галлюцинации в `ChatMessage`
