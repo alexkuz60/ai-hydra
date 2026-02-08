@@ -106,8 +106,7 @@ export function ContestTaskSelector() {
   useEffect(() => {
     const handler = () => setContestModels(getContestModels());
     window.addEventListener('storage', handler);
-    const interval = setInterval(handler, 1000);
-    return () => { window.removeEventListener('storage', handler); clearInterval(interval); };
+    return () => window.removeEventListener('storage', handler);
   }, []);
 
   const selectedSession = sessions.find(s => s.id === selectedTaskId);

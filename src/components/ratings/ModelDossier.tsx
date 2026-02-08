@@ -37,8 +37,7 @@ export function ModelDossier({ modelId, contestModels = {}, onToggleContest, onC
     );
   }
 
-  const { registry, stats, statsRoleDistribution, roleDistribution, taskHistory, duels } = dossier;
-  const provider = registry?.provider || 'openai';
+  const { registry, stats, statsRoleDistribution, taskHistory, duels } = dossier;
 
   // Build ModelOption for CandidateDetail
   const modelInfo = getModelInfo(modelId);
@@ -212,7 +211,7 @@ export function ModelDossier({ modelId, contestModels = {}, onToggleContest, onC
         )}
 
         {/* Empty state */}
-        {stats.totalResponses === 0 && roleDistribution.length === 0 && (
+        {stats.totalResponses === 0 && statsRoleDistribution.length === 0 && (
           <div className="text-center py-8 text-muted-foreground">
             <Brain className="h-10 w-10 mx-auto mb-3 opacity-30" />
             <p className="text-sm">
