@@ -164,7 +164,7 @@ export function ContestCandidates() {
     <TooltipProvider delayDuration={300}>
       <ResizablePanelGroup direction="horizontal" className="h-full">
         <ResizablePanel defaultSize={listSize} minSize={20} maxSize={50} onResize={handleListResize}>
-          <div className="h-full flex flex-col">
+          <div className="h-full flex flex-col overflow-hidden">
             {/* Search & summary */}
             <div className="p-3 border-b border-border space-y-2">
               <div className="relative">
