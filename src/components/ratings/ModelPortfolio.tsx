@@ -18,6 +18,7 @@ const PROVIDER_LABELS: Record<string, { ru: string; en: string }> = {
   openrouter: { ru: 'OpenRouter', en: 'OpenRouter' },
   groq: { ru: 'Groq', en: 'Groq' },
   deepseek: { ru: 'DeepSeek', en: 'DeepSeek' },
+  mistral: { ru: 'Mistral AI', en: 'Mistral AI' },
 };
 
 function ModelRow({ model, isAvailable }: { model: ModelOption; isAvailable: boolean }) {

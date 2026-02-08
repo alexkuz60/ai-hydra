@@ -731,6 +731,42 @@ async function callPersonalModel(
     };
   }
 
+  // Mistral AI (OpenAI-compatible API)
+  if (provider === "mistral") {
+    const userContent = imageAttachments.length > 0 
+      ? buildMultimodalContent(message, attachments)
+      : message;
+      
+    const response = await fetch("https://api.mistral.ai/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model,
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userContent },
+        ],
+        temperature,
+        max_tokens: maxTokens,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Mistral error: ${errorText}`);
+    }
+    const data = await response.json();
+    return { 
+      model, 
+      provider: "mistral", 
+      content: data.choices?.[0]?.message?.content || "",
+      usage: data.usage || null,
+    };
+  }
+
   throw new Error(`Unknown provider: ${provider}`);
 }
 
@@ -955,6 +991,7 @@ serve(async (req) => {
           if (modelReq.provider === "openrouter") apiKey = (apiKeys as { openrouter_api_key?: string | null })?.openrouter_api_key ?? null;
           if (modelReq.provider === "groq") apiKey = (apiKeys as { groq_api_key?: string | null })?.groq_api_key ?? null;
           if (modelReq.provider === "deepseek") apiKey = (apiKeys as { deepseek_api_key?: string | null })?.deepseek_api_key ?? null;
+          if (modelReq.provider === "mistral") apiKey = (apiKeys as { mistral_api_key?: string | null })?.mistral_api_key ?? null;
 
           if (!apiKey) {
             throw new Error(`No API key configured for ${modelReq.provider}`);
