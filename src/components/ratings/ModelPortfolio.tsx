@@ -108,7 +108,7 @@ export function ModelPortfolio() {
   return (
     <ResizablePanelGroup direction="horizontal" className="h-full">
       {/* Master: model list */}
-      <ResizablePanel defaultSize={40} minSize={25} maxSize={55}>
+      <ResizablePanel defaultSize={20} minSize={12} maxSize={35}>
         <div className="h-full flex flex-col">
           <div className="p-3 border-b border-border">
             <div className="flex items-center gap-2 mb-2">
@@ -187,7 +187,7 @@ export function ModelPortfolio() {
       <ResizableHandle withHandle />
 
       {/* Detail: dossier */}
-      <ResizablePanel defaultSize={60} minSize={40}>
+      <ResizablePanel defaultSize={80} minSize={50}>
         {selectedModelId ? (
           <ModelDossier modelId={selectedModelId} />
         ) : (
