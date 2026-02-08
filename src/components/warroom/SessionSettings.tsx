@@ -22,7 +22,7 @@ export function SessionSettings({
     <div className={cn('space-y-3', className)}>
       <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
         <Settings className="h-4 w-4" />
-        {t('settings.sessionSettings') || 'Настройки сессии'}
+        {t('settings.sessionSettings')}
       </div>
       
       {/* Hybrid Streaming Toggle */}

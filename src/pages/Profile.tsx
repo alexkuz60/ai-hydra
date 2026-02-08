@@ -376,20 +376,20 @@ export default function Profile() {
                 <div className="space-y-2">
                   <Label className="flex items-center gap-2">
                     <Type className="h-4 w-4" />
-                    {t('profile.fontSize') || 'Размер шрифта'}
+                    {t('profile.fontSize')}
                   </Label>
                   <Select value={fontSize} onValueChange={(value: FontSize) => setFontSize(value)}>
                     <SelectTrigger className="w-full max-w-xs">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="normal">{t('profile.fontNormal') || 'Обычный'}</SelectItem>
-                      <SelectItem value="large">{t('profile.fontLarge') || 'Крупный'}</SelectItem>
-                      <SelectItem value="xlarge">{t('profile.fontXLarge') || 'Очень крупный'}</SelectItem>
+                      <SelectItem value="normal">{t('profile.fontNormal')}</SelectItem>
+                      <SelectItem value="large">{t('profile.fontLarge')}</SelectItem>
+                      <SelectItem value="xlarge">{t('profile.fontXLarge')}</SelectItem>
                     </SelectContent>
                   </Select>
                   <p className="text-xs text-muted-foreground">
-                    {t('profile.fontSizeHint') || 'Увеличивает базовый размер текста во всём интерфейсе'}
+                    {t('profile.fontSizeHint')}
                   </p>
                 </div>
 

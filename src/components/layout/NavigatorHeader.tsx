@@ -34,8 +34,8 @@ export function NavigatorHeader({
       <IconButtonWithTooltip
         icon={isMinimized ? PanelLeftOpen : PanelLeftClose}
         tooltip={isMinimized 
-          ? (t('nav.expand') || 'Развернуть') 
-          : (t('nav.collapse') || 'Свернуть')}
+          ? t('nav.expand')
+          : t('nav.collapse')}
         onClick={onToggle}
         variant="ghost"
         className="h-7 w-7 shrink-0"
