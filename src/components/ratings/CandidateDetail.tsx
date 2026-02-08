@@ -55,7 +55,7 @@ export function CandidateDetail({
       <div className="absolute inset-0 overflow-y-auto hydra-scrollbar">
         <div className="p-4 space-y-4 relative">
           <HydraCard variant="default">
-            <HydraCardContent className="pt-2">
+            <HydraCardContent className="pt-1">
               <Collapsible open={isOpen} onOpenChange={handleOpenChange}>
                 {/* Header: logo + name + badges + chevron */}
                 <CollapsibleTrigger className="flex items-center gap-3 w-full group cursor-pointer py-1">
