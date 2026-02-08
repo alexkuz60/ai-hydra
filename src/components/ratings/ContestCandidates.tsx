@@ -1,6 +1,6 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { Brain, Check, X, Search } from 'lucide-react';
+import { Brain, Check, X, Search, ChevronsUpDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import { LOVABLE_AI_MODELS, PERSONAL_KEY_MODELS, useAvailableModels, type ModelOption } from '@/hooks/useAvailableModels';
@@ -117,6 +117,8 @@ export function ContestCandidates() {
   const [selectedModelId, setSelectedModelId] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [availFilter, setAvailFilter] = useState<'all' | 'available' | 'unavailable'>('all');
+  const [allExpanded, setAllExpanded] = useState(true);
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
   const [listSize, setListSize] = useState<number>(() => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
@@ -156,6 +158,20 @@ export function ContestCandidates() {
     }
     return groups;
   }, [filtered]);
+
+  const isGroupOpen = useCallback((key: string, defaultOpen: boolean) => {
+    return openGroups[key] ?? (allExpanded ? true : defaultOpen);
+  }, [openGroups, allExpanded]);
+
+  const toggleGroup = useCallback((key: string, open: boolean) => {
+    setOpenGroups(prev => ({ ...prev, [key]: open }));
+  }, []);
+
+  const toggleAll = useCallback(() => {
+    const newState = !allExpanded;
+    setAllExpanded(newState);
+    setOpenGroups({});
+  }, [allExpanded]);
 
   return (
     <div className="h-full overflow-hidden">
@@ -202,13 +218,28 @@ export function ContestCandidates() {
                   </button>
                 ))}
               </div>
+              <div className="flex items-center justify-end">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      onClick={toggleAll}
+                      className="p-1 rounded hover:bg-muted/40 text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      <ChevronsUpDown className="h-3.5 w-3.5" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="right" className="text-xs">
+                    {allExpanded ? (isRu ? 'Свернуть все' : 'Collapse all') : (isRu ? 'Развернуть все' : 'Expand all')}
+                  </TooltipContent>
+                </Tooltip>
+              </div>
             </div>
 
             <div className="flex-1 overflow-y-auto min-h-0 hydra-scrollbar">
               <div className="p-2 space-y-1">
                 {/* Lovable AI section */}
                 {lovableModels.length > 0 && (
-                  <Collapsible defaultOpen>
+                  <Collapsible open={isGroupOpen('lovable', true)} onOpenChange={(o) => toggleGroup('lovable', o)}>
                     <CollapsibleTrigger className="flex items-center justify-between w-full px-2 py-1.5 rounded-md hover:bg-accent/50 transition-colors group">
                       <div className="flex items-center gap-2">
                         {PROVIDER_LOGOS.lovable && <PROVIDER_LOGOS.lovable className="h-4 w-4 text-hydra-cyan" />}
@@ -237,7 +268,7 @@ export function ContestCandidates() {
                 {Object.entries(byokGrouped).map(([provider, entries]) => {
                   const hasKey = entries.some(e => e.isAvailable);
                   return (
-                    <Collapsible key={provider} defaultOpen={hasKey}>
+                    <Collapsible key={provider} open={isGroupOpen(provider, hasKey)} onOpenChange={(o) => toggleGroup(provider, o)}>
                       <CollapsibleTrigger className="flex items-center justify-between w-full px-2 py-1.5 rounded-md hover:bg-accent/50 transition-colors group">
                         <ProviderHeader provider={provider} hasKey={hasKey} loading={loading} language={language} />
                         <span className="text-[10px] text-muted-foreground/70">{entries.length}</span>
