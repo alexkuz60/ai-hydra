@@ -629,6 +629,13 @@ ${content.slice(0, 2000)}${content.length > 2000 ? '\n...(сокращено)' :
     toast.info(t('dchat.evaluationRequested'));
   }, [handleDChatExpand, t]);
 
+  // Track model response completion for statistics
+  const handleResponseComplete = useCallback((modelId: string, role: string) => {
+    if (currentTask?.id) {
+      incrementResponse(modelId, currentTask.id, role);
+    }
+  }, [currentTask?.id, incrementResponse]);
+
   if (authLoading || loading) {
     return (
       <Layout>
@@ -972,11 +979,7 @@ ${content.slice(0, 2000)}${content.length > 2000 ? '\n...(сокращено)' :
               initialQuery={dChatContext}
               onClearInitialQuery={handleClearDChatContext}
               onCopyToMainChat={handleCopyToMainChat}
-              onResponseComplete={useCallback((modelId: string, role: string) => {
-                if (currentTask?.id) {
-                  incrementResponse(modelId, currentTask.id, role);
-                }
-              }, [currentTask?.id, incrementResponse])}
+              onResponseComplete={handleResponseComplete}
             />
           </ResizablePanel>
         </ResizablePanelGroup>
