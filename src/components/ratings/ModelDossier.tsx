@@ -82,26 +82,31 @@ export function ModelDossier({ modelId }: ModelDossierProps) {
             <HydraCardTitle>{isRu ? 'Статистика участия' : 'Participation Stats'}</HydraCardTitle>
           </HydraCardHeader>
           <HydraCardContent>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              <StatCell label={isRu ? 'Ответов' : 'Responses'} value={stats.totalResponses} icon={MessageSquare} />
-              <StatCell label={isRu ? 'Brains' : 'Brains'} value={stats.totalBrains} icon={Brain} color="text-primary" />
-              <StatCell label={isRu ? 'Откл.' : 'Dismissed'} value={stats.totalDismissals} />
-              <StatCell 
-                label={isRu ? 'Оценок Арбитра' : 'Arbiter Evals'} 
-                value={stats.arbiterEvalCount} 
-                icon={Scale}
-                suffix={stats.arbiterEvalCount > 0 ? ` (ø${stats.arbiterAvgScore.toFixed(1)})` : ''}
-              />
-              <StatCell label={isRu ? 'Конкурсов' : 'Contests'} value={stats.contestCount} icon={Crown} />
-              <StatCell label={isRu ? 'Балл конкурсов' : 'Contest Score'} value={stats.contestTotalScore} icon={Sparkles} />
-              <StatCell label={isRu ? 'Галлюцинации' : 'Hallucinations'} value={stats.totalHallucinations} icon={AlertTriangle} color="text-destructive" />
+            <div className="flex flex-wrap items-center gap-2">
+              <StatBadge icon={MessageSquare} value={stats.totalResponses} label={isRu ? 'отв.' : 'resp.'} />
+              <StatBadge icon={Brain} value={stats.totalBrains} label="brains" color="text-primary" />
+              {stats.totalDismissals > 0 && (
+                <StatBadge value={stats.totalDismissals} label={isRu ? 'откл.' : 'dism.'} />
+              )}
+              {stats.arbiterEvalCount > 0 && (
+                <StatBadge icon={Scale} value={stats.arbiterEvalCount} label={`ø${stats.arbiterAvgScore.toFixed(1)}`} />
+              )}
+              {stats.contestCount > 0 && (
+                <StatBadge icon={Crown} value={stats.contestCount} label={isRu ? 'конк.' : 'cont.'} />
+              )}
+              {stats.contestTotalScore > 0 && (
+                <StatBadge icon={Sparkles} value={stats.contestTotalScore} label={isRu ? 'баллы' : 'score'} />
+              )}
+              {stats.totalHallucinations > 0 && (
+                <StatBadge icon={AlertTriangle} value={stats.totalHallucinations} label={isRu ? 'галл.' : 'hall.'} color="text-destructive" />
+              )}
+              {stats.firstUsedAt && (
+                <span className="text-[10px] text-muted-foreground ml-auto">
+                  {isRu ? 'с ' : 'since '}
+                  {format(new Date(stats.firstUsedAt), 'dd.MM.yy', { locale: isRu ? ruLocale : enUS })}
+                </span>
+              )}
             </div>
-            {stats.firstUsedAt && (
-              <p className="text-xs text-muted-foreground mt-3">
-                {isRu ? 'Первое использование: ' : 'First used: '}
-                {format(new Date(stats.firstUsedAt), 'dd MMM yyyy', { locale: isRu ? ruLocale : enUS })}
-              </p>
-            )}
           </HydraCardContent>
         </HydraCard>
 
@@ -242,21 +247,18 @@ function InfoRow({ icon: Icon, label, value }: { icon: React.ComponentType<{ cla
   );
 }
 
-function StatCell({ label, value, icon: Icon, color, suffix }: {
-  label: string;
-  value: number;
+function StatBadge({ icon: Icon, value, label, color }: {
   icon?: React.ComponentType<{ className?: string }>;
+  value: number;
+  label: string;
   color?: string;
-  suffix?: string;
 }) {
   return (
-    <div className="text-center p-2 rounded-lg bg-muted/30">
-      <div className={cn("text-lg font-bold", color || 'text-foreground')}>
-        {Icon && <Icon className={cn("h-4 w-4 inline mr-1 -mt-0.5", color)} />}
-        {value}{suffix}
-      </div>
-      <div className="text-[10px] text-muted-foreground">{label}</div>
-    </div>
+    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-muted/40 text-xs">
+      {Icon && <Icon className={cn("h-3 w-3", color || 'text-muted-foreground')} />}
+      <span className={cn("font-semibold", color)}>{value}</span>
+      <span className="text-muted-foreground">{label}</span>
+    </span>
   );
 }
 
