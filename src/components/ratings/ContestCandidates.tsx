@@ -195,9 +195,24 @@ export function ContestCandidates() {
                   <span>
                     {isRu ? `${filtered.length} из ${allModels.length}` : `${filtered.length} of ${allModels.length}`}
                   </span>
-                  <span className="text-hydra-cyan font-medium">
-                    {(isLovableAvailable ? LOVABLE_AI_MODELS.length : 0) + availablePersonalIds.size} {isRu ? 'доступно' : 'available'}
-                  </span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-hydra-cyan font-medium">
+                      {(isLovableAvailable ? LOVABLE_AI_MODELS.length : 0) + availablePersonalIds.size} {isRu ? 'доступно' : 'available'}
+                    </span>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button
+                          onClick={toggleAll}
+                          className="p-0.5 rounded hover:bg-muted/40 text-muted-foreground hover:text-foreground transition-colors"
+                        >
+                          <ChevronsUpDown className="h-3.5 w-3.5" />
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent side="right" className="text-xs">
+                        {allExpanded ? (isRu ? 'Свернуть все' : 'Collapse all') : (isRu ? 'Развернуть все' : 'Expand all')}
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
                 </div>
               )}
               <div className="flex gap-1">
@@ -217,21 +232,6 @@ export function ContestCandidates() {
                       : (isRu ? 'Недоступные' : 'Unavailable')}
                   </button>
                 ))}
-              </div>
-              <div className="flex items-center justify-end">
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <button
-                      onClick={toggleAll}
-                      className="p-1 rounded hover:bg-muted/40 text-muted-foreground hover:text-foreground transition-colors"
-                    >
-                      <ChevronsUpDown className="h-3.5 w-3.5" />
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent side="right" className="text-xs">
-                    {allExpanded ? (isRu ? 'Свернуть все' : 'Collapse all') : (isRu ? 'Развернуть все' : 'Expand all')}
-                  </TooltipContent>
-                </Tooltip>
               </div>
             </div>
 
