@@ -196,6 +196,13 @@ export default function ExpertPanel() {
     enabled: true,
   });
 
+  // Callback for when a streamed message is saved to DB
+  const handleStreamMessageSaved = useCallback(() => {
+    if (currentTask?.id) {
+      fetchMessages(currentTask.id);
+    }
+  }, [currentTask?.id, fetchMessages]);
+
   // Hybrid streaming hook - manages parallel SSE streams for real-time responses
   const {
     streamingResponses,
@@ -207,12 +214,7 @@ export default function ExpertPanel() {
   } = useStreamingResponses({
     sessionId: currentTask?.id || null,
     userId: user?.id || null,
-    onMessageSaved: useCallback(() => {
-      // Immediately refetch messages when AI response is saved
-      if (currentTask?.id) {
-        fetchMessages(currentTask.id);
-      }
-    }, [currentTask?.id, fetchMessages]),
+    onMessageSaved: handleStreamMessageSaved,
   });
   
   // Auto-clear completed streaming responses after a delay
