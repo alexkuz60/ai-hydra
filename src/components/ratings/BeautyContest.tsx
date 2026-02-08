@@ -1,64 +1,47 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ContestCandidates } from '@/components/ratings/ContestCandidates';
-import { ContestPodium } from './ContestPodium';
-import { Crown, Users, Trophy } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
+import { Crown, MessageSquare, Scale, Trophy } from 'lucide-react';
 
 export function BeautyContest() {
   const { language } = useLanguage();
   const isRu = language === 'ru';
 
-  const [podiumCount, setPodiumCount] = useState(() => {
-    try {
-      const stored = localStorage.getItem('hydra-contest-models');
-      if (stored) return Object.keys(JSON.parse(stored)).length;
-    } catch {}
-    return 0;
-  });
-
-  useEffect(() => {
-    const handler = () => {
-      try {
-        const stored = localStorage.getItem('hydra-contest-models');
-        setPodiumCount(stored ? Object.keys(JSON.parse(stored)).length : 0);
-      } catch {}
-    };
-    window.addEventListener('storage', handler);
-    const interval = setInterval(handler, 1000);
-    return () => { window.removeEventListener('storage', handler); clearInterval(interval); };
-  }, []);
+  const upcoming = [
+    { icon: MessageSquare, labelRu: 'Чат-арена конкурса', labelEn: 'Contest Chat Arena', descRu: 'Модели отвечают на задания в реальном времени', descEn: 'Models respond to tasks in real time' },
+    { icon: Scale, labelRu: 'Панель жюри', labelEn: 'Jury Panel', descRu: 'Оценка ответов по критериям Арбитра', descEn: 'Response evaluation using Arbiter criteria' },
+    { icon: Trophy, labelRu: 'Результаты и выбывание', labelEn: 'Results & Elimination', descRu: 'Итоги туров, турнирная сетка', descEn: 'Round results, bracket view' },
+  ];
 
   return (
-    <div className="h-full flex flex-col">
-      <Tabs defaultValue={localStorage.getItem('contest-active-tab') || 'candidates'} onValueChange={(v) => localStorage.setItem('contest-active-tab', v)} className="flex-1 flex flex-col">
-        <div className="px-4 pt-3">
-          <TabsList className="w-full">
-            <TabsTrigger value="candidates" className="flex-1 flex items-center gap-1.5">
-              <Users className="h-3.5 w-3.5" />
-              {isRu ? 'Отборочные кандидаты' : 'Qualifying Candidates'}
-              {podiumCount > 0 && (
-                <Badge variant="secondary" className="text-[10px] px-1.5 py-0 ml-1 bg-amber-500/20 text-amber-400 border-amber-500/30">
-                  <Crown className="h-2.5 w-2.5 mr-0.5" />{podiumCount}
-                </Badge>
-              )}
-            </TabsTrigger>
-            <TabsTrigger value="arena" className="flex-1 flex items-center gap-1.5">
-              <Trophy className="h-3.5 w-3.5" />
-              {isRu ? 'Подиум конкурса' : 'Contest Podium'}
-            </TabsTrigger>
-          </TabsList>
+    <div className="h-full flex items-center justify-center p-8">
+      <div className="text-center max-w-lg space-y-6">
+        <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10">
+          <Crown className="h-8 w-8 text-primary" />
         </div>
 
-        <TabsContent value="candidates" className="flex-1 mt-0 h-0 min-h-0">
-          <ContestCandidates />
-        </TabsContent>
+        <div>
+          <h2 className="text-xl font-bold mb-2">
+            {isRu ? 'Конкурс интеллект-красоты' : 'Intelligence Beauty Contest'}
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            {isRu
+              ? 'Здесь будет проходить соревнование ИИ-моделей. Настройте правила и пригласите участников через Портфолио.'
+              : 'This is where AI model competitions will take place. Configure rules and invite participants via Portfolio.'}
+          </p>
+        </div>
 
-        <TabsContent value="arena" className="flex-1 mt-0 h-0 min-h-0">
-          <ContestPodium />
-        </TabsContent>
-      </Tabs>
+        <div className="space-y-3 text-left">
+          {upcoming.map(({ icon: Icon, labelRu, labelEn, descRu, descEn }) => (
+            <div key={labelEn} className="flex items-start gap-3 p-3 rounded-lg bg-muted/30">
+              <Icon className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
+              <div>
+                <div className="text-sm font-medium">{isRu ? labelRu : labelEn}</div>
+                <div className="text-xs text-muted-foreground">{isRu ? descRu : descEn}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
