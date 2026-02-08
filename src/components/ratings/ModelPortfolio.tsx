@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Brain } from 'lucide-react';
 import { ModelDossier } from '@/components/ratings/ModelDossier';
 import { ModelListSidebar, useAllModels } from '@/components/ratings/ModelListSidebar';
+import { useVeteranModels } from '@/hooks/useModelDossier';
 import {
   ResizablePanelGroup,
   ResizablePanel,
@@ -17,6 +18,8 @@ const DEFAULT_LIST_SIZE = 25;
 export function ModelPortfolio() {
   const { language } = useLanguage();
   const { loading } = useAllModels();
+  const { veteranIds } = useVeteranModels();
+  const veteranSet = useMemo(() => new Set(veteranIds), [veteranIds]);
   const isRu = language === 'ru';
 
   const [selectedModelId, setSelectedModelId] = useState<string | null>(() => {
@@ -94,6 +97,7 @@ export function ModelPortfolio() {
           selectedModelId={selectedModelId}
           onSelect={setSelectedModelId}
           contestModels={contestModels}
+          veteranModelIds={veteranSet}
         />
       </ResizablePanel>
 

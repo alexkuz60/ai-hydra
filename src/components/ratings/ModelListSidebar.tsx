@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { Brain, Check, X, Search, ChevronsUpDown, Crown } from 'lucide-react';
+import { Brain, Check, X, Search, ChevronsUpDown, Crown, Activity } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import { LOVABLE_AI_MODELS, PERSONAL_KEY_MODELS, useAvailableModels, type ModelOption } from '@/hooks/useAvailableModels';
@@ -54,8 +54,8 @@ const PROVIDER_LABELS: Record<string, { ru: string; en: string }> = {
 
 // ── Sub-components ──
 
-function ModelRow({ model, isAvailable, isActive, isOnPodium, onClick }: {
-  model: ModelOption; isAvailable: boolean; isActive: boolean; isOnPodium?: boolean; onClick: () => void;
+function ModelRow({ model, isAvailable, isActive, isOnPodium, isVeteran, onClick }: {
+  model: ModelOption; isAvailable: boolean; isActive: boolean; isOnPodium?: boolean; isVeteran?: boolean; onClick: () => void;
 }) {
   const providerColor = PROVIDER_COLORS[model.provider] || 'text-muted-foreground';
   return (
@@ -73,6 +73,7 @@ function ModelRow({ model, isAvailable, isActive, isOnPodium, onClick }: {
         <span className="text-sm font-medium truncate">{model.name}</span>
       </div>
       <div className="flex items-center gap-1.5 shrink-0">
+        {isVeteran && <Activity className="h-3.5 w-3.5 text-hydra-cyan" />}
         {isOnPodium && <Crown className="h-3.5 w-3.5 text-amber-400" />}
         {isAvailable ? (
           <Check className="h-3.5 w-3.5 text-green-500" />
@@ -125,9 +126,11 @@ interface ModelListSidebarProps {
   onSelect: (id: string) => void;
   /** Map of modelId -> role for podium crown indicators */
   contestModels?: Record<string, string>;
+  /** Set of model IDs that have statistics data (veterans) */
+  veteranModelIds?: Set<string>;
 }
 
-export function ModelListSidebar({ selectedModelId, onSelect, contestModels = {} }: ModelListSidebarProps) {
+export function ModelListSidebar({ selectedModelId, onSelect, contestModels = {}, veteranModelIds }: ModelListSidebarProps) {
   const { language } = useLanguage();
   const { allModels, loading, isLovableAvailable, availablePersonalIds } = useAllModels();
   const [search, setSearch] = useState('');
@@ -185,9 +188,15 @@ export function ModelListSidebar({ selectedModelId, onSelect, contestModels = {}
             />
           </div>
           {!loading && (
-            <div className="flex items-center justify-between text-xs text-muted-foreground">
+             <div className="flex items-center justify-between text-xs text-muted-foreground">
               <span>
                 {isRu ? `${filtered.length} из ${allModels.length}` : `${filtered.length} of ${allModels.length}`}
+                {veteranModelIds && veteranModelIds.size > 0 && (
+                  <span className="ml-1.5 text-hydra-cyan">
+                    <Activity className="inline h-3 w-3 mr-0.5 -mt-0.5" />
+                    {veteranModelIds.size}
+                  </span>
+                )}
               </span>
               <div className="flex items-center gap-1.5">
                 <span className="text-hydra-cyan font-medium">
@@ -248,11 +257,12 @@ export function ModelListSidebar({ selectedModelId, onSelect, contestModels = {}
                   <CollapsibleContent className="space-y-0.5 pt-0.5 pb-1">
                     {lovableModels.map(e => (
                       <div key={e.model.id} className="pl-4">
-                        <ModelRow
+                         <ModelRow
                           model={e.model}
                           isAvailable={e.isAvailable}
                           isActive={selectedModelId === e.model.id}
                           isOnPodium={e.model.id in contestModels}
+                          isVeteran={veteranModelIds?.has(e.model.id)}
                           onClick={() => onSelect(e.model.id)}
                         />
                       </div>
@@ -278,6 +288,7 @@ export function ModelListSidebar({ selectedModelId, onSelect, contestModels = {}
                             isAvailable={e.isAvailable}
                             isActive={selectedModelId === e.model.id}
                             isOnPodium={e.model.id in contestModels}
+                            isVeteran={veteranModelIds?.has(e.model.id)}
                             onClick={() => onSelect(e.model.id)}
                           />
                         </div>
