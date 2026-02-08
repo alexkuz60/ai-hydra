@@ -206,7 +206,7 @@ export function ContestCandidates() {
               </div>
             </div>
 
-            <ScrollArea className="flex-1">
+            <ScrollArea className="flex-1 min-h-0">
               <div className="p-2 space-y-1">
                 {/* Lovable AI section */}
                 {lovableModels.length > 0 && (
