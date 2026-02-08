@@ -119,6 +119,7 @@ export function ContestCandidates() {
   const [availFilter, setAvailFilter] = useState<'all' | 'available' | 'unavailable'>('all');
   const [allExpanded, setAllExpanded] = useState(true);
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
+  const [contestModels, setContestModels] = useState<Record<string, string>>({});  // modelId -> role
   const [listSize, setListSize] = useState<number>(() => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
@@ -300,7 +301,19 @@ export function ContestCandidates() {
         {/* Detail panel */}
         <ResizablePanel defaultSize={100 - listSize} minSize={40}>
           {selectedEntry ? (
-            <CandidateDetail model={selectedEntry.model} isAvailable={selectedEntry.isAvailable} />
+            <CandidateDetail
+              model={selectedEntry.model}
+              isAvailable={selectedEntry.isAvailable}
+              isSelectedForContest={selectedEntry.model.id in contestModels}
+              contestRole={contestModels[selectedEntry.model.id] || ''}
+              onToggleContest={(id) => setContestModels(prev => {
+                const next = { ...prev };
+                if (id in next) delete next[id];
+                else next[id] = '';
+                return next;
+              })}
+              onContestRoleChange={(id, role) => setContestModels(prev => ({ ...prev, [id]: role }))}
+            />
           ) : (
             <div className="h-full flex items-center justify-center text-muted-foreground">
               <div className="text-center">
