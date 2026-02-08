@@ -19,7 +19,8 @@ import {
   Archive,
   Check,
   Lightbulb,
-  Scale
+  Scale,
+  AlertTriangle
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -105,6 +106,7 @@ interface ChatMessageProps {
   onRequestProposalDetails?: (messageId: string, proposalIds: string[]) => void;
   onConsultInDChat?: (messageId: string, content: string) => void;
   onRequestEvaluation?: (messageId: string, content: string, modelName: string | null) => void;
+  onHallucination?: (messageId: string, modelName: string | null, sessionId: string) => void;
   onChecklistChange?: (messageId: string, checklistState: Record<number, boolean>) => void;
   /** Override: force interactive checklists regardless of message metadata */
   forceInteractiveChecklists?: boolean;
@@ -112,7 +114,7 @@ interface ChatMessageProps {
 
 const MAX_COLLAPSED_LINES = 3;
 
-export function ChatMessage({ message, userDisplayInfo, onDelete, onRatingChange, isCollapsed, onToggleCollapse, onClarifyWithSpecialist, onSaveToMemory, isSavingToMemory, isAlreadySavedToMemory, onUpdateProposals, onRequestProposalDetails, onConsultInDChat, onRequestEvaluation, onChecklistChange, forceInteractiveChecklists }: ChatMessageProps) {
+export function ChatMessage({ message, userDisplayInfo, onDelete, onRatingChange, isCollapsed, onToggleCollapse, onClarifyWithSpecialist, onSaveToMemory, isSavingToMemory, isAlreadySavedToMemory, onUpdateProposals, onRequestProposalDetails, onConsultInDChat, onRequestEvaluation, onHallucination, onChecklistChange, forceInteractiveChecklists }: ChatMessageProps) {
   const { t } = useLanguage();
   const contentRef = useRef<HTMLDivElement>(null);
   const [savedToMemory, setSavedToMemory] = useState(isAlreadySavedToMemory || false);
@@ -343,6 +345,27 @@ export function ChatMessage({ message, userDisplayInfo, onDelete, onRatingChange
               </TooltipTrigger>
               <TooltipContent side="top">
                 <p className="text-xs">{t('dchat.requestEvaluation')}</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        )}
+        
+        {/* Flag hallucination button for AI messages */}
+        {isAiMessage && onHallucination && (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 text-destructive/60 hover:text-destructive hover:bg-destructive/10"
+                  onClick={() => onHallucination(message.id, message.model_name, message.session_id)}
+                >
+                  <AlertTriangle className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="top">
+                <p className="text-xs">{t('dchat.flagHallucination') || 'Flag hallucination'}</p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
