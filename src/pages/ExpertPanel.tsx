@@ -782,8 +782,8 @@ ${content.slice(0, 2000)}${content.length > 2000 ? '\n...(сокращено)' :
                                 variant={useHybridStreaming ? 'default' : 'secondary'}
                                 className={`flex items-center gap-1.5 cursor-pointer ${
                                   useHybridStreaming 
-                                    ? 'bg-hydra-cyan/20 text-hydra-cyan border-hydra-cyan/30' 
-                                    : 'bg-muted text-muted-foreground'
+                                    ? 'bg-hydra-cyan/30 text-hydra-cyan border-hydra-cyan/50' 
+                                    : 'bg-muted/80 text-foreground/60 border-border'
                                 }`}
                               >
                                 <motion.span
