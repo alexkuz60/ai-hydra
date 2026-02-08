@@ -26,6 +26,7 @@ interface MemoryChunk {
 
 interface UseStreamingChatProps {
   sessionId: string | null;
+  onResponseComplete?: (modelId: string, role: string) => void;
 }
 
 interface UseStreamingChatReturn {
@@ -48,6 +49,7 @@ interface UseStreamingChatReturn {
 
 export function useStreamingChat({
   sessionId,
+  onResponseComplete,
 }: UseStreamingChatProps): UseStreamingChatReturn {
   const { t } = useLanguage();
   const [messages, setMessages] = useState<StreamingMessage[]>([]);
@@ -241,6 +243,11 @@ export function useStreamingChat({
               : m
           )
         );
+
+        // Notify about completed response for statistics tracking
+        if (accumulatedContent.trim()) {
+          onResponseComplete?.(modelId, role);
+        }
 
       } catch (error: unknown) {
         if (error instanceof Error && error.name === 'AbortError') {
