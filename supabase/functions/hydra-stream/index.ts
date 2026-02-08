@@ -13,6 +13,9 @@ const CORS_HEADERS = {
 // DeepSeek models that need direct API access
 const DEEPSEEK_MODELS = ["deepseek-chat", "deepseek-reasoner"];
 
+// Mistral models that need direct API access
+const MISTRAL_MODELS = ["mistral-large-latest", "mistral-small-latest", "codestral-latest", "mistral-medium-latest"];
+
 // Default prompts by role
 const DEFAULT_PROMPTS: Record<string, string> = {
   assistant: `You are an expert AI assistant. Provide clear, well-reasoned responses.`,
@@ -215,7 +218,82 @@ serve(async (req) => {
       });
     }
 
-    // Get Lovable AI API key for non-DeepSeek models
+    // Check if this is a Mistral model
+    const isMistral = MISTRAL_MODELS.includes(model_id);
+    
+    if (isMistral) {
+      const authHeader = req.headers.get("Authorization");
+      const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+      const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+      
+      const supabase = createClient(supabaseUrl, supabaseServiceKey);
+      
+      let userId: string | null = null;
+      if (authHeader?.startsWith("Bearer ")) {
+        const token = authHeader.slice(7);
+        const { data: { user } } = await supabase.auth.getUser(token);
+        userId = user?.id || null;
+      }
+      
+      if (!userId) {
+        return new Response(
+          JSON.stringify({ error: "Authentication required for Mistral models" }),
+          { status: 401, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } }
+        );
+      }
+      
+      const { data: apiKeys } = await supabase.rpc("get_my_api_keys").single();
+      const mistralApiKey = (apiKeys as { mistral_api_key?: string })?.mistral_api_key;
+      
+      if (!mistralApiKey) {
+        return new Response(
+          JSON.stringify({ error: "Mistral API key not configured. Please add it in your profile settings." }),
+          { status: 400, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } }
+        );
+      }
+      
+      console.log(`[hydra-stream] Mistral streaming request: model=${model_id}`);
+      
+      const response = await fetch("https://api.mistral.ai/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${mistralApiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: model_id,
+          messages: [
+            { role: "system", content: finalSystemPrompt },
+            { role: "user", content: message },
+          ],
+          stream: true,
+          temperature,
+          max_tokens,
+        }),
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("[hydra-stream] Mistral error:", response.status, errorText);
+        return new Response(
+          JSON.stringify({ error: `Mistral error: ${response.status}` }),
+          { status: 500, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } }
+        );
+      }
+      
+      console.log("[hydra-stream] Mistral streaming response started");
+      
+      return new Response(response.body, {
+        headers: {
+          ...CORS_HEADERS,
+          "Content-Type": "text/event-stream",
+          "Cache-Control": "no-cache",
+          "Connection": "keep-alive",
+        },
+      });
+    }
+
+    // Get Lovable AI API key for non-DeepSeek/non-Mistral models
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
       return new Response(
