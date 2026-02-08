@@ -142,29 +142,34 @@ serve(async (req) => {
     const isDeepSeek = DEEPSEEK_MODELS.includes(model_id);
     
     if (isDeepSeek) {
-      // Get user's DeepSeek API key from database
       const authHeader = req.headers.get("Authorization");
       const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-      const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+      const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
       
-      const supabase = createClient(supabaseUrl, supabaseServiceKey);
-      
-      // Extract user from JWT
-      let userId: string | null = null;
-      if (authHeader?.startsWith("Bearer ")) {
-        const token = authHeader.slice(7);
-        const { data: { user } } = await supabase.auth.getUser(token);
-        userId = user?.id || null;
-      }
-      
-      if (!userId) {
+      if (!authHeader?.startsWith("Bearer ")) {
         return new Response(
           JSON.stringify({ error: "Authentication required for DeepSeek models" }),
           { status: 401, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } }
         );
       }
       
-      // Get DeepSeek API key
+      const token = authHeader.slice(7);
+      
+      // Create client with user's auth context for RLS-based RPC
+      const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+        global: { headers: { Authorization: authHeader } },
+      });
+      
+      const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+      
+      if (authError || !user) {
+        return new Response(
+          JSON.stringify({ error: "Authentication required for DeepSeek models" }),
+          { status: 401, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } }
+        );
+      }
+      
+      // Get DeepSeek API key via user-context RPC
       const { data: apiKeys } = await supabase.rpc("get_my_api_keys").single();
       const deepseekApiKey = (apiKeys as { deepseek_api_key?: string })?.deepseek_api_key;
       
@@ -224,18 +229,25 @@ serve(async (req) => {
     if (isMistral) {
       const authHeader = req.headers.get("Authorization");
       const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-      const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+      const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
       
-      const supabase = createClient(supabaseUrl, supabaseServiceKey);
-      
-      let userId: string | null = null;
-      if (authHeader?.startsWith("Bearer ")) {
-        const token = authHeader.slice(7);
-        const { data: { user } } = await supabase.auth.getUser(token);
-        userId = user?.id || null;
+      if (!authHeader?.startsWith("Bearer ")) {
+        return new Response(
+          JSON.stringify({ error: "Authentication required for Mistral models" }),
+          { status: 401, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } }
+        );
       }
       
-      if (!userId) {
+      const token = authHeader.slice(7);
+      
+      // Create client with user's auth context for RLS-based RPC
+      const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+        global: { headers: { Authorization: authHeader } },
+      });
+      
+      const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+      
+      if (authError || !user) {
         return new Response(
           JSON.stringify({ error: "Authentication required for Mistral models" }),
           { status: 401, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } }
