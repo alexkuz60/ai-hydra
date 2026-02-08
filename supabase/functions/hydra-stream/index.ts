@@ -1,125 +1,28 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-// ============================================
-// Streaming Edge Function for D-Chat
-// ============================================
-
-const CORS_HEADERS = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
-};
-
-// DeepSeek models that need direct API access
-const DEEPSEEK_MODELS = ["deepseek-chat", "deepseek-reasoner"];
-
-// Mistral models that need direct API access
-const MISTRAL_MODELS = ["mistral-large-latest", "mistral-small-latest", "codestral-latest", "mistral-medium-latest"];
-
-// Default prompts by role
-const DEFAULT_PROMPTS: Record<string, string> = {
-  assistant: `You are an expert AI assistant. Provide clear, well-reasoned responses.`,
-  
-  consultant: `You are an AI consultant helping with research and analysis. Use available tools when needed. Provide insightful, well-structured answers.`,
-  
-  critic: `You are a critical analyst. Find weaknesses, contradictions, and potential problems in reasoning. Be constructive but rigorous.`,
-  
-  arbiter: `You are a discussion arbiter. Synthesize different viewpoints, highlight consensus and disagreements.`,
-  
-  moderator: `Ты — Модератор дискуссии между несколькими ИИ-экспертами.
-
-Твоя задача:
-1. Проанализировать запрос пользователя и все ответы экспертов
-2. Выделить ключевые тезисы каждого эксперта
-3. Удалить смысловые повторы и информационный шум
-4. Структурировать информацию по темам
-5. Отметить точки консенсуса и расхождения
-
-Формат ответа:
-## Краткое резюме
-[1-2 предложения: суть вопроса и общий вывод]
-
-## Ключевые тезисы
-- [Тезис 1] — поддержано: [какими экспертами]
-
-## Расхождения (если есть)
-- [Точка расхождения]: [позиция А] vs [позиция Б]
-
-## Рекомендация
-[Финальный вывод на основе анализа]`,
-};
-
-interface MemoryChunk {
-  content: string;
-  chunk_type: string;
-  metadata?: Record<string, unknown>;
-}
-
-interface StreamRequest {
-  message: string;
-  model_id: string;
-  role?: string;
-  system_prompt?: string;
-  temperature?: number;
-  max_tokens?: number;
-  memory_context?: MemoryChunk[];
-}
-
-// Build memory context section for system prompt
-function buildMemoryContext(chunks: MemoryChunk[]): string {
-  if (!chunks || chunks.length === 0) return '';
-  
-  const sections: Record<string, string[]> = {
-    decision: [],
-    context: [],
-    instruction: [],
-    summary: [],
-  };
-  
-  chunks.forEach(chunk => {
-    const type = chunk.chunk_type || 'context';
-    if (sections[type]) {
-      sections[type].push(`• ${chunk.content}`);
-    } else {
-      sections.context.push(`• ${chunk.content}`);
-    }
-  });
-  
-  let contextText = '\n\n---\n## Контекст из памяти сессии\n';
-  
-  if (sections.decision.length > 0) {
-    contextText += '\n### Принятые решения:\n' + sections.decision.join('\n') + '\n';
-  }
-  if (sections.instruction.length > 0) {
-    contextText += '\n### Инструкции:\n' + sections.instruction.join('\n') + '\n';
-  }
-  if (sections.context.length > 0) {
-    contextText += '\n### Дополнительный контекст:\n' + sections.context.join('\n') + '\n';
-  }
-  if (sections.summary.length > 0) {
-    contextText += '\n### Саммари:\n' + sections.summary.join('\n') + '\n';
-  }
-  
-  contextText += '---\n\nУчитывай эту информацию при формировании ответа.';
-  
-  return contextText;
-}
+import {
+  CORS_HEADERS,
+  DEEPSEEK_MODELS,
+  MISTRAL_MODELS,
+  DEFAULT_PROMPTS,
+  buildMemoryContext,
+  type StreamRequest,
+} from "./types.ts";
+import { streamDeepSeek, streamMistral, streamLovableAI } from "./providers.ts";
 
 serve(async (req) => {
-  // Handle CORS preflight
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: CORS_HEADERS });
   }
 
   try {
-    const { 
-      message, 
-      model_id, 
-      role = 'assistant',
+    const {
+      message,
+      model_id,
+      role = "assistant",
       system_prompt,
       temperature = 0.7,
       max_tokens = 4096,
-      memory_context = []
+      memory_context = [],
     }: StreamRequest = await req.json();
 
     if (!message || !model_id) {
@@ -129,255 +32,33 @@ serve(async (req) => {
       );
     }
 
-    // Build system prompt with memory context
+    // Build final system prompt with memory context
     const basePrompt = system_prompt || DEFAULT_PROMPTS[role] || DEFAULT_PROMPTS.assistant;
-    const memorySection = buildMemoryContext(memory_context);
-    const finalSystemPrompt = basePrompt + memorySection;
-    
+    const finalSystemPrompt = basePrompt + buildMemoryContext(memory_context);
+
     if (memory_context.length > 0) {
-      console.log(`[hydra-stream] Including ${memory_context.length} memory chunks in context`);
+      console.log(`[hydra-stream] Including ${memory_context.length} memory chunks`);
     }
 
-    // Check if this is a DeepSeek model
-    const isDeepSeek = DEEPSEEK_MODELS.includes(model_id);
-    
-    if (isDeepSeek) {
-      const authHeader = req.headers.get("Authorization");
-      const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-      const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-      
-      if (!authHeader?.startsWith("Bearer ")) {
-        return new Response(
-          JSON.stringify({ error: "Authentication required for DeepSeek models" }),
-          { status: 401, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } }
-        );
-      }
-      
-      const token = authHeader.slice(7);
-      
-      // Create client with user's auth context for RLS-based RPC
-      const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-        global: { headers: { Authorization: authHeader } },
-      });
-      
-      const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-      
-      if (authError || !user) {
-        return new Response(
-          JSON.stringify({ error: "Authentication required for DeepSeek models" }),
-          { status: 401, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } }
-        );
-      }
-      
-      // Get DeepSeek API key via user-context RPC
-      const { data: apiKeys } = await supabase.rpc("get_my_api_keys").single();
-      const deepseekApiKey = (apiKeys as { deepseek_api_key?: string })?.deepseek_api_key;
-      
-      if (!deepseekApiKey) {
-        return new Response(
-          JSON.stringify({ error: "DeepSeek API key not configured. Please add it in your profile settings." }),
-          { status: 400, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } }
-        );
-      }
-      
-      const isReasoningModel = model_id === 'deepseek-reasoner';
-      
-      console.log(`[hydra-stream] DeepSeek streaming request: model=${model_id}`);
-      
-      const response = await fetch("https://api.deepseek.com/chat/completions", {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${deepseekApiKey}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: model_id,
-          messages: [
-            { role: "system", content: finalSystemPrompt },
-            { role: "user", content: message },
-          ],
-          stream: true,
-          temperature: isReasoningModel ? undefined : temperature,
-          max_tokens,
-        }),
-      });
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error("[hydra-stream] DeepSeek error:", response.status, errorText);
-        return new Response(
-          JSON.stringify({ error: `DeepSeek error: ${response.status}` }),
-          { status: 500, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } }
-        );
-      }
-      
-      console.log("[hydra-stream] DeepSeek streaming response started");
-      
-      return new Response(response.body, {
-        headers: {
-          ...CORS_HEADERS,
-          "Content-Type": "text/event-stream",
-          "Cache-Control": "no-cache",
-          "Connection": "keep-alive",
-        },
-      });
+    // Route to the correct provider
+    const params = {
+      req,
+      model_id,
+      systemPrompt: finalSystemPrompt,
+      message,
+      temperature,
+      max_tokens,
+    };
+
+    if (DEEPSEEK_MODELS.includes(model_id)) {
+      return streamDeepSeek(params);
     }
 
-    // Check if this is a Mistral model
-    const isMistral = MISTRAL_MODELS.includes(model_id);
-    
-    if (isMistral) {
-      const authHeader = req.headers.get("Authorization");
-      const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-      const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-      
-      if (!authHeader?.startsWith("Bearer ")) {
-        return new Response(
-          JSON.stringify({ error: "Authentication required for Mistral models" }),
-          { status: 401, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } }
-        );
-      }
-      
-      const token = authHeader.slice(7);
-      
-      // Create client with user's auth context for RLS-based RPC
-      const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-        global: { headers: { Authorization: authHeader } },
-      });
-      
-      const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-      
-      if (authError || !user) {
-        return new Response(
-          JSON.stringify({ error: "Authentication required for Mistral models" }),
-          { status: 401, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } }
-        );
-      }
-      
-      const { data: apiKeys } = await supabase.rpc("get_my_api_keys").single();
-      const mistralApiKey = (apiKeys as { mistral_api_key?: string })?.mistral_api_key;
-      
-      if (!mistralApiKey) {
-        return new Response(
-          JSON.stringify({ error: "Mistral API key not configured. Please add it in your profile settings." }),
-          { status: 400, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } }
-        );
-      }
-      
-      console.log(`[hydra-stream] Mistral streaming request: model=${model_id}`);
-      
-      const response = await fetch("https://api.mistral.ai/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${mistralApiKey}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: model_id,
-          messages: [
-            { role: "system", content: finalSystemPrompt },
-            { role: "user", content: message },
-          ],
-          stream: true,
-          temperature,
-          max_tokens,
-        }),
-      });
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error("[hydra-stream] Mistral error:", response.status, errorText);
-        return new Response(
-          JSON.stringify({ error: `Mistral error: ${response.status}` }),
-          { status: 500, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } }
-        );
-      }
-      
-      console.log("[hydra-stream] Mistral streaming response started");
-      
-      return new Response(response.body, {
-        headers: {
-          ...CORS_HEADERS,
-          "Content-Type": "text/event-stream",
-          "Cache-Control": "no-cache",
-          "Connection": "keep-alive",
-        },
-      });
+    if (MISTRAL_MODELS.includes(model_id)) {
+      return streamMistral(params);
     }
 
-    // Get Lovable AI API key for non-DeepSeek/non-Mistral models
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
-      return new Response(
-        JSON.stringify({ error: "LOVABLE_API_KEY not configured" }),
-        { status: 500, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } }
-      );
-    }
-
-    // Determine token parameter based on model
-    const isOpenAI = model_id.startsWith("openai/");
-    const tokenParam = isOpenAI 
-      ? { max_completion_tokens: max_tokens }
-      : { max_tokens };
-    const tempParam = isOpenAI ? {} : { temperature };
-
-    console.log(`[hydra-stream] Streaming request: model=${model_id}, role=${role}`);
-
-    // Call Lovable AI with streaming enabled
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: model_id,
-        messages: [
-          { role: "system", content: finalSystemPrompt },
-          { role: "user", content: message },
-        ],
-        stream: true,
-        ...tempParam,
-        ...tokenParam,
-      }),
-    });
-
-    // Handle API errors
-    if (!response.ok) {
-      if (response.status === 429) {
-        console.error("[hydra-stream] Rate limit exceeded");
-        return new Response(
-          JSON.stringify({ error: "Rate limit exceeded. Please try again later." }),
-          { status: 429, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } }
-        );
-      }
-      if (response.status === 402) {
-        console.error("[hydra-stream] Payment required");
-        return new Response(
-          JSON.stringify({ error: "Payment required. Please add funds to your Lovable AI workspace." }),
-          { status: 402, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } }
-        );
-      }
-      const errorText = await response.text();
-      console.error("[hydra-stream] AI gateway error:", response.status, errorText);
-      return new Response(
-        JSON.stringify({ error: `AI gateway error: ${response.status}` }),
-        { status: 500, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } }
-      );
-    }
-
-    // Proxy the SSE stream directly to client
-    console.log("[hydra-stream] Streaming response started");
-    
-    return new Response(response.body, {
-      headers: {
-        ...CORS_HEADERS,
-        "Content-Type": "text/event-stream",
-        "Cache-Control": "no-cache",
-        "Connection": "keep-alive",
-      },
-    });
-
+    return streamLovableAI(params);
   } catch (error) {
     console.error("[hydra-stream] Error:", error);
     return new Response(
