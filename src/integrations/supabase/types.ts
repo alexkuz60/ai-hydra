@@ -195,40 +195,64 @@ export type Database = {
       }
       model_statistics: {
         Row: {
+          arbiter_eval_count: number
+          arbiter_score: number
+          contest_count: number
+          contest_total_score: number
           created_at: string | null
+          critique_summary: string | null
           dismissal_count: number
           first_used_at: string | null
+          hallucination_count: number
           id: string
           last_used_at: string | null
           model_id: string
           response_count: number
+          role_used: string | null
           session_id: string | null
+          task_id: string | null
           total_brains: number
           updated_at: string | null
           user_id: string
         }
         Insert: {
+          arbiter_eval_count?: number
+          arbiter_score?: number
+          contest_count?: number
+          contest_total_score?: number
           created_at?: string | null
+          critique_summary?: string | null
           dismissal_count?: number
           first_used_at?: string | null
+          hallucination_count?: number
           id?: string
           last_used_at?: string | null
           model_id: string
           response_count?: number
+          role_used?: string | null
           session_id?: string | null
+          task_id?: string | null
           total_brains?: number
           updated_at?: string | null
           user_id: string
         }
         Update: {
+          arbiter_eval_count?: number
+          arbiter_score?: number
+          contest_count?: number
+          contest_total_score?: number
           created_at?: string | null
+          critique_summary?: string | null
           dismissal_count?: number
           first_used_at?: string | null
+          hallucination_count?: number
           id?: string
           last_used_at?: string | null
           model_id?: string
           response_count?: number
+          role_used?: string | null
           session_id?: string | null
+          task_id?: string | null
           total_brains?: number
           updated_at?: string | null
           user_id?: string

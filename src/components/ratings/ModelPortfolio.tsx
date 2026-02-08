@@ -1,182 +1,126 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { HydraCard, HydraCardHeader, HydraCardTitle, HydraCardContent } from '@/components/ui/hydra-card';
-import { Brain, Key, Check, X } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { Badge } from '@/components/ui/badge';
-import { LOVABLE_AI_MODELS, PERSONAL_KEY_MODELS, useAvailableModels, type ModelOption } from '@/hooks/useAvailableModels';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
+import { useVeteranModels } from '@/hooks/useModelDossier';
+import { ModelDossier } from '@/components/ratings/ModelDossier';
+import { getModelDisplayName, getModelInfo } from '@/hooks/useAvailableModels';
 import { PROVIDER_LOGOS, PROVIDER_COLORS } from '@/components/ui/ProviderLogos';
-
-const PROVIDER_LABELS: Record<string, { ru: string; en: string }> = {
-  lovable: { ru: 'Lovable AI', en: 'Lovable AI' },
-  openai: { ru: 'OpenAI', en: 'OpenAI' },
-  anthropic: { ru: 'Anthropic', en: 'Anthropic' },
-  gemini: { ru: 'Google Gemini', en: 'Google Gemini' },
-  xai: { ru: 'xAI (Grok)', en: 'xAI (Grok)' },
-  openrouter: { ru: 'OpenRouter', en: 'OpenRouter' },
-  groq: { ru: 'Groq', en: 'Groq' },
-  deepseek: { ru: 'DeepSeek', en: 'DeepSeek' },
-  mistral: { ru: 'Mistral AI', en: 'Mistral AI' },
-};
-
-function ModelRow({ model, isAvailable }: { model: ModelOption; isAvailable: boolean }) {
-  const providerColor = PROVIDER_COLORS[model.provider] || 'text-muted-foreground';
-
-  return (
-    <div className={cn(
-      "flex items-center justify-between p-2 rounded-lg transition-colors",
-      isAvailable ? "hover:bg-muted/30" : "opacity-50 hover:bg-muted/10"
-    )}>
-      <div className="flex items-center gap-2 min-w-0 flex-1">
-        <Brain className={cn("h-4 w-4 shrink-0", providerColor)} />
-        <span className="text-sm font-medium truncate">{model.name}</span>
-      </div>
-      <div className="flex items-center gap-2 shrink-0">
-        {isAvailable ? (
-          <Check className="h-3.5 w-3.5 text-green-500" />
-        ) : (
-          <X className="h-3.5 w-3.5 text-muted-foreground" />
-        )}
-      </div>
-    </div>
-  );
-}
-
-function ProviderHeader({ provider, hasKey, loading, language }: { 
-  provider: string; hasKey: boolean; loading: boolean; language: string;
-}) {
-  const Logo = PROVIDER_LOGOS[provider];
-  const label = PROVIDER_LABELS[provider]?.[language === 'ru' ? 'ru' : 'en'] || provider;
-  const color = PROVIDER_COLORS[provider];
-
-  return (
-    <div className="flex items-center gap-3 mb-3 py-2">
-      {Logo && (
-        <div className={cn("shrink-0", color)}>
-          <Logo className="h-7 w-7" />
-        </div>
-      )}
-      <h4 className={cn("text-sm font-semibold tracking-wide", color)}>
-        {label}
-      </h4>
-      {!loading && (
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <span className={cn(
-              "w-2.5 h-2.5 rounded-full shrink-0",
-              hasKey ? "bg-green-500" : "bg-muted-foreground/40"
-            )} />
-          </TooltipTrigger>
-          <TooltipContent side="right" className="text-xs">
-            {hasKey
-              ? (language === 'ru' ? 'API-ключ настроен' : 'API key configured')
-              : (language === 'ru' ? 'API-ключ не найден' : 'No API key found')}
-          </TooltipContent>
-        </Tooltip>
-      )}
-    </div>
-  );
-}
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Brain, Search } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { Input } from '@/components/ui/input';
+import {
+  ResizablePanelGroup,
+  ResizablePanel,
+  ResizableHandle,
+} from '@/components/ui/resizable';
 
 export function ModelPortfolio() {
   const { language } = useLanguage();
-  const { isAdmin, personalModels, loading } = useAvailableModels();
+  const { veteranIds, loading } = useVeteranModels();
+  const [selectedModelId, setSelectedModelId] = useState<string | null>(null);
+  const [search, setSearch] = useState('');
+  const isRu = language === 'ru';
 
-  const availablePersonalIds = new Set(personalModels.map(m => m.id));
-  const isLovableAvailable = isAdmin;
+  const filteredIds = veteranIds.filter(id => {
+    if (!search) return true;
+    const name = getModelDisplayName(id).toLowerCase();
+    return name.includes(search.toLowerCase()) || id.toLowerCase().includes(search.toLowerCase());
+  });
 
-  const LovableLogo = PROVIDER_LOGOS.lovable;
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+      </div>
+    );
+  }
+
+  if (veteranIds.length === 0) {
+    return (
+      <div className="h-full flex items-center justify-center p-4">
+        <div className="text-center max-w-md">
+          <Brain className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-30" />
+          <h2 className="text-lg font-semibold mb-2">
+            {isRu ? 'Портфолио пусто' : 'Portfolio is empty'}
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            {isRu
+              ? 'Здесь появятся модели, которые уже участвовали в ваших задачах. Начните чат, чтобы заполнить портфолио.'
+              : 'Models that have participated in your tasks will appear here. Start a chat to build your portfolio.'}
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <ScrollArea className="h-full">
-      <div className="p-4 space-y-6">
-        {/* Summary */}
-        {!loading && (
-          <div className="grid grid-cols-2 gap-3">
-            <div className="text-center p-3 rounded-lg bg-muted/50">
-              <div className="text-2xl font-bold text-hydra-cyan">
-                {(isLovableAvailable ? LOVABLE_AI_MODELS.length : 0) + availablePersonalIds.size}
-              </div>
-              <div className="text-xs text-muted-foreground">
-                {language === 'ru' ? 'Доступно вам' : 'Available to you'}
-              </div>
+    <ResizablePanelGroup direction="horizontal" className="h-full">
+      {/* Master: model list */}
+      <ResizablePanel defaultSize={35} minSize={25} maxSize={50}>
+        <div className="h-full flex flex-col">
+          <div className="p-3 border-b border-border">
+            <div className="relative">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder={isRu ? 'Поиск модели...' : 'Search model...'}
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-9 h-9"
+              />
             </div>
-            <div className="text-center p-3 rounded-lg bg-muted/50">
-              <div className="text-2xl font-bold text-muted-foreground">
-                {LOVABLE_AI_MODELS.length + PERSONAL_KEY_MODELS.length}
-              </div>
-              <div className="text-xs text-muted-foreground">
-                {language === 'ru' ? 'Всего в каталоге' : 'Total in catalog'}
-              </div>
+            <p className="text-xs text-muted-foreground mt-2">
+              {isRu ? `${filteredIds.length} из ${veteranIds.length} моделей` : `${filteredIds.length} of ${veteranIds.length} models`}
+            </p>
+          </div>
+          <ScrollArea className="flex-1">
+            <div className="p-2 space-y-1">
+              {filteredIds.map(id => {
+                const info = getModelInfo(id);
+                const provider = info.provider || 'openai';
+                const Logo = PROVIDER_LOGOS[provider];
+                const color = PROVIDER_COLORS[provider] || 'text-muted-foreground';
+                const isActive = selectedModelId === id;
+
+                return (
+                  <button
+                    key={id}
+                    onClick={() => setSelectedModelId(id)}
+                    className={cn(
+                      "w-full flex items-center gap-2.5 p-2.5 rounded-lg transition-colors text-left",
+                      isActive
+                        ? "bg-primary/10 text-primary"
+                        : "hover:bg-muted/30 text-foreground"
+                    )}
+                  >
+                    {Logo && <Logo className={cn("h-5 w-5 shrink-0", color)} />}
+                    <span className="text-sm font-medium truncate">
+                      {getModelDisplayName(id)}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </ScrollArea>
+        </div>
+      </ResizablePanel>
+
+      <ResizableHandle withHandle />
+
+      {/* Detail: dossier */}
+      <ResizablePanel defaultSize={65} minSize={40}>
+        {selectedModelId ? (
+          <ModelDossier modelId={selectedModelId} />
+        ) : (
+          <div className="h-full flex items-center justify-center text-muted-foreground">
+            <div className="text-center">
+              <Brain className="h-10 w-10 mx-auto mb-3 opacity-30" />
+              <p className="text-sm">
+                {isRu ? 'Выберите модель для просмотра досье' : 'Select a model to view its dossier'}
+              </p>
             </div>
           </div>
         )}
-
-        <TooltipProvider delayDuration={300}>
-          {/* Built-in models */}
-          <HydraCard variant="default">
-            <HydraCardHeader className="py-3">
-              <div className="flex items-center gap-3 flex-1">
-                {LovableLogo && <LovableLogo className="h-8 w-8 shrink-0" />}
-                <HydraCardTitle className="text-hydra-cyan">
-                  {language === 'ru' ? 'Встроенные модели — Lovable AI' : 'Built-in Models — Lovable AI'}
-                </HydraCardTitle>
-              </div>
-              {!loading && (
-                <Badge variant={isLovableAvailable ? 'default' : 'secondary'} className="ml-auto text-xs">
-                  {isLovableAvailable
-                    ? (language === 'ru' ? 'Доступны' : 'Available')
-                    : (language === 'ru' ? 'Только админ' : 'Admin only')}
-                </Badge>
-              )}
-            </HydraCardHeader>
-            <HydraCardContent>
-              <div className="space-y-1">
-                {LOVABLE_AI_MODELS.map(model => (
-                  <ModelRow key={model.id} model={model} isAvailable={isLovableAvailable} />
-                ))}
-              </div>
-            </HydraCardContent>
-          </HydraCard>
-
-          {/* BYOK models grouped by provider */}
-          <HydraCard variant="default">
-            <HydraCardHeader className="py-3">
-              <Key className="h-6 w-6 text-hydra-amber" />
-              <HydraCardTitle>
-                {language === 'ru' ? 'Модели с личным ключом (BYOK)' : 'Personal Key Models (BYOK)'}
-              </HydraCardTitle>
-            </HydraCardHeader>
-            <HydraCardContent>
-              <p className="text-xs text-muted-foreground mb-4">
-                {language === 'ru'
-                  ? 'Добавьте API-ключ провайдера в профиле для активации.'
-                  : 'Add provider API key in your profile to activate.'}
-              </p>
-              {Object.entries(
-                PERSONAL_KEY_MODELS.reduce<Record<string, ModelOption[]>>((acc, m) => {
-                  (acc[m.provider] ??= []).push(m);
-                  return acc;
-                }, {})
-              ).map(([provider, models]) => {
-                const hasKey = models.some(m => availablePersonalIds.has(m.id));
-                return (
-                  <div key={provider} className="mb-5 last:mb-0">
-                    <ProviderHeader provider={provider} hasKey={hasKey} loading={loading} language={language} />
-                    <div className="space-y-1 pl-10">
-                      {models.map(model => (
-                        <ModelRow key={model.id} model={model} isAvailable={availablePersonalIds.has(model.id)} />
-                      ))}
-                    </div>
-                  </div>
-                );
-              })}
-            </HydraCardContent>
-          </HydraCard>
-        </TooltipProvider>
-      </div>
-    </ScrollArea>
+      </ResizablePanel>
+    </ResizablePanelGroup>
   );
 }
