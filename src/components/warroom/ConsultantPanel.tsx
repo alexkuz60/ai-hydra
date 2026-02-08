@@ -474,8 +474,9 @@ export function ConsultantPanel({
                 openrouter: 'OpenRouter (Free)',
                 groq: 'Groq (Fast)',
                 deepseek: 'DeepSeek',
+                mistral: 'Mistral AI',
               };
-              const ORDER = ['lovable', 'openai', 'anthropic', 'gemini', 'xai', 'groq', 'deepseek', 'openrouter'];
+              const ORDER = ['lovable', 'openai', 'anthropic', 'gemini', 'xai', 'groq', 'deepseek', 'mistral', 'openrouter'];
               const grouped = new Map<string, typeof availableModels>();
               availableModels.forEach(m => {
                 const list = grouped.get(m.provider) || [];
