@@ -101,6 +101,27 @@ export function PerplexityLogo({ className }: { className?: string }) {
   );
 }
 
+export function MistralLogo({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+      <rect x="2" y="2" width="4" height="4" />
+      <rect x="10" y="2" width="4" height="4" />
+      <rect x="18" y="2" width="4" height="4" />
+      <rect x="2" y="7" width="4" height="4" />
+      <rect x="6" y="7" width="4" height="4" />
+      <rect x="10" y="7" width="4" height="4" />
+      <rect x="18" y="7" width="4" height="4" />
+      <rect x="2" y="12" width="4" height="4" />
+      <rect x="10" y="12" width="4" height="4" />
+      <rect x="14" y="12" width="4" height="4" />
+      <rect x="18" y="12" width="4" height="4" />
+      <rect x="2" y="17" width="4" height="4" />
+      <rect x="10" y="17" width="4" height="4" />
+      <rect x="18" y="17" width="4" height="4" />
+    </svg>
+  );
+}
+
 export const PROVIDER_LOGOS: Record<string, React.ComponentType<{ className?: string }>> = {
   lovable: LovableLogo,
   openai: OpenAILogo,
@@ -113,6 +134,7 @@ export const PROVIDER_LOGOS: Record<string, React.ComponentType<{ className?: st
   firecrawl: FirecrawlLogo,
   tavily: TavilyLogo,
   perplexity: PerplexityLogo,
+  mistral: MistralLogo,
 };
 
 export const PROVIDER_COLORS: Record<string, string> = {
@@ -127,4 +149,5 @@ export const PROVIDER_COLORS: Record<string, string> = {
   firecrawl: 'text-orange-500',
   tavily: 'text-emerald-400',
   perplexity: 'text-sky-400',
+  mistral: 'text-amber-500',
 };

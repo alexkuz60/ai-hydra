@@ -5,7 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 export interface ModelOption {
   id: string;
   name: string;
-  provider: 'lovable' | 'openai' | 'gemini' | 'anthropic' | 'xai' | 'openrouter' | 'groq' | 'deepseek';
+  provider: 'lovable' | 'openai' | 'gemini' | 'anthropic' | 'xai' | 'openrouter' | 'groq' | 'deepseek' | 'mistral';
   requiresApiKey: boolean;
 }
 
@@ -64,6 +64,12 @@ export const PERSONAL_KEY_MODELS: ModelOption[] = [
   // DeepSeek models
   { id: 'deepseek-chat', name: 'DeepSeek-V3', provider: 'deepseek', requiresApiKey: true },
   { id: 'deepseek-reasoner', name: 'DeepSeek-R1 (Reasoning)', provider: 'deepseek', requiresApiKey: true },
+  
+  // Mistral AI models
+  { id: 'mistral-large-latest', name: 'Mistral Large', provider: 'mistral', requiresApiKey: true },
+  { id: 'mistral-small-latest', name: 'Mistral Small', provider: 'mistral', requiresApiKey: true },
+  { id: 'codestral-latest', name: 'Codestral', provider: 'mistral', requiresApiKey: true },
+  { id: 'mistral-medium-latest', name: 'Mistral Medium', provider: 'mistral', requiresApiKey: true },
 ];
 
 // All valid model IDs for filtering deprecated models (centralized)
@@ -104,6 +110,7 @@ interface UserApiKeys {
   tavily: boolean;
   perplexity: boolean;
   deepseek: boolean;
+  mistral: boolean;
 }
 
 export function useAvailableModels() {
@@ -119,6 +126,7 @@ export function useAvailableModels() {
     tavily: false,
     perplexity: false,
     deepseek: false,
+    mistral: false,
   });
   const [loading, setLoading] = useState(true);
 
@@ -156,6 +164,7 @@ export function useAvailableModels() {
             has_tavily?: boolean;
             has_perplexity?: boolean;
             has_deepseek?: boolean;
+            has_mistral?: boolean;
           };
           setUserApiKeys({
             openai: status.has_openai || false,
@@ -167,6 +176,7 @@ export function useAvailableModels() {
             tavily: status.has_tavily || false,
             perplexity: status.has_perplexity || false,
             deepseek: status.has_deepseek || false,
+            mistral: status.has_mistral || false,
           });
         }
       } catch (error) {
@@ -188,6 +198,7 @@ export function useAvailableModels() {
     if (model.provider === 'openrouter') return userApiKeys.openrouter;
     if (model.provider === 'groq') return userApiKeys.groq;
     if (model.provider === 'deepseek') return userApiKeys.deepseek;
+    if (model.provider === 'mistral') return userApiKeys.mistral;
     return false;
   });
 

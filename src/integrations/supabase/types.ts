@@ -732,6 +732,7 @@ export type Database = {
           has_firecrawl: boolean
           has_gemini: boolean
           has_groq: boolean
+          has_mistral: boolean
           has_openai: boolean
           has_openrouter: boolean
           has_perplexity: boolean
@@ -747,6 +748,7 @@ export type Database = {
           firecrawl_api_key: string
           google_gemini_api_key: string
           groq_api_key: string
+          mistral_api_key: string
           openai_api_key: string
           openrouter_api_key: string
           perplexity_api_key: string
