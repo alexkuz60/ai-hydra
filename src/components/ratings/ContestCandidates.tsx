@@ -18,6 +18,9 @@ import {
 } from '@/components/ui/resizable';
 import { CandidateDetail } from './CandidateDetail';
 
+const STORAGE_KEY = 'hydra-contest-panel-size';
+const DEFAULT_LIST_SIZE = 35;
+
 const PROVIDER_LABELS: Record<string, { ru: string; en: string }> = {
   lovable: { ru: 'Lovable AI', en: 'Lovable AI' },
   openai: { ru: 'OpenAI', en: 'OpenAI' },
@@ -116,6 +119,21 @@ export function ContestCandidates() {
   const { allModels, loading, isLovableAvailable, availablePersonalIds } = useAllModels();
   const [selectedModelId, setSelectedModelId] = useState<string | null>(null);
   const [search, setSearch] = useState('');
+  const [listSize, setListSize] = useState<number>(() => {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) {
+        const parsed = parseFloat(stored);
+        if (!isNaN(parsed) && parsed >= 20 && parsed <= 50) return parsed;
+      }
+    } catch {}
+    return DEFAULT_LIST_SIZE;
+  });
+
+  const handleListResize = (size: number) => {
+    setListSize(size);
+    try { localStorage.setItem(STORAGE_KEY, String(size)); } catch {}
+  };
   const isRu = language === 'ru';
 
   const selectedEntry = allModels.find(e => e.model.id === selectedModelId);
@@ -139,8 +157,7 @@ export function ContestCandidates() {
   return (
     <TooltipProvider delayDuration={300}>
       <ResizablePanelGroup direction="horizontal" className="h-full">
-        {/* Master: candidate list */}
-        <ResizablePanel defaultSize={35} minSize={20} maxSize={50}>
+        <ResizablePanel defaultSize={listSize} minSize={20} maxSize={50} onResize={handleListResize}>
           <div className="h-full flex flex-col">
             {/* Search & summary */}
             <div className="p-3 border-b border-border space-y-2">
