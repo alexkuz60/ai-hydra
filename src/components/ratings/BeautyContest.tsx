@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ContestCandidates } from '@/components/ratings/ContestCandidates';
-import { HydraCard, HydraCardContent } from '@/components/ui/hydra-card';
+import { ContestPodium } from './ContestPodium';
 import { Crown, Users, Trophy } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
@@ -55,22 +55,8 @@ export function BeautyContest() {
           <ContestCandidates />
         </TabsContent>
 
-        <TabsContent value="arena" className="flex-1 mt-0">
-          <div className="h-full flex items-center justify-center p-4">
-            <HydraCard variant="default" className="max-w-md w-full">
-              <HydraCardContent className="py-16 text-center">
-                <Trophy className="h-12 w-12 text-hydra-amber mx-auto mb-4 opacity-50" />
-                <h2 className="text-lg font-semibold mb-2">
-                  {isRu ? 'Подиум конкурса' : 'Contest Podium'}
-                </h2>
-                <p className="text-sm text-muted-foreground">
-                  {isRu
-                    ? 'Раздел в разработке. Здесь появится система A/B-тестирования моделей.'
-                    : 'Section under development. A/B model testing system coming soon.'}
-                </p>
-              </HydraCardContent>
-            </HydraCard>
-          </div>
+        <TabsContent value="arena" className="flex-1 mt-0 h-0 min-h-0">
+          <ContestPodium />
         </TabsContent>
       </Tabs>
     </div>
