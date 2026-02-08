@@ -11,7 +11,7 @@ export function BeautyContest() {
 
   return (
     <div className="h-full flex flex-col">
-      <Tabs defaultValue="candidates" className="flex-1 flex flex-col">
+      <Tabs defaultValue={localStorage.getItem('contest-active-tab') || 'candidates'} onValueChange={(v) => localStorage.setItem('contest-active-tab', v)} className="flex-1 flex flex-col">
         <div className="px-4 pt-3">
           <TabsList className="w-full">
             <TabsTrigger value="candidates" className="flex-1 flex items-center gap-1.5">
