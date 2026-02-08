@@ -115,7 +115,9 @@ function ProviderHeader({ provider, hasKey, loading, language }: {
 export function ContestCandidates() {
   const { language } = useLanguage();
   const { allModels, loading, isLovableAvailable, availablePersonalIds } = useAllModels();
-  const [selectedModelId, setSelectedModelId] = useState<string | null>(null);
+  const [selectedModelId, setSelectedModelId] = useState<string | null>(() => {
+    try { return localStorage.getItem('hydra-contest-selected-model') || null; } catch { return null; }
+  });
   const [search, setSearch] = useState('');
   const [availFilter, setAvailFilter] = useState<'all' | 'available' | 'unavailable'>('all');
   const [allExpanded, setAllExpanded] = useState(true);
@@ -141,6 +143,10 @@ export function ContestCandidates() {
   useEffect(() => {
     try { localStorage.setItem('hydra-contest-models', JSON.stringify(contestModels)); } catch {}
   }, [contestModels]);
+
+  useEffect(() => {
+    try { localStorage.setItem('hydra-contest-selected-model', selectedModelId || ''); } catch {}
+  }, [selectedModelId]);
 
   const handleListResize = (size: number) => {
     setListSize(size);
