@@ -979,7 +979,8 @@ const translations: Translations = {
   'ratings.pieChart': { ru: 'Круговая', en: 'Pie Chart' },
   'ratings.avgRating': { ru: 'Средний балл', en: 'Avg Rating' },
   'dchat.requestEvaluation': { ru: 'Запросить оценку ответа', en: 'Request response evaluation' },
-  'dchat.evaluationRequested': { ru: 'Запрос оценки отправлен в D-Chat', en: 'Evaluation request sent to D-Chat' },
+   'dchat.evaluationRequested': { ru: 'Запрос оценки отправлен в D-Chat', en: 'Evaluation request sent to D-Chat' },
+   'dchat.flagHallucination': { ru: 'Отметить галлюцинацию', en: 'Flag hallucination' },
   // Period filters
   'ratings.periodWeek': { ru: 'Неделя', en: 'Week' },
   'ratings.periodMonth': { ru: 'Месяц', en: 'Month' },
