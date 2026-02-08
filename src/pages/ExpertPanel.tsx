@@ -108,7 +108,7 @@ export default function ExpertPanel() {
   const { selectedWishes, setSelectedWishes } = useSupervisorWishes(currentTask?.id || null);
 
   // Model statistics hook for tracking dismissals
-  const { incrementDismissal } = useModelStatistics(user?.id);
+  const { incrementDismissal, incrementHallucination } = useModelStatistics(user?.id);
 
 // Session memory hook - full management capabilities
   const { 
@@ -587,6 +587,13 @@ export default function ExpertPanel() {
     handleDChatExpand();
   }, [messages, handleDChatExpand]);
 
+  // Flag hallucination on an AI message
+  const handleHallucination = useCallback((messageId: string, modelName: string | null, sessionId: string) => {
+    if (!modelName || !sessionId) return;
+    incrementHallucination(modelName, sessionId);
+    toast.info('Галлюцинация зафиксирована');
+  }, [incrementHallucination]);
+
   // Request Arbiter evaluation for a specific AI message
   const handleRequestEvaluation = useCallback((messageId: string, content: string, modelName: string | null) => {
     // Build evaluation request with Arbiter context
@@ -903,6 +910,7 @@ ${content.slice(0, 2000)}${content.length > 2000 ? '\n...(сокращено)' :
                 onConsultInDChat={handleConsultInDChat}
                 onRequestEvaluation={handleRequestEvaluation}
                 onChecklistChange={handleChecklistChange}
+                onHallucination={handleHallucination}
               />
 
               {/* Input Area */}
