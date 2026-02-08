@@ -38,7 +38,9 @@ const translations: Translations = {
    'nav.modelRatings': { ru: 'Подиум ИИ-моделей', en: 'AI Model Podium' },
   'nav.hydrapedia': { ru: 'Гидропедия', en: 'Hydrapedia' },
   'nav.staffRoles': { ru: 'Штат специалистов', en: 'AI Staff' },
-  'nav.behavioralPatterns': { ru: 'Паттерны поведения', en: 'Behavioral Patterns' },
+   'nav.behavioralPatterns': { ru: 'Паттерны поведения', en: 'Behavioral Patterns' },
+   'nav.expand': { ru: 'Развернуть', en: 'Expand' },
+   'nav.collapse': { ru: 'Свернуть', en: 'Collapse' },
   
   // Staff Roles
   'staffRoles.description': { ru: 'Каталог доступных AI-ролей и их характеристики', en: 'Catalog of available AI roles and their characteristics' },
@@ -75,7 +77,8 @@ const translations: Translations = {
   'staffRoles.addSection': { ru: 'Добавить секцию', en: 'Add section' },
   'staffRoles.sectionName': { ru: 'Название секции', en: 'Section name' },
   'staffRoles.quickSnippets': { ru: 'Быстрые вставки', en: 'Quick snippets' },
-  'staffRoles.sectionTips': { ru: 'Советы по написанию секции', en: 'Section writing tips' },
+   'staffRoles.sectionTips': { ru: 'Советы по написанию секции', en: 'Section writing tips' },
+   'staffRoles.fullPreview': { ru: 'Полный просмотр', en: 'Full preview' },
   
   // Staff Roles - Role Descriptions
   'staffRoles.description.user': { ru: 'Человек-пользователь системы.', en: 'Human user of the system.' },
@@ -1175,6 +1178,7 @@ const translations: Translations = {
    'supervisorWishes.selected': { ru: 'Выбрано', en: 'Selected' },
    'supervisorWishes.noRolesSelected': { ru: 'Выберите роли для активации', en: 'Select roles to activate' },
    'supervisorWishes.noWishesForRoles': { ru: 'Для выбранных ролей нет доступных пожеланий', en: 'No wishes available for selected roles' },
+   'supervisorWishes.clearAll': { ru: 'Очистить', en: 'Clear all' },
    
    // Common
    'common.and': { ru: 'и', en: 'and' },

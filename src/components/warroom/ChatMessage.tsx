@@ -365,7 +365,7 @@ export function ChatMessage({ message, userDisplayInfo, onDelete, onRatingChange
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="top">
-                <p className="text-xs">{t('dchat.flagHallucination') || 'Flag hallucination'}</p>
+                <p className="text-xs">{t('dchat.flagHallucination')}</p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>

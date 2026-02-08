@@ -574,7 +574,7 @@ const RoleDetailsPanel = forwardRef<HTMLDivElement, RoleDetailsPanelProps>(
                           </Button>
                         </TooltipTrigger>
                         <TooltipContent side="top">
-                          {t('staffRoles.fullPreview') || 'Полный просмотр'}
+                          {t('staffRoles.fullPreview')}
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>

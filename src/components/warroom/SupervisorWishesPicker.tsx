@@ -208,7 +208,7 @@ export function SupervisorWishesPicker({
                     }}
                     className="text-xs text-muted-foreground hover:text-foreground transition-colors"
                   >
-                    {t('supervisorWishes.clearAll') || 'Очистить'}
+                    {t('supervisorWishes.clearAll')}
                   </button>
                 </div>
                 <div className="flex flex-wrap gap-1">
