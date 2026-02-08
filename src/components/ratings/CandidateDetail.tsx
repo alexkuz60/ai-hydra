@@ -35,7 +35,7 @@ export function CandidateDetail({
   const providerColor = PROVIDER_COLORS[model.provider] || 'text-muted-foreground';
 
   return (
-    <div className="h-full overflow-hidden">
+    <div className="h-full overflow-hidden relative">
       <div className="absolute inset-0 overflow-y-auto hydra-scrollbar">
         <div className="p-4 space-y-4 relative">
           {/* Header card with two columns */}
