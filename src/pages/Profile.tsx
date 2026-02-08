@@ -426,6 +426,7 @@ export default function Profile() {
                     metadata={keyMetadata[p.provider]}
                     onExpirationChange={(date) => handleExpirationChange(p.provider, date)}
                     hint={renderProviderHint(p)}
+                    unlimited={p.provider === 'mistral'}
                   />
                 ))}
 

@@ -25,6 +25,7 @@ interface ApiKeyFieldProps {
   hint?: React.ReactNode;
   metadata?: KeyMetadata;
   onExpirationChange?: (date: string | null) => void;
+  unlimited?: boolean;
 }
 
 export function ApiKeyField({
@@ -36,6 +37,7 @@ export function ApiKeyField({
   hint,
   metadata,
   onExpirationChange,
+  unlimited,
 }: ApiKeyFieldProps) {
   const { language } = useLanguage();
   const [showKey, setShowKey] = useState(false);
@@ -77,7 +79,7 @@ export function ApiKeyField({
           className="pr-20"
         />
         <div className="absolute right-0 top-0 h-full flex items-center">
-          {value && onExpirationChange && (
+          {value && onExpirationChange && !unlimited && (
             <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
               <PopoverTrigger asChild>
                 <Button
@@ -132,7 +134,7 @@ export function ApiKeyField({
       </div>
 
       {/* Metadata info line */}
-      {value && (addedAt || expiresAt) && (
+      {value && (addedAt || expiresAt || unlimited) && (
         <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
           {addedAt && (
             <span className="flex items-center gap-1">
@@ -140,7 +142,13 @@ export function ApiKeyField({
               {language === 'ru' ? 'Добавлен' : 'Added'}: {format(addedAt, 'dd.MM.yyyy', { locale })}
             </span>
           )}
-          {expiresAt && (
+          {unlimited && (
+            <span className="flex items-center gap-1 text-emerald-500 font-medium">
+              <CalendarDays className="h-3 w-3" />
+              {language === 'ru' ? 'Бессрочный' : 'Unlimited'}
+            </span>
+          )}
+          {!unlimited && expiresAt && (
             <span className={cn(
               "flex items-center gap-1",
               isExpired && "text-destructive font-medium",
