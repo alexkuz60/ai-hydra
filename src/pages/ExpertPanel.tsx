@@ -973,6 +973,11 @@ ${content.slice(0, 2000)}${content.length > 2000 ? '\n...(сокращено)' :
               initialQuery={dChatContext}
               onClearInitialQuery={handleClearDChatContext}
               onCopyToMainChat={handleCopyToMainChat}
+              onResponseComplete={useCallback((modelId: string, role: string) => {
+                if (currentTask?.id) {
+                  incrementResponse(modelId, currentTask.id, role);
+                }
+              }, [currentTask?.id, incrementResponse])}
             />
           </ResizablePanel>
         </ResizablePanelGroup>

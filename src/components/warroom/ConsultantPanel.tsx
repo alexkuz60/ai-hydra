@@ -59,6 +59,8 @@ interface ConsultantPanelProps {
   onClearInitialQuery?: () => void;
   // Copy to main chat
   onCopyToMainChat?: (content: string, sourceMessageId: string | null, modelName?: string | null, role?: string | null) => void;
+  // Statistics tracking
+  onResponseComplete?: (modelId: string, role: string) => void;
 }
 
 interface ModeConfig {
@@ -88,6 +90,7 @@ export function ConsultantPanel({
   initialQuery,
   onClearInitialQuery,
   onCopyToMainChat,
+  onResponseComplete,
 }: ConsultantPanelProps) {
   const { t } = useLanguage();
   const [input, setInput] = useState('');
@@ -102,6 +105,7 @@ export function ConsultantPanel({
 
   const { messages, streaming, sendQuery, stopStreaming, clearMessages } = useStreamingChat({
     sessionId,
+    onResponseComplete,
   });
   
   // Keep ref in sync for async access
