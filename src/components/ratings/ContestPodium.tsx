@@ -11,7 +11,7 @@ export function ContestPodium() {
 
   return (
     <ScrollArea className="h-full">
-      <div className="p-4 space-y-4 max-w-2xl mx-auto">
+      <div className="p-4 space-y-4">
         <ContestTaskSelector />
         <ContestRulesEditor />
         <ContestSummary />
