@@ -48,6 +48,8 @@ interface ChatMessagesListProps {
   onConsultInDChat?: (messageId: string, content: string) => void;
   // Evaluation request
   onRequestEvaluation?: (messageId: string, content: string, modelName: string | null) => void;
+  // Hallucination flagging
+  onHallucination?: (messageId: string, modelName: string | null, sessionId: string) => void;
   // Interactive checklists
   onChecklistChange?: (messageId: string, checklistState: Record<number, boolean>) => void;
 }
@@ -77,6 +79,7 @@ export function ChatMessagesList({
   onRequestProposalDetails,
   onConsultInDChat,
   onRequestEvaluation,
+  onHallucination,
   onChecklistChange,
 }: ChatMessagesListProps) {
   // Build a set of AI message IDs that should have interactive checklists
@@ -143,6 +146,7 @@ export function ChatMessagesList({
                   onRequestProposalDetails={onRequestProposalDetails}
                   onConsultInDChat={onConsultInDChat}
                   onRequestEvaluation={onRequestEvaluation}
+                  onHallucination={onHallucination}
                   onChecklistChange={onChecklistChange}
                   forceInteractiveChecklists={interactiveChecklistIds.has(message.id)}
                 />
