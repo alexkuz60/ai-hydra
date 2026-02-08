@@ -636,6 +636,7 @@ export type Database = {
           groq_vault_id: string | null
           id: string
           key_metadata: Json | null
+          mistral_vault_id: string | null
           openai_vault_id: string | null
           openrouter_vault_id: string | null
           perplexity_vault_id: string | null
@@ -653,6 +654,7 @@ export type Database = {
           groq_vault_id?: string | null
           id?: string
           key_metadata?: Json | null
+          mistral_vault_id?: string | null
           openai_vault_id?: string | null
           openrouter_vault_id?: string | null
           perplexity_vault_id?: string | null
@@ -670,6 +672,7 @@ export type Database = {
           groq_vault_id?: string | null
           id?: string
           key_metadata?: Json | null
+          mistral_vault_id?: string | null
           openai_vault_id?: string | null
           openrouter_vault_id?: string | null
           perplexity_vault_id?: string | null
