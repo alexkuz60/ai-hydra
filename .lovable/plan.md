@@ -1,49 +1,104 @@
 
+# Прототип интерфейса «Подиум конкурса»
 
-## Plan: Restructure CandidateDetail Card
+## Общая идея
 
-### Changes in `src/components/ratings/CandidateDetail.tsx`
+Вкладка «Подиум конкурса» (которая сейчас — заглушка с иконкой Trophy) превращается в полноценный пошаговый интерфейс проведения конкурса. Это wizard из трёх этапов, каждый оформлен как отдельный блок внутри скроллируемой области.
 
-**1. Text and icon replacements**
-- Replace `Swords` icon import with `Crown` from lucide-react
-- Crown icon gets gold color: `text-amber-400`
-- Button text: "Выбрать для конкурса" -> "Пригласить на подиум" / "Select for contest" -> "Invite to podium"
-- Reverse state text: "Убрать из конкурса" -> "Убрать с подиума" / "Remove from contest" -> "Remove from podium"
+---
 
-**2. Strengths badges -> dedicated column in the info grid**
-- Remove the standalone `flex-wrap` strengths block below the info grid
-- Expand the info grid to `grid-cols-[1fr_1fr]` and add strengths as a vertical column of badges in the second column (rows span the full height)
-- Layout: left column keeps Creator, Released, Parameters, Pricing rows; right column shows badges stacked vertically with `flex-wrap` for overflow
-
-**3. Move "Available/Unavailable" badge to the podium invitation block (right column)**
-- Remove the badge from the title row (next to model name)
-- Place it at the top of the contest/podium section in the right column, before the role selector
-
-**4. Move Type and Provider rows into the left info grid**
-- Remove the Access section from the right column
-- Add two new `InfoRow` entries to the left column grid: Type (BYOK / Lovable AI) and Provider
-- The API key hint stays in the right column (podium block) when model is unavailable
-
-### Resulting layout structure
+## Структура интерфейса (3 секции-шага)
 
 ```text
-+--------------------------------------------------+------------------+
-| [Logo]  Model Name                               | PODIUM           |
-|                                                   |                  |
-|  Creator: ...    | [Speed]          |              | [Available]      |
-|  Released: ...   | [Multimodal]     |              | Role selector    |
-|  Parameters: ... | [Coding]         |              | [Crown] Invite   |
-|  Pricing: ...    | [Efficiency]     |              |   to podium      |
-|  Type: BYOK      |                  |              |                  |
-|  Provider: xAI   |                  |              |                  |
-+--------------------------------------------------+------------------+
++----------------------------------------------------------+
+| Подиум конкурса                                          |
++----------------------------------------------------------+
+| ШАГ 1: УЧАСТНИКИ И ЗАДАЧА                                |
+| +------------------------------------------------------+ |
+| | Задача: [выпадающий список задач пользователя]       | |
+| | Описание задачи: (отображается после выбора)          | |
+| | Прикрепленные файлы: (список, если есть)              | |
+| +------------------------------------------------------+ |
+| | Участники подиума:                                    | |
+| | [Модель A / Эксперт]  [Модель B / Критик]  ...       | |
+| | (карточки приглашённых моделей с ролями)               | |
+| +------------------------------------------------------+ |
+|                                                          |
+| ШАГ 2: ПРАВИЛА КОНКУРСА                                  |
+| +------------------------------------------------------+ |
+| | Количество туров: [1] [2] [3] (переключатель)        | |
+| | Тур 1: Тип задания — [Свободный промпт / По роли]    | |
+| |        Промпт: [текстовое поле]                      | |
+| |        Критерии оценки: [чекбоксы]                   | |
+| | Тур 2: (если выбрано >1 тура, аналогично)             | |
+| | Правило выбывания: [Худшие N% / Ниже порога / Ручной] | |
+| +------------------------------------------------------+ |
+|                                                          |
+| ШАГ 3: ПРЕДПРОСМОТР И ЗАПУСК                             |
+| +------------------------------------------------------+ |
+| | Сводка: N моделей, M туров, Задача "..."              | |
+| | [Начать конкурс] — кнопка (пока неактивна)           | |
+| +------------------------------------------------------+ |
++----------------------------------------------------------+
 ```
 
-### Technical details
+---
 
-- File: `src/components/ratings/CandidateDetail.tsx`
-- Replace `Swords` import with `Crown`
-- Left column info grid changes to 3-column layout: `grid-cols-[auto_auto_1fr]` where first two columns are label-value InfoRows and third column is a vertical badge strip (using `row-span` or a separate nested flex container beside the grid)
-- Simpler approach: keep the grid `grid-cols-2` for InfoRows, but place the strengths as an adjacent flex column next to the grid using a horizontal flex wrapper: `flex gap-4` -> `[grid of InfoRows]` + `[vertical badge column with flex-wrap]`
-- Right column: remove Access section, add availability badge + keep contest UI renamed to "Podium"
+## Детали каждой секции
 
+### Секция 1: Участники и Задача
+
+- **Селектор задачи** — выпадающий список из существующих задач пользователя (из таблицы `sessions`). После выбора отображается название и описание задачи.
+- **Файлы задачи** — здесь будет блок-заглушка «Прикрепленные файлы» с пометкой, что функция прикрепления файлов к задаче будет добавлена в панель Задач позже.
+- **Карточки участников** — горизонтальная лента приглашённых на подиум моделей (из `contestModels` в localStorage). Каждая карточка содержит: логотип провайдера, имя модели, назначенная роль (бейдж). Если моделей нет — сообщение «Пригласите моделей на вкладке Кандидаты».
+
+### Секция 2: Правила конкурса
+
+- **Количество туров** — переключатель 1/2/3 (кнопки-тоглы).
+- **Настройки каждого тура**:
+  - Тип задания: «Свободный промпт» или «По шаблону роли»
+  - Текстовое поле для промпта
+  - Критерии оценки: чекбоксы (Точность, Полнота, Креативность, Структурированность, Практичность)
+- **Правило прохождения** — как модели проходят между турами:
+  - «Все проходят» (для 1 тура)
+  - «Худшие N% выбывают»
+  - «Ниже порога X баллов»
+  - «Ручной отбор»
+- Все настройки — только UI, сохраняются в localStorage, без бэкенда.
+
+### Секция 3: Предпросмотр и запуск
+
+- Сводка: количество участников, туров, название задачи.
+- Кнопка «Начать конкурс» — с иконкой Play, стилизованная `hydra-glow-sm`. На этом этапе кнопка заблокирована с подсказкой «Функция запуска будет доступна позже».
+
+---
+
+## Технический план
+
+### Новые файлы
+
+1. **`src/components/ratings/ContestPodium.tsx`** — основной компонент вкладки «Подиум конкурса», заменяет текущую заглушку в `BeautyContest.tsx`. Содержит три секции-карточки (HydraCard) со скроллом.
+
+2. **`src/components/ratings/ContestTaskSelector.tsx`** — секция 1: селектор задачи + карточки участников. Задачи загружаются из базы данных. Участники читаются из `localStorage` ключ `hydra-contest-models`.
+
+3. **`src/components/ratings/ContestRulesEditor.tsx`** — секция 2: настройки туров и правил. Чистый UI-state, сохраняется в `localStorage` ключ `hydra-contest-rules`.
+
+4. **`src/components/ratings/ContestSummary.tsx`** — секция 3: сводка и кнопка запуска (заглушка).
+
+### Изменяемые файлы
+
+5. **`src/components/ratings/BeautyContest.tsx`** — подключение `ContestPodium` вместо текущего placeholder в `TabsContent value="arena"`.
+
+### Работа с данными
+
+- Задачи — запрос к `sessions` через Supabase (аналогично странице Tasks).
+- Участники — чтение `hydra-contest-models` из localStorage.
+- Правила конкурса — localStorage ключ `hydra-contest-rules` (JSON с настройками туров).
+- Никаких новых таблиц в БД на этом этапе не создаётся.
+
+### Персистентность
+
+Все состояния прототипа сохраняются в localStorage:
+- `hydra-contest-task-id` — выбранная задача
+- `hydra-contest-rules` — настройки туров и правил
+- `hydra-contest-models` — участники (уже существует)
