@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { MessageSquare, Play, Trash2, Pencil, Check, X, Bot, Sparkles, Cpu, Loader2, Save } from 'lucide-react';
+import { TaskFilesPanel } from './TaskFilesPanel';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { MultiModelSelector } from '@/components/warroom/MultiModelSelector';
@@ -303,7 +304,11 @@ export function TaskDetailsPanel({
                  ))}
                </div>
              </section>
-           )}
+            )}
+
+            {/* Task Files */}
+            <TaskFilesPanel sessionId={task.id} className="border-t pt-4" />
+ 
  
            {/* Session settings */}
            <SessionSettings

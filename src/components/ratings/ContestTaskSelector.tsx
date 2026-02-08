@@ -3,12 +3,13 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { HydraCard, HydraCardHeader, HydraCardTitle, HydraCardContent } from '@/components/ui/hydra-card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Brain, ClipboardList, Paperclip, Users, Crown, Info } from 'lucide-react';
+import { Brain, ClipboardList, Paperclip, Users, Crown, Info, FileText, Image, File } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { PROVIDER_LOGOS, PROVIDER_COLORS } from '@/components/ui/ProviderLogos';
 import { cn } from '@/lib/utils';
 import { getModelRegistryEntry, type ModelRegistryEntry } from '@/config/modelRegistry';
+import { useTaskFiles } from '@/hooks/useTaskFiles';
 
 interface Session {
   id: string;
@@ -32,6 +33,46 @@ function getContestModels(): ContestModel[] {
 
 function getRegistryEntry(modelId: string): ModelRegistryEntry | undefined {
   return getModelRegistryEntry(modelId);
+}
+
+function TaskFilesDisplay({ sessionId, isRu }: { sessionId: string | null; isRu: boolean }) {
+  const { files, loading } = useTaskFiles(sessionId);
+
+  function getIcon(mime: string | null) {
+    if (!mime) return <File className="h-3 w-3 text-muted-foreground" />;
+    if (mime.startsWith('image/')) return <Image className="h-3 w-3 text-blue-400" />;
+    return <FileText className="h-3 w-3 text-muted-foreground" />;
+  }
+
+  return (
+    <div className="space-y-1.5">
+      <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+        <Paperclip className="h-3 w-3" />
+        {isRu ? 'Прикреплённые файлы' : 'Attached Files'}
+        {files.length > 0 && (
+          <span className="text-[10px] bg-muted/50 px-1.5 py-0.5 rounded">{files.length}</span>
+        )}
+      </label>
+      {loading ? null : files.length === 0 ? (
+        <div className="p-2.5 rounded-md border border-dashed border-border/40 bg-muted/10 text-center">
+          <p className="text-[11px] text-muted-foreground/60">
+            {sessionId
+              ? (isRu ? 'Нет файлов. Прикрепите в панели Задач.' : 'No files. Attach in Tasks panel.')
+              : (isRu ? 'Выберите задачу для просмотра файлов' : 'Select a task to view files')}
+          </p>
+        </div>
+      ) : (
+        <div className="flex flex-wrap gap-1.5">
+          {files.map(f => (
+            <div key={f.id} className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-muted/20 border border-border/20">
+              {getIcon(f.mime_type)}
+              <span className="text-[11px] truncate max-w-[120px]">{f.file_name}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }
 
 export function ContestTaskSelector() {
@@ -123,21 +164,8 @@ export function ContestTaskSelector() {
           )}
         </div>
 
-        {/* Files placeholder */}
-        <div className="space-y-1.5">
-          <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-            <Paperclip className="h-3 w-3" />
-            {isRu ? 'Прикреплённые файлы' : 'Attached Files'}
-          </label>
-          <div className="p-3 rounded-md border border-dashed border-border/40 bg-muted/10 text-center">
-            <Info className="h-4 w-4 text-muted-foreground/50 mx-auto mb-1" />
-            <p className="text-[11px] text-muted-foreground/60">
-              {isRu
-                ? 'Прикрепление файлов к задаче будет добавлено в панели Задач'
-                : 'File attachments for tasks will be added in the Tasks panel'}
-            </p>
-          </div>
-        </div>
+        {/* Files */}
+        <TaskFilesDisplay sessionId={selectedTaskId || null} isRu={isRu} />
 
         {/* Participants */}
         <div className="space-y-2">
