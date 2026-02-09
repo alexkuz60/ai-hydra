@@ -5,7 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 export interface ModelOption {
   id: string;
   name: string;
-  provider: 'lovable' | 'openai' | 'gemini' | 'anthropic' | 'xai' | 'openrouter' | 'groq' | 'deepseek' | 'mistral';
+  provider: 'lovable' | 'openai' | 'gemini' | 'anthropic' | 'xai' | 'openrouter' | 'groq' | 'deepseek' | 'mistral' | 'proxyapi';
   requiresApiKey: boolean;
 }
 
@@ -70,6 +70,16 @@ export const PERSONAL_KEY_MODELS: ModelOption[] = [
   { id: 'mistral-small-latest', name: 'Mistral Small', provider: 'mistral', requiresApiKey: true },
   { id: 'codestral-latest', name: 'Codestral', provider: 'mistral', requiresApiKey: true },
   { id: 'mistral-medium-latest', name: 'Mistral Medium', provider: 'mistral', requiresApiKey: true },
+  
+  // ProxyAPI models (Russian gateway — OpenAI, Anthropic, Gemini, DeepSeek)
+  { id: 'proxyapi/gpt-4o', name: 'GPT-4o (ProxyAPI)', provider: 'proxyapi', requiresApiKey: true },
+  { id: 'proxyapi/gpt-4o-mini', name: 'GPT-4o Mini (ProxyAPI)', provider: 'proxyapi', requiresApiKey: true },
+  { id: 'proxyapi/o3-mini', name: 'o3 Mini (ProxyAPI)', provider: 'proxyapi', requiresApiKey: true },
+  { id: 'proxyapi/claude-3-5-sonnet', name: 'Claude 3.5 Sonnet (ProxyAPI)', provider: 'proxyapi', requiresApiKey: true },
+  { id: 'proxyapi/claude-3-5-haiku', name: 'Claude 3.5 Haiku (ProxyAPI)', provider: 'proxyapi', requiresApiKey: true },
+  { id: 'proxyapi/gemini-2.0-flash', name: 'Gemini 2.0 Flash (ProxyAPI)', provider: 'proxyapi', requiresApiKey: true },
+  { id: 'proxyapi/deepseek-chat', name: 'DeepSeek-V3 (ProxyAPI)', provider: 'proxyapi', requiresApiKey: true },
+  { id: 'proxyapi/deepseek-reasoner', name: 'DeepSeek-R1 (ProxyAPI)', provider: 'proxyapi', requiresApiKey: true },
 ];
 
 // All valid model IDs for filtering deprecated models (centralized)
@@ -111,6 +121,7 @@ interface UserApiKeys {
   perplexity: boolean;
   deepseek: boolean;
   mistral: boolean;
+  proxyapi: boolean;
 }
 
 export function useAvailableModels() {
@@ -127,6 +138,7 @@ export function useAvailableModels() {
     perplexity: false,
     deepseek: false,
     mistral: false,
+    proxyapi: false,
   });
   const [loading, setLoading] = useState(true);
 
@@ -165,6 +177,7 @@ export function useAvailableModels() {
             has_perplexity?: boolean;
             has_deepseek?: boolean;
             has_mistral?: boolean;
+            has_proxyapi?: boolean;
           };
           setUserApiKeys({
             openai: status.has_openai || false,
@@ -177,6 +190,7 @@ export function useAvailableModels() {
             perplexity: status.has_perplexity || false,
             deepseek: status.has_deepseek || false,
             mistral: status.has_mistral || false,
+            proxyapi: status.has_proxyapi || false,
           });
         }
       } catch (error) {
@@ -199,6 +213,7 @@ export function useAvailableModels() {
     if (model.provider === 'groq') return userApiKeys.groq;
     if (model.provider === 'deepseek') return userApiKeys.deepseek;
     if (model.provider === 'mistral') return userApiKeys.mistral;
+    if (model.provider === 'proxyapi') return userApiKeys.proxyapi;
     return false;
   });
 

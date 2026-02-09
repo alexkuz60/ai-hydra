@@ -77,6 +77,16 @@ const registry: ModelRegistryEntry[] = [
   { id: 'mistral-small-latest', displayName: 'Mistral Small', provider: 'mistral', creator: 'Mistral AI', releaseDate: '2024-09', parameterCount: '22B', strengths: ['efficiency', 'coding'], pricing: { input: '$0.10', output: '$0.30' } },
   { id: 'codestral-latest', displayName: 'Codestral', provider: 'mistral', creator: 'Mistral AI', releaseDate: '2024-05', parameterCount: '22B', strengths: ['coding', 'code-generation'], pricing: { input: '$0.30', output: '$0.90' } },
   { id: 'mistral-medium-latest', displayName: 'Mistral Medium', provider: 'mistral', creator: 'Mistral AI', releaseDate: '2024-12', parameterCount: 'unknown', strengths: ['reasoning', 'multilingual'], pricing: { input: '$0.40', output: '$2.00' } },
+
+  // ─── ProxyAPI (Russian gateway) ───
+  { id: 'proxyapi/gpt-4o', displayName: 'GPT-4o (ProxyAPI)', provider: 'proxyapi', creator: 'OpenAI via ProxyAPI', releaseDate: '2024-05', parameterCount: '~200B (est.)', strengths: ['reasoning', 'vision', 'coding', 'multimodal'], pricing: { input: '≈$3.00', output: '≈$12.00' } },
+  { id: 'proxyapi/gpt-4o-mini', displayName: 'GPT-4o Mini (ProxyAPI)', provider: 'proxyapi', creator: 'OpenAI via ProxyAPI', releaseDate: '2024-07', parameterCount: '~8B (est.)', strengths: ['speed', 'efficiency', 'coding'], pricing: { input: '≈$0.20', output: '≈$0.80' } },
+  { id: 'proxyapi/o3-mini', displayName: 'o3 Mini (ProxyAPI)', provider: 'proxyapi', creator: 'OpenAI via ProxyAPI', releaseDate: '2025-01', parameterCount: 'unknown', strengths: ['reasoning', 'math', 'coding'], pricing: { input: '≈$1.50', output: '≈$6.00' } },
+  { id: 'proxyapi/claude-3-5-sonnet', displayName: 'Claude 3.5 Sonnet (ProxyAPI)', provider: 'proxyapi', creator: 'Anthropic via ProxyAPI', releaseDate: '2024-10', parameterCount: 'unknown', strengths: ['coding', 'reasoning', 'creative', 'analysis'], pricing: { input: '≈$4.00', output: '≈$20.00' } },
+  { id: 'proxyapi/claude-3-5-haiku', displayName: 'Claude 3.5 Haiku (ProxyAPI)', provider: 'proxyapi', creator: 'Anthropic via ProxyAPI', releaseDate: '2024-10', parameterCount: 'unknown', strengths: ['speed', 'coding', 'efficiency'], pricing: { input: '≈$1.00', output: '≈$5.00' } },
+  { id: 'proxyapi/gemini-2.0-flash', displayName: 'Gemini 2.0 Flash (ProxyAPI)', provider: 'proxyapi', creator: 'Google via ProxyAPI', releaseDate: '2025-02', parameterCount: 'unknown', strengths: ['speed', 'multimodal', 'coding'], pricing: { input: '≈$0.15', output: '≈$0.60' } },
+  { id: 'proxyapi/deepseek-chat', displayName: 'DeepSeek-V3 (ProxyAPI)', provider: 'proxyapi', creator: 'DeepSeek via ProxyAPI', releaseDate: '2024-12', parameterCount: '671B (MoE)', strengths: ['coding', 'math', 'reasoning', 'multilingual'], pricing: { input: '≈$0.40', output: '≈$1.60' } },
+  { id: 'proxyapi/deepseek-reasoner', displayName: 'DeepSeek-R1 (ProxyAPI)', provider: 'proxyapi', creator: 'DeepSeek via ProxyAPI', releaseDate: '2025-01', parameterCount: '671B (MoE)', strengths: ['deep-reasoning', 'math', 'coding'], pricing: { input: '≈$0.80', output: '≈$3.00' } },
 ];
 
 // Lookup map for O(1) access

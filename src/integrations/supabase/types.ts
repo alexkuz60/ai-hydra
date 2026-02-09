@@ -813,6 +813,7 @@ export type Database = {
           has_openai: boolean
           has_openrouter: boolean
           has_perplexity: boolean
+          has_proxyapi: boolean
           has_tavily: boolean
           has_xai: boolean
         }[]
