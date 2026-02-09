@@ -78,6 +78,13 @@ export const PERSONAL_KEY_MODELS: ModelOption[] = [
   { id: 'proxyapi/claude-3-5-sonnet', name: 'Claude 3.5 Sonnet (ProxyAPI)', provider: 'proxyapi', requiresApiKey: true },
   { id: 'proxyapi/claude-3-5-haiku', name: 'Claude 3.5 Haiku (ProxyAPI)', provider: 'proxyapi', requiresApiKey: true },
   { id: 'proxyapi/gemini-2.0-flash', name: 'Gemini 2.0 Flash (ProxyAPI)', provider: 'proxyapi', requiresApiKey: true },
+  { id: 'proxyapi/gpt-5', name: 'GPT-5 (ProxyAPI)', provider: 'proxyapi', requiresApiKey: true },
+  { id: 'proxyapi/gpt-5-mini', name: 'GPT-5 Mini (ProxyAPI)', provider: 'proxyapi', requiresApiKey: true },
+  { id: 'proxyapi/gpt-5.2', name: 'GPT-5.2 (ProxyAPI)', provider: 'proxyapi', requiresApiKey: true },
+  { id: 'proxyapi/gemini-3-flash-preview', name: 'Gemini 3 Flash (ProxyAPI)', provider: 'proxyapi', requiresApiKey: true },
+  { id: 'proxyapi/gemini-3-pro-preview', name: 'Gemini 3 Pro (ProxyAPI)', provider: 'proxyapi', requiresApiKey: true },
+  { id: 'proxyapi/gemini-2.5-pro', name: 'Gemini 2.5 Pro (ProxyAPI)', provider: 'proxyapi', requiresApiKey: true },
+  { id: 'proxyapi/gemini-2.5-flash', name: 'Gemini 2.5 Flash (ProxyAPI)', provider: 'proxyapi', requiresApiKey: true },
   { id: 'proxyapi/deepseek-chat', name: 'DeepSeek-V3 (ProxyAPI)', provider: 'proxyapi', requiresApiKey: true },
   { id: 'proxyapi/deepseek-reasoner', name: 'DeepSeek-R1 (ProxyAPI)', provider: 'proxyapi', requiresApiKey: true },
 ];

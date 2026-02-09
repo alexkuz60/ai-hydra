@@ -8,10 +8,17 @@ import { CORS_HEADERS, SSE_HEADERS } from "./types.ts";
 const PROXYAPI_MODEL_MAP: Record<string, string> = {
   "proxyapi/gpt-4o": "gpt-4o",
   "proxyapi/gpt-4o-mini": "gpt-4o-mini",
-  "proxyapi/o1-mini": "o1-mini",
+  "proxyapi/o3-mini": "o3-mini",
+  "proxyapi/gpt-5": "gpt-5",
+  "proxyapi/gpt-5-mini": "gpt-5-mini",
+  "proxyapi/gpt-5.2": "gpt-5.2",
   "proxyapi/claude-3-5-sonnet": "claude-3-5-sonnet-20241022",
   "proxyapi/claude-3-5-haiku": "claude-3-5-haiku-20241022",
   "proxyapi/gemini-2.0-flash": "gemini-2.0-flash",
+  "proxyapi/gemini-3-flash-preview": "gemini-3-flash-preview",
+  "proxyapi/gemini-3-pro-preview": "gemini-3-pro-preview",
+  "proxyapi/gemini-2.5-pro": "gemini-2.5-pro",
+  "proxyapi/gemini-2.5-flash": "gemini-2.5-flash",
   "proxyapi/deepseek-chat": "deepseek-chat",
   "proxyapi/deepseek-reasoner": "deepseek-reasoner",
 };
