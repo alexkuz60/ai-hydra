@@ -162,21 +162,53 @@ AI-Hydra включает 12 специализированных ИИ-роле�
 
 Технические роли накапливают **долгосрочный опыт** между сессиями — предпочтения пользователя, успешные стратегии, типичные ошибки. Подробнее в разделе «Ролевая память».
 
-## Управление в Штате
+## Модуль «Штат» — управление ролями
 
-Модуль «Штат» позволяет:
-- Просматривать все роли в таблице с группировкой
-- Настраивать системные промпты
-- Управлять профильными знаниями (RAG)
-- Просматривать ролевую память
-- Настраивать иерархию ролей
+Раздел **Штат** — центр администрирования всех ролей. Интерфейс построен по принципу «таблица слева — детали справа».
 
-## Табель о рангах
+### Карточка роли
 
-Иерархия ролей определяет приоритет и порядок взаимодействия между экспертами. Настраивается через табы взаимодействий в модуле «Штат».
+При выборе роли открывается детальная карточка с заголовком (иконка, имя, тип), описанием и четырьмя секциями:
+
+### 1. Системный промпт
+
+Промпт определяет поведение роли. Интерфейс показывает структуру промпта через **секции** (каждый заголовок \`##\` — отдельная секция с иконкой):
+
+- **Просмотр** — промпт разбит на визуальные секции с иконками. Нажмите на заголовок, чтобы развернуть/свернуть
+- **Полный просмотр** — кнопка 🔍 открывает промпт в полноэкранном диалоге
+- **Редактирование** — кнопка ✏️ «Редактировать» переключает в режим секционного редактора
+- **Библиотека** — выпадающий список позволяет загрузить промпт из библиотеки (личные и публичные)
+- **Перевод** — кнопки RU↔EN для автоматического перевода между языками
+- **Сохранение** — отредактированный промпт сохраняется в библиотеку с именем и флагом «Поделиться»
+
+> [!TIP] Индикатор изменений
+> Точка рядом с заголовком «Системный промпт» сигнализирует о несохранённых изменениях.
+
+### 2. Табель о рангах (Иерархия)
+
+Иерархия определяет, как роли взаимодействуют друг с другом. Три вкладки:
+
+| Вкладка | Назначение | Пример |
+|---------|-----------|--------|
+| **Уступает** | Роли, чьё мнение приоритетнее | Эксперт уступает Арбитру |
+| **Оспаривает** | Роли, с которыми допускается дискуссия | Критик оспаривает Эксперта |
+| **Сотрудничает** | Роли для совместной работы | Аналитик сотрудничает с Архивариусом |
 
 > [!WARNING] Автоматическая валидация конфликтов
-> Система автоматически обнаруживает противоречия в иерархии (циклические зависимости, конфликтующие приоритеты) и предупреждает администратора перед сохранением.
+> Система обнаруживает противоречия (роль одновременно уступает и оспаривает другую) и предлагает разрешение конфликта перед сохранением.
+
+### 3. Профильные знания (RAG)
+
+Доступно только для **технических ролей**. Позволяет обучать роль документацией:
+- Ручной ввод текстов с метаданными
+- Импорт из Гидропедии
+- Скрейпинг веб-страниц через Firecrawl
+- Статистика: количество чанков и статус обучения
+
+### 4. Настройки
+
+- **Утверждение Супервизором** — переключатель Human-in-the-Loop. Когда включён, ответы роли требуют одобрения перед финализацией
+- **Технический персонал** — бейдж 🔧 для технических ролей
 
 \`\`\`
 :::playground:::
@@ -211,21 +243,53 @@ AI-Hydra includes 12 specialized AI roles divided into two groups.
 
 Technical roles accumulate **long-term experience** between sessions — user preferences, successful strategies, common mistakes. See "Role Memory" section for details.
 
-## Management in Staff
+## Staff Module — Role Management
 
-The "Staff" module allows:
-- Viewing all roles in a grouped table
-- Configuring system prompts
-- Managing domain knowledge (RAG)
-- Viewing role memory
-- Configuring role hierarchy
+The **Staff** section is the administration center for all roles. The interface follows a "table on the left — details on the right" pattern.
 
-## Rank Table
+### Role Card
 
-Role hierarchy determines priority and interaction order between experts. Configured via interaction tabs in the "Staff" module.
+Selecting a role opens a detailed card with a header (icon, name, type), description, and four sections:
+
+### 1. System Prompt
+
+The prompt defines role behavior. The interface displays the prompt structure through **sections** (each \`##\` heading becomes a separate section with an icon):
+
+- **View** — the prompt is split into visual sections with icons. Click a heading to expand/collapse
+- **Full View** — the 🔍 button opens the prompt in a fullscreen dialog
+- **Editing** — the ✏️ "Edit" button switches to the section editor mode
+- **Library** — a dropdown lets you load a prompt from the library (personal and shared)
+- **Translation** — RU↔EN buttons for automatic translation between languages
+- **Save** — the edited prompt is saved to the library with a name and "Share" flag
+
+> [!TIP] Change Indicator
+> A dot next to the "System Prompt" heading signals unsaved changes.
+
+### 2. Rank Table (Hierarchy)
+
+The hierarchy defines how roles interact with each other. Three tabs:
+
+| Tab | Purpose | Example |
+|-----|---------|---------|
+| **Defers to** | Roles whose opinion has higher priority | Expert defers to Arbiter |
+| **Challenges** | Roles that can be debated | Critic challenges Expert |
+| **Collaborates** | Roles for joint work | Analyst collaborates with Archivist |
 
 > [!WARNING] Automatic Conflict Validation
-> The system automatically detects hierarchy contradictions (circular dependencies, conflicting priorities) and warns the administrator before saving.
+> The system detects contradictions (a role simultaneously defers to and challenges another) and offers conflict resolution before saving.
+
+### 3. Domain Knowledge (RAG)
+
+Available only for **technical roles**. Allows training a role with documentation:
+- Manual text entry with metadata
+- Import from Hydrapedia
+- Web page scraping via Firecrawl
+- Statistics: chunk count and training status
+
+### 4. Settings
+
+- **Supervisor Approval** — Human-in-the-Loop toggle. When enabled, role responses require approval before finalization
+- **Technical Staff** — 🔧 badge for technical roles
 
 \`\`\`
 :::playground:::
