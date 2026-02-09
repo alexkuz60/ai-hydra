@@ -1,5 +1,6 @@
 // Provider-specific streaming logic
 
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { authenticateUser, getUserApiKey } from "./auth.ts";
 import { CORS_HEADERS, SSE_HEADERS } from "./types.ts";
 
@@ -164,5 +165,83 @@ export async function streamLovableAI(params: ProviderStreamParams): Promise<Res
   }
 
   console.log("[hydra-stream] Lovable AI streaming started");
+  return new Response(response.body, { headers: SSE_HEADERS });
+}
+
+// ── OpenRouter (with ProxyAPI fallback) ─────────────────
+
+export async function streamOpenRouter(params: ProviderStreamParams): Promise<Response> {
+  const { req, model_id, systemPrompt, message, temperature, max_tokens } = params;
+
+  const auth = await authenticateUser(req, "OpenRouter");
+  if (!auth.ok) return auth.response;
+
+  // Fetch profile to check proxyapi_priority
+  const { data: profile } = await auth.supabase
+    .from("profiles")
+    .select("proxyapi_priority")
+    .eq("user_id", auth.userId)
+    .single();
+
+  const proxyapiPriority = !!(profile as any)?.proxyapi_priority;
+
+  // Get both keys in parallel
+  const { data: apiKeys } = await auth.supabase.rpc("get_my_api_keys").single();
+  const keys = apiKeys as Record<string, string | null> | null;
+
+  const openrouterKey = keys?.openrouter_api_key;
+  const proxyapiKey = keys?.proxyapi_api_key;
+
+  const useProxyApi = proxyapiPriority && !!proxyapiKey;
+  const effectiveKey = useProxyApi ? proxyapiKey : openrouterKey;
+
+  if (!effectiveKey) {
+    const label = useProxyApi ? "ProxyAPI" : "OpenRouter";
+    return new Response(
+      JSON.stringify({ error: `${label} API key not configured. Please add it in your profile settings.` }),
+      { status: 400, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } }
+    );
+  }
+
+  const baseUrl = useProxyApi
+    ? "https://api.proxyapi.ru/openai/v1/chat/completions"
+    : "https://openrouter.ai/api/v1/chat/completions";
+
+  const extraHeaders: Record<string, string> = useProxyApi
+    ? {}
+    : { "HTTP-Referer": "https://ai-hydra.lovable.app", "X-Title": "Hydra AI" };
+
+  console.log(`[hydra-stream] OpenRouter streaming: model=${model_id}, via=${useProxyApi ? "ProxyAPI" : "OpenRouter"}`);
+
+  const response = await fetch(baseUrl, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${effectiveKey}`,
+      "Content-Type": "application/json",
+      ...extraHeaders,
+    },
+    body: JSON.stringify({
+      model: model_id,
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: message },
+      ],
+      stream: true,
+      temperature,
+      max_tokens,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    const label = useProxyApi ? "ProxyAPI" : "OpenRouter";
+    console.error(`[hydra-stream] ${label} error:`, response.status, errorText);
+    return new Response(
+      JSON.stringify({ error: `${label} error: ${response.status}` }),
+      { status: 500, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } }
+    );
+  }
+
+  console.log(`[hydra-stream] OpenRouter streaming started via ${useProxyApi ? "ProxyAPI" : "OpenRouter"}`);
   return new Response(response.body, { headers: SSE_HEADERS });
 }
