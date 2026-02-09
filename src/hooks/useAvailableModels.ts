@@ -224,7 +224,8 @@ export function useAvailableModels() {
     if (model.provider === 'groq') return userApiKeys.groq;
     if (model.provider === 'deepseek') return userApiKeys.deepseek;
     if (model.provider === 'mistral') return userApiKeys.mistral;
-    if (model.provider === 'proxyapi') return userApiKeys.proxyapi;
+    // ProxyAPI temporarily hidden — routing issues under investigation
+    if (model.provider === 'proxyapi') return false;
     return false;
   });
 
