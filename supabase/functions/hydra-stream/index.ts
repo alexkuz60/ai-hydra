@@ -5,11 +5,12 @@ import {
   MISTRAL_MODELS,
   GROQ_MODELS,
   isOpenRouterModel,
+  isProxyApiModel,
   DEFAULT_PROMPTS,
   buildMemoryContext,
   type StreamRequest,
 } from "./types.ts";
-import { streamDeepSeek, streamMistral, streamGroq, streamLovableAI, streamOpenRouter } from "./providers.ts";
+import { streamDeepSeek, streamMistral, streamGroq, streamLovableAI, streamOpenRouter, streamProxyApi } from "./providers.ts";
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -62,6 +63,10 @@ serve(async (req) => {
 
     if (GROQ_MODELS.includes(model_id)) {
       return streamGroq(params);
+    }
+
+    if (isProxyApiModel(model_id)) {
+      return streamProxyApi(params);
     }
 
     if (isOpenRouterModel(model_id)) {
