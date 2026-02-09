@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Checkbox } from '@/components/ui/checkbox';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -449,36 +448,6 @@ export default function Profile() {
                     {/* ProxyAPI right after OpenRouter — Russian locale only */}
                     {p.provider === 'openrouter' && language === 'ru' && (
                       <div className="mt-2 space-y-3">
-                        <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/30">
-                          <div className="flex items-start gap-3">
-                            <AlertTriangle className="h-5 w-5 text-amber-500 flex-shrink-0 mt-0.5" />
-                            <div className="flex-1 space-y-2">
-                              <p className="text-sm font-semibold text-amber-400">
-                                Альтернатива OpenRouter для России!
-                              </p>
-                              <div className="flex items-center gap-2">
-                                <Checkbox
-                                  id="proxyapi-priority"
-                                  checked={proxyapiPriority && !!apiKeys['proxyapi']}
-                                  onCheckedChange={async (checked) => {
-                                    const val = !!checked;
-                                    setProxyapiPriority(val);
-                                    if (user) {
-                                      await supabase
-                                        .from('profiles')
-                                        .update({ proxyapi_priority: val })
-                                        .eq('user_id', user.id);
-                                    }
-                                  }}
-                                  disabled={!apiKeys['proxyapi']}
-                                />
-                                <Label htmlFor="proxyapi-priority" className="text-sm text-muted-foreground cursor-pointer">
-                                  Приоритет над OpenRouter
-                                </Label>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
                         <ApiKeyField
                           provider="proxyapi"
                           label="ProxyAPI"
@@ -565,7 +534,19 @@ export default function Profile() {
 
           {language === 'ru' && (
             <TabsContent value="proxyapi">
-              <ProxyApiDashboard hasKey={!!apiKeys['proxyapi']} />
+              <ProxyApiDashboard
+                hasKey={!!apiKeys['proxyapi']}
+                proxyapiPriority={proxyapiPriority && !!apiKeys['proxyapi']}
+                onPriorityChange={async (val) => {
+                  setProxyapiPriority(val);
+                  if (user) {
+                    await supabase
+                      .from('profiles')
+                      .update({ proxyapi_priority: val })
+                      .eq('user_id', user.id);
+                  }
+                }}
+              />
             </TabsContent>
           )}
 

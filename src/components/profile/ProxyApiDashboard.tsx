@@ -1,17 +1,22 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { HydraCard, HydraCardHeader, HydraCardTitle, HydraCardContent } from '@/components/ui/hydra-card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
+import { Slider } from '@/components/ui/slider';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { Loader2, Wifi, WifiOff, Zap, Play, CheckCircle, XCircle, Clock, AlertTriangle } from 'lucide-react';
+import { Loader2, Wifi, WifiOff, Zap, Play, CheckCircle, XCircle, Clock, AlertTriangle, History, Settings2, BarChart3, RefreshCw } from 'lucide-react';
 import { ProxyApiLogo, PROVIDER_LOGOS, PROVIDER_COLORS } from '@/components/ui/ProviderLogos';
 import { cn } from '@/lib/utils';
 import { getAllRegistryEntries, type ModelRegistryEntry, STRENGTH_LABELS } from '@/config/modelRegistry';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose,
 } from '@/components/ui/dialog';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
 // ─── Types ─────────────────────────────────────────────
 
@@ -31,9 +36,41 @@ interface TestResult {
   details?: string;
 }
 
+interface LogEntry {
+  id: string;
+  model_id: string;
+  request_type: string;
+  status: string;
+  latency_ms: number | null;
+  tokens_input: number | null;
+  tokens_output: number | null;
+  error_message: string | null;
+  created_at: string;
+}
+
+interface ProxyApiSettings {
+  timeout_sec: number;
+  max_retries: number;
+  fallback_enabled: boolean;
+}
+
+const DEFAULT_SETTINGS: ProxyApiSettings = {
+  timeout_sec: 30,
+  max_retries: 2,
+  fallback_enabled: true,
+};
+
+const SETTINGS_KEY = 'proxyapi_settings';
+
 // ─── Component ─────────────────────────────────────────
 
-export function ProxyApiDashboard({ hasKey }: { hasKey: boolean }) {
+interface ProxyApiDashboardProps {
+  hasKey: boolean;
+  proxyapiPriority: boolean;
+  onPriorityChange: (value: boolean) => void;
+}
+
+export function ProxyApiDashboard({ hasKey, proxyapiPriority, onPriorityChange }: ProxyApiDashboardProps) {
   const { user } = useAuth();
   const [pingResult, setPingResult] = useState<PingResult | null>(null);
   const [pinging, setPinging] = useState(false);
@@ -46,8 +83,45 @@ export function ProxyApiDashboard({ hasKey }: { hasKey: boolean }) {
     } catch { return new Set(); }
   });
   const [goneModel, setGoneModel] = useState<ModelRegistryEntry | null>(null);
+  const [logs, setLogs] = useState<LogEntry[]>([]);
+  const [logsLoading, setLogsLoading] = useState(false);
+  const [settings, setSettings] = useState<ProxyApiSettings>(() => {
+    try {
+      const saved = localStorage.getItem(SETTINGS_KEY);
+      return saved ? { ...DEFAULT_SETTINGS, ...JSON.parse(saved) } : DEFAULT_SETTINGS;
+    } catch { return DEFAULT_SETTINGS; }
+  });
 
   const proxyModels = getAllRegistryEntries().filter(m => m.provider === 'proxyapi' && !hiddenModels.has(m.id));
+
+  // Persist settings
+  useEffect(() => {
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+  }, [settings]);
+
+  // Fetch logs
+  const fetchLogs = useCallback(async () => {
+    if (!user) return;
+    setLogsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('proxy_api_logs')
+        .select('id, model_id, request_type, status, latency_ms, tokens_input, tokens_output, error_message, created_at')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(20);
+      if (error) throw error;
+      setLogs((data as LogEntry[]) || []);
+    } catch {
+      // silent
+    } finally {
+      setLogsLoading(false);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (hasKey && user) fetchLogs();
+  }, [hasKey, user, fetchLogs]);
 
   const handlePing = useCallback(async () => {
     if (!user) return;
@@ -59,21 +133,19 @@ export function ProxyApiDashboard({ hasKey }: { hasKey: boolean }) {
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/proxy-api-test`,
         {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${session?.access_token}`,
-          },
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session?.access_token}` },
           body: JSON.stringify({ action: 'ping' }),
         }
       );
       const data = await resp.json();
       setPingResult(data as PingResult);
+      fetchLogs();
     } catch {
       setPingResult({ status: 'error', latency_ms: 0, error: 'Network error' });
     } finally {
       setPinging(false);
     }
-  }, [user]);
+  }, [user, fetchLogs]);
 
   const handleTestModel = useCallback(async (modelId: string) => {
     if (!user) return;
@@ -84,10 +156,7 @@ export function ProxyApiDashboard({ hasKey }: { hasKey: boolean }) {
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/proxy-api-test`,
         {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${session?.access_token}`,
-          },
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session?.access_token}` },
           body: JSON.stringify({ action: 'test', model_id: modelId }),
         }
       );
@@ -97,6 +166,7 @@ export function ProxyApiDashboard({ hasKey }: { hasKey: boolean }) {
         const model = getAllRegistryEntries().find(m => m.id === modelId);
         if (model) setGoneModel(model);
       }
+      fetchLogs();
     } catch {
       setTestResults(prev => ({
         ...prev,
@@ -105,7 +175,7 @@ export function ProxyApiDashboard({ hasKey }: { hasKey: boolean }) {
     } finally {
       setTestingModel(null);
     }
-  }, [user]);
+  }, [user, fetchLogs]);
 
   const handleConfirmRemove = useCallback(() => {
     if (!goneModel) return;
@@ -115,6 +185,24 @@ export function ProxyApiDashboard({ hasKey }: { hasKey: boolean }) {
     localStorage.setItem('proxyapi_hidden_models', JSON.stringify([...next]));
     setGoneModel(null);
   }, [goneModel, hiddenModels]);
+
+  // Analytics data
+  const analyticsData = useMemo(() => {
+    const byModel: Record<string, { model: string; total: number; success: number; errors: number; avgLatency: number; latencies: number[] }> = {};
+    logs.forEach(log => {
+      if (log.request_type === 'ping') return;
+      const key = log.model_id.replace('proxyapi/', '');
+      if (!byModel[key]) byModel[key] = { model: key, total: 0, success: 0, errors: 0, avgLatency: 0, latencies: [] };
+      byModel[key].total++;
+      if (log.status === 'success') byModel[key].success++;
+      else byModel[key].errors++;
+      if (log.latency_ms) byModel[key].latencies.push(log.latency_ms);
+    });
+    return Object.values(byModel).map(m => ({
+      ...m,
+      avgLatency: m.latencies.length ? Math.round(m.latencies.reduce((a, b) => a + b, 0) / m.latencies.length) : 0,
+    }));
+  }, [logs]);
 
   if (!hasKey) {
     return (
@@ -142,16 +230,32 @@ export function ProxyApiDashboard({ hasKey }: { hasKey: boolean }) {
         <HydraCardTitle>ProxyAPI Dashboard</HydraCardTitle>
       </HydraCardHeader>
       <HydraCardContent>
+        {/* Priority checkbox */}
+        <div className="flex items-center gap-3 mb-4 p-3 rounded-lg bg-amber-500/10 border border-amber-500/30">
+          <AlertTriangle className="h-5 w-5 text-amber-500 flex-shrink-0" />
+          <div className="flex-1">
+            <p className="text-sm font-semibold text-amber-400 mb-1">Альтернатива OpenRouter для России</p>
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="dash-proxyapi-priority"
+                checked={proxyapiPriority}
+                onCheckedChange={(checked) => onPriorityChange(!!checked)}
+              />
+              <Label htmlFor="dash-proxyapi-priority" className="text-sm text-muted-foreground cursor-pointer">
+                Приоритет над OpenRouter
+              </Label>
+            </div>
+          </div>
+        </div>
+
         <Accordion type="multiple" defaultValue={['status', 'catalog']} className="space-y-2">
-          {/* ── Status Section ── */}
+          {/* ── Status ── */}
           <AccordionItem value="status" className="border rounded-lg px-4">
             <AccordionTrigger className="hover:no-underline">
               <div className="flex items-center gap-2">
                 <Wifi className="h-4 w-4 text-primary" />
                 <span className="font-semibold">Статус подключения</span>
-                {pingResult && (
-                  <StatusBadge status={pingResult.status} />
-                )}
+                {pingResult && <StatusBadge status={pingResult.status} />}
               </div>
             </AccordionTrigger>
             <AccordionContent className="space-y-4 pb-4">
@@ -170,9 +274,7 @@ export function ProxyApiDashboard({ hasKey }: { hasKey: boolean }) {
                         Моделей: <strong className="text-foreground">{pingResult.model_count}</strong>
                       </span>
                     )}
-                    {pingResult.error && (
-                      <span className="text-destructive text-xs">{pingResult.error}</span>
-                    )}
+                    {pingResult.error && <span className="text-destructive text-xs">{pingResult.error}</span>}
                   </div>
                 )}
               </div>
@@ -200,6 +302,161 @@ export function ProxyApiDashboard({ hasKey }: { hasKey: boolean }) {
                   />
                 ))}
               </div>
+            </AccordionContent>
+          </AccordionItem>
+
+          {/* ── Settings ── */}
+          <AccordionItem value="settings" className="border rounded-lg px-4">
+            <AccordionTrigger className="hover:no-underline">
+              <div className="flex items-center gap-2">
+                <Settings2 className="h-4 w-4 text-primary" />
+                <span className="font-semibold">Настройки</span>
+              </div>
+            </AccordionTrigger>
+            <AccordionContent className="pb-4 space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-xs text-muted-foreground">Таймаут (сек)</Label>
+                  <div className="flex items-center gap-3">
+                    <Slider
+                      value={[settings.timeout_sec]}
+                      onValueChange={([v]) => setSettings(s => ({ ...s, timeout_sec: v }))}
+                      min={10}
+                      max={120}
+                      step={5}
+                      className="flex-1"
+                    />
+                    <span className="text-sm font-mono w-10 text-right">{settings.timeout_sec}s</span>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs text-muted-foreground">Макс. повторов (retry)</Label>
+                  <Select
+                    value={String(settings.max_retries)}
+                    onValueChange={(v) => setSettings(s => ({ ...s, max_retries: Number(v) }))}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="0">0 — без повторов</SelectItem>
+                      <SelectItem value="1">1 повтор</SelectItem>
+                      <SelectItem value="2">2 повтора</SelectItem>
+                      <SelectItem value="3">3 повтора</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="fallback-enabled"
+                  checked={settings.fallback_enabled}
+                  onCheckedChange={(checked) => setSettings(s => ({ ...s, fallback_enabled: !!checked }))}
+                />
+                <Label htmlFor="fallback-enabled" className="text-sm cursor-pointer">
+                  Автоматический фолбэк на Lovable AI при ошибках
+                </Label>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Настройки сохраняются локально и применяются при следующих запросах через ProxyAPI.
+              </p>
+            </AccordionContent>
+          </AccordionItem>
+
+          {/* ── Recent Logs ── */}
+          <AccordionItem value="logs" className="border rounded-lg px-4">
+            <AccordionTrigger className="hover:no-underline">
+              <div className="flex items-center gap-2">
+                <History className="h-4 w-4 text-primary" />
+                <span className="font-semibold">Последние запросы</span>
+                <Badge variant="secondary" className="ml-2">{logs.length}</Badge>
+              </div>
+            </AccordionTrigger>
+            <AccordionContent className="pb-4">
+              <div className="flex justify-end mb-2">
+                <Button size="sm" variant="ghost" onClick={fetchLogs} disabled={logsLoading}>
+                  <RefreshCw className={cn("h-3.5 w-3.5 mr-1", logsLoading && "animate-spin")} />
+                  Обновить
+                </Button>
+              </div>
+              {logs.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-4">Нет записей</p>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs">
+                    <thead>
+                      <tr className="border-b text-muted-foreground">
+                        <th className="text-left py-2 pr-3">Модель</th>
+                        <th className="text-left py-2 pr-3">Тип</th>
+                        <th className="text-left py-2 pr-3">Статус</th>
+                        <th className="text-right py-2 pr-3">Латенси</th>
+                        <th className="text-right py-2 pr-3">Токены</th>
+                        <th className="text-right py-2">Дата</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {logs.map(log => (
+                        <LogRow key={log.id} log={log} />
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </AccordionContent>
+          </AccordionItem>
+
+          {/* ── Analytics ── */}
+          <AccordionItem value="analytics" className="border rounded-lg px-4">
+            <AccordionTrigger className="hover:no-underline">
+              <div className="flex items-center gap-2">
+                <BarChart3 className="h-4 w-4 text-primary" />
+                <span className="font-semibold">Аналитика</span>
+              </div>
+            </AccordionTrigger>
+            <AccordionContent className="pb-4">
+              {analyticsData.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-4">Недостаточно данных для аналитики</p>
+              ) : (
+                <div className="space-y-4">
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-2">Средняя латенси по моделям (ms)</p>
+                    <ResponsiveContainer width="100%" height={200}>
+                      <BarChart data={analyticsData} layout="vertical">
+                        <XAxis type="number" tick={{ fontSize: 10 }} />
+                        <YAxis type="category" dataKey="model" width={120} tick={{ fontSize: 10 }} />
+                        <Tooltip
+                          contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px', fontSize: '12px' }}
+                          labelStyle={{ color: 'hsl(var(--foreground))' }}
+                        />
+                        <Bar dataKey="avgLatency" name="Латенси (ms)" radius={[0, 4, 4, 0]}>
+                          {analyticsData.map((_, i) => (
+                            <Cell key={i} fill={`hsl(var(--primary) / ${0.4 + (i % 3) * 0.2})`} />
+                          ))}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    {analyticsData.map(m => (
+                      <div key={m.model} className="p-3 rounded-lg border bg-card/50 space-y-1">
+                        <p className="text-xs font-medium truncate">{m.model}</p>
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-muted-foreground">Всего</span>
+                          <span className="font-mono">{m.total}</span>
+                        </div>
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-emerald-400">✓ OK</span>
+                          <span className="font-mono">{m.success}</span>
+                        </div>
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-destructive">✗ Ошибки</span>
+                          <span className="font-mono">{m.errors}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </AccordionContent>
           </AccordionItem>
         </Accordion>
@@ -240,6 +497,31 @@ function StatusBadge({ status }: { status: string }) {
   return <Badge variant="destructive">Ошибка</Badge>;
 }
 
+function LogRow({ log }: { log: LogEntry }) {
+  const modelShort = log.model_id.replace('proxyapi/', '');
+  const date = new Date(log.created_at);
+  const timeStr = `${date.toLocaleDateString('ru-RU')} ${date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}`;
+  const tokens = (log.tokens_input || log.tokens_output)
+    ? `${log.tokens_input || 0}/${log.tokens_output || 0}`
+    : '—';
+
+  const statusColor = log.status === 'success' ? 'text-emerald-400'
+    : log.status === 'gone' ? 'text-destructive'
+    : log.status === 'timeout' ? 'text-amber-500'
+    : 'text-destructive';
+
+  return (
+    <tr className="border-b border-border/50 hover:bg-card/50">
+      <td className="py-1.5 pr-3 font-medium truncate max-w-[140px]">{modelShort}</td>
+      <td className="py-1.5 pr-3">{log.request_type}</td>
+      <td className={cn("py-1.5 pr-3", statusColor)}>{log.status}</td>
+      <td className="py-1.5 pr-3 text-right font-mono">{log.latency_ms ?? '—'}ms</td>
+      <td className="py-1.5 pr-3 text-right font-mono">{tokens}</td>
+      <td className="py-1.5 text-right text-muted-foreground">{timeStr}</td>
+    </tr>
+  );
+}
+
 function ModelRow({
   model,
   testResult,
@@ -252,7 +534,6 @@ function ModelRow({
   onTest: () => void;
 }) {
   const isDeprecated = model.displayName.includes('⚠️');
-  // Determine the "original" provider for the icon
   const creatorProvider = model.creator.includes('OpenAI') ? 'openai'
     : model.creator.includes('Anthropic') ? 'anthropic'
     : model.creator.includes('Google') ? 'gemini'
@@ -268,7 +549,6 @@ function ModelRow({
       "flex items-center gap-3 p-3 rounded-lg border bg-card/50 hover:bg-card/80 transition-colors",
       isDeprecated && "opacity-60"
     )}>
-      {/* Icon + Name */}
       <div className="flex items-center gap-2 flex-1 min-w-0">
         {Logo && <Logo className={cn("h-4 w-4 flex-shrink-0", color)} />}
         <div className="min-w-0">
@@ -277,7 +557,6 @@ function ModelRow({
         </div>
       </div>
 
-      {/* Strengths */}
       <div className="hidden md:flex items-center gap-1 flex-shrink-0">
         {model.strengths.slice(0, 3).map(s => (
           <Badge key={s} variant="outline" className="text-[10px] px-1.5 py-0">
@@ -286,7 +565,6 @@ function ModelRow({
         ))}
       </div>
 
-      {/* Test result */}
       {testResult && (
         <div className="flex items-center gap-2 flex-shrink-0 text-xs">
           {testResult.status === 'success' ? (
@@ -313,7 +591,6 @@ function ModelRow({
         </div>
       )}
 
-      {/* Test button */}
       <Button
         size="sm"
         variant="ghost"
