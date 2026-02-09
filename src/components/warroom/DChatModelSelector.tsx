@@ -15,9 +15,10 @@ const PROVIDER_LABELS: Record<string, string> = {
   groq: 'Groq (Fast)',
   deepseek: 'DeepSeek',
   mistral: 'Mistral AI',
+  proxyapi: 'ProxyAPI',
 };
 
-const PROVIDER_ORDER = ['lovable', 'openai', 'anthropic', 'gemini', 'xai', 'groq', 'deepseek', 'mistral', 'openrouter'];
+const PROVIDER_ORDER = ['lovable', 'openai', 'anthropic', 'gemini', 'xai', 'groq', 'deepseek', 'mistral', 'proxyapi', 'openrouter'];
 
 interface DChatModelSelectorProps {
   selectedModel: string;
