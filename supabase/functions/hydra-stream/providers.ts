@@ -2,7 +2,7 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { authenticateUser, getUserApiKey } from "./auth.ts";
-import { CORS_HEADERS, SSE_HEADERS } from "./types.ts";
+import { CORS_HEADERS, SSE_HEADERS, wrapStreamWithProviderInfo, type ProviderGateway } from "./types.ts";
 
 /** Universal ProxyAPI endpoint (OpenAI-compatible for all providers) */
 const PROXYAPI_UNIVERSAL_URL = "https://openai.api.proxyapi.ru/v1/chat/completions";
@@ -92,7 +92,7 @@ export async function streamDeepSeek(params: ProviderStreamParams): Promise<Resp
   }
 
   console.log("[hydra-stream] DeepSeek streaming started");
-  return new Response(response.body, { headers: SSE_HEADERS });
+  return new Response(wrapStreamWithProviderInfo(response.body!, 'deepseek'), { headers: SSE_HEADERS });
 }
 
 // ── Mistral ─────────────────────────────────────────────
@@ -136,7 +136,7 @@ export async function streamMistral(params: ProviderStreamParams): Promise<Respo
   }
 
   console.log("[hydra-stream] Mistral streaming started");
-  return new Response(response.body, { headers: SSE_HEADERS });
+  return new Response(wrapStreamWithProviderInfo(response.body!, 'mistral'), { headers: SSE_HEADERS });
 }
 
 // ── Groq ────────────────────────────────────────────────
@@ -180,7 +180,7 @@ export async function streamGroq(params: ProviderStreamParams): Promise<Response
   }
 
   console.log("[hydra-stream] Groq streaming started");
-  return new Response(response.body, { headers: SSE_HEADERS });
+  return new Response(wrapStreamWithProviderInfo(response.body!, 'groq'), { headers: SSE_HEADERS });
 }
 
 // ── Lovable AI (OpenAI, Google, etc.) ───────────────────
@@ -247,10 +247,28 @@ export async function streamLovableAI(params: ProviderStreamParams): Promise<Res
   }
 
   console.log("[hydra-stream] Lovable AI streaming started");
-  return new Response(response.body, { headers: SSE_HEADERS });
+  return new Response(wrapStreamWithProviderInfo(response.body!, 'lovable_ai'), { headers: SSE_HEADERS });
 }
 
-// ── ProxyAPI (direct, separate from OpenRouter) ─────────
+/** Lovable AI with fallback metadata (used when ProxyAPI falls back) */
+async function streamLovableAIWithFallbackInfo(
+  params: ProviderStreamParams,
+  fallbackFrom: ProviderGateway,
+  fallbackReason: string
+): Promise<Response> {
+  const result = await streamLovableAI(params);
+  if (!result.ok || !result.body) return result;
+  
+  // Re-wrap with fallback info
+  return new Response(
+    wrapStreamWithProviderInfo(result.body, 'lovable_ai', { 
+      fallback_from: fallbackFrom, 
+      fallback_reason: fallbackReason 
+    }),
+    { headers: SSE_HEADERS }
+  );
+}
+
 
 const PROXYAPI_MAX_RETRIES = 2;
 const PROXYAPI_RETRY_BASE_MS = 1000;
@@ -330,7 +348,7 @@ export async function streamProxyApi(params: ProviderStreamParams): Promise<Resp
 
       if (response.ok) {
         console.log(`[hydra-stream] ProxyAPI streaming started (attempt ${attempt + 1})`);
-        return new Response(response.body, { headers: SSE_HEADERS });
+        return new Response(wrapStreamWithProviderInfo(response.body!, 'proxyapi'), { headers: SSE_HEADERS });
       }
 
       lastStatus = response.status;
@@ -356,7 +374,7 @@ export async function streamProxyApi(params: ProviderStreamParams): Promise<Resp
       : lastStatus === 0 ? "timeout/network error"
       : `error ${lastStatus}`;
     console.log(`[hydra-stream] ProxyAPI fallback -> Lovable AI: ${model_id} -> ${lovableModelId} (reason: ${reason})`);
-    return streamLovableAI({ ...params, model_id: lovableModelId });
+    return streamLovableAIWithFallbackInfo({ ...params, model_id: lovableModelId }, 'proxyapi', reason);
   }
 
   return new Response(
@@ -439,6 +457,7 @@ export async function streamOpenRouter(params: ProviderStreamParams): Promise<Re
     );
   }
 
+  const gateway: ProviderGateway = useProxyApi ? 'proxyapi' : 'openrouter';
   console.log(`[hydra-stream] OpenRouter streaming started via ${useProxyApi ? "ProxyAPI" : "OpenRouter"}`);
-  return new Response(response.body, { headers: SSE_HEADERS });
+  return new Response(wrapStreamWithProviderInfo(response.body!, gateway), { headers: SSE_HEADERS });
 }

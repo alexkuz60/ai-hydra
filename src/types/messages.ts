@@ -16,6 +16,14 @@ export interface Attachment {
   content?: string;
 }
 
+export type ProviderGateway = 'lovable_ai' | 'proxyapi' | 'openrouter' | 'deepseek' | 'mistral' | 'groq';
+
+export interface ProviderInfo {
+  gateway: ProviderGateway;
+  fallback_from?: ProviderGateway;
+  fallback_reason?: string;
+}
+
 export interface MessageMetadata {
   attachments?: Attachment[];
   rating?: number;
@@ -25,6 +33,8 @@ export interface MessageMetadata {
   // Fallback indicator - when model was rate-limited and used orchestrator
   used_fallback?: boolean;
   fallback_reason?: 'rate_limit' | 'error' | 'unsupported';
+  // Provider gateway tracking
+  provider_info?: ProviderInfo;
   // Supervisor approval proposals
   proposals?: Proposal[];
   // Interactive checklists
