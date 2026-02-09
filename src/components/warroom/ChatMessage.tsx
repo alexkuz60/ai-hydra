@@ -43,7 +43,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Message, MessageMetadata } from '@/types/messages';
+import { Message, MessageMetadata, type ProviderInfo } from '@/types/messages';
+import { ProviderBadge } from './ProviderBadge';
 import { ToolCall, ToolResult } from '@/types/tools';
 import { ROLE_CONFIG, getRoleConfig } from '@/config/roles';
 import { ProposalApprovalBlock } from './ProposalApprovalBlock';
@@ -168,6 +169,7 @@ export function ChatMessage({ message, userDisplayInfo, onDelete, onRatingChange
   const toolResults = metadataObj.tool_results as ToolResult[] | undefined;
   const usedFallback = metadataObj.used_fallback === true;
   const fallbackReason = metadataObj.fallback_reason;
+  const providerInfo = metadataObj.provider_info as ProviderInfo | undefined;
   const proposals = metadataObj.proposals as Proposal[] | undefined;
   const interactiveChecklists = forceInteractiveChecklists || metadataObj.interactive_checklists === true;
   const checklistState = (metadataObj.checklist_state as Record<number, boolean>) || {};
@@ -243,6 +245,10 @@ export function ChatMessage({ message, userDisplayInfo, onDelete, onRatingChange
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
+          )}
+          {/* Provider gateway badge */}
+          {providerInfo && isAiMessage && !usedFallback && (
+            <ProviderBadge providerInfo={providerInfo} />
           )}
         </HydraCardTitle>
         <span className="text-xs text-muted-foreground ml-auto flex items-center gap-2">

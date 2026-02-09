@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { StreamingResponse } from '@/hooks/useStreamingResponses';
 import { ModelNameWithIcon } from '@/components/ui/ModelNameWithIcon';
+import { ProviderBadge } from './ProviderBadge';
 
 interface StreamingMessageCardProps {
   response: StreamingResponse;
@@ -86,6 +87,9 @@ export function StreamingMessageCard({
               <span className="text-xs text-primary animate-pulse">
                 {t('streaming.generating')}
               </span>
+            )}
+            {response.providerInfo && (
+              <ProviderBadge providerInfo={response.providerInfo} />
             )}
           </div>
           

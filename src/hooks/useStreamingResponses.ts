@@ -1,8 +1,10 @@
 import { useState, useCallback, useRef } from 'react';
 import { toast } from 'sonner';
+import type { Json } from '@/integrations/supabase/types';
 import { supabase } from '@/integrations/supabase/client';
 import type { AgentRole } from '@/config/roles';
 import type { PendingResponseState, RequestStartInfo } from '@/types/pending';
+import type { ProviderInfo } from '@/types/messages';
 
 export interface StreamingResponse {
   modelId: string;
@@ -13,6 +15,7 @@ export interface StreamingResponse {
   startTime: number;
   elapsedSeconds: number;
   status: PendingResponseState['status'];
+  providerInfo?: ProviderInfo;
 }
 
 interface UseStreamingResponsesProps {
@@ -335,7 +338,8 @@ export function useStreamingResponses({
       modelId: string,
       modelName: string,
       role: string,
-      content: string
+      content: string,
+      providerInfo?: ProviderInfo
     ) {
       if (!sessionId || !userId || !content.trim()) {
         console.log('[Streaming] Cannot save: missing sessionId, userId, or content');
@@ -343,12 +347,22 @@ export function useStreamingResponses({
       }
 
       try {
+        const metadata: Record<string, unknown> = {};
+        if (providerInfo) {
+          metadata.provider_info = providerInfo;
+          if (providerInfo.fallback_from) {
+            metadata.used_fallback = true;
+            metadata.fallback_reason = 'error';
+          }
+        }
+
         const { error } = await supabase.from('messages').insert({
           session_id: sessionId,
           user_id: userId,
           role: (role === 'assistant' ? 'assistant' : role) as 'user' | 'assistant' | 'critic' | 'arbiter' | 'consultant',
           content: content.trim(),
           model_name: modelName,
+          metadata: Object.keys(metadata).length > 0 ? (metadata as unknown as Json) : null,
         });
 
         if (error) {
@@ -451,6 +465,8 @@ export function useStreamingResponses({
         const decoder = new TextDecoder();
         let buffer = '';
         let accumulatedContent = '';
+        let providerInfo: ProviderInfo | undefined;
+        let currentEventType = '';
 
         while (true) {
           const { done, value } = await reader.read();
@@ -470,7 +486,17 @@ export function useStreamingResponses({
             }
 
             // Skip comments and empty lines
-            if (line.startsWith(':') || line.trim() === '') continue;
+            if (line.startsWith(':')) continue;
+            if (line.trim() === '') {
+              currentEventType = ''; // reset event type on blank line
+              continue;
+            }
+
+            // Track SSE event type
+            if (line.startsWith('event: ')) {
+              currentEventType = line.slice(7).trim();
+              continue;
+            }
 
             // Only process data lines
             if (!line.startsWith('data: ')) continue;
@@ -480,6 +506,24 @@ export function useStreamingResponses({
 
             try {
               const parsed = JSON.parse(jsonStr);
+
+              // Handle custom provider event
+              if (currentEventType === 'provider') {
+                providerInfo = parsed as ProviderInfo;
+                console.log(`[Streaming] Provider info for ${model.modelId}:`, providerInfo);
+                // Update streaming response with provider info
+                setStreamingResponses(prev => {
+                  const updated = new Map(prev);
+                  const existing = updated.get(model.modelId);
+                  if (existing) {
+                    updated.set(model.modelId, { ...existing, providerInfo });
+                  }
+                  return updated;
+                });
+                currentEventType = '';
+                continue;
+              }
+
               const delta = parsed.choices?.[0]?.delta?.content;
               
               if (delta) {
@@ -512,7 +556,8 @@ export function useStreamingResponses({
             updated.set(model.modelId, { 
               ...existing, 
               content: accumulatedContent, 
-              isStreaming: false 
+              isStreaming: false,
+              providerInfo,
             });
           }
           return updated;
@@ -524,7 +569,8 @@ export function useStreamingResponses({
             model.modelId,
             model.modelName,
             model.role,
-            accumulatedContent
+            accumulatedContent,
+            providerInfo
           );
         }
 

@@ -13,6 +13,35 @@ export const SSE_HEADERS = {
   "Connection": "keep-alive",
 };
 
+/** Provider gateway identifiers for client-side tracking */
+export type ProviderGateway = 'lovable_ai' | 'proxyapi' | 'openrouter' | 'deepseek' | 'mistral' | 'groq';
+
+/** Create an SSE stream that prepends provider metadata before the upstream body */
+export function wrapStreamWithProviderInfo(
+  upstreamBody: ReadableStream<Uint8Array>,
+  gateway: ProviderGateway,
+  options?: { fallback_from?: ProviderGateway; fallback_reason?: string }
+): ReadableStream<Uint8Array> {
+  const encoder = new TextEncoder();
+  const metaEvent = `event: provider\ndata: ${JSON.stringify({ gateway, ...options })}\n\n`;
+
+  return new ReadableStream({
+    async start(controller) {
+      controller.enqueue(encoder.encode(metaEvent));
+      const reader = upstreamBody.getReader();
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          controller.enqueue(value);
+        }
+      } finally {
+        controller.close();
+      }
+    },
+  });
+}
+
 export interface MemoryChunk {
   content: string;
   chunk_type: string;
