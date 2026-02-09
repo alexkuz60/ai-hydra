@@ -4,23 +4,26 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { authenticateUser, getUserApiKey } from "./auth.ts";
 import { CORS_HEADERS, SSE_HEADERS } from "./types.ts";
 
-/** Map proxyapi/ prefixed model IDs to real model IDs for the ProxyAPI gateway */
+/** Universal ProxyAPI endpoint (OpenAI-compatible for all providers) */
+const PROXYAPI_UNIVERSAL_URL = "https://openai.api.proxyapi.ru/v1/chat/completions";
+
+/** Map proxyapi/ prefixed model IDs to universal OpenAI-compatible model IDs with provider prefix */
 const PROXYAPI_MODEL_MAP: Record<string, string> = {
-  "proxyapi/gpt-4o": "gpt-4o",
-  "proxyapi/gpt-4o-mini": "gpt-4o-mini",
-  "proxyapi/o3-mini": "o3-mini",
-  "proxyapi/gpt-5": "gpt-5",
-  "proxyapi/gpt-5-mini": "gpt-5-mini",
-  "proxyapi/gpt-5.2": "gpt-5.2",
-  "proxyapi/claude-3-5-sonnet": "claude-3-5-sonnet-20241022",
-  "proxyapi/claude-3-5-haiku": "claude-3-5-haiku-20241022",
-  "proxyapi/gemini-2.0-flash": "gemini-2.0-flash",
-  "proxyapi/gemini-3-flash-preview": "gemini-3-flash-preview",
-  "proxyapi/gemini-3-pro-preview": "gemini-3-pro-preview",
-  "proxyapi/gemini-2.5-pro": "gemini-2.5-pro",
-  "proxyapi/gemini-2.5-flash": "gemini-2.5-flash",
-  "proxyapi/deepseek-chat": "deepseek-chat",
-  "proxyapi/deepseek-reasoner": "deepseek-reasoner",
+  "proxyapi/gpt-4o": "openai/gpt-4o",
+  "proxyapi/gpt-4o-mini": "openai/gpt-4o-mini",
+  "proxyapi/o3-mini": "openai/o3-mini",
+  "proxyapi/gpt-5": "openai/gpt-5",
+  "proxyapi/gpt-5-mini": "openai/gpt-5-mini",
+  "proxyapi/gpt-5.2": "openai/gpt-5.2",
+  "proxyapi/claude-3-5-sonnet": "anthropic/claude-3-5-sonnet-20241022",
+  "proxyapi/claude-3-5-haiku": "anthropic/claude-3-5-haiku-20241022",
+  "proxyapi/gemini-2.0-flash": "gemini/gemini-2.0-flash",
+  "proxyapi/gemini-3-flash-preview": "gemini/gemini-3-flash-preview",
+  "proxyapi/gemini-3-pro-preview": "gemini/gemini-3-pro-preview",
+  "proxyapi/gemini-2.5-pro": "gemini/gemini-2.5-pro",
+  "proxyapi/gemini-2.5-flash": "gemini/gemini-2.5-flash",
+  "proxyapi/deepseek-chat": "deepseek/deepseek-chat",
+  "proxyapi/deepseek-reasoner": "deepseek/deepseek-reasoner",
 };
 
 /** Map proxyapi/ model IDs to Lovable AI equivalents for 404 fallback */
@@ -254,69 +257,13 @@ export async function streamProxyApi(params: ProviderStreamParams): Promise<Resp
   const keyResult = await getUserApiKey(auth.supabase, "proxyapi_api_key", "ProxyAPI");
   if ("response" in keyResult) return keyResult.response;
 
+  // Map to universal OpenAI-compatible model ID with provider prefix
   const realModel = PROXYAPI_MODEL_MAP[model_id] || model_id.replace("proxyapi/", "");
+  const isReasoning = realModel.endsWith("deepseek-reasoner") || realModel.endsWith("o3-mini");
 
-  // Route Claude models to Anthropic endpoint, others to OpenAI-compatible endpoint
-  const isClaude = realModel.startsWith("claude");
-  const isGemini = realModel.startsWith("gemini");
+  console.log(`[hydra-stream] ProxyAPI streaming (universal): model=${realModel}`);
 
-  let baseUrl: string;
-  if (isClaude) {
-    baseUrl = "https://api.proxyapi.ru/anthropic/v1/messages";
-  } else if (isGemini) {
-    baseUrl = "https://api.proxyapi.ru/google/v1/chat/completions";
-  } else {
-    baseUrl = "https://api.proxyapi.ru/openai/v1/chat/completions";
-  }
-
-  console.log(`[hydra-stream] ProxyAPI streaming: model=${realModel}, endpoint=${isClaude ? "anthropic" : isGemini ? "google" : "openai"}`);
-
-  if (isClaude) {
-    // Anthropic format
-    const response = await fetch(baseUrl, {
-      method: "POST",
-      headers: {
-        "x-api-key": keyResult.key,
-        "Content-Type": "application/json",
-        "anthropic-version": "2023-06-01",
-      },
-      body: JSON.stringify({
-        model: realModel,
-        system: systemPrompt,
-        messages: [{ role: "user", content: message }],
-        stream: true,
-        temperature,
-        max_tokens,
-      }),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("[hydra-stream] ProxyAPI/Anthropic error:", response.status, errorText);
-
-      // Fallback to Lovable AI if ProxyAPI returns 404
-      if (response.status === 404) {
-        const lovableModelId = PROXYAPI_TO_LOVABLE_MAP[model_id];
-        if (lovableModelId) {
-          console.log(`[hydra-stream] ProxyAPI/Anthropic 404 fallback: ${model_id} -> ${lovableModelId}`);
-          return streamLovableAI({ ...params, model_id: lovableModelId });
-        }
-      }
-
-      return new Response(
-        JSON.stringify({ error: `ProxyAPI error: ${errorText}` }),
-        { status: 500, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } }
-      );
-    }
-
-    console.log("[hydra-stream] ProxyAPI/Anthropic streaming started");
-    return new Response(response.body, { headers: SSE_HEADERS });
-  }
-
-  // OpenAI-compatible format (OpenAI, Google, DeepSeek via ProxyAPI)
-  const isReasoning = realModel === "deepseek-reasoner" || realModel === "o1-mini";
-
-  const response = await fetch(baseUrl, {
+  const response = await fetch(PROXYAPI_UNIVERSAL_URL, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${keyResult.key}`,
@@ -393,7 +340,7 @@ export async function streamOpenRouter(params: ProviderStreamParams): Promise<Re
   }
 
   const baseUrl = useProxyApi
-    ? "https://api.proxyapi.ru/openai/v1/chat/completions"
+    ? "https://openai.api.proxyapi.ru/v1/chat/completions"
     : "https://openrouter.ai/api/v1/chat/completions";
 
   const extraHeaders: Record<string, string> = useProxyApi

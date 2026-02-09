@@ -597,7 +597,7 @@ async function callPersonalModel(
     // Determine if we should use ProxyAPI instead of OpenRouter
     const isProxyApi = useProxyApi && proxyapiKey;
     const baseUrl = isProxyApi
-      ? "https://api.proxyapi.ru/openai/v1/chat/completions"
+      ? "https://openai.api.proxyapi.ru/v1/chat/completions"
       : "https://openrouter.ai/api/v1/chat/completions";
     const effectiveKey = isProxyApi ? proxyapiKey : apiKey;
     const extraHeaders: Record<string, string> = isProxyApi
@@ -782,93 +782,46 @@ async function callPersonalModel(
     };
   }
 
-  // ProxyAPI (Russian gateway — routes to OpenAI/Anthropic/Google endpoints)
+  // ProxyAPI (Russian gateway — universal OpenAI-compatible endpoint)
   if (provider === "proxyapi") {
     const PROXYAPI_MODEL_MAP: Record<string, string> = {
-      "proxyapi/gpt-4o": "gpt-4o",
-      "proxyapi/gpt-4o-mini": "gpt-4o-mini",
-      "proxyapi/o3-mini": "o3-mini",
-      "proxyapi/gpt-5": "gpt-5",
-      "proxyapi/gpt-5-mini": "gpt-5-mini",
-      "proxyapi/gpt-5.2": "gpt-5.2",
-      "proxyapi/claude-3-5-sonnet": "claude-3-5-sonnet-20241022",
-      "proxyapi/claude-3-5-haiku": "claude-3-5-haiku-20241022",
-      "proxyapi/gemini-2.0-flash": "gemini-2.0-flash",
-      "proxyapi/gemini-3-flash-preview": "gemini-3-flash-preview",
-      "proxyapi/gemini-3-pro-preview": "gemini-3-pro-preview",
-      "proxyapi/gemini-2.5-pro": "gemini-2.5-pro",
-      "proxyapi/gemini-2.5-flash": "gemini-2.5-flash",
-      "proxyapi/deepseek-chat": "deepseek-chat",
-      "proxyapi/deepseek-reasoner": "deepseek-reasoner",
+      "proxyapi/gpt-4o": "openai/gpt-4o",
+      "proxyapi/gpt-4o-mini": "openai/gpt-4o-mini",
+      "proxyapi/o3-mini": "openai/o3-mini",
+      "proxyapi/gpt-5": "openai/gpt-5",
+      "proxyapi/gpt-5-mini": "openai/gpt-5-mini",
+      "proxyapi/gpt-5.2": "openai/gpt-5.2",
+      "proxyapi/claude-3-5-sonnet": "anthropic/claude-3-5-sonnet-20241022",
+      "proxyapi/claude-3-5-haiku": "anthropic/claude-3-5-haiku-20241022",
+      "proxyapi/gemini-2.0-flash": "gemini/gemini-2.0-flash",
+      "proxyapi/gemini-3-flash-preview": "gemini/gemini-3-flash-preview",
+      "proxyapi/gemini-3-pro-preview": "gemini/gemini-3-pro-preview",
+      "proxyapi/gemini-2.5-pro": "gemini/gemini-2.5-pro",
+      "proxyapi/gemini-2.5-flash": "gemini/gemini-2.5-flash",
+      "proxyapi/deepseek-chat": "deepseek/deepseek-chat",
+      "proxyapi/deepseek-reasoner": "deepseek/deepseek-reasoner",
+    };
+
+    const PROXYAPI_TO_LOVABLE: Record<string, string> = {
+      "proxyapi/gemini-3-pro-preview": "google/gemini-3-pro-preview",
+      "proxyapi/gemini-3-flash-preview": "google/gemini-3-flash-preview",
+      "proxyapi/gemini-2.5-pro": "google/gemini-2.5-pro",
+      "proxyapi/gemini-2.5-flash": "google/gemini-2.5-flash",
+      "proxyapi/gpt-5": "openai/gpt-5",
+      "proxyapi/gpt-5-mini": "openai/gpt-5-mini",
+      "proxyapi/gpt-5.2": "openai/gpt-5.2",
     };
 
     const realModel = PROXYAPI_MODEL_MAP[model] || model.replace("proxyapi/", "");
-    const isClaude = realModel.startsWith("claude");
-    const isGemini = realModel.startsWith("gemini");
-    const isReasoning = realModel === "deepseek-reasoner" || realModel === "o3-mini";
+    const isReasoning = realModel.endsWith("deepseek-reasoner") || realModel.endsWith("o3-mini");
 
     const userContent = imageAttachments.length > 0
       ? buildMultimodalContent(message, attachments)
       : message;
 
-    if (isClaude) {
-      // Anthropic format via ProxyAPI
-      const response = await fetch("https://api.proxyapi.ru/anthropic/v1/messages", {
-        method: "POST",
-        headers: {
-          "x-api-key": apiKey,
-          "Content-Type": "application/json",
-          "anthropic-version": "2023-06-01",
-        },
-        body: JSON.stringify({
-          model: realModel,
-          system: systemPrompt,
-          messages: [{ role: "user", content: userContent }],
-          temperature,
-          max_tokens: maxTokens,
-        }),
-      });
+    console.log(`[hydra-orchestrator] ProxyAPI (universal): model=${realModel}`);
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error("[hydra-orchestrator] ProxyAPI/Anthropic error:", response.status, errorText);
-        if (response.status === 404) {
-          const PROXYAPI_TO_LOVABLE: Record<string, string> = {
-            "proxyapi/gemini-3-pro-preview": "google/gemini-3-pro-preview",
-            "proxyapi/gemini-3-flash-preview": "google/gemini-3-flash-preview",
-            "proxyapi/gemini-2.5-pro": "google/gemini-2.5-pro",
-            "proxyapi/gemini-2.5-flash": "google/gemini-2.5-flash",
-            "proxyapi/gpt-5": "openai/gpt-5",
-            "proxyapi/gpt-5-mini": "openai/gpt-5-mini",
-            "proxyapi/gpt-5.2": "openai/gpt-5.2",
-          };
-          const lovableModelId = PROXYAPI_TO_LOVABLE[model];
-          if (lovableModelId) {
-            console.log(`[hydra-orchestrator] ProxyAPI/Anthropic 404 fallback: ${model} -> ${lovableModelId}`);
-            throw { proxyapiFallback: true, lovableModelId };
-          }
-        }
-        throw new Error(`ProxyAPI/Anthropic error: ${errorText}`);
-      }
-      const data = await response.json();
-      return {
-        model,
-        provider: "proxyapi",
-        content: data.content?.[0]?.text || "",
-        usage: data.usage ? {
-          prompt_tokens: data.usage.input_tokens || 0,
-          completion_tokens: data.usage.output_tokens || 0,
-          total_tokens: (data.usage.input_tokens || 0) + (data.usage.output_tokens || 0),
-        } : null,
-      };
-    }
-
-    // OpenAI-compatible format (OpenAI, Google, DeepSeek via ProxyAPI)
-    const baseUrl = isGemini
-      ? "https://api.proxyapi.ru/google/v1/chat/completions"
-      : "https://api.proxyapi.ru/openai/v1/chat/completions";
-
-    const response = await fetch(baseUrl, {
+    const response = await fetch("https://openai.api.proxyapi.ru/v1/chat/completions", {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${apiKey}`,
@@ -889,15 +842,6 @@ async function callPersonalModel(
       const errorText = await response.text();
       console.error("[hydra-orchestrator] ProxyAPI error:", response.status, errorText);
       if (response.status === 404) {
-        const PROXYAPI_TO_LOVABLE: Record<string, string> = {
-          "proxyapi/gemini-3-pro-preview": "google/gemini-3-pro-preview",
-          "proxyapi/gemini-3-flash-preview": "google/gemini-3-flash-preview",
-          "proxyapi/gemini-2.5-pro": "google/gemini-2.5-pro",
-          "proxyapi/gemini-2.5-flash": "google/gemini-2.5-flash",
-          "proxyapi/gpt-5": "openai/gpt-5",
-          "proxyapi/gpt-5-mini": "openai/gpt-5-mini",
-          "proxyapi/gpt-5.2": "openai/gpt-5.2",
-        };
         const lovableModelId = PROXYAPI_TO_LOVABLE[model];
         if (lovableModelId) {
           console.log(`[hydra-orchestrator] ProxyAPI 404 fallback: ${model} -> ${lovableModelId}`);
