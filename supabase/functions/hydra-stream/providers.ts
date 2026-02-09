@@ -285,7 +285,7 @@ export async function streamProxyApi(params: ProviderStreamParams): Promise<Resp
         { role: "user", content: message },
       ],
       stream: true,
-      temperature: isReasoning ? undefined : temperature,
+      temperature: (isReasoning || isOpenAIModel) ? undefined : temperature,
       ...tokenParam,
     }),
   });
