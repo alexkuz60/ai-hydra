@@ -135,7 +135,13 @@ export function ModelListSidebar({ selectedModelId, onSelect, contestModels = {}
   const { language } = useLanguage();
   const { allModels, loading, isLovableAvailable, availablePersonalIds } = useAllModels();
   const [search, setSearch] = useState('');
-  const [availFilter, setAvailFilter] = useState<'all' | 'available' | 'unavailable'>('all');
+  const [availFilter, setAvailFilter] = useState<'all' | 'available' | 'unavailable'>(() => {
+    try { const v = localStorage.getItem('portfolio-avail-filter'); return (v === 'available' || v === 'unavailable') ? v : 'all'; } catch { return 'all'; }
+  });
+  const handleAvailFilterChange = (v: 'all' | 'available' | 'unavailable') => {
+    setAvailFilter(v);
+    try { localStorage.setItem('portfolio-avail-filter', v); } catch {}
+  };
   const [allExpanded, setAllExpanded] = useState<boolean>(() => {
     try { const v = localStorage.getItem('portfolio-all-expanded'); return v !== null ? v === 'true' : true; } catch { return true; }
   });
@@ -235,7 +241,7 @@ export function ModelListSidebar({ selectedModelId, onSelect, contestModels = {}
             {(['all', 'available', 'unavailable'] as const).map(f => (
               <button
                 key={f}
-                onClick={() => setAvailFilter(f)}
+                onClick={() => handleAvailFilterChange(f)}
                 className={cn(
                   "flex-1 text-[11px] py-1 px-1.5 rounded-md transition-colors",
                   availFilter === f
