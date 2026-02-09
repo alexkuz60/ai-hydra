@@ -237,7 +237,7 @@ export function ChatMessage({ message, userDisplayInfo, onDelete, onRatingChange
                     {fallbackReason === 'rate_limit' 
                       ? 'Модель переключена на альтернативный режим из-за превышения лимита запросов'
                       : fallbackReason === 'unsupported'
-                      ? 'Модель не поддерживает стриминг, использован стандартный режим'
+                      ? 'Модель недоступна у ProxyAPI — ответ получен через Lovable AI'
                       : 'Модель использовала резервный режим обработки'}
                   </p>
                 </TooltipContent>
