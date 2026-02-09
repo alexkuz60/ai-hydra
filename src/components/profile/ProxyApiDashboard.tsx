@@ -529,7 +529,7 @@ export function ProxyApiDashboard({ hasKey, proxyapiPriority, onPriorityChange, 
                     value={catalogSearch}
                     onChange={e => setCatalogSearch(e.target.value)}
                     placeholder={catalogLoading ? 'Загрузка каталога...' : `Поиск среди ${proxyCatalog.length} моделей ProxyAPI...`}
-                    className="pl-9"
+                    className="pl-9 focus-visible:ring-offset-0"
                     disabled={catalogLoading}
                   />
                   {catalogLoading && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />}
@@ -802,8 +802,10 @@ export function ProxyApiDashboard({ hasKey, proxyapiPriority, onPriorityChange, 
                         <XAxis type="number" tick={{ fontSize: 10 }} />
                         <YAxis type="category" dataKey="model" width={120} tick={{ fontSize: 10 }} />
                         <RechartsTooltip
+                          cursor={{ fill: 'hsl(var(--muted) / 0.3)' }}
                           contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px', fontSize: '12px' }}
                           labelStyle={{ color: 'hsl(var(--foreground))' }}
+                          itemStyle={{ color: 'hsl(var(--foreground))' }}
                         />
                         <Bar dataKey="avgLatency" name="Латенси (ms)" radius={[0, 4, 4, 0]}>
                           {analyticsData.map((_, i) => (
