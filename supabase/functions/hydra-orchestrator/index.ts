@@ -782,6 +782,101 @@ async function callPersonalModel(
     };
   }
 
+  // ProxyAPI (Russian gateway — routes to OpenAI/Anthropic/Google endpoints)
+  if (provider === "proxyapi") {
+    const PROXYAPI_MODEL_MAP: Record<string, string> = {
+      "proxyapi/gpt-4o": "gpt-4o",
+      "proxyapi/gpt-4o-mini": "gpt-4o-mini",
+      "proxyapi/o3-mini": "o3-mini",
+      "proxyapi/gpt-5": "gpt-5",
+      "proxyapi/gpt-5-mini": "gpt-5-mini",
+      "proxyapi/gpt-5.2": "gpt-5.2",
+      "proxyapi/claude-3-5-sonnet": "claude-3-5-sonnet-20241022",
+      "proxyapi/claude-3-5-haiku": "claude-3-5-haiku-20241022",
+      "proxyapi/gemini-2.0-flash": "gemini-2.0-flash",
+      "proxyapi/gemini-3-flash-preview": "gemini-3-flash-preview",
+      "proxyapi/gemini-3-pro-preview": "gemini-3-pro-preview",
+      "proxyapi/gemini-2.5-pro": "gemini-2.5-pro",
+      "proxyapi/gemini-2.5-flash": "gemini-2.5-flash",
+      "proxyapi/deepseek-chat": "deepseek-chat",
+      "proxyapi/deepseek-reasoner": "deepseek-reasoner",
+    };
+
+    const realModel = PROXYAPI_MODEL_MAP[model] || model.replace("proxyapi/", "");
+    const isClaude = realModel.startsWith("claude");
+    const isGemini = realModel.startsWith("gemini");
+    const isReasoning = realModel === "deepseek-reasoner" || realModel === "o3-mini";
+
+    const userContent = imageAttachments.length > 0
+      ? buildMultimodalContent(message, attachments)
+      : message;
+
+    if (isClaude) {
+      // Anthropic format via ProxyAPI
+      const response = await fetch("https://api.proxyapi.ru/anthropic/v1/messages", {
+        method: "POST",
+        headers: {
+          "x-api-key": apiKey,
+          "Content-Type": "application/json",
+          "anthropic-version": "2023-06-01",
+        },
+        body: JSON.stringify({
+          model: realModel,
+          system: systemPrompt,
+          messages: [{ role: "user", content: userContent }],
+          temperature,
+          max_tokens: maxTokens,
+        }),
+      });
+
+      if (!response.ok) throw new Error(`ProxyAPI/Anthropic error: ${await response.text()}`);
+      const data = await response.json();
+      return {
+        model,
+        provider: "proxyapi",
+        content: data.content?.[0]?.text || "",
+        usage: data.usage ? {
+          prompt_tokens: data.usage.input_tokens || 0,
+          completion_tokens: data.usage.output_tokens || 0,
+          total_tokens: (data.usage.input_tokens || 0) + (data.usage.output_tokens || 0),
+        } : null,
+      };
+    }
+
+    // OpenAI-compatible format (OpenAI, Google, DeepSeek via ProxyAPI)
+    const baseUrl = isGemini
+      ? "https://api.proxyapi.ru/google/v1/chat/completions"
+      : "https://api.proxyapi.ru/openai/v1/chat/completions";
+
+    const response = await fetch(baseUrl, {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: realModel,
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userContent },
+        ],
+        temperature: isReasoning ? undefined : temperature,
+        max_tokens: maxTokens,
+      }),
+    });
+
+    if (!response.ok) throw new Error(`ProxyAPI error: ${await response.text()}`);
+    const data = await response.json();
+    const messageResponse = data.choices?.[0]?.message;
+    return {
+      model,
+      provider: "proxyapi",
+      content: messageResponse?.content || "",
+      reasoning: messageResponse?.reasoning_content || null,
+      usage: data.usage || null,
+    };
+  }
+
   throw new Error(`Unknown provider: ${provider}`);
 }
 
@@ -1020,6 +1115,7 @@ serve(async (req) => {
           if (modelReq.provider === "groq") apiKey = (apiKeys as { groq_api_key?: string | null })?.groq_api_key ?? null;
           if (modelReq.provider === "deepseek") apiKey = (apiKeys as { deepseek_api_key?: string | null })?.deepseek_api_key ?? null;
           if (modelReq.provider === "mistral") apiKey = (apiKeys as { mistral_api_key?: string | null })?.mistral_api_key ?? null;
+          if (modelReq.provider === "proxyapi") apiKey = (apiKeys as { proxyapi_api_key?: string | null })?.proxyapi_api_key ?? null;
 
           if (!apiKey) {
             throw new Error(`No API key configured for ${modelReq.provider}`);
