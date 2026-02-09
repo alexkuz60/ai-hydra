@@ -33,6 +33,7 @@ const PROVIDER_LABELS: Record<string, string> = {
   groq: 'Groq (Fast)',
   deepseek: 'DeepSeek',
   mistral: 'Mistral AI',
+  proxyapi: 'ProxyAPI',
 };
 
 interface GroupedModels {
@@ -64,7 +65,7 @@ export function ModelSelector({ value, onChange, className }: ModelSelectorProps
     });
     
     // Add in specific order
-    ['openai', 'anthropic', 'gemini', 'xai', 'groq', 'deepseek', 'mistral', 'openrouter'].forEach(provider => {
+    ['openai', 'anthropic', 'gemini', 'xai', 'groq', 'deepseek', 'mistral', 'proxyapi', 'openrouter'].forEach(provider => {
       const models = providerMap.get(provider);
       if (models && models.length > 0) {
         groups.push({ provider, models });

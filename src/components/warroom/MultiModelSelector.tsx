@@ -38,10 +38,11 @@ const PROVIDER_LABELS: Record<string, string> = {
   xai: 'xAI (Grok)',
   deepseek: 'DeepSeek',
   mistral: 'Mistral AI',
+  proxyapi: 'ProxyAPI',
 };
 
 // Order of provider subgroups
-const PROVIDER_ORDER = ['openai', 'anthropic', 'gemini', 'xai', 'deepseek', 'mistral'];
+const PROVIDER_ORDER = ['openai', 'anthropic', 'gemini', 'xai', 'deepseek', 'mistral', 'proxyapi'];
 
 interface ProviderGroup {
   provider: string;
