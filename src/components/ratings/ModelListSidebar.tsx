@@ -50,6 +50,7 @@ const PROVIDER_LABELS: Record<string, { ru: string; en: string }> = {
   groq: { ru: 'Groq', en: 'Groq' },
   deepseek: { ru: 'DeepSeek', en: 'DeepSeek' },
   mistral: { ru: 'Mistral AI', en: 'Mistral AI' },
+  proxyapi: { ru: 'ProxyAPI 🇷🇺', en: 'ProxyAPI 🇷🇺' },
 };
 
 // ── Sub-components ──
