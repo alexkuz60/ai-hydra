@@ -357,6 +357,54 @@ export type Database = {
         }
         Relationships: []
       }
+      proxy_api_logs: {
+        Row: {
+          created_at: string
+          error_message: string | null
+          fallback_provider: string | null
+          id: string
+          latency_ms: number | null
+          metadata: Json | null
+          model_id: string
+          provider: string
+          request_type: string
+          status: string
+          tokens_input: number | null
+          tokens_output: number | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          error_message?: string | null
+          fallback_provider?: string | null
+          id?: string
+          latency_ms?: number | null
+          metadata?: Json | null
+          model_id: string
+          provider?: string
+          request_type?: string
+          status?: string
+          tokens_input?: number | null
+          tokens_output?: number | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          error_message?: string | null
+          fallback_provider?: string | null
+          id?: string
+          latency_ms?: number | null
+          metadata?: Json | null
+          model_id?: string
+          provider?: string
+          request_type?: string
+          status?: string
+          tokens_input?: number | null
+          tokens_output?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       role_behaviors: {
         Row: {
           communication: Json

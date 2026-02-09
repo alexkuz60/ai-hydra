@@ -13,11 +13,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { User, Key, Settings, Loader2, Check, Moon, Sun, Globe, Shield, BarChart3, Search, AlertTriangle, Type } from 'lucide-react';
+import { User, Key, Settings, Loader2, Check, Moon, Sun, Globe, Shield, BarChart3, Search, AlertTriangle, Type, Gauge } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { Link } from 'react-router-dom';
+import { cn } from '@/lib/utils';
 import { UsageStats } from '@/components/profile/UsageStats';
 import { ApiKeyField, type KeyMetadata } from '@/components/profile/ApiKeyField';
+import { ProxyApiDashboard } from '@/components/profile/ProxyApiDashboard';
 
 interface Profile {
   id: string;
@@ -274,7 +276,7 @@ export default function Profile() {
         </div>
 
         <Tabs defaultValue="profile" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 max-w-lg">
+          <TabsList className={cn("grid w-full max-w-lg", language === 'ru' ? "grid-cols-5" : "grid-cols-4")}>
             <TabsTrigger value="profile" className="flex items-center gap-2">
               <User className="h-4 w-4" />
               <span className="hidden sm:inline">{t('nav.profile')}</span>
@@ -287,6 +289,12 @@ export default function Profile() {
               <Key className="h-4 w-4" />
               <span className="hidden sm:inline">{t('profile.apiKeys')}</span>
             </TabsTrigger>
+            {language === 'ru' && (
+              <TabsTrigger value="proxyapi" className="flex items-center gap-2">
+                <Gauge className="h-4 w-4" />
+                <span className="hidden sm:inline">ProxyAPI</span>
+              </TabsTrigger>
+            )}
             <TabsTrigger value="stats" className="flex items-center gap-2">
               <BarChart3 className="h-4 w-4" />
               <span className="hidden sm:inline">{t('profile.stats')}</span>
@@ -554,6 +562,12 @@ export default function Profile() {
               </HydraCardContent>
             </HydraCard>
           </TabsContent>
+
+          {language === 'ru' && (
+            <TabsContent value="proxyapi">
+              <ProxyApiDashboard hasKey={!!apiKeys['proxyapi']} />
+            </TabsContent>
+          )}
 
           <TabsContent value="stats">
             <UsageStats />
