@@ -829,7 +829,27 @@ async function callPersonalModel(
         }),
       });
 
-      if (!response.ok) throw new Error(`ProxyAPI/Anthropic error: ${await response.text()}`);
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("[hydra-orchestrator] ProxyAPI/Anthropic error:", response.status, errorText);
+        if (response.status === 404) {
+          const PROXYAPI_TO_LOVABLE: Record<string, string> = {
+            "proxyapi/gemini-3-pro-preview": "google/gemini-3-pro-preview",
+            "proxyapi/gemini-3-flash-preview": "google/gemini-3-flash-preview",
+            "proxyapi/gemini-2.5-pro": "google/gemini-2.5-pro",
+            "proxyapi/gemini-2.5-flash": "google/gemini-2.5-flash",
+            "proxyapi/gpt-5": "openai/gpt-5",
+            "proxyapi/gpt-5-mini": "openai/gpt-5-mini",
+            "proxyapi/gpt-5.2": "openai/gpt-5.2",
+          };
+          const lovableModelId = PROXYAPI_TO_LOVABLE[model];
+          if (lovableModelId) {
+            console.log(`[hydra-orchestrator] ProxyAPI/Anthropic 404 fallback: ${model} -> ${lovableModelId}`);
+            throw { proxyapiFallback: true, lovableModelId };
+          }
+        }
+        throw new Error(`ProxyAPI/Anthropic error: ${errorText}`);
+      }
       const data = await response.json();
       return {
         model,
@@ -865,7 +885,27 @@ async function callPersonalModel(
       }),
     });
 
-    if (!response.ok) throw new Error(`ProxyAPI error: ${await response.text()}`);
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("[hydra-orchestrator] ProxyAPI error:", response.status, errorText);
+      if (response.status === 404) {
+        const PROXYAPI_TO_LOVABLE: Record<string, string> = {
+          "proxyapi/gemini-3-pro-preview": "google/gemini-3-pro-preview",
+          "proxyapi/gemini-3-flash-preview": "google/gemini-3-flash-preview",
+          "proxyapi/gemini-2.5-pro": "google/gemini-2.5-pro",
+          "proxyapi/gemini-2.5-flash": "google/gemini-2.5-flash",
+          "proxyapi/gpt-5": "openai/gpt-5",
+          "proxyapi/gpt-5-mini": "openai/gpt-5-mini",
+          "proxyapi/gpt-5.2": "openai/gpt-5.2",
+        };
+        const lovableModelId = PROXYAPI_TO_LOVABLE[model];
+        if (lovableModelId) {
+          console.log(`[hydra-orchestrator] ProxyAPI 404 fallback: ${model} -> ${lovableModelId}`);
+          throw { proxyapiFallback: true, lovableModelId };
+        }
+      }
+      throw new Error(`ProxyAPI error: ${errorText}`);
+    }
     const data = await response.json();
     const messageResponse = data.choices?.[0]?.message;
     return {
@@ -1131,6 +1171,33 @@ serve(async (req) => {
           fallback_metadata: modelReq.fallback_metadata,
         };
       } catch (error: unknown) {
+        // Handle ProxyAPI 404 fallback to Lovable AI
+        if (error && typeof error === 'object' && 'proxyapiFallback' in error) {
+          const fallbackError = error as { proxyapiFallback: boolean; lovableModelId: string };
+          if (lovableKey && isAdmin) {
+            try {
+              console.log(`[hydra-orchestrator] Executing Lovable AI fallback for ${modelReq.model_id} -> ${fallbackError.lovableModelId}`);
+              const enableTools = modelReq.enable_tools !== false;
+              const enabledTools = modelReq.enabled_tools;
+              const modelCustomTools: CustomToolDefinition[] = [];
+              if (modelReq.enabled_custom_tools) {
+                for (const ctId of modelReq.enabled_custom_tools) {
+                  const ct = customToolsMap.get(ctId);
+                  if (ct) modelCustomTools.push(ct);
+                }
+              }
+              result = await callLovableAI(lovableKey, fallbackError.lovableModelId, enhancedMessage, images, systemPrompt, temperature, maxTokens, enableTools, enabledTools, modelCustomTools);
+              console.log(`[hydra-orchestrator] Lovable AI fallback success for ${fallbackError.lovableModelId}`);
+              return { ...result, role, fallback_metadata: { used_fallback: true, fallback_reason: 'unsupported' as const } };
+            } catch (fallbackErr) {
+              const fbMsg = fallbackErr instanceof Error ? fallbackErr.message : "Lovable AI fallback failed";
+              console.error(`[hydra-orchestrator] Lovable AI fallback failed:`, fbMsg);
+              return { error: true, model: modelReq.model_id, message: `ProxyAPI 404 + fallback failed: ${fbMsg}` };
+            }
+          }
+          return { error: true, model: modelReq.model_id, message: `Model not available on ProxyAPI and Lovable AI fallback not configured` };
+        }
+
         const errorMessage = error instanceof Error ? error.message : (error as { message?: string })?.message || "Unknown error";
         console.error(`Error for model ${modelReq.model_id}:`, errorMessage);
         return { error: true, model: modelReq.model_id, message: errorMessage };
