@@ -49,8 +49,13 @@ export const GROQ_MODELS = [
   "gemma2-9b-it",
 ];
 const LOVABLE_PREFIXES = ["openai/", "google/"];
+
+export function isProxyApiModel(modelId: string): boolean {
+  return modelId.startsWith("proxyapi/");
+}
+
 export function isOpenRouterModel(modelId: string): boolean {
-  return modelId.includes("/") && !LOVABLE_PREFIXES.some((p) => modelId.startsWith(p));
+  return modelId.includes("/") && !LOVABLE_PREFIXES.some((p) => modelId.startsWith(p)) && !isProxyApiModel(modelId);
 }
 
 // Default prompts by role
