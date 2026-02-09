@@ -188,7 +188,7 @@ export function useStreamingResponses({
             attachments: [],
             models: [{
               model_id: model.modelId,
-              use_lovable_ai: !model.modelId.startsWith('openrouter/'),
+              use_lovable_ai: !model.modelId.startsWith('openrouter/') && !model.modelId.startsWith('proxyapi/'),
               provider: model.modelId.split('/')[0],
               temperature: settings.temperature ?? 0.7,
               max_tokens: settings.maxTokens ?? 4096,
