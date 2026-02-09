@@ -172,6 +172,23 @@ Deno.serve(async (req) => {
           }), {
             headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
           });
+        } else if (resp.status === 410) {
+          await supabase.from("proxy_api_logs").insert({
+            user_id: user.id,
+            model_id,
+            provider: "proxyapi",
+            request_type: "test",
+            status: "gone",
+            latency_ms: latency,
+            error_message: "HTTP 410 Gone — model permanently removed",
+          });
+          return new Response(JSON.stringify({
+            status: "gone",
+            latency_ms: latency,
+            error: "Model permanently removed from ProxyAPI",
+          }), {
+            headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
+          });
         } else {
           const errText = await resp.text();
           await supabase.from("proxy_api_logs").insert({
