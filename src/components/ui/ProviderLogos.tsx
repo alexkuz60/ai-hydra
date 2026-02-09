@@ -122,6 +122,16 @@ export function MistralLogo({ className }: { className?: string }) {
   );
 }
 
+export function ProxyApiLogo({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="1" y="1" width="22" height="22" rx="4" fill="#2563EB" />
+      <text x="6" y="17" fontFamily="Arial, sans-serif" fontWeight="bold" fontSize="14" fill="white">P</text>
+      <text x="14" y="17" fontFamily="Arial, sans-serif" fontWeight="bold" fontSize="11" fill="#1E293B">A</text>
+    </svg>
+  );
+}
+
 export const PROVIDER_LOGOS: Record<string, React.ComponentType<{ className?: string }>> = {
   lovable: LovableLogo,
   openai: OpenAILogo,
@@ -135,6 +145,7 @@ export const PROVIDER_LOGOS: Record<string, React.ComponentType<{ className?: st
   tavily: TavilyLogo,
   perplexity: PerplexityLogo,
   mistral: MistralLogo,
+  proxyapi: ProxyApiLogo,
 };
 
 export const PROVIDER_COLORS: Record<string, string> = {
@@ -150,4 +161,5 @@ export const PROVIDER_COLORS: Record<string, string> = {
   tavily: 'text-emerald-400',
   perplexity: 'text-sky-400',
   mistral: 'text-amber-500',
+  proxyapi: 'text-blue-500',
 };

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -61,6 +62,7 @@ const RPC_KEY_MAP: Record<string, string> = {
   deepseek_api_key: 'deepseek',
   firecrawl_api_key: 'firecrawl',
   mistral_api_key: 'mistral',
+  proxyapi_api_key: 'proxyapi',
 };
 
 export default function Profile() {
@@ -81,6 +83,7 @@ export default function Profile() {
   // API keys as a single record
   const [apiKeys, setApiKeys] = useState<Record<string, string>>({});
   const [keyMetadata, setKeyMetadata] = useState<Record<string, KeyMetadata>>({});
+  const [proxyapiPriority, setProxyapiPriority] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -111,6 +114,7 @@ export default function Profile() {
         setDisplayName(profileData.display_name || '');
         setUsername(profileData.username || '');
         setIsAdmin(profileData.username === 'AlexKuz');
+        setProxyapiPriority((profileData as any).proxyapi_priority ?? false);
       }
 
       // Fetch decrypted API keys from Vault + metadata in parallel
@@ -171,6 +175,12 @@ export default function Profile() {
       const savePromises = allProviders.map(p =>
         supabase.rpc('save_api_key', { p_provider: p.provider, p_api_key: apiKeys[p.provider] || '' })
       );
+      // Save proxyapi key if in Russian locale
+      if (language === 'ru') {
+        savePromises.push(
+          supabase.rpc('save_api_key', { p_provider: 'proxyapi', p_api_key: apiKeys['proxyapi'] || '' })
+        );
+      }
 
       const results = await Promise.all(savePromises);
       const error = results.find(r => r.error)?.error;
@@ -429,6 +439,59 @@ export default function Profile() {
                     unlimited={p.provider === 'mistral'}
                   />
                 ))}
+
+                {/* ProxyAPI Section - only for Russian locale */}
+                {language === 'ru' && (
+                  <div className="mt-6 space-y-3">
+                    <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/30">
+                      <div className="flex items-start gap-3">
+                        <AlertTriangle className="h-5 w-5 text-amber-500 flex-shrink-0 mt-0.5" />
+                        <div className="flex-1 space-y-2">
+                          <p className="text-sm font-semibold text-amber-400">
+                            Альтернатива OpenRouter для России!
+                          </p>
+                          <div className="flex items-center gap-2">
+                            <Checkbox
+                              id="proxyapi-priority"
+                              checked={proxyapiPriority}
+                              onCheckedChange={async (checked) => {
+                                const val = !!checked;
+                                setProxyapiPriority(val);
+                                if (user) {
+                                  await supabase
+                                    .from('profiles')
+                                    .update({ proxyapi_priority: val } as any)
+                                    .eq('user_id', user.id);
+                                }
+                              }}
+                              disabled={!apiKeys['proxyapi']}
+                            />
+                            <Label htmlFor="proxyapi-priority" className="text-sm text-muted-foreground cursor-pointer">
+                              Приоритет над OpenRouter
+                            </Label>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <ApiKeyField
+                      provider="proxyapi"
+                      label="ProxyAPI"
+                      value={apiKeys['proxyapi'] || ''}
+                      onChange={(v) => setKeyValue('proxyapi', v)}
+                      placeholder="sk-..."
+                      metadata={keyMetadata['proxyapi']}
+                      onExpirationChange={(date) => handleExpirationChange('proxyapi', date)}
+                      hint={
+                        <>
+                          Получите ключ на{' '}
+                          <a href="https://console.proxyapi.ru/keys" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                            console.proxyapi.ru/keys
+                          </a>
+                        </>
+                      }
+                    />
+                  </div>
+                )}
 
                 {/* Tools Section */}
                 <Separator className="my-6" />
