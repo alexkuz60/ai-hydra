@@ -40,6 +40,12 @@ export const MISTRAL_MODELS = [
   "mistral-medium-latest",
 ];
 
+// OpenRouter models contain "/" but are NOT lovable-managed (openai/, google/)
+const LOVABLE_PREFIXES = ["openai/", "google/"];
+export function isOpenRouterModel(modelId: string): boolean {
+  return modelId.includes("/") && !LOVABLE_PREFIXES.some((p) => modelId.startsWith(p));
+}
+
 // Default prompts by role
 export const DEFAULT_PROMPTS: Record<string, string> = {
   assistant: `You are an expert AI assistant. Provide clear, well-reasoned responses.`,
