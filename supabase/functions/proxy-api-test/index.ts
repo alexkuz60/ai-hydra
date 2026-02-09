@@ -226,6 +226,37 @@ Deno.serve(async (req) => {
       }
     }
 
+    if (action === "models") {
+      // Fetch full model catalog from ProxyAPI
+      try {
+        const resp = await fetch("https://openai.api.proxyapi.ru/v1/models", {
+          headers: { Authorization: `Bearer ${proxyapiKey}` },
+          signal: AbortSignal.timeout(15_000),
+        });
+        if (!resp.ok) {
+          return new Response(JSON.stringify({ error: `HTTP ${resp.status}` }), {
+            status: resp.status,
+            headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
+          });
+        }
+        const data = await resp.json();
+        // Return simplified model list: { id, owned_by, created }
+        const models = (data?.data || []).map((m: Record<string, unknown>) => ({
+          id: m.id as string,
+          owned_by: (m.owned_by as string) || "unknown",
+          created: m.created as number | undefined,
+        }));
+        return new Response(JSON.stringify({ models, total: models.length }), {
+          headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
+        });
+      } catch (err) {
+        return new Response(JSON.stringify({ error: String(err) }), {
+          status: 500,
+          headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
+        });
+      }
+    }
+
     return new Response(JSON.stringify({ error: "Unknown action" }), {
       status: 400,
       headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
