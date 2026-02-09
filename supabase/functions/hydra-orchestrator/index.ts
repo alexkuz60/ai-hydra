@@ -842,7 +842,7 @@ async function callPersonalModel(
           { role: "system", content: systemPrompt },
           { role: "user", content: userContent },
         ],
-        temperature: isReasoning ? undefined : temperature,
+        temperature: (isReasoning || isOpenAIModel) ? undefined : temperature,
         ...tokenParam,
       }),
     });
