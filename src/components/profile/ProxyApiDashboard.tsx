@@ -194,12 +194,24 @@ export function ProxyApiDashboard({ hasKey, proxyapiPriority, onPriorityChange, 
     setCatalogSearch('');
   }, [userModelIds]);
 
-  const removeUserModel = useCallback((modelId: string) => {
+  const [logsRefreshTrigger, setLogsRefreshTrigger] = useState(0);
+  const removeUserModel = useCallback(async (modelId: string) => {
     const next = new Set(userModelIds);
     next.delete(modelId);
     setUserModelIds(next);
     localStorage.setItem(USER_MODELS_KEY, JSON.stringify([...next]));
-  }, [userModelIds]);
+    // Delete accumulated logs for this model
+    if (user) {
+      try {
+        await supabase
+          .from('proxy_api_logs')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('model_id', modelId);
+        setLogsRefreshTrigger(prev => prev + 1);
+      } catch { /* silent */ }
+    }
+  }, [userModelIds, user]);
 
   // Persist settings
   useEffect(() => {
@@ -228,7 +240,7 @@ export function ProxyApiDashboard({ hasKey, proxyapiPriority, onPriorityChange, 
 
   useEffect(() => {
     if (hasKey && user) fetchLogs();
-  }, [hasKey, user, fetchLogs]);
+  }, [hasKey, user, fetchLogs, logsRefreshTrigger]);
 
   const handlePing = useCallback(async () => {
     if (!user) return;
@@ -606,15 +618,6 @@ export function ProxyApiDashboard({ hasKey, proxyapiPriority, onPriorityChange, 
                       <Button
                         size="sm"
                         variant="ghost"
-                        className="flex-shrink-0 h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
-                        onClick={() => removeUserModel(model.id)}
-                        title="Убрать из списка"
-                      >
-                        <XCircle className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
                         className="flex-shrink-0 h-8 w-8 p-0"
                         onClick={() => handleTestModel(model.id)}
                         disabled={testingModel === model.id}
@@ -811,23 +814,52 @@ export function ProxyApiDashboard({ hasKey, proxyapiPriority, onPriorityChange, 
                     </ResponsiveContainer>
                   </div>
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                    {analyticsData.map(m => (
-                      <div key={m.model} className="p-3 rounded-lg border bg-card/50 space-y-1">
-                        <p className="text-xs font-medium truncate">{m.model}</p>
-                        <div className="flex items-center justify-between text-xs">
-                          <span className="text-muted-foreground">Всего</span>
-                          <span className="font-mono">{m.total}</span>
+                    {analyticsData.map(m => {
+                      const isProblematic = m.errors > 0 && m.success === 0;
+                      const fullModelId = m.model; // model without proxyapi/ prefix
+                      const isUserModel = userModelIds.has(fullModelId) || userModelIds.has(`proxyapi/${fullModelId}`);
+                      // Try to find the actual ID in userModelIds
+                      const actualModelId = userModelIds.has(fullModelId) ? fullModelId 
+                        : userModelIds.has(`proxyapi/${fullModelId}`) ? `proxyapi/${fullModelId}` 
+                        : [...userModelIds].find(id => id.includes(fullModelId)) || null;
+                      return (
+                        <div key={m.model} className={cn(
+                          "relative p-3 rounded-lg border space-y-1 transition-colors",
+                          isProblematic 
+                            ? "bg-destructive/10 border-destructive/40" 
+                            : "bg-card/50"
+                        )}>
+                          {isUserModel && actualModelId && (
+                            <button
+                              onClick={() => removeUserModel(actualModelId)}
+                              className="absolute top-1.5 right-1.5 p-0.5 rounded-sm text-muted-foreground hover:text-destructive transition-colors"
+                              title="Удалить модель и статистику"
+                            >
+                              <XCircle className="h-3.5 w-3.5" />
+                            </button>
+                          )}
+                          <p className="text-xs font-medium truncate pr-5">{m.model}</p>
+                          {isProblematic && (
+                            <div className="flex items-center gap-1 text-[10px] text-destructive">
+                              <AlertTriangle className="h-3 w-3" />
+                              <span>Только ошибки</span>
+                            </div>
+                          )}
+                          <div className="flex items-center justify-between text-xs">
+                            <span className="text-muted-foreground">Всего</span>
+                            <span className="font-mono">{m.total}</span>
+                          </div>
+                          <div className="flex items-center justify-between text-xs">
+                            <span className="text-emerald-400">✓ OK</span>
+                            <span className="font-mono">{m.success}</span>
+                          </div>
+                          <div className="flex items-center justify-between text-xs">
+                            <span className="text-destructive">✗ Ошибки</span>
+                            <span className="font-mono">{m.errors}</span>
+                          </div>
                         </div>
-                        <div className="flex items-center justify-between text-xs">
-                          <span className="text-emerald-400">✓ OK</span>
-                          <span className="font-mono">{m.success}</span>
-                        </div>
-                        <div className="flex items-center justify-between text-xs">
-                          <span className="text-destructive">✗ Ошибки</span>
-                          <span className="font-mono">{m.errors}</span>
-                        </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               )}
