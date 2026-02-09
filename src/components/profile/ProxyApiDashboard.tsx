@@ -7,9 +7,16 @@ import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
+import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { Loader2, Wifi, WifiOff, Zap, Play, CheckCircle, XCircle, Clock, AlertTriangle, History, Settings2, BarChart3, RefreshCw, Download, Key } from 'lucide-react';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import { Loader2, Wifi, WifiOff, Zap, Play, CheckCircle, XCircle, Clock, AlertTriangle, History, Settings2, BarChart3, RefreshCw, Download, Key, Search, Plus, HelpCircle } from 'lucide-react';
 import { ProxyApiLogo, PROVIDER_LOGOS, PROVIDER_COLORS } from '@/components/ui/ProviderLogos';
 import { cn } from '@/lib/utils';
 import { getAllRegistryEntries, type ModelRegistryEntry, STRENGTH_LABELS } from '@/config/modelRegistry';
@@ -17,7 +24,7 @@ import { ApiKeyField, type KeyMetadata } from '@/components/profile/ApiKeyField'
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose,
 } from '@/components/ui/dialog';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, Cell } from 'recharts';
 
 // ─── Types ─────────────────────────────────────────────
 
@@ -62,6 +69,20 @@ const DEFAULT_SETTINGS: ProxyApiSettings = {
 };
 
 const SETTINGS_KEY = 'proxyapi_settings';
+const USER_MODELS_KEY = 'proxyapi_user_models';
+
+// ─── Status explanations ──────────────────────────────
+
+const STATUS_EXPLANATIONS: Record<string, { label: string; description: string }> = {
+  success: { label: 'Успешно', description: 'Запрос выполнен без ошибок. Модель ответила корректно.' },
+  error: { label: 'Ошибка', description: 'Запрос завершился с ошибкой. Возможные причины: невалидный API-ключ, превышение лимита запросов, внутренняя ошибка провайдера или проблемы с сетью.' },
+  timeout: { label: 'Таймаут', description: 'Модель не успела ответить за отведённое время. Попробуйте увеличить таймаут в настройках или использовать более быструю модель.' },
+  gone: { label: '410 Gone', description: 'Модель навсегда удалена из сервиса ProxyAPI (HTTP 410). Она больше не доступна для запросов. Рекомендуется скрыть её из каталога.' },
+  fallback: { label: 'Фолбэк', description: 'Основной провайдер (ProxyAPI) вернул ошибку, запрос автоматически перенаправлен на резервный шлюз (Lovable AI).' },
+  stream: { label: 'Стриминг', description: 'Потоковый запрос к модели через ProxyAPI. Токены отправляются по мере генерации.' },
+  ping: { label: 'Пинг', description: 'Проверка доступности сервиса ProxyAPI. Измеряет латенси до API-сервера.' },
+  test: { label: 'Тест', description: 'Одиночный тестовый запрос к модели для проверки её работоспособности.' },
+};
 
 // ─── Component ─────────────────────────────────────────
 
@@ -96,8 +117,51 @@ export function ProxyApiDashboard({ hasKey, proxyapiPriority, onPriorityChange, 
       return saved ? { ...DEFAULT_SETTINGS, ...JSON.parse(saved) } : DEFAULT_SETTINGS;
     } catch { return DEFAULT_SETTINGS; }
   });
+  const [catalogSearch, setCatalogSearch] = useState('');
+  const [userModelIds, setUserModelIds] = useState<Set<string>>(() => {
+    try {
+      const saved = localStorage.getItem(USER_MODELS_KEY);
+      return saved ? new Set(JSON.parse(saved)) : new Set();
+    } catch { return new Set(); }
+  });
 
   const proxyModels = getAllRegistryEntries().filter(m => m.provider === 'proxyapi' && !hiddenModels.has(m.id));
+  const allModels = getAllRegistryEntries();
+
+  // Filtered catalog for search (all models, not just proxy)
+  const filteredCatalogModels = useMemo(() => {
+    if (!catalogSearch.trim()) return [];
+    const q = catalogSearch.toLowerCase();
+    return allModels.filter(m =>
+      m.provider !== 'proxyapi' &&
+      !userModelIds.has(m.id) &&
+      (m.displayName.toLowerCase().includes(q) ||
+       m.creator.toLowerCase().includes(q) ||
+       m.provider.toLowerCase().includes(q) ||
+       m.strengths.some(s => s.toLowerCase().includes(q)))
+    );
+  }, [catalogSearch, allModels, userModelIds]);
+
+  // User-added models from other providers
+  const userAddedModels = useMemo(() => {
+    return allModels.filter(m => userModelIds.has(m.id));
+  }, [allModels, userModelIds]);
+
+  // Persist user models
+  const addUserModel = useCallback((modelId: string) => {
+    const next = new Set(userModelIds);
+    next.add(modelId);
+    setUserModelIds(next);
+    localStorage.setItem(USER_MODELS_KEY, JSON.stringify([...next]));
+    setCatalogSearch('');
+  }, [userModelIds]);
+
+  const removeUserModel = useCallback((modelId: string) => {
+    const next = new Set(userModelIds);
+    next.delete(modelId);
+    setUserModelIds(next);
+    localStorage.setItem(USER_MODELS_KEY, JSON.stringify([...next]));
+  }, [userModelIds]);
 
   // Persist settings
   useEffect(() => {
@@ -267,6 +331,30 @@ export function ProxyApiDashboard({ hasKey, proxyapiPriority, onPriorityChange, 
     </Accordion>
   );
 
+  // Info block — always at top
+  const renderInfoBlock = () => (
+    <div className="flex items-center gap-3 mb-4 p-3 rounded-lg bg-amber-500/10 border border-amber-500/30">
+      <AlertTriangle className="h-5 w-5 text-amber-500 flex-shrink-0" />
+      <div className="flex-1">
+        <p className="text-sm font-semibold text-amber-400 mb-1">Альтернатива OpenRouter для России</p>
+        <p className="text-xs text-muted-foreground mb-2">
+          ProxyAPI — российский шлюз для доступа к моделям OpenAI, Anthropic, Google и DeepSeek без VPN.
+          Поддерживает оплату в рублях. Используется как замена OpenRouter при блокировках.
+        </p>
+        <div className="flex items-center gap-2">
+          <Checkbox
+            id="dash-proxyapi-priority"
+            checked={proxyapiPriority}
+            onCheckedChange={(checked) => onPriorityChange(!!checked)}
+          />
+          <Label htmlFor="dash-proxyapi-priority" className="text-sm text-muted-foreground cursor-pointer">
+            Приоритет над OpenRouter
+          </Label>
+        </div>
+      </div>
+    </div>
+  );
+
   if (!hasKey) {
     return (
       <HydraCard variant="glass" className="p-6">
@@ -275,6 +363,7 @@ export function ProxyApiDashboard({ hasKey, proxyapiPriority, onPriorityChange, 
           <HydraCardTitle>ProxyAPI Dashboard</HydraCardTitle>
         </HydraCardHeader>
         <HydraCardContent>
+          {renderInfoBlock()}
           {renderKeySection()}
           <div className="flex items-center gap-3 p-4 rounded-lg bg-muted/50 border border-border">
             <AlertTriangle className="h-5 w-5 text-amber-500 flex-shrink-0" />
@@ -294,24 +383,8 @@ export function ProxyApiDashboard({ hasKey, proxyapiPriority, onPriorityChange, 
         <HydraCardTitle>ProxyAPI Dashboard</HydraCardTitle>
       </HydraCardHeader>
       <HydraCardContent>
+        {renderInfoBlock()}
         {renderKeySection()}
-        {/* Priority checkbox */}
-        <div className="flex items-center gap-3 mb-4 p-3 rounded-lg bg-amber-500/10 border border-amber-500/30">
-          <AlertTriangle className="h-5 w-5 text-amber-500 flex-shrink-0" />
-          <div className="flex-1">
-            <p className="text-sm font-semibold text-amber-400 mb-1">Альтернатива OpenRouter для России</p>
-            <div className="flex items-center gap-2">
-              <Checkbox
-                id="dash-proxyapi-priority"
-                checked={proxyapiPriority}
-                onCheckedChange={(checked) => onPriorityChange(!!checked)}
-              />
-              <Label htmlFor="dash-proxyapi-priority" className="text-sm text-muted-foreground cursor-pointer">
-                Приоритет над OpenRouter
-              </Label>
-            </div>
-          </div>
-        </div>
 
         <Accordion type="multiple" defaultValue={['status', 'catalog']} className="space-y-2">
           {/* ── Status ── */}
@@ -352,11 +425,62 @@ export function ProxyApiDashboard({ hasKey, proxyapiPriority, onPriorityChange, 
               <div className="flex items-center gap-2">
                 <Zap className="h-4 w-4 text-primary" />
                 <span className="font-semibold">Каталог моделей</span>
-                <Badge variant="secondary" className="ml-2">{proxyModels.length}</Badge>
+                <Badge variant="secondary" className="ml-2">{proxyModels.length + userAddedModels.length}</Badge>
               </div>
             </AccordionTrigger>
-            <AccordionContent className="pb-4">
-              <div className="space-y-2">
+            <AccordionContent className="pb-4 space-y-3">
+              {/* Search across all models */}
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  value={catalogSearch}
+                  onChange={e => setCatalogSearch(e.target.value)}
+                  placeholder="Найти модель из полного каталога и добавить..."
+                  className="pl-9"
+                />
+              </div>
+
+              {/* Search results */}
+              {filteredCatalogModels.length > 0 && (
+                <div className="border rounded-lg bg-card/50 max-h-[200px] overflow-y-auto">
+                  {filteredCatalogModels.slice(0, 10).map(model => {
+                    const Logo = PROVIDER_LOGOS[model.provider];
+                    const color = PROVIDER_COLORS[model.provider];
+                    return (
+                      <div key={model.id} className="flex items-center gap-2 px-3 py-2 hover:bg-muted/50 cursor-pointer border-b border-border/30 last:border-0" onClick={() => addUserModel(model.id)}>
+                        {Logo && <Logo className={cn("h-3.5 w-3.5 flex-shrink-0", color)} />}
+                        <span className="text-sm truncate flex-1">{model.displayName}</span>
+                        <Badge variant="outline" className="text-[10px] px-1.5 py-0">{model.provider}</Badge>
+                        <Plus className="h-3.5 w-3.5 text-primary flex-shrink-0" />
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+              {catalogSearch.trim() && filteredCatalogModels.length === 0 && (
+                <p className="text-xs text-muted-foreground text-center py-2">Ничего не найдено</p>
+              )}
+
+              {/* User-added models from other providers */}
+              {userAddedModels.length > 0 && (
+                <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground font-medium">Пользовательский список</p>
+                  {userAddedModels.map(model => (
+                    <ModelRow
+                      key={model.id}
+                      model={model}
+                      testResult={testResults[model.id]}
+                      isTesting={testingModel === model.id}
+                      onTest={() => handleTestModel(model.id)}
+                      onRemove={() => removeUserModel(model.id)}
+                    />
+                  ))}
+                </div>
+              )}
+
+              {/* ProxyAPI native models */}
+              <div className="space-y-1">
+                {userAddedModels.length > 0 && <p className="text-xs text-muted-foreground font-medium">ProxyAPI модели</p>}
                 {proxyModels.map(model => (
                   <ModelRow
                     key={model.id}
@@ -452,23 +576,55 @@ export function ProxyApiDashboard({ hasKey, proxyapiPriority, onPriorityChange, 
                 <p className="text-sm text-muted-foreground text-center py-4">Нет записей</p>
               ) : (
                 <div className="overflow-x-auto">
-                  <table className="w-full text-xs">
-                    <thead>
-                      <tr className="border-b text-muted-foreground">
-                        <th className="text-left py-2 pr-3">Модель</th>
-                        <th className="text-left py-2 pr-3">Тип</th>
-                        <th className="text-left py-2 pr-3">Статус</th>
-                        <th className="text-right py-2 pr-3">Латенси</th>
-                        <th className="text-right py-2 pr-3">Токены</th>
-                        <th className="text-right py-2">Дата</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {logs.map(log => (
-                        <LogRow key={log.id} log={log} />
-                      ))}
-                    </tbody>
-                  </table>
+                  <TooltipProvider delayDuration={200}>
+                    <table className="w-full text-xs">
+                      <thead>
+                        <tr className="border-b text-muted-foreground">
+                          <th className="text-left py-2 pr-3">Модель</th>
+                          <th className="text-left py-2 pr-3">
+                            <div className="flex items-center gap-1">
+                              Тип
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <HelpCircle className="h-3 w-3 text-muted-foreground/60 cursor-help" />
+                                </TooltipTrigger>
+                                <TooltipContent side="top" className="max-w-[220px]">
+                                  <p className="text-xs">Тип запроса: stream (потоковый), test (тестовый), ping (проверка связи)</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </div>
+                          </th>
+                          <th className="text-left py-2 pr-3">
+                            <div className="flex items-center gap-1">
+                              Статус
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <HelpCircle className="h-3 w-3 text-muted-foreground/60 cursor-help" />
+                                </TooltipTrigger>
+                                <TooltipContent side="top" className="max-w-[250px]">
+                                  <div className="text-xs space-y-1">
+                                    <p><strong className="text-emerald-400">success</strong> — OK</p>
+                                    <p><strong className="text-destructive">error</strong> — ошибка запроса</p>
+                                    <p><strong className="text-amber-500">timeout</strong> — превышение таймаута</p>
+                                    <p><strong className="text-destructive">gone</strong> — модель удалена (410)</p>
+                                    <p><strong className="text-blue-400">fallback</strong> — авто-переключение</p>
+                                  </div>
+                                </TooltipContent>
+                              </Tooltip>
+                            </div>
+                          </th>
+                          <th className="text-right py-2 pr-3">Латенси</th>
+                          <th className="text-right py-2 pr-3">Токены</th>
+                          <th className="text-right py-2">Дата</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {logs.map(log => (
+                          <LogRow key={log.id} log={log} />
+                        ))}
+                      </tbody>
+                    </table>
+                  </TooltipProvider>
                 </div>
               )}
             </AccordionContent>
@@ -493,7 +649,7 @@ export function ProxyApiDashboard({ hasKey, proxyapiPriority, onPriorityChange, 
                       <BarChart data={analyticsData} layout="vertical">
                         <XAxis type="number" tick={{ fontSize: 10 }} />
                         <YAxis type="category" dataKey="model" width={120} tick={{ fontSize: 10 }} />
-                        <Tooltip
+                        <RechartsTooltip
                           contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px', fontSize: '12px' }}
                           labelStyle={{ color: 'hsl(var(--foreground))' }}
                         />
@@ -577,13 +733,41 @@ function LogRow({ log }: { log: LogEntry }) {
   const statusColor = log.status === 'success' ? 'text-emerald-400'
     : log.status === 'gone' ? 'text-destructive'
     : log.status === 'timeout' ? 'text-amber-500'
+    : log.status === 'fallback' ? 'text-blue-400'
     : 'text-destructive';
+
+  const statusExpl = STATUS_EXPLANATIONS[log.status];
+  const typeExpl = STATUS_EXPLANATIONS[log.request_type];
 
   return (
     <tr className="border-b border-border/50 hover:bg-card/50">
       <td className="py-1.5 pr-3 font-medium truncate max-w-[140px]">{modelShort}</td>
-      <td className="py-1.5 pr-3">{log.request_type}</td>
-      <td className={cn("py-1.5 pr-3", statusColor)}>{log.status}</td>
+      <td className="py-1.5 pr-3">
+        {typeExpl ? (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="cursor-help border-b border-dotted border-muted-foreground/40">{log.request_type}</span>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="max-w-[220px]">
+              <p className="text-xs">{typeExpl.description}</p>
+            </TooltipContent>
+          </Tooltip>
+        ) : log.request_type}
+      </td>
+      <td className={cn("py-1.5 pr-3", statusColor)}>
+        {statusExpl ? (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="cursor-help border-b border-dotted border-current">{log.status}</span>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="max-w-[250px]">
+              <p className="text-xs font-medium mb-1">{statusExpl.label}</p>
+              <p className="text-xs text-muted-foreground">{statusExpl.description}</p>
+              {log.error_message && <p className="text-xs text-destructive mt-1">Ошибка: {log.error_message}</p>}
+            </TooltipContent>
+          </Tooltip>
+        ) : log.status}
+      </td>
       <td className="py-1.5 pr-3 text-right font-mono">{log.latency_ms ?? '—'}ms</td>
       <td className="py-1.5 pr-3 text-right font-mono">{tokens}</td>
       <td className="py-1.5 text-right text-muted-foreground">{timeStr}</td>
@@ -596,22 +780,26 @@ function ModelRow({
   testResult,
   isTesting,
   onTest,
+  onRemove,
 }: {
   model: ModelRegistryEntry;
   testResult?: TestResult;
   isTesting: boolean;
   onTest: () => void;
+  onRemove?: () => void;
 }) {
   const isDeprecated = model.displayName.includes('⚠️');
   const creatorProvider = model.creator.includes('OpenAI') ? 'openai'
     : model.creator.includes('Anthropic') ? 'anthropic'
     : model.creator.includes('Google') ? 'gemini'
     : model.creator.includes('DeepSeek') ? 'deepseek'
-    : 'proxyapi';
+    : model.provider;
 
   const Logo = PROVIDER_LOGOS[creatorProvider];
   const color = PROVIDER_COLORS[creatorProvider];
   const pricing = typeof model.pricing === 'object' ? `${model.pricing.input}/${model.pricing.output}` : model.pricing;
+
+  const testStatusExpl = testResult ? STATUS_EXPLANATIONS[testResult.status] : null;
 
   return (
     <div className={cn(
@@ -635,29 +823,74 @@ function ModelRow({
       </div>
 
       {testResult && (
-        <div className="flex items-center gap-2 flex-shrink-0 text-xs">
-          {testResult.status === 'success' ? (
-            <>
-              <CheckCircle className="h-3.5 w-3.5 text-emerald-400" />
-              <span className="text-emerald-400">{testResult.latency_ms}ms</span>
-            </>
-          ) : testResult.status === 'gone' ? (
-            <>
-              <WifiOff className="h-3.5 w-3.5 text-destructive" />
-              <span className="text-destructive">410 Gone</span>
-            </>
-          ) : testResult.status === 'timeout' ? (
-            <>
-              <Clock className="h-3.5 w-3.5 text-amber-500" />
-              <span className="text-amber-500">Таймаут</span>
-            </>
-          ) : (
-            <>
-              <XCircle className="h-3.5 w-3.5 text-destructive" />
-              <span className="text-destructive truncate max-w-[100px]">{testResult.error}</span>
-            </>
-          )}
-        </div>
+        <TooltipProvider delayDuration={200}>
+          <div className="flex items-center gap-2 flex-shrink-0 text-xs">
+            {testResult.status === 'success' ? (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex items-center gap-1 cursor-help">
+                    <CheckCircle className="h-3.5 w-3.5 text-emerald-400" />
+                    <span className="text-emerald-400">{testResult.latency_ms}ms</span>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="max-w-[220px]">
+                  <p className="text-xs">{testStatusExpl?.description}</p>
+                  {testResult.tokens && <p className="text-xs text-muted-foreground mt-1">Токены: {testResult.tokens.input}/{testResult.tokens.output}</p>}
+                </TooltipContent>
+              </Tooltip>
+            ) : testResult.status === 'gone' ? (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex items-center gap-1 cursor-help">
+                    <WifiOff className="h-3.5 w-3.5 text-destructive" />
+                    <span className="text-destructive">410 Gone</span>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="max-w-[250px]">
+                  <p className="text-xs">{testStatusExpl?.description}</p>
+                </TooltipContent>
+              </Tooltip>
+            ) : testResult.status === 'timeout' ? (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex items-center gap-1 cursor-help">
+                    <Clock className="h-3.5 w-3.5 text-amber-500" />
+                    <span className="text-amber-500">Таймаут</span>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="max-w-[250px]">
+                  <p className="text-xs">{testStatusExpl?.description}</p>
+                </TooltipContent>
+              </Tooltip>
+            ) : (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex items-center gap-1 cursor-help">
+                    <XCircle className="h-3.5 w-3.5 text-destructive" />
+                    <span className="text-destructive truncate max-w-[100px]">{testResult.error}</span>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="max-w-[280px]">
+                  <p className="text-xs font-medium mb-1">Ошибка</p>
+                  <p className="text-xs text-muted-foreground">{testStatusExpl?.description}</p>
+                  {testResult.error && <p className="text-xs text-destructive mt-1">{testResult.error}</p>}
+                </TooltipContent>
+              </Tooltip>
+            )}
+          </div>
+        </TooltipProvider>
+      )}
+
+      {onRemove && (
+        <Button
+          size="sm"
+          variant="ghost"
+          className="flex-shrink-0 h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
+          onClick={onRemove}
+          title="Убрать из списка"
+        >
+          <XCircle className="h-4 w-4" />
+        </Button>
       )}
 
       <Button
