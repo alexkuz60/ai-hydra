@@ -1106,8 +1106,8 @@ serve(async (req) => {
 
       console.log(`Starting request for model: ${modelReq.model_id}, role: ${role}, temp: ${temperature}, maxTokens: ${maxTokens}${isThinkingModel ? ' (thinking model x4)' : ''}`);
       
+      let result: { model: string; provider: string; content: string; reasoning?: string | null; usage?: UsageData | null; tool_calls?: ToolCall[]; tool_results?: ToolResult[] };
       try {
-        let result: { model: string; provider: string; content: string; reasoning?: string | null; usage?: UsageData | null; tool_calls?: ToolCall[]; tool_results?: ToolResult[] };
         
         if (modelReq.use_lovable_ai) {
           if (!isAdmin) {
