@@ -451,7 +451,7 @@ export default function Profile() {
                               <div className="flex items-center gap-2">
                                 <Checkbox
                                   id="proxyapi-priority"
-                                  checked={proxyapiPriority}
+                                  checked={proxyapiPriority && !!apiKeys['proxyapi']}
                                   onCheckedChange={async (checked) => {
                                     const val = !!checked;
                                     setProxyapiPriority(val);
