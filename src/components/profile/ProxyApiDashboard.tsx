@@ -137,8 +137,8 @@ export function ProxyApiDashboard({ hasKey, proxyapiPriority, onPriorityChange, 
   const proxyModels = getAllRegistryEntries().filter(m => m.provider === 'proxyapi' && !hiddenModels.has(m.id));
 
   // Fetch full ProxyAPI catalog
-  const fetchCatalog = useCallback(async () => {
-    if (!user || catalogLoaded) return;
+  const fetchCatalog = useCallback(async (force = false) => {
+    if (!user || (catalogLoaded && !force)) return;
     setCatalogLoading(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -469,16 +469,27 @@ export function ProxyApiDashboard({ hasKey, proxyapiPriority, onPriorityChange, 
             </AccordionTrigger>
             <AccordionContent className="pb-4 space-y-3">
               {/* Search across all models */}
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  value={catalogSearch}
-                  onChange={e => setCatalogSearch(e.target.value)}
-                  placeholder={catalogLoading ? 'Загрузка каталога...' : `Поиск среди ${proxyCatalog.length} моделей ProxyAPI...`}
-                  className="pl-9"
+              <div className="flex items-center gap-2">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    value={catalogSearch}
+                    onChange={e => setCatalogSearch(e.target.value)}
+                    placeholder={catalogLoading ? 'Загрузка каталога...' : `Поиск среди ${proxyCatalog.length} моделей ProxyAPI...`}
+                    className="pl-9"
+                    disabled={catalogLoading}
+                  />
+                  {catalogLoading && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />}
+                </div>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => fetchCatalog(true)}
                   disabled={catalogLoading}
-                />
-                {catalogLoading && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />}
+                  title="Обновить каталог"
+                >
+                  <RefreshCw className={cn("h-4 w-4", catalogLoading && "animate-spin")} />
+                </Button>
               </div>
 
               {/* Search results from live ProxyAPI catalog */}
