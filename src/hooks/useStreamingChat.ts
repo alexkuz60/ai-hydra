@@ -121,6 +121,16 @@ export function useStreamingChat({
         const { data: { session } } = await supabase.auth.getSession();
         const authToken = session?.access_token || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
         
+        // Read ProxyAPI settings from localStorage for proxyapi and openrouter models
+        // (OpenRouter models may route through ProxyAPI when priority is enabled)
+        let proxyapi_settings: Record<string, unknown> | undefined;
+        if (modelId.startsWith('proxyapi/') || modelId.includes('/')) {
+          try {
+            const saved = localStorage.getItem('proxyapi_settings');
+            if (saved) proxyapi_settings = JSON.parse(saved);
+          } catch { /* ignore */ }
+        }
+
         const response = await fetch(
           `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/hydra-stream`,
           {
@@ -135,6 +145,7 @@ export function useStreamingChat({
               role: role,
               system_prompt: systemPrompt,
               memory_context: memoryContext || [],
+              proxyapi_settings,
             }),
             signal: abortControllerRef.current.signal,
           }

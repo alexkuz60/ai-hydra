@@ -9,6 +9,7 @@ import {
   DEFAULT_PROMPTS,
   buildMemoryContext,
   type StreamRequest,
+  type ProxyApiSettings,
 } from "./types.ts";
 import { streamDeepSeek, streamMistral, streamGroq, streamLovableAI, streamOpenRouter, streamProxyApi } from "./providers.ts";
 
@@ -26,6 +27,7 @@ serve(async (req) => {
       temperature = 0.7,
       max_tokens = 4096,
       memory_context = [],
+      proxyapi_settings,
     }: StreamRequest = await req.json();
 
     if (!message || !model_id) {
@@ -51,6 +53,7 @@ serve(async (req) => {
       message,
       temperature,
       max_tokens,
+      proxyapi_settings,
     };
 
     if (DEEPSEEK_MODELS.includes(model_id)) {
