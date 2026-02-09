@@ -424,74 +424,74 @@ export default function Profile() {
                     : 'Add your API keys to use various LLM models (BYOK — Bring Your Own Key)'}
                 </p>
 
-                {/* LLM Providers */}
+                {/* LLM Providers — with ProxyAPI inserted after OpenRouter */}
                 {LLM_PROVIDERS.map(p => (
-                  <ApiKeyField
-                    key={p.provider}
-                    provider={p.provider}
-                    label={'labelKey' in p ? t(p.labelKey) : p.label}
-                    value={apiKeys[p.provider] || ''}
-                    onChange={(v) => setKeyValue(p.provider, v)}
-                    placeholder={p.placeholder}
-                    metadata={keyMetadata[p.provider]}
-                    onExpirationChange={(date) => handleExpirationChange(p.provider, date)}
-                    hint={renderProviderHint(p)}
-                    unlimited={p.provider === 'mistral'}
-                  />
-                ))}
-
-                {/* ProxyAPI Section - only for Russian locale */}
-                {language === 'ru' && (
-                  <div className="mt-6 space-y-3">
-                    <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/30">
-                      <div className="flex items-start gap-3">
-                        <AlertTriangle className="h-5 w-5 text-amber-500 flex-shrink-0 mt-0.5" />
-                        <div className="flex-1 space-y-2">
-                          <p className="text-sm font-semibold text-amber-400">
-                            Альтернатива OpenRouter для России!
-                          </p>
-                          <div className="flex items-center gap-2">
-                            <Checkbox
-                              id="proxyapi-priority"
-                              checked={proxyapiPriority}
-                              onCheckedChange={async (checked) => {
-                                const val = !!checked;
-                                setProxyapiPriority(val);
-                                if (user) {
-                                  await supabase
-                                    .from('profiles')
-                                    .update({ proxyapi_priority: val } as any)
-                                    .eq('user_id', user.id);
-                                }
-                              }}
-                              disabled={!apiKeys['proxyapi']}
-                            />
-                            <Label htmlFor="proxyapi-priority" className="text-sm text-muted-foreground cursor-pointer">
-                              Приоритет над OpenRouter
-                            </Label>
+                  <React.Fragment key={p.provider}>
+                    <ApiKeyField
+                      provider={p.provider}
+                      label={'labelKey' in p ? t(p.labelKey) : p.label}
+                      value={apiKeys[p.provider] || ''}
+                      onChange={(v) => setKeyValue(p.provider, v)}
+                      placeholder={p.placeholder}
+                      metadata={keyMetadata[p.provider]}
+                      onExpirationChange={(date) => handleExpirationChange(p.provider, date)}
+                      hint={renderProviderHint(p)}
+                      unlimited={p.provider === 'mistral'}
+                    />
+                    {/* ProxyAPI right after OpenRouter — Russian locale only */}
+                    {p.provider === 'openrouter' && language === 'ru' && (
+                      <div className="mt-2 space-y-3">
+                        <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/30">
+                          <div className="flex items-start gap-3">
+                            <AlertTriangle className="h-5 w-5 text-amber-500 flex-shrink-0 mt-0.5" />
+                            <div className="flex-1 space-y-2">
+                              <p className="text-sm font-semibold text-amber-400">
+                                Альтернатива OpenRouter для России!
+                              </p>
+                              <div className="flex items-center gap-2">
+                                <Checkbox
+                                  id="proxyapi-priority"
+                                  checked={proxyapiPriority}
+                                  onCheckedChange={async (checked) => {
+                                    const val = !!checked;
+                                    setProxyapiPriority(val);
+                                    if (user) {
+                                      await supabase
+                                        .from('profiles')
+                                        .update({ proxyapi_priority: val })
+                                        .eq('user_id', user.id);
+                                    }
+                                  }}
+                                  disabled={!apiKeys['proxyapi']}
+                                />
+                                <Label htmlFor="proxyapi-priority" className="text-sm text-muted-foreground cursor-pointer">
+                                  Приоритет над OpenRouter
+                                </Label>
+                              </div>
+                            </div>
                           </div>
                         </div>
+                        <ApiKeyField
+                          provider="proxyapi"
+                          label="ProxyAPI"
+                          value={apiKeys['proxyapi'] || ''}
+                          onChange={(v) => setKeyValue('proxyapi', v)}
+                          placeholder="sk-..."
+                          metadata={keyMetadata['proxyapi']}
+                          onExpirationChange={(date) => handleExpirationChange('proxyapi', date)}
+                          hint={
+                            <>
+                              Получите ключ на{' '}
+                              <a href="https://console.proxyapi.ru/keys" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                                console.proxyapi.ru/keys
+                              </a>
+                            </>
+                          }
+                        />
                       </div>
-                    </div>
-                    <ApiKeyField
-                      provider="proxyapi"
-                      label="ProxyAPI"
-                      value={apiKeys['proxyapi'] || ''}
-                      onChange={(v) => setKeyValue('proxyapi', v)}
-                      placeholder="sk-..."
-                      metadata={keyMetadata['proxyapi']}
-                      onExpirationChange={(date) => handleExpirationChange('proxyapi', date)}
-                      hint={
-                        <>
-                          Получите ключ на{' '}
-                          <a href="https://console.proxyapi.ru/keys" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
-                            console.proxyapi.ru/keys
-                          </a>
-                        </>
-                      }
-                    />
-                  </div>
-                )}
+                    )}
+                  </React.Fragment>
+                ))}
 
                 {/* Tools Section */}
                 <Separator className="my-6" />
