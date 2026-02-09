@@ -275,6 +275,7 @@ export type Database = {
           id: string
           preferred_language: string
           preferred_theme: string
+          proxyapi_priority: boolean
           updated_at: string
           user_id: string
           username: string | null
@@ -286,6 +287,7 @@ export type Database = {
           id?: string
           preferred_language?: string
           preferred_theme?: string
+          proxyapi_priority?: boolean
           updated_at?: string
           user_id: string
           username?: string | null
@@ -297,6 +299,7 @@ export type Database = {
           id?: string
           preferred_language?: string
           preferred_theme?: string
+          proxyapi_priority?: boolean
           updated_at?: string
           user_id?: string
           username?: string | null
@@ -705,6 +708,7 @@ export type Database = {
           openai_vault_id: string | null
           openrouter_vault_id: string | null
           perplexity_vault_id: string | null
+          proxyapi_vault_id: string | null
           tavily_vault_id: string | null
           updated_at: string
           user_id: string
@@ -723,6 +727,7 @@ export type Database = {
           openai_vault_id?: string | null
           openrouter_vault_id?: string | null
           perplexity_vault_id?: string | null
+          proxyapi_vault_id?: string | null
           tavily_vault_id?: string | null
           updated_at?: string
           user_id: string
@@ -741,6 +746,7 @@ export type Database = {
           openai_vault_id?: string | null
           openrouter_vault_id?: string | null
           perplexity_vault_id?: string | null
+          proxyapi_vault_id?: string | null
           tavily_vault_id?: string | null
           updated_at?: string
           user_id?: string
@@ -823,6 +829,7 @@ export type Database = {
           openai_api_key: string
           openrouter_api_key: string
           perplexity_api_key: string
+          proxyapi_api_key: string
           tavily_api_key: string
           xai_api_key: string
         }[]
