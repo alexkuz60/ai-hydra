@@ -40,7 +40,14 @@ export const MISTRAL_MODELS = [
   "mistral-medium-latest",
 ];
 
-// OpenRouter models contain "/" but are NOT lovable-managed (openai/, google/)
+// Groq models (ultra-fast inference)
+export const GROQ_MODELS = [
+  "llama-3.3-70b-versatile",
+  "llama-3.1-8b-instant",
+  "llama-3.2-90b-vision-preview",
+  "mixtral-8x7b-32768",
+  "gemma2-9b-it",
+];
 const LOVABLE_PREFIXES = ["openai/", "google/"];
 export function isOpenRouterModel(modelId: string): boolean {
   return modelId.includes("/") && !LOVABLE_PREFIXES.some((p) => modelId.startsWith(p));

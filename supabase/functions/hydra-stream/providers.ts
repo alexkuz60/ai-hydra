@@ -102,7 +102,52 @@ export async function streamMistral(params: ProviderStreamParams): Promise<Respo
   return new Response(response.body, { headers: SSE_HEADERS });
 }
 
+// ── Groq ────────────────────────────────────────────────
+
+export async function streamGroq(params: ProviderStreamParams): Promise<Response> {
+  const { req, model_id, systemPrompt, message, temperature, max_tokens } = params;
+
+  const auth = await authenticateUser(req, "Groq");
+  if (!auth.ok) return auth.response;
+
+  const keyResult = await getUserApiKey(auth.supabase, "groq_api_key", "Groq");
+  if ("response" in keyResult) return keyResult.response;
+
+  console.log(`[hydra-stream] Groq streaming: model=${model_id}`);
+
+  const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${keyResult.key}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: model_id,
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: message },
+      ],
+      stream: true,
+      temperature,
+      max_tokens,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error("[hydra-stream] Groq error:", response.status, errorText);
+    return new Response(
+      JSON.stringify({ error: `Groq error: ${response.status}` }),
+      { status: 500, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } }
+    );
+  }
+
+  console.log("[hydra-stream] Groq streaming started");
+  return new Response(response.body, { headers: SSE_HEADERS });
+}
+
 // ── Lovable AI (OpenAI, Google, etc.) ───────────────────
+
 
 export async function streamLovableAI(params: ProviderStreamParams): Promise<Response> {
   const { model_id, systemPrompt, message, temperature, max_tokens } = params;
