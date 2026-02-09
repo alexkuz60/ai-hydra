@@ -346,11 +346,11 @@ export function ProxyApiDashboard({ hasKey, proxyapiPriority, onPriorityChange, 
 
   // Analytics data
   const analyticsData = useMemo(() => {
-    const byModel: Record<string, { model: string; total: number; success: number; errors: number; avgLatency: number; latencies: number[] }> = {};
+    const byModel: Record<string, { model: string; rawModelId: string; total: number; success: number; errors: number; avgLatency: number; latencies: number[] }> = {};
     logs.forEach(log => {
       if (log.request_type === 'ping') return;
       const key = log.model_id.replace('proxyapi/', '');
-      if (!byModel[key]) byModel[key] = { model: key, total: 0, success: 0, errors: 0, avgLatency: 0, latencies: [] };
+      if (!byModel[key]) byModel[key] = { model: key, rawModelId: log.model_id, total: 0, success: 0, errors: 0, avgLatency: 0, latencies: [] };
       byModel[key].total++;
       if (log.status === 'success') byModel[key].success++;
       else byModel[key].errors++;
@@ -816,12 +816,31 @@ export function ProxyApiDashboard({ hasKey, proxyapiPriority, onPriorityChange, 
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                     {analyticsData.map(m => {
                       const isProblematic = m.errors > 0 && m.success === 0;
-                      const fullModelId = m.model; // model without proxyapi/ prefix
-                      const isUserModel = userModelIds.has(fullModelId) || userModelIds.has(`proxyapi/${fullModelId}`);
-                      // Try to find the actual ID in userModelIds
-                      const actualModelId = userModelIds.has(fullModelId) ? fullModelId 
-                        : userModelIds.has(`proxyapi/${fullModelId}`) ? `proxyapi/${fullModelId}` 
-                        : [...userModelIds].find(id => id.includes(fullModelId)) || null;
+                      // Check if it's a user-added model to also remove from list
+                      const userModelKey = userModelIds.has(m.model) ? m.model 
+                        : [...userModelIds].find(id => id === m.model || id.endsWith(`/${m.model}`)) || null;
+
+                      const handleDeleteStats = async () => {
+                        // Remove logs from DB
+                        if (user) {
+                          try {
+                            await supabase
+                              .from('proxy_api_logs')
+                              .delete()
+                              .eq('user_id', user.id)
+                              .eq('model_id', m.rawModelId);
+                          } catch { /* silent */ }
+                        }
+                        // Also remove from user list if applicable
+                        if (userModelKey) {
+                          const next = new Set(userModelIds);
+                          next.delete(userModelKey);
+                          setUserModelIds(next);
+                          localStorage.setItem(USER_MODELS_KEY, JSON.stringify([...next]));
+                        }
+                        setLogsRefreshTrigger(prev => prev + 1);
+                      };
+
                       return (
                         <div key={m.model} className={cn(
                           "relative p-3 rounded-lg border space-y-1 transition-colors",
@@ -829,15 +848,13 @@ export function ProxyApiDashboard({ hasKey, proxyapiPriority, onPriorityChange, 
                             ? "bg-destructive/10 border-destructive/40" 
                             : "bg-card/50"
                         )}>
-                          {isUserModel && actualModelId && (
-                            <button
-                              onClick={() => removeUserModel(actualModelId)}
-                              className="absolute top-1.5 right-1.5 p-0.5 rounded-sm text-muted-foreground hover:text-destructive transition-colors"
-                              title="Удалить модель и статистику"
-                            >
-                              <XCircle className="h-3.5 w-3.5" />
-                            </button>
-                          )}
+                          <button
+                            onClick={handleDeleteStats}
+                            className="absolute top-1.5 right-1.5 p-0.5 rounded-sm text-muted-foreground hover:text-destructive transition-colors"
+                            title="Удалить статистику модели"
+                          >
+                            <XCircle className="h-3.5 w-3.5" />
+                          </button>
                           <p className="text-xs font-medium truncate pr-5">{m.model}</p>
                           {isProblematic && (
                             <div className="flex items-center gap-1 text-[10px] text-destructive">
