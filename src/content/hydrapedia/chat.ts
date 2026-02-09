@@ -2,6 +2,93 @@ import type { HydrapediaSection } from './types';
 
 export const chatSections: HydrapediaSection[] = [
   {
+    id: 'chat-actions',
+    titleKey: 'hydrapedia.sections.chatActions',
+    icon: 'MousePointerClick',
+    content: {
+      ru: `# Действия с сообщениями
+
+При наведении на любое сообщение ИИ в чате появляется панель быстрых действий. Эти инструменты позволяют оценивать, сохранять и управлять ответами — формируя персональный рейтинг моделей и обогащая контекст будущих диалогов.
+
+## Доступные действия
+
+| Иконка | Действие | Зачем это нужно |
+|--------|----------|-----------------|
+| ⚖️ Весы | **Запросить оценку Арбитра** | Отправляет ответ в D-Chat к Арбитру для независимой экспертной оценки качества |
+| ⚠️ Треугольник | **Отметить галлюцинацию** | Фиксирует факт галлюцинации модели — увеличивает счётчик \`hallucination_count\` в статистике |
+| 💡 Лампочка | **Обсудить в D-Chat** | Отправляет ответ выбранному консультанту для уточнения или развития мысли |
+| 📦 Архив | **Сохранить в память** | Сохраняет ответ в сессионную память для контекстного обогащения будущих запросов |
+| 🗑️ Корзина | **Удалить сообщение** | Удаляет сообщение после подтверждения (двухэтапное удаление) |
+
+## Как пользоваться
+
+### Оценка качества
+Наведите курсор на ответ модели → нажмите ⚖️ (весы). Арбитр получит этот ответ и предоставит независимую оценку — полезно для сравнения моделей и формирования рейтинга.
+
+### Отметка галлюцинации
+Если модель выдала недостоверную информацию → нажмите ⚠️. Статистика галлюцинаций учитывается в Подиуме моделей и помогает выявлять ненадёжные модели.
+
+### Сохранение в память
+Нажмите 📦 — ответ сохраняется в сессионную память. Кнопка анимированно меняется на ✓, подтверждая сохранение. Уже сохранённые ответы отмечены зелёной галочкой.
+
+> [!TIP] Когда сохранять в память
+> Сохраняйте ключевые выводы, решения и важные факты. Эти фрагменты будут автоматически подтягиваться в контекст при семантически похожих запросах в будущем.
+
+### Обсуждение в D-Chat
+Нажмите 💡 — ответ отправляется выбранному консультанту. Используйте, когда хотите углубиться в конкретный аспект ответа или получить альтернативную точку зрения.
+
+### Удаление
+Нажмите 🗑️ → подтвердите в диалоге. Удаление необратимо.
+
+> [!WARNING] Только для ответов ИИ
+> Панель действий (кроме удаления) отображается только для сообщений ИИ-ролей. Для пользовательских сообщений доступно только удаление.
+
+## Оценки и Подиум
+
+Все оценки (мозги 🧠, отклонения 👎, галлюцинации ⚠️, оценки Арбитра ⚖️) накапливаются и формируют персональный рейтинг в **Подиуме моделей**. Регулярная оценка помогает определить, какие модели лучше подходят для ваших задач.`,
+      en: `# Message Actions
+
+When hovering over any AI message in the chat, a quick action panel appears. These tools let you rate, save, and manage responses — building a personal model rating and enriching context for future conversations.
+
+## Available Actions
+
+| Icon | Action | Why You Need It |
+|------|--------|-----------------|
+| ⚖️ Scales | **Request Arbiter Evaluation** | Sends the response to D-Chat's Arbiter for independent quality assessment |
+| ⚠️ Triangle | **Flag Hallucination** | Records a model hallucination — increments \`hallucination_count\` in statistics |
+| 💡 Lightbulb | **Discuss in D-Chat** | Sends the response to a selected consultant for clarification or further exploration |
+| 📦 Archive | **Save to Memory** | Saves the response to session memory for contextual enrichment of future queries |
+| 🗑️ Trash | **Delete Message** | Deletes the message after confirmation (two-step deletion) |
+
+## How to Use
+
+### Quality Assessment
+Hover over a model's response → click ⚖️ (scales). The Arbiter will receive this response and provide an independent evaluation — useful for model comparison and rating.
+
+### Flagging Hallucinations
+If a model produced unreliable information → click ⚠️. Hallucination statistics are tracked in the Model Podium and help identify unreliable models.
+
+### Saving to Memory
+Click 📦 — the response is saved to session memory. The button animates to ✓, confirming the save. Already saved responses show a green checkmark.
+
+> [!TIP] When to Save to Memory
+> Save key conclusions, decisions, and important facts. These fragments will be automatically pulled into context for semantically similar queries in the future.
+
+### Discussing in D-Chat
+Click 💡 — the response is sent to the selected consultant. Use when you want to dive deeper into a specific aspect or get an alternative perspective.
+
+### Deletion
+Click 🗑️ → confirm in the dialog. Deletion is irreversible.
+
+> [!WARNING] AI Messages Only
+> The action panel (except deletion) is displayed only for AI role messages. For user messages, only deletion is available.
+
+## Ratings and the Podium
+
+All ratings (brains 🧠, dismissals 👎, hallucinations ⚠️, Arbiter evaluations ⚖️) accumulate and form a personal ranking in the **Model Podium**. Regular rating helps determine which models work best for your tasks.`,
+    },
+  },
+  {
     id: 'expert-panel',
     titleKey: 'hydrapedia.sections.expertPanel',
     icon: 'Users',

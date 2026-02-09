@@ -185,6 +185,151 @@ HTTP tools have SSRF protection — requests to internal networks and local addr
     },
   },
   {
+    id: 'proxyapi',
+    titleKey: 'hydrapedia.sections.proxyApi',
+    icon: 'Zap',
+    content: {
+      ru: `# ProxyAPI — Единый ключ
+
+ProxyAPI — это внешний шлюз, позволяющий использовать десятки ИИ-моделей разных провайдеров через один API-ключ. Дашборд ProxyAPI в Hydra даёт полный контроль над каталогом, тестированием и аналитикой.
+
+## Зачем это нужно
+
+Вместо настройки 10+ API-ключей у разных провайдеров, вы добавляете **один ключ ProxyAPI** и получаете доступ к сотням моделей — OpenAI, Anthropic, Google, DeepSeek, Meta и многим другим.
+
+## Как подключить
+
+1. Перейдите в **Профиль → API-ключи → ProxyAPI**
+2. Введите ваш ключ от ProxyAPI
+3. Откройте **Профиль → ProxyAPI Dashboard**
+
+## Дашборд ProxyAPI
+
+### Каталог моделей
+
+Живой каталог с поиском по 400+ моделям ProxyAPI:
+
+- **Поиск** — мгновенный поиск по всему каталогу
+- **Добавить в избранное** — клик по модели добавляет её в личный список
+- **Тест модели** — кнопка ▶ отправляет тестовый запрос и показывает латенси
+- **Массовый тест** — «Тест всех моделей» проверяет все выбранные модели с прогресс-баром
+
+> [!TIP] Статусы тестирования
+> ✓ Зелёный — модель работает (показана латенси в мс). ⚠ Жёлтый — таймаут. ✗ Красный — ошибка (наведите для расшифровки). 📡 Серый — модель удалена (410 Gone).
+
+### Аналитика
+
+Визуализация производительности моделей:
+
+- **График латенси** — горизонтальный bar chart со средним временем отклика каждой модели
+- **Карточки статистики** — общее количество запросов, успешные/ошибки для каждой модели
+- **Проблемные модели** — карточки с красной подсветкой для моделей с 100% ошибок
+- **Удаление статистики** — кнопка ✕ на карточке очищает данные модели (включая логи)
+
+### Логи
+
+Детальная таблица всех запросов:
+
+| Столбец | Описание |
+|---------|----------|
+| Модель | Идентификатор использованной модели |
+| Статус | success / error / timeout / gone |
+| Латенси | Время ответа в миллисекундах |
+| Токены | Входные/выходные (если доступно) |
+| Провайдер | Через какой сервис был выполнен запрос |
+| Дата | Временная метка запроса |
+
+- **CSV-экспорт** — выгрузка всех логов для внешнего анализа
+
+### Настройки
+
+| Параметр | Описание | Диапазон |
+|----------|----------|----------|
+| **Таймаут** | Время ожидания ответа | 10–120 сек |
+| **Макс. повторов** | Количество автоматических retry | 0–3 |
+| **Фолбэк** | Автопереключение на Lovable AI при ошибке | вкл/выкл |
+
+> [!CAUTION] Настройки локальны
+> Параметры сохраняются в localStorage вашего браузера, а не в облаке.
+
+## Диагностика
+
+Кнопки в заголовке дашборда:
+- **Пинг** — проверка связи с ProxyAPI
+- **Проверить ключ** — валидация API-ключа
+- **Обновить каталог** — принудительная загрузка актуального списка моделей`,
+      en: `# ProxyAPI — Single Key
+
+ProxyAPI is an external gateway that lets you use dozens of AI models from different providers through a single API key. The ProxyAPI dashboard in Hydra gives full control over catalog, testing, and analytics.
+
+## Why You Need It
+
+Instead of configuring 10+ API keys from different providers, you add **one ProxyAPI key** and get access to hundreds of models — OpenAI, Anthropic, Google, DeepSeek, Meta, and many more.
+
+## How to Connect
+
+1. Go to **Profile → API Keys → ProxyAPI**
+2. Enter your ProxyAPI key
+3. Open **Profile → ProxyAPI Dashboard**
+
+## ProxyAPI Dashboard
+
+### Model Catalog
+
+A live catalog searching 400+ ProxyAPI models:
+
+- **Search** — instant search across the entire catalog
+- **Add to favorites** — clicking a model adds it to your personal list
+- **Test model** — the ▶ button sends a test request and shows latency
+- **Mass test** — "Test All Models" checks all selected models with a progress bar
+
+> [!TIP] Test Statuses
+> ✓ Green — model works (latency shown in ms). ⚠ Yellow — timeout. ✗ Red — error (hover for details). 📡 Gray — model removed (410 Gone).
+
+### Analytics
+
+Model performance visualization:
+
+- **Latency chart** — horizontal bar chart with average response time per model
+- **Stats cards** — total requests, successes/errors for each model
+- **Problem models** — cards highlighted in red for models with 100% errors
+- **Delete stats** — the ✕ button on a card clears model data (including logs)
+
+### Logs
+
+Detailed table of all requests:
+
+| Column | Description |
+|--------|-------------|
+| Model | Identifier of the model used |
+| Status | success / error / timeout / gone |
+| Latency | Response time in milliseconds |
+| Tokens | Input/output (if available) |
+| Provider | Which service executed the request |
+| Date | Request timestamp |
+
+- **CSV export** — download all logs for external analysis
+
+### Settings
+
+| Parameter | Description | Range |
+|-----------|-------------|-------|
+| **Timeout** | Response wait time | 10–120 sec |
+| **Max retries** | Number of automatic retries | 0–3 |
+| **Fallback** | Auto-switch to Lovable AI on error | on/off |
+
+> [!CAUTION] Settings are Local
+> Parameters are saved in your browser's localStorage, not in the cloud.
+
+## Diagnostics
+
+Buttons in the dashboard header:
+- **Ping** — connectivity check with ProxyAPI
+- **Check key** — API key validation
+- **Refresh catalog** — force reload of the current model list`,
+    },
+  },
+  {
     id: 'api-integrations',
     titleKey: 'hydrapedia.sections.apiIntegrations',
     icon: 'Wrench',
