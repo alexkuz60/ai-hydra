@@ -264,6 +264,11 @@ export async function streamProxyApi(params: ProviderStreamParams): Promise<Resp
   // Map to universal OpenAI-compatible model ID with provider prefix
   const realModel = PROXYAPI_MODEL_MAP[model_id] || model_id.replace("proxyapi/", "");
   const isReasoning = realModel.endsWith("deepseek-reasoner") || realModel.endsWith("o3-mini");
+  const isOpenAIModel = realModel.startsWith("openai/");
+
+  const tokenParam = isOpenAIModel
+    ? { max_completion_tokens: max_tokens }
+    : { max_tokens };
 
   console.log(`[hydra-stream] ProxyAPI streaming (universal): model=${realModel}`);
 
@@ -281,7 +286,7 @@ export async function streamProxyApi(params: ProviderStreamParams): Promise<Resp
       ],
       stream: true,
       temperature: isReasoning ? undefined : temperature,
-      max_tokens,
+      ...tokenParam,
     }),
   });
 

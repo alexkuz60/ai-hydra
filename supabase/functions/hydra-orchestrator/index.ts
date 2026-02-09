@@ -818,12 +818,17 @@ async function callPersonalModel(
 
     const realModel = PROXYAPI_MODEL_MAP[model] || model.replace("proxyapi/", "");
     const isReasoning = realModel.endsWith("deepseek-reasoner") || realModel.endsWith("o3-mini");
+    const isOpenAIModel = realModel.startsWith("openai/");
 
     const userContent = imageAttachments.length > 0
       ? buildMultimodalContent(message, attachments)
       : message;
 
     console.log(`[hydra-orchestrator] ProxyAPI (universal): model=${realModel}`);
+
+    const tokenParam = isOpenAIModel
+      ? { max_completion_tokens: maxTokens }
+      : { max_tokens: maxTokens };
 
     const response = await fetch("https://openai.api.proxyapi.ru/v1/chat/completions", {
       method: "POST",
@@ -838,7 +843,7 @@ async function callPersonalModel(
           { role: "user", content: userContent },
         ],
         temperature: isReasoning ? undefined : temperature,
-        max_tokens: maxTokens,
+        ...tokenParam,
       }),
     });
 
