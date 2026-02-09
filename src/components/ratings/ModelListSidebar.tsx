@@ -136,8 +136,12 @@ export function ModelListSidebar({ selectedModelId, onSelect, contestModels = {}
   const { allModels, loading, isLovableAvailable, availablePersonalIds } = useAllModels();
   const [search, setSearch] = useState('');
   const [availFilter, setAvailFilter] = useState<'all' | 'available' | 'unavailable'>('all');
-  const [allExpanded, setAllExpanded] = useState(true);
-  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
+  const [allExpanded, setAllExpanded] = useState<boolean>(() => {
+    try { const v = localStorage.getItem('portfolio-all-expanded'); return v !== null ? v === 'true' : true; } catch { return true; }
+  });
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() => {
+    try { const v = localStorage.getItem('portfolio-open-groups'); return v ? JSON.parse(v) : {}; } catch { return {}; }
+  });
   const isRu = language === 'ru';
 
   const filtered = useMemo(() => {
@@ -165,13 +169,21 @@ export function ModelListSidebar({ selectedModelId, onSelect, contestModels = {}
   }, [openGroups, allExpanded]);
 
   const toggleGroup = useCallback((key: string, open: boolean) => {
-    setOpenGroups(prev => ({ ...prev, [key]: open }));
+    setOpenGroups(prev => {
+      const next = { ...prev, [key]: open };
+      try { localStorage.setItem('portfolio-open-groups', JSON.stringify(next)); } catch {}
+      return next;
+    });
   }, []);
 
   const toggleAll = useCallback(() => {
     const newState = !allExpanded;
     setAllExpanded(newState);
     setOpenGroups({});
+    try {
+      localStorage.setItem('portfolio-all-expanded', String(newState));
+      localStorage.removeItem('portfolio-open-groups');
+    } catch {}
   }, [allExpanded]);
 
   return (
