@@ -421,7 +421,9 @@ async function callPersonalModel(
   attachments: Attachment[],
   systemPrompt: string,
   temperature: number,
-  maxTokens: number
+  maxTokens: number,
+  useProxyApi = false,
+  proxyapiKey: string | null = null,
 ) {
   const imageAttachments = attachments.filter(a => a.type.startsWith('image/'));
   
@@ -591,14 +593,27 @@ async function callPersonalModel(
     const userContent = imageAttachments.length > 0 
       ? buildMultimodalContent(message, attachments)
       : message;
+
+    // Determine if we should use ProxyAPI instead of OpenRouter
+    const isProxyApi = useProxyApi && proxyapiKey;
+    const baseUrl = isProxyApi
+      ? "https://api.proxyapi.ru/openai/v1/chat/completions"
+      : "https://openrouter.ai/api/v1/chat/completions";
+    const effectiveKey = isProxyApi ? proxyapiKey : apiKey;
+    const extraHeaders: Record<string, string> = isProxyApi
+      ? {}
+      : { "HTTP-Referer": "https://ai-hydra.lovable.app", "X-Title": "Hydra AI" };
+
+    if (isProxyApi) {
+      console.log(`[hydra-orchestrator] Routing OpenRouter model ${model} via ProxyAPI`);
+    }
       
-    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+    const response = await fetch(baseUrl, {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${apiKey}`,
+        "Authorization": `Bearer ${effectiveKey}`,
         "Content-Type": "application/json",
-        "HTTP-Referer": "https://ai-hydra.lovable.app",
-        "X-Title": "Hydra AI",
+        ...extraHeaders,
       },
       body: JSON.stringify({
         model,
@@ -843,12 +858,20 @@ serve(async (req) => {
     // Fetch user profile and API keys
     const { data: profile } = await supabase
       .from("profiles")
-      .select("username")
+      .select("username, proxyapi_priority")
       .eq("user_id", user.id)
       .single();
 
     const { data: apiKeysResult } = await supabase.rpc('get_my_api_keys');
     const apiKeys = apiKeysResult?.[0] || null;
+
+    // Check ProxyAPI priority: if enabled and key exists, use ProxyAPI instead of OpenRouter
+    const proxyapiPriority = !!(profile as any)?.proxyapi_priority;
+    const proxyapiKey = (apiKeys as any)?.proxyapi_api_key || null;
+    const useProxyApi = proxyapiPriority && !!proxyapiKey;
+    if (useProxyApi) {
+      console.log("[hydra-orchestrator] ProxyAPI priority active — OpenRouter requests will be routed via ProxyAPI");
+    }
 
     const lovableKey = Deno.env.get("LOVABLE_API_KEY");
     const isAdmin = profile?.username === "AlexKuz";
@@ -988,7 +1011,12 @@ serve(async (req) => {
           if (modelReq.provider === "gemini") apiKey = apiKeys?.google_gemini_api_key;
           if (modelReq.provider === "anthropic") apiKey = apiKeys?.anthropic_api_key;
           if (modelReq.provider === "xai") apiKey = apiKeys?.xai_api_key;
-          if (modelReq.provider === "openrouter") apiKey = (apiKeys as { openrouter_api_key?: string | null })?.openrouter_api_key ?? null;
+          if (modelReq.provider === "openrouter") {
+            // Use ProxyAPI key when priority is active, otherwise fall back to OpenRouter key
+            apiKey = useProxyApi
+              ? proxyapiKey
+              : (apiKeys as { openrouter_api_key?: string | null })?.openrouter_api_key ?? null;
+          }
           if (modelReq.provider === "groq") apiKey = (apiKeys as { groq_api_key?: string | null })?.groq_api_key ?? null;
           if (modelReq.provider === "deepseek") apiKey = (apiKeys as { deepseek_api_key?: string | null })?.deepseek_api_key ?? null;
           if (modelReq.provider === "mistral") apiKey = (apiKeys as { mistral_api_key?: string | null })?.mistral_api_key ?? null;
@@ -997,7 +1025,7 @@ serve(async (req) => {
             throw new Error(`No API key configured for ${modelReq.provider}`);
           }
 
-          result = await callPersonalModel(modelReq.provider!, apiKey, modelReq.model_id, enhancedMessage, images, systemPrompt, temperature, maxTokens);
+          result = await callPersonalModel(modelReq.provider!, apiKey, modelReq.model_id, enhancedMessage, images, systemPrompt, temperature, maxTokens, useProxyApi, proxyapiKey);
         }
         
         console.log(`Success for model: ${modelReq.model_id}`);
