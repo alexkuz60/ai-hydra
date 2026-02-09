@@ -133,6 +133,8 @@ export function ProxyApiDashboard({ hasKey, proxyapiPriority, onPriorityChange, 
   const [proxyCatalog, setProxyCatalog] = useState<ProxyApiCatalogModel[]>([]);
   const [catalogLoading, setCatalogLoading] = useState(false);
   const [catalogLoaded, setCatalogLoaded] = useState(false);
+  const [massTestRunning, setMassTestRunning] = useState(false);
+  const [massTestProgress, setMassTestProgress] = useState({ done: 0, total: 0 });
 
   const proxyModels = getAllRegistryEntries().filter(m => m.provider === 'proxyapi' && !hiddenModels.has(m.id));
 
@@ -281,6 +283,45 @@ export function ProxyApiDashboard({ hasKey, proxyapiPriority, onPriorityChange, 
       setTestingModel(null);
     }
   }, [user, fetchLogs]);
+
+  // Mass test all selected models sequentially
+  const handleMassTest = useCallback(async () => {
+    if (!user || massTestRunning) return;
+    const allModels = [...proxyModels.map(m => m.id), ...userAddedModels.map(m => m.id)];
+    if (allModels.length === 0) return;
+    setMassTestRunning(true);
+    setMassTestProgress({ done: 0, total: allModels.length });
+    const { data: { session } } = await supabase.auth.getSession();
+    for (let i = 0; i < allModels.length; i++) {
+      const modelId = allModels[i];
+      setTestingModel(modelId);
+      try {
+        const resp = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/proxy-api-test`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session?.access_token}` },
+            body: JSON.stringify({ action: 'test', model_id: modelId }),
+          }
+        );
+        const data = await resp.json() as TestResult;
+        setTestResults(prev => ({ ...prev, [modelId]: data }));
+        if (data.status === 'gone') {
+          const model = getAllRegistryEntries().find(m => m.id === modelId);
+          if (model) setGoneModel(model);
+        }
+      } catch {
+        setTestResults(prev => ({
+          ...prev,
+          [modelId]: { status: 'error', latency_ms: 0, error: 'Network error' },
+        }));
+      }
+      setMassTestProgress({ done: i + 1, total: allModels.length });
+    }
+    setTestingModel(null);
+    setMassTestRunning(false);
+    fetchLogs();
+  }, [user, massTestRunning, proxyModels, userAddedModels, fetchLogs]);
 
   const handleConfirmRemove = useCallback(() => {
     if (!goneModel) return;
@@ -492,7 +533,30 @@ export function ProxyApiDashboard({ hasKey, proxyapiPriority, onPriorityChange, 
                 </Button>
               </div>
 
-              {/* Search results from live ProxyAPI catalog */}
+              {/* Mass test button */}
+              <div className="flex items-center gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={handleMassTest}
+                  disabled={massTestRunning || (proxyModels.length + userAddedModels.length) === 0}
+                  className="gap-2"
+                >
+                  {massTestRunning ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
+                  {massTestRunning
+                    ? `Тестирование ${massTestProgress.done}/${massTestProgress.total}...`
+                    : `Тест всех моделей (${proxyModels.length + userAddedModels.length})`}
+                </Button>
+                {massTestRunning && (
+                  <div className="flex-1 h-2 rounded-full bg-secondary overflow-hidden">
+                    <div
+                      className="h-full bg-primary transition-all duration-300"
+                      style={{ width: `${massTestProgress.total ? (massTestProgress.done / massTestProgress.total) * 100 : 0}%` }}
+                    />
+                  </div>
+                )}
+              </div>
+
               {filteredCatalogModels.length > 0 && (
                 <div className="border rounded-lg bg-card/50 max-h-[240px] overflow-y-auto">
                   {filteredCatalogModels.map(model => (
