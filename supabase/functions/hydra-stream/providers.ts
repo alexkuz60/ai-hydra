@@ -252,6 +252,26 @@ export async function streamLovableAI(params: ProviderStreamParams): Promise<Res
 
 // ── ProxyAPI (direct, separate from OpenRouter) ─────────
 
+const PROXYAPI_MAX_RETRIES = 2;
+const PROXYAPI_RETRY_BASE_MS = 1000;
+const PROXYAPI_TIMEOUT_MS = 30_000;
+
+/** Fetch with timeout */
+async function fetchWithTimeout(url: string, init: RequestInit, timeoutMs: number): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...init, signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/** Check if error is retryable */
+function isRetryable(status: number): boolean {
+  return status >= 500 || status === 429;
+}
+
 export async function streamProxyApi(params: ProviderStreamParams): Promise<Response> {
   const { req, model_id, systemPrompt, message, temperature, max_tokens } = params;
 
@@ -274,45 +294,75 @@ export async function streamProxyApi(params: ProviderStreamParams): Promise<Resp
 
   console.log(`[hydra-stream] ProxyAPI streaming (universal): model=${realModel}`);
 
-  const response = await fetch(PROXYAPI_UNIVERSAL_URL, {
+  const requestBody = JSON.stringify({
+    model: realModel,
+    messages: [
+      { role: "system", content: systemPrompt },
+      { role: "user", content: message },
+    ],
+    stream: true,
+    temperature: (isReasoning || isOpenAIModel) ? undefined : temperature,
+    ...tokenParam,
+  });
+
+  const requestInit: RequestInit = {
     method: "POST",
     headers: {
       Authorization: `Bearer ${keyResult.key}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({
-      model: realModel,
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: message },
-      ],
-      stream: true,
-      temperature: (isReasoning || isOpenAIModel) ? undefined : temperature,
-      ...tokenParam,
-    }),
-  });
+    body: requestBody,
+  };
 
-  if (!response.ok) {
-    const errorText = await response.text();
-    console.error("[hydra-stream] ProxyAPI error:", response.status, errorText);
+  // Retry loop with exponential backoff
+  let lastError = "";
+  let lastStatus = 0;
 
-    // Fallback to Lovable AI if ProxyAPI returns 404 (model not available)
-    if (response.status === 404) {
-      const lovableModelId = PROXYAPI_TO_LOVABLE_MAP[model_id];
-      if (lovableModelId) {
-        console.log(`[hydra-stream] ProxyAPI 404 fallback: ${model_id} -> ${lovableModelId}`);
-        return streamLovableAI({ ...params, model_id: lovableModelId });
-      }
+  for (let attempt = 0; attempt <= PROXYAPI_MAX_RETRIES; attempt++) {
+    if (attempt > 0) {
+      const delay = PROXYAPI_RETRY_BASE_MS * Math.pow(2, attempt - 1);
+      console.log(`[hydra-stream] ProxyAPI retry ${attempt}/${PROXYAPI_MAX_RETRIES} after ${delay}ms`);
+      await new Promise((r) => setTimeout(r, delay));
     }
 
-    return new Response(
-      JSON.stringify({ error: `ProxyAPI error: ${errorText}` }),
-      { status: 500, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } }
-    );
+    try {
+      const response = await fetchWithTimeout(PROXYAPI_UNIVERSAL_URL, requestInit, PROXYAPI_TIMEOUT_MS);
+
+      if (response.ok) {
+        console.log(`[hydra-stream] ProxyAPI streaming started (attempt ${attempt + 1})`);
+        return new Response(response.body, { headers: SSE_HEADERS });
+      }
+
+      lastStatus = response.status;
+      lastError = await response.text();
+      console.error(`[hydra-stream] ProxyAPI error (attempt ${attempt + 1}):`, lastStatus, lastError);
+
+      // Don't retry client errors (4xx) except 429
+      if (!isRetryable(lastStatus)) break;
+    } catch (err) {
+      lastError = err instanceof Error ? err.message : String(err);
+      lastStatus = 0;
+      console.error(`[hydra-stream] ProxyAPI timeout/network error (attempt ${attempt + 1}):`, lastError);
+      // Timeouts and network errors are always retryable
+    }
   }
 
-  console.log("[hydra-stream] ProxyAPI streaming started");
-  return new Response(response.body, { headers: SSE_HEADERS });
+  // All retries exhausted — try Lovable AI fallback for mapped models
+  const lovableModelId = PROXYAPI_TO_LOVABLE_MAP[model_id];
+  if (lovableModelId) {
+    const reason = lastStatus === 404 ? "model not available"
+      : lastStatus >= 500 ? `server error ${lastStatus}`
+      : lastStatus === 429 ? "rate limited"
+      : lastStatus === 0 ? "timeout/network error"
+      : `error ${lastStatus}`;
+    console.log(`[hydra-stream] ProxyAPI fallback -> Lovable AI: ${model_id} -> ${lovableModelId} (reason: ${reason})`);
+    return streamLovableAI({ ...params, model_id: lovableModelId });
+  }
+
+  return new Response(
+    JSON.stringify({ error: `ProxyAPI error after ${PROXYAPI_MAX_RETRIES + 1} attempts: ${lastError}` }),
+    { status: lastStatus || 500, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } }
+  );
 }
 
 // ── OpenRouter (with ProxyAPI fallback) ─────────────────
