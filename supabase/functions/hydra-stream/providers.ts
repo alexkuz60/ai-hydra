@@ -266,8 +266,10 @@ export async function streamProxyApi(params: ProviderStreamParams): Promise<Resp
   const isReasoning = realModel.endsWith("deepseek-reasoner") || realModel.endsWith("o3-mini");
   const isOpenAIModel = realModel.startsWith("openai/");
 
+  // GPT-5 reasoning models need higher min tokens for reasoning + response
+  const effectiveMaxTokens = isOpenAIModel ? Math.max(max_tokens, 2000) : max_tokens;
   const tokenParam = isOpenAIModel
-    ? { max_completion_tokens: max_tokens }
+    ? { max_completion_tokens: effectiveMaxTokens }
     : { max_tokens };
 
   console.log(`[hydra-stream] ProxyAPI streaming (universal): model=${realModel}`);
