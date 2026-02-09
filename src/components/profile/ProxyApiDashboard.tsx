@@ -9,6 +9,9 @@ import { Loader2, Wifi, WifiOff, Zap, Play, CheckCircle, XCircle, Clock, AlertTr
 import { ProxyApiLogo, PROVIDER_LOGOS, PROVIDER_COLORS } from '@/components/ui/ProviderLogos';
 import { cn } from '@/lib/utils';
 import { getAllRegistryEntries, type ModelRegistryEntry, STRENGTH_LABELS } from '@/config/modelRegistry';
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose,
+} from '@/components/ui/dialog';
 
 // ─── Types ─────────────────────────────────────────────
 
@@ -20,7 +23,7 @@ interface PingResult {
 }
 
 interface TestResult {
-  status: 'success' | 'error' | 'timeout';
+  status: 'success' | 'error' | 'timeout' | 'gone';
   latency_ms: number;
   content?: string;
   tokens?: { input: number; output: number };
@@ -36,8 +39,15 @@ export function ProxyApiDashboard({ hasKey }: { hasKey: boolean }) {
   const [pinging, setPinging] = useState(false);
   const [testResults, setTestResults] = useState<Record<string, TestResult>>({});
   const [testingModel, setTestingModel] = useState<string | null>(null);
+  const [hiddenModels, setHiddenModels] = useState<Set<string>>(() => {
+    try {
+      const saved = localStorage.getItem('proxyapi_hidden_models');
+      return saved ? new Set(JSON.parse(saved)) : new Set();
+    } catch { return new Set(); }
+  });
+  const [goneModel, setGoneModel] = useState<ModelRegistryEntry | null>(null);
 
-  const proxyModels = getAllRegistryEntries().filter(m => m.provider === 'proxyapi');
+  const proxyModels = getAllRegistryEntries().filter(m => m.provider === 'proxyapi' && !hiddenModels.has(m.id));
 
   const handlePing = useCallback(async () => {
     if (!user) return;
@@ -81,8 +91,12 @@ export function ProxyApiDashboard({ hasKey }: { hasKey: boolean }) {
           body: JSON.stringify({ action: 'test', model_id: modelId }),
         }
       );
-      const data = await resp.json();
-      setTestResults(prev => ({ ...prev, [modelId]: data as TestResult }));
+      const data = await resp.json() as TestResult;
+      setTestResults(prev => ({ ...prev, [modelId]: data }));
+      if (data.status === 'gone') {
+        const model = getAllRegistryEntries().find(m => m.id === modelId);
+        if (model) setGoneModel(model);
+      }
     } catch {
       setTestResults(prev => ({
         ...prev,
@@ -92,6 +106,15 @@ export function ProxyApiDashboard({ hasKey }: { hasKey: boolean }) {
       setTestingModel(null);
     }
   }, [user]);
+
+  const handleConfirmRemove = useCallback(() => {
+    if (!goneModel) return;
+    const next = new Set(hiddenModels);
+    next.add(goneModel.id);
+    setHiddenModels(next);
+    localStorage.setItem('proxyapi_hidden_models', JSON.stringify([...next]));
+    setGoneModel(null);
+  }, [goneModel, hiddenModels]);
 
   if (!hasKey) {
     return (
@@ -181,6 +204,30 @@ export function ProxyApiDashboard({ hasKey }: { hasKey: boolean }) {
           </AccordionItem>
         </Accordion>
       </HydraCardContent>
+
+      {/* Gone model dialog */}
+      <Dialog open={!!goneModel} onOpenChange={(open) => !open && setGoneModel(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <WifiOff className="h-5 w-5 text-destructive" />
+              Модель удалена
+            </DialogTitle>
+            <DialogDescription>
+              Модель <strong>{goneModel?.displayName}</strong> была навсегда удалена из сервиса ProxyAPI (HTTP 410 Gone).
+              Она больше не доступна для запросов. Скрыть её из каталога?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="ghost">Оставить</Button>
+            </DialogClose>
+            <Button variant="destructive" onClick={handleConfirmRemove}>
+              Скрыть модель
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </HydraCard>
   );
 }
@@ -246,6 +293,11 @@ function ModelRow({
             <>
               <CheckCircle className="h-3.5 w-3.5 text-emerald-400" />
               <span className="text-emerald-400">{testResult.latency_ms}ms</span>
+            </>
+          ) : testResult.status === 'gone' ? (
+            <>
+              <WifiOff className="h-3.5 w-3.5 text-destructive" />
+              <span className="text-destructive">410 Gone</span>
             </>
           ) : testResult.status === 'timeout' ? (
             <>
