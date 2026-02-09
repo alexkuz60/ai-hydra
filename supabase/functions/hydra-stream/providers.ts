@@ -23,6 +23,17 @@ const PROXYAPI_MODEL_MAP: Record<string, string> = {
   "proxyapi/deepseek-reasoner": "deepseek-reasoner",
 };
 
+/** Map proxyapi/ model IDs to Lovable AI equivalents for 404 fallback */
+const PROXYAPI_TO_LOVABLE_MAP: Record<string, string> = {
+  "proxyapi/gemini-3-pro-preview": "google/gemini-3-pro-preview",
+  "proxyapi/gemini-3-flash-preview": "google/gemini-3-flash-preview",
+  "proxyapi/gemini-2.5-pro": "google/gemini-2.5-pro",
+  "proxyapi/gemini-2.5-flash": "google/gemini-2.5-flash",
+  "proxyapi/gpt-5": "openai/gpt-5",
+  "proxyapi/gpt-5-mini": "openai/gpt-5-mini",
+  "proxyapi/gpt-5.2": "openai/gpt-5.2",
+};
+
 interface ProviderStreamParams {
   req: Request;
   model_id: string;
@@ -282,8 +293,18 @@ export async function streamProxyApi(params: ProviderStreamParams): Promise<Resp
     if (!response.ok) {
       const errorText = await response.text();
       console.error("[hydra-stream] ProxyAPI/Anthropic error:", response.status, errorText);
+
+      // Fallback to Lovable AI if ProxyAPI returns 404
+      if (response.status === 404) {
+        const lovableModelId = PROXYAPI_TO_LOVABLE_MAP[model_id];
+        if (lovableModelId) {
+          console.log(`[hydra-stream] ProxyAPI/Anthropic 404 fallback: ${model_id} -> ${lovableModelId}`);
+          return streamLovableAI({ ...params, model_id: lovableModelId });
+        }
+      }
+
       return new Response(
-        JSON.stringify({ error: `ProxyAPI error: ${response.status}` }),
+        JSON.stringify({ error: `ProxyAPI error: ${errorText}` }),
         { status: 500, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } }
       );
     }
@@ -316,8 +337,18 @@ export async function streamProxyApi(params: ProviderStreamParams): Promise<Resp
   if (!response.ok) {
     const errorText = await response.text();
     console.error("[hydra-stream] ProxyAPI error:", response.status, errorText);
+
+    // Fallback to Lovable AI if ProxyAPI returns 404 (model not available)
+    if (response.status === 404) {
+      const lovableModelId = PROXYAPI_TO_LOVABLE_MAP[model_id];
+      if (lovableModelId) {
+        console.log(`[hydra-stream] ProxyAPI 404 fallback: ${model_id} -> ${lovableModelId}`);
+        return streamLovableAI({ ...params, model_id: lovableModelId });
+      }
+    }
+
     return new Response(
-      JSON.stringify({ error: `ProxyAPI error: ${response.status}` }),
+      JSON.stringify({ error: `ProxyAPI error: ${errorText}` }),
       { status: 500, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } }
     );
   }
