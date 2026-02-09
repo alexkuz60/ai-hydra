@@ -318,26 +318,63 @@ export function ChatInputArea({
 
               // Regular file attachment
               const isImage = attached.file?.type.startsWith('image/');
+              
+              if (isImage && attached.preview) {
+                return (
+                  <Dialog key={attached.id}>
+                    <div className="relative group">
+                      <DialogTrigger asChild>
+                        <button
+                          type="button"
+                          className={cn(
+                            "rounded-md overflow-hidden border border-border/50",
+                            "bg-background/80 w-16 h-16 cursor-pointer",
+                            "hover:border-primary/50 transition-colors"
+                          )}
+                        >
+                          <img
+                            src={attached.preview}
+                            alt={attached.file?.name}
+                            className="w-full h-full object-cover"
+                          />
+                        </button>
+                      </DialogTrigger>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleRemoveAttachment(attached.id, attached.preview);
+                        }}
+                        className="absolute top-0.5 right-0.5 bg-destructive text-destructive-foreground rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                      >
+                        <span className="sr-only">Remove</span>
+                        <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M18 6L6 18M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </div>
+                    <DialogContent className="max-w-4xl max-h-[85vh] p-2">
+                      <img
+                        src={attached.preview}
+                        alt={attached.file?.name}
+                        className="w-full h-full object-contain rounded"
+                      />
+                    </DialogContent>
+                  </Dialog>
+                );
+              }
+
               return (
                 <div
                   key={attached.id}
                   className={cn(
                     "relative group rounded-md overflow-hidden border border-border/50",
-                    "bg-background/80 flex items-center",
-                    isImage ? "w-16 h-16" : "px-2 py-1 gap-1"
+                    "bg-background/80 flex items-center px-2 py-1 gap-1"
                   )}
                 >
-                  {isImage && attached.preview ? (
-                    <img
-                      src={attached.preview}
-                      alt={attached.file?.name}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <span className="text-xs truncate max-w-[100px]">
-                      {attached.file?.name}
-                    </span>
-                  )}
+                  <span className="text-xs truncate max-w-[100px]">
+                    {attached.file?.name}
+                  </span>
                   <button
                     type="button"
                     onClick={() => handleRemoveAttachment(attached.id, attached.preview)}
