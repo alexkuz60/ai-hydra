@@ -1,0 +1,1 @@
+GRANT EXECUTE ON FUNCTION vault._crypto_aead_det_decrypt(bytea, bytea, bigint, bytea, bytea) TO postgres;
