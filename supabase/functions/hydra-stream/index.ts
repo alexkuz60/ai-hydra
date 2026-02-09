@@ -3,12 +3,13 @@ import {
   CORS_HEADERS,
   DEEPSEEK_MODELS,
   MISTRAL_MODELS,
+  GROQ_MODELS,
   isOpenRouterModel,
   DEFAULT_PROMPTS,
   buildMemoryContext,
   type StreamRequest,
 } from "./types.ts";
-import { streamDeepSeek, streamMistral, streamLovableAI, streamOpenRouter } from "./providers.ts";
+import { streamDeepSeek, streamMistral, streamGroq, streamLovableAI, streamOpenRouter } from "./providers.ts";
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -57,6 +58,10 @@ serve(async (req) => {
 
     if (MISTRAL_MODELS.includes(model_id)) {
       return streamMistral(params);
+    }
+
+    if (GROQ_MODELS.includes(model_id)) {
+      return streamGroq(params);
     }
 
     if (isOpenRouterModel(model_id)) {
