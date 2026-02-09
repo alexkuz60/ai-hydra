@@ -2,7 +2,7 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { authenticateUser, getUserApiKey } from "./auth.ts";
-import { CORS_HEADERS, SSE_HEADERS, wrapStreamWithProviderInfo, type ProviderGateway } from "./types.ts";
+import { CORS_HEADERS, SSE_HEADERS, wrapStreamWithProviderInfo, type ProviderGateway, type ProxyApiSettings } from "./types.ts";
 
 /** Universal ProxyAPI endpoint (OpenAI-compatible for all providers) */
 const PROXYAPI_UNIVERSAL_URL = "https://openai.api.proxyapi.ru/v1/chat/completions";
@@ -48,6 +48,7 @@ interface ProviderStreamParams {
   message: string;
   temperature: number;
   max_tokens: number;
+  proxyapi_settings?: ProxyApiSettings;
 }
 
 // ── DeepSeek ────────────────────────────────────────────
@@ -270,9 +271,9 @@ async function streamLovableAIWithFallbackInfo(
 }
 
 
-const PROXYAPI_MAX_RETRIES = 2;
-const PROXYAPI_RETRY_BASE_MS = 1000;
-const PROXYAPI_TIMEOUT_MS = 30_000;
+const PROXYAPI_DEFAULT_MAX_RETRIES = 2;
+const PROXYAPI_DEFAULT_RETRY_BASE_MS = 1000;
+const PROXYAPI_DEFAULT_TIMEOUT_MS = 30_000;
 
 /** Fetch with timeout */
 async function fetchWithTimeout(url: string, init: RequestInit, timeoutMs: number): Promise<Response> {
@@ -291,8 +292,12 @@ function isRetryable(status: number): boolean {
 }
 
 export async function streamProxyApi(params: ProviderStreamParams): Promise<Response> {
-  const { req, model_id, systemPrompt, message, temperature, max_tokens } = params;
+  const { req, model_id, systemPrompt, message, temperature, max_tokens, proxyapi_settings } = params;
+  const maxRetries = proxyapi_settings?.max_retries ?? PROXYAPI_DEFAULT_MAX_RETRIES;
+  const timeoutMs = (proxyapi_settings?.timeout_sec ?? 30) * 1000;
+  const fallbackEnabled = proxyapi_settings?.fallback_enabled ?? true;
 
+  console.log(`[hydra-stream] ProxyAPI settings: timeout=${timeoutMs}ms, retries=${maxRetries}, fallback=${fallbackEnabled}`);
   const auth = await authenticateUser(req, "ProxyAPI");
   if (!auth.ok) return auth.response;
 
@@ -336,15 +341,15 @@ export async function streamProxyApi(params: ProviderStreamParams): Promise<Resp
   let lastError = "";
   let lastStatus = 0;
 
-  for (let attempt = 0; attempt <= PROXYAPI_MAX_RETRIES; attempt++) {
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
     if (attempt > 0) {
-      const delay = PROXYAPI_RETRY_BASE_MS * Math.pow(2, attempt - 1);
-      console.log(`[hydra-stream] ProxyAPI retry ${attempt}/${PROXYAPI_MAX_RETRIES} after ${delay}ms`);
+      const delay = PROXYAPI_DEFAULT_RETRY_BASE_MS * Math.pow(2, attempt - 1);
+      console.log(`[hydra-stream] ProxyAPI retry ${attempt}/${maxRetries} after ${delay}ms`);
       await new Promise((r) => setTimeout(r, delay));
     }
 
     try {
-      const response = await fetchWithTimeout(PROXYAPI_UNIVERSAL_URL, requestInit, PROXYAPI_TIMEOUT_MS);
+      const response = await fetchWithTimeout(PROXYAPI_UNIVERSAL_URL, requestInit, timeoutMs);
 
       if (response.ok) {
         console.log(`[hydra-stream] ProxyAPI streaming started (attempt ${attempt + 1})`);
@@ -367,7 +372,7 @@ export async function streamProxyApi(params: ProviderStreamParams): Promise<Resp
 
   // All retries exhausted — try Lovable AI fallback for mapped models
   const lovableModelId = PROXYAPI_TO_LOVABLE_MAP[model_id];
-  if (lovableModelId) {
+  if (fallbackEnabled && lovableModelId) {
     const reason = lastStatus === 404 ? "model not available"
       : lastStatus >= 500 ? `server error ${lastStatus}`
       : lastStatus === 429 ? "rate limited"
@@ -378,7 +383,7 @@ export async function streamProxyApi(params: ProviderStreamParams): Promise<Resp
   }
 
   return new Response(
-    JSON.stringify({ error: `ProxyAPI error after ${PROXYAPI_MAX_RETRIES + 1} attempts: ${lastError}` }),
+    JSON.stringify({ error: `ProxyAPI error after ${maxRetries + 1} attempts: ${lastError}` }),
     { status: lastStatus || 500, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } }
   );
 }
@@ -428,7 +433,11 @@ export async function streamOpenRouter(params: ProviderStreamParams): Promise<Re
 
   console.log(`[hydra-stream] OpenRouter streaming: model=${model_id}, via=${useProxyApi ? "ProxyAPI" : "OpenRouter"}`);
 
-  const response = await fetch(baseUrl, {
+  const timeoutMs = useProxyApi 
+    ? (params.proxyapi_settings?.timeout_sec ?? 30) * 1000 
+    : 60_000;
+
+  const response = await fetchWithTimeout(baseUrl, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${effectiveKey}`,
@@ -445,7 +454,7 @@ export async function streamOpenRouter(params: ProviderStreamParams): Promise<Re
       temperature,
       max_tokens,
     }),
-  });
+  }, timeoutMs);
 
   if (!response.ok) {
     const errorText = await response.text();

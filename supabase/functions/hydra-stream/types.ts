@@ -48,6 +48,12 @@ export interface MemoryChunk {
   metadata?: Record<string, unknown>;
 }
 
+export interface ProxyApiSettings {
+  timeout_sec?: number;
+  max_retries?: number;
+  fallback_enabled?: boolean;
+}
+
 export interface StreamRequest {
   message: string;
   model_id: string;
@@ -56,6 +62,7 @@ export interface StreamRequest {
   temperature?: number;
   max_tokens?: number;
   memory_context?: MemoryChunk[];
+  proxyapi_settings?: ProxyApiSettings;
 }
 
 // DeepSeek models that need direct API access
