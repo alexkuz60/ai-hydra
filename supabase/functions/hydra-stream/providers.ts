@@ -296,6 +296,7 @@ export async function streamProxyApi(params: ProviderStreamParams): Promise<Resp
   const maxRetries = proxyapi_settings?.max_retries ?? PROXYAPI_DEFAULT_MAX_RETRIES;
   const timeoutMs = (proxyapi_settings?.timeout_sec ?? 30) * 1000;
   const fallbackEnabled = proxyapi_settings?.fallback_enabled ?? true;
+  const startTime = Date.now();
 
   console.log(`[hydra-stream] ProxyAPI settings: timeout=${timeoutMs}ms, retries=${maxRetries}, fallback=${fallbackEnabled}`);
   const auth = await authenticateUser(req, "ProxyAPI");
@@ -337,6 +338,22 @@ export async function streamProxyApi(params: ProviderStreamParams): Promise<Resp
     body: requestBody,
   };
 
+  // Helper to log to proxy_api_logs (fire-and-forget)
+  const logRequest = (status: string, errorMsg?: string, fallbackProvider?: string) => {
+    const latency = Date.now() - startTime;
+    auth.supabase.from("proxy_api_logs").insert({
+      user_id: auth.userId,
+      model_id: model_id,
+      request_type: "stream",
+      status,
+      latency_ms: latency,
+      error_message: errorMsg || null,
+      fallback_provider: fallbackProvider || null,
+    }).then(({ error }) => {
+      if (error) console.error("[hydra-stream] Failed to log proxy request:", error.message);
+    });
+  };
+
   // Retry loop with exponential backoff
   let lastError = "";
   let lastStatus = 0;
@@ -353,6 +370,7 @@ export async function streamProxyApi(params: ProviderStreamParams): Promise<Resp
 
       if (response.ok) {
         console.log(`[hydra-stream] ProxyAPI streaming started (attempt ${attempt + 1})`);
+        logRequest("success");
         return new Response(wrapStreamWithProviderInfo(response.body!, 'proxyapi'), { headers: SSE_HEADERS });
       }
 
@@ -379,9 +397,11 @@ export async function streamProxyApi(params: ProviderStreamParams): Promise<Resp
       : lastStatus === 0 ? "timeout/network error"
       : `error ${lastStatus}`;
     console.log(`[hydra-stream] ProxyAPI fallback -> Lovable AI: ${model_id} -> ${lovableModelId} (reason: ${reason})`);
+    logRequest("fallback", reason, "lovable_ai");
     return streamLovableAIWithFallbackInfo({ ...params, model_id: lovableModelId }, 'proxyapi', reason);
   }
 
+  logRequest("error", `${lastStatus}: ${lastError}`);
   return new Response(
     JSON.stringify({ error: `ProxyAPI error after ${maxRetries + 1} attempts: ${lastError}` }),
     { status: lastStatus || 500, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } }

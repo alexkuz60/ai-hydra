@@ -9,10 +9,11 @@ import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { Loader2, Wifi, WifiOff, Zap, Play, CheckCircle, XCircle, Clock, AlertTriangle, History, Settings2, BarChart3, RefreshCw } from 'lucide-react';
+import { Loader2, Wifi, WifiOff, Zap, Play, CheckCircle, XCircle, Clock, AlertTriangle, History, Settings2, BarChart3, RefreshCw, Download, Key } from 'lucide-react';
 import { ProxyApiLogo, PROVIDER_LOGOS, PROVIDER_COLORS } from '@/components/ui/ProviderLogos';
 import { cn } from '@/lib/utils';
 import { getAllRegistryEntries, type ModelRegistryEntry, STRENGTH_LABELS } from '@/config/modelRegistry';
+import { ApiKeyField, type KeyMetadata } from '@/components/profile/ApiKeyField';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose,
 } from '@/components/ui/dialog';
@@ -68,9 +69,13 @@ interface ProxyApiDashboardProps {
   hasKey: boolean;
   proxyapiPriority: boolean;
   onPriorityChange: (value: boolean) => void;
+  apiKeyValue: string;
+  onApiKeyChange: (value: string) => void;
+  keyMetadata?: KeyMetadata;
+  onExpirationChange: (date: string | null) => void;
 }
 
-export function ProxyApiDashboard({ hasKey, proxyapiPriority, onPriorityChange }: ProxyApiDashboardProps) {
+export function ProxyApiDashboard({ hasKey, proxyapiPriority, onPriorityChange, apiKeyValue, onApiKeyChange, keyMetadata: keyMeta, onExpirationChange }: ProxyApiDashboardProps) {
   const { user } = useAuth();
   const [pingResult, setPingResult] = useState<PingResult | null>(null);
   const [pinging, setPinging] = useState(false);
@@ -204,6 +209,64 @@ export function ProxyApiDashboard({ hasKey, proxyapiPriority, onPriorityChange }
     }));
   }, [logs]);
 
+  // Export logs as CSV
+  const handleExportCSV = useCallback(() => {
+    if (logs.length === 0) return;
+    const headers = ['Дата', 'Модель', 'Тип', 'Статус', 'Латенси (ms)', 'Токены вход', 'Токены выход', 'Ошибка'];
+    const rows = logs.map(l => [
+      new Date(l.created_at).toISOString(),
+      l.model_id,
+      l.request_type,
+      l.status,
+      l.latency_ms ?? '',
+      l.tokens_input ?? '',
+      l.tokens_output ?? '',
+      l.error_message ?? '',
+    ]);
+    const csv = [headers.join(','), ...rows.map(r => r.map(v => `"${v}"`).join(','))].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `proxyapi-logs-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }, [logs]);
+
+  // API Key section (always shown)
+  const renderKeySection = () => (
+    <Accordion type="multiple" defaultValue={['apikey']} className="mb-4">
+      <AccordionItem value="apikey" className="border rounded-lg px-4">
+        <AccordionTrigger className="hover:no-underline">
+          <div className="flex items-center gap-2">
+            <Key className="h-4 w-4 text-primary" />
+            <span className="font-semibold">API-ключ</span>
+            {hasKey && <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30 ml-2">Активен</Badge>}
+          </div>
+        </AccordionTrigger>
+        <AccordionContent className="pb-4">
+          <ApiKeyField
+            provider="proxyapi"
+            label="ProxyAPI"
+            value={apiKeyValue}
+            onChange={onApiKeyChange}
+            placeholder="sk-..."
+            metadata={keyMeta}
+            onExpirationChange={onExpirationChange}
+            hint={
+              <>
+                Получите ключ на{' '}
+                <a href="https://console.proxyapi.ru/keys" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                  console.proxyapi.ru/keys
+                </a>
+              </>
+            }
+          />
+        </AccordionContent>
+      </AccordionItem>
+    </Accordion>
+  );
+
   if (!hasKey) {
     return (
       <HydraCard variant="glass" className="p-6">
@@ -212,10 +275,11 @@ export function ProxyApiDashboard({ hasKey, proxyapiPriority, onPriorityChange }
           <HydraCardTitle>ProxyAPI Dashboard</HydraCardTitle>
         </HydraCardHeader>
         <HydraCardContent>
-          <div className="flex items-center gap-3 p-4 rounded-lg bg-amber-500/10 border border-amber-500/30">
+          {renderKeySection()}
+          <div className="flex items-center gap-3 p-4 rounded-lg bg-muted/50 border border-border">
             <AlertTriangle className="h-5 w-5 text-amber-500 flex-shrink-0" />
             <p className="text-sm text-muted-foreground">
-              Добавьте ключ ProxyAPI во вкладке «API-ключи» для доступа к дашборду.
+              Добавьте ключ ProxyAPI выше и сохраните для доступа к дашборду.
             </p>
           </div>
         </HydraCardContent>
@@ -230,6 +294,7 @@ export function ProxyApiDashboard({ hasKey, proxyapiPriority, onPriorityChange }
         <HydraCardTitle>ProxyAPI Dashboard</HydraCardTitle>
       </HydraCardHeader>
       <HydraCardContent>
+        {renderKeySection()}
         {/* Priority checkbox */}
         <div className="flex items-center gap-3 mb-4 p-3 rounded-lg bg-amber-500/10 border border-amber-500/30">
           <AlertTriangle className="h-5 w-5 text-amber-500 flex-shrink-0" />
@@ -373,7 +438,11 @@ export function ProxyApiDashboard({ hasKey, proxyapiPriority, onPriorityChange }
               </div>
             </AccordionTrigger>
             <AccordionContent className="pb-4">
-              <div className="flex justify-end mb-2">
+              <div className="flex justify-end gap-2 mb-2">
+                <Button size="sm" variant="ghost" onClick={handleExportCSV} disabled={logs.length === 0}>
+                  <Download className="h-3.5 w-3.5 mr-1" />
+                  CSV
+                </Button>
                 <Button size="sm" variant="ghost" onClick={fetchLogs} disabled={logsLoading}>
                   <RefreshCw className={cn("h-3.5 w-3.5 mr-1", logsLoading && "animate-spin")} />
                   Обновить

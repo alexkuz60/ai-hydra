@@ -445,28 +445,7 @@ export default function Profile() {
                       hint={renderProviderHint(p)}
                       unlimited={p.provider === 'mistral'}
                     />
-                    {/* ProxyAPI right after OpenRouter — Russian locale only */}
-                    {p.provider === 'openrouter' && language === 'ru' && (
-                      <div className="mt-2 space-y-3">
-                        <ApiKeyField
-                          provider="proxyapi"
-                          label="ProxyAPI"
-                          value={apiKeys['proxyapi'] || ''}
-                          onChange={(v) => setKeyValue('proxyapi', v)}
-                          placeholder="sk-..."
-                          metadata={keyMetadata['proxyapi']}
-                          onExpirationChange={(date) => handleExpirationChange('proxyapi', date)}
-                          hint={
-                            <>
-                              Получите ключ на{' '}
-                              <a href="https://console.proxyapi.ru/keys" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
-                                console.proxyapi.ru/keys
-                              </a>
-                            </>
-                          }
-                        />
-                      </div>
-                    )}
+                    {/* ProxyAPI key moved to ProxyAPI Dashboard tab */}
                   </React.Fragment>
                 ))}
 
@@ -546,6 +525,10 @@ export default function Profile() {
                       .eq('user_id', user.id);
                   }
                 }}
+                apiKeyValue={apiKeys['proxyapi'] || ''}
+                onApiKeyChange={(v) => setKeyValue('proxyapi', v)}
+                keyMetadata={keyMetadata['proxyapi']}
+                onExpirationChange={(date) => handleExpirationChange('proxyapi', date)}
               />
             </TabsContent>
           )}
