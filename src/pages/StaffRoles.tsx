@@ -183,6 +183,7 @@ const StaffRoles = () => {
             className="gap-1.5"
             onClick={handleBulkSeed}
             disabled={isBulkSeeding}
+            data-guide="staff-seed-button"
           >
             {isBulkSeeding ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
             {language === 'ru' ? 'Обучить всех техников' : 'Seed All Tech Roles'}
@@ -255,9 +256,10 @@ const StaffRoles = () => {
                 </TableHeader>
                 <TableBody>
                   {/* Группа экспертов */}
-                  <TableRow 
+                   <TableRow 
                     className="bg-muted/30 hover:bg-muted/40 cursor-pointer"
                     onClick={() => setExpertsExpanded(!expertsExpanded)}
+                    data-guide="staff-experts-group"
                   >
                     <TableCell colSpan={2} className="py-2">
                       <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
@@ -280,6 +282,7 @@ const StaffRoles = () => {
                   <TableRow 
                     className="bg-muted/30 hover:bg-muted/40 cursor-pointer"
                     onClick={() => setTechnicalExpanded(!technicalExpanded)}
+                    data-guide="staff-technical-group"
                   >
                     <TableCell colSpan={2} className="py-2">
                       <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">

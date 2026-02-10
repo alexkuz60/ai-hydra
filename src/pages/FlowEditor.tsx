@@ -462,6 +462,7 @@ function FlowEditorContent() {
   }, [flowRuntime, currentDiagramId]);
 
   const headerActions = useMemo(() => (
+    <div data-guide="flow-header-actions">
     <FlowHeaderActions
       diagramName={diagramName}
       savedDiagrams={diagrams}
@@ -480,6 +481,7 @@ function FlowEditorContent() {
       isSaving={isSaving}
       hasChanges={hasChanges}
     />
+    </div>
   ), [diagramName, diagrams, currentDiagramId, handleLoadDiagram, deleteDiagram, 
       handleSave, handleNew, exportPng, exportSvg, exportJson, exportYaml, 
       exportPdf, copyToClipboard, handleGenerateMermaid, isSaving, hasChanges]);

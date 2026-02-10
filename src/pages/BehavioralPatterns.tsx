@@ -439,9 +439,10 @@ const BehavioralPatterns = () => {
                 </TableHeader>
                 <TableBody>
                   {/* Strategic Patterns Group */}
-                  <TableRow
+                   <TableRow
                     className="bg-muted/30 hover:bg-muted/40 cursor-pointer"
                     onClick={() => setStrategicExpanded(!strategicExpanded)}
+                    data-guide="patterns-strategic-group"
                   >
                     <TableCell colSpan={2} className="py-2">
                       <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
@@ -454,6 +455,7 @@ const BehavioralPatterns = () => {
                           size="sm"
                           className="ml-auto h-6 px-2"
                           onClick={(e) => { e.stopPropagation(); handleCreateBlueprint(); }}
+                          data-guide="patterns-create-blueprint"
                         >
                           <Plus className="h-3 w-3 mr-1" />
                           {t('patterns.createNew')}
@@ -478,6 +480,7 @@ const BehavioralPatterns = () => {
                   <TableRow
                     className="bg-muted/30 hover:bg-muted/40 cursor-pointer"
                     onClick={() => setExpertExpanded(!expertExpanded)}
+                    data-guide="patterns-behavior-group"
                   >
                     <TableCell colSpan={2} className="py-2">
                       <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">

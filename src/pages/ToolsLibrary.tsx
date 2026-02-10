@@ -392,11 +392,11 @@ export default function ToolsLibrary() {
             <p className="text-sm text-muted-foreground">{t('tools.description')}</p>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={handleStartCreate}>
+            <Button variant="outline" onClick={handleStartCreate} data-guide="tools-create-btn">
               <Plus className="h-4 w-4 mr-2" />
               {t('tools.createTool')}
             </Button>
-            <Button variant="outline" onClick={handleImport}>
+            <Button variant="outline" onClick={handleImport} data-guide="tools-import-btn">
               <Upload className="h-4 w-4 mr-2" />
               {t('tools.import')}
             </Button>
@@ -456,7 +456,7 @@ export default function ToolsLibrary() {
               ) : (
               <div className="flex-1 flex flex-col">
               {/* Filters */}
-              <div className="p-4 border-b space-y-3">
+              <div className="p-4 border-b space-y-3" data-guide="tools-filters">
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
