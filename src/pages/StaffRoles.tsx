@@ -196,6 +196,7 @@ const StaffRoles = () => {
             minSize={4} 
             maxSize={50}
             onResize={nav.onPanelResize}
+            data-guide="staff-list"
           >
             <div className="h-full flex flex-col hydra-nav-surface">
               <NavigatorHeader
@@ -306,7 +307,7 @@ const StaffRoles = () => {
           <ResizableHandle withHandle />
 
           <ResizablePanel defaultSize={100 - nav.panelSize} minSize={50} maxSize={96}>
-            <div className="h-full border-l border-border bg-card">
+            <div className="h-full border-l border-border bg-card" data-guide="role-details">
               <RoleDetailsPanel 
                 selectedRole={selectedRole} 
                 onHasUnsavedChanges={handleHasUnsavedChanges}
