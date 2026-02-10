@@ -246,7 +246,11 @@ export function GuideTourDetailPanel({ tour, steps, elements, lang, onDeleteTour
   /* ─── Step CRUD ─── */
   const [expandedStepId, setExpandedStepId] = useState<string | null>(null);
   const [stepDialog, setStepDialog] = useState<{ open: boolean; step: Partial<DbStep> | null }>({ open: false, step: null });
-  const [elementDialog, setElementDialog] = useState<{ open: boolean; element: Partial<DbElement> | null; stepIndex: number }>({ open: false, element: null, stepIndex: 0 });
+
+  /* ─── Inline element editing ─── */
+  const [editingElementId, setEditingElementId] = useState<string | null>(null);
+  const [elementDraft, setElementDraft] = useState<Partial<DbElement> | null>(null);
+  const [addingElementForStep, setAddingElementForStep] = useState<number | null>(null);
 
   const stepElements = (stepIndex: number) =>
     elements.filter(e => e.step_index === stepIndex).sort((a, b) => a.sort_order - b.sort_order);
@@ -324,26 +328,34 @@ export function GuideTourDetailPanel({ tour, steps, elements, lang, onDeleteTour
     return `${slug || 'el'}-s${stepIndex}-${suffix}`;
   };
 
-  const openElementDialog = (stepIndex: number, el?: DbElement) => {
-    setElementDialog({
-      open: true, stepIndex,
-      element: el ? { ...el } : {
-        tour_id: tour.id, step_index: stepIndex, element_id: '',
-        label_ru: '', label_en: '', description_ru: '', description_en: '',
-        selector: null, sort_order: stepElements(stepIndex).length,
-      },
+  const startEditElement = (el: DbElement) => {
+    setEditingElementId(el.id);
+    setElementDraft({ ...el });
+  };
+
+  const startAddElement = (stepIndex: number) => {
+    setAddingElementForStep(stepIndex);
+    setElementDraft({
+      tour_id: tour.id, step_index: stepIndex, element_id: '',
+      label_ru: '', label_en: '', description_ru: '', description_en: '',
+      selector: null, sort_order: stepElements(stepIndex).length,
     });
   };
 
-  const saveElement = async () => {
-    const el = elementDialog.element;
+  const cancelElementEdit = () => {
+    setEditingElementId(null);
+    setAddingElementForStep(null);
+    setElementDraft(null);
+  };
+
+  const saveElementInline = async () => {
+    const el = elementDraft;
     if (!el || !el.label_ru || !el.label_en) {
       toast.error(lang === 'ru' ? 'Заполните название RU и EN' : 'Fill label RU and EN');
       return;
     }
-    // Auto-generate element_id for new elements
     if (!el.id && !el.element_id) {
-      el.element_id = generateElementId(el.label_ru || el.label_en || '', elementDialog.stepIndex);
+      el.element_id = generateElementId(el.label_ru || el.label_en || '', el.step_index ?? 0);
     }
     setSaving(true);
     try {
@@ -356,14 +368,14 @@ export function GuideTourDetailPanel({ tour, steps, elements, lang, onDeleteTour
         if (error) throw error;
       } else {
         const { error } = await supabase.from('guide_panel_elements').insert({
-          tour_id: tour.id, step_index: elementDialog.stepIndex,
+          tour_id: tour.id, step_index: el.step_index!,
           element_id: el.element_id!, label_ru: el.label_ru!, label_en: el.label_en!,
           description_ru: el.description_ru || '', description_en: el.description_en || '',
           selector: el.selector || null, sort_order: el.sort_order ?? 0,
         });
         if (error) throw error;
       }
-      setElementDialog({ open: false, element: null, stepIndex: 0 });
+      cancelElementEdit();
       await onRefresh();
     } catch (e: any) {
       toast.error(e.message);
@@ -681,33 +693,131 @@ export function GuideTourDetailPanel({ tour, steps, elements, lang, onDeleteTour
                               <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
                                 {lang === 'ru' ? 'Элементы панели' : 'Panel Elements'}
                               </span>
-                              <Button variant="outline" size="sm" className="h-6 text-[10px]" onClick={() => openElementDialog(step.step_index)}>
+                              <Button variant="outline" size="sm" className="h-6 text-[10px]" onClick={() => startAddElement(step.step_index)}>
                                 <Plus className="h-2.5 w-2.5 mr-1" />
                                 {lang === 'ru' ? 'Элемент' : 'Element'}
                               </Button>
                             </div>
-                            {sElements.length === 0 ? (
+                            {sElements.length === 0 && addingElementForStep !== step.step_index ? (
                               <p className="text-xs text-muted-foreground italic">{lang === 'ru' ? 'Нет элементов' : 'No elements'}</p>
                             ) : (
-                              <div className="space-y-1">
-                                {sElements.map((el) => (
-                                  <div key={el.id} className="flex items-center justify-between px-3 py-2 rounded-md bg-muted/30 border border-border/50">
-                                    <div className="min-w-0 flex-1">
-                                      <span className="text-sm font-medium">{el[`label_${contentLang}`]}</span>
-                                      <div className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
-                                        <RoleHighlightedText text={el[`description_${contentLang}`] || ''} />
+                              <div className="space-y-1.5">
+                                {sElements.map((el) => {
+                                  const isEditing = editingElementId === el.id;
+                                  
+                                  if (isEditing && elementDraft) {
+                                    return (
+                                      <div key={el.id} className="rounded-lg border border-hydra-guide/30 bg-muted/20 p-3 space-y-2">
+                                        <div className="space-y-1">
+                                          <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                                            {contentLang === 'ru' ? 'Название (RU)' : 'Label (EN)'}
+                                          </Label>
+                                          <Input
+                                            className="h-8 text-sm"
+                                            value={contentLang === 'ru' ? elementDraft.label_ru || '' : elementDraft.label_en || ''}
+                                            onChange={e => setElementDraft(prev => prev ? { ...prev, [contentLang === 'ru' ? 'label_ru' : 'label_en']: e.target.value } : prev)}
+                                          />
+                                        </div>
+                                        <div className="space-y-1">
+                                          <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                                            {contentLang === 'ru' ? 'Описание (RU)' : 'Description (EN)'}
+                                          </Label>
+                                          <Textarea
+                                            rows={2}
+                                            className="text-sm resize-none"
+                                            value={contentLang === 'ru' ? elementDraft.description_ru || '' : elementDraft.description_en || ''}
+                                            onChange={e => setElementDraft(prev => prev ? { ...prev, [contentLang === 'ru' ? 'description_ru' : 'description_en']: e.target.value } : prev)}
+                                          />
+                                        </div>
+                                        <div className="space-y-1">
+                                          <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">CSS Selector</Label>
+                                          <Input
+                                            className="h-8 text-sm font-mono"
+                                            value={elementDraft.selector || ''}
+                                            onChange={e => setElementDraft(prev => prev ? { ...prev, selector: e.target.value || null } : prev)}
+                                            placeholder="[data-guide='...']"
+                                          />
+                                        </div>
+                                        <div className="flex items-center gap-2 pt-1">
+                                          <Button size="sm" className="h-7 text-xs" onClick={saveElementInline} disabled={saving}>
+                                            {saving ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Save className="h-3 w-3 mr-1" />}
+                                            {lang === 'ru' ? 'Сохранить' : 'Save'}
+                                          </Button>
+                                          <Button variant="outline" size="sm" className="h-7 text-xs" onClick={cancelElementEdit}>
+                                            <X className="h-3 w-3 mr-1" />
+                                            {lang === 'ru' ? 'Отмена' : 'Cancel'}
+                                          </Button>
+                                        </div>
+                                      </div>
+                                    );
+                                  }
+                                  
+                                  return (
+                                    <div key={el.id} className="flex items-center justify-between px-3 py-2 rounded-md bg-muted/30 border border-border/50 group hover:border-border">
+                                      <div className="min-w-0 flex-1">
+                                        <span className="text-sm font-medium">{el[`label_${contentLang}`]}</span>
+                                        <div className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
+                                          <RoleHighlightedText text={el[`description_${contentLang}`] || ''} />
+                                        </div>
+                                      </div>
+                                      <div className="flex items-center gap-0.5 shrink-0 ml-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => startEditElement(el)}>
+                                          <Pencil className="h-2.5 w-2.5" />
+                                        </Button>
+                                        <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-destructive" onClick={() => deleteElement(el.id)}>
+                                          <Trash2 className="h-2.5 w-2.5" />
+                                        </Button>
                                       </div>
                                     </div>
-                                    <div className="flex items-center gap-0.5 shrink-0 ml-2">
-                                      <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => openElementDialog(el.step_index, el)}>
-                                        <Pencil className="h-2.5 w-2.5" />
+                                  );
+                                })}
+
+                                {/* Inline add new element form */}
+                                {addingElementForStep === step.step_index && elementDraft && (
+                                  <div className="rounded-lg border border-hydra-guide/30 bg-muted/20 p-3 space-y-2">
+                                    <div className="space-y-1">
+                                      <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                                        {contentLang === 'ru' ? 'Название (RU)' : 'Label (EN)'}
+                                      </Label>
+                                      <Input
+                                        className="h-8 text-sm"
+                                        value={contentLang === 'ru' ? elementDraft.label_ru || '' : elementDraft.label_en || ''}
+                                        onChange={e => setElementDraft(prev => prev ? { ...prev, [contentLang === 'ru' ? 'label_ru' : 'label_en']: e.target.value } : prev)}
+                                        autoFocus
+                                      />
+                                    </div>
+                                    <div className="space-y-1">
+                                      <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                                        {contentLang === 'ru' ? 'Описание (RU)' : 'Description (EN)'}
+                                      </Label>
+                                      <Textarea
+                                        rows={2}
+                                        className="text-sm resize-none"
+                                        value={contentLang === 'ru' ? elementDraft.description_ru || '' : elementDraft.description_en || ''}
+                                        onChange={e => setElementDraft(prev => prev ? { ...prev, [contentLang === 'ru' ? 'description_ru' : 'description_en']: e.target.value } : prev)}
+                                      />
+                                    </div>
+                                    <div className="space-y-1">
+                                      <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">CSS Selector</Label>
+                                      <Input
+                                        className="h-8 text-sm font-mono"
+                                        value={elementDraft.selector || ''}
+                                        onChange={e => setElementDraft(prev => prev ? { ...prev, selector: e.target.value || null } : prev)}
+                                        placeholder="[data-guide='...']"
+                                      />
+                                    </div>
+                                    <div className="flex items-center gap-2 pt-1">
+                                      <Button size="sm" className="h-7 text-xs" onClick={saveElementInline} disabled={saving}>
+                                        {saving ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Save className="h-3 w-3 mr-1" />}
+                                        {lang === 'ru' ? 'Добавить' : 'Add'}
                                       </Button>
-                                      <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-destructive" onClick={() => deleteElement(el.id)}>
-                                        <Trash2 className="h-2.5 w-2.5" />
+                                      <Button variant="outline" size="sm" className="h-7 text-xs" onClick={cancelElementEdit}>
+                                        <X className="h-3 w-3 mr-1" />
+                                        {lang === 'ru' ? 'Отмена' : 'Cancel'}
                                       </Button>
                                     </div>
                                   </div>
-                                ))}
+                                )}
                               </div>
                             )}
                           </div>
@@ -800,42 +910,6 @@ export function GuideTourDetailPanel({ tour, steps, elements, lang, onDeleteTour
         </DialogContent>
       </Dialog>
 
-      {/* ─── Element Dialog ─── */}
-      <Dialog open={elementDialog.open} onOpenChange={(o) => !o && setElementDialog({ open: false, element: null, stepIndex: 0 })}>
-        <DialogContent className="sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle>{elementDialog.element?.id ? (lang === 'ru' ? 'Редактировать элемент' : 'Edit Element') : (lang === 'ru' ? 'Новый элемент' : 'New Element')}</DialogTitle>
-          </DialogHeader>
-          {elementDialog.element && (
-            <div className="space-y-3">
-              <div className="space-y-1">
-                <Label>CSS Selector</Label>
-                <Input value={elementDialog.element.selector || ''} onChange={e => setElementDialog(p => ({ ...p, element: { ...p.element!, selector: e.target.value || null } }))} placeholder="[data-guide='tasks']" />
-              </div>
-              <div className="space-y-1">
-                <Label>{contentLang === 'ru' ? 'Название (RU) *' : 'Label (EN) *'}</Label>
-                <Input
-                  value={contentLang === 'ru' ? elementDialog.element.label_ru || '' : elementDialog.element.label_en || ''}
-                  onChange={e => setElementDialog(p => ({ ...p, element: { ...p.element!, [contentLang === 'ru' ? 'label_ru' : 'label_en']: e.target.value } }))}
-                />
-              </div>
-              <div className="space-y-1">
-                <Label>{contentLang === 'ru' ? 'Описание (RU)' : 'Description (EN)'}</Label>
-                <Textarea
-                  rows={2}
-                  value={contentLang === 'ru' ? elementDialog.element.description_ru || '' : elementDialog.element.description_en || ''}
-                  onChange={e => setElementDialog(p => ({ ...p, element: { ...p.element!, [contentLang === 'ru' ? 'description_ru' : 'description_en']: e.target.value } }))}
-                />
-              </div>
-              
-            </div>
-          )}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setElementDialog({ open: false, element: null, stepIndex: 0 })}>{lang === 'ru' ? 'Отмена' : 'Cancel'}</Button>
-            <Button onClick={saveElement} disabled={saving}>{saving && <Loader2 className="h-4 w-4 animate-spin mr-2" />}{lang === 'ru' ? 'Сохранить' : 'Save'}</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       {/* Unsaved changes dialog */}
       <UnsavedChangesDialog
