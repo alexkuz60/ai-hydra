@@ -351,6 +351,7 @@ const BehavioralPatterns = () => {
             minSize={4} 
             maxSize={50}
             onResize={nav.onPanelResize}
+            data-guide="patterns-list"
           >
             <div className="h-full flex flex-col hydra-nav-surface">
               <NavigatorHeader
@@ -584,7 +585,7 @@ const BehavioralPatterns = () => {
 
           <ResizableHandle withHandle />
 
-          <ResizablePanel defaultSize={100 - nav.panelSize} minSize={50} maxSize={96}>
+          <ResizablePanel defaultSize={100 - nav.panelSize} minSize={50} maxSize={96} data-guide="patterns-details">
             <div className="h-full border-l border-border bg-card">
               <PatternDetailsPanel 
                 selectedPattern={selectedPattern} 

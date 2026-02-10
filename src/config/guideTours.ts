@@ -246,6 +246,60 @@ export const GUIDE_TOURS: GuideTour[] = [
       },
     ],
   },
+  {
+    id: 'tools-library',
+    title: { ru: 'Инструменты ИИ', en: 'AI Tools' },
+    description: { ru: 'Библиотека Prompt- и HTTP-инструментов', en: 'Prompt & HTTP tools library' },
+    icon: 'Wrench',
+    steps: [
+      {
+        selector: '[data-guide="tools-list"]',
+        route: '/tools-library',
+        title: { ru: 'Каталог инструментов', en: 'Tools Catalog' },
+        description: {
+          ru: 'Список всех инструментов по категориям: AI, Data, Integration. Системные защищены от редактирования.',
+          en: 'All tools by category: AI, Data, Integration. System tools are read-only.',
+        },
+        placement: 'right',
+      },
+      {
+        selector: '[data-guide="tools-details"]',
+        title: { ru: 'Детали инструмента', en: 'Tool Details' },
+        description: {
+          ru: 'Просмотр параметров, статистика использования и встроенный тестер (Prompt или HTTP).',
+          en: 'View parameters, usage stats, and built-in tester (Prompt or HTTP).',
+        },
+        placement: 'left',
+      },
+    ],
+  },
+  {
+    id: 'behavioral-patterns',
+    title: { ru: 'Паттерны поведения', en: 'Behavioral Patterns' },
+    description: { ru: 'Стратегические рецепты и ролевые паттерны', en: 'Strategic blueprints & role behaviors' },
+    icon: 'Target',
+    steps: [
+      {
+        selector: '[data-guide="patterns-list"]',
+        route: '/behavioral-patterns',
+        title: { ru: 'Список паттернов', en: 'Pattern List' },
+        description: {
+          ru: 'Два типа: стратегические рецепты (Blueprints) с этапами и контрольными точками, и ролевые паттерны (Behaviors) с настройками коммуникации.',
+          en: 'Two types: strategic blueprints with stages and checkpoints, and role behaviors with communication settings.',
+        },
+        placement: 'right',
+      },
+      {
+        selector: '[data-guide="patterns-details"]',
+        title: { ru: 'Детали паттерна', en: 'Pattern Details' },
+        description: {
+          ru: 'Inline-редактирование параметров, бейджи реакций и интеграция с Редактором потоков.',
+          en: 'Inline editing, reaction badges, and Flow Editor integration.',
+        },
+        placement: 'left',
+      },
+    ],
+  },
 ];
 
 /** Get a tour by ID */
