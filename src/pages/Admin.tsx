@@ -130,7 +130,8 @@ export default function Admin() {
 
       setUsers(Array.from(usersMap.values()));
     } catch (error: any) {
-      toast.error(error.message);
+      console.error('fetchUsersWithRoles error:', error);
+      toast.error(error?.message || 'Ошибка загрузки пользователей');
     } finally {
       setLoading(false);
     }
