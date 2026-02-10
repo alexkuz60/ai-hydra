@@ -1,0 +1,420 @@
+import React, { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+import {
+  Pencil,
+  Trash2,
+  Plus,
+  Loader2,
+  ChevronDown,
+  ChevronRight,
+  Compass,
+  Eye,
+  EyeOff,
+} from 'lucide-react';
+import { cn } from '@/lib/utils';
+import type { DbTour, DbStep, DbElement } from '@/pages/GuideToursEditor';
+
+interface Props {
+  tour: DbTour;
+  steps: DbStep[];
+  elements: DbElement[];
+  lang: 'ru' | 'en';
+  onEditTour: () => void;
+  onDeleteTour: () => void;
+  onRefresh: () => Promise<void>;
+}
+
+const PLACEMENT_OPTIONS = ['top', 'bottom', 'left', 'right'];
+
+export function GuideTourDetailPanel({ tour, steps, elements, lang, onEditTour, onDeleteTour, onRefresh }: Props) {
+  const [expandedStepId, setExpandedStepId] = useState<string | null>(null);
+  const [stepDialog, setStepDialog] = useState<{ open: boolean; step: Partial<DbStep> | null }>({ open: false, step: null });
+  const [elementDialog, setElementDialog] = useState<{ open: boolean; element: Partial<DbElement> | null; stepIndex: number }>({ open: false, element: null, stepIndex: 0 });
+  const [saving, setSaving] = useState(false);
+
+  const stepElements = (stepIndex: number) =>
+    elements.filter(e => e.step_index === stepIndex).sort((a, b) => a.sort_order - b.sort_order);
+
+  /* ─── Step CRUD ─── */
+  const openStepDialog = (step?: DbStep) => {
+    setStepDialog({
+      open: true,
+      step: step ? { ...step } : {
+        tour_id: tour.id, step_index: steps.length, selector: '',
+        placement: 'bottom', title_ru: '', title_en: '', description_ru: '', description_en: '',
+        route: null, delay_ms: null, action: null,
+      },
+    });
+  };
+
+  const saveStep = async () => {
+    const s = stepDialog.step;
+    if (!s || !s.selector || !s.title_ru || !s.title_en) {
+      toast.error(lang === 'ru' ? 'Заполните selector, заголовок RU и EN' : 'Fill selector, title RU and EN');
+      return;
+    }
+    setSaving(true);
+    try {
+      if (s.id) {
+        const { error } = await supabase.from('guide_tour_steps').update({
+          step_index: s.step_index!, selector: s.selector!,
+          placement: s.placement || 'bottom',
+          title_ru: s.title_ru!, title_en: s.title_en!,
+          description_ru: s.description_ru || '', description_en: s.description_en || '',
+          route: s.route || null, delay_ms: s.delay_ms || null, action: s.action || null,
+        }).eq('id', s.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from('guide_tour_steps').insert({
+          tour_id: tour.id, step_index: s.step_index!,
+          selector: s.selector!, placement: s.placement || 'bottom',
+          title_ru: s.title_ru!, title_en: s.title_en!,
+          description_ru: s.description_ru || '', description_en: s.description_en || '',
+          route: s.route || null, delay_ms: s.delay_ms || null, action: s.action || null,
+        });
+        if (error) throw error;
+      }
+      setStepDialog({ open: false, step: null });
+      await onRefresh();
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const deleteStep = async (step: DbStep) => {
+    try {
+      await supabase.from('guide_panel_elements').delete().eq('tour_id', tour.id).eq('step_index', step.step_index);
+      const { error } = await supabase.from('guide_tour_steps').delete().eq('id', step.id);
+      if (error) throw error;
+      await onRefresh();
+    } catch (e: any) {
+      toast.error(e.message);
+    }
+  };
+
+  /* ─── Element CRUD ─── */
+  const openElementDialog = (stepIndex: number, el?: DbElement) => {
+    setElementDialog({
+      open: true, stepIndex,
+      element: el ? { ...el } : {
+        tour_id: tour.id, step_index: stepIndex, element_id: '',
+        label_ru: '', label_en: '', description_ru: '', description_en: '',
+        selector: null, sort_order: stepElements(stepIndex).length,
+      },
+    });
+  };
+
+  const saveElement = async () => {
+    const el = elementDialog.element;
+    if (!el || !el.element_id || !el.label_ru || !el.label_en) {
+      toast.error(lang === 'ru' ? 'Заполните ID, название RU и EN' : 'Fill ID, label RU and EN');
+      return;
+    }
+    setSaving(true);
+    try {
+      if (el.id) {
+        const { error } = await supabase.from('guide_panel_elements').update({
+          element_id: el.element_id!, label_ru: el.label_ru!, label_en: el.label_en!,
+          description_ru: el.description_ru || '', description_en: el.description_en || '',
+          selector: el.selector || null, sort_order: el.sort_order ?? 0,
+        }).eq('id', el.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from('guide_panel_elements').insert({
+          tour_id: tour.id, step_index: elementDialog.stepIndex,
+          element_id: el.element_id!, label_ru: el.label_ru!, label_en: el.label_en!,
+          description_ru: el.description_ru || '', description_en: el.description_en || '',
+          selector: el.selector || null, sort_order: el.sort_order ?? 0,
+        });
+        if (error) throw error;
+      }
+      setElementDialog({ open: false, element: null, stepIndex: 0 });
+      await onRefresh();
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const deleteElement = async (id: string) => {
+    try {
+      const { error } = await supabase.from('guide_panel_elements').delete().eq('id', id);
+      if (error) throw error;
+      await onRefresh();
+    } catch (e: any) {
+      toast.error(e.message);
+    }
+  };
+
+  return (
+    <div className="h-full flex flex-col">
+      {/* Tour header */}
+      <div className="px-6 py-4 border-b flex items-center justify-between shrink-0">
+        <div className="flex items-center gap-3 min-w-0">
+          <Compass className="h-5 w-5 text-hydra-guide shrink-0" />
+          <div className="min-w-0">
+            <h2 className="text-lg font-semibold truncate">{tour[`title_${lang}`]}</h2>
+            <p className="text-xs text-muted-foreground truncate">{tour[`description_${lang}`]}</p>
+          </div>
+          <div className="flex items-center gap-1 shrink-0">
+            <Badge variant="outline" className="text-[10px]">{tour.icon}</Badge>
+            <Badge variant="outline" className="text-[10px]">#{tour.sort_order}</Badge>
+            {!tour.is_active && <Badge variant="destructive" className="text-[10px]">{lang === 'ru' ? 'Выкл' : 'Off'}</Badge>}
+          </div>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <Button variant="outline" size="sm" onClick={onEditTour}>
+            <Pencil className="h-3.5 w-3.5 mr-1.5" />
+            {lang === 'ru' ? 'Редактировать' : 'Edit'}
+          </Button>
+          <Button variant="outline" size="sm" className="text-destructive hover:text-destructive" onClick={onDeleteTour}>
+            <Trash2 className="h-3.5 w-3.5 mr-1.5" />
+            {lang === 'ru' ? 'Удалить' : 'Delete'}
+          </Button>
+        </div>
+      </div>
+
+      {/* Steps */}
+      <div className="flex-1 overflow-auto hydra-scrollbar">
+        <div className="px-6 py-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
+              {lang === 'ru' ? 'Шаги' : 'Steps'} ({steps.length})
+            </span>
+            <Button variant="outline" size="sm" onClick={() => openStepDialog()}>
+              <Plus className="h-3.5 w-3.5 mr-1.5" />
+              {lang === 'ru' ? 'Добавить шаг' : 'Add Step'}
+            </Button>
+          </div>
+
+          {steps.length === 0 ? (
+            <div className="text-center py-12 text-muted-foreground">
+              <p>{lang === 'ru' ? 'Нет шагов — добавьте первый' : 'No steps — add the first one'}</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {steps.map((step) => {
+                const isExpanded = expandedStepId === step.id;
+                const sElements = stepElements(step.step_index);
+                return (
+                  <div key={step.id} className="rounded-lg border border-border bg-card">
+                    {/* Step header */}
+                    <div className="flex items-center justify-between p-3">
+                      <button
+                        onClick={() => setExpandedStepId(isExpanded ? null : step.id)}
+                        className="flex items-center gap-3 flex-1 text-left min-w-0"
+                      >
+                        {isExpanded ? <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" /> : <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />}
+                        <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded text-muted-foreground shrink-0">
+                          {step.step_index + 1}
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <span className="text-sm font-medium">{step[`title_${lang}`]}</span>
+                          <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                            <code className="text-[10px] text-muted-foreground bg-muted px-1 rounded max-w-[300px] truncate">
+                              {step.selector}
+                            </code>
+                            {step.route && (
+                              <code className="text-[10px] text-hydra-guide bg-hydra-guide/10 px-1 rounded">{step.route}</code>
+                            )}
+                            {step.action && (
+                              <Badge variant="outline" className="text-[10px] h-4">{step.action}</Badge>
+                            )}
+                            {sElements.length > 0 && (
+                              <Badge variant="secondary" className="text-[10px] h-4">{sElements.length} el</Badge>
+                            )}
+                          </div>
+                        </div>
+                      </button>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openStepDialog(step)}>
+                          <Pencil className="h-3 w-3" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive" onClick={() => deleteStep(step)}>
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    </div>
+
+                    {/* Expanded: description + elements */}
+                    {isExpanded && (
+                      <div className="border-t border-border px-4 pb-4 pt-3 space-y-4">
+                        {/* Description */}
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">RU</span>
+                            <p className="text-sm text-muted-foreground mt-1">{step.description_ru || '—'}</p>
+                          </div>
+                          <div>
+                            <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">EN</span>
+                            <p className="text-sm text-muted-foreground mt-1">{step.description_en || '—'}</p>
+                          </div>
+                        </div>
+
+                        {/* Meta */}
+                        <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                          <span>Placement: <code className="bg-muted px-1 rounded">{step.placement}</code></span>
+                          {step.delay_ms && <span>Delay: <code className="bg-muted px-1 rounded">{step.delay_ms}ms</code></span>}
+                        </div>
+
+                        {/* Panel elements */}
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
+                              {lang === 'ru' ? 'Элементы панели' : 'Panel Elements'}
+                            </span>
+                            <Button variant="outline" size="sm" className="h-6 text-[10px]" onClick={() => openElementDialog(step.step_index)}>
+                              <Plus className="h-2.5 w-2.5 mr-1" />
+                              {lang === 'ru' ? 'Элемент' : 'Element'}
+                            </Button>
+                          </div>
+
+                          {sElements.length === 0 ? (
+                            <p className="text-xs text-muted-foreground italic">{lang === 'ru' ? 'Нет элементов' : 'No elements'}</p>
+                          ) : (
+                            <div className="space-y-1">
+                              {sElements.map((el) => (
+                                <div key={el.id} className="flex items-center justify-between px-3 py-2 rounded-md bg-muted/30 border border-border/50">
+                                  <div className="min-w-0 flex-1">
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-xs font-medium">{el[`label_${lang}`]}</span>
+                                      <code className="text-[10px] text-muted-foreground">{el.element_id}</code>
+                                    </div>
+                                    {el.selector && <code className="text-[10px] text-muted-foreground">{el.selector}</code>}
+                                    <p className="text-[10px] text-muted-foreground mt-0.5 line-clamp-1">{el[`description_${lang}`]}</p>
+                                  </div>
+                                  <div className="flex items-center gap-0.5 shrink-0 ml-2">
+                                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => openElementDialog(el.step_index, el)}>
+                                      <Pencil className="h-2.5 w-2.5" />
+                                    </Button>
+                                    <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-destructive" onClick={() => deleteElement(el.id)}>
+                                      <Trash2 className="h-2.5 w-2.5" />
+                                    </Button>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ─── Step Dialog ─── */}
+      <Dialog open={stepDialog.open} onOpenChange={(o) => !o && setStepDialog({ open: false, step: null })}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>{stepDialog.step?.id ? (lang === 'ru' ? 'Редактировать шаг' : 'Edit Step') : (lang === 'ru' ? 'Новый шаг' : 'New Step')}</DialogTitle>
+          </DialogHeader>
+          {stepDialog.step && (
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1"><Label>CSS Selector *</Label><Input value={stepDialog.step.selector || ''} onChange={e => setStepDialog(p => ({ ...p, step: { ...p.step!, selector: e.target.value } }))} placeholder="[data-guide='sidebar']" /></div>
+                <div className="space-y-1"><Label>{lang === 'ru' ? 'Индекс' : 'Index'}</Label><Input type="number" value={stepDialog.step.step_index ?? 0} onChange={e => setStepDialog(p => ({ ...p, step: { ...p.step!, step_index: Number(e.target.value) } }))} /></div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1"><Label>Заголовок (RU) *</Label><Input value={stepDialog.step.title_ru || ''} onChange={e => setStepDialog(p => ({ ...p, step: { ...p.step!, title_ru: e.target.value } }))} /></div>
+                <div className="space-y-1"><Label>Title (EN) *</Label><Input value={stepDialog.step.title_en || ''} onChange={e => setStepDialog(p => ({ ...p, step: { ...p.step!, title_en: e.target.value } }))} /></div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1"><Label>Описание (RU)</Label><Textarea rows={2} value={stepDialog.step.description_ru || ''} onChange={e => setStepDialog(p => ({ ...p, step: { ...p.step!, description_ru: e.target.value } }))} /></div>
+                <div className="space-y-1"><Label>Description (EN)</Label><Textarea rows={2} value={stepDialog.step.description_en || ''} onChange={e => setStepDialog(p => ({ ...p, step: { ...p.step!, description_en: e.target.value } }))} /></div>
+              </div>
+              <div className="grid grid-cols-3 gap-3">
+                <div className="space-y-1">
+                  <Label>Route</Label>
+                  <Input value={stepDialog.step.route || ''} onChange={e => setStepDialog(p => ({ ...p, step: { ...p.step!, route: e.target.value || null } }))} placeholder="/tasks" />
+                </div>
+                <div className="space-y-1">
+                  <Label>Placement</Label>
+                  <Select value={stepDialog.step.placement || 'bottom'} onValueChange={v => setStepDialog(p => ({ ...p, step: { ...p.step!, placement: v } }))}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>{PLACEMENT_OPTIONS.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}</SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1">
+                  <Label>Action</Label>
+                  <Select value={stepDialog.step.action || 'none'} onValueChange={v => setStepDialog(p => ({ ...p, step: { ...p.step!, action: v === 'none' ? null : v } }))}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">—</SelectItem>
+                      <SelectItem value="click">click</SelectItem>
+                      <SelectItem value="hover">hover</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="space-y-1">
+                <Label>Delay (ms)</Label>
+                <Input type="number" value={stepDialog.step.delay_ms ?? ''} onChange={e => setStepDialog(p => ({ ...p, step: { ...p.step!, delay_ms: e.target.value ? Number(e.target.value) : null } }))} placeholder="300" />
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setStepDialog({ open: false, step: null })}>{lang === 'ru' ? 'Отмена' : 'Cancel'}</Button>
+            <Button onClick={saveStep} disabled={saving}>{saving && <Loader2 className="h-4 w-4 animate-spin mr-2" />}{lang === 'ru' ? 'Сохранить' : 'Save'}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ─── Element Dialog ─── */}
+      <Dialog open={elementDialog.open} onOpenChange={(o) => !o && setElementDialog({ open: false, element: null, stepIndex: 0 })}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>{elementDialog.element?.id ? (lang === 'ru' ? 'Редактировать элемент' : 'Edit Element') : (lang === 'ru' ? 'Новый элемент' : 'New Element')}</DialogTitle>
+          </DialogHeader>
+          {elementDialog.element && (
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1"><Label>Element ID *</Label><Input value={elementDialog.element.element_id || ''} onChange={e => setElementDialog(p => ({ ...p, element: { ...p.element!, element_id: e.target.value } }))} placeholder="sidebar-tasks" /></div>
+                <div className="space-y-1"><Label>CSS Selector</Label><Input value={elementDialog.element.selector || ''} onChange={e => setElementDialog(p => ({ ...p, element: { ...p.element!, selector: e.target.value || null } }))} placeholder="[data-guide='tasks']" /></div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1"><Label>Название (RU) *</Label><Input value={elementDialog.element.label_ru || ''} onChange={e => setElementDialog(p => ({ ...p, element: { ...p.element!, label_ru: e.target.value } }))} /></div>
+                <div className="space-y-1"><Label>Label (EN) *</Label><Input value={elementDialog.element.label_en || ''} onChange={e => setElementDialog(p => ({ ...p, element: { ...p.element!, label_en: e.target.value } }))} /></div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1"><Label>Описание (RU)</Label><Textarea rows={2} value={elementDialog.element.description_ru || ''} onChange={e => setElementDialog(p => ({ ...p, element: { ...p.element!, description_ru: e.target.value } }))} /></div>
+                <div className="space-y-1"><Label>Description (EN)</Label><Textarea rows={2} value={elementDialog.element.description_en || ''} onChange={e => setElementDialog(p => ({ ...p, element: { ...p.element!, description_en: e.target.value } }))} /></div>
+              </div>
+              <div className="space-y-1"><Label>{lang === 'ru' ? 'Порядок' : 'Sort'}</Label><Input type="number" value={elementDialog.element.sort_order ?? 0} onChange={e => setElementDialog(p => ({ ...p, element: { ...p.element!, sort_order: Number(e.target.value) } }))} /></div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setElementDialog({ open: false, element: null, stepIndex: 0 })}>{lang === 'ru' ? 'Отмена' : 'Cancel'}</Button>
+            <Button onClick={saveElement} disabled={saving}>{saving && <Loader2 className="h-4 w-4 animate-spin mr-2" />}{lang === 'ru' ? 'Сохранить' : 'Save'}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
