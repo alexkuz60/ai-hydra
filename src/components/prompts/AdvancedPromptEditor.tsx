@@ -141,7 +141,7 @@ export function AdvancedPromptEditor({
   };
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full flex flex-col" data-guide="prompt-advanced-editor">
       {/* Header */}
       <div className="p-4 border-b flex items-center justify-between shrink-0">
         <h2 className="text-lg font-semibold">
@@ -248,11 +248,11 @@ export function AdvancedPromptEditor({
             {shouldShowError('content') && errors.content && (
               <FieldError error={errors.content} />
             )}
-            <div className={cn(
-              "border rounded-lg p-4",
-              shouldShowError('content') && errors.content && 'border-destructive'
-            )}>
-              <PromptSectionsEditor
+             <div className={cn(
+               "border rounded-lg p-4",
+               shouldShowError('content') && errors.content && 'border-destructive'
+             )} data-guide="prompt-sections-editor">
+               <PromptSectionsEditor
                 title={editorTitle}
                 sections={editorSections}
                 onTitleChange={handleTitleChange}
