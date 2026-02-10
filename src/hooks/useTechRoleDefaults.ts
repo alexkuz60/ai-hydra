@@ -58,9 +58,9 @@ export function useTechRoleDefaults() {
 export function getTechRoleDefaultModel(role: string): string | null {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    const parsed = raw ? JSON.parse(raw) : {};
-    return parsed[role] || null;
+    const overrides = raw ? JSON.parse(raw) : {};
+    return overrides[role] || BUILTIN_DEFAULTS[role] || null;
   } catch {
-    return null;
+    return BUILTIN_DEFAULTS[role] || null;
   }
 }
