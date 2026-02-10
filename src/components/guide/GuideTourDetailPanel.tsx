@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { icons } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -441,7 +442,19 @@ export function GuideTourDetailPanel({ tour, steps, elements, lang, onDeleteTour
                 </Label>
                 <Select value={draft.icon} onValueChange={v => updateDraft({ icon: v })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>{ICON_OPTIONS.map(i => <SelectItem key={i} value={i}>{i}</SelectItem>)}</SelectContent>
+                  <SelectContent>
+                    {ICON_OPTIONS.map(i => {
+                      const Ic = icons[i as keyof typeof icons];
+                      return (
+                        <SelectItem key={i} value={i}>
+                          <span className="flex items-center gap-2">
+                            {Ic ? <Ic className="h-4 w-4" /> : null}
+                            {i}
+                          </span>
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectContent>
                 </Select>
               </div>
               <div className="space-y-1 w-20">
@@ -468,13 +481,15 @@ export function GuideTourDetailPanel({ tour, steps, elements, lang, onDeleteTour
         ) : (
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3 min-w-0">
-              <Compass className="h-5 w-5 text-hydra-guide shrink-0" />
+              {(() => {
+                const TourIcon = icons[tour.icon as keyof typeof icons] || Compass;
+                return <TourIcon className="h-5 w-5 text-hydra-guide shrink-0" />;
+              })()}
               <div className="min-w-0">
                 <h2 className="text-lg font-semibold truncate">{tour[`title_${contentLang}`]}</h2>
                 <p className="text-xs text-muted-foreground truncate">{tour[`description_${contentLang}`]}</p>
               </div>
               <div className="flex items-center gap-1 shrink-0">
-                <Badge variant="outline" className="text-[10px]">{tour.icon}</Badge>
                 <Badge variant="outline" className="text-[10px]">#{tour.sort_order}</Badge>
                 {!tour.is_active && <Badge variant="destructive" className="text-[10px]">{lang === 'ru' ? 'Выкл' : 'Off'}</Badge>}
               </div>
