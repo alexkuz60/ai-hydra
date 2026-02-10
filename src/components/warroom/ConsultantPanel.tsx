@@ -213,7 +213,7 @@ export function ConsultantPanel({
       </div>
 
       {/* Mode selector */}
-      <div className="p-2 border-b border-border">
+      <div className="p-2 border-b border-border" data-guide="dchat-mode-selector">
         <div className="grid grid-cols-7 gap-1">
           {MODES.map(mode => (
             <Tooltip key={mode.id}>
@@ -244,14 +244,16 @@ export function ConsultantPanel({
       )}
 
       {/* Model selector (extracted component) */}
+      <div data-guide="dchat-model-selector">
       <DChatModelSelector
         selectedModel={selectedModel}
         onSelectModel={setSelectedModel}
         availableModels={availableModels}
       />
+      </div>
 
       {/* Messages area */}
-      <ScrollArea className="flex-1 p-3 hydra-scrollbar">
+      <ScrollArea className="flex-1 p-3 hydra-scrollbar" data-guide="dchat-messages">
         <div className="space-y-3">
           {isModeratingContext && (
             <div className="flex items-center gap-2 p-3 rounded-lg bg-hydra-consultant/10 border border-hydra-consultant/20 text-hydra-consultant">
@@ -338,6 +340,7 @@ export function ConsultantPanel({
                 value={input}
                 onChange={e => setInput(e.target.value)}
                 placeholder={t('dchat.placeholder')}
+                data-guide="dchat-input"
                 style={{ height: inputHeight }}
                 className="resize-none text-sm"
                 onKeyDown={e => {

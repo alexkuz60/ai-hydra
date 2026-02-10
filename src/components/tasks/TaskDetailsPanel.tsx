@@ -246,12 +246,13 @@ export function TaskDetailsPanel({
                   {t('tasks.saveConfig')}
                 </Button>
               )}
-              <Button
-                variant="destructive"
-                size="icon"
-                className="h-9 w-9"
-                onClick={onDelete}
-              >
+               <Button
+                 variant="destructive"
+                 size="icon"
+                 className="h-9 w-9"
+                 onClick={onDelete}
+                 data-guide="tasks-delete-btn"
+               >
                 <Trash2 className="h-4 w-4" />
               </Button>
               <Button
@@ -277,14 +278,14 @@ export function TaskDetailsPanel({
        <ScrollArea className="flex-1">
          <div className="p-4 space-y-6">
            {/* Model Selector */}
-           <section>
-             <h3 className="text-sm font-medium text-muted-foreground mb-3">{t('tasks.selectModels')}</h3>
-             <MultiModelSelector 
-               value={selectedModels} 
-               onChange={handleModelsChange}
-               className="w-full"
-             />
-           </section>
+            <section data-guide="tasks-detail-models">
+              <h3 className="text-sm font-medium text-muted-foreground mb-3">{t('tasks.selectModels')}</h3>
+              <MultiModelSelector 
+                value={selectedModels} 
+                onChange={handleModelsChange}
+                className="w-full"
+              />
+            </section>
  
            {/* Selected models preview */}
            {selectedModels.length > 0 && (
@@ -314,11 +315,13 @@ export function TaskDetailsPanel({
  
  
            {/* Session settings */}
-           <SessionSettings
-             useHybridStreaming={useHybridStreaming}
-             onHybridStreamingChange={handleHybridChange}
-             className="border-t pt-4"
-           />
+            <div data-guide="tasks-hybrid-toggle">
+            <SessionSettings
+              useHybridStreaming={useHybridStreaming}
+              onHybridStreamingChange={handleHybridChange}
+              className="border-t pt-4"
+            />
+            </div>
  
            {/* Per-model settings */}
            {selectedModels.length > 0 && (

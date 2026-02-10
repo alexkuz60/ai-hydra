@@ -382,39 +382,43 @@ export default function Tasks() {
                <div className="flex-1 flex flex-col">
                {/* Search and Create */}
                <div className="p-4 border-b space-y-3" data-guide="tasks-create-form">
-                 <div className="relative">
-                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                   <Input
-                     value={searchQuery}
-                     onChange={(e) => setSearchQuery(e.target.value)}
-                     placeholder={t('tasks.search')}
-                     className="pl-9"
-                   />
+                <div className="relative" data-guide="tasks-search">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder={t('tasks.search')}
+                      className="pl-9"
+                    />
                  </div>
                  
                  {/* Create new task inline */}
                  <div className="space-y-2">
                    <div className="flex gap-2">
-                     <Input
-                       value={newTaskTitle}
-                       onChange={(e) => setNewTaskTitle(e.target.value)}
-                       placeholder={t('tasks.newPlaceholder')}
-                       className="flex-1"
-                       onKeyDown={(e) => e.key === 'Enter' && handleCreateTask()}
-                     />
-                     <Button 
-                       onClick={handleCreateTask} 
-                       disabled={creating || !newTaskTitle.trim() || selectedModels.length === 0}
-                       size="icon"
-                     >
+                      <Input
+                        value={newTaskTitle}
+                        onChange={(e) => setNewTaskTitle(e.target.value)}
+                        placeholder={t('tasks.newPlaceholder')}
+                        className="flex-1"
+                        onKeyDown={(e) => e.key === 'Enter' && handleCreateTask()}
+                        data-guide="tasks-title-input"
+                      />
+                      <Button 
+                        onClick={handleCreateTask} 
+                        disabled={creating || !newTaskTitle.trim() || selectedModels.length === 0}
+                        size="icon"
+                        data-guide="tasks-create-btn"
+                      >
                        {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
                      </Button>
                    </div>
-                   <MultiModelSelector 
-                     value={selectedModels} 
-                     onChange={setSelectedModels}
-                     className="w-full"
-                   />
+                    <div data-guide="tasks-model-chips">
+                    <MultiModelSelector 
+                      value={selectedModels} 
+                      onChange={setSelectedModels}
+                      className="w-full"
+                    />
+                    </div>
                    {selectedModels.length === 0 && (
                      <p className="text-xs text-muted-foreground">
                        {t('tasks.selectModelsFirst')}
