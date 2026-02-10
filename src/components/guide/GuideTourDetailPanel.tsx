@@ -323,43 +323,41 @@ export function GuideTourDetailPanel({ tour, steps, elements, lang, onDeleteTour
 
   const updateDraft = (patch: Partial<DbTour>) => setDraft(prev => ({ ...prev, ...patch }));
 
-  /* ─── Bulk copy RU → EN ─── */
+  /* ─── Bulk copy translations ─── */
   const [copying, setCopying] = useState(false);
-  const copyRuToEn = async () => {
-    if (!confirm(lang === 'ru'
-      ? 'Скопировать все RU-тексты в EN для этого тура, его шагов и элементов? Существующие EN-тексты будут перезаписаны.'
-      : 'Copy all RU texts to EN for this tour, steps and elements? Existing EN texts will be overwritten.'
+  const copyTranslations = async (direction: 'ru-en' | 'en-ru') => {
+    const fromRu = direction === 'ru-en';
+    if (!confirm(fromRu
+      ? (lang === 'ru' ? 'Скопировать все RU-тексты в EN? Существующие EN-тексты будут перезаписаны.' : 'Copy all RU texts to EN? Existing EN texts will be overwritten.')
+      : (lang === 'ru' ? 'Скопировать все EN-тексты в RU? Существующие RU-тексты будут перезаписаны.' : 'Copy all EN texts to RU? Existing RU texts will be overwritten.')
     )) return;
 
     setCopying(true);
     try {
-      // Tour
-      const { error: tErr } = await supabase.from('guide_tours').update({
-        title_en: tour.title_ru,
-        description_en: tour.description_ru,
-      }).eq('id', tour.id);
+      const { error: tErr } = await supabase.from('guide_tours').update(fromRu
+        ? { title_en: tour.title_ru, description_en: tour.description_ru }
+        : { title_ru: tour.title_en, description_ru: tour.description_en }
+      ).eq('id', tour.id);
       if (tErr) throw tErr;
 
-      // Steps
       for (const s of steps) {
-        const { error } = await supabase.from('guide_tour_steps').update({
-          title_en: s.title_ru,
-          description_en: s.description_ru,
-        }).eq('id', s.id);
+        const { error } = await supabase.from('guide_tour_steps').update(fromRu
+          ? { title_en: s.title_ru, description_en: s.description_ru }
+          : { title_ru: s.title_en, description_ru: s.description_en }
+        ).eq('id', s.id);
         if (error) throw error;
       }
 
-      // Elements
       for (const el of elements) {
-        const { error } = await supabase.from('guide_panel_elements').update({
-          label_en: el.label_ru,
-          description_en: el.description_ru,
-        }).eq('id', el.id);
+        const { error } = await supabase.from('guide_panel_elements').update(fromRu
+          ? { label_en: el.label_ru, description_en: el.description_ru }
+          : { label_ru: el.label_en, description_ru: el.description_en }
+        ).eq('id', el.id);
         if (error) throw error;
       }
 
       await onRefresh();
-      toast.success(lang === 'ru' ? 'RU → EN скопировано' : 'RU → EN copied');
+      toast.success(fromRu ? 'RU → EN' : 'EN → RU');
     } catch (e: any) {
       toast.error(e.message);
     } finally {
@@ -400,11 +398,21 @@ export function GuideTourDetailPanel({ tour, steps, elements, lang, onDeleteTour
             variant="ghost"
             size="sm"
             className="h-7 text-xs gap-1.5 text-muted-foreground hover:text-foreground"
-            onClick={copyRuToEn}
+            onClick={() => copyTranslations('ru-en')}
             disabled={copying}
           >
             {copying ? <Loader2 className="h-3 w-3 animate-spin" /> : <Copy className="h-3 w-3" />}
             RU → EN
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 text-xs gap-1.5 text-muted-foreground hover:text-foreground"
+            onClick={() => copyTranslations('en-ru')}
+            disabled={copying}
+          >
+            {copying ? <Loader2 className="h-3 w-3 animate-spin" /> : <Copy className="h-3 w-3" />}
+            EN → RU
           </Button>
         </div>
       </div>
