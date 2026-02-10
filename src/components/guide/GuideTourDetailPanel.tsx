@@ -455,10 +455,7 @@ export function GuideTourDetailPanel({ tour, steps, elements, lang, onDeleteTour
                       const Ic = icons[i as keyof typeof icons];
                       return (
                         <SelectItem key={i} value={i}>
-                          <span className="flex items-center gap-2">
-                            {Ic ? <Ic className="h-4 w-4" /> : null}
-                            {i}
-                          </span>
+                          {Ic ? <Ic className="h-4 w-4" /> : i}
                         </SelectItem>
                       );
                     })}
