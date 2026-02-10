@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { FieldError } from '@/components/ui/FieldError';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -111,13 +112,8 @@ function validateForm(formData: ToolFormData, t: (key: string) => string): Valid
   return errors;
 }
 
-// Field error component
-function FieldError({ error }: { error?: string }) {
-  if (!error) return null;
-  return (
-    <p className="text-xs text-destructive mt-1">{error}</p>
-  );
-}
+
+
 
 interface ToolEditorProps {
   formData: ToolFormData;

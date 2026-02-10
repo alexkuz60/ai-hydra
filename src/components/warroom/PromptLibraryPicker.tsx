@@ -29,6 +29,7 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { AgentRole, getRoleBadgeColor } from '@/config/roles';
 import { RoleSelectOptions } from '@/components/ui/RoleSelectItem';
+import type { PromptLanguage } from '@/hooks/usePromptsCRUD';
 
 // Detect if text is primarily Russian (Cyrillic)
 function detectLanguage(text: string): 'ru' | 'en' {
@@ -39,7 +40,6 @@ function detectLanguage(text: string): 'ru' | 'en' {
   return cyrillicMatches.length > latinMatches.length ? 'ru' : 'en';
 }
 
-type PromptLanguage = 'ru' | 'en' | 'auto';
 
 interface PromptItem {
   id: string;
@@ -189,10 +189,6 @@ export function PromptLibraryPicker({ open, onOpenChange, onSelect, currentRole 
   const ruPrompts = filteredPrompts.filter(p => getEffectiveLanguage(p) === 'ru');
   const enPrompts = filteredPrompts.filter(p => getEffectiveLanguage(p) === 'en');
 
-  const getRoleBadge = (role: string) => {
-    const colorClass = getRoleBadgeColor(role);
-    return colorClass;
-  };
 
   const renderPromptItem = (prompt: PromptItem) => (
     <button
@@ -208,7 +204,7 @@ export function PromptLibraryPicker({ open, onOpenChange, onSelect, currentRole 
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
             <span className="font-medium text-sm truncate">{prompt.name}</span>
-            <Badge variant="secondary" className={cn('text-[10px] px-1.5 py-0', getRoleBadge(prompt.role))}>
+            <Badge variant="secondary" className={cn('text-[10px] px-1.5 py-0', getRoleBadgeColor(prompt.role))}>
               {t(`role.${prompt.role}`)}
             </Badge>
             {prompt.is_shared && (
