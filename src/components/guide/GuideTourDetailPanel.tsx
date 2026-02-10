@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -32,6 +32,7 @@ import {
   X,
   Eye,
   EyeOff,
+  GripVertical,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useUnsavedChanges } from '@/hooks/useUnsavedChanges';
@@ -116,7 +117,53 @@ export function GuideTourDetailPanel({ tour, steps, elements, lang, onDeleteTour
     unsaved.withConfirmation(() => onSelectTour(id));
   }, [unsaved, onSelectTour]);
 
-  /* ─── Steps / Elements state ─── */
+  /* ─── Drag & Drop reorder ─── */
+  const [dragIdx, setDragIdx] = useState<number | null>(null);
+  const [dragOverIdx, setDragOverIdx] = useState<number | null>(null);
+
+  const handleDragStart = (idx: number) => {
+    setDragIdx(idx);
+  };
+
+  const handleDragOver = (e: React.DragEvent, idx: number) => {
+    e.preventDefault();
+    setDragOverIdx(idx);
+  };
+
+  const handleDrop = async (targetIdx: number) => {
+    if (dragIdx === null || dragIdx === targetIdx) {
+      setDragIdx(null);
+      setDragOverIdx(null);
+      return;
+    }
+
+    // Reorder: move dragIdx to targetIdx position
+    const ordered = [...steps];
+    const [moved] = ordered.splice(dragIdx, 1);
+    ordered.splice(targetIdx, 0, moved);
+
+    // Update step_index for all affected steps
+    try {
+      const updates = ordered.map((s, i) =>
+        supabase.from('guide_tour_steps').update({ step_index: i }).eq('id', s.id)
+      );
+      await Promise.all(updates);
+      await onRefresh();
+      toast.success(lang === 'ru' ? 'Порядок обновлён' : 'Order updated');
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally {
+      setDragIdx(null);
+      setDragOverIdx(null);
+    }
+  };
+
+  const handleDragEnd = () => {
+    setDragIdx(null);
+    setDragOverIdx(null);
+  };
+
+  /* ─── Step CRUD ─── */
   const [expandedStepId, setExpandedStepId] = useState<string | null>(null);
   const [stepDialog, setStepDialog] = useState<{ open: boolean; step: Partial<DbStep> | null }>({ open: false, step: null });
   const [elementDialog, setElementDialog] = useState<{ open: boolean; element: Partial<DbElement> | null; stepIndex: number }>({ open: false, element: null, stepIndex: 0 });
@@ -332,7 +379,7 @@ export function GuideTourDetailPanel({ tour, steps, elements, lang, onDeleteTour
         )}
       </div>
 
-      {/* Steps */}
+      {/* Steps — Vertical Timeline with Drag & Drop */}
       <div className="flex-1 overflow-auto hydra-scrollbar">
         <div className="px-6 py-4 space-y-3">
           <div className="flex items-center justify-between">
@@ -350,104 +397,147 @@ export function GuideTourDetailPanel({ tour, steps, elements, lang, onDeleteTour
               <p>{lang === 'ru' ? 'Нет шагов — добавьте первый' : 'No steps — add the first one'}</p>
             </div>
           ) : (
-            <div className="space-y-2">
-              {steps.map((step) => {
+            <div className="relative pl-6">
+              {/* Timeline line */}
+              <div className="absolute left-[11px] top-3 bottom-3 w-px bg-border" />
+
+              {steps.map((step, idx) => {
                 const isExpanded = expandedStepId === step.id;
                 const sElements = stepElements(step.step_index);
+                const isDragging = dragIdx === idx;
+                const isDragOver = dragOverIdx === idx && dragIdx !== idx;
+                const isLast = idx === steps.length - 1;
+
                 return (
-                  <div key={step.id} className="rounded-lg border border-border bg-card">
-                    <div className="flex items-center justify-between p-3">
-                      <button
-                        onClick={() => setExpandedStepId(isExpanded ? null : step.id)}
-                        className="flex items-center gap-3 flex-1 text-left min-w-0"
-                      >
-                        {isExpanded ? <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" /> : <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />}
-                        <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded text-muted-foreground shrink-0">
-                          {step.step_index + 1}
-                        </span>
-                        <div className="min-w-0 flex-1">
-                          <span className="text-sm font-medium">{step[`title_${lang}`]}</span>
-                          <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
-                            <code className="text-[10px] text-muted-foreground bg-muted px-1 rounded max-w-[300px] truncate">
-                              {step.selector}
-                            </code>
-                            {step.route && (
-                              <code className="text-[10px] text-hydra-guide bg-hydra-guide/10 px-1 rounded">{step.route}</code>
-                            )}
-                            {step.action && (
-                              <Badge variant="outline" className="text-[10px] h-4">{step.action}</Badge>
-                            )}
-                            {sElements.length > 0 && (
-                              <Badge variant="secondary" className="text-[10px] h-4">{sElements.length} el</Badge>
-                            )}
-                          </div>
-                        </div>
-                      </button>
-                      <div className="flex items-center gap-1 shrink-0">
-                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openStepDialog(step)}>
-                          <Pencil className="h-3 w-3" />
-                        </Button>
-                        <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive" onClick={() => deleteStep(step)}>
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
-                      </div>
+                  <div
+                    key={step.id}
+                    draggable
+                    onDragStart={() => handleDragStart(idx)}
+                    onDragOver={(e) => handleDragOver(e, idx)}
+                    onDrop={() => handleDrop(idx)}
+                    onDragEnd={handleDragEnd}
+                    className={cn(
+                      "relative mb-2 transition-all",
+                      isDragging && "opacity-40",
+                      isDragOver && "translate-y-1"
+                    )}
+                  >
+                    {/* Drop indicator */}
+                    {isDragOver && (
+                      <div className="absolute -top-1.5 left-0 right-0 h-0.5 bg-hydra-guide rounded-full z-10" />
+                    )}
+
+                    {/* Timeline node */}
+                    <div className={cn(
+                      "absolute -left-6 top-3.5 w-5 h-5 rounded-full border-2 flex items-center justify-center text-[9px] font-bold z-[1]",
+                      isExpanded
+                        ? "bg-hydra-guide border-hydra-guide text-white"
+                        : "bg-background border-border text-muted-foreground"
+                    )}>
+                      {idx + 1}
                     </div>
 
-                    {isExpanded && (
-                      <div className="border-t border-border px-4 pb-4 pt-3 space-y-4">
-                        <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">RU</span>
-                            <p className="text-sm text-muted-foreground mt-1">{step.description_ru || '—'}</p>
-                          </div>
-                          <div>
-                            <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">EN</span>
-                            <p className="text-sm text-muted-foreground mt-1">{step.description_en || '—'}</p>
-                          </div>
+                    {/* Step card */}
+                    <div className={cn(
+                      "rounded-lg border bg-card ml-2 transition-colors",
+                      isExpanded ? "border-hydra-guide/30" : "border-border",
+                      isDragOver && "border-hydra-guide/50"
+                    )}>
+                      <div className="flex items-center justify-between p-3">
+                        {/* Drag handle */}
+                        <div className="cursor-grab active:cursor-grabbing text-muted-foreground/40 hover:text-muted-foreground shrink-0 mr-1">
+                          <GripVertical className="h-4 w-4" />
                         </div>
-                        <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                          <span>Placement: <code className="bg-muted px-1 rounded">{step.placement}</code></span>
-                          {step.delay_ms && <span>Delay: <code className="bg-muted px-1 rounded">{step.delay_ms}ms</code></span>}
-                        </div>
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between">
-                            <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
-                              {lang === 'ru' ? 'Элементы панели' : 'Panel Elements'}
-                            </span>
-                            <Button variant="outline" size="sm" className="h-6 text-[10px]" onClick={() => openElementDialog(step.step_index)}>
-                              <Plus className="h-2.5 w-2.5 mr-1" />
-                              {lang === 'ru' ? 'Элемент' : 'Element'}
-                            </Button>
-                          </div>
-                          {sElements.length === 0 ? (
-                            <p className="text-xs text-muted-foreground italic">{lang === 'ru' ? 'Нет элементов' : 'No elements'}</p>
-                          ) : (
-                            <div className="space-y-1">
-                              {sElements.map((el) => (
-                                <div key={el.id} className="flex items-center justify-between px-3 py-2 rounded-md bg-muted/30 border border-border/50">
-                                  <div className="min-w-0 flex-1">
-                                    <div className="flex items-center gap-2">
-                                      <span className="text-xs font-medium">{el[`label_${lang}`]}</span>
-                                      <code className="text-[10px] text-muted-foreground">{el.element_id}</code>
-                                    </div>
-                                    {el.selector && <code className="text-[10px] text-muted-foreground">{el.selector}</code>}
-                                    <p className="text-[10px] text-muted-foreground mt-0.5 line-clamp-1">{el[`description_${lang}`]}</p>
-                                  </div>
-                                  <div className="flex items-center gap-0.5 shrink-0 ml-2">
-                                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => openElementDialog(el.step_index, el)}>
-                                      <Pencil className="h-2.5 w-2.5" />
-                                    </Button>
-                                    <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-destructive" onClick={() => deleteElement(el.id)}>
-                                      <Trash2 className="h-2.5 w-2.5" />
-                                    </Button>
-                                  </div>
-                                </div>
-                              ))}
+
+                        <button
+                          onClick={() => setExpandedStepId(isExpanded ? null : step.id)}
+                          className="flex items-center gap-3 flex-1 text-left min-w-0"
+                        >
+                          {isExpanded ? <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" /> : <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />}
+                          <div className="min-w-0 flex-1">
+                            <span className="text-sm font-medium">{step[`title_${lang}`]}</span>
+                            <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                              <code className="text-[10px] text-muted-foreground bg-muted px-1 rounded max-w-[300px] truncate">
+                                {step.selector}
+                              </code>
+                              {step.route && (
+                                <code className="text-[10px] text-hydra-guide bg-hydra-guide/10 px-1 rounded">{step.route}</code>
+                              )}
+                              {step.action && (
+                                <Badge variant="outline" className="text-[10px] h-4">{step.action}</Badge>
+                              )}
+                              {sElements.length > 0 && (
+                                <Badge variant="secondary" className="text-[10px] h-4">{sElements.length} el</Badge>
+                              )}
                             </div>
-                          )}
+                          </div>
+                        </button>
+                        <div className="flex items-center gap-1 shrink-0">
+                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openStepDialog(step)}>
+                            <Pencil className="h-3 w-3" />
+                          </Button>
+                          <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive" onClick={() => deleteStep(step)}>
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
                         </div>
                       </div>
-                    )}
+
+                      {isExpanded && (
+                        <div className="border-t border-border px-4 pb-4 pt-3 space-y-4">
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">RU</span>
+                              <p className="text-sm text-muted-foreground mt-1">{step.description_ru || '—'}</p>
+                            </div>
+                            <div>
+                              <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">EN</span>
+                              <p className="text-sm text-muted-foreground mt-1">{step.description_en || '—'}</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                            <span>Placement: <code className="bg-muted px-1 rounded">{step.placement}</code></span>
+                            {step.delay_ms && <span>Delay: <code className="bg-muted px-1 rounded">{step.delay_ms}ms</code></span>}
+                          </div>
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
+                                {lang === 'ru' ? 'Элементы панели' : 'Panel Elements'}
+                              </span>
+                              <Button variant="outline" size="sm" className="h-6 text-[10px]" onClick={() => openElementDialog(step.step_index)}>
+                                <Plus className="h-2.5 w-2.5 mr-1" />
+                                {lang === 'ru' ? 'Элемент' : 'Element'}
+                              </Button>
+                            </div>
+                            {sElements.length === 0 ? (
+                              <p className="text-xs text-muted-foreground italic">{lang === 'ru' ? 'Нет элементов' : 'No elements'}</p>
+                            ) : (
+                              <div className="space-y-1">
+                                {sElements.map((el) => (
+                                  <div key={el.id} className="flex items-center justify-between px-3 py-2 rounded-md bg-muted/30 border border-border/50">
+                                    <div className="min-w-0 flex-1">
+                                      <div className="flex items-center gap-2">
+                                        <span className="text-xs font-medium">{el[`label_${lang}`]}</span>
+                                        <code className="text-[10px] text-muted-foreground">{el.element_id}</code>
+                                      </div>
+                                      {el.selector && <code className="text-[10px] text-muted-foreground">{el.selector}</code>}
+                                      <p className="text-[10px] text-muted-foreground mt-0.5 line-clamp-1">{el[`description_${lang}`]}</p>
+                                    </div>
+                                    <div className="flex items-center gap-0.5 shrink-0 ml-2">
+                                      <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => openElementDialog(el.step_index, el)}>
+                                        <Pencil className="h-2.5 w-2.5" />
+                                      </Button>
+                                      <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-destructive" onClick={() => deleteElement(el.id)}>
+                                        <Trash2 className="h-2.5 w-2.5" />
+                                      </Button>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 );
               })}
