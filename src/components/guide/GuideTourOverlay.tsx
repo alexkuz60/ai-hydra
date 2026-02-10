@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, ChevronLeft, ChevronRight, Compass, ChevronDown, Info, List } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { GuideAskSection } from '@/components/guide/GuideAskSection';
 import type { PanelElement } from '@/config/guidePanelElements';
 import type { GuideTourState } from '@/hooks/useGuideTour';
 
@@ -24,6 +25,7 @@ export function GuideTourOverlay({ state, onNext, onPrev, onStop, onGoToStep, ge
   const [comboOpen, setComboOpen] = useState(false);
   const [stepListOpen, setStepListOpen] = useState(false);
   const [elementRect, setElementRect] = useState<DOMRect | null>(null);
+  const [guideAnswer, setGuideAnswer] = useState<string | null>(null);
   const elementObserverRef = useRef<ResizeObserver | null>(null);
   const tooltipRef = useRef<HTMLDivElement | null>(null);
   const [tooltipHeight, setTooltipHeight] = useState(200);
@@ -40,6 +42,7 @@ export function GuideTourOverlay({ state, onNext, onPrev, onStop, onGoToStep, ge
     setElementRect(null);
     setComboOpen(false);
     setStepListOpen(false);
+    setGuideAnswer(null);
     setTooltipHeight(200);
     if (elementObserverRef.current) {
       elementObserverRef.current.disconnect();
@@ -349,9 +352,30 @@ export function GuideTourOverlay({ state, onNext, onPrev, onStop, onGoToStep, ge
                   </div>
                 </div>
 
-                {/* Full-width explanation */}
+                {/* Full-width explanation or guide answer */}
                 <AnimatePresence mode="wait">
-                  {(selectedElement || panelElements.length === 1) && (() => {
+                  {guideAnswer ? (
+                    <motion.div
+                      key="guide-answer"
+                      initial={{ opacity: 0, y: 4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -4 }}
+                      transition={{ duration: 0.15 }}
+                    >
+                      <div className="rounded-lg border border-hydra-guide/30 bg-hydra-guide/10 p-3 space-y-1.5">
+                        <span className="text-xs font-semibold text-hydra-guide">
+                          {lang === 'ru' ? '🧭 Ответ Экскурсовода' : '🧭 Guide Answer'}
+                        </span>
+                        <p className="text-xs text-foreground/90 leading-relaxed whitespace-pre-wrap">{guideAnswer}</p>
+                        <button
+                          onClick={() => setGuideAnswer(null)}
+                          className="text-[10px] text-muted-foreground hover:text-foreground transition-colors underline"
+                        >
+                          {lang === 'ru' ? 'Закрыть ответ' : 'Close answer'}
+                        </button>
+                      </div>
+                    </motion.div>
+                  ) : (selectedElement || panelElements.length === 1) ? (() => {
                     const el = selectedElement ?? panelElements[0];
                     return (
                       <motion.div
@@ -367,11 +391,39 @@ export function GuideTourOverlay({ state, onNext, onPrev, onStop, onGoToStep, ge
                         </div>
                       </motion.div>
                     );
-                  })()}
+                  })() : null}
                 </AnimatePresence>
+
+                {/* Ask the Guide */}
+                <GuideAskSection
+                  contextTitle={step.title[lang]}
+                  contextDescription={step.description[lang]}
+                  onAnswer={setGuideAnswer}
+                />
               </div>
             ) : (
-              <p className="text-sm text-muted-foreground leading-relaxed">{step.description[lang]}</p>
+              <div className="space-y-3">
+                <p className="text-sm text-muted-foreground leading-relaxed">{step.description[lang]}</p>
+                <GuideAskSection
+                  contextTitle={step.title[lang]}
+                  contextDescription={step.description[lang]}
+                  onAnswer={setGuideAnswer}
+                />
+                {guideAnswer && (
+                  <div className="rounded-lg border border-hydra-guide/30 bg-hydra-guide/10 p-3 space-y-1.5">
+                    <span className="text-xs font-semibold text-hydra-guide">
+                      {lang === 'ru' ? '🧭 Ответ Экскурсовода' : '🧭 Guide Answer'}
+                    </span>
+                    <p className="text-xs text-foreground/90 leading-relaxed whitespace-pre-wrap">{guideAnswer}</p>
+                    <button
+                      onClick={() => setGuideAnswer(null)}
+                      className="text-[10px] text-muted-foreground hover:text-foreground transition-colors underline"
+                    >
+                      {lang === 'ru' ? 'Закрыть ответ' : 'Close answer'}
+                    </button>
+                  </div>
+                )}
+              </div>
             )}
 
             {/* Footer */}

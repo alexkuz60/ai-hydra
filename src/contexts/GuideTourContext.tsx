@@ -1,6 +1,7 @@
-import React, { createContext, useContext, useState, useCallback, type ReactNode } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react';
 import { useGuideTour } from '@/hooks/useGuideTour';
 import { useGuideToursData, getElementsFromMap } from '@/hooks/useGuideToursData';
+import { useGuideKnowledgeSync } from '@/hooks/useGuideKnowledgeSync';
 import { GuideTourOverlay } from '@/components/guide/GuideTourOverlay';
 import { GuideTourPickerDialog } from '@/components/guide/GuideTourPickerDialog';
 import type { GuideTour } from '@/config/guideTours';
@@ -27,6 +28,12 @@ export function GuideTourProvider({ children }: { children: ReactNode }) {
   const { state, startTour, nextStep, prevStep, goToStep, stopTour } = useGuideTour();
   const { data, isLoading } = useGuideToursData();
   const [pickerOpen, setPickerOpen] = useState(false);
+  const { sync: syncGuideKnowledge } = useGuideKnowledgeSync();
+
+  // Auto-sync Hydrapedia → Guide knowledge on mount
+  useEffect(() => {
+    syncGuideKnowledge();
+  }, [syncGuideKnowledge]);
 
   const openPicker = useCallback(() => setPickerOpen(true), []);
 
