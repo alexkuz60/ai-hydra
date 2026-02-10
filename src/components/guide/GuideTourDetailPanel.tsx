@@ -33,6 +33,7 @@ import {
   Eye,
   EyeOff,
   GripVertical,
+  Copy,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useUnsavedChanges } from '@/hooks/useUnsavedChanges';
@@ -321,33 +322,89 @@ export function GuideTourDetailPanel({ tour, steps, elements, lang, onDeleteTour
 
   const updateDraft = (patch: Partial<DbTour>) => setDraft(prev => ({ ...prev, ...patch }));
 
+  /* ─── Bulk copy RU → EN ─── */
+  const [copying, setCopying] = useState(false);
+  const copyRuToEn = async () => {
+    if (!confirm(lang === 'ru'
+      ? 'Скопировать все RU-тексты в EN для этого тура, его шагов и элементов? Существующие EN-тексты будут перезаписаны.'
+      : 'Copy all RU texts to EN for this tour, steps and elements? Existing EN texts will be overwritten.'
+    )) return;
+
+    setCopying(true);
+    try {
+      // Tour
+      const { error: tErr } = await supabase.from('guide_tours').update({
+        title_en: tour.title_ru,
+        description_en: tour.description_ru,
+      }).eq('id', tour.id);
+      if (tErr) throw tErr;
+
+      // Steps
+      for (const s of steps) {
+        const { error } = await supabase.from('guide_tour_steps').update({
+          title_en: s.title_ru,
+          description_en: s.description_ru,
+        }).eq('id', s.id);
+        if (error) throw error;
+      }
+
+      // Elements
+      for (const el of elements) {
+        const { error } = await supabase.from('guide_panel_elements').update({
+          label_en: el.label_ru,
+          description_en: el.description_ru,
+        }).eq('id', el.id);
+        if (error) throw error;
+      }
+
+      await onRefresh();
+      toast.success(lang === 'ru' ? 'RU → EN скопировано' : 'RU → EN copied');
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally {
+      setCopying(false);
+    }
+  };
+
   return (
     <div className="h-full flex flex-col">
       {/* ─── Language tabs in header ─── */}
       <div className="px-6 pt-3 pb-0 shrink-0 flex items-center justify-between">
-        <div className="flex items-center gap-1 bg-muted/40 rounded-lg p-0.5">
-          <button
-            onClick={() => setContentLang('ru')}
-            className={cn(
-              "px-3 py-1 text-xs font-medium rounded-md transition-colors",
-              contentLang === 'ru'
-                ? "bg-background text-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground"
-            )}
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 bg-muted/40 rounded-lg p-0.5">
+            <button
+              onClick={() => setContentLang('ru')}
+              className={cn(
+                "px-3 py-1 text-xs font-medium rounded-md transition-colors",
+                contentLang === 'ru'
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              RU
+            </button>
+            <button
+              onClick={() => setContentLang('en')}
+              className={cn(
+                "px-3 py-1 text-xs font-medium rounded-md transition-colors",
+                contentLang === 'en'
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              EN
+            </button>
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 text-xs gap-1.5 text-muted-foreground hover:text-foreground"
+            onClick={copyRuToEn}
+            disabled={copying}
           >
-            RU
-          </button>
-          <button
-            onClick={() => setContentLang('en')}
-            className={cn(
-              "px-3 py-1 text-xs font-medium rounded-md transition-colors",
-              contentLang === 'en'
-                ? "bg-background text-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground"
-            )}
-          >
-            EN
-          </button>
+            {copying ? <Loader2 className="h-3 w-3 animate-spin" /> : <Copy className="h-3 w-3" />}
+            RU → EN
+          </Button>
         </div>
       </div>
 
