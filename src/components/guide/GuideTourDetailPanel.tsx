@@ -136,7 +136,10 @@ export function GuideTourDetailPanel({ tour, steps, elements, lang, onDeleteTour
 
   const handleDrop = async (e: React.DragEvent, targetIdx: number) => {
     e.preventDefault();
+    e.stopPropagation();
     const sourceIdx = dragIdxRef.current;
+    
+    // Reset visual state immediately
     setDragIdx(null);
     setDragOverIdx(null);
     dragIdxRef.current = null;
@@ -150,21 +153,25 @@ export function GuideTourDetailPanel({ tour, steps, elements, lang, onDeleteTour
 
     // Update step_index for all affected steps
     try {
-      const updates = ordered.map((s, i) =>
-        supabase.from('guide_tour_steps').update({ step_index: i }).eq('id', s.id)
-      );
-      await Promise.all(updates);
+      for (let i = 0; i < ordered.length; i++) {
+        const { error } = await supabase
+          .from('guide_tour_steps')
+          .update({ step_index: i })
+          .eq('id', ordered[i].id);
+        if (error) throw error;
+      }
       await onRefresh();
       toast.success(lang === 'ru' ? 'Порядок обновлён' : 'Order updated');
-    } catch (e: any) {
-      toast.error(e.message);
+    } catch (err: any) {
+      console.error('Reorder error:', err);
+      toast.error(err.message || 'Reorder failed');
     }
   };
 
   const handleDragEnd = () => {
+    // Only reset visual state, don't clear ref (drop handler reads it first)
     setDragIdx(null);
     setDragOverIdx(null);
-    dragIdxRef.current = null;
   };
 
   /* ─── Step CRUD ─── */
