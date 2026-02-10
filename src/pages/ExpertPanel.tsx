@@ -349,6 +349,7 @@ export default function ExpertPanel() {
           {/* Main Content */}
           <ResizablePanel defaultSize={80 - consultantPanelWidth} minSize={25}>
             <div className="h-full flex flex-col min-w-0">
+              <div data-guide="model-selector">
               <TaskHeader
                 taskTitle={currentTask.title}
                 sessionId={currentTask.id}
@@ -359,6 +360,7 @@ export default function ExpertPanel() {
                 onStopAllStreaming={stopAllStreaming}
                 onResponseComplete={actions.handleResponseComplete}
               />
+              </div>
 
               <ChatMessagesList
                 messages={displayedMessages}
@@ -389,6 +391,7 @@ export default function ExpertPanel() {
                 onHallucination={actions.handleHallucination}
               />
 
+              <div data-guide="chat-input">
               <ChatInputArea
                 input={input}
                 onInputChange={setInput}
@@ -418,6 +421,7 @@ export default function ExpertPanel() {
                 interactiveChecklists={interactiveChecklists}
                 onInteractiveChecklistsChange={setInteractiveChecklists}
               />
+              </div>
             </div>
           </ResizablePanel>
 
@@ -431,6 +435,7 @@ export default function ExpertPanel() {
             maxSize={50}
             onResize={saveConsultantPanelWidth}
           >
+            <div data-guide="consultant-panel" className="h-full">
             <ConsultantPanel
               sessionId={currentTask?.id || null}
               availableModels={allAvailableModels}
@@ -442,6 +447,7 @@ export default function ExpertPanel() {
               onCopyToMainChat={actions.handleCopyToMainChat}
               onResponseComplete={actions.handleResponseComplete}
             />
+            </div>
           </ResizablePanel>
         </ResizablePanelGroup>
       </div>
