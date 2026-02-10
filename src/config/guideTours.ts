@@ -156,6 +156,96 @@ export const GUIDE_TOURS: GuideTour[] = [
       },
     ],
   },
+  {
+    id: 'model-ratings',
+    title: { ru: 'Подиум ИИ-моделей', en: 'AI Model Podium' },
+    description: { ru: 'Портфолио, конкурсы и рейтинги моделей', en: 'Portfolio, contests, and model ratings' },
+    icon: 'Crown',
+    steps: [
+      {
+        selector: '[data-guide="podium-sections"]',
+        route: '/model-ratings',
+        title: { ru: 'Разделы Подиума', en: 'Podium Sections' },
+        description: {
+          ru: 'Навигатор разделов: Портфолио, Правила конкурса, Конкурс интеллект-красоты и Рейтинги.',
+          en: 'Section navigator: Portfolio, Contest Rules, Intelligence Contest, and Ratings.',
+        },
+        placement: 'right',
+      },
+      {
+        selector: '[data-guide="podium-content"]',
+        title: { ru: 'Рабочая область', en: 'Work Area' },
+        description: {
+          ru: 'Здесь отображается содержимое выбранного раздела — досье моделей, настройки конкурса или аналитика.',
+          en: 'This area shows the selected section content — model dossiers, contest setup, or analytics.',
+        },
+        placement: 'left',
+      },
+    ],
+  },
+  {
+    id: 'flow-editor',
+    title: { ru: 'Редактор потоков мысли', en: 'Thought Flow Editor' },
+    description: { ru: 'Визуальное проектирование логики ИИ', en: 'Visual AI logic design' },
+    icon: 'GitBranch',
+    steps: [
+      {
+        selector: '[data-guide="flow-toolbar"]',
+        route: '/flow-editor',
+        title: { ru: 'Панель инструментов', en: 'Toolbar' },
+        description: {
+          ru: 'Имя диаграммы, стиль связей, Undo/Redo, авто-раскладка и запуск потока.',
+          en: 'Diagram name, edge styles, Undo/Redo, auto-layout, and flow execution.',
+        },
+        placement: 'bottom',
+      },
+      {
+        selector: '[data-guide="flow-sidebar"]',
+        title: { ru: 'Палитра узлов', en: 'Node Palette' },
+        description: {
+          ru: 'Перетаскивайте узлы на холст: Input, Prompt, Model, Condition, Output и многие другие.',
+          en: 'Drag nodes onto the canvas: Input, Prompt, Model, Condition, Output, and more.',
+        },
+        placement: 'right',
+      },
+      {
+        selector: '[data-guide="flow-canvas"]',
+        title: { ru: 'Холст диаграммы', en: 'Diagram Canvas' },
+        description: {
+          ru: 'Основная рабочая область. Соединяйте узлы, настраивайте свойства и стройте потоки мысли.',
+          en: 'Main workspace. Connect nodes, configure properties, and build thought flows.',
+        },
+        placement: 'left',
+      },
+    ],
+  },
+  {
+    id: 'role-library',
+    title: { ru: 'Библиотека промптов', en: 'Prompt Library' },
+    description: { ru: 'Управление системными промптами для ролей', en: 'Managing system prompts for roles' },
+    icon: 'Library',
+    steps: [
+      {
+        selector: '[data-guide="prompt-list"]',
+        route: '/role-library',
+        title: { ru: 'Список промптов', en: 'Prompt List' },
+        description: {
+          ru: 'Все промпты сгруппированы по языку. Фильтруйте по роли, владельцу или поисковому запросу.',
+          en: 'All prompts grouped by language. Filter by role, owner, or search query.',
+        },
+        placement: 'right',
+      },
+      {
+        selector: '[data-guide="prompt-details"]',
+        title: { ru: 'Детали промпта', en: 'Prompt Details' },
+        description: {
+          ru: 'Просмотр и редактирование содержимого, метаданных и настроек выбранного промпта.',
+          en: 'View and edit the content, metadata, and settings of the selected prompt.',
+        },
+        placement: 'left',
+      },
+    ],
+  },
 ];
 
 /** Get a tour by ID */

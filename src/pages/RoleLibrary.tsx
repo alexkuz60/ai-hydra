@@ -319,13 +319,14 @@
          {/* Main content */}
          <ResizablePanelGroup direction="horizontal" className="flex-1">
            {/* Left panel - List */}
-           <ResizablePanel 
-             ref={nav.panelRef}
-             defaultSize={nav.panelSize} 
-             minSize={4} 
-             maxSize={60}
-             onResize={nav.onPanelResize}
-           >
+            <ResizablePanel 
+              ref={nav.panelRef}
+              defaultSize={nav.panelSize} 
+              minSize={4} 
+              maxSize={60}
+              onResize={nav.onPanelResize}
+              data-guide="prompt-list"
+            >
              <div className="h-full flex flex-col hydra-nav-surface">
                <NavigatorHeader
                  title={t('roleLibrary.title')}
@@ -471,7 +472,7 @@
            <ResizableHandle withHandle />
  
            {/* Right panel - Details or Editor */}
-           <ResizablePanel defaultSize={100 - nav.panelSize} minSize={40} maxSize={96}>
+           <ResizablePanel defaultSize={100 - nav.panelSize} minSize={40} maxSize={96} data-guide="prompt-details">
             {isCreating || isEditing ? (
                 <AdvancedPromptEditor
                   formData={formData}
