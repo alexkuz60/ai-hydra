@@ -34,7 +34,7 @@ export function GuideTourOverlay({ state, onNext, onPrev, onStop, onGoToStep, ge
 
   const lang = language as 'ru' | 'en';
 
-  // Clean up on step change
+  // Auto-select first element on step change
   useEffect(() => {
     setSelectedElement(null);
     setElementRect(null);
@@ -46,6 +46,17 @@ export function GuideTourOverlay({ state, onNext, onPrev, onStop, onGoToStep, ge
       elementObserverRef.current = null;
     }
   }, [stepKey]);
+
+  // Auto-select first panel element when available
+  useEffect(() => {
+    if (!state.isActive || !state.tour) return;
+    const elements = getPanelElements(state.tour.id, state.currentStepIndex);
+    if (elements.length > 0 && !selectedElement) {
+      // Delay to let DOM render
+      const timer = setTimeout(() => handleSelectElement(elements[0]), 50);
+      return () => clearTimeout(timer);
+    }
+  }, [stepKey, state.isActive]);
 
   // Measure tooltip height
   useEffect(() => {
@@ -89,38 +100,35 @@ export function GuideTourOverlay({ state, onNext, onPrev, onStop, onGoToStep, ge
 
   // Simplified positioning: always above target, shift left/right to avoid overlapping green frame
   const getTooltipStyle = (): React.CSSProperties => {
-    if (!rect) return { top: '50%', left: '50%', transform: 'translate(-50%, -50%)' };
-
     const gap = 16;
     const tooltipWidth = 540;
     const margin = 16;
 
-    // Always place above the target
-    const top = Math.max(margin, rect.top - PADDING - gap - tooltipHeight);
+    // Always pin to the top of the viewport
+    const top = margin;
+
+    if (!rect) {
+      return { top, left: '50%', transform: 'translateX(-50%)' };
+    }
 
     // Center horizontally on target, then clamp
     let left = rect.left + rect.width / 2 - tooltipWidth / 2;
 
-    // If tooltip overlaps the green frame horizontally, shift away
+    // Avoid overlapping the green frame (so blue highlight stays visible)
     const greenLeft = rect.left - PADDING;
     const greenRight = rect.right + PADDING;
     const tooltipRight = left + tooltipWidth;
 
-    // If tooltip covers the green frame, try shifting left or right
     if (left < greenRight && tooltipRight > greenLeft) {
-      // Prefer placing to the right of the green frame
       const rightCandidate = greenRight + gap;
       const leftCandidate = greenLeft - gap - tooltipWidth;
-
       if (rightCandidate + tooltipWidth + margin <= window.innerWidth) {
         left = rightCandidate;
       } else if (leftCandidate >= margin) {
         left = leftCandidate;
       }
-      // else keep centered (fallback)
     }
 
-    // Clamp to viewport
     left = Math.max(margin, Math.min(left, window.innerWidth - tooltipWidth - margin));
 
     return { top, left };
@@ -278,13 +286,15 @@ export function GuideTourOverlay({ state, onNext, onPrev, onStop, onGoToStep, ge
                   {/* Right: element selector */}
                   <div>
                     {panelElements.length === 1 ? (
-                      (() => {
-                        const el = panelElements[0];
-                        if (!selectedElement || selectedElement.id !== el.id) {
-                          setTimeout(() => handleSelectElement(el), 0);
-                        }
-                        return null;
-                      })()
+                      <div>
+                        <span className="text-[10px] uppercase tracking-wider text-muted-foreground/70 font-medium">
+                          {lang === 'ru' ? 'Элемент UI' : 'UI element'}
+                        </span>
+                        <div className="mt-1 px-3 py-2 rounded-lg border border-hydra-guide/30 bg-hydra-guide/5 text-xs font-medium text-hydra-guide flex items-center gap-2">
+                          <Info className="h-3.5 w-3.5" />
+                          {panelElements[0].label[lang]}
+                        </div>
+                      </div>
                     ) : (
                       <div className="relative space-y-1">
                         <span className="text-[10px] uppercase tracking-wider text-muted-foreground/70 font-medium">
@@ -303,6 +313,37 @@ export function GuideTourOverlay({ state, onNext, onPrev, onStop, onGoToStep, ge
                           </span>
                           <ChevronDown className={`h-3.5 w-3.5 text-muted-foreground transition-transform ${comboOpen ? 'rotate-180' : ''}`} />
                         </button>
+                        {/* Dropdown anchored to combobox */}
+                        <AnimatePresence>
+                          {comboOpen && (
+                            <motion.div
+                              initial={{ opacity: 0, y: -4 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              exit={{ opacity: 0, y: -4 }}
+                              className="absolute z-[10001] left-0 right-0 top-full mt-1 rounded-lg border border-border bg-card shadow-xl"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <div className="space-y-0.5 max-h-48 overflow-y-auto hydra-scrollbar p-1">
+                                {panelElements.map((el) => (
+                                  <button
+                                    key={el.id}
+                                    onClick={() => { handleSelectElement(el); setComboOpen(false); }}
+                                    className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md text-left text-xs transition-colors ${
+                                      selectedElement?.id === el.id
+                                        ? 'bg-hydra-guide/15 text-hydra-guide font-medium'
+                                        : 'text-muted-foreground hover:bg-hydra-guide/10 hover:text-hydra-guide'
+                                    }`}
+                                  >
+                                    <span className={`shrink-0 w-1.5 h-1.5 rounded-full ${
+                                      selectedElement?.id === el.id ? 'bg-hydra-guide' : 'bg-hydra-guide/50'
+                                    }`} />
+                                    <span className="truncate">{el.label[lang]}</span>
+                                  </button>
+                                ))}
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
                       </div>
                     )}
                   </div>
@@ -352,39 +393,6 @@ export function GuideTourOverlay({ state, onNext, onPrev, onStop, onGoToStep, ge
               </div>
             </div>
           </div>
-
-          {/* Floating details dropdown — OUTSIDE card, overlays everything */}
-          <AnimatePresence>
-            {comboOpen && panelElements.length > 1 && (
-              <motion.div
-                initial={{ opacity: 0, y: -4 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -4 }}
-                className="absolute z-[10001] right-4 rounded-lg border border-border bg-card shadow-xl"
-                style={{ top: tooltipRef.current ? 'auto' : undefined, width: 'calc(50% - 1.25rem)' }}
-                onClick={(e) => e.stopPropagation()}
-              >
-                <div className="space-y-0.5 max-h-48 overflow-y-auto hydra-scrollbar p-1">
-                  {panelElements.map((el) => (
-                    <button
-                      key={el.id}
-                      onClick={() => { handleSelectElement(el); setComboOpen(false); }}
-                      className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md text-left text-xs transition-colors ${
-                        selectedElement?.id === el.id
-                          ? 'bg-hydra-guide/15 text-hydra-guide font-medium'
-                          : 'text-muted-foreground hover:bg-hydra-guide/10 hover:text-hydra-guide'
-                      }`}
-                    >
-                      <span className={`shrink-0 w-1.5 h-1.5 rounded-full ${
-                        selectedElement?.id === el.id ? 'bg-hydra-guide' : 'bg-hydra-guide/50'
-                      }`} />
-                      <span className="truncate">{el.label[lang]}</span>
-                    </button>
-                  ))}
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
         </motion.div>
       </motion.div>
     </AnimatePresence>
