@@ -174,9 +174,9 @@ export function ChatInputArea(props: ChatInputAreaProps) {
                   </TooltipTrigger>
                   <TooltipContent side="right">{t('expertPanel.collapseInput')}</TooltipContent>
                 </Tooltip>
-                <FileUpload files={attachedFiles} onFilesChange={onFilesChange} onAttachMermaid={handleAttachMermaid} onSelectFlowDiagram={() => setFlowPickerOpen(true)} disabled={sending} />
-                <TimeoutSlider value={timeoutSeconds} onChange={onTimeoutChange} disabled={sending} />
-                <SupervisorWishesPicker selectedWishes={selectedWishes} onWishesChange={onWishesChange} activeRoles={activeRoles} disabled={sending} supervisorDisplayName={supervisorDisplayName} />
+                <span data-guide="chat-attach-btn"><FileUpload files={attachedFiles} onFilesChange={onFilesChange} onAttachMermaid={handleAttachMermaid} onSelectFlowDiagram={() => setFlowPickerOpen(true)} disabled={sending} /></span>
+                <span data-guide="chat-timeout"><TimeoutSlider value={timeoutSeconds} onChange={onTimeoutChange} disabled={sending} /></span>
+                <span data-guide="chat-wishes-btn"><SupervisorWishesPicker selectedWishes={selectedWishes} onWishesChange={onWishesChange} activeRoles={activeRoles} disabled={sending} supervisorDisplayName={supervisorDisplayName} /></span>
                 {onInteractiveChecklistsChange && (
                   <Tooltip>
                     <TooltipTrigger asChild>
@@ -194,6 +194,7 @@ export function ChatInputArea(props: ChatInputAreaProps) {
 
               {/* Textarea */}
               <Textarea
+                data-guide="chat-textarea"
                 value={input}
                 onChange={e => onInputChange(e.target.value)}
                 placeholder={t('expertPanel.placeholder')}
@@ -207,7 +208,7 @@ export function ChatInputArea(props: ChatInputAreaProps) {
               <div className="flex flex-col gap-1 justify-end shrink-0">
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Button onClick={onSend} disabled={disabled} size="icon" className="h-9 w-9 hydra-glow-sm">
+                    <Button onClick={onSend} disabled={disabled} size="icon" className="h-9 w-9 hydra-glow-sm" data-guide="chat-send-btn">
                       {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Users className="h-3 w-3 absolute top-1 right-1 opacity-60" /><Send className="h-4 w-4" /></>}
                     </Button>
                   </TooltipTrigger>

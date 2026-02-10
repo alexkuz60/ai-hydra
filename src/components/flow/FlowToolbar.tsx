@@ -326,6 +326,7 @@ export function FlowToolbar({
         onChange={(e) => onNameChange(e.target.value)}
         className="w-48 h-8 text-sm"
         placeholder={t('flowEditor.newDiagram')}
+        data-guide="flow-diagram-name"
       />
       
       {hasChanges && (
@@ -333,7 +334,7 @@ export function FlowToolbar({
       )}
 
       {/* Undo/Redo buttons */}
-      <div className="flex items-center gap-1 border-l border-border pl-3">
+      <div className="flex items-center gap-1 border-l border-border pl-3" data-guide="flow-undo-redo">
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
@@ -405,6 +406,7 @@ export function FlowToolbar({
               size="icon"
               className="h-8 w-8"
               onClick={onToggleLogistics}
+              data-guide="flow-logistics-btn"
             >
               <Route className="h-4 w-4 text-hydra-flowregulator" />
             </Button>
@@ -418,7 +420,7 @@ export function FlowToolbar({
       {/* Auto Layout - right aligned */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="outline" size="sm" className="gap-1">
+          <Button variant="outline" size="sm" className="gap-1" data-guide="flow-auto-layout">
             <LayoutGrid className="h-4 w-4" />
             {t('flowEditor.autoLayout')}
             <ChevronDown className="h-3 w-3" />
@@ -437,10 +439,12 @@ export function FlowToolbar({
       </DropdownMenu>
 
       {/* Edge Style Selector */}
+      <span data-guide="flow-edge-style">
       <EdgeStyleSelector
         settings={edgeSettings}
         onSettingsChange={onEdgeSettingsChange}
       />
+      </span>
     </div>
   );
 }

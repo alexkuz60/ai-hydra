@@ -73,33 +73,40 @@ const RoleDetailsPanel = forwardRef<HTMLDivElement, RoleDetailsPanelProps>(
             <Separator />
 
             {/* Prompt Section */}
+            <div data-guide="role-prompt-section">
             <RolePromptSection
               selectedRole={selectedRole}
               systemPrompt={systemPrompt}
               userId={user?.id}
               {...promptEditor}
             />
+            </div>
 
             <Separator />
 
             {/* Hierarchy Section */}
+            <div data-guide="role-hierarchy-section">
             <RoleHierarchySection
               selectedRole={selectedRole}
               userId={user?.id}
               onHasUnsavedChanges={onHasUnsavedChanges}
             />
+            </div>
 
             {/* Knowledge - technical staff only */}
             {config.isTechnicalStaff && (
               <>
                 <Separator />
+                <div data-guide="role-knowledge-section">
                 <RoleKnowledgeTab role={selectedRole} />
+                </div>
               </>
             )}
 
             <Separator />
 
             {/* Settings */}
+            <div data-guide="role-settings-section">
             <RoleSettingsSection
               isTechnicalStaff={config.isTechnicalStaff}
               requiresApproval={behavior?.requires_approval ?? false}
@@ -108,6 +115,7 @@ const RoleDetailsPanel = forwardRef<HTMLDivElement, RoleDetailsPanelProps>(
               userId={user?.id}
               onSaveRequiresApproval={saveRequiresApproval}
             />
+            </div>
           </div>
         </ScrollArea>
       </div>

@@ -41,6 +41,7 @@ export function TaskHeader({
       </div>
       <div className="flex items-center gap-2">
         {/* Tech Support */}
+        <span data-guide="chat-tech-support">
         <TechSupportDialog
           sessionId={sessionId}
           availableModels={allAvailableModels}
@@ -65,8 +66,10 @@ export function TaskHeader({
             </TooltipProvider>
           }
         />
+        </span>
         
         {/* Streaming Mode Toggle */}
+        <span data-guide="chat-streaming-toggle">
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
@@ -136,6 +139,7 @@ export function TaskHeader({
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
+        </span>
         
         {/* Stop All Streaming */}
         <TooltipProvider>
