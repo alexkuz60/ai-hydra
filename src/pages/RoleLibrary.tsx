@@ -310,7 +310,7 @@
              </div>
              <p className="text-sm text-muted-foreground mt-1">{t('roleLibrary.pageDescription')}</p>
            </div>
-           <Button onClick={handleStartCreate}>
+           <Button onClick={handleStartCreate} data-guide="prompt-create-btn">
              <Plus className="h-4 w-4 mr-2" />
              {t('roleLibrary.new')}
            </Button>
@@ -372,7 +372,7 @@
                ) : (
                <div className="flex-1 flex flex-col">
                {/* Filters */}
-               <div className="p-4 border-b space-y-3">
+               <div className="p-4 border-b space-y-3" data-guide="prompt-filters">
                  <div className="relative">
                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                    <Input

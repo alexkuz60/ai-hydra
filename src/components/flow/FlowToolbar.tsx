@@ -379,6 +379,7 @@ export function FlowToolbar({
               variant={isExecuting ? 'destructive' : 'default'}
               size="icon"
               className="h-8 w-8"
+              data-guide="flow-execute-btn"
               onClick={isExecuting ? onStopExecution : onStartExecution}
               disabled={!canExecute && !isExecuting}
             >

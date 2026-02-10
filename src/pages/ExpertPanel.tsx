@@ -322,7 +322,7 @@ export default function ExpertPanel() {
             className="hydra-nav-surface"
             onResize={nav.onPanelResize}
           >
-            <div className="h-full flex flex-col">
+            <div className="h-full flex flex-col" data-guide="chat-tree-nav">
               <NavigatorHeader title={t('chat.participants')} isMinimized={nav.isMinimized} onToggle={nav.toggle} />
               <div className="flex-1 overflow-hidden">
                 <ChatTreeNav
@@ -362,6 +362,7 @@ export default function ExpertPanel() {
               />
               </div>
 
+              <div data-guide="chat-messages" className="flex-1 overflow-auto">
               <ChatMessagesList
                 messages={displayedMessages}
                 filteredParticipant={filteredParticipant}
@@ -390,6 +391,7 @@ export default function ExpertPanel() {
                 onChecklistChange={handleChecklistChange}
                 onHallucination={actions.handleHallucination}
               />
+              </div>
 
               <div data-guide="chat-input">
               <ChatInputArea

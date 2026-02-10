@@ -92,12 +92,14 @@ export default function ModelRatings() {
                     const Icon = section.icon;
                     const isActive = activeSection === section.id;
                     const label = language === 'ru' ? section.labelRu : section.labelEn;
+                    const guideAttr = `podium-${section.id}-btn`;
 
                     if (nav.isMinimized) {
                       return (
                         <Tooltip key={section.id}>
                           <TooltipTrigger asChild>
                             <button
+                              data-guide={guideAttr}
                               onClick={() => setActiveSection(section.id)}
                               className={cn(
                                 "w-full flex items-center justify-center p-2 rounded-lg transition-colors",
@@ -122,6 +124,7 @@ export default function ModelRatings() {
                     return (
                       <button
                         key={section.id}
+                        data-guide={guideAttr}
                         onClick={() => setActiveSection(section.id)}
                         className={cn(
                           "w-full flex items-center gap-3 p-2.5 rounded-lg transition-colors text-left",

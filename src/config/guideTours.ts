@@ -30,6 +30,7 @@ export interface GuideTour {
 }
 
 export const GUIDE_TOURS: GuideTour[] = [
+  // ─── 1. Welcome Tour ───
   {
     id: 'welcome',
     title: { ru: 'Знакомство с Hydra', en: 'Welcome to Hydra' },
@@ -74,15 +75,6 @@ export const GUIDE_TOURS: GuideTour[] = [
         placement: 'right',
       },
       {
-        selector: 'a[href="/model-ratings"]',
-        title: { ru: 'Подиум ИИ-моделей', en: 'AI Model Podium' },
-        description: {
-          ru: 'Досье моделей, конкурсы интеллект-красоты и рейтинги. Выбирайте лучшие «мозги» для каждой роли.',
-          en: 'Model dossiers, beauty contests, and ratings. Choose the best "brains" for each role.',
-        },
-        placement: 'right',
-      },
-      {
         selector: 'a[href="/hydrapedia"]',
         title: { ru: 'Гидропедия', en: 'Hydrapedia' },
         description: {
@@ -93,6 +85,8 @@ export const GUIDE_TOURS: GuideTour[] = [
       },
     ],
   },
+
+  // ─── 2. Expert Panel Tour ───
   {
     id: 'expert-panel',
     title: { ru: 'Как работает Панель экспертов', en: 'How the Expert Panel Works' },
@@ -110,11 +104,29 @@ export const GUIDE_TOURS: GuideTour[] = [
         placement: 'bottom',
       },
       {
+        selector: '[data-guide="chat-tree-nav"]',
+        title: { ru: 'Навигатор участников', en: 'Participant Navigator' },
+        description: {
+          ru: 'Дерево сообщений и участников обсуждения. Кликайте для перехода к сообщению, дважды — для фильтрации по участнику.',
+          en: 'Message and participant tree. Click to jump to a message, double-click to filter by participant.',
+        },
+        placement: 'right',
+      },
+      {
+        selector: '[data-guide="chat-messages"]',
+        title: { ru: 'Область обсуждения', en: 'Discussion Area' },
+        description: {
+          ru: 'Здесь отображаются сообщения всех участников. Оценивайте ответы, сохраняйте в память, запрашивайте уточнения.',
+          en: 'All participant messages appear here. Rate responses, save to memory, request clarifications.',
+        },
+        placement: 'top',
+      },
+      {
         selector: '[data-guide="chat-input"]',
         title: { ru: 'Ввод запроса', en: 'Input Query' },
         description: {
-          ru: 'Введите вопрос или задачу. Поддерживаются вложения файлов и изображений.',
-          en: 'Enter your question or task. File and image attachments are supported.',
+          ru: 'Введите вопрос или задачу. Поддерживаются вложения файлов и изображений, таймаут и пожелания Супервайзера.',
+          en: 'Enter your question or task. File/image attachments, timeout, and Supervisor wishes are supported.',
         },
         placement: 'top',
       },
@@ -129,6 +141,8 @@ export const GUIDE_TOURS: GuideTour[] = [
       },
     ],
   },
+
+  // ─── 3. Staff Roles Tour ───
   {
     id: 'staff-roles',
     title: { ru: 'Штат специалистов', en: 'AI Staff' },
@@ -140,10 +154,19 @@ export const GUIDE_TOURS: GuideTour[] = [
         route: '/staff-roles',
         title: { ru: 'Список ролей', en: 'Role List' },
         description: {
-          ru: '6 экспертных ролей (Эксперт, Критик, Арбитр, Консультант, Модератор, Советник) и 6 технических (Архивариус, Аналитик и др.).',
-          en: '6 expert roles (Expert, Critic, Arbiter, Consultant, Moderator, Advisor) and 6 technical ones (Archivist, Analyst, etc.).',
+          ru: '6 экспертных ролей (Эксперт, Критик, Арбитр, Консультант, Модератор, Советник) и 6 технических.',
+          en: '6 expert roles (Expert, Critic, Arbiter, Consultant, Moderator, Advisor) and 6 technical ones.',
         },
         placement: 'right',
+      },
+      {
+        selector: '[data-guide="staff-seed-button"]',
+        title: { ru: 'Обучение техников', en: 'Seed Tech Roles' },
+        description: {
+          ru: 'Одной кнопкой загрузите базу знаний для всех технических ролей — Архивариус, Аналитик и др.',
+          en: 'One click to seed knowledge base for all technical roles — Archivist, Analyst, etc.',
+        },
+        placement: 'bottom',
       },
       {
         selector: '[data-guide="role-details"]',
@@ -154,8 +177,28 @@ export const GUIDE_TOURS: GuideTour[] = [
         },
         placement: 'left',
       },
+      {
+        selector: '[data-guide="staff-experts-group"]',
+        title: { ru: 'Группа экспертов', en: 'Expert Group' },
+        description: {
+          ru: 'Эксперт, Критик, Арбитр, Консультант, Модератор и Советник — роли для дискуссий и принятия решений.',
+          en: 'Expert, Critic, Arbiter, Consultant, Moderator, Advisor — roles for discussions and decisions.',
+        },
+        placement: 'right',
+      },
+      {
+        selector: '[data-guide="staff-technical-group"]',
+        title: { ru: 'Технический персонал', en: 'Technical Staff' },
+        description: {
+          ru: 'Архивариус, Аналитик, Промпт-инженер, Регулятор, Инструменталист и Web-Охотник — скрытая инфраструктура.',
+          en: 'Archivist, Analyst, Prompt Engineer, Regulator, Toolsmith, Web-Hunter — hidden infrastructure.',
+        },
+        placement: 'right',
+      },
     ],
   },
+
+  // ─── 4. Model Ratings Tour ───
   {
     id: 'model-ratings',
     title: { ru: 'Подиум ИИ-моделей', en: 'AI Model Podium' },
@@ -181,8 +224,37 @@ export const GUIDE_TOURS: GuideTour[] = [
         },
         placement: 'left',
       },
+      {
+        selector: '[data-guide="podium-portfolio-btn"]',
+        title: { ru: 'Портфолио моделей', en: 'Model Portfolio' },
+        description: {
+          ru: 'Каталог всех доступных ИИ-моделей с провайдерами, ценами и характеристиками.',
+          en: 'Catalog of all available AI models with providers, pricing, and specs.',
+        },
+        placement: 'right',
+      },
+      {
+        selector: '[data-guide="podium-ratings-btn"]',
+        title: { ru: 'Рейтинги', en: 'Ratings' },
+        description: {
+          ru: 'Статистика использования моделей, оценки Арбитра и итоговые рейтинги по проекту.',
+          en: 'Model usage statistics, Arbiter evaluations, and project-wide ratings.',
+        },
+        placement: 'right',
+      },
+      {
+        selector: '[data-guide="podium-contest-btn"]',
+        title: { ru: 'Конкурс интеллект-красоты', en: 'Intelligence Contest' },
+        description: {
+          ru: 'Соревнования между моделями: арена реального времени, жюри и турнирные сетки.',
+          en: 'Model competitions: real-time arena, judging panel, and tournament brackets.',
+        },
+        placement: 'right',
+      },
     ],
   },
+
+  // ─── 5. Flow Editor Tour ───
   {
     id: 'flow-editor',
     title: { ru: 'Редактор потоков мысли', en: 'Thought Flow Editor' },
@@ -217,8 +289,28 @@ export const GUIDE_TOURS: GuideTour[] = [
         },
         placement: 'left',
       },
+      {
+        selector: '[data-guide="flow-header-actions"]',
+        title: { ru: 'Управление диаграммами', en: 'Diagram Management' },
+        description: {
+          ru: 'Сохранение, загрузка, экспорт в PNG/SVG/JSON/YAML, создание новой диаграммы и генерация Mermaid-кода.',
+          en: 'Save, load, export to PNG/SVG/JSON/YAML, create new diagram, and generate Mermaid code.',
+        },
+        placement: 'bottom',
+      },
+      {
+        selector: '[data-guide="flow-execute-btn"]',
+        title: { ru: 'Запуск потока', en: 'Run Flow' },
+        description: {
+          ru: 'Запускает выполнение диаграммы — данные проходят через все узлы от Input до Output.',
+          en: 'Executes the diagram — data flows through all nodes from Input to Output.',
+        },
+        placement: 'bottom',
+      },
     ],
   },
+
+  // ─── 6. Prompt Library Tour ───
   {
     id: 'role-library',
     title: { ru: 'Библиотека промптов', en: 'Prompt Library' },
@@ -236,6 +328,24 @@ export const GUIDE_TOURS: GuideTour[] = [
         placement: 'right',
       },
       {
+        selector: '[data-guide="prompt-filters"]',
+        title: { ru: 'Фильтры', en: 'Filters' },
+        description: {
+          ru: 'Поиск по тексту, фильтр по роли и типу владельца (свои, общие, системные).',
+          en: 'Text search, role filter, and owner type filter (own, shared, system).',
+        },
+        placement: 'right',
+      },
+      {
+        selector: '[data-guide="prompt-create-btn"]',
+        title: { ru: 'Создание промпта', en: 'Create Prompt' },
+        description: {
+          ru: 'Создайте новый промпт: выберите роль, язык, напишите содержимое и сохраните в библиотеку.',
+          en: 'Create a new prompt: choose a role, language, write content, and save to the library.',
+        },
+        placement: 'bottom',
+      },
+      {
         selector: '[data-guide="prompt-details"]',
         title: { ru: 'Детали промпта', en: 'Prompt Details' },
         description: {
@@ -246,6 +356,8 @@ export const GUIDE_TOURS: GuideTour[] = [
       },
     ],
   },
+
+  // ─── 7. Tools Library Tour ───
   {
     id: 'tools-library',
     title: { ru: 'Инструменты ИИ', en: 'AI Tools' },
@@ -263,6 +375,33 @@ export const GUIDE_TOURS: GuideTour[] = [
         placement: 'right',
       },
       {
+        selector: '[data-guide="tools-filters"]',
+        title: { ru: 'Фильтры', en: 'Filters' },
+        description: {
+          ru: 'Поиск по имени и описанию, фильтр по типу владельца (системные, свои, общие).',
+          en: 'Search by name/description, filter by owner type (system, own, shared).',
+        },
+        placement: 'right',
+      },
+      {
+        selector: '[data-guide="tools-create-btn"]',
+        title: { ru: 'Создание инструмента', en: 'Create Tool' },
+        description: {
+          ru: 'Создайте Prompt-tool или HTTP API-tool с параметрами, шаблоном и настройками.',
+          en: 'Create a Prompt tool or HTTP API tool with parameters, template, and settings.',
+        },
+        placement: 'bottom',
+      },
+      {
+        selector: '[data-guide="tools-import-btn"]',
+        title: { ru: 'Импорт инструмента', en: 'Import Tool' },
+        description: {
+          ru: 'Импортируйте готовый инструмент из JSON-файла — быстрый обмен с коллегами.',
+          en: 'Import a ready-made tool from a JSON file — quick sharing with colleagues.',
+        },
+        placement: 'bottom',
+      },
+      {
         selector: '[data-guide="tools-details"]',
         title: { ru: 'Детали инструмента', en: 'Tool Details' },
         description: {
@@ -273,6 +412,8 @@ export const GUIDE_TOURS: GuideTour[] = [
       },
     ],
   },
+
+  // ─── 8. Behavioral Patterns Tour ───
   {
     id: 'behavioral-patterns',
     title: { ru: 'Паттерны поведения', en: 'Behavioral Patterns' },
@@ -284,8 +425,26 @@ export const GUIDE_TOURS: GuideTour[] = [
         route: '/behavioral-patterns',
         title: { ru: 'Список паттернов', en: 'Pattern List' },
         description: {
-          ru: 'Два типа: стратегические рецепты (Blueprints) с этапами и контрольными точками, и ролевые паттерны (Behaviors) с настройками коммуникации.',
-          en: 'Two types: strategic blueprints with stages and checkpoints, and role behaviors with communication settings.',
+          ru: 'Два типа: стратегические рецепты (Blueprints) с этапами и контрольными точками, и ролевые паттерны (Behaviors).',
+          en: 'Two types: strategic blueprints with stages/checkpoints, and role behaviors.',
+        },
+        placement: 'right',
+      },
+      {
+        selector: '[data-guide="patterns-strategic-group"]',
+        title: { ru: 'Стратегические рецепты', en: 'Strategic Blueprints' },
+        description: {
+          ru: 'Многоэтапные сценарии с назначением ролей на каждый этап и контрольными точками.',
+          en: 'Multi-stage scenarios with role assignments per stage and checkpoints.',
+        },
+        placement: 'right',
+      },
+      {
+        selector: '[data-guide="patterns-behavior-group"]',
+        title: { ru: 'Ролевые паттерны', en: 'Role Behaviors' },
+        description: {
+          ru: 'Настройки коммуникации для каждой роли: тон, детализация, реакции и взаимодействия.',
+          en: 'Communication settings per role: tone, verbosity, reactions, and interactions.',
         },
         placement: 'right',
       },
@@ -297,6 +456,15 @@ export const GUIDE_TOURS: GuideTour[] = [
           en: 'Inline editing, reaction badges, and Flow Editor integration.',
         },
         placement: 'left',
+      },
+      {
+        selector: '[data-guide="patterns-create-blueprint"]',
+        title: { ru: 'Создание рецепта', en: 'Create Blueprint' },
+        description: {
+          ru: 'Создайте новый стратегический рецепт с этапами, ролями и контрольными точками.',
+          en: 'Create a new strategic blueprint with stages, roles, and checkpoints.',
+        },
+        placement: 'right',
       },
     ],
   },
