@@ -267,6 +267,19 @@ export function GuideTourDetailPanel({ tour, steps, elements, lang, onDeleteTour
   };
 
   /* ─── Element CRUD ─── */
+  const generateElementId = (label: string, stepIndex: number): string => {
+    const slug = label.trim().toLowerCase()
+      .replace(/[а-яё]/g, (c) => {
+        const map: Record<string, string> = {'а':'a','б':'b','в':'v','г':'g','д':'d','е':'e','ё':'yo','ж':'zh','з':'z','и':'i','й':'y','к':'k','л':'l','м':'m','н':'n','о':'o','п':'p','р':'r','с':'s','т':'t','у':'u','ф':'f','х':'kh','ц':'ts','ч':'ch','ш':'sh','щ':'shch','ъ':'','ы':'y','ь':'','э':'e','ю':'yu','я':'ya'};
+        return map[c] || c;
+      })
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '')
+      .slice(0, 30);
+    const suffix = Math.random().toString(36).slice(2, 6);
+    return `${slug || 'el'}-s${stepIndex}-${suffix}`;
+  };
+
   const openElementDialog = (stepIndex: number, el?: DbElement) => {
     setElementDialog({
       open: true, stepIndex,
@@ -280,9 +293,13 @@ export function GuideTourDetailPanel({ tour, steps, elements, lang, onDeleteTour
 
   const saveElement = async () => {
     const el = elementDialog.element;
-    if (!el || !el.element_id || !el.label_ru || !el.label_en) {
-      toast.error(lang === 'ru' ? 'Заполните ID, название RU и EN' : 'Fill ID, label RU and EN');
+    if (!el || !el.label_ru || !el.label_en) {
+      toast.error(lang === 'ru' ? 'Заполните название RU и EN' : 'Fill label RU and EN');
       return;
+    }
+    // Auto-generate element_id for new elements
+    if (!el.id && !el.element_id) {
+      el.element_id = generateElementId(el.label_ru || el.label_en || '', elementDialog.stepIndex);
     }
     setSaving(true);
     try {
@@ -636,11 +653,8 @@ export function GuideTourDetailPanel({ tour, steps, elements, lang, onDeleteTour
                                 {sElements.map((el) => (
                                   <div key={el.id} className="flex items-center justify-between px-3 py-2 rounded-md bg-muted/30 border border-border/50">
                                     <div className="min-w-0 flex-1">
-                                      <div className="flex items-center gap-2">
-                                        <span className="text-xs font-medium">{el[`label_${contentLang}`]}</span>
-                                        <code className="text-[10px] text-muted-foreground">{el.element_id}</code>
-                                      </div>
-                                      {el.selector && <code className="text-[10px] text-muted-foreground">{el.selector}</code>}
+                                      <span className="text-xs font-medium">{el[`label_${contentLang}`]}</span>
+                                      {el.selector && <code className="text-[10px] text-muted-foreground block">{el.selector}</code>}
                                       <p className="text-[10px] text-muted-foreground mt-0.5 line-clamp-1">{el[`description_${contentLang}`]}</p>
                                     </div>
                                     <div className="flex items-center gap-0.5 shrink-0 ml-2">
@@ -739,9 +753,9 @@ export function GuideTourDetailPanel({ tour, steps, elements, lang, onDeleteTour
           </DialogHeader>
           {elementDialog.element && (
             <div className="space-y-3">
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1"><Label>Element ID *</Label><Input value={elementDialog.element.element_id || ''} onChange={e => setElementDialog(p => ({ ...p, element: { ...p.element!, element_id: e.target.value } }))} placeholder="sidebar-tasks" /></div>
-                <div className="space-y-1"><Label>CSS Selector</Label><Input value={elementDialog.element.selector || ''} onChange={e => setElementDialog(p => ({ ...p, element: { ...p.element!, selector: e.target.value || null } }))} placeholder="[data-guide='tasks']" /></div>
+              <div className="space-y-1">
+                <Label>CSS Selector</Label>
+                <Input value={elementDialog.element.selector || ''} onChange={e => setElementDialog(p => ({ ...p, element: { ...p.element!, selector: e.target.value || null } }))} placeholder="[data-guide='tasks']" />
               </div>
               <div className="space-y-1">
                 <Label>{contentLang === 'ru' ? 'Название (RU) *' : 'Label (EN) *'}</Label>

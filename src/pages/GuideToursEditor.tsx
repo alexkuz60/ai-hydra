@@ -157,12 +157,25 @@ export default function GuideToursEditor() {
     const q = searchQuery.toLowerCase();
     return tours.filter(t =>
       t.title_ru.toLowerCase().includes(q) ||
-      t.title_en.toLowerCase().includes(q) ||
-      t.id.toLowerCase().includes(q)
+      t.title_en.toLowerCase().includes(q)
     );
   }, [tours, searchQuery]);
 
   /* ─── Tour CRUD ─── */
+  // Generate unique tour ID from title
+  const generateTourId = (title: string): string => {
+    const slug = title.trim().toLowerCase()
+      .replace(/[а-яё]/g, (c) => {
+        const map: Record<string, string> = {'а':'a','б':'b','в':'v','г':'g','д':'d','е':'e','ё':'yo','ж':'zh','з':'z','и':'i','й':'y','к':'k','л':'l','м':'m','н':'n','о':'o','п':'p','р':'r','с':'s','т':'t','у':'u','ф':'f','х':'kh','ц':'ts','ч':'ch','ш':'sh','щ':'shch','ъ':'','ы':'y','ь':'','э':'e','ю':'yu','я':'ya'};
+        return map[c] || c;
+      })
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '')
+      .slice(0, 30);
+    const suffix = Math.random().toString(36).slice(2, 6);
+    return `${slug || 'tour'}-${suffix}`;
+  };
+
   const openTourDialog = () => {
     setTourDialog({
       open: true,
@@ -172,20 +185,21 @@ export default function GuideToursEditor() {
 
   const saveTour = async () => {
     const t = tourDialog.tour;
-    if (!t || !t.id || !t.title_ru || !t.title_en) {
-      toast.error(lang === 'ru' ? 'Заполните ID, название RU и EN' : 'Fill ID, title RU and EN');
+    if (!t || !t.title_ru || !t.title_en) {
+      toast.error(lang === 'ru' ? 'Заполните название RU и EN' : 'Fill title RU and EN');
       return;
     }
     setSaving(true);
     try {
+      const autoId = generateTourId(t.title_ru || t.title_en || '');
       const { error } = await supabase.from('guide_tours').insert({
-        id: t.id!, title_ru: t.title_ru!, title_en: t.title_en!,
+        id: autoId, title_ru: t.title_ru!, title_en: t.title_en!,
         description_ru: t.description_ru || '', description_en: t.description_en || '',
         icon: t.icon || 'Compass', sort_order: t.sort_order ?? 0, is_active: t.is_active ?? true,
       });
       if (error) throw error;
       toast.success(lang === 'ru' ? 'Тур создан' : 'Tour created');
-      setSelectedTourId(t.id!);
+      setSelectedTourId(autoId);
       setTourDialog({ open: false, tour: null });
       await fetchAll();
       invalidateCache();
@@ -197,7 +211,8 @@ export default function GuideToursEditor() {
   };
 
   const deleteTour = async (id: string) => {
-    if (!confirm(lang === 'ru' ? `Удалить тур "${id}" и все его шаги?` : `Delete tour "${id}" and all steps?`)) return;
+    const tourTitle = tours.find(t => t.id === id)?.[`title_${lang}`] || id;
+    if (!confirm(lang === 'ru' ? `Удалить тур "${tourTitle}" и все его шаги?` : `Delete tour "${tourTitle}" and all steps?`)) return;
     try {
       await supabase.from('guide_panel_elements').delete().eq('tour_id', id);
       await supabase.from('guide_tour_steps').delete().eq('tour_id', id);
@@ -397,14 +412,6 @@ export default function GuideToursEditor() {
           </DialogHeader>
           {tourDialog.tour && (
             <div className="space-y-3">
-              <div className="space-y-1">
-                <Label>ID</Label>
-                <Input
-                  value={tourDialog.tour.id || ''}
-                  onChange={e => setTourDialog(p => ({ ...p, tour: { ...p.tour!, id: e.target.value } }))}
-                  placeholder="my-tour-id"
-                />
-              </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
                   <Label>Название (RU)</Label>
