@@ -9,6 +9,7 @@ import { LanguageProvider } from "@/contexts/LanguageContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ApiKeyExpirationNotifier } from "@/components/profile/ApiKeyExpirationNotifier";
+import { GuideTourProvider } from "@/contexts/GuideTourContext";
 
 // Auto-reload on stale chunk errors (happens after deploys)
 function lazyWithRetry(factory: () => Promise<{ default: ComponentType<any> }>) {
@@ -63,28 +64,30 @@ const App = () => (
             <Sonner />
             <ApiKeyExpirationNotifier />
             <BrowserRouter>
-              <ErrorBoundary>
-                <Suspense fallback={<PageLoader />}>
-                  <Routes>
-                    <Route path="/" element={<Index />} />
-                    <Route path="/login" element={<Login />} />
-                    <Route path="/signup" element={<Signup />} />
-                    <Route path="/profile" element={<Profile />} />
-                    <Route path="/tasks" element={<Tasks />} />
-                    <Route path="/expert-panel" element={<ExpertPanel />} />
-                    <Route path="/model-ratings" element={<ModelRatings />} />
-                    <Route path="/role-library" element={<RoleLibrary />} />
-                    <Route path="/tools-library" element={<ToolsLibrary />} />
-                    <Route path="/flow-editor" element={<FlowEditor />} />
-                    <Route path="/hydrapedia" element={<Hydrapedia />} />
-                    <Route path="/staff-roles" element={<StaffRoles />} />
-                    <Route path="/behavioral-patterns" element={<BehavioralPatterns />} />
-                    <Route path="/war-room" element={<Navigate to="/expert-panel" replace />} />
-                    <Route path="/admin" element={<Admin />} />
-                    <Route path="*" element={<NotFound />} />
-                  </Routes>
-                </Suspense>
-              </ErrorBoundary>
+              <GuideTourProvider>
+                <ErrorBoundary>
+                  <Suspense fallback={<PageLoader />}>
+                    <Routes>
+                      <Route path="/" element={<Index />} />
+                      <Route path="/login" element={<Login />} />
+                      <Route path="/signup" element={<Signup />} />
+                      <Route path="/profile" element={<Profile />} />
+                      <Route path="/tasks" element={<Tasks />} />
+                      <Route path="/expert-panel" element={<ExpertPanel />} />
+                      <Route path="/model-ratings" element={<ModelRatings />} />
+                      <Route path="/role-library" element={<RoleLibrary />} />
+                      <Route path="/tools-library" element={<ToolsLibrary />} />
+                      <Route path="/flow-editor" element={<FlowEditor />} />
+                      <Route path="/hydrapedia" element={<Hydrapedia />} />
+                      <Route path="/staff-roles" element={<StaffRoles />} />
+                      <Route path="/behavioral-patterns" element={<BehavioralPatterns />} />
+                      <Route path="/war-room" element={<Navigate to="/expert-panel" replace />} />
+                      <Route path="/admin" element={<Admin />} />
+                      <Route path="*" element={<NotFound />} />
+                    </Routes>
+                  </Suspense>
+                </ErrorBoundary>
+              </GuideTourProvider>
             </BrowserRouter>
           </TooltipProvider>
         </AuthProvider>

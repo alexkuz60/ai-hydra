@@ -83,6 +83,7 @@ export default {
           promptengineer: "hsl(var(--hydra-promptengineer))",
           flowregulator: "hsl(var(--hydra-flowregulator))",
           toolsmith: "hsl(var(--hydra-toolsmith))",
+          guide: "hsl(var(--hydra-guide))",
           memory: "hsl(var(--hydra-memory))",
           cyan: "hsl(var(--hydra-cyan))",
           info: "hsl(var(--hydra-info))",
