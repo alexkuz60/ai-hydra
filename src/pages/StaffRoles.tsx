@@ -16,7 +16,7 @@ import {
 } from '@/components/ui/resizable';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Wrench, Users, Settings, ChevronDown, ChevronRight, Sparkles, Loader2 } from 'lucide-react';
+import { Wrench, Users, Settings, ChevronDown, ChevronRight, Sparkles, Loader2, Cpu } from 'lucide-react';
 import { ROLE_CONFIG, AGENT_ROLES, type AgentRole } from '@/config/roles';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -27,6 +27,8 @@ import { UnsavedChangesDialog } from '@/components/ui/unsaved-changes-dialog';
 import { useNavigatorResize } from '@/hooks/useNavigatorResize';
 import { NavigatorHeader } from '@/components/layout/NavigatorHeader';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
+import { getTechRoleDefaultModel } from '@/hooks/useTechRoleDefaults';
+import { getModelShortName } from '@/components/warroom/permodel/types';
 
 const TECHNICAL_ROLES: AgentRole[] = ['archivist', 'analyst', 'promptengineer', 'flowregulator', 'toolsmith', 'webhunter', 'guide'];
 
@@ -159,6 +161,15 @@ const StaffRoles = () => {
                   <Wrench className="h-3 w-3" />
                 </Badge>
               )}
+              {config.isTechnicalStaff && (() => {
+                const defaultModel = getTechRoleDefaultModel(role);
+                return defaultModel ? (
+                  <Badge variant="outline" className="gap-1 text-[10px] py-0 font-mono text-muted-foreground">
+                    <Cpu className="h-2.5 w-2.5" />
+                    {getModelShortName(defaultModel)}
+                  </Badge>
+                ) : null;
+              })()}
             </div>
             <span className="text-xs text-muted-foreground font-mono">
               {role}
