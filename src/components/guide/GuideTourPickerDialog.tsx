@@ -30,7 +30,7 @@ export function GuideTourPickerDialog({ open, onOpenChange, onSelectTour }: Guid
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-3xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Compass className="h-5 w-5 text-hydra-guide" />
@@ -42,7 +42,7 @@ export function GuideTourPickerDialog({ open, onOpenChange, onSelectTour }: Guid
               : 'Choose a route for an interactive tour'}
           </DialogDescription>
         </DialogHeader>
-        <div className="space-y-2 pt-2">
+        <div className="grid grid-cols-2 gap-2 pt-2">
           {GUIDE_TOURS.map((tour) => {
             const Icon = ICON_MAP[tour.icon] || Compass;
             return (
