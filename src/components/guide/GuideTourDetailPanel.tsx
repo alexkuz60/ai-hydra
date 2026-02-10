@@ -469,12 +469,6 @@ export function GuideTourDetailPanel({ tour, steps, elements, lang, onDeleteTour
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-1 w-20">
-                <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                  {lang === 'ru' ? 'Порядок' : 'Sort'}
-                </Label>
-                <Input type="number" value={draft.sort_order} onChange={e => updateDraft({ sort_order: Number(e.target.value) })} />
-              </div>
               <label className="flex items-center gap-2 text-sm pb-2 cursor-pointer">
                 <input type="checkbox" checked={draft.is_active} onChange={e => updateDraft({ is_active: e.target.checked })} />
                 {lang === 'ru' ? 'Активен' : 'Active'}
@@ -502,7 +496,6 @@ export function GuideTourDetailPanel({ tour, steps, elements, lang, onDeleteTour
                 <p className="text-xs text-muted-foreground truncate">{tour[`description_${contentLang}`]}</p>
               </div>
               <div className="flex items-center gap-1 shrink-0">
-                <Badge variant="outline" className="text-[10px]">#{tour.sort_order}</Badge>
                 {!tour.is_active && <Badge variant="destructive" className="text-[10px]">{lang === 'ru' ? 'Выкл' : 'Off'}</Badge>}
               </div>
             </div>
@@ -597,19 +590,17 @@ export function GuideTourDetailPanel({ tour, steps, elements, lang, onDeleteTour
                         >
                           {isExpanded ? <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" /> : <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />}
                           <div className="min-w-0 flex-1">
-                            <span className="text-sm font-medium">{step[`title_${contentLang}`]}</span>
-                            <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
-                              <code className="text-[10px] text-muted-foreground bg-muted px-1 rounded max-w-[300px] truncate">
-                                {step.selector}
-                              </code>
+                            <span className="text-base font-medium">{step[`title_${contentLang}`]}</span>
+                            <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                              <Badge variant="outline" className="text-xs font-mono">{step.selector}</Badge>
                               {step.route && (
-                                <code className="text-[10px] text-hydra-guide bg-hydra-guide/10 px-1 rounded">{step.route}</code>
+                                <Badge className="text-xs bg-hydra-guide/15 text-hydra-guide border-hydra-guide/30 hover:bg-hydra-guide/20">{step.route}</Badge>
                               )}
                               {step.action && (
-                                <Badge variant="outline" className="text-[10px] h-4">{step.action}</Badge>
+                                <Badge variant="secondary" className="text-xs">{step.action}</Badge>
                               )}
                               {sElements.length > 0 && (
-                                <Badge variant="secondary" className="text-[10px] h-4">{sElements.length} el</Badge>
+                                <Badge variant="secondary" className="text-xs">{sElements.length} {lang === 'ru' ? 'эл.' : 'el.'}</Badge>
                               )}
                             </div>
                           </div>
@@ -632,9 +623,9 @@ export function GuideTourDetailPanel({ tour, steps, elements, lang, onDeleteTour
                             </span>
                             <p className="text-sm text-muted-foreground mt-1">{step[`description_${contentLang}`] || '—'}</p>
                           </div>
-                          <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                            <span>Placement: <code className="bg-muted px-1 rounded">{step.placement}</code></span>
-                            {step.delay_ms && <span>Delay: <code className="bg-muted px-1 rounded">{step.delay_ms}ms</code></span>}
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <Badge variant="outline" className="text-xs">{lang === 'ru' ? 'Позиция' : 'Placement'}: {step.placement}</Badge>
+                            {step.delay_ms != null && <Badge variant="outline" className="text-xs">{lang === 'ru' ? 'Задержка' : 'Delay'}: {step.delay_ms}ms</Badge>}
                           </div>
                           <div className="space-y-2">
                             <div className="flex items-center justify-between">
@@ -653,9 +644,9 @@ export function GuideTourDetailPanel({ tour, steps, elements, lang, onDeleteTour
                                 {sElements.map((el) => (
                                   <div key={el.id} className="flex items-center justify-between px-3 py-2 rounded-md bg-muted/30 border border-border/50">
                                     <div className="min-w-0 flex-1">
-                                      <span className="text-xs font-medium">{el[`label_${contentLang}`]}</span>
-                                      {el.selector && <code className="text-[10px] text-muted-foreground block">{el.selector}</code>}
-                                      <p className="text-[10px] text-muted-foreground mt-0.5 line-clamp-1">{el[`description_${contentLang}`]}</p>
+                                      <span className="text-sm font-medium">{el[`label_${contentLang}`]}</span>
+                                      {el.selector && <Badge variant="outline" className="text-xs font-mono mt-0.5">{el.selector}</Badge>}
+                                      <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{el[`description_${contentLang}`]}</p>
                                     </div>
                                     <div className="flex items-center gap-0.5 shrink-0 ml-2">
                                       <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => openElementDialog(el.step_index, el)}>
@@ -689,9 +680,9 @@ export function GuideTourDetailPanel({ tour, steps, elements, lang, onDeleteTour
           </DialogHeader>
           {stepDialog.step && (
             <div className="space-y-3">
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1"><Label>CSS Selector *</Label><Input value={stepDialog.step.selector || ''} onChange={e => setStepDialog(p => ({ ...p, step: { ...p.step!, selector: e.target.value } }))} placeholder="[data-guide='sidebar']" /></div>
-                <div className="space-y-1"><Label>{lang === 'ru' ? 'Индекс' : 'Index'}</Label><Input type="number" value={stepDialog.step.step_index ?? 0} onChange={e => setStepDialog(p => ({ ...p, step: { ...p.step!, step_index: Number(e.target.value) } }))} /></div>
+              <div className="space-y-1">
+                <Label>CSS Selector *</Label>
+                <Input value={stepDialog.step.selector || ''} onChange={e => setStepDialog(p => ({ ...p, step: { ...p.step!, selector: e.target.value } }))} placeholder="[data-guide='sidebar']" />
               </div>
               <div className="space-y-1">
                 <Label>{contentLang === 'ru' ? 'Заголовок (RU) *' : 'Title (EN) *'}</Label>
@@ -733,8 +724,22 @@ export function GuideTourDetailPanel({ tour, steps, elements, lang, onDeleteTour
                 </div>
               </div>
               <div className="space-y-1">
-                <Label>Delay (ms)</Label>
-                <Input type="number" value={stepDialog.step.delay_ms ?? ''} onChange={e => setStepDialog(p => ({ ...p, step: { ...p.step!, delay_ms: e.target.value ? Number(e.target.value) : null } }))} placeholder="300" />
+                <Label>{lang === 'ru' ? 'Задержка' : 'Delay'}</Label>
+                <Select
+                  value={String(stepDialog.step.delay_ms ?? '0')}
+                  onValueChange={v => setStepDialog(p => ({ ...p, step: { ...p.step!, delay_ms: v === '0' ? null : Number(v) } }))}
+                >
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="0">{lang === 'ru' ? 'Без задержки' : 'No delay'}</SelectItem>
+                    <SelectItem value="100">100 ms</SelectItem>
+                    <SelectItem value="200">200 ms</SelectItem>
+                    <SelectItem value="300">300 ms</SelectItem>
+                    <SelectItem value="500">500 ms</SelectItem>
+                    <SelectItem value="1000">1 s</SelectItem>
+                    <SelectItem value="2000">2 s</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
           )}
@@ -772,7 +777,7 @@ export function GuideTourDetailPanel({ tour, steps, elements, lang, onDeleteTour
                   onChange={e => setElementDialog(p => ({ ...p, element: { ...p.element!, [contentLang === 'ru' ? 'description_ru' : 'description_en']: e.target.value } }))}
                 />
               </div>
-              <div className="space-y-1"><Label>{lang === 'ru' ? 'Порядок' : 'Sort'}</Label><Input type="number" value={elementDialog.element.sort_order ?? 0} onChange={e => setElementDialog(p => ({ ...p, element: { ...p.element!, sort_order: Number(e.target.value) } }))} /></div>
+              
             </div>
           )}
           <DialogFooter>
