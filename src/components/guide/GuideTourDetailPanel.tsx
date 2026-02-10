@@ -120,26 +120,32 @@ export function GuideTourDetailPanel({ tour, steps, elements, lang, onDeleteTour
   /* ─── Drag & Drop reorder ─── */
   const [dragIdx, setDragIdx] = useState<number | null>(null);
   const [dragOverIdx, setDragOverIdx] = useState<number | null>(null);
+  const dragIdxRef = useRef<number | null>(null);
 
-  const handleDragStart = (idx: number) => {
+  const handleDragStart = (e: React.DragEvent, idx: number) => {
+    dragIdxRef.current = idx;
     setDragIdx(idx);
+    e.dataTransfer.effectAllowed = 'move';
   };
 
   const handleDragOver = (e: React.DragEvent, idx: number) => {
     e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
     setDragOverIdx(idx);
   };
 
-  const handleDrop = async (targetIdx: number) => {
-    if (dragIdx === null || dragIdx === targetIdx) {
-      setDragIdx(null);
-      setDragOverIdx(null);
-      return;
-    }
+  const handleDrop = async (e: React.DragEvent, targetIdx: number) => {
+    e.preventDefault();
+    const sourceIdx = dragIdxRef.current;
+    setDragIdx(null);
+    setDragOverIdx(null);
+    dragIdxRef.current = null;
 
-    // Reorder: move dragIdx to targetIdx position
+    if (sourceIdx === null || sourceIdx === targetIdx) return;
+
+    // Reorder: move sourceIdx to targetIdx position
     const ordered = [...steps];
-    const [moved] = ordered.splice(dragIdx, 1);
+    const [moved] = ordered.splice(sourceIdx, 1);
     ordered.splice(targetIdx, 0, moved);
 
     // Update step_index for all affected steps
@@ -152,15 +158,13 @@ export function GuideTourDetailPanel({ tour, steps, elements, lang, onDeleteTour
       toast.success(lang === 'ru' ? 'Порядок обновлён' : 'Order updated');
     } catch (e: any) {
       toast.error(e.message);
-    } finally {
-      setDragIdx(null);
-      setDragOverIdx(null);
     }
   };
 
   const handleDragEnd = () => {
     setDragIdx(null);
     setDragOverIdx(null);
+    dragIdxRef.current = null;
   };
 
   /* ─── Step CRUD ─── */
@@ -412,9 +416,9 @@ export function GuideTourDetailPanel({ tour, steps, elements, lang, onDeleteTour
                   <div
                     key={step.id}
                     draggable
-                    onDragStart={() => handleDragStart(idx)}
+                    onDragStart={(e) => handleDragStart(e, idx)}
                     onDragOver={(e) => handleDragOver(e, idx)}
-                    onDrop={() => handleDrop(idx)}
+                    onDrop={(e) => handleDrop(e, idx)}
                     onDragEnd={handleDragEnd}
                     className={cn(
                       "relative mb-2 transition-all",
