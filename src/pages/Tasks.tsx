@@ -339,6 +339,7 @@ export default function Tasks() {
               minSize={4} 
               maxSize={60}
               onResize={nav.onPanelResize}
+              data-guide="tasks-list"
             >
              <div className="h-full flex flex-col hydra-nav-surface">
                <NavigatorHeader
@@ -380,7 +381,7 @@ export default function Tasks() {
                ) : (
                <div className="flex-1 flex flex-col">
                {/* Search and Create */}
-               <div className="p-4 border-b space-y-3">
+               <div className="p-4 border-b space-y-3" data-guide="tasks-create-form">
                  <div className="relative">
                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                    <Input
@@ -479,7 +480,7 @@ export default function Tasks() {
            <ResizableHandle withHandle />
  
            {/* Right panel - Details */}
-           <ResizablePanel defaultSize={100 - nav.panelSize} minSize={40} maxSize={96}>
+            <ResizablePanel defaultSize={100 - nav.panelSize} minSize={40} maxSize={96} data-guide="tasks-details">
               <TaskDetailsPanel
                 task={selectedTask}
                 onUpdateTitle={handleUpdateTitle}

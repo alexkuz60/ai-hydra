@@ -30,6 +30,62 @@ export interface GuideTour {
 }
 
 export const GUIDE_TOURS: GuideTour[] = [
+  // ─── 0. Tasks Tour ───
+  {
+    id: 'tasks',
+    title: { ru: 'Менеджер задач', en: 'Task Manager' },
+    description: { ru: 'Создание задач, файлы и настройка ИИ-команды', en: 'Task creation, files, and AI team setup' },
+    icon: 'CheckSquare',
+    steps: [
+      {
+        selector: '[data-guide="tasks-list"]',
+        route: '/tasks',
+        title: { ru: 'Список задач', en: 'Task List' },
+        description: {
+          ru: 'Все ваши задачи. Каждая задача — отдельная сессия обсуждения с ИИ-командой.',
+          en: 'All your tasks. Each task is a separate discussion session with the AI team.',
+        },
+        placement: 'right',
+      },
+      {
+        selector: '[data-guide="tasks-create-form"]',
+        title: { ru: 'Создание задачи', en: 'Create Task' },
+        description: {
+          ru: 'Введите название задачи, выберите ИИ-модели для команды и нажмите «+» для создания.',
+          en: 'Enter a task name, choose AI models for the team, and press "+" to create.',
+        },
+        placement: 'right',
+      },
+      {
+        selector: '[data-guide="tasks-details"]',
+        title: { ru: 'Детали задачи', en: 'Task Details' },
+        description: {
+          ru: 'Настройки выбранной задачи: название, описание, модели и параметры каждой роли.',
+          en: 'Selected task settings: title, description, models, and per-role parameters.',
+        },
+        placement: 'left',
+      },
+      {
+        selector: '[data-guide="tasks-files-tab"]',
+        title: { ru: 'Файлы задачи', en: 'Task Files' },
+        description: {
+          ru: 'Прикрепляйте документы и файлы к задаче. Модели могут учитывать их содержимое при обсуждении.',
+          en: 'Attach documents and files to the task. Models can consider their content during discussion.',
+        },
+        placement: 'left',
+      },
+      {
+        selector: '[data-guide="tasks-open-btn"]',
+        title: { ru: 'Открыть обсуждение', en: 'Open Discussion' },
+        description: {
+          ru: 'Перейдите к Панели экспертов для коллегиального обсуждения задачи с ИИ-командой.',
+          en: 'Go to the Expert Panel for collegial discussion of the task with the AI team.',
+        },
+        placement: 'bottom',
+      },
+    ],
+  },
+
   // ─── 1. Welcome Tour ───
   {
     id: 'welcome',
