@@ -53,6 +53,9 @@ const PLACEMENT_OPTIONS = ['top', 'bottom', 'left', 'right'];
 const ICON_OPTIONS = ['Compass', 'Users', 'UserCog', 'BookOpen', 'Crown', 'GitBranch', 'Library', 'Wrench', 'Target', 'CheckSquare'];
 
 export function GuideTourDetailPanel({ tour, steps, elements, lang, onDeleteTour, onRefresh, onSelectTour }: Props) {
+  /* ─── Content language tab ─── */
+  const [contentLang, setContentLang] = useState<'ru' | 'en'>('ru');
+
   /* ─── Inline tour editing ─── */
   const [editMode, setEditMode] = useState(false);
   const [draft, setDraft] = useState<DbTour>({ ...tour });
@@ -320,35 +323,58 @@ export function GuideTourDetailPanel({ tour, steps, elements, lang, onDeleteTour
 
   return (
     <div className="h-full flex flex-col">
+      {/* ─── Language tabs in header ─── */}
+      <div className="px-6 pt-3 pb-0 shrink-0 flex items-center justify-between">
+        <div className="flex items-center gap-1 bg-muted/40 rounded-lg p-0.5">
+          <button
+            onClick={() => setContentLang('ru')}
+            className={cn(
+              "px-3 py-1 text-xs font-medium rounded-md transition-colors",
+              contentLang === 'ru'
+                ? "bg-background text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            RU
+          </button>
+          <button
+            onClick={() => setContentLang('en')}
+            className={cn(
+              "px-3 py-1 text-xs font-medium rounded-md transition-colors",
+              contentLang === 'en'
+                ? "bg-background text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            EN
+          </button>
+        </div>
+      </div>
+
       {/* ─── Tour header / inline editor ─── */}
       <div className="px-6 py-4 border-b shrink-0">
         {editMode ? (
           <div className="space-y-3">
-            {/* Row 1: titles */}
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1">
-                <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                  {lang === 'ru' ? 'Название (RU)' : 'Title (RU)'}
-                </Label>
-                <Input value={draft.title_ru} onChange={e => updateDraft({ title_ru: e.target.value })} />
-              </div>
-              <div className="space-y-1">
-                <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Title (EN)</Label>
-                <Input value={draft.title_en} onChange={e => updateDraft({ title_en: e.target.value })} />
-              </div>
+            {/* Title */}
+            <div className="space-y-1">
+              <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                {contentLang === 'ru' ? 'Название (RU)' : 'Title (EN)'}
+              </Label>
+              <Input
+                value={contentLang === 'ru' ? draft.title_ru : draft.title_en}
+                onChange={e => updateDraft(contentLang === 'ru' ? { title_ru: e.target.value } : { title_en: e.target.value })}
+              />
             </div>
-            {/* Row 2: descriptions */}
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1">
-                <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                  {lang === 'ru' ? 'Описание (RU)' : 'Description (RU)'}
-                </Label>
-                <Textarea rows={2} value={draft.description_ru} onChange={e => updateDraft({ description_ru: e.target.value })} />
-              </div>
-              <div className="space-y-1">
-                <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Description (EN)</Label>
-                <Textarea rows={2} value={draft.description_en} onChange={e => updateDraft({ description_en: e.target.value })} />
-              </div>
+            {/* Description */}
+            <div className="space-y-1">
+              <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                {contentLang === 'ru' ? 'Описание (RU)' : 'Description (EN)'}
+              </Label>
+              <Textarea
+                rows={2}
+                value={contentLang === 'ru' ? draft.description_ru : draft.description_en}
+                onChange={e => updateDraft(contentLang === 'ru' ? { description_ru: e.target.value } : { description_en: e.target.value })}
+              />
             </div>
             {/* Row 3: icon, sort, active + actions */}
             <div className="flex items-end gap-3">
@@ -387,8 +413,8 @@ export function GuideTourDetailPanel({ tour, steps, elements, lang, onDeleteTour
             <div className="flex items-center gap-3 min-w-0">
               <Compass className="h-5 w-5 text-hydra-guide shrink-0" />
               <div className="min-w-0">
-                <h2 className="text-lg font-semibold truncate">{tour[`title_${lang}`]}</h2>
-                <p className="text-xs text-muted-foreground truncate">{tour[`description_${lang}`]}</p>
+                <h2 className="text-lg font-semibold truncate">{tour[`title_${contentLang}`]}</h2>
+                <p className="text-xs text-muted-foreground truncate">{tour[`description_${contentLang}`]}</p>
               </div>
               <div className="flex items-center gap-1 shrink-0">
                 <Badge variant="outline" className="text-[10px]">{tour.icon}</Badge>
@@ -487,7 +513,7 @@ export function GuideTourDetailPanel({ tour, steps, elements, lang, onDeleteTour
                         >
                           {isExpanded ? <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" /> : <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />}
                           <div className="min-w-0 flex-1">
-                            <span className="text-sm font-medium">{step[`title_${lang}`]}</span>
+                            <span className="text-sm font-medium">{step[`title_${contentLang}`]}</span>
                             <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
                               <code className="text-[10px] text-muted-foreground bg-muted px-1 rounded max-w-[300px] truncate">
                                 {step.selector}
@@ -516,15 +542,11 @@ export function GuideTourDetailPanel({ tour, steps, elements, lang, onDeleteTour
 
                       {isExpanded && (
                         <div className="border-t border-border px-4 pb-4 pt-3 space-y-4">
-                          <div className="grid grid-cols-2 gap-4">
-                            <div>
-                              <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">RU</span>
-                              <p className="text-sm text-muted-foreground mt-1">{step.description_ru || '—'}</p>
-                            </div>
-                            <div>
-                              <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">EN</span>
-                              <p className="text-sm text-muted-foreground mt-1">{step.description_en || '—'}</p>
-                            </div>
+                          <div>
+                            <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">
+                              {contentLang === 'ru' ? 'Описание (RU)' : 'Description (EN)'}
+                            </span>
+                            <p className="text-sm text-muted-foreground mt-1">{step[`description_${contentLang}`] || '—'}</p>
                           </div>
                           <div className="flex items-center gap-3 text-xs text-muted-foreground">
                             <span>Placement: <code className="bg-muted px-1 rounded">{step.placement}</code></span>
@@ -548,11 +570,11 @@ export function GuideTourDetailPanel({ tour, steps, elements, lang, onDeleteTour
                                   <div key={el.id} className="flex items-center justify-between px-3 py-2 rounded-md bg-muted/30 border border-border/50">
                                     <div className="min-w-0 flex-1">
                                       <div className="flex items-center gap-2">
-                                        <span className="text-xs font-medium">{el[`label_${lang}`]}</span>
+                                        <span className="text-xs font-medium">{el[`label_${contentLang}`]}</span>
                                         <code className="text-[10px] text-muted-foreground">{el.element_id}</code>
                                       </div>
                                       {el.selector && <code className="text-[10px] text-muted-foreground">{el.selector}</code>}
-                                      <p className="text-[10px] text-muted-foreground mt-0.5 line-clamp-1">{el[`description_${lang}`]}</p>
+                                      <p className="text-[10px] text-muted-foreground mt-0.5 line-clamp-1">{el[`description_${contentLang}`]}</p>
                                     </div>
                                     <div className="flex items-center gap-0.5 shrink-0 ml-2">
                                       <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => openElementDialog(el.step_index, el)}>
@@ -590,13 +612,20 @@ export function GuideTourDetailPanel({ tour, steps, elements, lang, onDeleteTour
                 <div className="space-y-1"><Label>CSS Selector *</Label><Input value={stepDialog.step.selector || ''} onChange={e => setStepDialog(p => ({ ...p, step: { ...p.step!, selector: e.target.value } }))} placeholder="[data-guide='sidebar']" /></div>
                 <div className="space-y-1"><Label>{lang === 'ru' ? 'Индекс' : 'Index'}</Label><Input type="number" value={stepDialog.step.step_index ?? 0} onChange={e => setStepDialog(p => ({ ...p, step: { ...p.step!, step_index: Number(e.target.value) } }))} /></div>
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1"><Label>Заголовок (RU) *</Label><Input value={stepDialog.step.title_ru || ''} onChange={e => setStepDialog(p => ({ ...p, step: { ...p.step!, title_ru: e.target.value } }))} /></div>
-                <div className="space-y-1"><Label>Title (EN) *</Label><Input value={stepDialog.step.title_en || ''} onChange={e => setStepDialog(p => ({ ...p, step: { ...p.step!, title_en: e.target.value } }))} /></div>
+              <div className="space-y-1">
+                <Label>{contentLang === 'ru' ? 'Заголовок (RU) *' : 'Title (EN) *'}</Label>
+                <Input
+                  value={contentLang === 'ru' ? stepDialog.step.title_ru || '' : stepDialog.step.title_en || ''}
+                  onChange={e => setStepDialog(p => ({ ...p, step: { ...p.step!, [contentLang === 'ru' ? 'title_ru' : 'title_en']: e.target.value } }))}
+                />
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1"><Label>Описание (RU)</Label><Textarea rows={2} value={stepDialog.step.description_ru || ''} onChange={e => setStepDialog(p => ({ ...p, step: { ...p.step!, description_ru: e.target.value } }))} /></div>
-                <div className="space-y-1"><Label>Description (EN)</Label><Textarea rows={2} value={stepDialog.step.description_en || ''} onChange={e => setStepDialog(p => ({ ...p, step: { ...p.step!, description_en: e.target.value } }))} /></div>
+              <div className="space-y-1">
+                <Label>{contentLang === 'ru' ? 'Описание (RU)' : 'Description (EN)'}</Label>
+                <Textarea
+                  rows={2}
+                  value={contentLang === 'ru' ? stepDialog.step.description_ru || '' : stepDialog.step.description_en || ''}
+                  onChange={e => setStepDialog(p => ({ ...p, step: { ...p.step!, [contentLang === 'ru' ? 'description_ru' : 'description_en']: e.target.value } }))}
+                />
               </div>
               <div className="grid grid-cols-3 gap-3">
                 <div className="space-y-1">
@@ -647,13 +676,20 @@ export function GuideTourDetailPanel({ tour, steps, elements, lang, onDeleteTour
                 <div className="space-y-1"><Label>Element ID *</Label><Input value={elementDialog.element.element_id || ''} onChange={e => setElementDialog(p => ({ ...p, element: { ...p.element!, element_id: e.target.value } }))} placeholder="sidebar-tasks" /></div>
                 <div className="space-y-1"><Label>CSS Selector</Label><Input value={elementDialog.element.selector || ''} onChange={e => setElementDialog(p => ({ ...p, element: { ...p.element!, selector: e.target.value || null } }))} placeholder="[data-guide='tasks']" /></div>
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1"><Label>Название (RU) *</Label><Input value={elementDialog.element.label_ru || ''} onChange={e => setElementDialog(p => ({ ...p, element: { ...p.element!, label_ru: e.target.value } }))} /></div>
-                <div className="space-y-1"><Label>Label (EN) *</Label><Input value={elementDialog.element.label_en || ''} onChange={e => setElementDialog(p => ({ ...p, element: { ...p.element!, label_en: e.target.value } }))} /></div>
+              <div className="space-y-1">
+                <Label>{contentLang === 'ru' ? 'Название (RU) *' : 'Label (EN) *'}</Label>
+                <Input
+                  value={contentLang === 'ru' ? elementDialog.element.label_ru || '' : elementDialog.element.label_en || ''}
+                  onChange={e => setElementDialog(p => ({ ...p, element: { ...p.element!, [contentLang === 'ru' ? 'label_ru' : 'label_en']: e.target.value } }))}
+                />
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1"><Label>Описание (RU)</Label><Textarea rows={2} value={elementDialog.element.description_ru || ''} onChange={e => setElementDialog(p => ({ ...p, element: { ...p.element!, description_ru: e.target.value } }))} /></div>
-                <div className="space-y-1"><Label>Description (EN)</Label><Textarea rows={2} value={elementDialog.element.description_en || ''} onChange={e => setElementDialog(p => ({ ...p, element: { ...p.element!, description_en: e.target.value } }))} /></div>
+              <div className="space-y-1">
+                <Label>{contentLang === 'ru' ? 'Описание (RU)' : 'Description (EN)'}</Label>
+                <Textarea
+                  rows={2}
+                  value={contentLang === 'ru' ? elementDialog.element.description_ru || '' : elementDialog.element.description_en || ''}
+                  onChange={e => setElementDialog(p => ({ ...p, element: { ...p.element!, [contentLang === 'ru' ? 'description_ru' : 'description_en']: e.target.value } }))}
+                />
               </div>
               <div className="space-y-1"><Label>{lang === 'ru' ? 'Порядок' : 'Sort'}</Label><Input type="number" value={elementDialog.element.sort_order ?? 0} onChange={e => setElementDialog(p => ({ ...p, element: { ...p.element!, sort_order: Number(e.target.value) } }))} /></div>
             </div>
