@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import { FieldError } from '@/components/ui/FieldError';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -42,10 +43,8 @@ function validateForm(formData: PromptFormData, t: (key: string) => string): Val
   return errors;
 }
 
-function FieldError({ error }: { error?: string }) {
-  if (!error) return null;
-  return <p className="text-xs text-destructive mt-1">{error}</p>;
-}
+
+
 
 interface AdvancedPromptEditorProps {
   formData: PromptFormData;

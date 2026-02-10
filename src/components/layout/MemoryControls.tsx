@@ -123,8 +123,8 @@ interface MemoryStats {
        {/* Refresh Button */}
        <TooltipProvider>
          <Tooltip>
-           <TooltipTrigger asChild>
-              <motion.button
+            <TooltipTrigger asChild>
+              <button
                 onClick={onRefresh}
                 disabled={isLoading}
                 className={cn(
@@ -135,32 +135,31 @@ interface MemoryStats {
                       ? "text-hydra-success bg-hydra-success/15"
                       : "text-hydra-memory hover:text-hydra-memory hover:bg-hydra-memory/15 hover:shadow-[0_0_6px_hsl(var(--hydra-memory)/0.3)]"
                 )}
-                whileTap={!isLoading ? { scale: 0.9 } : undefined}
               >
-               <AnimatePresence mode="wait">
-                 <motion.span
-                   key={isRefreshed ? 'check' : isLoading ? 'loading' : 'refresh'}
-                   initial={{ opacity: 0, scale: 0.5, rotate: -90 }}
-                   animate={{ 
-                     opacity: 1, 
-                     scale: 1, 
-                     rotate: isLoading ? 360 : 0 
-                   }}
-                   exit={{ opacity: 0, scale: 0.5, rotate: 90 }}
-                   transition={{ 
-                     duration: isLoading ? 1 : 0.2,
-                     repeat: isLoading ? Infinity : 0,
-                     ease: isLoading ? 'linear' : 'easeOut'
-                   }}
-                 >
-                    {isRefreshed ? (
-                      <Check className="h-4 w-4 text-hydra-success" />
-                    ) : (
-                      <RefreshCw className="h-4 w-4" />
-                    )}
-                 </motion.span>
-               </AnimatePresence>
-             </motion.button>
+                <AnimatePresence mode="wait">
+                  <motion.span
+                    key={isRefreshed ? 'check' : isLoading ? 'loading' : 'refresh'}
+                    initial={{ opacity: 0, scale: 0.5, rotate: -90 }}
+                    animate={{ 
+                      opacity: 1, 
+                      scale: 1, 
+                      rotate: isLoading ? 360 : 0 
+                    }}
+                    exit={{ opacity: 0, scale: 0.5, rotate: 90 }}
+                    transition={{ 
+                      duration: isLoading ? 1 : 0.2,
+                      repeat: isLoading ? Infinity : 0,
+                      ease: isLoading ? 'linear' : 'easeOut'
+                    }}
+                  >
+                     {isRefreshed ? (
+                       <Check className="h-4 w-4 text-hydra-success" />
+                     ) : (
+                       <RefreshCw className="h-4 w-4" />
+                     )}
+                  </motion.span>
+                </AnimatePresence>
+              </button>
            </TooltipTrigger>
            <TooltipContent side="bottom">
              <p className="text-xs">
