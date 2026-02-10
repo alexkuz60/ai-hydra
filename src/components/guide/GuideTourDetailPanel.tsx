@@ -151,8 +151,17 @@ export function GuideTourDetailPanel({ tour, steps, elements, lang, onDeleteTour
     const [moved] = ordered.splice(sourceIdx, 1);
     ordered.splice(targetIdx, 0, moved);
 
-    // Update step_index for all affected steps
+    // Two-pass update to avoid unique constraint violation on (tour_id, step_index)
     try {
+      // Pass 1: offset all indices to temporary values
+      for (let i = 0; i < ordered.length; i++) {
+        const { error } = await supabase
+          .from('guide_tour_steps')
+          .update({ step_index: 10000 + i })
+          .eq('id', ordered[i].id);
+        if (error) throw error;
+      }
+      // Pass 2: set final indices
       for (let i = 0; i < ordered.length; i++) {
         const { error } = await supabase
           .from('guide_tour_steps')
