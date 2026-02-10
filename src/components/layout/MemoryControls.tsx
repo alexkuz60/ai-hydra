@@ -1,4 +1,5 @@
- import React, { useMemo } from 'react';
+import React, { useMemo } from 'react';
+import { cn } from '@/lib/utils';
  import { useLanguage } from '@/contexts/LanguageContext';
  import { Button } from '@/components/ui/button';
  import { Badge } from '@/components/ui/badge';
@@ -49,7 +50,7 @@ interface MemoryStats {
    }
  
    return (
-     <div className="flex items-center gap-1.5">
+     <div className="flex items-center gap-1.5" data-guide="memory-controls">
        {/* Memory Stats Badge */}
        {memoryStats && memoryStats.total > 0 && (
          <TooltipProvider>
@@ -123,12 +124,19 @@ interface MemoryStats {
        <TooltipProvider>
          <Tooltip>
            <TooltipTrigger asChild>
-             <motion.button
-               onClick={onRefresh}
-               disabled={isLoading}
-               className="h-6 w-6 rounded flex items-center justify-center text-hydra-memory/80 hover:text-hydra-memory hover:bg-hydra-memory/10 transition-colors focus:outline-none focus:ring-2 focus:ring-hydra-memory/50 disabled:opacity-50"
-               whileTap={!isLoading ? { scale: 0.9 } : undefined}
-             >
+              <motion.button
+                onClick={onRefresh}
+                disabled={isLoading}
+                className={cn(
+                  "h-7 w-7 rounded-md flex items-center justify-center transition-all focus:outline-none focus:ring-2 focus:ring-hydra-memory/50 disabled:opacity-50",
+                  isLoading
+                    ? "text-hydra-memory bg-hydra-memory/20 shadow-[0_0_8px_hsl(var(--hydra-memory)/0.4)]"
+                    : isRefreshed
+                      ? "text-hydra-success bg-hydra-success/15"
+                      : "text-hydra-memory hover:text-hydra-memory hover:bg-hydra-memory/15 hover:shadow-[0_0_6px_hsl(var(--hydra-memory)/0.3)]"
+                )}
+                whileTap={!isLoading ? { scale: 0.9 } : undefined}
+              >
                <AnimatePresence mode="wait">
                  <motion.span
                    key={isRefreshed ? 'check' : isLoading ? 'loading' : 'refresh'}
@@ -145,11 +153,11 @@ interface MemoryStats {
                      ease: isLoading ? 'linear' : 'easeOut'
                    }}
                  >
-                   {isRefreshed ? (
-                     <Check className="h-3.5 w-3.5 text-hydra-success" />
-                   ) : (
-                     <RefreshCw className="h-3.5 w-3.5" />
-                   )}
+                    {isRefreshed ? (
+                      <Check className="h-4 w-4 text-hydra-success" />
+                    ) : (
+                      <RefreshCw className="h-4 w-4" />
+                    )}
                  </motion.span>
                </AnimatePresence>
              </motion.button>
