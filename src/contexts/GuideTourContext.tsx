@@ -19,7 +19,7 @@ export function useGuideTourContext() {
 }
 
 export function GuideTourProvider({ children }: { children: ReactNode }) {
-  const { state, startTour, nextStep, prevStep, stopTour } = useGuideTour();
+  const { state, startTour, nextStep, prevStep, goToStep, stopTour } = useGuideTour();
   const [pickerOpen, setPickerOpen] = useState(false);
 
   const openPicker = useCallback(() => setPickerOpen(true), []);
@@ -41,6 +41,7 @@ export function GuideTourProvider({ children }: { children: ReactNode }) {
         onNext={nextStep}
         onPrev={prevStep}
         onStop={stopTour}
+        onGoToStep={goToStep}
       />
     </GuideTourContext.Provider>
   );

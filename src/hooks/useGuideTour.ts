@@ -106,6 +106,11 @@ export function useGuideTour() {
     }
   }, [stepIndex]);
 
+  const goToStep = useCallback((index: number) => {
+    if (!tour || index < 0 || index >= tour.steps.length) return;
+    setStepIndex(index);
+  }, [tour]);
+
   const stopTour = useCallback(() => {
     setTour(null);
     setStepIndex(0);
@@ -145,6 +150,7 @@ export function useGuideTour() {
     startTour,
     nextStep,
     prevStep,
+    goToStep,
     stopTour,
   };
 }

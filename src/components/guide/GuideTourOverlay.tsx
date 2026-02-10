@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, ChevronLeft, ChevronRight, Compass } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, Compass, List, ChevronDown, ChevronUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/contexts/LanguageContext';
 import type { GuideTourState } from '@/hooks/useGuideTour';
@@ -11,30 +11,32 @@ interface GuideTourOverlayProps {
   onNext: () => void;
   onPrev: () => void;
   onStop: () => void;
+  onGoToStep: (index: number) => void;
 }
 
 const PADDING = 8;
 
-export function GuideTourOverlay({ state, onNext, onPrev, onStop }: GuideTourOverlayProps) {
+export function GuideTourOverlay({ state, onNext, onPrev, onStop, onGoToStep }: GuideTourOverlayProps) {
   const { language } = useLanguage();
+  const [showStepList, setShowStepList] = useState(false);
 
-  if (!state.isActive || !state.currentStep) return null;
+  if (!state.isActive || !state.currentStep || !state.tour) return null;
 
   const step = state.currentStep;
   const rect = state.targetRect;
   const lang = language as 'ru' | 'en';
+  const allSteps = state.tour.steps;
 
-  // Tooltip position
+  // Tooltip position with viewport clamping
   const getTooltipStyle = (): React.CSSProperties => {
     if (!rect) return { top: '50%', left: '50%', transform: 'translate(-50%, -50%)' };
 
     const placement = step.placement ?? 'bottom';
     const gap = 16;
-    const tooltipWidth = 320; // w-80
-    const tooltipHeight = 160; // approximate
-    const margin = 16; // viewport margin
+    const tooltipWidth = 320;
+    const tooltipHeight = showStepList ? 400 : 160;
+    const margin = 16;
 
-    // Check if tooltip fits on the preferred side, otherwise flip
     const fitsRight = rect.right + PADDING + gap + tooltipWidth + margin < window.innerWidth;
     const fitsLeft = rect.left - PADDING - gap - tooltipWidth - margin > 0;
     const fitsBottom = rect.bottom + PADDING + gap + tooltipHeight + margin < window.innerHeight;
@@ -160,18 +162,61 @@ export function GuideTourOverlay({ state, onNext, onPrev, onStop }: GuideTourOve
                 <Compass className="h-4 w-4 text-hydra-guide" />
                 <h3 className="font-semibold text-sm">{step.title[lang]}</h3>
               </div>
-              <button
-                onClick={onStop}
-                className="text-muted-foreground hover:text-foreground transition-colors"
-              >
-                <X className="h-4 w-4" />
-              </button>
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => setShowStepList(v => !v)}
+                  className="text-muted-foreground hover:text-hydra-guide transition-colors p-0.5 rounded"
+                  title={lang === 'ru' ? 'Все шаги маршрута' : 'All tour steps'}
+                >
+                  {showStepList ? <ChevronUp className="h-4 w-4" /> : <List className="h-4 w-4" />}
+                </button>
+                <button
+                  onClick={onStop}
+                  className="text-muted-foreground hover:text-foreground transition-colors p-0.5"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
             </div>
 
             {/* Description */}
             <p className="text-sm text-muted-foreground leading-relaxed">
               {step.description[lang]}
             </p>
+
+            {/* Collapsible step list */}
+            <AnimatePresence>
+              {showStepList && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  className="overflow-hidden"
+                >
+                  <div className="border-t border-border pt-2 space-y-0.5 max-h-48 overflow-y-auto hydra-scrollbar">
+                    {allSteps.map((s, i) => (
+                      <button
+                        key={i}
+                        onClick={() => {
+                          onGoToStep(i);
+                          setShowStepList(false);
+                        }}
+                        className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-left text-xs transition-colors ${
+                          i === state.currentStepIndex
+                            ? 'bg-hydra-guide/15 text-hydra-guide font-medium'
+                            : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'
+                        }`}
+                      >
+                        <span className="shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-mono border border-current/30">
+                          {i + 1}
+                        </span>
+                        <span className="truncate">{s.title[lang]}</span>
+                      </button>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             {/* Footer with navigation */}
             <div className="flex items-center justify-between pt-1">
