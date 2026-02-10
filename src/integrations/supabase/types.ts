@@ -107,6 +107,151 @@ export type Database = {
         }
         Relationships: []
       }
+      guide_panel_elements: {
+        Row: {
+          created_at: string
+          description_en: string
+          description_ru: string
+          element_id: string
+          id: string
+          label_en: string
+          label_ru: string
+          selector: string | null
+          sort_order: number
+          step_index: number
+          tour_id: string
+        }
+        Insert: {
+          created_at?: string
+          description_en?: string
+          description_ru?: string
+          element_id: string
+          id?: string
+          label_en: string
+          label_ru: string
+          selector?: string | null
+          sort_order?: number
+          step_index: number
+          tour_id: string
+        }
+        Update: {
+          created_at?: string
+          description_en?: string
+          description_ru?: string
+          element_id?: string
+          id?: string
+          label_en?: string
+          label_ru?: string
+          selector?: string | null
+          sort_order?: number
+          step_index?: number
+          tour_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "guide_panel_elements_tour_id_fkey"
+            columns: ["tour_id"]
+            isOneToOne: false
+            referencedRelation: "guide_tours"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      guide_tour_steps: {
+        Row: {
+          action: string | null
+          created_at: string
+          delay_ms: number | null
+          description_en: string
+          description_ru: string
+          id: string
+          placement: string
+          route: string | null
+          selector: string
+          step_index: number
+          title_en: string
+          title_ru: string
+          tour_id: string
+        }
+        Insert: {
+          action?: string | null
+          created_at?: string
+          delay_ms?: number | null
+          description_en?: string
+          description_ru?: string
+          id?: string
+          placement?: string
+          route?: string | null
+          selector: string
+          step_index: number
+          title_en: string
+          title_ru: string
+          tour_id: string
+        }
+        Update: {
+          action?: string | null
+          created_at?: string
+          delay_ms?: number | null
+          description_en?: string
+          description_ru?: string
+          id?: string
+          placement?: string
+          route?: string | null
+          selector?: string
+          step_index?: number
+          title_en?: string
+          title_ru?: string
+          tour_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "guide_tour_steps_tour_id_fkey"
+            columns: ["tour_id"]
+            isOneToOne: false
+            referencedRelation: "guide_tours"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      guide_tours: {
+        Row: {
+          created_at: string
+          description_en: string
+          description_ru: string
+          icon: string
+          id: string
+          is_active: boolean
+          sort_order: number
+          title_en: string
+          title_ru: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description_en?: string
+          description_ru?: string
+          icon?: string
+          id: string
+          is_active?: boolean
+          sort_order?: number
+          title_en: string
+          title_ru: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description_en?: string
+          description_ru?: string
+          icon?: string
+          id?: string
+          is_active?: boolean
+          sort_order?: number
+          title_en?: string
+          title_ru?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       messages: {
         Row: {
           confidence_score: number | null
