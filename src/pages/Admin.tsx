@@ -152,15 +152,16 @@ export default function Admin() {
         if (error.code === '23505') {
           toast.error('У пользователя уже есть эта роль');
         } else {
-          throw error;
+          toast.error(error.message || 'Ошибка добавления роли');
         }
       } else {
         toast.success('Роль добавлена');
         setSelectedUserId('');
-        fetchUsersWithRoles();
+        await fetchUsersWithRoles();
       }
     } catch (error: any) {
-      toast.error(error.message);
+      console.error('handleAddRole error:', error);
+      toast.error(error?.message || 'Непредвиденная ошибка');
     } finally {
       setAdding(false);
     }
