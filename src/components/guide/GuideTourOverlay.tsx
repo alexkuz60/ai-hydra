@@ -30,32 +30,46 @@ export function GuideTourOverlay({ state, onNext, onPrev, onStop }: GuideTourOve
 
     const placement = step.placement ?? 'bottom';
     const gap = 16;
+    const tooltipWidth = 320; // w-80
+    const tooltipHeight = 160; // approximate
+    const margin = 16; // viewport margin
 
-    switch (placement) {
+    // Check if tooltip fits on the preferred side, otherwise flip
+    const fitsRight = rect.right + PADDING + gap + tooltipWidth + margin < window.innerWidth;
+    const fitsLeft = rect.left - PADDING - gap - tooltipWidth - margin > 0;
+    const fitsBottom = rect.bottom + PADDING + gap + tooltipHeight + margin < window.innerHeight;
+    const fitsTop = rect.top - PADDING - gap - tooltipHeight - margin > 0;
+
+    let effectivePlacement = placement;
+    if (placement === 'right' && !fitsRight) effectivePlacement = fitsLeft ? 'left' : 'bottom';
+    if (placement === 'left' && !fitsLeft) effectivePlacement = fitsRight ? 'right' : 'bottom';
+    if (placement === 'bottom' && !fitsBottom) effectivePlacement = fitsTop ? 'top' : 'right';
+    if (placement === 'top' && !fitsTop) effectivePlacement = fitsBottom ? 'bottom' : 'right';
+
+    const clampY = (y: number) => Math.max(margin, Math.min(y, window.innerHeight - tooltipHeight - margin));
+    const clampX = (x: number) => Math.max(margin, Math.min(x, window.innerWidth - tooltipWidth - margin));
+
+    switch (effectivePlacement) {
       case 'right':
         return {
-          top: rect.top + rect.height / 2,
+          top: clampY(rect.top + rect.height / 2 - tooltipHeight / 2),
           left: rect.right + PADDING + gap,
-          transform: 'translateY(-50%)',
         };
       case 'left':
         return {
-          top: rect.top + rect.height / 2,
-          right: window.innerWidth - rect.left + PADDING + gap,
-          transform: 'translateY(-50%)',
+          top: clampY(rect.top + rect.height / 2 - tooltipHeight / 2),
+          left: Math.max(margin, rect.left - PADDING - gap - tooltipWidth),
         };
       case 'top':
         return {
-          bottom: window.innerHeight - rect.top + PADDING + gap,
-          left: rect.left + rect.width / 2,
-          transform: 'translateX(-50%)',
+          top: Math.max(margin, rect.top - PADDING - gap - tooltipHeight),
+          left: clampX(rect.left + rect.width / 2 - tooltipWidth / 2),
         };
       case 'bottom':
       default:
         return {
           top: rect.bottom + PADDING + gap,
-          left: rect.left + rect.width / 2,
-          transform: 'translateX(-50%)',
+          left: clampX(rect.left + rect.width / 2 - tooltipWidth / 2),
         };
     }
   };
