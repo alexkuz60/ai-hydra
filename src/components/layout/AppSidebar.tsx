@@ -41,9 +41,11 @@ import {
   GitBranch,
   BookOpen,
   UserCog,
-  Sparkles
+  Sparkles,
+  Compass
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useGuideTourContext } from '@/contexts/GuideTourContext';
 
 export function AppSidebar() {
   const { user, signOut } = useAuth();
@@ -53,6 +55,7 @@ export function AppSidebar() {
   const location = useLocation();
   const { state } = useSidebar();
   const isCollapsed = state === 'collapsed';
+  const { openPicker: openGuideTour } = useGuideTourContext();
 
   const handleSignOut = async () => {
     await signOut();
@@ -143,6 +146,24 @@ export function AppSidebar() {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        {/* Guide Tour */}
+        <SidebarGroup>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  onClick={openGuideTour}
+                  tooltip={language === 'ru' ? 'Экскурсия' : 'Guided Tour'}
+                  className="transition-all duration-200 active:scale-95 border-2 border-dashed border-hydra-guide/30 rounded-md hover:bg-hydra-guide/10 py-3 text-hydra-guide"
+                >
+                  <Compass className="h-4 w-4" />
+                  <span>{language === 'ru' ? 'Экскурсия' : 'Guided Tour'}</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

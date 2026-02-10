@@ -60,6 +60,7 @@
     --hydra-promptengineer: 300 75% 55%; /* magenta for prompt engineer */
     --hydra-flowregulator: 175 70% 45%; /* teal for flow logistician */
     --hydra-toolsmith: 15 85% 55%; /* coral/rust for toolsmith */
+    --hydra-guide: 145 65% 45%; /* green/emerald for guide */
     --hydra-memory: 260 70% 60%; /* violet for memory/embedding features */
     --hydra-cyan: 190 95% 50%; /* cyan for streaming/tech */
     /* Flow editor nodes */
@@ -135,6 +136,7 @@
     --hydra-promptengineer: 300 80% 60%; /* magenta for prompt engineer */
     --hydra-flowregulator: 175 75% 50%; /* teal for flow logistician */
     --hydra-toolsmith: 15 90% 60%; /* coral/rust for toolsmith */
+    --hydra-guide: 145 70% 50%; /* green/emerald for guide */
     --hydra-memory: 260 75% 65%; /* violet for memory/embedding features */
     --hydra-cyan: 190 100% 55%; /* cyan for streaming/tech */
     /* Flow editor nodes - Dark */
