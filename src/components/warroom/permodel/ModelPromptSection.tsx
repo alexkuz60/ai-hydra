@@ -143,7 +143,7 @@ export function ModelPromptSection({
 
       {/* Library & action buttons */}
       <div className="flex items-center gap-1.5 flex-wrap">
-        <Button variant="outline" size="sm" className="h-9" onClick={() => setLibraryOpen(true)}>
+        <Button variant="outline" size="sm" className="h-9" onClick={() => setLibraryOpen(true)} data-guide="prompt-library-picker-btn">
           <Library className="h-4 w-4 mr-2" />{t('settings.loadFromLibrary')}
         </Button>
         <Button variant="default" size="sm" className="h-9" onClick={() => { setSavePromptName(''); setSaveDialogOpen(true); }}>
