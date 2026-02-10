@@ -23,6 +23,8 @@ export function GuideTourOverlay({ state, onNext, onPrev, onStop, onGoToStep }: 
   const [comboOpen, setComboOpen] = useState(false);
   const [elementRect, setElementRect] = useState<DOMRect | null>(null);
   const elementObserverRef = useRef<ResizeObserver | null>(null);
+  const tooltipRef = useRef<HTMLDivElement | null>(null);
+  const [tooltipHeight, setTooltipHeight] = useState(200);
 
   const stepKey = state.tour && state.isActive
     ? `${state.tour.id}-${state.currentStepIndex}`
@@ -33,11 +35,24 @@ export function GuideTourOverlay({ state, onNext, onPrev, onStop, onGoToStep }: 
     setSelectedElement(null);
     setElementRect(null);
     setComboOpen(false);
+    setTooltipHeight(200);
     if (elementObserverRef.current) {
       elementObserverRef.current.disconnect();
       elementObserverRef.current = null;
     }
   }, [stepKey]);
+
+  // Measure actual tooltip height for positioning
+  useEffect(() => {
+    if (!tooltipRef.current) return;
+    const ro = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        setTooltipHeight(entry.contentRect.height);
+      }
+    });
+    ro.observe(tooltipRef.current);
+    return () => ro.disconnect();
+  });
 
   if (!state.isActive || !state.currentStep || !state.tour) return null;
 
@@ -78,33 +93,33 @@ export function GuideTourOverlay({ state, onNext, onPrev, onStop, onGoToStep }: 
     const placement = step.placement ?? 'bottom';
     const gap = 16;
     const tooltipWidth = 340;
-    const tooltipHeight = selectedElement ? 320 : comboOpen ? 300 : 200;
+    const estHeight = tooltipHeight;
     const margin = 16;
 
     const fitsRight = rect.right + PADDING + gap + tooltipWidth + margin < window.innerWidth;
     const fitsLeft = rect.left - PADDING - gap - tooltipWidth - margin > 0;
-    const fitsBottom = rect.bottom + PADDING + gap + tooltipHeight + margin < window.innerHeight;
-    const fitsTop = rect.top - PADDING - gap - tooltipHeight - margin > 0;
+    const fitsBottom = rect.bottom + PADDING + gap + estHeight + margin < window.innerHeight;
+    const fitsTop = rect.top - PADDING - gap - estHeight - margin > 0;
 
     let effectivePlacement = placement;
-    if (placement === 'right' && !fitsRight) effectivePlacement = fitsLeft ? 'left' : 'bottom';
-    if (placement === 'left' && !fitsLeft) effectivePlacement = fitsRight ? 'right' : 'bottom';
-    if (placement === 'bottom' && !fitsBottom) effectivePlacement = fitsTop ? 'top' : 'right';
-    if (placement === 'top' && !fitsTop) effectivePlacement = fitsBottom ? 'bottom' : 'right';
+    if (placement === 'right' && !fitsRight) effectivePlacement = fitsLeft ? 'left' : fitsTop ? 'top' : 'bottom';
+    if (placement === 'left' && !fitsLeft) effectivePlacement = fitsRight ? 'right' : fitsTop ? 'top' : 'bottom';
+    if (placement === 'bottom' && !fitsBottom) effectivePlacement = fitsTop ? 'top' : fitsRight ? 'right' : 'left';
+    if (placement === 'top' && !fitsTop) effectivePlacement = fitsBottom ? 'bottom' : fitsRight ? 'right' : 'left';
 
-    const clampY = (y: number) => Math.max(margin, Math.min(y, window.innerHeight - tooltipHeight - margin));
+    const clampY = (y: number) => Math.max(margin, Math.min(y, window.innerHeight - estHeight - margin));
     const clampX = (x: number) => Math.max(margin, Math.min(x, window.innerWidth - tooltipWidth - margin));
 
     switch (effectivePlacement) {
       case 'right':
-        return { top: clampY(rect.top + rect.height / 2 - tooltipHeight / 2), left: rect.right + PADDING + gap };
+        return { top: clampY(rect.top + rect.height / 2 - estHeight / 2), left: rect.right + PADDING + gap };
       case 'left':
-        return { top: clampY(rect.top + rect.height / 2 - tooltipHeight / 2), left: Math.max(margin, rect.left - PADDING - gap - tooltipWidth) };
+        return { top: clampY(rect.top + rect.height / 2 - estHeight / 2), left: Math.max(margin, rect.left - PADDING - gap - tooltipWidth) };
       case 'top':
-        return { top: Math.max(margin, rect.top - PADDING - gap - tooltipHeight), left: clampX(rect.left + rect.width / 2 - tooltipWidth / 2) };
+        return { top: Math.max(margin, rect.top - PADDING - gap - estHeight), left: clampX(rect.left + rect.width / 2 - tooltipWidth / 2) };
       case 'bottom':
       default:
-        return { top: rect.bottom + PADDING + gap, left: clampX(rect.left + rect.width / 2 - tooltipWidth / 2) };
+        return { top: clampY(rect.bottom + PADDING + gap), left: clampX(rect.left + rect.width / 2 - tooltipWidth / 2) };
     }
   };
 
@@ -150,20 +165,30 @@ export function GuideTourOverlay({ state, onNext, onPrev, onStop, onGoToStep }: 
           />
         )}
 
-        {/* Blue highlight ring on explained element */}
-        {elementRect && selectedElement && (
-          <motion.div
-            key={`element-highlight-${selectedElement.id}`}
-            initial={{ opacity: 0, scale: 0.97 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="absolute rounded-md pointer-events-none"
-            style={{
-              left: elementRect.left - 4, top: elementRect.top - 4,
-              width: elementRect.width + 8, height: elementRect.height + 8,
-              boxShadow: '0 0 0 2px hsl(200 80% 55%), 0 0 16px hsl(200 80% 55% / 0.35)',
-            }}
-          />
-        )}
+        {/* Blue highlight ring on explained element (skip if overlaps green spotlight) */}
+        {elementRect && selectedElement && (() => {
+          // Don't show blue ring if it matches the step target (would duplicate green)
+          if (rect) {
+            const dx = Math.abs(elementRect.left - rect.left);
+            const dy = Math.abs(elementRect.top - rect.top);
+            const dw = Math.abs(elementRect.width - rect.width);
+            const dh = Math.abs(elementRect.height - rect.height);
+            if (dx < 12 && dy < 12 && dw < 12 && dh < 12) return null;
+          }
+          return (
+            <motion.div
+              key={`element-highlight-${selectedElement.id}`}
+              initial={{ opacity: 0, scale: 0.97 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="absolute rounded-md pointer-events-none"
+              style={{
+                left: elementRect.left - 4, top: elementRect.top - 4,
+                width: elementRect.width + 8, height: elementRect.height + 8,
+                boxShadow: '0 0 0 2px hsl(200 80% 55%), 0 0 16px hsl(200 80% 55% / 0.35)',
+              }}
+            />
+          );
+        })()}
 
         {/* Click-through area over the target */}
         {rect && (
@@ -183,7 +208,8 @@ export function GuideTourOverlay({ state, onNext, onPrev, onStop, onGoToStep }: 
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.15 }}
-          className="absolute z-10 w-[340px] max-w-[calc(100vw-2rem)]"
+          className="absolute z-10 w-[340px] max-w-[calc(100vw-2rem)] max-h-[calc(100vh-2rem)] overflow-y-auto hydra-scrollbar"
+          ref={tooltipRef}
           style={{ ...getTooltipStyle(), pointerEvents: 'auto' }}
           onClick={(e) => e.stopPropagation()}
         >
