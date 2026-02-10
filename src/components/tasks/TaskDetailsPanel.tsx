@@ -258,6 +258,7 @@ export function TaskDetailsPanel({
                 onClick={handleOpenTask}
                 disabled={selectedModels.length === 0}
                 className="hydra-glow-sm"
+                data-guide="tasks-open-btn"
               >
                 <Play className="h-4 w-4 mr-2" />
                 {t('tasks.open')}
@@ -307,7 +308,9 @@ export function TaskDetailsPanel({
             )}
 
             {/* Task Files */}
+            <div data-guide="tasks-files-tab">
             <TaskFilesPanel sessionId={task.id} className="border-t pt-4" />
+            </div>
  
  
            {/* Session settings */}
