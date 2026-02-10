@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, ChevronLeft, ChevronRight, Compass, ChevronDown, Info } from 'lucide-react';
@@ -21,6 +21,23 @@ export function GuideTourOverlay({ state, onNext, onPrev, onStop, onGoToStep }: 
   const { language } = useLanguage();
   const [selectedElement, setSelectedElement] = useState<PanelElement | null>(null);
   const [comboOpen, setComboOpen] = useState(false);
+  const [elementRect, setElementRect] = useState<DOMRect | null>(null);
+  const elementObserverRef = useRef<ResizeObserver | null>(null);
+
+  const stepKey = state.tour && state.isActive
+    ? `${state.tour.id}-${state.currentStepIndex}`
+    : '';
+
+  // Clean up element observer on step change
+  useEffect(() => {
+    setSelectedElement(null);
+    setElementRect(null);
+    setComboOpen(false);
+    if (elementObserverRef.current) {
+      elementObserverRef.current.disconnect();
+      elementObserverRef.current = null;
+    }
+  }, [stepKey]);
 
   if (!state.isActive || !state.currentStep || !state.tour) return null;
 
@@ -29,8 +46,30 @@ export function GuideTourOverlay({ state, onNext, onPrev, onStop, onGoToStep }: 
   const lang = language as 'ru' | 'en';
   const panelElements = getPanelElements(state.tour.id, state.currentStepIndex);
 
-  // Reset selection when step changes — handled via key on the tooltip
-  const stepKey = `${state.tour.id}-${state.currentStepIndex}`;
+  // Track highlighted element rect
+  const handleSelectElement = (el: PanelElement) => {
+    setSelectedElement(el);
+    // Clean up previous observer
+    if (elementObserverRef.current) {
+      elementObserverRef.current.disconnect();
+      elementObserverRef.current = null;
+    }
+    if (el.selector) {
+      const domEl = document.querySelector(el.selector);
+      if (domEl) {
+        setElementRect(domEl.getBoundingClientRect());
+        elementObserverRef.current = new ResizeObserver(() => {
+          setElementRect(domEl.getBoundingClientRect());
+        });
+        elementObserverRef.current.observe(domEl);
+      } else {
+        setElementRect(null);
+      }
+    } else {
+      setElementRect(null);
+    }
+  };
+
 
   // Tooltip position with viewport clamping
   const getTooltipStyle = (): React.CSSProperties => {
@@ -111,6 +150,21 @@ export function GuideTourOverlay({ state, onNext, onPrev, onStop, onGoToStep }: 
           />
         )}
 
+        {/* Blue highlight ring on explained element */}
+        {elementRect && selectedElement && (
+          <motion.div
+            key={`element-highlight-${selectedElement.id}`}
+            initial={{ opacity: 0, scale: 0.97 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="absolute rounded-md pointer-events-none"
+            style={{
+              left: elementRect.left - 4, top: elementRect.top - 4,
+              width: elementRect.width + 8, height: elementRect.height + 8,
+              boxShadow: '0 0 0 2px hsl(200 80% 55%), 0 0 16px hsl(200 80% 55% / 0.35)',
+            }}
+          />
+        )}
+
         {/* Click-through area over the target */}
         {rect && (
           <div className="absolute" style={{
@@ -151,22 +205,25 @@ export function GuideTourOverlay({ state, onNext, onPrev, onStop, onGoToStep }: 
             {/* Panel elements combo-box */}
             {panelElements.length > 0 && (
               <div className="space-y-2">
+                <span className="text-[10px] uppercase tracking-wider text-muted-foreground/70 font-medium">
+                  {lang === 'ru' ? 'Объяснить подробнее о назначении элемента UI' : 'Explain UI element purpose in detail'}
+                </span>
                 <button
-                  onClick={() => { setComboOpen(v => !v); setSelectedElement(null); }}
+                  onClick={() => setComboOpen(v => !v)}
                   className="w-full flex items-center justify-between gap-2 px-3 py-2 rounded-lg border border-border bg-muted/30 hover:bg-muted/60 transition-colors text-left"
                 >
                   <span className="flex items-center gap-2 text-xs font-medium">
                     <Info className="h-3.5 w-3.5 text-hydra-guide" />
                     {selectedElement
                       ? selectedElement.label[lang]
-                      : (lang === 'ru' ? 'Элементы панели…' : 'Panel elements…')
+                      : (lang === 'ru' ? 'Выберите элемент…' : 'Select element…')
                     }
                   </span>
                   <ChevronDown className={`h-3.5 w-3.5 text-muted-foreground transition-transform ${comboOpen ? 'rotate-180' : ''}`} />
                 </button>
 
                 <AnimatePresence>
-                  {comboOpen && !selectedElement && (
+                  {comboOpen && (
                     <motion.div
                       initial={{ height: 0, opacity: 0 }}
                       animate={{ height: 'auto', opacity: 1 }}
@@ -177,10 +234,16 @@ export function GuideTourOverlay({ state, onNext, onPrev, onStop, onGoToStep }: 
                         {panelElements.map((el) => (
                           <button
                             key={el.id}
-                            onClick={() => { setSelectedElement(el); setComboOpen(false); }}
-                            className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md text-left text-xs text-muted-foreground hover:bg-hydra-guide/10 hover:text-hydra-guide transition-colors"
+                            onClick={() => { handleSelectElement(el); setComboOpen(false); }}
+                            className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md text-left text-xs transition-colors ${
+                              selectedElement?.id === el.id
+                                ? 'bg-hydra-guide/15 text-hydra-guide font-medium'
+                                : 'text-muted-foreground hover:bg-hydra-guide/10 hover:text-hydra-guide'
+                            }`}
                           >
-                            <span className="shrink-0 w-1.5 h-1.5 rounded-full bg-hydra-guide/50" />
+                            <span className={`shrink-0 w-1.5 h-1.5 rounded-full ${
+                              selectedElement?.id === el.id ? 'bg-hydra-guide' : 'bg-hydra-guide/50'
+                            }`} />
                             <span className="truncate">{el.label[lang]}</span>
                           </button>
                         ))}
@@ -190,24 +253,17 @@ export function GuideTourOverlay({ state, onNext, onPrev, onStop, onGoToStep }: 
                 </AnimatePresence>
 
                 {/* Selected element explanation */}
-                <AnimatePresence>
+                <AnimatePresence mode="wait">
                   {selectedElement && (
                     <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: 'auto', opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      className="overflow-hidden"
+                      key={selectedElement.id}
+                      initial={{ opacity: 0, y: 4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -4 }}
+                      transition={{ duration: 0.15 }}
                     >
                       <div className="rounded-lg border border-hydra-guide/20 bg-hydra-guide/5 p-3 space-y-1.5">
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs font-semibold text-hydra-guide">{selectedElement.label[lang]}</span>
-                          <button
-                            onClick={() => { setSelectedElement(null); setComboOpen(true); }}
-                            className="text-muted-foreground hover:text-foreground p-0.5"
-                          >
-                            <X className="h-3 w-3" />
-                          </button>
-                        </div>
+                        <span className="text-xs font-semibold text-hydra-guide">{selectedElement.label[lang]}</span>
                         <p className="text-xs text-muted-foreground leading-relaxed">{selectedElement.description[lang]}</p>
                       </div>
                     </motion.div>
