@@ -127,7 +127,7 @@ export const ROLE_CONFIG: Record<MessageRole, RoleConfigItem> = {
     color: 'text-hydra-webhunter',
     label: 'role.webhunter',
     description: 'staffRoles.description.webhunter',
-    isTechnicalStaff: false,
+    isTechnicalStaff: true,
     cardVariant: 'webhunter',
   },
   promptengineer: {
