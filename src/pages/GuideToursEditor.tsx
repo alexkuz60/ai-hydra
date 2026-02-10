@@ -381,6 +381,7 @@ export default function GuideToursEditor() {
 
           {/* Right panel — Detail */}
           <ResizablePanel defaultSize={100 - nav.panelSize} minSize={40}>
+            <div className="h-full border-l border-border bg-card">
             {selectedTour ? (
               <GuideTourDetailPanel
                 tour={selectedTour}
@@ -400,6 +401,7 @@ export default function GuideToursEditor() {
                 </div>
               </div>
             )}
+            </div>
           </ResizablePanel>
         </ResizablePanelGroup>
       </div>
