@@ -40,6 +40,50 @@ import { cn } from '@/lib/utils';
 import { useUnsavedChanges } from '@/hooks/useUnsavedChanges';
 import { UnsavedChangesDialog } from '@/components/ui/unsaved-changes-dialog';
 import type { DbTour, DbStep, DbElement } from '@/pages/GuideToursEditor';
+import { ROLE_CONFIG } from '@/config/roles';
+import type { MessageRole } from '@/config/roles';
+
+/* ─── Role name → key mapping for colored badges ─── */
+const ROLE_NAME_MAP: Record<string, MessageRole> = {
+  'эксперт': 'assistant', 'expert': 'assistant',
+  'критик': 'critic', 'critic': 'critic',
+  'арбитр': 'arbiter', 'arbiter': 'arbiter',
+  'консультант': 'consultant', 'consultant': 'consultant',
+  'модератор': 'moderator', 'moderator': 'moderator',
+  'советник': 'advisor', 'advisor': 'advisor',
+  'архивариус': 'archivist', 'archivist': 'archivist',
+  'аналитик': 'analyst', 'analyst': 'analyst',
+  'web-охотник': 'webhunter', 'webhunter': 'webhunter',
+  'промпт-инженер': 'promptengineer', 'prompt engineer': 'promptengineer',
+  'регулятор': 'flowregulator', 'flow regulator': 'flowregulator',
+  'инструментальщик': 'toolsmith', 'toolsmith': 'toolsmith',
+};
+
+/** Render text with role names replaced by colored badges */
+function RoleHighlightedText({ text, className }: { text: string; className?: string }) {
+  // Build regex from all role names
+  const roleNames = Object.keys(ROLE_NAME_MAP).sort((a, b) => b.length - a.length);
+  const pattern = new RegExp(`(${roleNames.map(n => n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})`, 'gi');
+  
+  const parts = text.split(pattern);
+  
+  return (
+    <span className={className}>
+      {parts.map((part, i) => {
+        const roleKey = ROLE_NAME_MAP[part.toLowerCase()];
+        if (roleKey) {
+          const config = ROLE_CONFIG[roleKey];
+          return (
+            <Badge key={i} variant="outline" className={cn("text-xs mx-0.5", config.color, "border-current/30")}>
+              {part}
+            </Badge>
+          );
+        }
+        return <span key={i}>{part}</span>;
+      })}
+    </span>
+  );
+}
 
 interface Props {
   tour: DbTour;
@@ -590,14 +634,15 @@ export function GuideTourDetailPanel({ tour, steps, elements, lang, onDeleteTour
                         >
                           {isExpanded ? <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" /> : <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />}
                           <div className="min-w-0 flex-1">
-                            <span className="text-base font-medium">{step[`title_${contentLang}`]}</span>
-                            <div className="flex items-center gap-1.5 mt-1 flex-wrap">
-                              <Badge variant="outline" className="text-xs font-mono">{step.selector}</Badge>
+                            <span className="text-base font-semibold">{step[`title_${contentLang}`]}</span>
+                            {step[`description_${contentLang}`] && (
+                              <div className="mt-1">
+                                <RoleHighlightedText text={step[`description_${contentLang}`]} className="text-sm text-muted-foreground line-clamp-2" />
+                              </div>
+                            )}
+                            <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
                               {step.route && (
                                 <Badge className="text-xs bg-hydra-guide/15 text-hydra-guide border-hydra-guide/30 hover:bg-hydra-guide/20">{step.route}</Badge>
-                              )}
-                              {step.action && (
-                                <Badge variant="secondary" className="text-xs">{step.action}</Badge>
                               )}
                               {sElements.length > 0 && (
                                 <Badge variant="secondary" className="text-xs">{sElements.length} {lang === 'ru' ? 'эл.' : 'el.'}</Badge>
@@ -621,10 +666,14 @@ export function GuideTourDetailPanel({ tour, steps, elements, lang, onDeleteTour
                             <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">
                               {contentLang === 'ru' ? 'Описание (RU)' : 'Description (EN)'}
                             </span>
-                            <p className="text-sm text-muted-foreground mt-1">{step[`description_${contentLang}`] || '—'}</p>
+                            <div className="text-sm text-muted-foreground mt-1">
+                              <RoleHighlightedText text={step[`description_${contentLang}`] || '—'} />
+                            </div>
                           </div>
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <Badge variant="outline" className="text-xs">{lang === 'ru' ? 'Селектор' : 'Selector'}: <code className="ml-1 font-mono">{step.selector}</code></Badge>
                             <Badge variant="outline" className="text-xs">{lang === 'ru' ? 'Позиция' : 'Placement'}: {step.placement}</Badge>
+                            {step.action && <Badge variant="outline" className="text-xs">{lang === 'ru' ? 'Действие' : 'Action'}: {step.action}</Badge>}
                             {step.delay_ms != null && <Badge variant="outline" className="text-xs">{lang === 'ru' ? 'Задержка' : 'Delay'}: {step.delay_ms}ms</Badge>}
                           </div>
                           <div className="space-y-2">
@@ -645,8 +694,9 @@ export function GuideTourDetailPanel({ tour, steps, elements, lang, onDeleteTour
                                   <div key={el.id} className="flex items-center justify-between px-3 py-2 rounded-md bg-muted/30 border border-border/50">
                                     <div className="min-w-0 flex-1">
                                       <span className="text-sm font-medium">{el[`label_${contentLang}`]}</span>
-                                      {el.selector && <Badge variant="outline" className="text-xs font-mono mt-0.5">{el.selector}</Badge>}
-                                      <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{el[`description_${contentLang}`]}</p>
+                                      <div className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
+                                        <RoleHighlightedText text={el[`description_${contentLang}`] || ''} />
+                                      </div>
                                     </div>
                                     <div className="flex items-center gap-0.5 shrink-0 ml-2">
                                       <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => openElementDialog(el.step_index, el)}>
