@@ -57,6 +57,15 @@ export const GUIDE_TOURS: GuideTour[] = [
         placement: 'right',
       },
       {
+        selector: '[data-guide="tasks-list"]',
+        title: { ru: 'Выберите задачу', en: 'Select a Task' },
+        description: {
+          ru: 'Кликните на любую задачу в списке, чтобы открыть панель деталей справа.',
+          en: 'Click any task in the list to open the details panel on the right.',
+        },
+        placement: 'right',
+      },
+      {
         selector: '[data-guide="tasks-details"]',
         title: { ru: 'Детали задачи', en: 'Task Details' },
         description: {
@@ -223,6 +232,15 @@ export const GUIDE_TOURS: GuideTour[] = [
           en: 'One click to seed knowledge base for all technical roles — Archivist, Analyst, etc.',
         },
         placement: 'bottom',
+      },
+      {
+        selector: '[data-guide="staff-list"]',
+        title: { ru: 'Выберите роль', en: 'Select a Role' },
+        description: {
+          ru: 'Кликните на любую роль в списке, чтобы открыть панель настроек справа.',
+          en: 'Click any role in the list to open the settings panel on the right.',
+        },
+        placement: 'right',
       },
       {
         selector: '[data-guide="role-details"]',
@@ -402,6 +420,15 @@ export const GUIDE_TOURS: GuideTour[] = [
         placement: 'bottom',
       },
       {
+        selector: '[data-guide="prompt-list"]',
+        title: { ru: 'Выберите промпт', en: 'Select a Prompt' },
+        description: {
+          ru: 'Кликните на любой промпт в списке, чтобы открыть панель деталей справа.',
+          en: 'Click any prompt in the list to open the details panel on the right.',
+        },
+        placement: 'right',
+      },
+      {
         selector: '[data-guide="prompt-details"]',
         title: { ru: 'Детали промпта', en: 'Prompt Details' },
         description: {
@@ -458,6 +485,15 @@ export const GUIDE_TOURS: GuideTour[] = [
         placement: 'bottom',
       },
       {
+        selector: '[data-guide="tools-list"]',
+        title: { ru: 'Выберите инструмент', en: 'Select a Tool' },
+        description: {
+          ru: 'Кликните на любой инструмент в списке, чтобы открыть панель деталей справа.',
+          en: 'Click any tool in the list to open the details panel on the right.',
+        },
+        placement: 'right',
+      },
+      {
         selector: '[data-guide="tools-details"]',
         title: { ru: 'Детали инструмента', en: 'Tool Details' },
         description: {
@@ -501,6 +537,15 @@ export const GUIDE_TOURS: GuideTour[] = [
         description: {
           ru: 'Настройки коммуникации для каждой роли: тон, детализация, реакции и взаимодействия.',
           en: 'Communication settings per role: tone, verbosity, reactions, and interactions.',
+        },
+        placement: 'right',
+      },
+      {
+        selector: '[data-guide="patterns-list"]',
+        title: { ru: 'Выберите паттерн', en: 'Select a Pattern' },
+        description: {
+          ru: 'Кликните на любой паттерн в списке, чтобы открыть панель деталей справа.',
+          en: 'Click any pattern in the list to open the details panel on the right.',
         },
         placement: 'right',
       },
