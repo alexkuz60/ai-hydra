@@ -120,9 +120,15 @@ export function GuideTourDetailPanel({ tour, steps, elements, lang, onDeleteTour
   /* ─── Drag & Drop reorder ─── */
   const [dragIdx, setDragIdx] = useState<number | null>(null);
   const [dragOverIdx, setDragOverIdx] = useState<number | null>(null);
+  const [reordering, setReordering] = useState(false);
+  const [optimisticSteps, setOptimisticSteps] = useState<typeof steps | null>(null);
   const dragIdxRef = useRef<number | null>(null);
 
+  // Use optimistic steps when reordering, otherwise use real steps
+  const displaySteps = optimisticSteps ?? steps;
+
   const handleDragStart = (e: React.DragEvent, idx: number) => {
+    if (reordering) return;
     dragIdxRef.current = idx;
     setDragIdx(idx);
     e.dataTransfer.effectAllowed = 'move';
@@ -139,19 +145,21 @@ export function GuideTourDetailPanel({ tour, steps, elements, lang, onDeleteTour
     e.stopPropagation();
     const sourceIdx = dragIdxRef.current;
     
-    // Reset visual state immediately
     setDragIdx(null);
     setDragOverIdx(null);
     dragIdxRef.current = null;
 
-    if (sourceIdx === null || sourceIdx === targetIdx) return;
+    if (sourceIdx === null || sourceIdx === targetIdx || reordering) return;
 
-    // Reorder: move sourceIdx to targetIdx position
+    // Optimistic reorder
     const ordered = [...steps];
     const [moved] = ordered.splice(sourceIdx, 1);
     ordered.splice(targetIdx, 0, moved);
+    const reindexed = ordered.map((s, i) => ({ ...s, step_index: i }));
 
-    // Two-pass update to avoid unique constraint violation on (tour_id, step_index)
+    setOptimisticSteps(reindexed);
+    setReordering(true);
+
     try {
       // Pass 1: offset all indices to temporary values
       for (let i = 0; i < ordered.length; i++) {
@@ -174,6 +182,9 @@ export function GuideTourDetailPanel({ tour, steps, elements, lang, onDeleteTour
     } catch (err: any) {
       console.error('Reorder error:', err);
       toast.error(err.message || 'Reorder failed');
+    } finally {
+      setOptimisticSteps(null);
+      setReordering(false);
     }
   };
 
@@ -404,7 +415,8 @@ export function GuideTourDetailPanel({ tour, steps, elements, lang, onDeleteTour
         <div className="px-6 py-4 space-y-3">
           <div className="flex items-center justify-between">
             <span className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
-              {lang === 'ru' ? 'Шаги' : 'Steps'} ({steps.length})
+              {lang === 'ru' ? 'Шаги' : 'Steps'} ({displaySteps.length})
+              {reordering && <Loader2 className="inline h-3.5 w-3.5 ml-2 animate-spin text-hydra-guide" />}
             </span>
             <Button variant="outline" size="sm" onClick={() => openStepDialog()}>
               <Plus className="h-3.5 w-3.5 mr-1.5" />
@@ -412,21 +424,21 @@ export function GuideTourDetailPanel({ tour, steps, elements, lang, onDeleteTour
             </Button>
           </div>
 
-          {steps.length === 0 ? (
+          {displaySteps.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
               <p>{lang === 'ru' ? 'Нет шагов — добавьте первый' : 'No steps — add the first one'}</p>
             </div>
           ) : (
-            <div className="relative pl-6">
+            <div className={cn("relative pl-6 transition-opacity duration-200", reordering && "opacity-70 pointer-events-none")}>
               {/* Timeline line */}
               <div className="absolute left-[11px] top-3 bottom-3 w-px bg-border" />
 
-              {steps.map((step, idx) => {
+              {displaySteps.map((step, idx) => {
                 const isExpanded = expandedStepId === step.id;
                 const sElements = stepElements(step.step_index);
                 const isDragging = dragIdx === idx;
                 const isDragOver = dragOverIdx === idx && dragIdx !== idx;
-                const isLast = idx === steps.length - 1;
+                const isLast = idx === displaySteps.length - 1;
 
                 return (
                   <div
