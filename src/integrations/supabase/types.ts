@@ -1144,6 +1144,7 @@ export type Database = {
         | "promptengineer"
         | "flowregulator"
         | "toolsmith"
+        | "guide"
       pattern_category: "planning" | "creative" | "analysis" | "technical"
       verbosity_level: "concise" | "detailed" | "adaptive"
     }
@@ -1289,6 +1290,7 @@ export const Constants = {
         "promptengineer",
         "flowregulator",
         "toolsmith",
+        "guide",
       ],
       pattern_category: ["planning", "creative", "analysis", "technical"],
       verbosity_level: ["concise", "detailed", "adaptive"],

@@ -310,6 +310,11 @@
     background: linear-gradient(90deg, hsl(var(--hydra-flowregulator) / 0.08), transparent);
   }
 
+  .hydra-card-guide {
+    border-left: 3px solid hsl(var(--hydra-guide));
+    background: linear-gradient(90deg, hsl(var(--hydra-guide) / 0.08), transparent);
+  }
+
   /* Scrollbar styling */
   .hydra-scrollbar::-webkit-scrollbar {
     width: 6px;
