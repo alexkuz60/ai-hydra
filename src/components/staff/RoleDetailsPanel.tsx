@@ -108,6 +108,7 @@ const RoleDetailsPanel = forwardRef<HTMLDivElement, RoleDetailsPanelProps>(
             {/* Settings */}
             <div data-guide="role-settings-section">
             <RoleSettingsSection
+              selectedRole={selectedRole}
               isTechnicalStaff={config.isTechnicalStaff}
               requiresApproval={behavior?.requires_approval ?? false}
               isSaving={isSaving}

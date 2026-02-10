@@ -11,6 +11,7 @@ import { StreamingMessage } from '@/components/warroom/StreamingMessage';
 import { ModelOption } from '@/hooks/useAvailableModels';
 import { useStreamingChat } from '@/hooks/useStreamingChat';
 import { ROLE_CONFIG, AGENT_ROLES, type AgentRole } from '@/config/roles';
+import { getTechRoleDefaultModel } from '@/hooks/useTechRoleDefaults';
 import { cn } from '@/lib/utils';
 import {
   Wrench,
@@ -46,9 +47,12 @@ export function TechSupportDialog({
   const { t } = useLanguage();
   const [input, setInput] = useState('');
   const [selectedRole, setSelectedRole] = useState<TechRole>('archivist');
-  const [selectedModel, setSelectedModel] = useState<string>(
-    availableModels[0]?.id || ''
-  );
+  const [selectedModel, setSelectedModel] = useState<string>(() => {
+    // Use saved default for initial role, fallback to first available
+    const saved = getTechRoleDefaultModel('archivist');
+    if (saved && availableModels.find(m => m.id === saved)) return saved;
+    return availableModels[0]?.id || '';
+  });
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
   // Internal state for uncontrolled mode
@@ -64,12 +68,25 @@ export function TechSupportDialog({
     onResponseComplete,
   });
 
-  // Update selected model when available models change
+  // When role changes, apply the saved default model (if available), otherwise keep current
+  useEffect(() => {
+    const saved = getTechRoleDefaultModel(selectedRole);
+    if (saved && availableModels.find(m => m.id === saved)) {
+      setSelectedModel(saved);
+    }
+  }, [selectedRole, availableModels]);
+
+  // Update selected model when available models change and current is invalid
   useEffect(() => {
     if (availableModels.length > 0 && !availableModels.find((m) => m.id === selectedModel)) {
-      setSelectedModel(availableModels[0].id);
+      const saved = getTechRoleDefaultModel(selectedRole);
+      if (saved && availableModels.find(m => m.id === saved)) {
+        setSelectedModel(saved);
+      } else {
+        setSelectedModel(availableModels[0].id);
+      }
     }
-  }, [availableModels, selectedModel]);
+  }, [availableModels, selectedModel, selectedRole]);
 
   // Auto-scroll to bottom on new messages
   useEffect(() => {
