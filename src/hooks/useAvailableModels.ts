@@ -89,8 +89,6 @@ export const PERSONAL_KEY_MODELS: ModelOption[] = [
   { id: 'proxyapi/gemini-2.5-pro', name: 'Gemini 2.5 Pro (ProxyAPI)', provider: 'proxyapi', requiresApiKey: true },
   { id: 'proxyapi/gemini-2.5-flash', name: 'Gemini 2.5 Flash (ProxyAPI)', provider: 'proxyapi', requiresApiKey: true },
   { id: 'proxyapi/gemini-2.0-flash', name: 'Gemini 2.0 Flash (ProxyAPI)', provider: 'proxyapi', requiresApiKey: true },
-  { id: 'proxyapi/deepseek-chat', name: 'DeepSeek-V3 (ProxyAPI) ⚠️', provider: 'proxyapi', requiresApiKey: true },
-  { id: 'proxyapi/deepseek-reasoner', name: 'DeepSeek-R1 (ProxyAPI) ⚠️', provider: 'proxyapi', requiresApiKey: true },
 ];
 
 // All valid model IDs for filtering deprecated models (centralized)

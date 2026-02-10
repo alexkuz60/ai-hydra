@@ -96,8 +96,6 @@ const registry: ModelRegistryEntry[] = [
   { id: 'proxyapi/gemini-2.5-pro', displayName: 'Gemini 2.5 Pro (ProxyAPI)', provider: 'proxyapi', creator: 'Google via ProxyAPI', releaseDate: '2025-03', parameterCount: 'unknown', strengths: ['reasoning', 'vision', 'coding', 'long-context'], pricing: { input: '≈$1.50', output: '≈$6.00' } },
   { id: 'proxyapi/gemini-2.5-flash', displayName: 'Gemini 2.5 Flash (ProxyAPI)', provider: 'proxyapi', creator: 'Google via ProxyAPI', releaseDate: '2025-03', parameterCount: 'unknown', strengths: ['speed', 'multimodal', 'reasoning'], pricing: { input: '≈$0.15', output: '≈$0.60' } },
   { id: 'proxyapi/gemini-2.0-flash', displayName: 'Gemini 2.0 Flash (ProxyAPI)', provider: 'proxyapi', creator: 'Google via ProxyAPI', releaseDate: '2025-02', parameterCount: 'unknown', strengths: ['speed', 'multimodal', 'coding'], pricing: { input: '≈$0.15', output: '≈$0.60' } },
-  { id: 'proxyapi/deepseek-chat', displayName: 'DeepSeek-V3 (ProxyAPI) ⚠️', provider: 'proxyapi', creator: 'DeepSeek via ProxyAPI', releaseDate: '2024-12', parameterCount: '671B (MoE)', strengths: ['coding', 'math', 'reasoning', 'multilingual'], pricing: { input: '≈$0.40', output: '≈$1.60' } },
-  { id: 'proxyapi/deepseek-reasoner', displayName: 'DeepSeek-R1 (ProxyAPI) ⚠️', provider: 'proxyapi', creator: 'DeepSeek via ProxyAPI', releaseDate: '2025-01', parameterCount: '671B (MoE)', strengths: ['deep-reasoning', 'math', 'coding'], pricing: { input: '≈$0.80', output: '≈$3.00' } },
 ];
 
 // Lookup map for O(1) access
