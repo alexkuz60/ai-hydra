@@ -163,10 +163,10 @@ export default function GuideToursEditor() {
   }, [tours, searchQuery]);
 
   /* ─── Tour CRUD ─── */
-  const openTourDialog = (tour?: DbTour) => {
+  const openTourDialog = () => {
     setTourDialog({
       open: true,
-      tour: tour ? { ...tour } : { id: '', title_ru: '', title_en: '', description_ru: '', description_en: '', icon: 'Compass', sort_order: tours.length, is_active: true },
+      tour: { id: '', title_ru: '', title_en: '', description_ru: '', description_en: '', icon: 'Compass', sort_order: tours.length, is_active: true },
     });
   };
 
@@ -178,25 +178,14 @@ export default function GuideToursEditor() {
     }
     setSaving(true);
     try {
-      const existing = tours.find(x => x.id === t.id);
-      if (existing) {
-        const { error } = await supabase.from('guide_tours').update({
-          title_ru: t.title_ru!, title_en: t.title_en!,
-          description_ru: t.description_ru || '', description_en: t.description_en || '',
-          icon: t.icon || 'Compass', sort_order: t.sort_order ?? 0, is_active: t.is_active ?? true,
-        }).eq('id', t.id);
-        if (error) throw error;
-        toast.success(lang === 'ru' ? 'Тур обновлён' : 'Tour updated');
-      } else {
-        const { error } = await supabase.from('guide_tours').insert({
-          id: t.id!, title_ru: t.title_ru!, title_en: t.title_en!,
-          description_ru: t.description_ru || '', description_en: t.description_en || '',
-          icon: t.icon || 'Compass', sort_order: t.sort_order ?? 0, is_active: t.is_active ?? true,
-        });
-        if (error) throw error;
-        toast.success(lang === 'ru' ? 'Тур создан' : 'Tour created');
-        setSelectedTourId(t.id!);
-      }
+      const { error } = await supabase.from('guide_tours').insert({
+        id: t.id!, title_ru: t.title_ru!, title_en: t.title_en!,
+        description_ru: t.description_ru || '', description_en: t.description_en || '',
+        icon: t.icon || 'Compass', sort_order: t.sort_order ?? 0, is_active: t.is_active ?? true,
+      });
+      if (error) throw error;
+      toast.success(lang === 'ru' ? 'Тур создан' : 'Tour created');
+      setSelectedTourId(t.id!);
       setTourDialog({ open: false, tour: null });
       await fetchAll();
       invalidateCache();
@@ -383,9 +372,9 @@ export default function GuideToursEditor() {
                 steps={tourSteps}
                 elements={tourElements}
                 lang={lang}
-                onEditTour={() => openTourDialog(selectedTour)}
                 onDeleteTour={() => deleteTour(selectedTour.id)}
                 onRefresh={async () => { await fetchAll(); invalidateCache(); }}
+                onSelectTour={(id) => setSelectedTourId(id)}
               />
             ) : (
               <div className="h-full flex items-center justify-center text-muted-foreground">
@@ -400,16 +389,11 @@ export default function GuideToursEditor() {
         </ResizablePanelGroup>
       </div>
 
-      {/* ─── Tour Dialog ─── */}
+      {/* ─── Tour Create Dialog ─── */}
       <Dialog open={tourDialog.open} onOpenChange={(o) => !o && setTourDialog({ open: false, tour: null })}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>
-              {tourDialog.tour?.id && tours.find(t => t.id === tourDialog.tour?.id)
-                ? (lang === 'ru' ? 'Редактировать тур' : 'Edit Tour')
-                : (lang === 'ru' ? 'Новый тур' : 'New Tour')
-              }
-            </DialogTitle>
+            <DialogTitle>{lang === 'ru' ? 'Новый тур' : 'New Tour'}</DialogTitle>
           </DialogHeader>
           {tourDialog.tour && (
             <div className="space-y-3">
@@ -419,7 +403,6 @@ export default function GuideToursEditor() {
                   value={tourDialog.tour.id || ''}
                   onChange={e => setTourDialog(p => ({ ...p, tour: { ...p.tour!, id: e.target.value } }))}
                   placeholder="my-tour-id"
-                  disabled={!!tours.find(t => t.id === tourDialog.tour?.id)}
                 />
               </div>
               <div className="grid grid-cols-2 gap-3">
@@ -467,7 +450,7 @@ export default function GuideToursEditor() {
             <Button variant="outline" onClick={() => setTourDialog({ open: false, tour: null })}>{lang === 'ru' ? 'Отмена' : 'Cancel'}</Button>
             <Button onClick={saveTour} disabled={saving}>
               {saving && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-              {lang === 'ru' ? 'Сохранить' : 'Save'}
+              {lang === 'ru' ? 'Создать' : 'Create'}
             </Button>
           </DialogFooter>
         </DialogContent>
