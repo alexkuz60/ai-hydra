@@ -432,17 +432,13 @@ export default function GuideToursEditor() {
                   <Textarea rows={2} value={tourDialog.tour.description_en || ''} onChange={e => setTourDialog(p => ({ ...p, tour: { ...p.tour!, description_en: e.target.value } }))} />
                 </div>
               </div>
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
                   <Label>{lang === 'ru' ? 'Иконка' : 'Icon'}</Label>
                   <Select value={tourDialog.tour.icon || 'Compass'} onValueChange={v => setTourDialog(p => ({ ...p, tour: { ...p.tour!, icon: v } }))}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>{ICON_OPTIONS.map(i => <SelectItem key={i} value={i}>{i}</SelectItem>)}</SelectContent>
                   </Select>
-                </div>
-                <div className="space-y-1">
-                  <Label>{lang === 'ru' ? 'Порядок' : 'Sort'}</Label>
-                  <Input type="number" value={tourDialog.tour.sort_order ?? 0} onChange={e => setTourDialog(p => ({ ...p, tour: { ...p.tour!, sort_order: Number(e.target.value) } }))} />
                 </div>
                 <div className="flex items-end pb-1">
                   <label className="flex items-center gap-2 text-sm">
