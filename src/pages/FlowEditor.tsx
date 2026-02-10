@@ -492,6 +492,7 @@ function FlowEditorContent() {
     <Layout headerActions={headerActions}>
       <TooltipProvider>
         <div className="flex flex-col h-[calc(100vh-2.5rem)]">
+          <div data-guide="flow-toolbar">
           <FlowToolbar
             diagramName={diagramName}
             onNameChange={setDiagramName}
@@ -513,8 +514,12 @@ function FlowEditorContent() {
             }}
             isLogisticsOpen={showLogisticsPanel}
           />
+          </div>
           <div className="flex flex-1 overflow-hidden">
-            <FlowSidebar onDragStart={onDragStart} isMinimized={nav.isMinimized} onToggle={nav.toggle} />
+            <div data-guide="flow-sidebar">
+              <FlowSidebar onDragStart={onDragStart} isMinimized={nav.isMinimized} onToggle={nav.toggle} />
+            </div>
+            <div data-guide="flow-canvas" className="flex-1 min-w-0">
             <FlowCanvas
               nodes={nodes}
               edges={edges}
@@ -535,6 +540,7 @@ function FlowEditorContent() {
                 setShowLogisticsPanel(true);
               }}
             />
+            </div>
             {selectedNode && !showExecutionPanel && (
               <NodePropertiesPanel
                 selectedNode={selectedNode}

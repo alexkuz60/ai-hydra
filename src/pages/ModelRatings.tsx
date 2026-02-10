@@ -77,6 +77,7 @@ export default function ModelRatings() {
             minSize={4}
             maxSize={40}
             onResize={nav.onPanelResize}
+            data-guide="podium-sections"
           >
             <div className="h-full flex flex-col hydra-nav-surface">
               <NavigatorHeader
@@ -147,7 +148,7 @@ export default function ModelRatings() {
           <ResizableHandle withHandle />
 
           <ResizablePanel defaultSize={100 - nav.panelSize} minSize={50}>
-            <div className="h-full">
+            <div className="h-full" data-guide="podium-content">
               {activeSection === 'portfolio' && <ModelPortfolio />}
               {activeSection === 'rules' && <ContestPodium />}
               {activeSection === 'contest' && <BeautyContest />}
