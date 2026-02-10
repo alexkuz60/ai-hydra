@@ -37,6 +37,8 @@ export function useGuideTour() {
         setTargetRect(null);
         return false;
       }
+      // Auto-scroll into view if off-screen
+      el.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
       const rect = el.getBoundingClientRect();
       setTargetRect(rect);
 
