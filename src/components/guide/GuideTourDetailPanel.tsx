@@ -398,11 +398,11 @@ export function GuideTourDetailPanel({ tour, steps, elements, lang, onDeleteTour
             variant="ghost"
             size="sm"
             className="h-7 text-xs gap-1.5 text-muted-foreground hover:text-foreground"
-            onClick={() => copyTranslations(contentLang === 'en' ? 'ru-en' : 'en-ru')}
+            onClick={() => copyTranslations(contentLang === 'ru' ? 'ru-en' : 'en-ru')}
             disabled={copying}
           >
             {copying ? <Loader2 className="h-3 w-3 animate-spin" /> : <Copy className="h-3 w-3" />}
-            {contentLang === 'en' ? 'RU → EN' : 'EN → RU'}
+            {contentLang === 'ru' ? 'RU → EN' : 'EN → RU'}
           </Button>
         </div>
       </div>
