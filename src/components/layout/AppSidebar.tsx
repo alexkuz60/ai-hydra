@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useUserRoles } from '@/hooks/useUserRoles';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -42,7 +43,8 @@ import {
   BookOpen,
   UserCog,
   Sparkles,
-  Compass
+  Compass,
+  Map
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useGuideTourContext } from '@/contexts/GuideTourContext';
@@ -56,6 +58,7 @@ export function AppSidebar() {
   const { state } = useSidebar();
   const isCollapsed = state === 'collapsed';
   const { openPicker: openGuideTour } = useGuideTourContext();
+  const { isAdmin } = useUserRoles();
 
   const handleSignOut = async () => {
     await signOut();
@@ -164,6 +167,32 @@ export function AppSidebar() {
                   <span>{language === 'ru' ? 'Экскурсия' : 'Guided Tour'}</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
+              {isAdmin && (
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={isActive('/guide-editor')}
+                    tooltip={language === 'ru' ? 'Редактор экскурсий' : 'Tour Editor'}
+                    className={cn(
+                      "transition-all duration-200 active:scale-95 border-2 border-muted rounded-md hover:bg-muted/50 py-3",
+                      isActive('/guide-editor') && "hydra-menu-active bg-accent/30"
+                    )}
+                  >
+                    <Link to="/guide-editor" className="flex items-center gap-2">
+                      <Map className={cn(
+                        "h-4 w-4 transition-all duration-200",
+                        isActive('/guide-editor') && "text-hydra-glow hydra-text-glow"
+                      )} />
+                      <span className={cn(
+                        "transition-colors duration-200",
+                        isActive('/guide-editor') && "text-sidebar-primary font-medium"
+                      )}>
+                        {language === 'ru' ? 'Редактор экскурсий' : 'Tour Editor'}
+                      </span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
