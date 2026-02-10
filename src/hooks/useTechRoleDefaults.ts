@@ -3,6 +3,17 @@ import type { AgentRole } from '@/config/roles';
 
 const STORAGE_KEY = 'hydra-tech-role-defaults';
 
+/** Built-in defaults chosen for cost/speed/quality fit per role */
+const BUILTIN_DEFAULTS: Record<string, string> = {
+  archivist: 'google/gemini-2.5-flash',         // summarization + retrieval — balanced speed & reasoning
+  analyst: 'google/gemini-2.5-pro',              // complex metrics — strongest reasoning
+  promptengineer: 'openai/gpt-5',               // prompt craft — top-tier language precision
+  flowregulator: 'google/gemini-3-flash-preview', // structural analysis — fast & capable
+  toolsmith: 'openai/gpt-5-mini',               // code generation — good quality, moderate cost
+  guide: 'google/gemini-2.5-flash-lite',         // FAQ answers — fastest & cheapest
+  webhunter: 'google/gemini-3-flash-preview',    // web content processing — fast multimodal
+};
+
 interface TechRoleDefaults {
   [role: string]: string; // role -> modelId
 }
@@ -10,9 +21,9 @@ interface TechRoleDefaults {
 function loadDefaults(): TechRoleDefaults {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : {};
+    return raw ? { ...BUILTIN_DEFAULTS, ...JSON.parse(raw) } : { ...BUILTIN_DEFAULTS };
   } catch {
-    return {};
+    return { ...BUILTIN_DEFAULTS };
   }
 }
 
