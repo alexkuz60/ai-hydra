@@ -6,6 +6,7 @@ import { flowSections } from './flow';
 import { featuresSections } from './features';
 import { referenceSections } from './reference';
 import { adminSections } from './admin';
+import { guideSections } from './guide';
 
 // Helper to pluck a section by id from a module array
 const pick = (sections: HydrapediaSection[], id: string) =>
@@ -39,4 +40,5 @@ export const allHydrapediaSections: HydrapediaSection[] = [
   pick(referenceSections, 'advanced-patterns'),
   pick(featuresSections, 'roleMemory'),
   pick(referenceSections, 'faq'),
+  pick(guideSections, 'guide-tours'),
 ];
