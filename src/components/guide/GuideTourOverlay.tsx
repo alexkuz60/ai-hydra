@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, ChevronLeft, ChevronRight, Compass, ChevronDown, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { getPanelElements, type PanelElement } from '@/config/guidePanelElements';
+import type { PanelElement } from '@/config/guidePanelElements';
 import type { GuideTourState } from '@/hooks/useGuideTour';
 
 interface GuideTourOverlayProps {
@@ -13,11 +13,12 @@ interface GuideTourOverlayProps {
   onPrev: () => void;
   onStop: () => void;
   onGoToStep: (index: number) => void;
+  getPanelElements: (tourId: string, stepIndex: number) => PanelElement[];
 }
 
 const PADDING = 8;
 
-export function GuideTourOverlay({ state, onNext, onPrev, onStop, onGoToStep }: GuideTourOverlayProps) {
+export function GuideTourOverlay({ state, onNext, onPrev, onStop, onGoToStep, getPanelElements }: GuideTourOverlayProps) {
   const { language } = useLanguage();
   const [selectedElement, setSelectedElement] = useState<PanelElement | null>(null);
   const [comboOpen, setComboOpen] = useState(false);
