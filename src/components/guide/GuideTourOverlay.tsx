@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, ChevronLeft, ChevronRight, Compass, List, ChevronDown, ChevronUp } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, Compass, ChevronDown, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { getPanelElements, type PanelElement } from '@/config/guidePanelElements';
 import type { GuideTourState } from '@/hooks/useGuideTour';
 
 interface GuideTourOverlayProps {
@@ -18,14 +19,18 @@ const PADDING = 8;
 
 export function GuideTourOverlay({ state, onNext, onPrev, onStop, onGoToStep }: GuideTourOverlayProps) {
   const { language } = useLanguage();
-  const [showStepList, setShowStepList] = useState(false);
+  const [selectedElement, setSelectedElement] = useState<PanelElement | null>(null);
+  const [comboOpen, setComboOpen] = useState(false);
 
   if (!state.isActive || !state.currentStep || !state.tour) return null;
 
   const step = state.currentStep;
   const rect = state.targetRect;
   const lang = language as 'ru' | 'en';
-  const allSteps = state.tour.steps;
+  const panelElements = getPanelElements(state.tour.id, state.currentStepIndex);
+
+  // Reset selection when step changes — handled via key on the tooltip
+  const stepKey = `${state.tour.id}-${state.currentStepIndex}`;
 
   // Tooltip position with viewport clamping
   const getTooltipStyle = (): React.CSSProperties => {
@@ -33,8 +38,8 @@ export function GuideTourOverlay({ state, onNext, onPrev, onStop, onGoToStep }: 
 
     const placement = step.placement ?? 'bottom';
     const gap = 16;
-    const tooltipWidth = 320;
-    const tooltipHeight = showStepList ? 400 : 160;
+    const tooltipWidth = 340;
+    const tooltipHeight = selectedElement ? 320 : comboOpen ? 300 : 200;
     const margin = 16;
 
     const fitsRight = rect.right + PADDING + gap + tooltipWidth + margin < window.innerWidth;
@@ -53,26 +58,14 @@ export function GuideTourOverlay({ state, onNext, onPrev, onStop, onGoToStep }: 
 
     switch (effectivePlacement) {
       case 'right':
-        return {
-          top: clampY(rect.top + rect.height / 2 - tooltipHeight / 2),
-          left: rect.right + PADDING + gap,
-        };
+        return { top: clampY(rect.top + rect.height / 2 - tooltipHeight / 2), left: rect.right + PADDING + gap };
       case 'left':
-        return {
-          top: clampY(rect.top + rect.height / 2 - tooltipHeight / 2),
-          left: Math.max(margin, rect.left - PADDING - gap - tooltipWidth),
-        };
+        return { top: clampY(rect.top + rect.height / 2 - tooltipHeight / 2), left: Math.max(margin, rect.left - PADDING - gap - tooltipWidth) };
       case 'top':
-        return {
-          top: Math.max(margin, rect.top - PADDING - gap - tooltipHeight),
-          left: clampX(rect.left + rect.width / 2 - tooltipWidth / 2),
-        };
+        return { top: Math.max(margin, rect.top - PADDING - gap - tooltipHeight), left: clampX(rect.left + rect.width / 2 - tooltipWidth / 2) };
       case 'bottom':
       default:
-        return {
-          top: rect.bottom + PADDING + gap,
-          left: clampX(rect.left + rect.width / 2 - tooltipWidth / 2),
-        };
+        return { top: rect.bottom + PADDING + gap, left: clampX(rect.left + rect.width / 2 - tooltipWidth / 2) };
     }
   };
 
@@ -93,22 +86,14 @@ export function GuideTourOverlay({ state, onNext, onPrev, onStop, onGoToStep }: 
               <rect x="0" y="0" width="100%" height="100%" fill="white" />
               {rect && (
                 <rect
-                  x={rect.left - PADDING}
-                  y={rect.top - PADDING}
-                  width={rect.width + PADDING * 2}
-                  height={rect.height + PADDING * 2}
-                  rx="8"
-                  fill="black"
+                  x={rect.left - PADDING} y={rect.top - PADDING}
+                  width={rect.width + PADDING * 2} height={rect.height + PADDING * 2}
+                  rx="8" fill="black"
                 />
               )}
             </mask>
           </defs>
-          <rect
-            x="0" y="0"
-            width="100%" height="100%"
-            fill="rgba(0,0,0,0.6)"
-            mask="url(#guide-spotlight)"
-          />
+          <rect x="0" y="0" width="100%" height="100%" fill="rgba(0,0,0,0.6)" mask="url(#guide-spotlight)" />
         </svg>
 
         {/* Glowing border around target */}
@@ -119,10 +104,8 @@ export function GuideTourOverlay({ state, onNext, onPrev, onStop, onGoToStep }: 
             animate={{ opacity: 1, scale: 1 }}
             className="absolute rounded-lg pointer-events-none"
             style={{
-              left: rect.left - PADDING,
-              top: rect.top - PADDING,
-              width: rect.width + PADDING * 2,
-              height: rect.height + PADDING * 2,
+              left: rect.left - PADDING, top: rect.top - PADDING,
+              width: rect.width + PADDING * 2, height: rect.height + PADDING * 2,
               boxShadow: '0 0 0 2px hsl(var(--hydra-guide)), 0 0 20px hsl(var(--hydra-guide) / 0.3)',
             }}
           />
@@ -130,16 +113,11 @@ export function GuideTourOverlay({ state, onNext, onPrev, onStop, onGoToStep }: 
 
         {/* Click-through area over the target */}
         {rect && (
-          <div
-            className="absolute"
-            style={{
-              left: rect.left - PADDING,
-              top: rect.top - PADDING,
-              width: rect.width + PADDING * 2,
-              height: rect.height + PADDING * 2,
-              pointerEvents: 'none',
-            }}
-          />
+          <div className="absolute" style={{
+            left: rect.left - PADDING, top: rect.top - PADDING,
+            width: rect.width + PADDING * 2, height: rect.height + PADDING * 2,
+            pointerEvents: 'none',
+          }} />
         )}
 
         {/* Click backdrop to prevent interaction outside */}
@@ -147,11 +125,11 @@ export function GuideTourOverlay({ state, onNext, onPrev, onStop, onGoToStep }: 
 
         {/* Tooltip card */}
         <motion.div
-          key={`tooltip-${state.currentStepIndex}`}
+          key={stepKey}
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.15 }}
-          className="absolute z-10 w-80 max-w-[calc(100vw-2rem)]"
+          className="absolute z-10 w-[340px] max-w-[calc(100vw-2rem)]"
           style={{ ...getTooltipStyle(), pointerEvents: 'auto' }}
           onClick={(e) => e.stopPropagation()}
         >
@@ -162,61 +140,81 @@ export function GuideTourOverlay({ state, onNext, onPrev, onStop, onGoToStep }: 
                 <Compass className="h-4 w-4 text-hydra-guide" />
                 <h3 className="font-semibold text-sm">{step.title[lang]}</h3>
               </div>
-              <div className="flex items-center gap-1">
-                <button
-                  onClick={() => setShowStepList(v => !v)}
-                  className="text-muted-foreground hover:text-hydra-guide transition-colors p-0.5 rounded"
-                  title={lang === 'ru' ? 'Все шаги маршрута' : 'All tour steps'}
-                >
-                  {showStepList ? <ChevronUp className="h-4 w-4" /> : <List className="h-4 w-4" />}
-                </button>
-                <button
-                  onClick={onStop}
-                  className="text-muted-foreground hover:text-foreground transition-colors p-0.5"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
+              <button onClick={onStop} className="text-muted-foreground hover:text-foreground transition-colors p-0.5">
+                <X className="h-4 w-4" />
+              </button>
             </div>
 
             {/* Description */}
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              {step.description[lang]}
-            </p>
+            <p className="text-sm text-muted-foreground leading-relaxed">{step.description[lang]}</p>
 
-            {/* Collapsible step list */}
-            <AnimatePresence>
-              {showStepList && (
-                <motion.div
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: 'auto', opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  className="overflow-hidden"
+            {/* Panel elements combo-box */}
+            {panelElements.length > 0 && (
+              <div className="space-y-2">
+                <button
+                  onClick={() => { setComboOpen(v => !v); setSelectedElement(null); }}
+                  className="w-full flex items-center justify-between gap-2 px-3 py-2 rounded-lg border border-border bg-muted/30 hover:bg-muted/60 transition-colors text-left"
                 >
-                  <div className="border-t border-border pt-2 space-y-0.5 max-h-48 overflow-y-auto hydra-scrollbar">
-                    {allSteps.map((s, i) => (
-                      <button
-                        key={i}
-                        onClick={() => {
-                          onGoToStep(i);
-                          setShowStepList(false);
-                        }}
-                        className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-left text-xs transition-colors ${
-                          i === state.currentStepIndex
-                            ? 'bg-hydra-guide/15 text-hydra-guide font-medium'
-                            : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'
-                        }`}
-                      >
-                        <span className="shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-mono border border-current/30">
-                          {i + 1}
-                        </span>
-                        <span className="truncate">{s.title[lang]}</span>
-                      </button>
-                    ))}
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+                  <span className="flex items-center gap-2 text-xs font-medium">
+                    <Info className="h-3.5 w-3.5 text-hydra-guide" />
+                    {selectedElement
+                      ? selectedElement.label[lang]
+                      : (lang === 'ru' ? 'Элементы панели…' : 'Panel elements…')
+                    }
+                  </span>
+                  <ChevronDown className={`h-3.5 w-3.5 text-muted-foreground transition-transform ${comboOpen ? 'rotate-180' : ''}`} />
+                </button>
+
+                <AnimatePresence>
+                  {comboOpen && !selectedElement && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      className="overflow-hidden"
+                    >
+                      <div className="space-y-0.5 max-h-36 overflow-y-auto hydra-scrollbar">
+                        {panelElements.map((el) => (
+                          <button
+                            key={el.id}
+                            onClick={() => { setSelectedElement(el); setComboOpen(false); }}
+                            className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md text-left text-xs text-muted-foreground hover:bg-hydra-guide/10 hover:text-hydra-guide transition-colors"
+                          >
+                            <span className="shrink-0 w-1.5 h-1.5 rounded-full bg-hydra-guide/50" />
+                            <span className="truncate">{el.label[lang]}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                {/* Selected element explanation */}
+                <AnimatePresence>
+                  {selectedElement && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      className="overflow-hidden"
+                    >
+                      <div className="rounded-lg border border-hydra-guide/20 bg-hydra-guide/5 p-3 space-y-1.5">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-semibold text-hydra-guide">{selectedElement.label[lang]}</span>
+                          <button
+                            onClick={() => { setSelectedElement(null); setComboOpen(true); }}
+                            className="text-muted-foreground hover:text-foreground p-0.5"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </div>
+                        <p className="text-xs text-muted-foreground leading-relaxed">{selectedElement.description[lang]}</p>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            )}
 
             {/* Footer with navigation */}
             <div className="flex items-center justify-between pt-1">
@@ -224,27 +222,15 @@ export function GuideTourOverlay({ state, onNext, onPrev, onStop, onGoToStep }: 
                 {state.currentStepIndex + 1} / {state.totalSteps}
               </span>
               <div className="flex items-center gap-2">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={onPrev}
-                  disabled={state.currentStepIndex === 0}
-                  className="h-7 px-2"
-                >
+                <Button variant="ghost" size="sm" onClick={onPrev} disabled={state.currentStepIndex === 0} className="h-7 px-2">
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
-                <Button
-                  size="sm"
-                  onClick={onNext}
-                  className="h-7 px-3 bg-hydra-guide hover:bg-hydra-guide/90 text-white"
-                >
+                <Button size="sm" onClick={onNext} className="h-7 px-3 bg-hydra-guide hover:bg-hydra-guide/90 text-white">
                   {state.currentStepIndex === state.totalSteps - 1
                     ? (lang === 'ru' ? 'Готово' : 'Done')
                     : (lang === 'ru' ? 'Далее' : 'Next')
                   }
-                  {state.currentStepIndex < state.totalSteps - 1 && (
-                    <ChevronRight className="h-3.5 w-3.5 ml-0.5" />
-                  )}
+                  {state.currentStepIndex < state.totalSteps - 1 && <ChevronRight className="h-3.5 w-3.5 ml-0.5" />}
                 </Button>
               </div>
             </div>
