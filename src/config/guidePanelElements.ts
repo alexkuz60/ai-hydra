@@ -8,6 +8,8 @@ export interface PanelElement {
   id: string;
   label: { ru: string; en: string };
   description: { ru: string; en: string };
+  /** Optional CSS selector to highlight the explained element on the page */
+  selector?: string;
 }
 
 export interface TourStepElements {
