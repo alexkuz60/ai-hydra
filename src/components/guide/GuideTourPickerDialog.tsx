@@ -1,7 +1,7 @@
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Compass, Users, UserCog, BookOpen, Crown, GitBranch, Library } from 'lucide-react';
+import { Compass, Users, UserCog, BookOpen, Crown, GitBranch, Library, Wrench, Target } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { GUIDE_TOURS, type GuideTour } from '@/config/guideTours';
 
@@ -13,6 +13,8 @@ const ICON_MAP: Record<string, React.ElementType> = {
   Crown,
   GitBranch,
   Library,
+  Wrench,
+  Target,
 };
 
 interface GuideTourPickerDialogProps {

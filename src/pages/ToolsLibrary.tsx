@@ -412,6 +412,7 @@ export default function ToolsLibrary() {
             minSize={4} 
             maxSize={60}
             onResize={nav.onPanelResize}
+            data-guide="tools-list"
           >
             <div className="h-full flex flex-col hydra-nav-surface">
               <NavigatorHeader
@@ -558,7 +559,7 @@ export default function ToolsLibrary() {
           <ResizableHandle withHandle />
 
           {/* Right panel - Details or Editor */}
-          <ResizablePanel defaultSize={100 - nav.panelSize} minSize={40} maxSize={96}>
+          <ResizablePanel defaultSize={100 - nav.panelSize} minSize={40} maxSize={96} data-guide="tools-details">
             {isEditing || isCreating ? (
               <ToolEditor
                 formData={formData}
