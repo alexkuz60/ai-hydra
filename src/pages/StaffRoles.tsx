@@ -28,7 +28,7 @@ import { useNavigatorResize } from '@/hooks/useNavigatorResize';
 import { NavigatorHeader } from '@/components/layout/NavigatorHeader';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 
-const TECHNICAL_ROLES: AgentRole[] = ['archivist', 'analyst', 'promptengineer', 'flowregulator', 'toolsmith', 'webhunter'];
+const TECHNICAL_ROLES: AgentRole[] = ['archivist', 'analyst', 'promptengineer', 'flowregulator', 'toolsmith', 'webhunter', 'guide'];
 
 const StaffRoles = () => {
   const { t, language } = useLanguage();

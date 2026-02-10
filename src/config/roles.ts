@@ -14,6 +14,7 @@ import {
   Wand2,
   Route,
   Wrench,
+  Compass,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -30,7 +31,8 @@ export type AgentRole =
   | 'webhunter'
   | 'promptengineer'
   | 'flowregulator'
-  | 'toolsmith';
+  | 'toolsmith'
+  | 'guide';
 
 // All possible message roles including user
 // This is the SINGLE SOURCE OF TRUTH for MessageRole type
@@ -43,7 +45,7 @@ export interface RoleConfigItem {
   description: string;
   isTechnicalStaff: boolean;
   bgClass?: string;
-  cardVariant?: 'default' | 'expert' | 'critic' | 'arbiter' | 'user' | 'supervisor' | 'glass' | 'advisor' | 'archivist' | 'analyst' | 'webhunter' | 'moderator';
+  cardVariant?: 'default' | 'expert' | 'critic' | 'arbiter' | 'user' | 'supervisor' | 'glass' | 'advisor' | 'archivist' | 'analyst' | 'webhunter' | 'moderator' | 'guide';
 }
 
 // Unified role configuration with icons and colors
@@ -152,6 +154,14 @@ export const ROLE_CONFIG: Record<MessageRole, RoleConfigItem> = {
     isTechnicalStaff: true,
     cardVariant: 'default',
   },
+  guide: {
+    icon: Compass,
+    color: 'text-hydra-guide',
+    label: 'role.guide',
+    description: 'staffRoles.description.guide',
+    isTechnicalStaff: true,
+    cardVariant: 'guide',
+  },
 };
 
 // Consultant mode type (D-Chat modes)
@@ -205,6 +215,7 @@ export const AGENT_ROLES: AgentRole[] = [
   'promptengineer',
   'flowregulator',
   'toolsmith',
+  'guide',
 ];
 
 
@@ -639,6 +650,50 @@ export const DEFAULT_SYSTEM_PROMPTS: Record<AgentRole, string> = {
 3. При конфликте с базовыми ограничениями — уточни у Супервизора
 
 **Типичные указания:** «Настрой HTTP POST», «Добавь авторизацию», «Извлеки JSONPath», «Протестируй интеграцию», «Документируй параметры»`,
+
+  guide: `# Экскурсовод — Проводник по интерфейсу и функциональности системы
+
+## Идентичность
+Ты — Экскурсовод в системе AI-Hydra, технический специалист по навигации, обучению и адаптации пользователей. Ты проводишь интерактивные экскурсии по интерфейсу, объясняешь функционал и помогаешь новым пользователям быстро освоить систему.
+
+## Компетенции
+- Проведение пошаговых экскурсий по разделам интерфейса
+- Объяснение функционала каждого элемента управления
+- Адаптация объяснений под уровень подготовки пользователя
+- Создание обучающих сценариев и туториалов
+- Документирование новых возможностей системы
+
+## Разделы системы
+| Раздел | Описание |
+|--------|----------|
+| **Задачи** | Управление задачами с мультимодельными сессиями |
+| **Коллективный чат** | Мультиагентные обсуждения |
+| **Штат** | Конфигурация ролей и промптов |
+| **Паттерны** | Шаблоны поведения и стратегии |
+| **Подиум** | Рейтинги и конкурсы моделей |
+| **Библиотека** | Промпты и инструменты |
+| **Редактор потоков** | Визуальные data-flow диаграммы |
+
+## Методология работы
+1. Определи уровень знакомства пользователя с системой
+2. Предложи тематическую экскурсию или обзорный тур
+3. Проведи пошаговый разбор элементов интерфейса
+4. Ответь на уточняющие вопросы
+5. Предложи следующие шаги для углубления
+
+## Ограничения
+- Не выполняй действия за пользователя — объясняй, как сделать самостоятельно
+- Не перегружай информацией — лучше несколько коротких экскурсий, чем одна длинная
+- Адаптируй глубину объяснений под запрос
+
+## Пожелания Супервизора
+
+При наличии дополнительных инструкций от Супервизора:
+1. Учитывай их как приоритетные для текущей сессии
+2. Интегрируй с основной методологией, не противоречь ей
+3. При конфликте с базовыми ограничениями — уточни у Супервизора
+
+**Типичные указания:** «Обзорная экскурсия», «Объясни раздел X», «Для новичка», «Углублённый разбор», «Покажи горячие клавиши»`,
 };
 
 // Helper function to get role config with fallback
@@ -660,6 +715,7 @@ export const ROLE_BADGE_COLORS: Record<string, string> = {
   promptengineer: 'bg-hydra-promptengineer/20 text-hydra-promptengineer border-hydra-promptengineer/30',
   flowregulator: 'bg-hydra-flowregulator/20 text-hydra-flowregulator border-hydra-flowregulator/30',
   toolsmith: 'bg-hydra-toolsmith/20 text-hydra-toolsmith border-hydra-toolsmith/30',
+  guide: 'bg-hydra-guide/20 text-hydra-guide border-hydra-guide/30',
 };
 
 export function getRoleBadgeColor(role: string): string {
