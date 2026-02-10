@@ -52,7 +52,7 @@ export function ProxyCatalogSection({
           </Badge>
         </div>
       </AccordionTrigger>
-      <AccordionContent className="pb-4 space-y-3">
+      <AccordionContent className="pb-4 space-y-3 overflow-visible">
         {/* Search */}
         <div className="relative z-10 flex items-center gap-2">
           <div className="relative flex-1">
