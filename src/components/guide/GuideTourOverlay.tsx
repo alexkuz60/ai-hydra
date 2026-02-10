@@ -228,99 +228,97 @@ export function GuideTourOverlay({ state, onNext, onPrev, onStop, onGoToStep, ge
 
             {/* Two-column body: description left, details right */}
             {panelElements.length > 0 ? (
-              <div className="grid grid-cols-2 gap-3">
-                {/* Left column: step description */}
-                <div className="space-y-2">
-                  <p className="text-sm text-muted-foreground leading-relaxed">{step.description[lang]}</p>
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  {/* Left column: step description */}
+                  <div>
+                    <p className="text-sm text-muted-foreground leading-relaxed">{step.description[lang]}</p>
+                  </div>
+
+                  {/* Right column: element selector */}
+                  <div>
+                    {panelElements.length === 1 ? (
+                      (() => {
+                        const el = panelElements[0];
+                        if (!selectedElement || selectedElement.id !== el.id) {
+                          setTimeout(() => handleSelectElement(el), 0);
+                        }
+                        return null;
+                      })()
+                    ) : (
+                      <div className="relative space-y-1">
+                        <span className="text-[10px] uppercase tracking-wider text-muted-foreground/70 font-medium">
+                          {lang === 'ru' ? 'Элементы UI' : 'UI elements'}
+                        </span>
+                        <button
+                          onClick={() => setComboOpen(v => !v)}
+                          className="w-full flex items-center justify-between gap-2 px-3 py-2 rounded-lg border border-border bg-muted/30 hover:bg-muted/60 transition-colors text-left"
+                        >
+                          <span className="flex items-center gap-2 text-xs font-medium">
+                            <Info className="h-3.5 w-3.5 text-hydra-guide" />
+                            {selectedElement
+                              ? selectedElement.label[lang]
+                              : (lang === 'ru' ? 'Выберите элемент…' : 'Select element…')
+                            }
+                          </span>
+                          <ChevronDown className={`h-3.5 w-3.5 text-muted-foreground transition-transform ${comboOpen ? 'rotate-180' : ''}`} />
+                        </button>
+
+                        {/* Floating dropdown overlay */}
+                        <AnimatePresence>
+                          {comboOpen && (
+                            <motion.div
+                              initial={{ opacity: 0, y: -4 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              exit={{ opacity: 0, y: -4 }}
+                              className="absolute z-20 top-full left-0 right-0 mt-1 rounded-lg border border-border bg-card shadow-lg"
+                            >
+                              <div className="space-y-0.5 max-h-36 overflow-y-auto hydra-scrollbar p-1">
+                                {panelElements.map((el) => (
+                                  <button
+                                    key={el.id}
+                                    onClick={() => { handleSelectElement(el); setComboOpen(false); }}
+                                    className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md text-left text-xs transition-colors ${
+                                      selectedElement?.id === el.id
+                                        ? 'bg-hydra-guide/15 text-hydra-guide font-medium'
+                                        : 'text-muted-foreground hover:bg-hydra-guide/10 hover:text-hydra-guide'
+                                    }`}
+                                  >
+                                    <span className={`shrink-0 w-1.5 h-1.5 rounded-full ${
+                                      selectedElement?.id === el.id ? 'bg-hydra-guide' : 'bg-hydra-guide/50'
+                                    }`} />
+                                    <span className="truncate">{el.label[lang]}</span>
+                                  </button>
+                                ))}
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
-                {/* Right column: element details */}
-                <div className="space-y-2">
-                  {panelElements.length === 1 ? (
-                    /* Single element — show explanation directly */
-                    (() => {
-                      const el = panelElements[0];
-                      // Auto-select for highlight
-                      if (!selectedElement || selectedElement.id !== el.id) {
-                        setTimeout(() => handleSelectElement(el), 0);
-                      }
-                      return (
+                {/* Explanation — full width below */}
+                <AnimatePresence mode="wait">
+                  {(selectedElement || panelElements.length === 1) && (() => {
+                    const el = selectedElement ?? panelElements[0];
+                    return (
+                      <motion.div
+                        key={el.id}
+                        initial={{ opacity: 0, y: 4 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -4 }}
+                        transition={{ duration: 0.15 }}
+                      >
                         <div className="rounded-lg border border-hydra-guide/20 bg-hydra-guide/5 p-3 space-y-1.5">
                           <span className="text-xs font-semibold text-hydra-guide">{el.label[lang]}</span>
                           <p className="text-xs text-muted-foreground leading-relaxed">{el.description[lang]}</p>
                         </div>
-                      );
-                    })()
-                  ) : (
-                    /* Multiple elements — combo-box */
-                    <>
-                      <span className="text-[10px] uppercase tracking-wider text-muted-foreground/70 font-medium">
-                        {lang === 'ru' ? 'Элементы UI' : 'UI elements'}
-                      </span>
-                      <button
-                        onClick={() => setComboOpen(v => !v)}
-                        className="w-full flex items-center justify-between gap-2 px-3 py-2 rounded-lg border border-border bg-muted/30 hover:bg-muted/60 transition-colors text-left"
-                      >
-                        <span className="flex items-center gap-2 text-xs font-medium">
-                          <Info className="h-3.5 w-3.5 text-hydra-guide" />
-                          {selectedElement
-                            ? selectedElement.label[lang]
-                            : (lang === 'ru' ? 'Выберите элемент…' : 'Select element…')
-                          }
-                        </span>
-                        <ChevronDown className={`h-3.5 w-3.5 text-muted-foreground transition-transform ${comboOpen ? 'rotate-180' : ''}`} />
-                      </button>
-
-                      <AnimatePresence>
-                        {comboOpen && (
-                          <motion.div
-                            initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: 'auto', opacity: 1 }}
-                            exit={{ height: 0, opacity: 0 }}
-                            className="overflow-hidden"
-                          >
-                            <div className="space-y-0.5 max-h-36 overflow-y-auto hydra-scrollbar">
-                              {panelElements.map((el) => (
-                                <button
-                                  key={el.id}
-                                  onClick={() => { handleSelectElement(el); setComboOpen(false); }}
-                                  className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md text-left text-xs transition-colors ${
-                                    selectedElement?.id === el.id
-                                      ? 'bg-hydra-guide/15 text-hydra-guide font-medium'
-                                      : 'text-muted-foreground hover:bg-hydra-guide/10 hover:text-hydra-guide'
-                                  }`}
-                                >
-                                  <span className={`shrink-0 w-1.5 h-1.5 rounded-full ${
-                                    selectedElement?.id === el.id ? 'bg-hydra-guide' : 'bg-hydra-guide/50'
-                                  }`} />
-                                  <span className="truncate">{el.label[lang]}</span>
-                                </button>
-                              ))}
-                            </div>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-
-                      {/* Selected element explanation */}
-                      <AnimatePresence mode="wait">
-                        {selectedElement && (
-                          <motion.div
-                            key={selectedElement.id}
-                            initial={{ opacity: 0, y: 4 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -4 }}
-                            transition={{ duration: 0.15 }}
-                          >
-                            <div className="rounded-lg border border-hydra-guide/20 bg-hydra-guide/5 p-3 space-y-1.5">
-                              <span className="text-xs font-semibold text-hydra-guide">{selectedElement.label[lang]}</span>
-                              <p className="text-xs text-muted-foreground leading-relaxed">{selectedElement.description[lang]}</p>
-                            </div>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </>
-                  )}
-                </div>
+                      </motion.div>
+                    );
+                  })()}
+                </AnimatePresence>
               </div>
             ) : (
               /* No panel elements — just description */
