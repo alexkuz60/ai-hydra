@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -28,10 +28,14 @@ import {
   ChevronDown,
   ChevronRight,
   Compass,
+  Save,
+  X,
   Eye,
   EyeOff,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useUnsavedChanges } from '@/hooks/useUnsavedChanges';
+import { UnsavedChangesDialog } from '@/components/ui/unsaved-changes-dialog';
 import type { DbTour, DbStep, DbElement } from '@/pages/GuideToursEditor';
 
 interface Props {
@@ -39,18 +43,83 @@ interface Props {
   steps: DbStep[];
   elements: DbElement[];
   lang: 'ru' | 'en';
-  onEditTour: () => void;
   onDeleteTour: () => void;
   onRefresh: () => Promise<void>;
+  onSelectTour: (id: string) => void;
 }
 
 const PLACEMENT_OPTIONS = ['top', 'bottom', 'left', 'right'];
+const ICON_OPTIONS = ['Compass', 'Users', 'UserCog', 'BookOpen', 'Crown', 'GitBranch', 'Library', 'Wrench', 'Target', 'CheckSquare'];
 
-export function GuideTourDetailPanel({ tour, steps, elements, lang, onEditTour, onDeleteTour, onRefresh }: Props) {
+export function GuideTourDetailPanel({ tour, steps, elements, lang, onDeleteTour, onRefresh, onSelectTour }: Props) {
+  /* ─── Inline tour editing ─── */
+  const [editMode, setEditMode] = useState(false);
+  const [draft, setDraft] = useState<DbTour>({ ...tour });
+  const [saving, setSaving] = useState(false);
+
+  const unsaved = useUnsavedChanges();
+
+  // Sync draft when tour changes externally
+  useEffect(() => {
+    if (!editMode) {
+      setDraft({ ...tour });
+    }
+  }, [tour, editMode]);
+
+  // Track changes
+  useEffect(() => {
+    if (!editMode) return;
+    const changed = JSON.stringify(draft) !== JSON.stringify(tour);
+    unsaved.setHasUnsavedChanges(changed);
+  }, [draft, tour, editMode]);
+
+  const enterEditMode = useCallback(() => {
+    setDraft({ ...tour });
+    setEditMode(true);
+  }, [tour]);
+
+  const cancelEdit = useCallback(() => {
+    setDraft({ ...tour });
+    setEditMode(false);
+    unsaved.markSaved();
+  }, [tour, unsaved]);
+
+  const saveTour = async () => {
+    if (!draft.title_ru || !draft.title_en) {
+      toast.error(lang === 'ru' ? 'Заполните название RU и EN' : 'Fill title RU and EN');
+      return;
+    }
+    setSaving(true);
+    try {
+      const { error } = await supabase.from('guide_tours').update({
+        title_ru: draft.title_ru,
+        title_en: draft.title_en,
+        description_ru: draft.description_ru || '',
+        description_en: draft.description_en || '',
+        icon: draft.icon || 'Compass',
+        sort_order: draft.sort_order ?? 0,
+        is_active: draft.is_active ?? true,
+      }).eq('id', tour.id);
+      if (error) throw error;
+      toast.success(lang === 'ru' ? 'Тур обновлён' : 'Tour updated');
+      setEditMode(false);
+      unsaved.markSaved();
+      await onRefresh();
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleSelectTour = useCallback((id: string) => {
+    unsaved.withConfirmation(() => onSelectTour(id));
+  }, [unsaved, onSelectTour]);
+
+  /* ─── Steps / Elements state ─── */
   const [expandedStepId, setExpandedStepId] = useState<string | null>(null);
   const [stepDialog, setStepDialog] = useState<{ open: boolean; step: Partial<DbStep> | null }>({ open: false, step: null });
   const [elementDialog, setElementDialog] = useState<{ open: boolean; element: Partial<DbElement> | null; stepIndex: number }>({ open: false, element: null, stepIndex: 0 });
-  const [saving, setSaving] = useState(false);
 
   const stepElements = (stepIndex: number) =>
     elements.filter(e => e.step_index === stepIndex).sort((a, b) => a.sort_order - b.sort_order);
@@ -169,32 +238,98 @@ export function GuideTourDetailPanel({ tour, steps, elements, lang, onEditTour, 
     }
   };
 
+  const updateDraft = (patch: Partial<DbTour>) => setDraft(prev => ({ ...prev, ...patch }));
+
   return (
     <div className="h-full flex flex-col">
-      {/* Tour header */}
-      <div className="px-6 py-4 border-b flex items-center justify-between shrink-0">
-        <div className="flex items-center gap-3 min-w-0">
-          <Compass className="h-5 w-5 text-hydra-guide shrink-0" />
-          <div className="min-w-0">
-            <h2 className="text-lg font-semibold truncate">{tour[`title_${lang}`]}</h2>
-            <p className="text-xs text-muted-foreground truncate">{tour[`description_${lang}`]}</p>
+      {/* ─── Tour header / inline editor ─── */}
+      <div className="px-6 py-4 border-b shrink-0">
+        {editMode ? (
+          <div className="space-y-3">
+            {/* Row 1: titles */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                  {lang === 'ru' ? 'Название (RU)' : 'Title (RU)'}
+                </Label>
+                <Input value={draft.title_ru} onChange={e => updateDraft({ title_ru: e.target.value })} />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Title (EN)</Label>
+                <Input value={draft.title_en} onChange={e => updateDraft({ title_en: e.target.value })} />
+              </div>
+            </div>
+            {/* Row 2: descriptions */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                  {lang === 'ru' ? 'Описание (RU)' : 'Description (RU)'}
+                </Label>
+                <Textarea rows={2} value={draft.description_ru} onChange={e => updateDraft({ description_ru: e.target.value })} />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Description (EN)</Label>
+                <Textarea rows={2} value={draft.description_en} onChange={e => updateDraft({ description_en: e.target.value })} />
+              </div>
+            </div>
+            {/* Row 3: icon, sort, active + actions */}
+            <div className="flex items-end gap-3">
+              <div className="space-y-1 w-32">
+                <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                  {lang === 'ru' ? 'Иконка' : 'Icon'}
+                </Label>
+                <Select value={draft.icon} onValueChange={v => updateDraft({ icon: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>{ICON_OPTIONS.map(i => <SelectItem key={i} value={i}>{i}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1 w-20">
+                <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                  {lang === 'ru' ? 'Порядок' : 'Sort'}
+                </Label>
+                <Input type="number" value={draft.sort_order} onChange={e => updateDraft({ sort_order: Number(e.target.value) })} />
+              </div>
+              <label className="flex items-center gap-2 text-sm pb-2 cursor-pointer">
+                <input type="checkbox" checked={draft.is_active} onChange={e => updateDraft({ is_active: e.target.checked })} />
+                {lang === 'ru' ? 'Активен' : 'Active'}
+              </label>
+              <div className="flex-1" />
+              <Button variant="outline" size="sm" onClick={cancelEdit}>
+                <X className="h-3.5 w-3.5 mr-1.5" />
+                {lang === 'ru' ? 'Отмена' : 'Cancel'}
+              </Button>
+              <Button size="sm" onClick={saveTour} disabled={saving || !unsaved.hasUnsavedChanges}>
+                {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" /> : <Save className="h-3.5 w-3.5 mr-1.5" />}
+                {lang === 'ru' ? 'Сохранить' : 'Save'}
+              </Button>
+            </div>
           </div>
-          <div className="flex items-center gap-1 shrink-0">
-            <Badge variant="outline" className="text-[10px]">{tour.icon}</Badge>
-            <Badge variant="outline" className="text-[10px]">#{tour.sort_order}</Badge>
-            {!tour.is_active && <Badge variant="destructive" className="text-[10px]">{lang === 'ru' ? 'Выкл' : 'Off'}</Badge>}
+        ) : (
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3 min-w-0">
+              <Compass className="h-5 w-5 text-hydra-guide shrink-0" />
+              <div className="min-w-0">
+                <h2 className="text-lg font-semibold truncate">{tour[`title_${lang}`]}</h2>
+                <p className="text-xs text-muted-foreground truncate">{tour[`description_${lang}`]}</p>
+              </div>
+              <div className="flex items-center gap-1 shrink-0">
+                <Badge variant="outline" className="text-[10px]">{tour.icon}</Badge>
+                <Badge variant="outline" className="text-[10px]">#{tour.sort_order}</Badge>
+                {!tour.is_active && <Badge variant="destructive" className="text-[10px]">{lang === 'ru' ? 'Выкл' : 'Off'}</Badge>}
+              </div>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <Button variant="outline" size="sm" onClick={enterEditMode}>
+                <Pencil className="h-3.5 w-3.5 mr-1.5" />
+                {lang === 'ru' ? 'Редактировать' : 'Edit'}
+              </Button>
+              <Button variant="outline" size="sm" className="text-destructive hover:text-destructive" onClick={onDeleteTour}>
+                <Trash2 className="h-3.5 w-3.5 mr-1.5" />
+                {lang === 'ru' ? 'Удалить' : 'Delete'}
+              </Button>
+            </div>
           </div>
-        </div>
-        <div className="flex items-center gap-2 shrink-0">
-          <Button variant="outline" size="sm" onClick={onEditTour}>
-            <Pencil className="h-3.5 w-3.5 mr-1.5" />
-            {lang === 'ru' ? 'Редактировать' : 'Edit'}
-          </Button>
-          <Button variant="outline" size="sm" className="text-destructive hover:text-destructive" onClick={onDeleteTour}>
-            <Trash2 className="h-3.5 w-3.5 mr-1.5" />
-            {lang === 'ru' ? 'Удалить' : 'Delete'}
-          </Button>
-        </div>
+        )}
       </div>
 
       {/* Steps */}
@@ -221,7 +356,6 @@ export function GuideTourDetailPanel({ tour, steps, elements, lang, onEditTour, 
                 const sElements = stepElements(step.step_index);
                 return (
                   <div key={step.id} className="rounded-lg border border-border bg-card">
-                    {/* Step header */}
                     <div className="flex items-center justify-between p-3">
                       <button
                         onClick={() => setExpandedStepId(isExpanded ? null : step.id)}
@@ -259,10 +393,8 @@ export function GuideTourDetailPanel({ tour, steps, elements, lang, onEditTour, 
                       </div>
                     </div>
 
-                    {/* Expanded: description + elements */}
                     {isExpanded && (
                       <div className="border-t border-border px-4 pb-4 pt-3 space-y-4">
-                        {/* Description */}
                         <div className="grid grid-cols-2 gap-4">
                           <div>
                             <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">RU</span>
@@ -273,14 +405,10 @@ export function GuideTourDetailPanel({ tour, steps, elements, lang, onEditTour, 
                             <p className="text-sm text-muted-foreground mt-1">{step.description_en || '—'}</p>
                           </div>
                         </div>
-
-                        {/* Meta */}
                         <div className="flex items-center gap-3 text-xs text-muted-foreground">
                           <span>Placement: <code className="bg-muted px-1 rounded">{step.placement}</code></span>
                           {step.delay_ms && <span>Delay: <code className="bg-muted px-1 rounded">{step.delay_ms}ms</code></span>}
                         </div>
-
-                        {/* Panel elements */}
                         <div className="space-y-2">
                           <div className="flex items-center justify-between">
                             <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
@@ -291,7 +419,6 @@ export function GuideTourDetailPanel({ tour, steps, elements, lang, onEditTour, 
                               {lang === 'ru' ? 'Элемент' : 'Element'}
                             </Button>
                           </div>
-
                           {sElements.length === 0 ? (
                             <p className="text-xs text-muted-foreground italic">{lang === 'ru' ? 'Нет элементов' : 'No elements'}</p>
                           ) : (
@@ -415,6 +542,13 @@ export function GuideTourDetailPanel({ tour, steps, elements, lang, onEditTour, 
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Unsaved changes dialog */}
+      <UnsavedChangesDialog
+        open={unsaved.showConfirmDialog}
+        onConfirm={unsaved.confirmAndProceed}
+        onCancel={unsaved.cancelNavigation}
+      />
     </div>
   );
 }
