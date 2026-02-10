@@ -84,6 +84,7 @@ export function ChatMessageActions({
       )}
 
       {isAiMessage && onSaveToMemory && (
+        <div data-guide="memory-save-action">
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
@@ -122,6 +123,7 @@ export function ChatMessageActions({
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
+        </div>
       )}
 
       {/* Expand/collapse handled externally */}

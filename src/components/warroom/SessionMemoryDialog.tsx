@@ -254,7 +254,7 @@ export function SessionMemoryDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl h-[80vh] flex flex-col min-h-0 overflow-hidden">
+      <DialogContent className="max-w-2xl h-[80vh] flex flex-col min-h-0 overflow-hidden" data-guide="memory-dialog">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Archive className="h-5 w-5 text-hydra-memory" />
