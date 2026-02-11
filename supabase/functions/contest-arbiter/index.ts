@@ -20,6 +20,7 @@ interface ArbiterRequest {
   criteria: string[];
   criteria_weights: Record<string, number>;
   arbiter_model?: string;
+  language?: string; // 'ru' | 'en'
 }
 
 serve(async (req) => {
@@ -29,7 +30,8 @@ serve(async (req) => {
 
   try {
     const body: ArbiterRequest = await req.json();
-    const { prompt, responses, criteria, criteria_weights, arbiter_model } = body;
+    const { prompt, responses, criteria, criteria_weights, arbiter_model, language } = body;
+    const isRu = language === 'ru';
 
     if (!responses?.length || !criteria?.length) {
       return new Response(
@@ -59,12 +61,31 @@ serve(async (req) => {
       })
       .join("\n\n---\n\n");
 
-    const systemPrompt = `You are an impartial AI arbiter evaluating responses from multiple AI models in a competition. 
+    const systemPrompt = isRu
+      ? `Вы — беспристрастный ИИ-арбитр, оценивающий ответы нескольких ИИ-моделей в конкурсе.
+Вы должны оценить каждый ответ на основе заданных критериев и выставить справедливые, детализированные оценки.
+Будьте объективны и аналитичны. Учитывайте как сильные, так и слабые стороны каждого ответа.
+Оценивайте ТОЛЬКО по предоставленным критериям с учётом их весов.
+ВАЖНО: Все комментарии пишите ТОЛЬКО на русском языке.`
+      : `You are an impartial AI arbiter evaluating responses from multiple AI models in a competition. 
 You must evaluate each response based on the given criteria and provide fair, detailed scores.
 Be objective and analytical. Consider both strengths and weaknesses of each response.
 Evaluate ONLY based on the criteria provided, with their respective weights.`;
 
-    const userPrompt = `## Original Prompt Given to Contestants
+    const userPrompt = isRu
+      ? `## Исходный промпт для конкурсантов
+${prompt}
+
+## Критерии оценки (с весами)
+${criteriaDesc}
+
+## Ответы конкурсантов
+${responsesDesc}
+
+Оцените ответ каждого конкурсанта. Для каждой модели укажите:
+1. Взвешенный балл от 1 до 10 (с учётом весов критериев)
+2. Краткий аналитический комментарий (2-3 предложения) с указанием сильных и слабых сторон. Комментарий ОБЯЗАТЕЛЬНО на русском языке.`
+      : `## Original Prompt Given to Contestants
 ${prompt}
 
 ## Evaluation Criteria (with weights)
@@ -95,7 +116,9 @@ Evaluate each contestant's response. For each model, provide:
             type: "function",
             function: {
               name: "submit_evaluations",
-              description: "Submit evaluation scores and comments for each contestant model.",
+              description: isRu
+                ? "Отправить оценки и комментарии (на русском языке) для каждой модели-конкурсанта."
+                : "Submit evaluation scores and comments for each contestant model.",
               parameters: {
                 type: "object",
                 properties: {
@@ -114,7 +137,9 @@ Evaluate each contestant's response. For each model, provide:
                         },
                         comment: {
                           type: "string",
-                          description: "Brief analytical comment (2-3 sentences) on the response quality",
+                          description: isRu
+                            ? "Краткий аналитический комментарий (2-3 предложения) о качестве ответа. ОБЯЗАТЕЛЬНО на русском языке."
+                            : "Brief analytical comment (2-3 sentences) on the response quality",
                         },
                       },
                       required: ["model_id", "score", "comment"],
