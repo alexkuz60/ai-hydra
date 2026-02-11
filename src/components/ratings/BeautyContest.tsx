@@ -3,7 +3,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useContestSession, type ContestResult } from '@/hooks/useContestSession';
 import { useContestExecution } from '@/hooks/useContestExecution';
-import { Crown, Play, History, Loader2, Clock, CheckCircle2, AlertCircle, MessageSquare, Scale, Trophy, ChevronDown, Send, BarChart3, Archive } from 'lucide-react';
+import { Crown, Play, History, Loader2, Clock, CheckCircle2, AlertCircle, MessageSquare, Scale, Trophy, ChevronDown, Send, BarChart3, Archive, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
@@ -252,17 +252,73 @@ function ContestScoreboard({
   );
 }
 
+/** Inline scoring widget for user evaluation */
+function UserScoreWidget({
+  resultId,
+  onScore,
+  isRu,
+}: {
+  resultId: string;
+  onScore: (resultId: string, score: number) => void;
+  isRu: boolean;
+}) {
+  const [hover, setHover] = useState<number | null>(null);
+  const [submitted, setSubmitted] = useState(false);
+
+  if (submitted) return null;
+
+  return (
+    <div className="pt-2 border-t border-primary/20 space-y-1.5">
+      <div className="flex items-center gap-1.5">
+        <Star className="h-3 w-3 text-primary" />
+        <span className="text-[11px] font-medium text-primary">
+          {isRu ? 'Ваша оценка:' : 'Your score:'}
+        </span>
+      </div>
+      <div className="flex items-center gap-1">
+        {Array.from({ length: 10 }, (_, i) => i + 1).map(score => (
+          <button
+            key={score}
+            className={cn(
+              "w-7 h-7 rounded-md text-[11px] font-semibold transition-all border",
+              (hover ?? 0) >= score
+                ? "bg-primary text-primary-foreground border-primary scale-105"
+                : "bg-muted/30 text-muted-foreground border-border/40 hover:bg-muted/60"
+            )}
+            onMouseEnter={() => setHover(score)}
+            onMouseLeave={() => setHover(null)}
+            onClick={() => {
+              setSubmitted(true);
+              onScore(resultId, score);
+            }}
+          >
+            {score}
+          </button>
+        ))}
+      </div>
+      <p className="text-[10px] text-muted-foreground">
+        {hover
+          ? (isRu ? `Оценка: ${hover}/10` : `Score: ${hover}/10`)
+          : (isRu ? 'Нажмите для оценки от 1 до 10' : 'Click to rate 1-10')
+        }
+      </p>
+    </div>
+  );
+}
+
 /** Filtered responses chat */
 function ContestResponsesPanel({
   results,
   rounds,
   streamingTexts,
   isRu,
+  onScore,
 }: {
   results: ContestResult[];
   rounds: { id: string; round_index: number; prompt: string }[];
   streamingTexts: Record<string, string>;
   isRu: boolean;
+  onScore?: (resultId: string, score: number) => void;
 }) {
   const modelIds = [...new Set(results.map(r => r.model_id))];
   const [activeModel, setActiveModel] = useState<string>('all');
@@ -341,6 +397,14 @@ function ContestResponsesPanel({
                         <Loader2 className="h-3 w-3 animate-spin text-primary inline ml-1" />
                       )}
                     </div>
+                    {/* Scoring widget */}
+                    {result.status === 'ready' && result.user_score == null && onScore && (
+                      <UserScoreWidget
+                        resultId={result.id}
+                        onScore={onScore}
+                        isRu={isRu}
+                      />
+                    )}
                     {(result.user_score != null || result.arbiter_score != null) && (
                       <div className="flex items-center gap-3 text-[10px] pt-1 border-t border-border/30">
                         {result.user_score != null && (
@@ -653,6 +717,9 @@ export function BeautyContest() {
               rounds={contest.rounds}
               streamingTexts={execution.streamingTexts}
               isRu={isRu}
+              onScore={async (resultId, score) => {
+                await contest.updateResult(resultId, { user_score: score } as any);
+              }}
             />
           </div>
 
