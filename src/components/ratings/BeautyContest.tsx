@@ -476,8 +476,8 @@ function ContestResponsesPanel({
                         <Loader2 className="h-3 w-3 animate-spin text-primary inline ml-1" />
                       )}
                     </div>
-                    {/* Scoring widget — always visible & editable */}
-                    {result.status === 'ready' && onScore && (
+                    {/* Scoring widget — always visible & editable (even after arbiter judging) */}
+                    {(result.status === 'ready' || result.status === 'judged') && onScore && (
                       <UserScoreWidget
                         resultId={result.id}
                         currentScore={result.user_score}
