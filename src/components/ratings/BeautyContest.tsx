@@ -310,10 +310,10 @@ function ContestScoreboard({
             <motion.p 
               key={`${phase}-${msgIndex}`}
               className="text-sm font-medium leading-snug"
-              initial={{ opacity: 0, y: -8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 8 }}
-              transition={{ duration: 0.4, ease: 'easeInOut' }}
+              initial={{ opacity: 0, x: 40 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -40 }}
+              transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
             >
               {currentMsg}
             </motion.p>
