@@ -3,7 +3,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useContestSession, type ContestResult } from '@/hooks/useContestSession';
 import { useContestExecution } from '@/hooks/useContestExecution';
-import { Crown, Play, History, Loader2, Clock, CheckCircle2, AlertCircle, MessageSquare, Scale, Trophy, ChevronDown, Send, BarChart3, Archive, Star } from 'lucide-react';
+import { Crown, Play, History, Loader2, Clock, CheckCircle2, AlertCircle, MessageSquare, Scale, Trophy, ChevronDown, ChevronUp, Send, BarChart3, Archive, Star, Maximize2, Minimize2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
@@ -313,12 +313,16 @@ function ContestResponsesPanel({
   streamingTexts,
   isRu,
   onScore,
+  expanded,
+  onToggleExpand,
 }: {
   results: ContestResult[];
   rounds: { id: string; round_index: number; prompt: string }[];
   streamingTexts: Record<string, string>;
   isRu: boolean;
   onScore?: (resultId: string, score: number) => void;
+  expanded?: boolean;
+  onToggleExpand?: () => void;
 }) {
   const modelIds = [...new Set(results.map(r => r.model_id))];
   const [activeModel, setActiveModel] = useState<string>('all');
@@ -336,9 +340,14 @@ function ContestResponsesPanel({
         <div className="px-3 pt-2 pb-1 border-b border-border/50">
           <div className="flex items-center gap-2 mb-1">
             <MessageSquare className="h-3.5 w-3.5 text-muted-foreground" />
-            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex-1">
               {isRu ? 'Ответы конкурсантов' : 'Contestant Responses'}
             </span>
+            {onToggleExpand && (
+              <Button size="sm" variant="ghost" className="h-6 w-6 p-0" onClick={onToggleExpand}>
+                {expanded ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
+              </Button>
+            )}
           </div>
           <TabsList className="h-7 p-0.5 bg-muted/30">
             <TabsTrigger value="all" className="text-[10px] h-6 px-2">
@@ -584,6 +593,7 @@ export function BeautyContest() {
 
   const [followUpText, setFollowUpText] = useState('');
   const [initialLoad, setInitialLoad] = useState(true);
+  const [responsesExpanded, setResponsesExpanded] = useState(false);
 
   // On mount, try to restore last session
   useEffect(() => {
@@ -709,8 +719,11 @@ export function BeautyContest() {
 
       {/* Main content area */}
       <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
-        {/* Responses chat — takes most space */}
-        <div className="flex-1 min-h-[200px] border-b border-border/30 overflow-hidden">
+        {/* Responses chat */}
+        <div className={cn(
+          "border-b border-border/30 overflow-hidden flex flex-col",
+          responsesExpanded ? "flex-1" : "flex-1 min-h-[200px]"
+        )}>
           <ContestResponsesPanel
             results={contest.results}
             rounds={contest.rounds}
@@ -719,25 +732,29 @@ export function BeautyContest() {
             onScore={async (resultId, score) => {
               await contest.updateResult(resultId, { user_score: score } as any);
             }}
+            expanded={responsesExpanded}
+            onToggleExpand={() => setResponsesExpanded(e => !e)}
           />
         </div>
 
-        {/* Arbiter comments — compact */}
-        <div className="h-[140px] flex-shrink-0 border-b border-border/30 overflow-hidden">
-          <ContestArbiterPanel
-            results={contest.results}
-            isRu={isRu}
-          />
-        </div>
-
-        {/* Scores table — compact */}
-        <div className="flex-shrink-0 max-h-[160px] overflow-auto p-3">
-          <ContestScoresTable
-            results={contest.results}
-            rounds={contest.rounds}
-            isRu={isRu}
-          />
-        </div>
+        {/* Arbiter + Scores — hidden when expanded */}
+        {!responsesExpanded && (
+          <>
+            <div className="h-[140px] flex-shrink-0 border-b border-border/30 overflow-hidden">
+              <ContestArbiterPanel
+                results={contest.results}
+                isRu={isRu}
+              />
+            </div>
+            <div className="flex-shrink-0 max-h-[160px] overflow-auto p-3">
+              <ContestScoresTable
+                results={contest.results}
+                rounds={contest.rounds}
+                isRu={isRu}
+              />
+            </div>
+          </>
+        )}
 
         {/* Follow-up input */}
         <div className="border-t border-border px-3 py-2 flex-shrink-0">
