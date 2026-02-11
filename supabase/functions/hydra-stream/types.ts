@@ -14,7 +14,7 @@ export const SSE_HEADERS = {
 };
 
 /** Provider gateway identifiers for client-side tracking */
-export type ProviderGateway = 'lovable_ai' | 'proxyapi' | 'openrouter' | 'deepseek' | 'mistral' | 'groq';
+export type ProviderGateway = 'lovable_ai' | 'proxyapi' | 'openrouter' | 'deepseek' | 'mistral' | 'groq' | 'gemini';
 
 /** Create an SSE stream that prepends provider metadata before the upstream body */
 export function wrapStreamWithProviderInfo(
@@ -84,6 +84,13 @@ export const GROQ_MODELS = [
   "mixtral-8x7b-32768",
   "gemma2-9b-it",
 ];
+// Google Gemini models (BYOK - direct API)
+export const GEMINI_MODELS = [
+  "gemini-2.5-pro",
+  "gemini-2.5-flash",
+  "gemini-2.0-flash",
+];
+
 const LOVABLE_PREFIXES = ["openai/", "google/"];
 
 export function isProxyApiModel(modelId: string): boolean {

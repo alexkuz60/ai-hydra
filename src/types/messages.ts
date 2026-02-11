@@ -16,7 +16,7 @@ export interface Attachment {
   content?: string;
 }
 
-export type ProviderGateway = 'lovable_ai' | 'proxyapi' | 'openrouter' | 'deepseek' | 'mistral' | 'groq';
+export type ProviderGateway = 'lovable_ai' | 'proxyapi' | 'openrouter' | 'deepseek' | 'mistral' | 'groq' | 'gemini';
 
 export interface ProviderInfo {
   gateway: ProviderGateway;

@@ -471,9 +471,12 @@ async function callPersonalModel(
         }
       });
     }
+
+    // Use the actual model name in the API URL (not hardcoded)
+    const geminiModel = model || 'gemini-2.5-flash';
     
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${apiKey}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -488,7 +491,7 @@ async function callPersonalModel(
     const data = await response.json();
     const usageMetadata = data.usageMetadata;
     return { 
-      model: "gemini-1.5-pro", 
+      model: geminiModel, 
       provider: "gemini", 
       content: data.candidates?.[0]?.content?.parts?.[0]?.text || "",
       usage: usageMetadata ? {

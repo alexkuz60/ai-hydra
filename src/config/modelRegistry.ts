@@ -46,9 +46,9 @@ const registry: ModelRegistryEntry[] = [
   { id: 'claude-3-haiku', displayName: 'Claude 3 Haiku', provider: 'anthropic', creator: 'Anthropic', releaseDate: '2024-03', parameterCount: 'unknown', strengths: ['speed', 'efficiency'], pricing: { input: '$0.25', output: '$1.25' } },
 
   // ─── Google Gemini (BYOK) ───
+  { id: 'gemini-2.5-pro', displayName: 'Gemini 2.5 Pro', provider: 'gemini', creator: 'Google DeepMind', releaseDate: '2025-03', parameterCount: 'unknown', strengths: ['reasoning', 'vision', 'coding', 'long-context'], pricing: { input: '$1.25', output: '$5.00' } },
+  { id: 'gemini-2.5-flash', displayName: 'Gemini 2.5 Flash', provider: 'gemini', creator: 'Google DeepMind', releaseDate: '2025-03', parameterCount: 'unknown', strengths: ['speed', 'multimodal', 'reasoning'], pricing: { input: '$0.075', output: '$0.30' } },
   { id: 'gemini-2.0-flash', displayName: 'Gemini 2.0 Flash', provider: 'gemini', creator: 'Google DeepMind', releaseDate: '2025-02', parameterCount: 'unknown', strengths: ['speed', 'multimodal', 'coding'], pricing: { input: '$0.10', output: '$0.40' } },
-  { id: 'gemini-1.5-pro', displayName: 'Gemini 1.5 Pro', provider: 'gemini', creator: 'Google DeepMind', releaseDate: '2024-05', parameterCount: 'unknown', strengths: ['long-context', 'reasoning', 'multimodal'], pricing: { input: '$1.25', output: '$5.00' } },
-  { id: 'gemini-1.5-flash', displayName: 'Gemini 1.5 Flash', provider: 'gemini', creator: 'Google DeepMind', releaseDate: '2024-05', parameterCount: 'unknown', strengths: ['speed', 'multimodal'], pricing: { input: '$0.075', output: '$0.30' } },
 
   // ─── xAI Grok ───
   { id: 'grok-3', displayName: 'Grok 3', provider: 'xai', creator: 'xAI', releaseDate: '2025-02', parameterCount: 'unknown', strengths: ['reasoning', 'coding', 'math'], pricing: { input: '$3.00', output: '$15.00' } },
