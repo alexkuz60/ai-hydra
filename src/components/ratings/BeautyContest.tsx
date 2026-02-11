@@ -410,6 +410,8 @@ function ContestResponsesPanel({
   onScore,
   expanded,
   onToggleExpand,
+  activeModel,
+  onActiveModelChange,
 }: {
   results: ContestResult[];
   rounds: { id: string; round_index: number; prompt: string }[];
@@ -418,9 +420,10 @@ function ContestResponsesPanel({
   onScore?: (resultId: string, score: number) => void;
   expanded?: boolean;
   onToggleExpand?: () => void;
+  activeModel: string;
+  onActiveModelChange: (model: string) => void;
 }) {
   const modelIds = [...new Set(results.map(r => r.model_id))];
-  const [activeModel, setActiveModel] = useState<string>('all');
 
   // Include streaming results that don't have response_text yet
   const allDisplayable = activeModel === 'all'
@@ -431,7 +434,7 @@ function ContestResponsesPanel({
 
   return (
     <div className="flex flex-col h-full">
-      <Tabs value={activeModel} onValueChange={setActiveModel} className="flex flex-col h-full">
+      <Tabs value={activeModel} onValueChange={onActiveModelChange} className="flex flex-col h-full">
         <div className="px-3 pt-2 pb-1 border-b border-border/50">
           <div className="flex items-center gap-2 mb-1">
             <MessageSquare className="h-3.5 w-3.5 text-muted-foreground" />
@@ -660,6 +663,8 @@ export function BeautyContest() {
   const [followUpText, setFollowUpText] = useState('');
   const [initialLoad, setInitialLoad] = useState(true);
   const [responsesExpanded, setResponsesExpanded] = useState(false);
+  const [activeModel, setActiveModel] = useState<string>('all');
+  const [sendingFollowUp, setSendingFollowUp] = useState(false);
 
   // On mount, try to restore last session
   useEffect(() => {
@@ -681,6 +686,27 @@ export function BeautyContest() {
 
   const handleLoadFromHistory = async (sessionId: string) => {
     await contest.loadSession(sessionId);
+  };
+
+  const handleSendFollowUp = async () => {
+    if (!followUpText.trim() || !contest.session) return;
+    setSendingFollowUp(true);
+    try {
+      const targetModels = activeModel === 'all' ? undefined : [activeModel];
+      const followUp = await contest.createFollowUpRound(followUpText.trim(), targetModels);
+      if (followUp) {
+        setFollowUpText('');
+        const targetName = activeModel === 'all'
+          ? (isRu ? 'всем' : 'all')
+          : (getModelRegistryEntry(activeModel)?.displayName || activeModel.split('/').pop());
+        toast({ description: isRu ? `Вопрос отправлен: ${targetName}` : `Question sent to: ${targetName}` });
+        await execution.executeRound(contest.session, followUp.round, followUp.results, contest.updateResult);
+      }
+    } catch (err: any) {
+      toast({ variant: 'destructive', description: err.message });
+    } finally {
+      setSendingFollowUp(false);
+    }
   };
 
   // No session yet — show launch / restore UI
@@ -790,7 +816,7 @@ export function BeautyContest() {
           "border-b border-border/30 overflow-hidden flex flex-col",
           responsesExpanded ? "flex-1" : "flex-1 min-h-[200px]"
         )}>
-          <ContestResponsesPanel
+           <ContestResponsesPanel
             results={contest.results}
             rounds={contest.rounds}
             streamingTexts={execution.streamingTexts}
@@ -800,6 +826,8 @@ export function BeautyContest() {
             }}
             expanded={responsesExpanded}
             onToggleExpand={() => setResponsesExpanded(e => !e)}
+            activeModel={activeModel}
+            onActiveModelChange={setActiveModel}
           />
         </div>
 
@@ -824,29 +852,67 @@ export function BeautyContest() {
 
         {/* Follow-up input */}
         <div className="border-t border-border px-3 py-2 flex-shrink-0">
+          {/* Target indicator */}
+          {activeModel !== 'all' && (
+            <div className="flex items-center gap-1.5 mb-1.5">
+              <Badge variant="outline" className="text-[10px] gap-1 border-primary/40 bg-primary/5">
+                {(() => {
+                  const entry = getModelRegistryEntry(activeModel);
+                  const ProviderLogo = entry?.provider ? PROVIDER_LOGOS[entry.provider] : undefined;
+                  const color = entry?.provider ? PROVIDER_COLORS[entry.provider] : '';
+                  const name = entry?.displayName || activeModel.split('/').pop() || activeModel;
+                  return (
+                    <>
+                      {ProviderLogo && <ProviderLogo className={cn("h-2.5 w-2.5", color)} />}
+                      {isRu ? `Вопрос для: ${name}` : `Question for: ${name}`}
+                    </>
+                  );
+                })()}
+              </Badge>
+              <button
+                className="text-[10px] text-muted-foreground hover:text-foreground transition-colors"
+                onClick={() => setActiveModel('all')}
+              >
+                {isRu ? '(всем)' : '(all)'}
+              </button>
+            </div>
+          )}
           <div className="flex items-end gap-2">
             <Textarea
               value={followUpText}
               onChange={e => setFollowUpText(e.target.value)}
-              placeholder={isRu ? 'Дополнительный вопрос конкурсантам...' : 'Follow-up question for contestants...'}
+              placeholder={
+                activeModel === 'all'
+                  ? (isRu ? 'Дополнительный вопрос всем конкурсантам...' : 'Follow-up question for all contestants...')
+                  : (isRu ? `Вопрос для ${getModelRegistryEntry(activeModel)?.displayName || activeModel.split('/').pop()}...` : `Question for ${getModelRegistryEntry(activeModel)?.displayName || activeModel.split('/').pop()}...`)
+              }
               className="min-h-[36px] max-h-[100px] text-sm resize-none"
               rows={1}
+              onKeyDown={e => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  if (followUpText.trim() && contest.session?.status === 'running' && !sendingFollowUp && !execution.executing) {
+                    handleSendFollowUp();
+                  }
+                }
+              }}
             />
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
                     size="sm"
-                    disabled={!followUpText.trim() || contest.session?.status !== 'running'}
-                    onClick={() => {
-                      toast({ description: isRu ? 'Дополнительный вопрос будет реализован в следующей итерации' : 'Follow-up will be implemented in next iteration' });
-                    }}
+                    disabled={!followUpText.trim() || contest.session?.status !== 'running' || sendingFollowUp || execution.executing}
+                    onClick={handleSendFollowUp}
                   >
-                    <Send className="h-3.5 w-3.5" />
+                    {sendingFollowUp ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
-                  {isRu ? 'Отправить уточняющий вопрос' : 'Send follow-up question'}
+                  {activeModel === 'all'
+                    ? (isRu ? 'Отправить всем конкурсантам' : 'Send to all contestants')
+                    : (isRu ? `Отправить только ${getModelRegistryEntry(activeModel)?.displayName || activeModel.split('/').pop()}` : `Send only to ${getModelRegistryEntry(activeModel)?.displayName || activeModel.split('/').pop()}`)
+                  }
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
