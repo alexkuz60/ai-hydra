@@ -28,6 +28,7 @@ export function ContestPipelineSelector() {
 
   useEffect(() => {
     try { localStorage.setItem(STORAGE_KEY, pipeline); } catch {}
+    window.dispatchEvent(new Event('contest-config-changed'));
   }, [pipeline]);
 
   const selectedOption = PIPELINE_OPTIONS.find(o => o.id === pipeline);
