@@ -40,7 +40,7 @@ export function ContestSummary() {
         <div className="flex items-center gap-2 text-hydra-amber">
           <Trophy className="h-4 w-4" />
           <span className="text-xs font-bold uppercase tracking-wider opacity-60">
-            {isRu ? 'Шаг 3' : 'Step 3'}
+            {isRu ? 'Шаг 5' : 'Step 5'}
           </span>
         </div>
         <HydraCardTitle>
