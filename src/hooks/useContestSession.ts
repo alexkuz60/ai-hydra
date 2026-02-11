@@ -242,6 +242,39 @@ export function useContestSession() {
     setSession(prev => prev ? { ...prev, ...updates } : null);
   }, [session, toast]);
 
+  // Realtime subscription for contest_results
+  useEffect(() => {
+    if (!session) return;
+    const channel = supabase
+      .channel(`contest-results-${session.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'contest_results',
+          filter: `session_id=eq.${session.id}`,
+        },
+        (payload) => {
+          if (payload.eventType === 'INSERT') {
+            setResults(prev => {
+              if (prev.some(r => r.id === (payload.new as ContestResult).id)) return prev;
+              return [...prev, payload.new as ContestResult];
+            });
+          } else if (payload.eventType === 'UPDATE') {
+            setResults(prev => prev.map(r => r.id === (payload.new as ContestResult).id ? (payload.new as ContestResult) : r));
+          } else if (payload.eventType === 'DELETE') {
+            setResults(prev => prev.filter(r => r.id !== (payload.old as any).id));
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [session?.id]);
+
   return {
     session,
     rounds,
