@@ -55,8 +55,7 @@ serve(async (req) => {
 
     const responsesDesc = responses
       .map((r, i) => {
-        const modelLabel = r.model_id.split("/").pop() || r.model_id;
-        return `=== Contestant ${i + 1}: ${modelLabel} ===\nResponse time: ${r.response_time_ms ? (r.response_time_ms / 1000).toFixed(1) + "s" : "N/A"}\nTokens: ${r.token_count ?? "N/A"}\n\n${r.response_text}`;
+        return `=== Contestant ${i + 1} (model_id: "${r.model_id}") ===\nResponse time: ${r.response_time_ms ? (r.response_time_ms / 1000).toFixed(1) + "s" : "N/A"}\nTokens: ${r.token_count ?? "N/A"}\n\n${r.response_text}`;
       })
       .join("\n\n---\n\n");
 
@@ -107,7 +106,7 @@ Evaluate each contestant's response. For each model, provide:
                       properties: {
                         model_id: {
                           type: "string",
-                          description: "The model identifier exactly as provided",
+                          description: "The EXACT model_id string as shown in parentheses after 'model_id:' for each contestant. Copy it verbatim.",
                         },
                         score: {
                           type: "number",
@@ -179,9 +178,17 @@ Evaluate each contestant's response. For each model, provide:
       );
     }
 
-    // Map evaluations back to result_ids
+    // Map evaluations back to result_ids — robust matching
     const results = responses.map(r => {
-      const eval_ = evaluations.find(e => e.model_id === r.model_id);
+      // Try exact match first, then partial match (LLM may return short names)
+      let eval_ = evaluations.find(e => e.model_id === r.model_id);
+      if (!eval_) {
+        const shortId = r.model_id.split('/').pop()?.toLowerCase() || '';
+        eval_ = evaluations.find(e => 
+          e.model_id.toLowerCase().includes(shortId) || 
+          shortId.includes(e.model_id.toLowerCase().split('/').pop() || '???')
+        );
+      }
       return {
         result_id: r.result_id,
         model_id: r.model_id,
