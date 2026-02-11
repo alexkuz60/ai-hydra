@@ -111,9 +111,13 @@ export function ContestTaskSelector() {
 
   // Persist selected task
   useEffect(() => {
-    try { localStorage.setItem('hydra-contest-task-id', selectedTaskId); } catch {}
+    try {
+      localStorage.setItem('hydra-contest-task-id', selectedTaskId);
+      const session = sessions.find(s => s.id === selectedTaskId);
+      localStorage.setItem('hydra-contest-task-title', session?.title || '');
+    } catch {}
     window.dispatchEvent(new Event('contest-config-changed'));
-  }, [selectedTaskId]);
+  }, [selectedTaskId, sessions]);
 
   // Sync contest models from localStorage
   useEffect(() => {

@@ -19,6 +19,10 @@ interface ContestFlowConfig {
   criteria?: string[];
   /** Jury mode */
   juryMode?: 'user' | 'arbiter' | 'both';
+  /** Task title for the Input node */
+  taskTitle?: string;
+  /** Task prompt text for the Prompt node */
+  taskPrompt?: string;
 }
 
 const X_START = 60;
@@ -53,7 +57,7 @@ export function generateContestFreePromptFlow(config: ContestFlowConfig = {}): {
     type: 'input',
     position: { x, y: Y_CENTER },
     data: {
-      label: 'Задание конкурса',
+      label: config.taskTitle || 'Задание конкурса',
       description: 'Текст задания и список кандидатов',
       inputType: 'user',
     },
@@ -62,6 +66,7 @@ export function generateContestFreePromptFlow(config: ContestFlowConfig = {}): {
 
   // ── 2. Prompt (system prompt for candidates) ──
   const promptId = uid('prompt');
+  const defaultPrompt = 'Ты — эксперт-{role}. Дай развернутый, структурированный ответ на задание пользователя.';
   nodes.push({
     id: promptId,
     type: 'prompt',
@@ -69,7 +74,7 @@ export function generateContestFreePromptFlow(config: ContestFlowConfig = {}): {
     data: {
       label: 'Промпт задания',
       description: 'Системный промпт + задание пользователя для кандидатов',
-      promptContent: 'Ты — эксперт-{role}. Дай развернутый, структурированный ответ на задание пользователя.',
+      promptContent: config.taskPrompt || defaultPrompt,
     },
   });
   edges.push(edge(inputId, promptId));

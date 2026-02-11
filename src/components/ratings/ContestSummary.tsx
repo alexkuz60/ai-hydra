@@ -138,11 +138,20 @@ export function ContestSummary() {
       if (models) candidates = Object.keys(JSON.parse(models));
     } catch {}
 
+    // Read task title from selected session
+    let taskTitleForFlow = '';
+    try {
+      const taskId = localStorage.getItem('hydra-contest-task-id');
+      const taskName = localStorage.getItem('hydra-contest-task-title');
+      if (taskId && taskName) taskTitleForFlow = taskName;
+    } catch {}
+
     const { nodes, edges } = template.generate({
       candidates,
       arbiterModel: 'google/gemini-2.5-pro',
       criteria: arbitration?.criteria,
       juryMode: (arbitration?.juryMode as 'user' | 'arbiter' | 'both') || 'both',
+      taskTitle: taskTitleForFlow || undefined,
     });
 
     const diagramName = `${isRu ? 'Конкурс' : 'Contest'}: ${isRu ? template.ru : template.en}`;
