@@ -11,6 +11,7 @@ const GATEWAY_LABELS: Record<ProviderGateway, string> = {
   deepseek: 'DeepSeek',
   mistral: 'Mistral',
   groq: 'Groq',
+  gemini: 'Google Gemini',
 };
 
 const GATEWAY_COLORS: Record<ProviderGateway, string> = {
@@ -20,6 +21,7 @@ const GATEWAY_COLORS: Record<ProviderGateway, string> = {
   deepseek: 'bg-blue-500/15 text-blue-400 border-blue-500/25',
   mistral: 'bg-orange-500/15 text-orange-400 border-orange-500/25',
   groq: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/25',
+  gemini: 'bg-sky-500/15 text-sky-400 border-sky-500/25',
 };
 
 interface ProviderBadgeProps {

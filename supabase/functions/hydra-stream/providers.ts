@@ -4,6 +4,90 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { authenticateUser, getUserApiKey } from "./auth.ts";
 import { CORS_HEADERS, SSE_HEADERS, wrapStreamWithProviderInfo, type ProviderGateway, type ProxyApiSettings } from "./types.ts";
 
+// ── Google Gemini (BYOK - streaming via SSE adapter) ────
+
+export async function streamGemini(params: ProviderStreamParams): Promise<Response> {
+  const { req, model_id, systemPrompt, message, temperature, max_tokens } = params;
+
+  const auth = await authenticateUser(req, "Gemini");
+  if (!auth.ok) return auth.response;
+
+  const keyResult = await getUserApiKey(auth.supabase, "google_gemini_api_key", "Google Gemini");
+  if ("response" in keyResult) return keyResult.response;
+
+  const geminiModel = model_id || 'gemini-2.5-flash';
+  console.log(`[hydra-stream] Gemini streaming: model=${geminiModel}`);
+
+  // Gemini uses streamGenerateContent with alt=sse
+  const response = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:streamGenerateContent?alt=sse&key=${keyResult.key}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: `${systemPrompt}\n\nUser: ${message}` }] }],
+        generationConfig: { temperature, maxOutputTokens: max_tokens },
+      }),
+    }
+  );
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error("[hydra-stream] Gemini error:", response.status, errorText);
+    return new Response(
+      JSON.stringify({ error: `Gemini error: ${response.status}` }),
+      { status: 500, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } }
+    );
+  }
+
+  // Transform Gemini SSE format to OpenAI-compatible SSE format
+  const encoder = new TextEncoder();
+  const decoder = new TextDecoder();
+  const reader = response.body!.getReader();
+
+  const transformedStream = new ReadableStream({
+    async start(controller) {
+      let buffer = "";
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buffer += decoder.decode(value, { stream: true });
+
+          let newlineIndex: number;
+          while ((newlineIndex = buffer.indexOf("\n")) !== -1) {
+            let line = buffer.slice(0, newlineIndex);
+            buffer = buffer.slice(newlineIndex + 1);
+            if (line.endsWith("\r")) line = line.slice(0, -1);
+            if (!line.startsWith("data: ")) continue;
+
+            const jsonStr = line.slice(6).trim();
+            if (!jsonStr || jsonStr === "[DONE]") continue;
+
+            try {
+              const parsed = JSON.parse(jsonStr);
+              const text = parsed.candidates?.[0]?.content?.parts?.[0]?.text;
+              if (text) {
+                // Re-format as OpenAI-compatible SSE
+                const openaiChunk = {
+                  choices: [{ delta: { content: text }, index: 0 }],
+                };
+                controller.enqueue(encoder.encode(`data: ${JSON.stringify(openaiChunk)}\n\n`));
+              }
+            } catch { /* skip partial JSON */ }
+          }
+        }
+        controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+      } finally {
+        controller.close();
+      }
+    },
+  });
+
+  console.log("[hydra-stream] Gemini streaming started");
+  return new Response(wrapStreamWithProviderInfo(transformedStream, 'gemini'), { headers: SSE_HEADERS });
+}
+
 /** Universal ProxyAPI endpoint (OpenAI-compatible for all providers) */
 const PROXYAPI_UNIVERSAL_URL = "https://openai.api.proxyapi.ru/v1/chat/completions";
 
