@@ -207,6 +207,7 @@ function ContestScoreboard({
   results,
   currentRound,
   totalRounds,
+  completedRounds = 0,
   status,
   sessionName,
   arbiterCount,
@@ -216,6 +217,7 @@ function ContestScoreboard({
   results: ContestResult[];
   currentRound: number;
   totalRounds: number;
+  completedRounds?: number;
   status: string;
   sessionName: string;
   arbiterCount: number;
@@ -256,9 +258,17 @@ function ContestScoreboard({
           <span className="text-sm font-bold truncate">{sessionName}</span>
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
-          <Badge variant="outline" className="text-[10px] border-primary/40 bg-primary/10">
-            {isRu ? `Тур ${currentRound + 1}/${totalRounds}` : `R${currentRound + 1}/${totalRounds}`}
-          </Badge>
+          <div className="flex items-center gap-1.5">
+            <Badge variant="outline" className="text-[10px] border-primary/40 bg-primary/10 gap-1">
+              {isRu ? `Тур ${currentRound + 1}/${totalRounds}` : `R${currentRound + 1}/${totalRounds}`}
+            </Badge>
+            <div className="w-16 h-1.5 rounded-full bg-muted/40 overflow-hidden">
+              <div
+                className="h-full rounded-full bg-primary transition-all duration-700 ease-out"
+                style={{ width: `${totalRounds > 0 ? (completedRounds / totalRounds) * 100 : 0}%` }}
+              />
+            </div>
+          </div>
           <Badge variant="outline" className="text-[10px] gap-1">
             <Play className="h-2.5 w-2.5" />
             {modelIds.length}
@@ -893,9 +903,10 @@ export function BeautyContest() {
     <div className="h-full flex flex-col">
       {/* Scoreboard */}
       <ContestScoreboard
-        results={contest.results}
-        currentRound={currentRoundIndex >= 0 ? currentRoundIndex : 0}
-        totalRounds={contest.rounds.length || 1}
+         results={contest.results}
+         currentRound={currentRoundIndex >= 0 ? currentRoundIndex : 0}
+         totalRounds={contest.rounds.length || 1}
+         completedRounds={contest.rounds.filter(r => r.status === 'completed').length}
         status={contest.session?.status || 'draft'}
         sessionName={contest.session?.name || (isRu ? 'Конкурс' : 'Contest')}
         arbiterCount={contest.session?.config?.arbitration?.juryMode === 'ai' ? 1 : contest.session?.config?.arbitration?.juryMode === 'hybrid' ? 2 : 0}
