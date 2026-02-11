@@ -80,14 +80,21 @@ export function useContestExecution() {
       const data = await response.json();
       const evaluations: { result_id: string; arbiter_score: number | null; arbiter_comment: string | null; arbiter_model: string }[] = data.evaluations || [];
 
-      // Save each evaluation
+      // Save each evaluation — include response_text to prevent state loss
       for (const eval_ of evaluations) {
         if (eval_.arbiter_score != null) {
+          const originalResult = readyResults.find(r => r.id === eval_.result_id);
           await updateResult(eval_.result_id, {
             arbiter_score: eval_.arbiter_score,
             arbiter_comment: eval_.arbiter_comment,
             arbiter_model: eval_.arbiter_model,
             status: 'judged',
+            // Preserve response fields to prevent UI from losing them
+            ...(originalResult ? {
+              response_text: originalResult.response_text,
+              response_time_ms: originalResult.response_time_ms,
+              token_count: originalResult.token_count,
+            } : {}),
           } as any);
         }
       }
