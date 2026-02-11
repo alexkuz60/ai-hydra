@@ -113,7 +113,11 @@ export function ContestSummary() {
     };
     sync();
     window.addEventListener('storage', sync);
-    return () => window.removeEventListener('storage', sync);
+    window.addEventListener('contest-config-changed', sync);
+    return () => {
+      window.removeEventListener('storage', sync);
+      window.removeEventListener('contest-config-changed', sync);
+    };
   }, [isRu]);
 
   const label = (map: Record<string, { ru: string; en: string }>, key: string) =>
