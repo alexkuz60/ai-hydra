@@ -1,9 +1,11 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useContestSession, type ContestResult } from '@/hooks/useContestSession';
 import { useContestExecution } from '@/hooks/useContestExecution';
-import { Crown, Play, History, Loader2, Clock, CheckCircle2, AlertCircle, MessageSquare, Scale, Trophy, ChevronDown, ChevronUp, Send, BarChart3, Archive, Star, Maximize2, Minimize2, FileText } from 'lucide-react';
+import { Crown, Play, History, Loader2, Clock, CheckCircle2, AlertCircle, MessageSquare, Scale, Trophy, ChevronDown, ChevronUp, Send, BarChart3, Archive, Star, Maximize2, Minimize2, FileText, Users } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { useNavigate } from 'react-router-dom';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -681,15 +683,19 @@ function ContestArbiterPanel({
   );
 }
 
-/** Scores table with footer totals */
+/** Scores table with footer totals and winner selection */
 function ContestScoresTable({
   results,
   rounds,
   isRu,
+  selectedWinners,
+  onToggleWinner,
 }: {
   results: ContestResult[];
   rounds: { id: string; round_index: number }[];
   isRu: boolean;
+  selectedWinners: Set<string>;
+  onToggleWinner: (modelId: string) => void;
 }) {
   const modelIds = [...new Set(results.map(r => r.model_id))];
 
@@ -712,10 +718,19 @@ function ContestScoresTable({
         <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
           {isRu ? 'Таблица оценок' : 'Scores Table'}
         </span>
+        {selectedWinners.size > 0 && (
+          <Badge variant="secondary" className="ml-auto text-[10px] gap-1 bg-primary/10 text-primary">
+            <Crown className="h-2.5 w-2.5" />
+            {selectedWinners.size} {isRu ? 'выбрано' : 'selected'}
+          </Badge>
+        )}
       </div>
       <Table>
         <TableHeader>
           <TableRow className="text-[11px]">
+            <TableHead className="w-8">
+              <Crown className="h-3 w-3 text-primary mx-auto" />
+            </TableHead>
             <TableHead className="w-8">#</TableHead>
             <TableHead>{isRu ? 'Модель' : 'Model'}</TableHead>
             <TableHead className="text-center">👤</TableHead>
@@ -729,10 +744,28 @@ function ContestScoresTable({
             const shortName = entry?.displayName || row.modelId.split('/').pop() || row.modelId;
             const ProviderLogo = entry?.provider ? PROVIDER_LOGOS[entry.provider] : undefined;
             const color = entry?.provider ? PROVIDER_COLORS[entry.provider] : '';
+            const isSelected = selectedWinners.has(row.modelId);
 
             return (
-              <TableRow key={row.modelId} className="text-xs">
-                <TableCell className="font-mono text-muted-foreground">{i + 1}</TableCell>
+              <TableRow
+                key={row.modelId}
+                className={cn("text-xs cursor-pointer transition-colors", isSelected && "bg-primary/5")}
+                onClick={() => onToggleWinner(row.modelId)}
+              >
+                <TableCell className="text-center">
+                  <Checkbox
+                    checked={isSelected}
+                    onCheckedChange={() => onToggleWinner(row.modelId)}
+                    className="mx-auto"
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                </TableCell>
+                <TableCell className="font-mono text-muted-foreground">
+                  <div className="flex items-center gap-1">
+                    {isSelected && <Crown className="h-2.5 w-2.5 text-primary" />}
+                    {i + 1}
+                  </div>
+                </TableCell>
                 <TableCell>
                   <div className="flex items-center gap-1.5">
                     {ProviderLogo && <ProviderLogo className={cn("h-3 w-3", color)} />}
@@ -759,6 +792,7 @@ export function BeautyContest() {
   const { language } = useLanguage();
   const { user } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const isRu = language === 'ru';
   const contest = useContestSession();
   const execution = useContestExecution();
@@ -769,6 +803,54 @@ export function BeautyContest() {
   const [sendingFollowUp, setSendingFollowUp] = useState(false);
   const [activeMainTab, setActiveMainTab] = useState<string>('responses');
   const [promptOpen, setPromptOpen] = useState(false);
+  const [selectedWinners, setSelectedWinners] = useState<Set<string>>(new Set());
+
+  const handleToggleWinner = useCallback((modelId: string) => {
+    setSelectedWinners(prev => {
+      const next = new Set(prev);
+      if (next.has(modelId)) next.delete(modelId);
+      else next.add(modelId);
+      return next;
+    });
+  }, []);
+
+  const handleMigrateToExpertPanel = useCallback(() => {
+    if (selectedWinners.size === 0 || !contest.session) return;
+
+    // Build migration payload with selected winners' answers and scores
+    const winnerModels = [...selectedWinners];
+    const winnerResults = contest.results.filter(r => winnerModels.includes(r.model_id));
+    const taskPrompt = contest.rounds[0]?.prompt || '';
+
+    const migrationData = {
+      contestName: contest.session.name,
+      taskPrompt,
+      winners: winnerModels.map(modelId => {
+        const entry = getModelRegistryEntry(modelId);
+        const modelResults = winnerResults.filter(r => r.model_id === modelId);
+        const userScores = modelResults.filter(r => r.user_score != null).map(r => r.user_score!);
+        const arbiterScores = modelResults.filter(r => r.arbiter_score != null).map(r => r.arbiter_score!);
+        const avgUser = userScores.length ? userScores.reduce((a, b) => a + b, 0) / userScores.length : null;
+        const avgArbiter = arbiterScores.length ? arbiterScores.reduce((a, b) => a + b, 0) / arbiterScores.length : null;
+        const bestResponse = modelResults.find(r => r.response_text)?.response_text || '';
+
+        return {
+          modelId,
+          displayName: entry?.displayName || modelId.split('/').pop() || modelId,
+          provider: entry?.provider || null,
+          avgUserScore: avgUser,
+          avgArbiterScore: avgArbiter,
+          totalScore: (avgUser ?? 0) + (avgArbiter ?? 0),
+          bestResponse,
+        };
+      }).sort((a, b) => b.totalScore - a.totalScore),
+    };
+
+    // Store in sessionStorage for ExpertPanel to pick up
+    sessionStorage.setItem('contest-migration', JSON.stringify(migrationData));
+    navigate('/expert-panel');
+    toast({ description: isRu ? `${selectedWinners.size} победитель(ей) отправлено в Панель экспертов` : `${selectedWinners.size} winner(s) sent to Expert Panel` });
+  }, [selectedWinners, contest.session, contest.results, contest.rounds, navigate, isRu, toast]);
 
   // On mount, try to restore last session
   useEffect(() => {
@@ -967,12 +1049,27 @@ export function BeautyContest() {
              />
           </TabsContent>
 
-          <TabsContent value="scores" className="flex-1 min-h-0 overflow-auto mt-0 p-3">
+          <TabsContent value="scores" className="flex-1 min-h-0 overflow-auto mt-0 p-3 space-y-3">
             <ContestScoresTable
               results={contest.results}
               rounds={contest.rounds}
               isRu={isRu}
+              selectedWinners={selectedWinners}
+              onToggleWinner={handleToggleWinner}
             />
+            {selectedWinners.size > 0 && (
+              <Button
+                onClick={handleMigrateToExpertPanel}
+                className="w-full gap-2"
+                variant="outline"
+              >
+                <Crown className="h-3.5 w-3.5 text-primary" />
+                <Users className="h-3.5 w-3.5" />
+                {isRu
+                  ? `Отправить ${selectedWinners.size} победител${selectedWinners.size === 1 ? 'я' : 'ей'} в Панель экспертов`
+                  : `Send ${selectedWinners.size} winner${selectedWinners.size > 1 ? 's' : ''} to Expert Panel`}
+              </Button>
+            )}
           </TabsContent>
 
           <TabsContent value="arbiter" className="flex-1 min-h-0 overflow-hidden mt-0">
