@@ -7,16 +7,99 @@ interface ExecutionState {
   running: boolean;
   /** model_id → accumulated text so far (for live preview) */
   streamingTexts: Record<string, string>;
+  /** true while the arbiter is evaluating */
+  arbiterRunning: boolean;
 }
 
 /**
  * Sends the round prompt to every contestant model in parallel via hydra-stream,
- * collects responses and writes them back into contest_results.
+ * collects responses, then triggers arbiter evaluation.
  */
 export function useContestExecution() {
   const { toast } = useToast();
-  const [state, setState] = useState<ExecutionState>({ running: false, streamingTexts: {} });
+  const [state, setState] = useState<ExecutionState>({ running: false, streamingTexts: {}, arbiterRunning: false });
   const abortRef = useRef<AbortController | null>(null);
+
+  /** Call the contest-arbiter edge function to evaluate all responses */
+  const runArbiterEvaluation = useCallback(async (
+    session: ContestSession,
+    round: ContestRound,
+    roundResults: ContestResult[],
+    updateResult: (id: string, updates: Partial<ContestResult>) => Promise<void>,
+  ) => {
+    const arbitration = session.config.arbitration;
+    if (!arbitration || arbitration.juryMode === 'user') return;
+
+    const readyResults = roundResults.filter(r => r.status === 'ready' && r.response_text);
+    if (readyResults.length === 0) return;
+
+    setState(prev => ({ ...prev, arbiterRunning: true }));
+
+    try {
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+      const { data: { session: authSession } } = await supabase.auth.getSession();
+      const authToken = authSession?.access_token;
+
+      const response = await fetch(`${supabaseUrl}/functions/v1/contest-arbiter`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authToken || supabaseKey}`,
+          'apikey': supabaseKey,
+        },
+        body: JSON.stringify({
+          prompt: round.prompt,
+          responses: readyResults.map(r => ({
+            result_id: r.id,
+            model_id: r.model_id,
+            response_text: r.response_text,
+            response_time_ms: r.response_time_ms,
+            token_count: r.token_count,
+          })),
+          criteria: arbitration.criteria || [],
+          criteria_weights: arbitration.criteriaWeights || {},
+          arbiter_model: arbitration.arbiterModel || undefined,
+        }),
+      });
+
+      if (!response.ok) {
+        const errText = await response.text();
+        console.error('[contest-arbiter] Failed:', response.status, errText);
+        toast({
+          variant: 'destructive',
+          description: response.status === 429
+            ? 'Арбитр: превышен лимит запросов, попробуйте позже'
+            : response.status === 402
+              ? 'Арбитр: недостаточно кредитов'
+              : `Ошибка арбитра: ${response.status}`,
+        });
+        return;
+      }
+
+      const data = await response.json();
+      const evaluations: { result_id: string; arbiter_score: number | null; arbiter_comment: string | null; arbiter_model: string }[] = data.evaluations || [];
+
+      // Save each evaluation
+      for (const eval_ of evaluations) {
+        if (eval_.arbiter_score != null) {
+          await updateResult(eval_.result_id, {
+            arbiter_score: eval_.arbiter_score,
+            arbiter_comment: eval_.arbiter_comment,
+            arbiter_model: eval_.arbiter_model,
+            status: 'judged',
+          } as any);
+        }
+      }
+
+      toast({ description: `Арбитр оценил ${evaluations.length} ответов` });
+    } catch (err: any) {
+      console.error('[contest-arbiter] Error:', err);
+      toast({ variant: 'destructive', description: `Ошибка арбитра: ${err.message}` });
+    } finally {
+      setState(prev => ({ ...prev, arbiterRunning: false }));
+    }
+  }, [toast]);
 
   const executeRound = useCallback(async (
     session: ContestSession,
@@ -30,12 +113,15 @@ export function useContestExecution() {
     const abortController = new AbortController();
     abortRef.current = abortController;
 
-    setState({ running: true, streamingTexts: {} });
+    setState({ running: true, streamingTexts: {}, arbiterRunning: false });
 
     const prompt = round.prompt;
     const systemPrompt = session.config.arbitration
       ? `You are a contestant in an AI model competition. Answer the prompt as best you can.`
       : undefined;
+
+    // Track completed results for arbiter
+    const completedResults: ContestResult[] = [];
 
     // Launch all models in parallel
     const promises = roundResults.map(async (result) => {
@@ -124,6 +210,14 @@ export function useContestExecution() {
 
         const elapsed = Date.now() - startTime;
 
+        const updatedResult = {
+          ...result,
+          response_text: accumulated,
+          response_time_ms: elapsed,
+          token_count: tokenCount,
+          status: 'ready' as const,
+        };
+
         // Write final result
         await updateResult(result.id, {
           response_text: accumulated,
@@ -131,6 +225,8 @@ export function useContestExecution() {
           token_count: tokenCount,
           status: 'ready',
         } as any);
+
+        completedResults.push(updatedResult);
 
       } catch (err: any) {
         if (err.name === 'AbortError') return;
@@ -150,19 +246,26 @@ export function useContestExecution() {
       .update({ status: 'completed', completed_at: new Date().toISOString() })
       .eq('id', round.id);
 
-    setState({ running: false, streamingTexts: {} });
+    setState(prev => ({ ...prev, running: false, streamingTexts: {} }));
     abortRef.current = null;
-  }, [toast]);
+
+    // Auto-trigger arbiter evaluation if configured
+    if (completedResults.length > 0 && session.config.arbitration) {
+      await runArbiterEvaluation(session, round, completedResults, updateResult);
+    }
+  }, [toast, runArbiterEvaluation]);
 
   const cancel = useCallback(() => {
     abortRef.current?.abort();
-    setState({ running: false, streamingTexts: {} });
+    setState({ running: false, streamingTexts: {}, arbiterRunning: false });
   }, []);
 
   return {
     executing: state.running,
+    arbiterRunning: state.arbiterRunning,
     streamingTexts: state.streamingTexts,
     executeRound,
+    runArbiterEvaluation,
     cancelExecution: cancel,
   };
 }

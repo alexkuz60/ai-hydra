@@ -20,3 +20,6 @@ verify_jwt = false
 
 [functions.firecrawl-scrape]
 verify_jwt = false
+
+[functions.contest-arbiter]
+verify_jwt = false

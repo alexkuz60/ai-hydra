@@ -23,6 +23,7 @@ export interface ContestSessionConfig {
     criteriaWeights: Record<string, number>;
     userWeight: number;
     scoringScheme: string;
+    arbiterModel?: string;
   };
 }
 
