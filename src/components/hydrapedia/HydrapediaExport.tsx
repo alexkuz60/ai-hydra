@@ -48,11 +48,26 @@ async function exportMarkdown(lang: 'ru' | 'en', isAdmin: boolean) {
   toast.success(lang === 'ru' ? 'Markdown файл скачан' : 'Markdown downloaded');
 }
 
+async function loadRobotoFont(doc: jsPDF) {
+  const resp = await fetch('/fonts/Roboto-Regular.ttf');
+  const buf = await resp.arrayBuffer();
+  const binary = Array.from(new Uint8Array(buf))
+    .map(b => String.fromCharCode(b))
+    .join('');
+  const base64 = btoa(binary);
+  doc.addFileToVFS('Roboto-Regular.ttf', base64);
+  doc.addFont('Roboto-Regular.ttf', 'Roboto', 'normal');
+  doc.setFont('Roboto');
+}
+
 async function exportPDF(lang: 'ru' | 'en', isAdmin: boolean) {
   const md = collectMarkdown(lang, isAdmin);
   const plainText = stripMarkdown(md);
 
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+
+  // Load Roboto for Cyrillic support
+  await loadRobotoFont(doc);
 
   // Title
   doc.setFontSize(20);
@@ -64,8 +79,6 @@ async function exportPDF(lang: 'ru' | 'en', isAdmin: boolean) {
   );
   doc.text(new Date().toLocaleDateString(lang === 'ru' ? 'ru-RU' : 'en-US'), 105, 34, { align: 'center' });
 
-  // Body — jsPDF default font doesn't support Cyrillic well.
-  // We output as best-effort plain-text; for full Cyrillic fidelity the Markdown export is recommended.
   doc.setFontSize(10);
   const pageWidth = doc.internal.pageSize.getWidth();
   const margin = 15;
