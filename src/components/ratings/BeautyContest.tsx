@@ -122,6 +122,72 @@ const PHASE_ICONS: Record<ContestPhase, React.ReactNode> = {
   failed: <AlertCircle className="h-8 w-8 text-destructive" />,
 };
 
+/** Mini podium histogram — vertical bars representing top 3 */
+function PodiumHistogram({ results }: { results: ContestResult[] }) {
+  const modelIds = [...new Set(results.map(r => r.model_id))];
+
+  // Compute total scores per model (user + arbiter)
+  const scored = modelIds.map(modelId => {
+    const mrs = results.filter(r => r.model_id === modelId);
+    const uScores = mrs.filter(r => r.user_score != null).map(r => r.user_score!);
+    const aScores = mrs.filter(r => r.arbiter_score != null).map(r => r.arbiter_score!);
+    const avgU = uScores.length ? uScores.reduce((a, b) => a + b, 0) / uScores.length : 0;
+    const avgA = aScores.length ? aScores.reduce((a, b) => a + b, 0) / aScores.length : 0;
+    const total = avgU + avgA;
+    const hasScore = uScores.length > 0 || aScores.length > 0;
+    return { modelId, total, hasScore };
+  }).sort((a, b) => b.total - a.total);
+
+  const hasAnyScore = scored.some(s => s.hasScore);
+  const maxScore = hasAnyScore ? Math.max(...scored.map(s => s.total), 1) : 1;
+
+  // Show top 3 (or pad to 3)
+  const podium = [scored[1], scored[0], scored[2]]; // 2nd, 1st, 3rd — classic podium order
+  const podiumHeights = [60, 100, 40]; // percentage heights for 2nd, 1st, 3rd
+  const podiumColors = hasAnyScore
+    ? ['hsl(var(--hydra-expert))', 'hsl(var(--hydra-arbiter))', 'hsl(var(--primary))']
+    : ['hsl(var(--muted))', 'hsl(var(--muted))', 'hsl(var(--muted))'];
+  const podiumLabels = ['2', '1', '3'];
+
+  return (
+    <div className="flex-shrink-0 w-16 h-14 flex items-end justify-center gap-[3px]">
+      {podium.map((entry, i) => {
+        const heightPct = entry?.hasScore
+          ? Math.max(20, (entry.total / maxScore) * 100)
+          : podiumHeights[i] * 0.4;
+        const color = entry?.hasScore ? podiumColors[i] : 'hsl(var(--muted))';
+        const entryData = entry ? getModelRegistryEntry(entry.modelId) : null;
+        const shortName = entryData?.displayName || entry?.modelId?.split('/').pop() || '';
+
+        return (
+          <TooltipProvider key={i}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="flex flex-col items-center gap-0.5" style={{ height: '100%', justifyContent: 'flex-end' }}>
+                  <span className="text-[8px] font-bold text-muted-foreground">{podiumLabels[i]}</span>
+                  <div
+                    className="w-4 rounded-t-sm transition-all duration-500"
+                    style={{
+                      height: `${heightPct}%`,
+                      backgroundColor: color,
+                      opacity: entry?.hasScore ? 1 : 0.3,
+                    }}
+                  />
+                </div>
+              </TooltipTrigger>
+              {entry && (
+                <TooltipContent side="bottom" className="text-[10px]">
+                  {shortName}{entry.hasScore ? `: ${entry.total.toFixed(1)}` : ''}
+                </TooltipContent>
+              )}
+            </Tooltip>
+          </TooltipProvider>
+        );
+      })}
+    </div>
+  );
+}
+
 /** Progress Scoreboard — vivid sticky header */
 function ContestScoreboard({
   results,
@@ -204,14 +270,14 @@ function ContestScoreboard({
         </div>
       </div>
 
-      {/* Two-column dynamic area */}
+      {/* Three-column dynamic area */}
       <div className="flex items-center gap-4">
         {/* Left: large phase icon */}
         <div className="flex-shrink-0 w-14 h-14 rounded-xl bg-background/60 border border-border/50 flex items-center justify-center shadow-sm">
           {PHASE_ICONS[phase]}
         </div>
 
-        {/* Right: animated notification */}
+        {/* Center: animated notification + chips */}
         <div className="flex-1 min-w-0">
           <p className="text-sm font-medium leading-snug animate-fade-in" key={`${phase}-${msgIndex}`}>
             {currentMsg}
@@ -247,6 +313,9 @@ function ContestScoreboard({
             })}
           </div>
         </div>
+
+        {/* Right: mini podium histogram */}
+        <PodiumHistogram results={results} />
       </div>
     </div>
   );
