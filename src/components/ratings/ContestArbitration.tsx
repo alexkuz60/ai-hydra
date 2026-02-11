@@ -42,10 +42,23 @@ const SCORING_OPTIONS = [
   { id: 'elo', ru: 'Рейтинг Эло', en: 'Elo Rating' },
 ];
 
+const DEFAULT_CONFIG: ArbitrationConfig = {
+  juryMode: 'both',
+  arbiterModel: '',
+  criteria: ['factuality', 'relevance', 'completeness', 'clarity'],
+  criteriaWeights: { factuality: 30, relevance: 25, completeness: 25, clarity: 20 },
+  userWeight: 40,
+  scoringScheme: 'weighted-avg',
+};
+
 function loadConfig(): ArbitrationConfig {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) return JSON.parse(stored);
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      // Merge with defaults to handle missing fields from old data
+      return { ...DEFAULT_CONFIG, ...parsed };
+    }
   } catch {}
   return {
     juryMode: 'both',
