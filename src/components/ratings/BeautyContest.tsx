@@ -313,7 +313,7 @@ function ContestScoreboard({
               initial={{ opacity: 0, x: 40 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -40 }}
-              transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
+              transition={{ duration: 0.75, ease: [0.4, 0, 0.2, 1] }}
             >
               {currentMsg}
             </motion.p>
