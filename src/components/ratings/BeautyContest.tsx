@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useContestSession, type ContestResult } from '@/hooks/useContestSession';
@@ -305,9 +306,18 @@ function ContestScoreboard({
 
         {/* Center: animated notification + chips */}
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium leading-snug animate-fade-in" key={`${phase}-${msgIndex}`}>
-            {currentMsg}
-          </p>
+          <AnimatePresence mode="wait">
+            <motion.p 
+              key={`${phase}-${msgIndex}`}
+              className="text-sm font-medium leading-snug"
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 8 }}
+              transition={{ duration: 0.4, ease: 'easeInOut' }}
+            >
+              {currentMsg}
+            </motion.p>
+          </AnimatePresence>
           {/* Model chips */}
           <div className="flex flex-wrap gap-1.5 mt-1.5">
             {modelIds.map(modelId => {
