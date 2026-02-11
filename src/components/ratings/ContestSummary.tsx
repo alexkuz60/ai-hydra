@@ -4,7 +4,7 @@ import { HydraCard, HydraCardHeader, HydraCardTitle, HydraCardContent } from '@/
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Save, Trophy, Users, ListOrdered, ClipboardList, Scale, Workflow, Weight, BarChart3, Calculator, CheckCircle2, ExternalLink, Loader2, FileText, Maximize2, RotateCcw } from 'lucide-react';
+import { Save, Trophy, Users, ListOrdered, ClipboardList, Scale, Workflow, Weight, BarChart3, Calculator, CheckCircle2, ExternalLink, Loader2, FileText, Maximize2, RotateCcw, Download } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
@@ -69,6 +69,16 @@ interface SavedPlan {
 
 const SAVED_PLAN_KEY = 'hydra-contest-saved-plan';
 
+const CONTEST_STORAGE_KEYS = [
+  'hydra-contest-models',
+  'hydra-contest-rules',
+  'hydra-contest-task-id',
+  'hydra-contest-task-title',
+  'hydra-contest-mode',
+  'hydra-contest-pipeline',
+  'hydra-contest-arbitration',
+  SAVED_PLAN_KEY,
+];
 export function ContestSummary() {
   const { language } = useLanguage();
   const isRu = language === 'ru';
@@ -318,8 +328,37 @@ export function ContestSummary() {
           </>
         )}
 
-        {/* Reset all config */}
-        <div className="flex items-center justify-end">
+        {/* Export & Reset */}
+        <div className="flex items-center justify-end gap-1.5">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 text-[11px] gap-1.5"
+            onClick={() => {
+              const data: Record<string, unknown> = {};
+              CONTEST_STORAGE_KEYS.forEach(k => {
+                try {
+                  const v = localStorage.getItem(k);
+                  if (v) data[k] = JSON.parse(v);
+                } catch {
+                  const v = localStorage.getItem(k);
+                  if (v) data[k] = v;
+                }
+              });
+              const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = `contest-config-${new Date().toISOString().slice(0, 10)}.json`;
+              a.click();
+              URL.revokeObjectURL(url);
+              toast({ description: isRu ? 'Настройки экспортированы' : 'Settings exported' });
+            }}
+          >
+            <Download className="h-3 w-3" />
+            {isRu ? 'Экспорт' : 'Export'}
+          </Button>
+
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button variant="ghost" size="sm" className="h-7 text-[11px] gap-1.5 text-destructive hover:text-destructive hover:bg-destructive/10">
@@ -343,17 +382,7 @@ export function ContestSummary() {
                 <AlertDialogAction
                   className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                   onClick={() => {
-                    const keys = [
-                      'hydra-contest-models',
-                      'hydra-contest-rules',
-                      'hydra-contest-task-id',
-                      'hydra-contest-task-title',
-                      'hydra-contest-mode',
-                      'hydra-contest-pipeline',
-                      'hydra-contest-arbitration',
-                      SAVED_PLAN_KEY,
-                    ];
-                    keys.forEach(k => { try { localStorage.removeItem(k); } catch {} });
+                    CONTEST_STORAGE_KEYS.forEach(k => { try { localStorage.removeItem(k); } catch {} });
                     setModelCount(0);
                     setRoundCount(1);
                     setTaskTitle('');
