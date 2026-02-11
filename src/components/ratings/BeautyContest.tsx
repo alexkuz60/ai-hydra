@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useContestSession, type ContestResult } from '@/hooks/useContestSession';
+import { useContestExecution } from '@/hooks/useContestExecution';
 import { Crown, Play, History, Loader2, Clock, CheckCircle2, AlertCircle, MessageSquare, Scale, Trophy, ChevronDown, Send, BarChart3, Archive } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -247,18 +248,23 @@ function ContestScoreboard({
 function ContestResponsesPanel({
   results,
   rounds,
+  streamingTexts,
   isRu,
 }: {
   results: ContestResult[];
   rounds: { id: string; round_index: number; prompt: string }[];
+  streamingTexts: Record<string, string>;
   isRu: boolean;
 }) {
   const modelIds = [...new Set(results.map(r => r.model_id))];
   const [activeModel, setActiveModel] = useState<string>('all');
 
-  const filtered = activeModel === 'all'
-    ? results.filter(r => r.response_text)
-    : results.filter(r => r.model_id === activeModel && r.response_text);
+  // Include streaming results that don't have response_text yet
+  const allDisplayable = activeModel === 'all'
+    ? results.filter(r => r.response_text || streamingTexts[r.model_id])
+    : results.filter(r => r.model_id === activeModel && (r.response_text || streamingTexts[r.model_id]));
+
+  const filtered = allDisplayable;
 
   return (
     <div className="flex flex-col h-full">
@@ -322,7 +328,10 @@ function ContestResponsesPanel({
                       </div>
                     </div>
                     <div className="text-sm">
-                      <MarkdownRenderer content={result.response_text || ''} />
+                      <MarkdownRenderer content={result.response_text || streamingTexts[result.model_id] || ''} />
+                      {result.status === 'generating' && !result.response_text && streamingTexts[result.model_id] && (
+                        <Loader2 className="h-3 w-3 animate-spin text-primary inline ml-1" />
+                      )}
                     </div>
                     {(result.user_score != null || result.arbiter_score != null) && (
                       <div className="flex items-center gap-3 text-[10px] pt-1 border-t border-border/30">
@@ -499,6 +508,7 @@ export function BeautyContest() {
   const { toast } = useToast();
   const isRu = language === 'ru';
   const contest = useContestSession();
+  const execution = useContestExecution();
 
   const [followUpText, setFollowUpText] = useState('');
   const [initialLoad, setInitialLoad] = useState(true);
@@ -514,6 +524,14 @@ export function BeautyContest() {
     const s = await contest.createFromWizard();
     if (s) {
       toast({ description: isRu ? 'Конкурс запущен!' : 'Contest launched!' });
+      // Auto-execute the first round
+      // Need to wait for state to settle, then execute
+      setTimeout(async () => {
+        const firstRound = contest.rounds.find(r => r.status === 'running') || contest.rounds[0];
+        if (firstRound) {
+          await execution.executeRound(s, firstRound, contest.results, contest.updateResult);
+        }
+      }, 300);
     }
   };
 
@@ -628,6 +646,7 @@ export function BeautyContest() {
             <ContestResponsesPanel
               results={contest.results}
               rounds={contest.rounds}
+              streamingTexts={execution.streamingTexts}
               isRu={isRu}
             />
           </div>
