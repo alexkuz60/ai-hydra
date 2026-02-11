@@ -143,7 +143,19 @@ function PodiumHistogram({ results }: { results: ContestResult[] }) {
 
   // Show top 3 (or pad to 3)
   const podium = [scored[1], scored[0], scored[2]]; // 2nd, 1st, 3rd — classic podium order
-  const podiumHeights = [60, 100, 40]; // percentage heights for 2nd, 1st, 3rd
+  const defaultHeights = [60, 100, 40]; // fallback percentage heights for 2nd, 1st, 3rd
+
+  // Dynamic range: use min score as floor to amplify visual differences
+  const scores = scored.filter(s => s.hasScore).map(s => s.total);
+  const minScore = scores.length > 1 ? Math.min(...scores) : 0;
+  const range = maxScore - minScore;
+  // Map score to 15%–100% range for maximum visual contrast
+  const dynamicHeight = (total: number) => {
+    if (range < 0.01) return 100; // all equal
+    const normalized = (total - minScore) / range; // 0..1
+    return 15 + normalized * 85; // 15%..100%
+  };
+
   const podiumColors = hasAnyScore
     ? ['hsl(var(--hydra-expert))', 'hsl(var(--hydra-arbiter))', 'hsl(var(--primary))']
     : ['hsl(var(--muted))', 'hsl(var(--muted))', 'hsl(var(--muted))'];
@@ -153,8 +165,8 @@ function PodiumHistogram({ results }: { results: ContestResult[] }) {
     <div className="flex-shrink-0 w-16 h-14 flex items-end justify-center gap-[3px]">
       {podium.map((entry, i) => {
         const heightPct = entry?.hasScore
-          ? Math.max(20, (entry.total / maxScore) * 100)
-          : podiumHeights[i] * 0.4;
+          ? dynamicHeight(entry.total)
+          : defaultHeights[i] * 0.4;
         const color = entry?.hasScore ? podiumColors[i] : 'hsl(var(--muted))';
         const entryData = entry ? getModelRegistryEntry(entry.modelId) : null;
         const shortName = entryData?.displayName || entry?.modelId?.split('/').pop() || '';
