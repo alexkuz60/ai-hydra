@@ -14,7 +14,7 @@ export function Layout({ children, headerActions }: LayoutProps) {
         <AppSidebar />
         <div className="flex-1 flex flex-col min-h-screen">
           {/* Compact header with sidebar trigger */}
-          <header className="h-10 flex items-center border-b border-border/50 px-2 bg-background/50 backdrop-blur-sm">
+          <header className="h-10 flex items-center border-b border-border/50 px-2 bg-background/50 backdrop-blur-sm relative z-20">
             <SidebarTrigger className="text-muted-foreground hover:text-primary" />
             {headerActions && (
               <div className="flex-1 flex items-center justify-end gap-2 px-2">
