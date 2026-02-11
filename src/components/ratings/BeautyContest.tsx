@@ -304,18 +304,31 @@ function ContestScoreboard({
               const color = entry?.provider ? PROVIDER_COLORS[entry.provider] : '';
               const isActive = modelId === activeModelId;
 
+              // Resolve provider accent color for active highlight
+              const PROVIDER_ACCENT: Record<string, string> = {
+                gemini: 'var(--hydra-arbiter)',
+                openai: 'var(--hydra-success)',
+                anthropic: 'var(--hydra-expert)',
+                xai: 'var(--hydra-expert)',
+                deepseek: 'var(--hydra-success)',
+              };
+              const accent = entry?.provider ? PROVIDER_ACCENT[entry.provider] : undefined;
+
               return (
                 <div
                   key={modelId}
                   className={cn(
-                    "flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] border transition-all",
-                    isActive
-                      ? "bg-primary/15 border-primary/50 ring-1 ring-primary/30 font-semibold"
-                      : "bg-background/50 border-border/30"
+                    "flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] border transition-all",
+                    isActive ? "font-semibold ring-1" : "bg-background/50 border-border/30"
                   )}
+                  style={isActive ? {
+                    backgroundColor: accent ? `hsl(${accent} / 0.15)` : 'hsl(var(--primary) / 0.15)',
+                    borderColor: accent ? `hsl(${accent} / 0.5)` : 'hsl(var(--primary) / 0.5)',
+                    boxShadow: `0 0 0 1px ${accent ? `hsl(${accent} / 0.3)` : 'hsl(var(--primary) / 0.3)'}`,
+                  } : undefined}
                 >
                   {ProviderLogo && <ProviderLogo className={cn("h-2.5 w-2.5", color)} />}
-                  <span className="truncate max-w-[70px]">{shortName}</span>
+                  <span className="truncate max-w-[120px]">{shortName}</span>
                   {result?.status === 'generating' && <Loader2 className="h-2.5 w-2.5 animate-spin text-primary" />}
                   {result?.status === 'ready' && <CheckCircle2 className="h-2.5 w-2.5 text-[hsl(var(--hydra-success))]" />}
                   {result?.status === 'judged' && <Trophy className="h-2.5 w-2.5 text-[hsl(var(--hydra-arbiter))]" />}

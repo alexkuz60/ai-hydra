@@ -262,7 +262,8 @@ export function useContestSession() {
               return [...prev, payload.new as ContestResult];
             });
           } else if (payload.eventType === 'UPDATE') {
-            setResults(prev => prev.map(r => r.id === (payload.new as ContestResult).id ? (payload.new as ContestResult) : r));
+            // Merge to preserve fields (e.g. response_text) that may be omitted from realtime payload
+            setResults(prev => prev.map(r => r.id === (payload.new as ContestResult).id ? { ...r, ...(payload.new as ContestResult) } : r));
           } else if (payload.eventType === 'DELETE') {
             setResults(prev => prev.filter(r => r.id !== (payload.old as any).id));
           }
