@@ -471,40 +471,57 @@ function ContestResponsesPanel({
                   roundGroups.push({ round: { id: '__orphan', round_index: -1, prompt: '' }, results: orphans });
                 }
 
-                return roundGroups.map(({ round, results: groupResults }) => {
-                  const isFollowUp = round.round_index >= (rounds.length > 0 ? Math.min(...rounds.filter(r => r.prompt).map(r => r.round_index)) + (rounds.filter(r => r.prompt).length > 1 ? 1 : 999) : 999);
-                  const roundLabel = round.round_index < 0
-                    ? ''
-                    : isRu
-                      ? `Тур ${round.round_index + 1}`
-                      : `Round ${round.round_index + 1}`;
+                 return roundGroups.map(({ round, results: groupResults }) => {
+                   // Determine if this is a follow-up round (after the initial roundCount)
+                   const config = (rounds as any)?.[0]?.config || {};
+                   const initialRoundCount = 1; // Default assumption
+                   const isFollowUp = round.round_index >= initialRoundCount;
+                   
+                   const roundLabel = round.round_index < 0
+                     ? ''
+                     : isFollowUp
+                       ? (isRu ? `Дополнительный вопрос ${round.round_index - initialRoundCount + 1}` : `Follow-up ${round.round_index - initialRoundCount + 1}`)
+                       : (isRu ? `Тур ${round.round_index + 1}` : `Round ${round.round_index + 1}`);
 
-                  return (
-                    <div key={round.id} className="space-y-2">
-                      {round.round_index >= 0 && (
-                        <div className="flex items-center gap-2 pt-1">
-                          <div className="flex items-center gap-1.5 flex-shrink-0">
-                            <Crown className="h-3 w-3 text-primary" />
-                            <span className="text-[11px] font-bold text-primary uppercase tracking-wider">{roundLabel}</span>
-                          </div>
-                          <Separator className="flex-1" />
-                          {round.prompt && (
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <FileText className="h-3 w-3 text-muted-foreground flex-shrink-0 cursor-help" />
-                                </TooltipTrigger>
-                                <TooltipContent side="bottom" className="max-w-xs text-xs whitespace-pre-wrap">
-                                  {round.prompt}
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
-                          )}
-                        </div>
-                      )}
-                      {round.prompt && round.round_index >= 0 && (
-                        <p className="text-[11px] text-muted-foreground italic pl-5 line-clamp-2">{round.prompt}</p>
-                      )}
+                   const followUpCount = isFollowUp ? round.round_index - initialRoundCount + 1 : 0;
+
+                   return (
+                     <div key={round.id} className={cn("space-y-2", isFollowUp && "pl-5")}>
+                       {round.round_index >= 0 && (
+                         <div className="flex items-center gap-2 pt-1">
+                           <div className="flex items-center gap-1.5 flex-shrink-0">
+                             {isFollowUp ? (
+                               <MessageSquare className="h-3 w-3 text-[hsl(var(--hydra-arbiter))]" />
+                             ) : (
+                               <Crown className="h-3 w-3 text-primary" />
+                             )}
+                             <span className={cn(
+                               "text-[11px] font-bold uppercase tracking-wider",
+                               isFollowUp ? "text-[hsl(var(--hydra-arbiter))]" : "text-primary"
+                             )}>
+                               {roundLabel}
+                             </span>
+                           </div>
+                           <Separator className="flex-1" />
+                           {round.prompt && (
+                             <TooltipProvider>
+                               <Tooltip>
+                                 <TooltipTrigger asChild>
+                                   <FileText className="h-3 w-3 text-muted-foreground flex-shrink-0 cursor-help" />
+                                 </TooltipTrigger>
+                                 <TooltipContent side="bottom" className="max-w-xs text-xs whitespace-pre-wrap">
+                                   {round.prompt}
+                                 </TooltipContent>
+                               </Tooltip>
+                             </TooltipProvider>
+                           )}
+                         </div>
+                       )}
+                       {round.prompt && round.round_index >= 0 && (
+                         <p className={cn("text-[11px] text-muted-foreground italic line-clamp-2", isFollowUp ? "pl-0" : "pl-5")}>
+                           {round.prompt}
+                         </p>
+                       )}
                       {groupResults.map(result => {
                         const entry = getModelRegistryEntry(result.model_id);
                         const shortName = entry?.displayName || result.model_id.split('/').pop() || result.model_id;
@@ -590,30 +607,43 @@ function ContestArbiterPanel({
               {isRu ? 'Арбитр ещё не оценивал' : 'Arbiter has not judged yet'}
             </div>
           ) : (
-            (() => {
-              // Group arbiter comments by round
-              const roundIds = [...new Set(judged.map(r => r.round_id))];
-              return roundIds.map(roundId => {
-                const round = rounds.find(rd => rd.id === roundId);
-                const roundResults = judged.filter(r => r.round_id === roundId);
-                const roundLabel = round
-                  ? (isRu ? `Тур ${round.round_index + 1}` : `Round ${round.round_index + 1}`)
-                  : '';
+             (() => {
+               // Group arbiter comments by round
+               const roundIds = [...new Set(judged.map(r => r.round_id))];
+               const initialRoundCount = 1; // Default assumption
+               return roundIds.map(roundId => {
+                 const round = rounds.find(rd => rd.id === roundId);
+                 const roundResults = judged.filter(r => r.round_id === roundId);
+                 const isFollowUp = round ? round.round_index >= initialRoundCount : false;
+                 const roundLabel = round
+                   ? isFollowUp
+                     ? (isRu ? `Дополнительный вопрос ${round.round_index - initialRoundCount + 1}` : `Follow-up ${round.round_index - initialRoundCount + 1}`)
+                     : (isRu ? `Тур ${round.round_index + 1}` : `Round ${round.round_index + 1}`)
+                   : '';
 
-                return (
-                  <div key={roundId} className="space-y-2">
-                    {round && (
-                      <div className="flex items-center gap-2 pt-1">
-                        <div className="flex items-center gap-1.5 flex-shrink-0">
-                          <Scale className="h-3 w-3 text-primary" />
-                          <span className="text-[11px] font-bold text-primary uppercase tracking-wider">{roundLabel}</span>
-                        </div>
-                        <Separator className="flex-1" />
-                      </div>
-                    )}
-                    {round?.prompt && (
-                      <p className="text-[11px] text-muted-foreground italic pl-5 line-clamp-2">{round.prompt}</p>
-                    )}
+                 return (
+                   <div key={roundId} className={cn("space-y-2", isFollowUp && "pl-5")}>
+                     {round && (
+                       <div className="flex items-center gap-2 pt-1">
+                         <div className="flex items-center gap-1.5 flex-shrink-0">
+                           {isFollowUp ? (
+                             <MessageSquare className="h-3 w-3 text-[hsl(var(--hydra-arbiter))]" />
+                           ) : (
+                             <Scale className="h-3 w-3 text-primary" />
+                           )}
+                           <span className={cn(
+                             "text-[11px] font-bold uppercase tracking-wider",
+                             isFollowUp ? "text-[hsl(var(--hydra-arbiter))]" : "text-primary"
+                           )}>
+                             {roundLabel}
+                           </span>
+                         </div>
+                         <Separator className="flex-1" />
+                       </div>
+                     )}
+                     {round?.prompt && (
+                       <p className={cn("text-[11px] text-muted-foreground italic line-clamp-2", isFollowUp ? "pl-0" : "pl-5")}>{round.prompt}</p>
+                     )}
                     {roundResults.map(r => {
                       const entry = getModelRegistryEntry(r.model_id);
                       const shortName = entry?.displayName || r.model_id.split('/').pop() || r.model_id;
