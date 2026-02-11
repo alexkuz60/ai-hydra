@@ -14,6 +14,152 @@ export type Database = {
   }
   public: {
     Tables: {
+      contest_results: {
+        Row: {
+          arbiter_comment: string | null
+          arbiter_model: string | null
+          arbiter_score: number | null
+          created_at: string
+          id: string
+          metadata: Json | null
+          model_id: string
+          response_text: string | null
+          response_time_ms: number | null
+          round_id: string
+          session_id: string
+          status: string
+          token_count: number | null
+          updated_at: string
+          user_score: number | null
+        }
+        Insert: {
+          arbiter_comment?: string | null
+          arbiter_model?: string | null
+          arbiter_score?: number | null
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          model_id: string
+          response_text?: string | null
+          response_time_ms?: number | null
+          round_id: string
+          session_id: string
+          status?: string
+          token_count?: number | null
+          updated_at?: string
+          user_score?: number | null
+        }
+        Update: {
+          arbiter_comment?: string | null
+          arbiter_model?: string | null
+          arbiter_score?: number | null
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          model_id?: string
+          response_text?: string | null
+          response_time_ms?: number | null
+          round_id?: string
+          session_id?: string
+          status?: string
+          token_count?: number | null
+          updated_at?: string
+          user_score?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contest_results_round_id_fkey"
+            columns: ["round_id"]
+            isOneToOne: false
+            referencedRelation: "contest_rounds"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contest_results_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "contest_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contest_rounds: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          id: string
+          prompt: string
+          round_index: number
+          session_id: string
+          started_at: string | null
+          status: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          prompt?: string
+          round_index?: number
+          session_id: string
+          started_at?: string | null
+          status?: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          prompt?: string
+          round_index?: number
+          session_id?: string
+          started_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contest_rounds_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "contest_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contest_sessions: {
+        Row: {
+          completed_at: string | null
+          config: Json
+          created_at: string
+          id: string
+          name: string
+          started_at: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          config?: Json
+          created_at?: string
+          id?: string
+          name?: string
+          started_at?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          config?: Json
+          created_at?: string
+          id?: string
+          name?: string
+          started_at?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       custom_tools: {
         Row: {
           category: string
