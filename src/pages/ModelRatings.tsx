@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -17,7 +17,6 @@ import { ModelPortfolio } from '@/components/ratings/ModelPortfolio';
 import { BeautyContest } from '@/components/ratings/BeautyContest';
 import { ContestPodium } from '@/components/ratings/ContestPodium';
 import { RatingsContent } from '@/components/ratings/RatingsContent';
-import { useEffect } from 'react';
 
 type Section = 'portfolio' | 'rules' | 'contest' | 'ratings';
 

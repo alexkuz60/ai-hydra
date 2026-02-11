@@ -1,802 +1,28 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
-import { useContestSession, type ContestResult } from '@/hooks/useContestSession';
+import { useContestSession } from '@/hooks/useContestSession';
 import { useContestExecution } from '@/hooks/useContestExecution';
-import { Crown, Play, History, Loader2, Clock, CheckCircle2, AlertCircle, MessageSquare, Scale, Trophy, ChevronDown, ChevronUp, Send, BarChart3, Archive, Star, Maximize2, Minimize2, FileText, Users } from 'lucide-react';
-import { Checkbox } from '@/components/ui/checkbox';
+import { Crown, Play, Loader2, ChevronDown, ChevronUp, Send, BarChart3, Archive, MessageSquare, Scale, FileText, Users } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
 import { cn } from '@/lib/utils';
 import { getModelRegistryEntry } from '@/config/modelRegistry';
 import { PROVIDER_LOGOS, PROVIDER_COLORS } from '@/components/ui/ProviderLogos';
-import { MarkdownRenderer } from '@/components/warroom/MarkdownRenderer';
 import { useToast } from '@/hooks/use-toast';
 
-// ============================================
-// Sub-components
-// ============================================
-
-// ============================================
-// Scoreboard phase detection & messages
-// ============================================
-
-type ContestPhase = 'idle' | 'generating' | 'user_scoring' | 'arbiter_judging' | 'round_complete' | 'completed' | 'failed';
-
-function detectPhase(results: ContestResult[], status: string): { phase: ContestPhase; activeModelId?: string } {
-  if (status === 'completed') return { phase: 'completed' };
-  if (status === 'draft' || status === 'paused') return { phase: 'idle' };
-
-  const generating = results.find(r => r.status === 'generating');
-  if (generating) return { phase: 'generating', activeModelId: generating.model_id };
-
-  const readyNoUserScore = results.find(r => r.status === 'ready' && r.user_score == null);
-  if (readyNoUserScore) return { phase: 'user_scoring', activeModelId: readyNoUserScore.model_id };
-
-  const readyNoArbiter = results.find(r => r.status === 'ready' && r.arbiter_score == null && r.user_score != null);
-  if (readyNoArbiter) return { phase: 'arbiter_judging', activeModelId: readyNoArbiter.model_id };
-
-  const failed = results.find(r => r.status === 'failed');
-  if (failed) return { phase: 'failed', activeModelId: failed.model_id };
-
-  if (results.length > 0 && results.every(r => r.status === 'judged')) return { phase: 'round_complete' };
-
-  return { phase: 'idle' };
-}
-
-const PHASE_MESSAGES_RU: Record<ContestPhase, string[]> = {
-  idle: ['Конкурс ожидает запуска…', 'Подиум готов, жюри заняло свои места.'],
-  generating: [
-    'На подиуме модель {model} — демонстрирует своё мастерство!',
-    'Модель {model} обдумывает ответ… глубокие нейронные связи активированы!',
-    '{model} выступает перед жюри — все взгляды устремлены на подиум!',
-  ],
-  user_scoring: [
-    'Ответ {model} готов — ваша очередь поставить оценку!',
-    'Жюри ожидает вашу экспертную оценку для {model}.',
-    'Модель {model} замерла в ожидании вашего вердикта…',
-  ],
-  arbiter_judging: [
-    'Арбитры совещаются по выступлению {model}…',
-    'Судьи оценивают мастерство {model} — шепот в зале…',
-    'Арбитр анализирует ответ {model} по всем критериям.',
-  ],
-  round_complete: [
-    'Тур завершён! Результаты занесены в протокол.',
-    'Все конкурсанты выступили — итоги подведены!',
-  ],
-  completed: [
-    'Конкурс завершён! Победители определены. 🏆',
-    'Финальные результаты зафиксированы. Поздравляем!',
-  ],
-  failed: [
-    'Возникла ошибка при обработке ответа {model}.',
-    'Модель {model} не смогла ответить — технический сбой.',
-  ],
-};
-
-const PHASE_MESSAGES_EN: Record<ContestPhase, string[]> = {
-  idle: ['Contest awaiting launch…', 'The podium is ready, the jury is seated.'],
-  generating: [
-    'Model {model} is on the podium — showcasing its skills!',
-    '{model} is thinking deeply… neural pathways activated!',
-    '{model} performs for the jury — all eyes on the stage!',
-  ],
-  user_scoring: [
-    '{model}\'s response is ready — your turn to score!',
-    'The jury awaits your expert evaluation of {model}.',
-    '{model} stands frozen, awaiting your verdict…',
-  ],
-  arbiter_judging: [
-    'Arbiters deliberate on {model}\'s performance…',
-    'Judges evaluate {model}\'s craft — whispers in the hall…',
-    'Arbiter analyzes {model}\'s response across all criteria.',
-  ],
-  round_complete: [
-    'Round complete! Results recorded in the protocol.',
-    'All contestants have performed — scores tallied!',
-  ],
-  completed: [
-    'Contest finished! Winners determined. 🏆',
-    'Final results are in. Congratulations!',
-  ],
-  failed: [
-    'Error processing {model}\'s response.',
-    '{model} failed to respond — technical issue.',
-  ],
-};
-
-const PHASE_ICONS: Record<ContestPhase, React.ReactNode> = {
-  idle: <Crown className="h-8 w-8 text-primary" />,
-  generating: <Loader2 className="h-8 w-8 animate-spin text-primary" />,
-  user_scoring: <MessageSquare className="h-8 w-8 text-[hsl(var(--hydra-arbiter))]" />,
-  arbiter_judging: <Scale className="h-8 w-8 text-[hsl(var(--hydra-expert))]" />,
-  round_complete: <CheckCircle2 className="h-8 w-8 text-[hsl(var(--hydra-success))]" />,
-  completed: <Trophy className="h-8 w-8 text-[hsl(var(--hydra-arbiter))]" />,
-  failed: <AlertCircle className="h-8 w-8 text-destructive" />,
-};
-
-/** Mini podium histogram — vertical bars representing top 3 */
-function PodiumHistogram({ results }: { results: ContestResult[] }) {
-  const modelIds = [...new Set(results.map(r => r.model_id))];
-
-  // Compute total scores per model (user + arbiter)
-  const scored = modelIds.map(modelId => {
-    const mrs = results.filter(r => r.model_id === modelId);
-    const uScores = mrs.filter(r => r.user_score != null).map(r => r.user_score!);
-    const aScores = mrs.filter(r => r.arbiter_score != null).map(r => r.arbiter_score!);
-    const avgU = uScores.length ? uScores.reduce((a, b) => a + b, 0) / uScores.length : 0;
-    const avgA = aScores.length ? aScores.reduce((a, b) => a + b, 0) / aScores.length : 0;
-    const total = avgU + avgA;
-    const hasScore = uScores.length > 0 || aScores.length > 0;
-    return { modelId, total, hasScore };
-  }).sort((a, b) => b.total - a.total);
-
-  const hasAnyScore = scored.some(s => s.hasScore);
-  const maxScore = hasAnyScore ? Math.max(...scored.map(s => s.total), 1) : 1;
-
-  // Show top 3 (or pad to 3)
-  const podium = [scored[1], scored[0], scored[2]]; // 2nd, 1st, 3rd — classic podium order
-  const defaultHeights = [60, 100, 40]; // fallback percentage heights for 2nd, 1st, 3rd
-
-  // Dynamic range: use min score as floor to amplify visual differences
-  const scores = scored.filter(s => s.hasScore).map(s => s.total);
-  const minScore = scores.length > 1 ? Math.min(...scores) : 0;
-  const range = maxScore - minScore;
-  // Map score to 15%–100% range for maximum visual contrast
-  const dynamicHeight = (total: number) => {
-    if (range < 0.01) return 100; // all equal
-    const normalized = (total - minScore) / range; // 0..1
-    return 15 + normalized * 85; // 15%..100%
-  };
-
-  const podiumColors = hasAnyScore
-    ? ['hsl(var(--hydra-expert))', 'hsl(var(--hydra-arbiter))', 'hsl(var(--primary))']
-    : ['hsl(var(--muted))', 'hsl(var(--muted))', 'hsl(var(--muted))'];
-  const podiumLabels = ['2', '1', '3'];
-
-  return (
-    <div className="flex-shrink-0 w-16 h-14 flex items-end justify-center gap-[3px]">
-      {podium.map((entry, i) => {
-        const heightPct = entry?.hasScore
-          ? dynamicHeight(entry.total)
-          : defaultHeights[i] * 0.4;
-        const color = entry?.hasScore ? podiumColors[i] : 'hsl(var(--muted))';
-        const entryData = entry ? getModelRegistryEntry(entry.modelId) : null;
-        const shortName = entryData?.displayName || entry?.modelId?.split('/').pop() || '';
-
-        return (
-          <TooltipProvider key={i}>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div className="flex flex-col items-center gap-0.5" style={{ height: '100%', justifyContent: 'flex-end' }}>
-                  <span className="text-[8px] font-bold text-muted-foreground">{podiumLabels[i]}</span>
-                  <div
-                    className="w-4 rounded-t-sm"
-                    style={{
-                      height: `${heightPct}%`,
-                      backgroundColor: color,
-                      opacity: entry?.hasScore ? 1 : 0.3,
-                      transition: 'height 0.8s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.4s ease, opacity 0.4s ease',
-                    }}
-                  />
-                </div>
-              </TooltipTrigger>
-              {entry && (
-                <TooltipContent side="bottom" className="text-[10px]">
-                  {shortName}{entry.hasScore ? `: ${entry.total.toFixed(1)}` : ''}
-                </TooltipContent>
-              )}
-            </Tooltip>
-          </TooltipProvider>
-        );
-      })}
-    </div>
-  );
-}
-
-/** Progress Scoreboard — vivid sticky header */
-function ContestScoreboard({
-  results,
-  currentRound,
-  totalRounds,
-  completedRounds = 0,
-  status,
-  sessionName,
-  arbiterCount,
-  isRu,
-  onNewContest,
-}: {
-  results: ContestResult[];
-  currentRound: number;
-  totalRounds: number;
-  completedRounds?: number;
-  status: string;
-  sessionName: string;
-  arbiterCount: number;
-  isRu: boolean;
-  onNewContest?: () => void;
-}) {
-  const modelIds = [...new Set(results.map(r => r.model_id))];
-  const { phase, activeModelId } = detectPhase(results, status);
-  const [msgIndex, setMsgIndex] = useState(0);
-
-  // Rotate messages every 4s
-  useEffect(() => {
-    const msgs = isRu ? PHASE_MESSAGES_RU[phase] : PHASE_MESSAGES_EN[phase];
-    if (msgs.length <= 1) { setMsgIndex(0); return; }
-    const t = setInterval(() => setMsgIndex(i => (i + 1) % msgs.length), 4000);
-    return () => clearInterval(t);
-  }, [phase, isRu]);
-
-  // Reset index on phase change
-  useEffect(() => { setMsgIndex(0); }, [phase]);
-
-  const msgs = isRu ? PHASE_MESSAGES_RU[phase] : PHASE_MESSAGES_EN[phase];
-  const activeEntry = activeModelId ? getModelRegistryEntry(activeModelId) : null;
-  const activeDisplayName = activeEntry?.displayName || activeModelId?.split('/').pop() || '…';
-  const currentMsg = (msgs[msgIndex % msgs.length] || '').replace(/\{model\}/g, activeDisplayName);
-
-  const statusBadge = status === 'running' ? (isRu ? 'Идёт' : 'Live')
-    : status === 'completed' ? (isRu ? 'Завершён' : 'Done')
-    : status === 'paused' ? (isRu ? 'Пауза' : 'Paused')
-    : status;
-
-  return (
-    <div className="border-b-2 border-primary/30 bg-gradient-to-r from-primary/15 via-primary/8 to-accent/10 px-4 py-3">
-      {/* Header row */}
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-2 min-w-0">
-          <Crown className="h-4 w-4 text-primary flex-shrink-0" />
-          <span className="text-sm font-bold truncate">{sessionName}</span>
-        </div>
-        <div className="flex items-center gap-2 flex-shrink-0">
-          <div className="flex items-center gap-1.5">
-            <Badge variant="outline" className="text-[10px] border-primary/40 bg-primary/10 gap-1">
-              {isRu ? `Тур ${currentRound + 1}/${totalRounds}` : `R${currentRound + 1}/${totalRounds}`}
-            </Badge>
-            <div className="w-16 h-1.5 rounded-full bg-muted/40 overflow-hidden">
-              <div
-                className="h-full rounded-full bg-primary transition-all duration-700 ease-out"
-                style={{ width: `${totalRounds > 0 ? (completedRounds / totalRounds) * 100 : 0}%` }}
-              />
-            </div>
-          </div>
-          <Badge variant="outline" className="text-[10px] gap-1">
-            <Play className="h-2.5 w-2.5" />
-            {modelIds.length}
-          </Badge>
-          {arbiterCount > 0 && (
-            <Badge variant="outline" className="text-[10px] gap-1 border-[hsl(var(--hydra-expert))]/40">
-              <Scale className="h-2.5 w-2.5" />
-              {arbiterCount}
-            </Badge>
-          )}
-          <Badge
-            variant={status === 'running' ? 'default' : 'secondary'}
-            className={cn("text-[10px]", status === 'running' && "animate-pulse")}
-          >
-            {statusBadge}
-          </Badge>
-          {onNewContest && (
-            <Button size="sm" variant="outline" className="h-6 text-[10px] gap-1 px-2" onClick={onNewContest}>
-              <Play className="h-2.5 w-2.5" />
-              {isRu ? 'Новый' : 'New'}
-            </Button>
-          )}
-        </div>
-      </div>
-
-      {/* Three-column dynamic area */}
-      <div className="flex items-center gap-4">
-        {/* Left: large phase icon */}
-        <div className="flex-shrink-0 w-14 h-14 rounded-xl bg-background/60 border border-border/50 flex items-center justify-center shadow-sm">
-          {PHASE_ICONS[phase]}
-        </div>
-
-        {/* Center: animated notification + chips */}
-        <div className="flex-1 min-w-0">
-          <AnimatePresence mode="wait">
-            <motion.p 
-              key={`${phase}-${msgIndex}`}
-              className="text-sm font-medium leading-snug"
-              initial={{ opacity: 0, x: 40 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -40 }}
-              transition={{ duration: 0.75, ease: [0.4, 0, 0.2, 1] }}
-            >
-              {currentMsg}
-            </motion.p>
-          </AnimatePresence>
-          {/* Model chips */}
-          <div className="flex flex-wrap gap-1.5 mt-1.5">
-            {modelIds.map(modelId => {
-              const entry = getModelRegistryEntry(modelId);
-              const shortName = entry?.displayName || modelId.split('/').pop() || modelId;
-              const result = results.find(r => r.model_id === modelId);
-              const ProviderLogo = entry?.provider ? PROVIDER_LOGOS[entry.provider] : undefined;
-              const color = entry?.provider ? PROVIDER_COLORS[entry.provider] : '';
-              const isActive = modelId === activeModelId;
-
-              // Resolve provider accent color for active highlight
-              const PROVIDER_ACCENT: Record<string, string> = {
-                gemini: 'var(--hydra-arbiter)',
-                openai: 'var(--hydra-success)',
-                anthropic: 'var(--hydra-expert)',
-                xai: 'var(--hydra-expert)',
-                deepseek: 'var(--hydra-success)',
-              };
-              const accent = entry?.provider ? PROVIDER_ACCENT[entry.provider] : undefined;
-
-              return (
-                <div
-                  key={modelId}
-                  className={cn(
-                    "flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] border transition-all",
-                    isActive ? "font-semibold ring-1" : "bg-background/50 border-border/30"
-                  )}
-                  style={isActive ? {
-                    backgroundColor: accent ? `hsl(${accent} / 0.15)` : 'hsl(var(--primary) / 0.15)',
-                    borderColor: accent ? `hsl(${accent} / 0.5)` : 'hsl(var(--primary) / 0.5)',
-                    boxShadow: `0 0 0 1px ${accent ? `hsl(${accent} / 0.3)` : 'hsl(var(--primary) / 0.3)'}`,
-                  } : undefined}
-                >
-                  {ProviderLogo && <ProviderLogo className={cn("h-2.5 w-2.5", color)} />}
-                  <span className="truncate max-w-[120px]">{shortName}</span>
-                  {result?.status === 'generating' && <Loader2 className="h-2.5 w-2.5 animate-spin text-primary" />}
-                  {result?.status === 'ready' && <CheckCircle2 className="h-2.5 w-2.5 text-[hsl(var(--hydra-success))]" />}
-                  {result?.status === 'judged' && <Trophy className="h-2.5 w-2.5 text-[hsl(var(--hydra-arbiter))]" />}
-                  {result?.status === 'failed' && <AlertCircle className="h-2.5 w-2.5 text-destructive" />}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Right: mini podium histogram */}
-        <PodiumHistogram results={results} />
-      </div>
-    </div>
-  );
-}
-
-/** Inline scoring widget for user evaluation — always editable */
-function UserScoreWidget({
-  resultId,
-  currentScore,
-  onScore,
-  isRu,
-}: {
-  resultId: string;
-  currentScore: number | null;
-  onScore: (resultId: string, score: number) => void;
-  isRu: boolean;
-}) {
-  const [hover, setHover] = useState<number | null>(null);
-
-  return (
-    <div className="pt-2 border-t border-primary/20 space-y-1.5">
-      <div className="flex items-center gap-1.5">
-        <Star className="h-3 w-3 text-primary" />
-        <span className="text-[11px] font-medium text-primary">
-          {isRu ? 'Ваша оценка:' : 'Your score:'}
-        </span>
-      </div>
-      <div className="flex items-center gap-1">
-        {Array.from({ length: 10 }, (_, i) => i + 1).map(score => {
-          const isActive = hover != null ? hover >= score : (currentScore ?? 0) >= score;
-          return (
-            <button
-              key={score}
-              className={cn(
-                "w-7 h-7 rounded-md text-[11px] font-semibold transition-all border",
-                isActive
-                  ? "bg-primary text-primary-foreground border-primary scale-105"
-                  : "bg-muted/30 text-muted-foreground border-border/40 hover:bg-muted/60"
-              )}
-              onMouseEnter={() => setHover(score)}
-              onMouseLeave={() => setHover(null)}
-              onClick={() => onScore(resultId, score)}
-            >
-              {score}
-            </button>
-          );
-        })}
-      </div>
-      <p className="text-[10px] text-muted-foreground">
-        {hover
-          ? (isRu ? `Оценка: ${hover}/10` : `Score: ${hover}/10`)
-          : currentScore != null
-            ? (isRu ? `Текущая: ${currentScore}/10 — нажмите для изменения` : `Current: ${currentScore}/10 — click to change`)
-            : (isRu ? 'Нажмите для оценки от 1 до 10' : 'Click to rate 1-10')
-        }
-      </p>
-    </div>
-  );
-}
-
-/** Filtered responses chat — now rendered inside a tab, no own header */
-function ContestResponsesPanel({
-  results,
-  rounds,
-  streamingTexts,
-  isRu,
-  initialRoundCount = 1,
-  onScore,
-  activeModel,
-  onActiveModelChange,
-}: {
-  results: ContestResult[];
-  rounds: { id: string; round_index: number; prompt: string }[];
-  streamingTexts: Record<string, string>;
-  isRu: boolean;
-  initialRoundCount?: number;
-  onScore?: (resultId: string, score: number) => void;
-  activeModel: string;
-  onActiveModelChange: (model: string) => void;
-}) {
-  const modelIds = [...new Set(results.map(r => r.model_id))];
-
-  const allDisplayable = activeModel === 'all'
-    ? results.filter(r => r.response_text || streamingTexts[r.model_id])
-    : results.filter(r => r.model_id === activeModel && (r.response_text || streamingTexts[r.model_id]));
-
-  const filtered = allDisplayable;
-
-  return (
-    <div className="flex flex-col h-full">
-      <Tabs value={activeModel} onValueChange={onActiveModelChange} className="flex flex-col h-full">
-        <div className="px-3 pt-2 pb-1 border-b border-border/50">
-          <TabsList className="h-8 p-1 bg-muted/30 w-full justify-start gap-1">
-            <TabsTrigger value="all" className="text-xs h-6 px-3">
-              {isRu ? 'Все' : 'All'}
-            </TabsTrigger>
-            {modelIds.map(id => {
-              const entry = getModelRegistryEntry(id);
-              const short = entry?.displayName || id.split('/').pop() || id;
-              return (
-                <TabsTrigger key={id} value={id} className="text-xs h-6 px-3 max-w-[140px] truncate">
-                  {short}
-                </TabsTrigger>
-              );
-            })}
-          </TabsList>
-        </div>
-
-        <ScrollArea className="flex-1 p-3">
-          <div className="space-y-3">
-            {filtered.length === 0 ? (
-              <div className="text-xs text-muted-foreground text-center py-8">
-                {isRu ? 'Ответы появятся здесь после запуска' : 'Responses will appear here after launch'}
-              </div>
-            ) : (
-              (() => {
-                // Group results by round
-                const roundGroups = rounds
-                  .filter(round => filtered.some(r => r.round_id === round.id))
-                  .map(round => ({
-                    round,
-                    results: filtered.filter(r => r.round_id === round.id),
-                  }));
-
-                // Results without a matching round (fallback)
-                const orphans = filtered.filter(r => !rounds.some(rd => rd.id === r.round_id));
-                if (orphans.length > 0) {
-                  roundGroups.push({ round: { id: '__orphan', round_index: -1, prompt: '' }, results: orphans });
-                }
-
-                 return roundGroups.map(({ round, results: groupResults }) => {
-                   // Determine if this is a follow-up round (after the initial roundCount)
-                   const isFollowUp = round.round_index >= initialRoundCount;
-                   
-                   const roundLabel = round.round_index < 0
-                     ? ''
-                     : isFollowUp
-                       ? (isRu ? `Дополнительный вопрос ${round.round_index - initialRoundCount + 1}` : `Follow-up ${round.round_index - initialRoundCount + 1}`)
-                       : (isRu ? `Тур ${round.round_index + 1}` : `Round ${round.round_index + 1}`);
-
-                   const followUpCount = isFollowUp ? round.round_index - initialRoundCount + 1 : 0;
-
-                   return (
-                     <div key={round.id} className={cn("space-y-2", isFollowUp && "pl-5")}>
-                       {round.round_index >= 0 && (
-                         <div className="flex items-center gap-2 pt-1">
-                           <div className="flex items-center gap-1.5 flex-shrink-0">
-                             {isFollowUp ? (
-                               <MessageSquare className="h-3 w-3 text-[hsl(var(--hydra-arbiter))]" />
-                             ) : (
-                               <Crown className="h-3 w-3 text-primary" />
-                             )}
-                             <span className={cn(
-                               "text-[11px] font-bold uppercase tracking-wider",
-                               isFollowUp ? "text-[hsl(var(--hydra-arbiter))]" : "text-primary"
-                             )}>
-                               {roundLabel}
-                             </span>
-                           </div>
-                           <Separator className="flex-1" />
-                           {round.prompt && (
-                             <TooltipProvider>
-                               <Tooltip>
-                                 <TooltipTrigger asChild>
-                                   <FileText className="h-3 w-3 text-muted-foreground flex-shrink-0 cursor-help" />
-                                 </TooltipTrigger>
-                                 <TooltipContent side="bottom" className="max-w-xs text-xs whitespace-pre-wrap">
-                                   {round.prompt}
-                                 </TooltipContent>
-                               </Tooltip>
-                             </TooltipProvider>
-                           )}
-                         </div>
-                       )}
-                       {round.prompt && round.round_index >= 0 && (
-                         <p className={cn("text-[11px] text-muted-foreground italic line-clamp-2", isFollowUp ? "pl-0" : "pl-5")}>
-                           {round.prompt}
-                         </p>
-                       )}
-                      {groupResults.map(result => {
-                        const entry = getModelRegistryEntry(result.model_id);
-                        const shortName = entry?.displayName || result.model_id.split('/').pop() || result.model_id;
-                        const ProviderLogo = entry?.provider ? PROVIDER_LOGOS[entry.provider] : undefined;
-                        const color = entry?.provider ? PROVIDER_COLORS[entry.provider] : '';
-
-                        return (
-                          <div key={result.id} className="rounded-lg border border-border/40 bg-card p-3 space-y-2">
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-1.5">
-                                {ProviderLogo && <ProviderLogo className={cn("h-3.5 w-3.5", color)} />}
-                                <span className="text-xs font-semibold">{shortName}</span>
-                              </div>
-                              <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
-                                {result.response_time_ms && (
-                                  <span>{(result.response_time_ms / 1000).toFixed(1)}s</span>
-                                )}
-                                {result.token_count && (
-                                  <span>{result.token_count} tok</span>
-                                )}
-                              </div>
-                            </div>
-                            <div className="text-sm">
-                              <MarkdownRenderer content={result.response_text || streamingTexts[result.model_id] || ''} />
-                              {result.status === 'generating' && !result.response_text && streamingTexts[result.model_id] && (
-                                <Loader2 className="h-3 w-3 animate-spin text-primary inline ml-1" />
-                              )}
-                            </div>
-                            {(result.status === 'ready' || result.status === 'judged') && onScore && (
-                              <UserScoreWidget
-                                resultId={result.id}
-                                currentScore={result.user_score}
-                                onScore={onScore}
-                                isRu={isRu}
-                              />
-                            )}
-                            {result.arbiter_score != null && (
-                              <div className="flex items-center gap-3 text-[10px] pt-1 border-t border-border/30">
-                                <span>⚖️ {result.arbiter_score}/10</span>
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  );
-                });
-              })()
-            )}
-          </div>
-        </ScrollArea>
-      </Tabs>
-    </div>
-  );
-}
-
-/** Arbiter comments panel */
-function ContestArbiterPanel({
-  results,
-  rounds,
-  isRu,
-  initialRoundCount = 1,
-}: {
-  results: ContestResult[];
-  rounds: { id: string; round_index: number; prompt: string }[];
-  isRu: boolean;
-  initialRoundCount?: number;
-}) {
-  const judged = results.filter(r => r.arbiter_comment);
-
-  return (
-    <div className="flex flex-col h-full">
-      <div className="px-3 pt-2 pb-1 border-b border-border/50">
-        <div className="flex items-center gap-2">
-          <Scale className="h-3.5 w-3.5 text-muted-foreground" />
-          <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            {isRu ? 'Комментарии арбитра' : 'Arbiter Comments'}
-          </span>
-        </div>
-      </div>
-      <ScrollArea className="flex-1 p-3">
-        <div className="space-y-2">
-          {judged.length === 0 ? (
-            <div className="text-xs text-muted-foreground text-center py-6">
-              {isRu ? 'Арбитр ещё не оценивал' : 'Arbiter has not judged yet'}
-            </div>
-          ) : (
-             (() => {
-               // Group arbiter comments by round
-               const roundIds = [...new Set(judged.map(r => r.round_id))];
-               return roundIds.map(roundId => {
-                 const round = rounds.find(rd => rd.id === roundId);
-                 const roundResults = judged.filter(r => r.round_id === roundId);
-                 const isFollowUp = round ? round.round_index >= initialRoundCount : false;
-                 const roundLabel = round
-                   ? isFollowUp
-                     ? (isRu ? `Дополнительный вопрос ${round.round_index - initialRoundCount + 1}` : `Follow-up ${round.round_index - initialRoundCount + 1}`)
-                     : (isRu ? `Тур ${round.round_index + 1}` : `Round ${round.round_index + 1}`)
-                   : '';
-
-                 return (
-                   <div key={roundId} className={cn("space-y-2", isFollowUp && "pl-5")}>
-                     {round && (
-                       <div className="flex items-center gap-2 pt-1">
-                         <div className="flex items-center gap-1.5 flex-shrink-0">
-                           {isFollowUp ? (
-                             <MessageSquare className="h-3 w-3 text-[hsl(var(--hydra-arbiter))]" />
-                           ) : (
-                             <Scale className="h-3 w-3 text-primary" />
-                           )}
-                           <span className={cn(
-                             "text-[11px] font-bold uppercase tracking-wider",
-                             isFollowUp ? "text-[hsl(var(--hydra-arbiter))]" : "text-primary"
-                           )}>
-                             {roundLabel}
-                           </span>
-                         </div>
-                         <Separator className="flex-1" />
-                       </div>
-                     )}
-                     {round?.prompt && (
-                       <p className={cn("text-[11px] text-muted-foreground italic line-clamp-2", isFollowUp ? "pl-0" : "pl-5")}>{round.prompt}</p>
-                     )}
-                    {roundResults.map(r => {
-                      const entry = getModelRegistryEntry(r.model_id);
-                      const shortName = entry?.displayName || r.model_id.split('/').pop() || r.model_id;
-                      return (
-                        <div key={r.id} className="rounded-md border border-border/30 bg-muted/10 p-2 space-y-1">
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs font-medium">{shortName}</span>
-                            {r.arbiter_score != null && (
-                              <Badge variant="secondary" className="text-[10px]">{r.arbiter_score}/10</Badge>
-                            )}
-                          </div>
-                          <p className="text-xs text-muted-foreground leading-relaxed">{r.arbiter_comment}</p>
-                        </div>
-                      );
-                    })}
-                  </div>
-                );
-              });
-            })()
-          )}
-        </div>
-      </ScrollArea>
-    </div>
-  );
-}
-
-/** Scores table with footer totals and winner selection */
-function ContestScoresTable({
-  results,
-  rounds,
-  isRu,
-  selectedWinners,
-  onToggleWinner,
-}: {
-  results: ContestResult[];
-  rounds: { id: string; round_index: number }[];
-  isRu: boolean;
-  selectedWinners: Set<string>;
-  onToggleWinner: (modelId: string) => void;
-}) {
-  const modelIds = [...new Set(results.map(r => r.model_id))];
-
-  // Aggregate scores per model
-  const aggregated = modelIds.map(modelId => {
-    const modelResults = results.filter(r => r.model_id === modelId);
-    const userScores = modelResults.filter(r => r.user_score != null).map(r => r.user_score!);
-    const arbiterScores = modelResults.filter(r => r.arbiter_score != null).map(r => r.arbiter_score!);
-    const avgUser = userScores.length ? userScores.reduce((a, b) => a + b, 0) / userScores.length : null;
-    const avgArbiter = arbiterScores.length ? arbiterScores.reduce((a, b) => a + b, 0) / arbiterScores.length : null;
-    const totalScore = (avgUser ?? 0) + (avgArbiter ?? 0) || null;
-
-    return { modelId, avgUser, avgArbiter, totalScore, responseCount: modelResults.length };
-  }).sort((a, b) => (b.totalScore ?? 0) - (a.totalScore ?? 0));
-
-  return (
-    <div className="rounded-lg border border-border/40 overflow-hidden">
-      <div className="px-3 py-2 border-b border-border/30 flex items-center gap-2">
-        <BarChart3 className="h-3.5 w-3.5 text-muted-foreground" />
-        <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          {isRu ? 'Таблица оценок' : 'Scores Table'}
-        </span>
-        {selectedWinners.size > 0 && (
-          <Badge variant="secondary" className="ml-auto text-[10px] gap-1 bg-primary/10 text-primary">
-            <Crown className="h-2.5 w-2.5" />
-            {selectedWinners.size} {isRu ? 'выбрано' : 'selected'}
-          </Badge>
-        )}
-      </div>
-      <Table>
-        <TableHeader>
-          <TableRow className="text-[11px]">
-            <TableHead className="w-8">
-              <Crown className="h-3 w-3 text-primary mx-auto" />
-            </TableHead>
-            <TableHead className="w-8">#</TableHead>
-            <TableHead>{isRu ? 'Модель' : 'Model'}</TableHead>
-            <TableHead className="text-center">👤</TableHead>
-            <TableHead className="text-center">⚖️</TableHead>
-            <TableHead className="text-center">{isRu ? 'Итого' : 'Total'}</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {aggregated.map((row, i) => {
-            const entry = getModelRegistryEntry(row.modelId);
-            const shortName = entry?.displayName || row.modelId.split('/').pop() || row.modelId;
-            const ProviderLogo = entry?.provider ? PROVIDER_LOGOS[entry.provider] : undefined;
-            const color = entry?.provider ? PROVIDER_COLORS[entry.provider] : '';
-            const isSelected = selectedWinners.has(row.modelId);
-
-            return (
-              <TableRow
-                key={row.modelId}
-                className={cn("text-xs cursor-pointer transition-colors", isSelected && "bg-primary/5")}
-                onClick={() => onToggleWinner(row.modelId)}
-              >
-                <TableCell className="text-center">
-                  <Checkbox
-                    checked={isSelected}
-                    onCheckedChange={() => onToggleWinner(row.modelId)}
-                    className="mx-auto"
-                    onClick={(e) => e.stopPropagation()}
-                  />
-                </TableCell>
-                <TableCell className="font-mono text-muted-foreground">
-                  <div className="flex items-center gap-1">
-                    {isSelected && <Crown className="h-2.5 w-2.5 text-primary" />}
-                    {i + 1}
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-1.5">
-                    {ProviderLogo && <ProviderLogo className={cn("h-3 w-3", color)} />}
-                    <span className="truncate max-w-[120px]">{shortName}</span>
-                  </div>
-                </TableCell>
-                <TableCell className="text-center">{row.avgUser != null ? row.avgUser.toFixed(1) : '—'}</TableCell>
-                <TableCell className="text-center">{row.avgArbiter != null ? row.avgArbiter.toFixed(1) : '—'}</TableCell>
-                <TableCell className="text-center font-semibold">{row.totalScore != null ? row.totalScore.toFixed(1) : '—'}</TableCell>
-              </TableRow>
-            );
-          })}
-        </TableBody>
-      </Table>
-    </div>
-  );
-}
-
-// ============================================
-// Main Component
-// ============================================
+// Extracted sub-components
+import { ContestScoreboard } from './ContestScoreboard';
+import { ContestResponsesPanel } from './ContestResponsesPanel';
+import { ContestArbiterPanel } from './ContestArbiterPanel';
+import { ContestScoresTable } from './ContestScoresTable';
 
 export function BeautyContest() {
   const { language } = useLanguage();
@@ -818,8 +44,7 @@ export function BeautyContest() {
   const handleToggleWinner = useCallback((modelId: string) => {
     setSelectedWinners(prev => {
       const next = new Set(prev);
-      if (next.has(modelId)) next.delete(modelId);
-      else next.add(modelId);
+      if (next.has(modelId)) next.delete(modelId); else next.add(modelId);
       return next;
     });
   }, []);
@@ -827,7 +52,6 @@ export function BeautyContest() {
   const handleMigrateToExpertPanel = useCallback(() => {
     if (selectedWinners.size === 0 || !contest.session) return;
 
-    // Build migration payload with selected winners' answers and scores
     const winnerModels = [...selectedWinners];
     const winnerResults = contest.results.filter(r => winnerModels.includes(r.model_id));
     const taskPrompt = contest.rounds[0]?.prompt || '';
@@ -843,7 +67,6 @@ export function BeautyContest() {
         const avgUser = userScores.length ? userScores.reduce((a, b) => a + b, 0) / userScores.length : null;
         const avgArbiter = arbiterScores.length ? arbiterScores.reduce((a, b) => a + b, 0) / arbiterScores.length : null;
         const bestResponse = modelResults.find(r => r.response_text)?.response_text || '';
-
         return {
           modelId,
           displayName: entry?.displayName || modelId.split('/').pop() || modelId,
@@ -856,13 +79,11 @@ export function BeautyContest() {
       }).sort((a, b) => b.totalScore - a.totalScore),
     };
 
-    // Store in sessionStorage for ExpertPanel to pick up
     sessionStorage.setItem('contest-migration', JSON.stringify(migrationData));
     navigate('/expert-panel');
     toast({ description: isRu ? `${selectedWinners.size} победитель(ей) отправлено в Панель экспертов` : `${selectedWinners.size} winner(s) sent to Expert Panel` });
   }, [selectedWinners, contest.session, contest.results, contest.rounds, navigate, isRu, toast]);
 
-  // On mount, try to restore last session
   useEffect(() => {
     if (user && initialLoad) {
       contest.loadLatestSession().finally(() => setInitialLoad(false));
@@ -905,7 +126,7 @@ export function BeautyContest() {
     }
   };
 
-  // No session yet — show launch / restore UI
+  // No session — launch/restore UI
   if (!contest.session && !initialLoad) {
     return (
       <div className="h-full flex flex-col">
@@ -914,7 +135,6 @@ export function BeautyContest() {
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10">
               <Crown className="h-8 w-8 text-primary" />
             </div>
-
             <div>
               <h2 className="text-xl font-bold mb-2">
                 {isRu ? 'Конкурс интеллект-красоты' : 'Intelligence Beauty Contest'}
@@ -925,13 +145,11 @@ export function BeautyContest() {
                   : 'Configure the contest in "Rules" section and launch it here, or restore a previous session.'}
               </p>
             </div>
-
             <div className="flex flex-col gap-2">
               <Button onClick={handleLaunch} className="gap-2" size="lg">
                 <Play className="h-4 w-4" />
                 {isRu ? 'Запустить из плана' : 'Launch from Plan'}
               </Button>
-
               <Dialog>
                 <DialogTrigger asChild>
                   <Button variant="outline" className="gap-2" onClick={() => contest.loadHistory()}>
@@ -993,12 +211,11 @@ export function BeautyContest() {
 
   return (
     <div className="h-full flex flex-col">
-      {/* Scoreboard */}
       <ContestScoreboard
-         results={contest.results}
-         currentRound={currentRoundIndex >= 0 ? currentRoundIndex : 0}
-         totalRounds={contest.rounds.length || 1}
-         completedRounds={contest.rounds.filter(r => r.status === 'completed').length}
+        results={contest.results}
+        currentRound={currentRoundIndex >= 0 ? currentRoundIndex : 0}
+        totalRounds={contest.rounds.length || 1}
+        completedRounds={contest.rounds.filter(r => r.status === 'completed').length}
         status={contest.session?.status || 'draft'}
         sessionName={contest.session?.name || (isRu ? 'Конкурс' : 'Contest')}
         arbiterCount={contest.session?.config?.arbitration?.juryMode === 'ai' ? 1 : contest.session?.config?.arbitration?.juryMode === 'hybrid' ? 2 : 0}
@@ -1024,7 +241,7 @@ export function BeautyContest() {
         </Collapsible>
       )}
 
-      {/* Unified tabset — fills remaining space */}
+      {/* Unified tabset */}
       <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
         <Tabs value={activeMainTab} onValueChange={setActiveMainTab} className="flex flex-col flex-1 min-h-0">
           <div className="px-3 pt-2 flex-shrink-0">
@@ -1045,18 +262,18 @@ export function BeautyContest() {
           </div>
 
           <TabsContent value="responses" className="flex-1 min-h-0 overflow-hidden mt-0">
-             <ContestResponsesPanel
-               results={contest.results}
-               rounds={contest.rounds}
-               streamingTexts={execution.streamingTexts}
-               isRu={isRu}
-               initialRoundCount={contest.session?.config?.rules?.roundCount ?? 1}
-               onScore={async (resultId, score) => {
-                 await contest.updateResult(resultId, { user_score: score } as any);
-               }}
-               activeModel={activeModel}
-               onActiveModelChange={setActiveModel}
-             />
+            <ContestResponsesPanel
+              results={contest.results}
+              rounds={contest.rounds}
+              streamingTexts={execution.streamingTexts}
+              isRu={isRu}
+              initialRoundCount={contest.session?.config?.rules?.roundCount ?? 1}
+              onScore={async (resultId, score) => {
+                await contest.updateResult(resultId, { user_score: score } as any);
+              }}
+              activeModel={activeModel}
+              onActiveModelChange={setActiveModel}
+            />
           </TabsContent>
 
           <TabsContent value="scores" className="flex-1 min-h-0 overflow-auto mt-0 p-3 space-y-3">
@@ -1068,11 +285,7 @@ export function BeautyContest() {
               onToggleWinner={handleToggleWinner}
             />
             {selectedWinners.size > 0 && (
-              <Button
-                onClick={handleMigrateToExpertPanel}
-                className="w-full gap-2"
-                variant="outline"
-              >
+              <Button onClick={handleMigrateToExpertPanel} className="w-full gap-2" variant="outline">
                 <Crown className="h-3.5 w-3.5 text-primary" />
                 <Users className="h-3.5 w-3.5" />
                 {isRu
@@ -1083,16 +296,16 @@ export function BeautyContest() {
           </TabsContent>
 
           <TabsContent value="arbiter" className="flex-1 min-h-0 overflow-hidden mt-0">
-             <ContestArbiterPanel
-               results={contest.results}
-               rounds={contest.rounds}
-               isRu={isRu}
-               initialRoundCount={contest.session?.config?.rules?.roundCount ?? 1}
-             />
+            <ContestArbiterPanel
+              results={contest.results}
+              rounds={contest.rounds}
+              isRu={isRu}
+              initialRoundCount={contest.session?.config?.rules?.roundCount ?? 1}
+            />
           </TabsContent>
         </Tabs>
 
-        {/* Follow-up input — pinned at bottom */}
+        {/* Follow-up input */}
         <div className="border-t border-border px-3 py-2 flex-shrink-0">
           {activeModel !== 'all' && (
             <div className="flex items-center gap-1.5 mb-1.5">

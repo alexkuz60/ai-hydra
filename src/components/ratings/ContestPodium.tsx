@@ -1,5 +1,4 @@
 import React from 'react';
-import { useLanguage } from '@/contexts/LanguageContext';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { ContestTaskSelector } from './ContestTaskSelector';
 import { ContestRulesEditor } from './ContestRulesEditor';
@@ -8,8 +7,6 @@ import { ContestArbitration } from './ContestArbitration';
 import { ContestSummary } from './ContestSummary';
 
 export function ContestPodium() {
-  const { language } = useLanguage();
-  const isRu = language === 'ru';
 
   return (
     <ScrollArea className="h-full">
