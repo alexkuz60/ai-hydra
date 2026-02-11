@@ -58,6 +58,7 @@ export function ContestRulesEditor() {
 
   useEffect(() => {
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(rules)); } catch {}
+    window.dispatchEvent(new Event('contest-config-changed'));
   }, [rules]);
 
   const setRoundCount = (count: number) => {
