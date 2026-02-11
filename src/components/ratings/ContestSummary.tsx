@@ -4,7 +4,7 @@ import { HydraCard, HydraCardHeader, HydraCardTitle, HydraCardContent } from '@/
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Save, Trophy, Users, ListOrdered, ClipboardList, Scale, Workflow, Weight, BarChart3, Calculator, CheckCircle2, ExternalLink, Loader2, FileText, Maximize2, RotateCcw, Download } from 'lucide-react';
+import { Save, Trophy, Users, ListOrdered, ClipboardList, Scale, Workflow, Weight, BarChart3, Calculator, CheckCircle2, ExternalLink, Loader2, FileText, Maximize2, RotateCcw, Download, Upload } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
@@ -330,6 +330,48 @@ export function ContestSummary() {
 
         {/* Export & Reset */}
         <div className="flex items-center justify-end gap-1.5">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 text-[11px] gap-1.5"
+            onClick={() => {
+              const input = document.createElement('input');
+              input.type = 'file';
+              input.accept = '.json';
+              input.onchange = (e) => {
+                const file = (e.target as HTMLInputElement).files?.[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                  try {
+                    const data = JSON.parse(ev.target?.result as string);
+                    CONTEST_STORAGE_KEYS.forEach(k => {
+                      if (k in data) {
+                        localStorage.setItem(k, typeof data[k] === 'string' ? data[k] : JSON.stringify(data[k]));
+                      }
+                    });
+                    window.dispatchEvent(new Event('contest-config-changed'));
+                    // Re-read state from localStorage
+                    try { const m = localStorage.getItem('hydra-contest-models'); setModelCount(m ? Object.keys(JSON.parse(m)).length : 0); } catch { setModelCount(0); }
+                    try { const r = localStorage.getItem('hydra-contest-rules'); if (r) { const p = JSON.parse(r); setRoundCount(p.roundCount || 1); setRoundPrompt(p.rounds?.[0]?.prompt || ''); } } catch {}
+                    try { const t = localStorage.getItem('hydra-contest-task-id'); setTaskTitle(t ? (isRu ? 'Выбрана' : 'Selected') : ''); } catch {}
+                    try { setMode(localStorage.getItem('hydra-contest-mode') || 'contest'); } catch {}
+                    try { setPipeline(localStorage.getItem('hydra-contest-pipeline') || 'none'); } catch {}
+                    try { const a = localStorage.getItem('hydra-contest-arbitration'); setArbitration(a ? JSON.parse(a) : null); } catch {}
+                    try { const s = localStorage.getItem(SAVED_PLAN_KEY); setSavedPlan(s ? JSON.parse(s) : null); } catch {}
+                    toast({ description: isRu ? 'Настройки импортированы' : 'Settings imported' });
+                  } catch {
+                    toast({ variant: 'destructive', description: isRu ? 'Ошибка чтения файла' : 'Failed to read file' });
+                  }
+                };
+                reader.readAsText(file);
+              };
+              input.click();
+            }}
+          >
+            <Upload className="h-3 w-3" />
+            {isRu ? 'Импорт' : 'Import'}
+          </Button>
           <Button
             variant="ghost"
             size="sm"
