@@ -22,63 +22,222 @@ import { useToast } from '@/hooks/use-toast';
 // Sub-components
 // ============================================
 
-/** Progress Scoreboard — sticky top bar */
+// ============================================
+// Scoreboard phase detection & messages
+// ============================================
+
+type ContestPhase = 'idle' | 'generating' | 'user_scoring' | 'arbiter_judging' | 'round_complete' | 'completed' | 'failed';
+
+function detectPhase(results: ContestResult[], status: string): { phase: ContestPhase; activeModelId?: string } {
+  if (status === 'completed') return { phase: 'completed' };
+  if (status === 'draft' || status === 'paused') return { phase: 'idle' };
+
+  const generating = results.find(r => r.status === 'generating');
+  if (generating) return { phase: 'generating', activeModelId: generating.model_id };
+
+  const readyNoUserScore = results.find(r => r.status === 'ready' && r.user_score == null);
+  if (readyNoUserScore) return { phase: 'user_scoring', activeModelId: readyNoUserScore.model_id };
+
+  const readyNoArbiter = results.find(r => r.status === 'ready' && r.arbiter_score == null && r.user_score != null);
+  if (readyNoArbiter) return { phase: 'arbiter_judging', activeModelId: readyNoArbiter.model_id };
+
+  const failed = results.find(r => r.status === 'failed');
+  if (failed) return { phase: 'failed', activeModelId: failed.model_id };
+
+  if (results.length > 0 && results.every(r => r.status === 'judged')) return { phase: 'round_complete' };
+
+  return { phase: 'idle' };
+}
+
+const PHASE_MESSAGES_RU: Record<ContestPhase, string[]> = {
+  idle: ['Конкурс ожидает запуска…', 'Подиум готов, жюри заняло свои места.'],
+  generating: [
+    'На подиуме модель {model} — демонстрирует своё мастерство!',
+    'Модель {model} обдумывает ответ… глубокие нейронные связи активированы!',
+    '{model} выступает перед жюри — все взгляды устремлены на подиум!',
+  ],
+  user_scoring: [
+    'Ответ {model} готов — ваша очередь поставить оценку!',
+    'Жюри ожидает вашу экспертную оценку для {model}.',
+    'Модель {model} замерла в ожидании вашего вердикта…',
+  ],
+  arbiter_judging: [
+    'Арбитры совещаются по выступлению {model}…',
+    'Судьи оценивают мастерство {model} — шепот в зале…',
+    'Арбитр анализирует ответ {model} по всем критериям.',
+  ],
+  round_complete: [
+    'Тур завершён! Результаты занесены в протокол.',
+    'Все конкурсанты выступили — итоги подведены!',
+  ],
+  completed: [
+    'Конкурс завершён! Победители определены. 🏆',
+    'Финальные результаты зафиксированы. Поздравляем!',
+  ],
+  failed: [
+    'Возникла ошибка при обработке ответа {model}.',
+    'Модель {model} не смогла ответить — технический сбой.',
+  ],
+};
+
+const PHASE_MESSAGES_EN: Record<ContestPhase, string[]> = {
+  idle: ['Contest awaiting launch…', 'The podium is ready, the jury is seated.'],
+  generating: [
+    'Model {model} is on the podium — showcasing its skills!',
+    '{model} is thinking deeply… neural pathways activated!',
+    '{model} performs for the jury — all eyes on the stage!',
+  ],
+  user_scoring: [
+    '{model}\'s response is ready — your turn to score!',
+    'The jury awaits your expert evaluation of {model}.',
+    '{model} stands frozen, awaiting your verdict…',
+  ],
+  arbiter_judging: [
+    'Arbiters deliberate on {model}\'s performance…',
+    'Judges evaluate {model}\'s craft — whispers in the hall…',
+    'Arbiter analyzes {model}\'s response across all criteria.',
+  ],
+  round_complete: [
+    'Round complete! Results recorded in the protocol.',
+    'All contestants have performed — scores tallied!',
+  ],
+  completed: [
+    'Contest finished! Winners determined. 🏆',
+    'Final results are in. Congratulations!',
+  ],
+  failed: [
+    'Error processing {model}\'s response.',
+    '{model} failed to respond — technical issue.',
+  ],
+};
+
+const PHASE_ICONS: Record<ContestPhase, React.ReactNode> = {
+  idle: <Crown className="h-8 w-8 text-primary" />,
+  generating: <Loader2 className="h-8 w-8 animate-spin text-primary" />,
+  user_scoring: <MessageSquare className="h-8 w-8 text-[hsl(var(--hydra-arbiter))]" />,
+  arbiter_judging: <Scale className="h-8 w-8 text-[hsl(var(--hydra-expert))]" />,
+  round_complete: <CheckCircle2 className="h-8 w-8 text-[hsl(var(--hydra-success))]" />,
+  completed: <Trophy className="h-8 w-8 text-[hsl(var(--hydra-arbiter))]" />,
+  failed: <AlertCircle className="h-8 w-8 text-destructive" />,
+};
+
+/** Progress Scoreboard — vivid sticky header */
 function ContestScoreboard({
   results,
   currentRound,
   totalRounds,
   status,
+  sessionName,
+  arbiterCount,
   isRu,
 }: {
   results: ContestResult[];
   currentRound: number;
   totalRounds: number;
   status: string;
+  sessionName: string;
+  arbiterCount: number;
   isRu: boolean;
 }) {
   const modelIds = [...new Set(results.map(r => r.model_id))];
-  const statusIcon = (s: string) => {
-    switch (s) {
-      case 'generating': return <Loader2 className="h-3 w-3 animate-spin text-primary" />;
-      case 'ready': return <CheckCircle2 className="h-3 w-3 text-accent-foreground" />;
-      case 'judged': return <Trophy className="h-3 w-3 text-primary" />;
-      case 'failed': return <AlertCircle className="h-3 w-3 text-destructive" />;
-      default: return <Clock className="h-3 w-3 text-muted-foreground" />;
-    }
-  };
+  const { phase, activeModelId } = detectPhase(results, status);
+  const [msgIndex, setMsgIndex] = useState(0);
+
+  // Rotate messages every 4s
+  useEffect(() => {
+    const msgs = isRu ? PHASE_MESSAGES_RU[phase] : PHASE_MESSAGES_EN[phase];
+    if (msgs.length <= 1) { setMsgIndex(0); return; }
+    const t = setInterval(() => setMsgIndex(i => (i + 1) % msgs.length), 4000);
+    return () => clearInterval(t);
+  }, [phase, isRu]);
+
+  // Reset index on phase change
+  useEffect(() => { setMsgIndex(0); }, [phase]);
+
+  const msgs = isRu ? PHASE_MESSAGES_RU[phase] : PHASE_MESSAGES_EN[phase];
+  const activeEntry = activeModelId ? getModelRegistryEntry(activeModelId) : null;
+  const activeDisplayName = activeEntry?.displayName || activeModelId?.split('/').pop() || '…';
+  const currentMsg = (msgs[msgIndex % msgs.length] || '').replace(/\{model\}/g, activeDisplayName);
+
+  const statusBadge = status === 'running' ? (isRu ? 'Идёт' : 'Live')
+    : status === 'completed' ? (isRu ? 'Завершён' : 'Done')
+    : status === 'paused' ? (isRu ? 'Пауза' : 'Paused')
+    : status;
 
   return (
-    <div className="border-b border-border bg-muted/20 px-4 py-2">
+    <div className="border-b-2 border-primary/30 bg-gradient-to-r from-primary/15 via-primary/8 to-accent/10 px-4 py-3">
+      {/* Header row */}
       <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-2">
-          <Crown className="h-4 w-4 text-primary" />
-          <span className="text-sm font-semibold">
-            {isRu ? `Тур ${currentRound + 1} из ${totalRounds}` : `Round ${currentRound + 1} of ${totalRounds}`}
-          </span>
+        <div className="flex items-center gap-2 min-w-0">
+          <Crown className="h-4 w-4 text-primary flex-shrink-0" />
+          <span className="text-sm font-bold truncate">{sessionName}</span>
         </div>
-        <Badge variant={status === 'running' ? 'default' : 'secondary'} className="text-[10px]">
-          {status === 'running' ? (isRu ? 'Идёт' : 'Running') :
-           status === 'completed' ? (isRu ? 'Завершён' : 'Completed') :
-           status === 'paused' ? (isRu ? 'Пауза' : 'Paused') :
-           status}
-        </Badge>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <Badge variant="outline" className="text-[10px] border-primary/40 bg-primary/10">
+            {isRu ? `Тур ${currentRound + 1}/${totalRounds}` : `R${currentRound + 1}/${totalRounds}`}
+          </Badge>
+          <Badge variant="outline" className="text-[10px] gap-1">
+            <Play className="h-2.5 w-2.5" />
+            {modelIds.length}
+          </Badge>
+          {arbiterCount > 0 && (
+            <Badge variant="outline" className="text-[10px] gap-1 border-[hsl(var(--hydra-expert))]/40">
+              <Scale className="h-2.5 w-2.5" />
+              {arbiterCount}
+            </Badge>
+          )}
+          <Badge
+            variant={status === 'running' ? 'default' : 'secondary'}
+            className={cn("text-[10px]", status === 'running' && "animate-pulse")}
+          >
+            {statusBadge}
+          </Badge>
+        </div>
       </div>
-      <div className="flex flex-wrap gap-2">
-        {modelIds.map(modelId => {
-          const entry = getModelRegistryEntry(modelId);
-          const shortName = entry?.displayName || modelId.split('/').pop() || modelId;
-          const result = results.find(r => r.model_id === modelId && r.round_id === results.find(rr => rr.model_id === modelId)?.round_id);
-          const ProviderLogo = entry?.provider ? PROVIDER_LOGOS[entry.provider] : undefined;
-          const color = entry?.provider ? PROVIDER_COLORS[entry.provider] : '';
 
-          return (
-            <div key={modelId} className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-background border border-border/50 text-xs">
-              {ProviderLogo && <ProviderLogo className={cn("h-3 w-3", color)} />}
-              <span className="font-medium truncate max-w-[100px]">{shortName}</span>
-              {result && statusIcon(result.status)}
-            </div>
-          );
-        })}
+      {/* Two-column dynamic area */}
+      <div className="flex items-center gap-4">
+        {/* Left: large phase icon */}
+        <div className="flex-shrink-0 w-14 h-14 rounded-xl bg-background/60 border border-border/50 flex items-center justify-center shadow-sm">
+          {PHASE_ICONS[phase]}
+        </div>
+
+        {/* Right: animated notification */}
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-medium leading-snug animate-fade-in" key={`${phase}-${msgIndex}`}>
+            {currentMsg}
+          </p>
+          {/* Model chips */}
+          <div className="flex flex-wrap gap-1.5 mt-1.5">
+            {modelIds.map(modelId => {
+              const entry = getModelRegistryEntry(modelId);
+              const shortName = entry?.displayName || modelId.split('/').pop() || modelId;
+              const result = results.find(r => r.model_id === modelId);
+              const ProviderLogo = entry?.provider ? PROVIDER_LOGOS[entry.provider] : undefined;
+              const color = entry?.provider ? PROVIDER_COLORS[entry.provider] : '';
+              const isActive = modelId === activeModelId;
+
+              return (
+                <div
+                  key={modelId}
+                  className={cn(
+                    "flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] border transition-all",
+                    isActive
+                      ? "bg-primary/15 border-primary/50 ring-1 ring-primary/30 font-semibold"
+                      : "bg-background/50 border-border/30"
+                  )}
+                >
+                  {ProviderLogo && <ProviderLogo className={cn("h-2.5 w-2.5", color)} />}
+                  <span className="truncate max-w-[70px]">{shortName}</span>
+                  {result?.status === 'generating' && <Loader2 className="h-2.5 w-2.5 animate-spin text-primary" />}
+                  {result?.status === 'ready' && <CheckCircle2 className="h-2.5 w-2.5 text-[hsl(var(--hydra-success))]" />}
+                  {result?.status === 'judged' && <Trophy className="h-2.5 w-2.5 text-[hsl(var(--hydra-arbiter))]" />}
+                  {result?.status === 'failed' && <AlertCircle className="h-2.5 w-2.5 text-destructive" />}
+                </div>
+              );
+            })}
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -456,6 +615,8 @@ export function BeautyContest() {
         currentRound={currentRoundIndex >= 0 ? currentRoundIndex : 0}
         totalRounds={contest.rounds.length || 1}
         status={contest.session?.status || 'draft'}
+        sessionName={contest.session?.name || (isRu ? 'Конкурс' : 'Contest')}
+        arbiterCount={contest.session?.config?.arbitration?.juryMode === 'ai' ? 1 : contest.session?.config?.arbitration?.juryMode === 'hybrid' ? 2 : 0}
         isRu={isRu}
       />
 
