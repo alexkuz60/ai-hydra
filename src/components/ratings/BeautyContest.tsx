@@ -529,17 +529,13 @@ export function BeautyContest() {
   }, [user]);
 
   const handleLaunch = async () => {
-    const s = await contest.createFromWizard();
-    if (s) {
+    const result = await contest.createFromWizard();
+    if (result) {
       toast({ description: isRu ? 'Конкурс запущен!' : 'Contest launched!' });
-      // Auto-execute the first round
-      // Need to wait for state to settle, then execute
-      setTimeout(async () => {
-        const firstRound = contest.rounds.find(r => r.status === 'running') || contest.rounds[0];
-        if (firstRound) {
-          await execution.executeRound(s, firstRound, contest.results, contest.updateResult);
-        }
-      }, 300);
+      const firstRound = result.rounds.find(r => r.status === 'running') || result.rounds[0];
+      if (firstRound) {
+        await execution.executeRound(result.session, firstRound, result.results, contest.updateResult);
+      }
     }
   };
 

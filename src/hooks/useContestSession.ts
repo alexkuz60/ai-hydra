@@ -122,11 +122,10 @@ export function useContestSession() {
   }, [user]);
 
   // Create a new session from localStorage wizard config
-  const createFromWizard = useCallback(async (): Promise<ContestSession | null> => {
+  const createFromWizard = useCallback(async (): Promise<{ session: ContestSession; rounds: ContestRound[]; results: ContestResult[] } | null> => {
     if (!user) return null;
     setLoading(true);
     try {
-      // Read config from localStorage
       const models = JSON.parse(localStorage.getItem('hydra-contest-models') || '{}');
       const rulesStr = localStorage.getItem('hydra-contest-rules');
       const rules = rulesStr ? JSON.parse(rulesStr) : { roundCount: 1, rounds: [{ prompt: '' }] };
@@ -150,7 +149,6 @@ export function useContestSession() {
 
       const newSession = { ...data, config } as ContestSession;
 
-      // Create rounds
       const roundInserts = rules.rounds.map((r: { prompt: string }, i: number) => ({
         session_id: newSession.id,
         round_index: i,
@@ -167,7 +165,7 @@ export function useContestSession() {
       const newRounds = (roundsData || []) as unknown as ContestRound[];
       setRounds(newRounds);
 
-      // Create result entries for round 0
+      let newResults: ContestResult[] = [];
       const modelIds = Object.keys(models);
       if (newRounds.length > 0 && modelIds.length > 0) {
         const resultInserts = modelIds.map(modelId => ({
@@ -180,11 +178,12 @@ export function useContestSession() {
           .from('contest_results')
           .insert(resultInserts)
           .select();
-        setResults((resultsData || []) as unknown as ContestResult[]);
+        newResults = (resultsData || []) as unknown as ContestResult[];
+        setResults(newResults);
       }
 
       setSession(newSession);
-      return newSession;
+      return { session: newSession, rounds: newRounds, results: newResults };
     } catch (err: any) {
       toast({ variant: 'destructive', description: err.message });
       return null;
