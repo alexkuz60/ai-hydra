@@ -349,15 +349,15 @@ function ContestResponsesPanel({
               </Button>
             )}
           </div>
-          <TabsList className="h-7 p-0.5 bg-muted/30">
-            <TabsTrigger value="all" className="text-[10px] h-6 px-2">
+          <TabsList className="h-9 p-1 bg-muted/30 w-full justify-start gap-1">
+            <TabsTrigger value="all" className="text-xs h-7 px-4">
               {isRu ? 'Все' : 'All'}
             </TabsTrigger>
             {modelIds.map(id => {
               const entry = getModelRegistryEntry(id);
               const short = entry?.displayName || id.split('/').pop() || id;
               return (
-                <TabsTrigger key={id} value={id} className="text-[10px] h-6 px-2 max-w-[80px] truncate">
+                <TabsTrigger key={id} value={id} className="text-xs h-7 px-4 max-w-[160px] truncate">
                   {short}
                 </TabsTrigger>
               );
