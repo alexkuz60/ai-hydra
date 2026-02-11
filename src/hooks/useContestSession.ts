@@ -242,6 +242,67 @@ export function useContestSession() {
     setSession(prev => prev ? { ...prev, ...updates } : null);
   }, [session, toast]);
 
+  // Create a follow-up round targeting specific or all models
+  const createFollowUpRound = useCallback(async (
+    prompt: string,
+    targetModelIds?: string[], // undefined = all models in session
+  ): Promise<{ round: ContestRound; results: ContestResult[] } | null> => {
+    if (!session) return null;
+    setLoading(true);
+    try {
+      const allModelIds = targetModelIds || Object.keys(session.config.models || {});
+      if (allModelIds.length === 0) return null;
+
+      const nextIndex = rounds.length;
+
+      const { data: roundData, error: roundErr } = await supabase
+        .from('contest_rounds')
+        .insert({
+          session_id: session.id,
+          round_index: nextIndex,
+          prompt,
+          status: 'running',
+          started_at: new Date().toISOString(),
+        })
+        .select()
+        .single();
+
+      if (roundErr) throw roundErr;
+      const newRound = roundData as unknown as ContestRound;
+
+      const resultInserts = allModelIds.map(modelId => ({
+        round_id: newRound.id,
+        session_id: session.id,
+        model_id: modelId,
+        status: 'pending',
+      }));
+
+      const { data: resultsData, error: resErr } = await supabase
+        .from('contest_results')
+        .insert(resultInserts)
+        .select();
+
+      if (resErr) throw resErr;
+      const newResults = (resultsData || []) as unknown as ContestResult[];
+
+      setRounds(prev => [...prev, newRound]);
+      setResults(prev => [...prev, ...newResults]);
+
+      // Also ensure session stays running
+      if (session.status !== 'running') {
+        await supabase.from('contest_sessions').update({ status: 'running' }).eq('id', session.id);
+        setSession(prev => prev ? { ...prev, status: 'running' } : null);
+      }
+
+      return { round: newRound, results: newResults };
+    } catch (err: any) {
+      toast({ variant: 'destructive', description: err.message });
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  }, [session, rounds, toast]);
+
   // Realtime subscription for contest_results
   useEffect(() => {
     if (!session) return;
@@ -285,6 +346,7 @@ export function useContestSession() {
     loadLatestSession,
     loadHistory,
     createFromWizard,
+    createFollowUpRound,
     loadSession,
     updateResult,
     updateSessionStatus,
