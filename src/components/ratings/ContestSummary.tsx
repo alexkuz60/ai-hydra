@@ -4,9 +4,10 @@ import { HydraCard, HydraCardHeader, HydraCardTitle, HydraCardContent } from '@/
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Save, Trophy, Users, ListOrdered, ClipboardList, Scale, Workflow, Weight, BarChart3, Calculator, CheckCircle2, ExternalLink, Loader2, FileText, Maximize2 } from 'lucide-react';
+import { Save, Trophy, Users, ListOrdered, ClipboardList, Scale, Workflow, Weight, BarChart3, Calculator, CheckCircle2, ExternalLink, Loader2, FileText, Maximize2, RotateCcw } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { CONTEST_FLOW_TEMPLATES, type ContestFlowTemplateId } from '@/lib/contestFlowTemplates';
 import { useFlowDiagrams } from '@/hooks/useFlowDiagrams';
 import { exportToMermaid } from '@/hooks/useFlowDiagrams';
@@ -316,6 +317,61 @@ export function ContestSummary() {
             </div>
           </>
         )}
+
+        {/* Reset all config */}
+        <div className="flex items-center justify-end">
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="ghost" size="sm" className="h-7 text-[11px] gap-1.5 text-destructive hover:text-destructive hover:bg-destructive/10">
+                <RotateCcw className="h-3 w-3" />
+                {isRu ? 'Сбросить всё' : 'Reset All'}
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>
+                  {isRu ? 'Сбросить настройки конкурса?' : 'Reset contest settings?'}
+                </AlertDialogTitle>
+                <AlertDialogDescription>
+                  {isRu
+                    ? 'Все настройки конкурса (участники, правила, пайплайн, арбитраж, сохранённый план) будут удалены. Это действие нельзя отменить.'
+                    : 'All contest settings (participants, rules, pipeline, arbitration, saved plan) will be cleared. This cannot be undone.'}
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>{isRu ? 'Отмена' : 'Cancel'}</AlertDialogCancel>
+                <AlertDialogAction
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  onClick={() => {
+                    const keys = [
+                      'hydra-contest-models',
+                      'hydra-contest-rules',
+                      'hydra-contest-task-id',
+                      'hydra-contest-task-title',
+                      'hydra-contest-mode',
+                      'hydra-contest-pipeline',
+                      'hydra-contest-arbitration',
+                      SAVED_PLAN_KEY,
+                    ];
+                    keys.forEach(k => { try { localStorage.removeItem(k); } catch {} });
+                    setModelCount(0);
+                    setRoundCount(1);
+                    setTaskTitle('');
+                    setMode('contest');
+                    setPipeline('none');
+                    setArbitration(null);
+                    setRoundPrompt('');
+                    setSavedPlan(null);
+                    window.dispatchEvent(new Event('contest-config-changed'));
+                    toast({ description: isRu ? 'Настройки конкурса сброшены' : 'Contest settings reset' });
+                  }}
+                >
+                  {isRu ? 'Сбросить' : 'Reset'}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
 
         <Separator className="opacity-30" />
 
