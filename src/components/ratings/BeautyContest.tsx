@@ -546,31 +546,6 @@ function ContestScoresTable({
             );
           })}
         </TableBody>
-        {aggregated.length > 0 && (
-          <TableFooter>
-            <TableRow className="text-[10px]">
-              <TableCell colSpan={2} className="text-muted-foreground">{isRu ? 'Среднее' : 'Average'}</TableCell>
-              <TableCell className="text-center">
-                {(() => {
-                  const vals = aggregated.filter(a => a.avgUser != null).map(a => a.avgUser!);
-                  return vals.length ? (vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(1) : '—';
-                })()}
-              </TableCell>
-              <TableCell className="text-center">
-                {(() => {
-                  const vals = aggregated.filter(a => a.avgArbiter != null).map(a => a.avgArbiter!);
-                  return vals.length ? (vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(1) : '—';
-                })()}
-              </TableCell>
-              <TableCell className="text-center font-semibold">
-                {(() => {
-                  const vals = aggregated.filter(a => a.totalScore != null).map(a => a.totalScore!);
-                  return vals.length ? (vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(1) : '—';
-                })()}
-              </TableCell>
-            </TableRow>
-          </TableFooter>
-        )}
       </Table>
     </div>
   );
