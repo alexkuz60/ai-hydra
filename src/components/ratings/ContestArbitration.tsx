@@ -1,11 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { HydraCard, HydraCardHeader, HydraCardTitle, HydraCardContent } from '@/components/ui/hydra-card';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
-import { Scale, Users, BarChart3, Calculator } from 'lucide-react';
+import { Slider } from '@/components/ui/slider';
+import { Scale, Users, BarChart3, Calculator, Weight } from 'lucide-react';
 
 const STORAGE_KEY = 'hydra-contest-arbitration';
 
@@ -13,6 +14,8 @@ interface ArbitrationConfig {
   juryMode: 'user' | 'arbiter' | 'both';
   arbiterModel: string;
   criteria: string[];
+  criteriaWeights: Record<string, number>;
+  userWeight: number; // 0-100, arbiterWeight = 100 - userWeight
   scoringScheme: 'weighted-avg' | 'tournament' | 'elo';
 }
 
@@ -48,6 +51,8 @@ function loadConfig(): ArbitrationConfig {
     juryMode: 'both',
     arbiterModel: '',
     criteria: ['factuality', 'relevance', 'completeness', 'clarity'],
+    criteriaWeights: { factuality: 30, relevance: 25, completeness: 25, clarity: 20 },
+    userWeight: 40,
     scoringScheme: 'weighted-avg',
   };
 }
@@ -64,11 +69,37 @@ export function ContestArbitration() {
   const toggleCriterion = (id: string) => {
     setConfig(prev => {
       const criteria = [...prev.criteria];
+      const weights = { ...prev.criteriaWeights };
       const idx = criteria.indexOf(id);
-      if (idx >= 0) criteria.splice(idx, 1); else criteria.push(id);
-      return { ...prev, criteria };
+      if (idx >= 0) {
+        criteria.splice(idx, 1);
+        delete weights[id];
+      } else {
+        criteria.push(id);
+        weights[id] = 25; // default weight for new criterion
+      }
+      // Normalize weights to sum to 100
+      const total = Object.values(weights).reduce((s, v) => s + v, 0);
+      if (total > 0 && criteria.length > 0) {
+        for (const k of Object.keys(weights)) {
+          weights[k] = Math.round((weights[k] / total) * 100);
+        }
+        // Fix rounding errors
+        const diff = 100 - Object.values(weights).reduce((s, v) => s + v, 0);
+        if (diff !== 0 && criteria.length > 0) {
+          weights[criteria[0]] += diff;
+        }
+      }
+      return { ...prev, criteria, criteriaWeights: weights };
     });
   };
+
+  const setCriterionWeight = useCallback((id: string, value: number) => {
+    setConfig(prev => {
+      const weights = { ...prev.criteriaWeights, [id]: value };
+      return { ...prev, criteriaWeights: weights };
+    });
+  }, []);
 
   return (
     <HydraCard variant="default" className="border-border/50">
@@ -108,6 +139,34 @@ export function ContestArbitration() {
           </Select>
         </div>
 
+        {/* Jury weight slider — only shown when both */}
+        {config.juryMode === 'both' && (
+          <>
+            <div className="space-y-2 p-2.5 rounded-md bg-muted/20 border border-border/20">
+              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                <Weight className="h-3 w-3" />
+                {isRu ? 'Вес оценки: Пользователь vs Арбитр' : 'Score Weight: User vs Arbiter'}
+              </label>
+              <div className="flex items-center gap-3">
+                <span className="text-xs text-muted-foreground w-20 text-right">
+                  {isRu ? 'Пользователь' : 'User'} {config.userWeight}%
+                </span>
+                <Slider
+                  value={[config.userWeight]}
+                  onValueChange={([v]) => setConfig(prev => ({ ...prev, userWeight: v }))}
+                  min={0}
+                  max={100}
+                  step={5}
+                  className="flex-1"
+                />
+                <span className="text-xs text-muted-foreground w-16">
+                  {isRu ? 'Арбитр' : 'Arbiter'} {100 - config.userWeight}%
+                </span>
+              </div>
+            </div>
+          </>
+        )}
+
         <Separator className="opacity-30" />
 
         {/* Evaluation criteria */}
@@ -132,6 +191,43 @@ export function ContestArbitration() {
             ))}
           </div>
         </div>
+
+        {/* Criteria weights — only when weighted-avg and criteria selected */}
+        {config.scoringScheme === 'weighted-avg' && config.criteria.length > 0 && (
+          <div className="space-y-2 p-2.5 rounded-md bg-muted/20 border border-border/20">
+            <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+              <Weight className="h-3 w-3" />
+              {isRu ? 'Веса критериев' : 'Criteria Weights'}
+              <span className="text-[10px] opacity-50 normal-case font-normal">
+                ({isRu ? 'сумма' : 'total'}: {Object.entries(config.criteriaWeights)
+                  .filter(([k]) => config.criteria.includes(k))
+                  .reduce((s, [, v]) => s + v, 0)}%)
+              </span>
+            </label>
+            <div className="space-y-1.5">
+              {config.criteria.map(cId => {
+                const opt = CRITERIA_OPTIONS.find(o => o.id === cId);
+                const weight = config.criteriaWeights[cId] || 0;
+                return (
+                  <div key={cId} className="flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground w-28 truncate">
+                      {opt ? (isRu ? opt.ru : opt.en) : cId}
+                    </span>
+                    <Slider
+                      value={[weight]}
+                      onValueChange={([v]) => setCriterionWeight(cId, v)}
+                      min={0}
+                      max={100}
+                      step={5}
+                      className="flex-1"
+                    />
+                    <span className="text-xs text-muted-foreground w-8 text-right">{weight}%</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         <Separator className="opacity-30" />
 
