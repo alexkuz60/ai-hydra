@@ -3,11 +3,19 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { HydraCard, HydraCardHeader, HydraCardTitle, HydraCardContent } from '@/components/ui/hydra-card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Workflow, Info } from 'lucide-react';
+import { CONTEST_FLOW_TEMPLATES, type ContestFlowTemplateId } from '@/lib/contestFlowTemplates';
 
 const STORAGE_KEY = 'hydra-contest-pipeline';
 
-const PIPELINE_OPTIONS = [
+const PIPELINE_OPTIONS: { id: ContestFlowTemplateId; ru: string; en: string; descRu?: string; descEn?: string }[] = [
   { id: 'none', ru: 'Не нужен', en: 'Not needed' },
+  ...Object.values(CONTEST_FLOW_TEMPLATES).map(t => ({
+    id: t.id as ContestFlowTemplateId,
+    ru: t.ru,
+    en: t.en,
+    descRu: t.descriptionRu,
+    descEn: t.descriptionEn,
+  })),
 ];
 
 export function ContestPipelineSelector() {
@@ -21,6 +29,8 @@ export function ContestPipelineSelector() {
   useEffect(() => {
     try { localStorage.setItem(STORAGE_KEY, pipeline); } catch {}
   }, [pipeline]);
+
+  const selectedOption = PIPELINE_OPTIONS.find(o => o.id === pipeline);
 
   return (
     <HydraCard variant="default" className="border-border/50">
@@ -53,19 +63,29 @@ export function ContestPipelineSelector() {
               ))}
             </SelectContent>
           </Select>
-          <p className="text-[10px] text-muted-foreground/60">
-            {isRu
-              ? 'Шаблон определяет цепочку: ответы → оценки → арбитраж. Специализированные шаблоны будут добавлены позже.'
-              : 'Template defines the chain: responses → evaluations → arbitration. Specialized templates will be added later.'}
-          </p>
+
+          {/* Description of selected template */}
+          {selectedOption && selectedOption.id !== 'none' && (
+            <p className="text-[10px] text-muted-foreground/80 mt-1">
+              {isRu ? selectedOption.descRu : selectedOption.descEn}
+            </p>
+          )}
+
+          {pipeline === 'none' && (
+            <p className="text-[10px] text-muted-foreground/60">
+              {isRu
+                ? 'Без шаблона конкурс будет выполняться вручную.'
+                : 'Without a template the contest will run manually.'}
+            </p>
+          )}
         </div>
 
         <div className="flex items-start gap-2 p-2.5 rounded-md bg-muted/20 border border-border/20">
           <Info className="h-3.5 w-3.5 text-muted-foreground shrink-0 mt-0.5" />
           <p className="text-[11px] text-muted-foreground leading-relaxed">
             {isRu
-              ? 'Для большинства конкурсов рекомендуется использовать шаблон потока, автоматизирующий цепочку действий: получение ответов от кандидатов, критический анализ и арбитраж.'
-              : 'For most contests, a flow template is recommended to automate the action chain: collecting candidate responses, critical analysis, and arbitration.'}
+              ? 'Шаблон определяет автоматическую цепочку: ответы кандидатов → оценки пользователя → арбитраж → подведение итогов.'
+              : 'Template defines the automated chain: candidate responses → user ratings → arbitration → final results.'}
           </p>
         </div>
       </HydraCardContent>

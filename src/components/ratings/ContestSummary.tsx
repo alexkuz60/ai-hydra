@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Play, Trophy, Users, ListOrdered, ClipboardList, Scale, Workflow, Weight, BarChart3, Calculator } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
+import { CONTEST_FLOW_TEMPLATES } from '@/lib/contestFlowTemplates';
 
 const CRITERIA_LABELS: Record<string, { ru: string; en: string }> = {
   factuality: { ru: 'Фактологичность', en: 'Factuality' },
@@ -32,6 +33,9 @@ const SCORING_LABELS: Record<string, { ru: string; en: string }> = {
 
 const PIPELINE_LABELS: Record<string, { ru: string; en: string }> = {
   none: { ru: 'Не нужен', en: 'Not needed' },
+  ...Object.fromEntries(
+    Object.values(CONTEST_FLOW_TEMPLATES).map(t => [t.id, { ru: t.ru, en: t.en }])
+  ),
 };
 
 const MODE_LABELS: Record<string, { ru: string; en: string }> = {
