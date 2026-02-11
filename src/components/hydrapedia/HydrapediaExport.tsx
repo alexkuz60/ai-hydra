@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Download, FileText, FileDown, Languages } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useLanguage } from '@/contexts/LanguageContext';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -44,7 +45,7 @@ async function exportMarkdown(lang: 'ru' | 'en', isAdmin: boolean) {
   a.download = `hydrapedia_${lang}.md`;
   a.click();
   URL.revokeObjectURL(url);
-  toast.success(lang === 'ru' ? 'Markdown скачан' : 'Markdown downloaded');
+  toast.success(lang === 'ru' ? 'Markdown файл скачан' : 'Markdown downloaded');
 }
 
 async function exportPDF(lang: 'ru' | 'en', isAdmin: boolean) {
@@ -90,7 +91,9 @@ async function exportPDF(lang: 'ru' | 'en', isAdmin: boolean) {
 
 export function HydrapediaExport() {
   const { isAdmin } = useUserRoles();
+  const { language } = useLanguage();
   const [busy, setBusy] = useState(false);
+  const isRu = language === 'ru';
 
   const handle = async (fn: () => Promise<void>) => {
     setBusy(true);
@@ -107,7 +110,7 @@ export function HydrapediaExport() {
           className="hidden sm:flex items-center gap-2 text-primary border-primary/50 hover:bg-primary/10 hover:border-primary"
         >
           <Download className="h-4 w-4" />
-          <span className="text-xs">Export</span>
+          <span className="text-xs">{isRu ? 'Экспорт' : 'Export'}</span>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-48">
