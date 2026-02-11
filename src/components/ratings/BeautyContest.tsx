@@ -500,7 +500,7 @@ function ContestScoresTable({
     const arbiterScores = modelResults.filter(r => r.arbiter_score != null).map(r => r.arbiter_score!);
     const avgUser = userScores.length ? userScores.reduce((a, b) => a + b, 0) / userScores.length : null;
     const avgArbiter = arbiterScores.length ? arbiterScores.reduce((a, b) => a + b, 0) / arbiterScores.length : null;
-    const totalScore = avgUser != null && avgArbiter != null ? (avgUser + avgArbiter) / 2 : avgUser ?? avgArbiter;
+    const totalScore = (avgUser ?? 0) + (avgArbiter ?? 0) || null;
 
     return { modelId, avgUser, avgArbiter, totalScore, responseCount: modelResults.length };
   }).sort((a, b) => (b.totalScore ?? 0) - (a.totalScore ?? 0));
