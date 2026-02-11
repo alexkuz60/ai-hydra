@@ -77,6 +77,7 @@ export function ContestArbitration() {
 
   useEffect(() => {
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(config)); } catch {}
+    window.dispatchEvent(new Event('contest-config-changed'));
   }, [config]);
 
   const toggleCriterion = (id: string) => {

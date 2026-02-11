@@ -95,6 +95,7 @@ export function ContestTaskSelector() {
   // Persist mode
   useEffect(() => {
     try { localStorage.setItem('hydra-contest-mode', contestMode); } catch {}
+    window.dispatchEvent(new Event('contest-config-changed'));
   }, [contestMode]);
 
   // Load sessions
@@ -111,6 +112,7 @@ export function ContestTaskSelector() {
   // Persist selected task
   useEffect(() => {
     try { localStorage.setItem('hydra-contest-task-id', selectedTaskId); } catch {}
+    window.dispatchEvent(new Event('contest-config-changed'));
   }, [selectedTaskId]);
 
   // Sync contest models from localStorage
