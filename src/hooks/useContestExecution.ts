@@ -1,6 +1,7 @@
 import { useCallback, useRef, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useLanguage } from '@/contexts/LanguageContext';
 import type { ContestResult, ContestRound, ContestSession } from './useContestSession';
 
 interface ExecutionState {
@@ -17,6 +18,8 @@ interface ExecutionState {
  */
 export function useContestExecution() {
   const { toast } = useToast();
+  const { language } = useLanguage();
+  const isRu = language === 'ru';
   const [state, setState] = useState<ExecutionState>({ running: false, streamingTexts: {}, arbiterRunning: false });
   const abortRef = useRef<AbortController | null>(null);
 
@@ -60,6 +63,7 @@ export function useContestExecution() {
           criteria: arbitration.criteria || [],
           criteria_weights: arbitration.criteriaWeights || {},
           arbiter_model: arbitration.arbiterModel || undefined,
+          language,
         }),
       });
 
@@ -69,10 +73,10 @@ export function useContestExecution() {
         toast({
           variant: 'destructive',
           description: response.status === 429
-            ? 'Арбитр: превышен лимит запросов, попробуйте позже'
+            ? (isRu ? 'Арбитр: превышен лимит запросов, попробуйте позже' : 'Arbiter: rate limit exceeded, try again later')
             : response.status === 402
-              ? 'Арбитр: недостаточно кредитов'
-              : `Ошибка арбитра: ${response.status}`,
+              ? (isRu ? 'Арбитр: недостаточно кредитов' : 'Arbiter: insufficient credits')
+              : (isRu ? `Ошибка арбитра: ${response.status}` : `Arbiter error: ${response.status}`),
         });
         return;
       }
@@ -99,14 +103,14 @@ export function useContestExecution() {
         }
       }
 
-      toast({ description: `Арбитр оценил ${evaluations.length} ответов` });
+      toast({ description: isRu ? `Арбитр оценил ${evaluations.length} ответов` : `Arbiter evaluated ${evaluations.length} responses` });
     } catch (err: any) {
       console.error('[contest-arbiter] Error:', err);
-      toast({ variant: 'destructive', description: `Ошибка арбитра: ${err.message}` });
+      toast({ variant: 'destructive', description: isRu ? `Ошибка арбитра: ${err.message}` : `Arbiter error: ${err.message}` });
     } finally {
       setState(prev => ({ ...prev, arbiterRunning: false }));
     }
-  }, [toast]);
+  }, [toast, isRu, language]);
 
   const executeRound = useCallback(async (
     session: ContestSession,
