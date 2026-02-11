@@ -19,6 +19,7 @@ import { cn } from '@/lib/utils';
 import { UsageStats } from '@/components/profile/UsageStats';
 import { ApiKeyField, type KeyMetadata } from '@/components/profile/ApiKeyField';
 import { ProxyApiDashboard } from '@/components/profile/ProxyApiDashboard';
+import { GeminiLimitsDialog } from '@/components/profile/GeminiLimitsDialog';
 
 interface Profile {
   id: string;
@@ -446,6 +447,11 @@ export default function Profile() {
                       unlimited={p.provider === 'mistral'}
                     />
                     {/* ProxyAPI key moved to ProxyAPI Dashboard tab */}
+                    {p.provider === 'gemini' && apiKeys['gemini'] && (
+                      <div className="mt-1 mb-2">
+                        <GeminiLimitsDialog hasKey={!!apiKeys['gemini']} />
+                      </div>
+                    )}
                   </React.Fragment>
                 ))}
 
