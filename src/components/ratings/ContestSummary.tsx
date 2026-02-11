@@ -1,12 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { HydraCard, HydraCardHeader, HydraCardTitle, HydraCardContent } from '@/components/ui/hydra-card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Play, Trophy, Users, ListOrdered, ClipboardList, Scale, Workflow, Weight, BarChart3, Calculator } from 'lucide-react';
+import { Save, Trophy, Users, ListOrdered, ClipboardList, Scale, Workflow, Weight, BarChart3, Calculator, CheckCircle2, ExternalLink, Loader2 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
-import { CONTEST_FLOW_TEMPLATES } from '@/lib/contestFlowTemplates';
+import { CONTEST_FLOW_TEMPLATES, type ContestFlowTemplateId } from '@/lib/contestFlowTemplates';
+import { useFlowDiagrams } from '@/hooks/useFlowDiagrams';
+import { exportToMermaid } from '@/hooks/useFlowDiagrams';
+import { useToast } from '@/hooks/use-toast';
+import { MermaidPreview } from '@/components/warroom/MermaidPreview';
+import { useNavigate } from 'react-router-dom';
 
 const CRITERIA_LABELS: Record<string, { ru: string; en: string }> = {
   factuality: { ru: 'Фактологичность', en: 'Factuality' },
@@ -51,9 +56,22 @@ interface ArbitrationConfig {
   scoringScheme: string;
 }
 
+interface SavedPlan {
+  diagramId: string;
+  diagramName: string;
+  mermaidCode: string;
+  nodeCount: number;
+  edgeCount: number;
+}
+
+const SAVED_PLAN_KEY = 'hydra-contest-saved-plan';
+
 export function ContestSummary() {
   const { language } = useLanguage();
   const isRu = language === 'ru';
+  const { toast } = useToast();
+  const navigate = useNavigate();
+  const { saveDiagram, isSaving } = useFlowDiagrams();
 
   const [modelCount, setModelCount] = useState(0);
   const [roundCount, setRoundCount] = useState(1);
@@ -61,6 +79,12 @@ export function ContestSummary() {
   const [mode, setMode] = useState('contest');
   const [pipeline, setPipeline] = useState('none');
   const [arbitration, setArbitration] = useState<ArbitrationConfig | null>(null);
+  const [savedPlan, setSavedPlan] = useState<SavedPlan | null>(() => {
+    try {
+      const stored = localStorage.getItem(SAVED_PLAN_KEY);
+      return stored ? JSON.parse(stored) : null;
+    } catch { return null; }
+  });
 
   useEffect(() => {
     const sync = () => {
@@ -94,6 +118,64 @@ export function ContestSummary() {
 
   const label = (map: Record<string, { ru: string; en: string }>, key: string) =>
     map[key] ? (isRu ? map[key].ru : map[key].en) : key;
+
+  const canSave = pipeline !== 'none' && pipeline in CONTEST_FLOW_TEMPLATES;
+
+  const handleSavePlan = useCallback(async () => {
+    if (!canSave) return;
+
+    const templateKey = pipeline as keyof typeof CONTEST_FLOW_TEMPLATES;
+    const template = CONTEST_FLOW_TEMPLATES[templateKey];
+
+    // Read contest config from localStorage
+    let candidates: string[] = [];
+    try {
+      const models = localStorage.getItem('hydra-contest-models');
+      if (models) candidates = Object.keys(JSON.parse(models));
+    } catch {}
+
+    const { nodes, edges } = template.generate({
+      candidates,
+      arbiterModel: 'google/gemini-2.5-pro',
+      criteria: arbitration?.criteria,
+      juryMode: (arbitration?.juryMode as 'user' | 'arbiter' | 'both') || 'both',
+    });
+
+    const diagramName = `${isRu ? 'Конкурс' : 'Contest'}: ${isRu ? template.ru : template.en}`;
+
+    try {
+      const result = await saveDiagram({
+        name: diagramName,
+        description: isRu
+          ? `Автогенерация из плана конкурса. Участников: ${candidates.length}, Туров: ${roundCount}`
+          : `Auto-generated from contest plan. Participants: ${candidates.length}, Rounds: ${roundCount}`,
+        nodes,
+        edges,
+        viewport: { x: 0, y: 0, zoom: 0.75 },
+        source: 'pattern' as const,
+      });
+
+      const mermaidCode = exportToMermaid(nodes, edges);
+      const plan: SavedPlan = {
+        diagramId: result.id,
+        diagramName,
+        mermaidCode,
+        nodeCount: nodes.length,
+        edgeCount: edges.length,
+      };
+      setSavedPlan(plan);
+      try { localStorage.setItem(SAVED_PLAN_KEY, JSON.stringify(plan)); } catch {}
+
+      toast({
+        description: isRu ? 'План конкурса сохранён' : 'Contest plan saved',
+      });
+    } catch (err: any) {
+      toast({
+        variant: 'destructive',
+        description: isRu ? `Ошибка: ${err.message}` : `Error: ${err.message}`,
+      });
+    }
+  }, [canSave, pipeline, arbitration, roundCount, isRu, saveDiagram, toast]);
 
   return (
     <HydraCard variant="default" glow className="border-border/50">
@@ -169,25 +251,82 @@ export function ContestSummary() {
 
         <Separator className="opacity-30" />
 
+        {/* Save Plan button */}
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
               <div>
-                <Button disabled className="w-full gap-2 hydra-glow-sm" size="lg">
-                  <Play className="h-4 w-4" />
-                  {isRu ? 'Начать конкурс' : 'Start Contest'}
+                <Button
+                  disabled={!canSave || isSaving}
+                  className="w-full gap-2"
+                  size="lg"
+                  onClick={handleSavePlan}
+                >
+                  {isSaving ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : savedPlan ? (
+                    <CheckCircle2 className="h-4 w-4" />
+                  ) : (
+                    <Save className="h-4 w-4" />
+                  )}
+                  {isRu
+                    ? (savedPlan ? 'Пересохранить план конкурса' : 'Сохранить план конкурса')
+                    : (savedPlan ? 'Re-save Contest Plan' : 'Save Contest Plan')}
                 </Button>
               </div>
             </TooltipTrigger>
-            <TooltipContent>
-              <p className="text-xs">
-                {isRu
-                  ? 'Функция запуска будет доступна позже'
-                  : 'Launch feature will be available later'}
-              </p>
-            </TooltipContent>
+            {!canSave && (
+              <TooltipContent>
+                <p className="text-xs">
+                  {isRu
+                    ? 'Выберите шаблон пайплайна в Шаге 3'
+                    : 'Select a pipeline template in Step 3'}
+                </p>
+              </TooltipContent>
+            )}
           </Tooltip>
         </TooltipProvider>
+
+        {/* Saved plan preview */}
+        {savedPlan && (
+          <div className="space-y-2">
+            <Separator className="opacity-30" />
+
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                <Workflow className="h-3 w-3" />
+                {isRu ? 'Сохранённый поток' : 'Saved Flow'}
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 text-[10px] gap-1 px-2"
+                onClick={() => navigate(`/flow-editor?diagram=${savedPlan.diagramId}`)}
+              >
+                <ExternalLink className="h-3 w-3" />
+                {isRu ? 'Открыть в редакторе' : 'Open in Editor'}
+              </Button>
+            </div>
+
+            <div className="flex flex-wrap gap-x-4 gap-y-1">
+              <SummaryItem
+                icon={<Workflow className="h-3.5 w-3.5" />}
+                label={isRu ? 'Узлов' : 'Nodes'}
+                value={String(savedPlan.nodeCount)}
+              />
+              <SummaryItem
+                icon={<Workflow className="h-3.5 w-3.5" />}
+                label={isRu ? 'Связей' : 'Edges'}
+                value={String(savedPlan.edgeCount)}
+              />
+            </div>
+
+            {/* Mermaid diagram preview */}
+            <div className="rounded-md border border-border/30 bg-muted/10 overflow-hidden">
+              <MermaidPreview content={savedPlan.mermaidCode} />
+            </div>
+          </div>
+        )}
       </HydraCardContent>
     </HydraCard>
   );
