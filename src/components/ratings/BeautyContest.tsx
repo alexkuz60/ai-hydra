@@ -409,6 +409,7 @@ function ContestResponsesPanel({
   rounds,
   streamingTexts,
   isRu,
+  initialRoundCount = 1,
   onScore,
   activeModel,
   onActiveModelChange,
@@ -417,6 +418,7 @@ function ContestResponsesPanel({
   rounds: { id: string; round_index: number; prompt: string }[];
   streamingTexts: Record<string, string>;
   isRu: boolean;
+  initialRoundCount?: number;
   onScore?: (resultId: string, score: number) => void;
   activeModel: string;
   onActiveModelChange: (model: string) => void;
@@ -473,8 +475,6 @@ function ContestResponsesPanel({
 
                  return roundGroups.map(({ round, results: groupResults }) => {
                    // Determine if this is a follow-up round (after the initial roundCount)
-                   const config = (rounds as any)?.[0]?.config || {};
-                   const initialRoundCount = 1; // Default assumption
                    const isFollowUp = round.round_index >= initialRoundCount;
                    
                    const roundLabel = round.round_index < 0
@@ -583,10 +583,12 @@ function ContestArbiterPanel({
   results,
   rounds,
   isRu,
+  initialRoundCount = 1,
 }: {
   results: ContestResult[];
   rounds: { id: string; round_index: number; prompt: string }[];
   isRu: boolean;
+  initialRoundCount?: number;
 }) {
   const judged = results.filter(r => r.arbiter_comment);
 
@@ -610,7 +612,6 @@ function ContestArbiterPanel({
              (() => {
                // Group arbiter comments by round
                const roundIds = [...new Set(judged.map(r => r.round_id))];
-               const initialRoundCount = 1; // Default assumption
                return roundIds.map(roundId => {
                  const round = rounds.find(rd => rd.id === roundId);
                  const roundResults = judged.filter(r => r.round_id === roundId);
@@ -941,17 +942,18 @@ export function BeautyContest() {
           </div>
 
           <TabsContent value="responses" className="flex-1 min-h-0 overflow-hidden mt-0">
-            <ContestResponsesPanel
-              results={contest.results}
-              rounds={contest.rounds}
-              streamingTexts={execution.streamingTexts}
-              isRu={isRu}
-              onScore={async (resultId, score) => {
-                await contest.updateResult(resultId, { user_score: score } as any);
-              }}
-              activeModel={activeModel}
-              onActiveModelChange={setActiveModel}
-            />
+             <ContestResponsesPanel
+               results={contest.results}
+               rounds={contest.rounds}
+               streamingTexts={execution.streamingTexts}
+               isRu={isRu}
+               initialRoundCount={contest.session?.config?.rules?.roundCount ?? 1}
+               onScore={async (resultId, score) => {
+                 await contest.updateResult(resultId, { user_score: score } as any);
+               }}
+               activeModel={activeModel}
+               onActiveModelChange={setActiveModel}
+             />
           </TabsContent>
 
           <TabsContent value="scores" className="flex-1 min-h-0 overflow-auto mt-0 p-3">
@@ -963,11 +965,12 @@ export function BeautyContest() {
           </TabsContent>
 
           <TabsContent value="arbiter" className="flex-1 min-h-0 overflow-hidden mt-0">
-            <ContestArbiterPanel
-              results={contest.results}
-              rounds={contest.rounds}
-              isRu={isRu}
-            />
+             <ContestArbiterPanel
+               results={contest.results}
+               rounds={contest.rounds}
+               isRu={isRu}
+               initialRoundCount={contest.session?.config?.rules?.roundCount ?? 1}
+             />
           </TabsContent>
         </Tabs>
 
