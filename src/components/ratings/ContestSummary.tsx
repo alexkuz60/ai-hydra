@@ -138,12 +138,17 @@ export function ContestSummary() {
       if (models) candidates = Object.keys(JSON.parse(models));
     } catch {}
 
-    // Read task title from selected session
+    // Read task prompt from round config
+    let taskPrompt = '';
     let taskTitleForFlow = '';
     try {
-      const taskId = localStorage.getItem('hydra-contest-task-id');
+      const rulesStr = localStorage.getItem('hydra-contest-rules');
+      if (rulesStr) {
+        const rules = JSON.parse(rulesStr);
+        if (rules.rounds?.[0]?.prompt) taskPrompt = rules.rounds[0].prompt;
+      }
       const taskName = localStorage.getItem('hydra-contest-task-title');
-      if (taskId && taskName) taskTitleForFlow = taskName;
+      if (taskName) taskTitleForFlow = taskName;
     } catch {}
 
     const { nodes, edges } = template.generate({
@@ -152,6 +157,7 @@ export function ContestSummary() {
       criteria: arbitration?.criteria,
       juryMode: (arbitration?.juryMode as 'user' | 'arbiter' | 'both') || 'both',
       taskTitle: taskTitleForFlow || undefined,
+      taskPrompt: taskPrompt || undefined,
     });
 
     const diagramName = `${isRu ? 'Конкурс' : 'Contest'}: ${isRu ? template.ru : template.en}`;
