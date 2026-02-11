@@ -20,6 +20,7 @@ import { UsageStats } from '@/components/profile/UsageStats';
 import { ApiKeyField, type KeyMetadata } from '@/components/profile/ApiKeyField';
 import { ProxyApiDashboard } from '@/components/profile/ProxyApiDashboard';
 import { GeminiLimitsDialog } from '@/components/profile/GeminiLimitsDialog';
+import { OpenRouterLimitsDialog } from '@/components/profile/OpenRouterLimitsDialog';
 
 interface Profile {
   id: string;
@@ -450,6 +451,11 @@ export default function Profile() {
                     {p.provider === 'gemini' && apiKeys['gemini'] && (
                       <div className="mt-1 mb-2">
                         <GeminiLimitsDialog hasKey={!!apiKeys['gemini']} />
+                      </div>
+                    )}
+                    {p.provider === 'openrouter' && apiKeys['openrouter'] && (
+                      <div className="mt-1 mb-2">
+                        <OpenRouterLimitsDialog hasKey={!!apiKeys['openrouter']} />
                       </div>
                     )}
                   </React.Fragment>
