@@ -365,7 +365,33 @@ Buttons in the dashboard header:
 
 - **Firecrawl** — извлечение Markdown из веб-страниц для RAG
 - Поддержка персонального ключа (BYOK)
-- Приоритет персонального ключа над системным`,
+- Приоритет персонального ключа над системным
+
+## Диагностика провайдеров ⚡
+
+Для каждого провайдера доступна кнопка **«Лимиты»** (⚡) рядом с полем API-ключа, открывающая диалог диагностики с двумя вкладками:
+
+### Gemini
+- **Тест доступности** — пинг моделей Gemini Pro, Flash, Flash-Lite с замером латенси
+- **Справка** — лимиты бесплатного тарифа (RPM, RPD, TPM по моделям)
+
+### OpenRouter
+- **Тест доступности** — проверка бесплатных моделей с отображением статуса (200 OK, 429 Rate Limit, ошибка)
+- **Справка** — статус аккаунта, тир, расход за день и остаток кредитов
+
+### Mistral
+- **Тест доступности** — пинг Mistral Large, Small, Codestral, Medium с замером латенси
+- **Справка** — лимиты бесплатного тарифа (~1 RPS, ~500K TPM)
+
+### Firecrawl
+- **Тест режимов** — проверка эндпоинтов Scrape, Crawl, Map, Search
+- **Справка** — доступные форматы (Markdown, HTML, JSON, скриншоты), режимы извлечения (страница, краулинг, карта сайта, поиск) и лимиты бесплатного тарифа (500 кредитов, ~10 req/min)
+
+> [!WARNING] VPN для пользователей из России
+> Прямые запросы к API Gemini, OpenRouter, Mistral и Firecrawl **заблокированы** из России. Для использования кнопок диагностики необходим **VPN**. Это ограничение касается только клиентских тестов — серверные вызовы через Hydra работают без VPN.
+
+> [!TIP] Когда использовать диагностику
+> Запускайте тесты после добавления нового ключа, при подозрении на блокировку или для проверки, какие модели доступны на вашем тарифе.`,
       en: `# Integrations & API
 
 ## Supported AI Providers
@@ -397,7 +423,33 @@ All providers support personal API keys:
 
 - **Firecrawl** — Markdown extraction from web pages for RAG
 - Personal key support (BYOK)
-- Personal key priority over system key`,
+- Personal key priority over system key
+
+## Provider Diagnostics ⚡
+
+Each provider has a **"Limits"** button (⚡) next to the API key field, opening a diagnostics dialog with two tabs:
+
+### Gemini
+- **Availability Test** — pings Gemini Pro, Flash, Flash-Lite models with latency measurement
+- **Reference** — free tier limits (RPM, RPD, TPM per model)
+
+### OpenRouter
+- **Availability Test** — checks free models with status display (200 OK, 429 Rate Limit, error)
+- **Reference** — account status, tier, daily usage and remaining credits
+
+### Mistral
+- **Availability Test** — pings Mistral Large, Small, Codestral, Medium with latency measurement
+- **Reference** — free tier limits (~1 RPS, ~500K TPM)
+
+### Firecrawl
+- **Mode Test** — checks Scrape, Crawl, Map, Search endpoints
+- **Reference** — available formats (Markdown, HTML, JSON, screenshots), extraction modes (page, crawl, sitemap, search) and free tier limits (500 credits, ~10 req/min)
+
+> [!WARNING] VPN Required for Users in Russia
+> Direct requests to Gemini, OpenRouter, Mistral, and Firecrawl APIs are **blocked** from Russia. A **VPN** is required to use the diagnostics buttons. This restriction applies only to client-side tests — server-side calls through Hydra work without VPN.
+
+> [!TIP] When to Use Diagnostics
+> Run tests after adding a new key, when suspecting a block, or to check which models are available on your tier.`,
     },
   },
   {
