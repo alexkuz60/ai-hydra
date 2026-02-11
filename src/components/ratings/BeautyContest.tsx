@@ -178,11 +178,12 @@ function PodiumHistogram({ results }: { results: ContestResult[] }) {
                 <div className="flex flex-col items-center gap-0.5" style={{ height: '100%', justifyContent: 'flex-end' }}>
                   <span className="text-[8px] font-bold text-muted-foreground">{podiumLabels[i]}</span>
                   <div
-                    className="w-4 rounded-t-sm transition-all duration-500"
+                    className="w-4 rounded-t-sm"
                     style={{
                       height: `${heightPct}%`,
                       backgroundColor: color,
                       opacity: entry?.hasScore ? 1 : 0.3,
+                      transition: 'height 0.8s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.4s ease, opacity 0.4s ease',
                     }}
                   />
                 </div>
