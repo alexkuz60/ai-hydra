@@ -163,7 +163,7 @@ export function useContestExecution() {
             role: 'assistant',
             system_prompt: systemPrompt,
             temperature: 0.7,
-            max_tokens: 4096,
+            max_tokens: 8192,
           }),
           signal: abortController.signal,
         });
