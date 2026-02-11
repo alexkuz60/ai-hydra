@@ -22,6 +22,7 @@ import { ProxyApiDashboard } from '@/components/profile/ProxyApiDashboard';
 import { GeminiLimitsDialog } from '@/components/profile/GeminiLimitsDialog';
 import { OpenRouterLimitsDialog } from '@/components/profile/OpenRouterLimitsDialog';
 import { MistralLimitsDialog } from '@/components/profile/MistralLimitsDialog';
+import { FirecrawlLimitsDialog } from '@/components/profile/FirecrawlLimitsDialog';
 
 interface Profile {
   id: string;
@@ -477,17 +478,23 @@ export default function Profile() {
                 </div>
 
                 {TOOL_PROVIDERS.map(p => (
-                  <ApiKeyField
-                    key={p.provider}
-                    provider={p.provider}
-                    label={p.label}
-                    value={apiKeys[p.provider] || ''}
-                    onChange={(v) => setKeyValue(p.provider, v)}
-                    placeholder={p.placeholder}
-                    metadata={keyMetadata[p.provider]}
-                    onExpirationChange={(date) => handleExpirationChange(p.provider, date)}
-                    hint={renderProviderHint(p)}
-                  />
+                  <React.Fragment key={p.provider}>
+                    <ApiKeyField
+                      provider={p.provider}
+                      label={p.label}
+                      value={apiKeys[p.provider] || ''}
+                      onChange={(v) => setKeyValue(p.provider, v)}
+                      placeholder={p.placeholder}
+                      metadata={keyMetadata[p.provider]}
+                      onExpirationChange={(date) => handleExpirationChange(p.provider, date)}
+                      hint={renderProviderHint(p)}
+                    />
+                    {p.provider === 'firecrawl' && apiKeys['firecrawl'] && (
+                      <div className="mt-1 mb-2">
+                        <FirecrawlLimitsDialog hasKey={!!apiKeys['firecrawl']} />
+                      </div>
+                    )}
+                  </React.Fragment>
                 ))}
 
                 {/* Web Search Section */}
