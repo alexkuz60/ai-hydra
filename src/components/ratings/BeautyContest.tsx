@@ -708,41 +708,39 @@ export function BeautyContest() {
       />
 
       {/* Main content area */}
-      <div className="flex-1 flex flex-col min-h-0">
-        <div className="flex-1 grid grid-rows-[1fr_auto_auto] min-h-0">
-          {/* Upper section: Responses chat */}
-          <div className="min-h-0 border-b border-border/30">
-            <ContestResponsesPanel
-              results={contest.results}
-              rounds={contest.rounds}
-              streamingTexts={execution.streamingTexts}
-              isRu={isRu}
-              onScore={async (resultId, score) => {
-                await contest.updateResult(resultId, { user_score: score } as any);
-              }}
-            />
-          </div>
+      <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+        {/* Responses chat — takes most space */}
+        <div className="flex-1 min-h-[200px] border-b border-border/30 overflow-hidden">
+          <ContestResponsesPanel
+            results={contest.results}
+            rounds={contest.rounds}
+            streamingTexts={execution.streamingTexts}
+            isRu={isRu}
+            onScore={async (resultId, score) => {
+              await contest.updateResult(resultId, { user_score: score } as any);
+            }}
+          />
+        </div>
 
-          {/* Arbiter comments */}
-          <div className="h-[200px] border-b border-border/30">
-            <ContestArbiterPanel
-              results={contest.results}
-              isRu={isRu}
-            />
-          </div>
+        {/* Arbiter comments — compact */}
+        <div className="h-[140px] flex-shrink-0 border-b border-border/30 overflow-hidden">
+          <ContestArbiterPanel
+            results={contest.results}
+            isRu={isRu}
+          />
+        </div>
 
-          {/* Scores table */}
-          <div className="p-3">
-            <ContestScoresTable
-              results={contest.results}
-              rounds={contest.rounds}
-              isRu={isRu}
-            />
-          </div>
+        {/* Scores table — compact */}
+        <div className="flex-shrink-0 max-h-[160px] overflow-auto p-3">
+          <ContestScoresTable
+            results={contest.results}
+            rounds={contest.rounds}
+            isRu={isRu}
+          />
         </div>
 
         {/* Follow-up input */}
-        <div className="border-t border-border px-3 py-2">
+        <div className="border-t border-border px-3 py-2 flex-shrink-0">
           <div className="flex items-end gap-2">
             <Textarea
               value={followUpText}
