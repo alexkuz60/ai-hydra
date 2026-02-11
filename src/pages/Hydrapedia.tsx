@@ -3,6 +3,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useSearchParams } from 'react-router-dom';
 import { Layout } from '@/components/layout/Layout';
 import { HydrapediaMarkdown } from '@/components/hydrapedia/HydrapediaMarkdown';
+import { HydrapediaExport } from '@/components/hydrapedia/HydrapediaExport';
 import { HydraCard } from '@/components/ui/hydra-card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
@@ -390,6 +391,9 @@ export default function Hydrapedia() {
               {t('hydrapedia.subtitle')}
             </p>
           </div>
+          
+          {/* Export button */}
+          <HydrapediaExport />
           
           {/* Search button */}
           <Button
