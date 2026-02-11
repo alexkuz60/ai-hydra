@@ -456,56 +456,103 @@ function ContestResponsesPanel({
                 {isRu ? 'Ответы появятся здесь после запуска' : 'Responses will appear here after launch'}
               </div>
             ) : (
-              filtered.map(result => {
-                const entry = getModelRegistryEntry(result.model_id);
-                const shortName = entry?.displayName || result.model_id.split('/').pop() || result.model_id;
-                const ProviderLogo = entry?.provider ? PROVIDER_LOGOS[entry.provider] : undefined;
-                const color = entry?.provider ? PROVIDER_COLORS[entry.provider] : '';
-                const round = rounds.find(r => r.id === result.round_id);
+              (() => {
+                // Group results by round
+                const roundGroups = rounds
+                  .filter(round => filtered.some(r => r.round_id === round.id))
+                  .map(round => ({
+                    round,
+                    results: filtered.filter(r => r.round_id === round.id),
+                  }));
 
-                return (
-                  <div key={result.id} className="rounded-lg border border-border/40 bg-card p-3 space-y-2">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-1.5">
-                        {ProviderLogo && <ProviderLogo className={cn("h-3.5 w-3.5", color)} />}
-                        <span className="text-xs font-semibold">{shortName}</span>
-                        {round && (
-                          <Badge variant="outline" className="text-[9px] px-1 py-0">
-                            {isRu ? `Тур ${round.round_index + 1}` : `R${round.round_index + 1}`}
-                          </Badge>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
-                        {result.response_time_ms && (
-                          <span>{(result.response_time_ms / 1000).toFixed(1)}s</span>
-                        )}
-                        {result.token_count && (
-                          <span>{result.token_count} tok</span>
-                        )}
-                      </div>
-                    </div>
-                    <div className="text-sm">
-                      <MarkdownRenderer content={result.response_text || streamingTexts[result.model_id] || ''} />
-                      {result.status === 'generating' && !result.response_text && streamingTexts[result.model_id] && (
-                        <Loader2 className="h-3 w-3 animate-spin text-primary inline ml-1" />
+                // Results without a matching round (fallback)
+                const orphans = filtered.filter(r => !rounds.some(rd => rd.id === r.round_id));
+                if (orphans.length > 0) {
+                  roundGroups.push({ round: { id: '__orphan', round_index: -1, prompt: '' }, results: orphans });
+                }
+
+                return roundGroups.map(({ round, results: groupResults }) => {
+                  const isFollowUp = round.round_index >= (rounds.length > 0 ? Math.min(...rounds.filter(r => r.prompt).map(r => r.round_index)) + (rounds.filter(r => r.prompt).length > 1 ? 1 : 999) : 999);
+                  const roundLabel = round.round_index < 0
+                    ? ''
+                    : isRu
+                      ? `Тур ${round.round_index + 1}`
+                      : `Round ${round.round_index + 1}`;
+
+                  return (
+                    <div key={round.id} className="space-y-2">
+                      {round.round_index >= 0 && (
+                        <div className="flex items-center gap-2 pt-1">
+                          <div className="flex items-center gap-1.5 flex-shrink-0">
+                            <Crown className="h-3 w-3 text-primary" />
+                            <span className="text-[11px] font-bold text-primary uppercase tracking-wider">{roundLabel}</span>
+                          </div>
+                          <Separator className="flex-1" />
+                          {round.prompt && (
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <FileText className="h-3 w-3 text-muted-foreground flex-shrink-0 cursor-help" />
+                                </TooltipTrigger>
+                                <TooltipContent side="bottom" className="max-w-xs text-xs whitespace-pre-wrap">
+                                  {round.prompt}
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          )}
+                        </div>
                       )}
+                      {round.prompt && round.round_index >= 0 && (
+                        <p className="text-[11px] text-muted-foreground italic pl-5 line-clamp-2">{round.prompt}</p>
+                      )}
+                      {groupResults.map(result => {
+                        const entry = getModelRegistryEntry(result.model_id);
+                        const shortName = entry?.displayName || result.model_id.split('/').pop() || result.model_id;
+                        const ProviderLogo = entry?.provider ? PROVIDER_LOGOS[entry.provider] : undefined;
+                        const color = entry?.provider ? PROVIDER_COLORS[entry.provider] : '';
+
+                        return (
+                          <div key={result.id} className="rounded-lg border border-border/40 bg-card p-3 space-y-2">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-1.5">
+                                {ProviderLogo && <ProviderLogo className={cn("h-3.5 w-3.5", color)} />}
+                                <span className="text-xs font-semibold">{shortName}</span>
+                              </div>
+                              <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+                                {result.response_time_ms && (
+                                  <span>{(result.response_time_ms / 1000).toFixed(1)}s</span>
+                                )}
+                                {result.token_count && (
+                                  <span>{result.token_count} tok</span>
+                                )}
+                              </div>
+                            </div>
+                            <div className="text-sm">
+                              <MarkdownRenderer content={result.response_text || streamingTexts[result.model_id] || ''} />
+                              {result.status === 'generating' && !result.response_text && streamingTexts[result.model_id] && (
+                                <Loader2 className="h-3 w-3 animate-spin text-primary inline ml-1" />
+                              )}
+                            </div>
+                            {(result.status === 'ready' || result.status === 'judged') && onScore && (
+                              <UserScoreWidget
+                                resultId={result.id}
+                                currentScore={result.user_score}
+                                onScore={onScore}
+                                isRu={isRu}
+                              />
+                            )}
+                            {result.arbiter_score != null && (
+                              <div className="flex items-center gap-3 text-[10px] pt-1 border-t border-border/30">
+                                <span>⚖️ {result.arbiter_score}/10</span>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
-                    {(result.status === 'ready' || result.status === 'judged') && onScore && (
-                      <UserScoreWidget
-                        resultId={result.id}
-                        currentScore={result.user_score}
-                        onScore={onScore}
-                        isRu={isRu}
-                      />
-                    )}
-                    {result.arbiter_score != null && (
-                      <div className="flex items-center gap-3 text-[10px] pt-1 border-t border-border/30">
-                        <span>⚖️ {result.arbiter_score}/10</span>
-                      </div>
-                    )}
-                  </div>
-                );
-              })
+                  );
+                });
+              })()
             )}
           </div>
         </ScrollArea>
@@ -517,9 +564,11 @@ function ContestResponsesPanel({
 /** Arbiter comments panel */
 function ContestArbiterPanel({
   results,
+  rounds,
   isRu,
 }: {
   results: ContestResult[];
+  rounds: { id: string; round_index: number; prompt: string }[];
   isRu: boolean;
 }) {
   const judged = results.filter(r => r.arbiter_comment);
@@ -541,21 +590,49 @@ function ContestArbiterPanel({
               {isRu ? 'Арбитр ещё не оценивал' : 'Arbiter has not judged yet'}
             </div>
           ) : (
-            judged.map(r => {
-              const entry = getModelRegistryEntry(r.model_id);
-              const shortName = entry?.displayName || r.model_id.split('/').pop() || r.model_id;
-              return (
-                <div key={r.id} className="rounded-md border border-border/30 bg-muted/10 p-2 space-y-1">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-medium">{shortName}</span>
-                    {r.arbiter_score != null && (
-                      <Badge variant="secondary" className="text-[10px]">{r.arbiter_score}/10</Badge>
+            (() => {
+              // Group arbiter comments by round
+              const roundIds = [...new Set(judged.map(r => r.round_id))];
+              return roundIds.map(roundId => {
+                const round = rounds.find(rd => rd.id === roundId);
+                const roundResults = judged.filter(r => r.round_id === roundId);
+                const roundLabel = round
+                  ? (isRu ? `Тур ${round.round_index + 1}` : `Round ${round.round_index + 1}`)
+                  : '';
+
+                return (
+                  <div key={roundId} className="space-y-2">
+                    {round && (
+                      <div className="flex items-center gap-2 pt-1">
+                        <div className="flex items-center gap-1.5 flex-shrink-0">
+                          <Scale className="h-3 w-3 text-primary" />
+                          <span className="text-[11px] font-bold text-primary uppercase tracking-wider">{roundLabel}</span>
+                        </div>
+                        <Separator className="flex-1" />
+                      </div>
                     )}
+                    {round?.prompt && (
+                      <p className="text-[11px] text-muted-foreground italic pl-5 line-clamp-2">{round.prompt}</p>
+                    )}
+                    {roundResults.map(r => {
+                      const entry = getModelRegistryEntry(r.model_id);
+                      const shortName = entry?.displayName || r.model_id.split('/').pop() || r.model_id;
+                      return (
+                        <div key={r.id} className="rounded-md border border-border/30 bg-muted/10 p-2 space-y-1">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-medium">{shortName}</span>
+                            {r.arbiter_score != null && (
+                              <Badge variant="secondary" className="text-[10px]">{r.arbiter_score}/10</Badge>
+                            )}
+                          </div>
+                          <p className="text-xs text-muted-foreground leading-relaxed">{r.arbiter_comment}</p>
+                        </div>
+                      );
+                    })}
                   </div>
-                  <p className="text-xs text-muted-foreground leading-relaxed">{r.arbiter_comment}</p>
-                </div>
-              );
-            })
+                );
+              });
+            })()
           )}
         </div>
       </ScrollArea>
@@ -858,6 +935,7 @@ export function BeautyContest() {
           <TabsContent value="arbiter" className="flex-1 min-h-0 overflow-hidden mt-0">
             <ContestArbiterPanel
               results={contest.results}
+              rounds={contest.rounds}
               isRu={isRu}
             />
           </TabsContent>
