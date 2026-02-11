@@ -4,7 +4,7 @@ import { HydraCard, HydraCardHeader, HydraCardTitle, HydraCardContent } from '@/
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Save, Trophy, Users, ListOrdered, ClipboardList, Scale, Workflow, Weight, BarChart3, Calculator, CheckCircle2, ExternalLink, Loader2 } from 'lucide-react';
+import { Save, Trophy, Users, ListOrdered, ClipboardList, Scale, Workflow, Weight, BarChart3, Calculator, CheckCircle2, ExternalLink, Loader2, FileText } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { CONTEST_FLOW_TEMPLATES, type ContestFlowTemplateId } from '@/lib/contestFlowTemplates';
 import { useFlowDiagrams } from '@/hooks/useFlowDiagrams';
@@ -79,6 +79,7 @@ export function ContestSummary() {
   const [mode, setMode] = useState('contest');
   const [pipeline, setPipeline] = useState('none');
   const [arbitration, setArbitration] = useState<ArbitrationConfig | null>(null);
+  const [roundPrompt, setRoundPrompt] = useState('');
   const [savedPlan, setSavedPlan] = useState<SavedPlan | null>(() => {
     try {
       const stored = localStorage.getItem(SAVED_PLAN_KEY);
@@ -94,7 +95,11 @@ export function ContestSummary() {
       } catch {}
       try {
         const rules = localStorage.getItem('hydra-contest-rules');
-        if (rules) setRoundCount(JSON.parse(rules).roundCount || 1);
+        if (rules) {
+          const parsed = JSON.parse(rules);
+          setRoundCount(parsed.roundCount || 1);
+          setRoundPrompt(parsed.rounds?.[0]?.prompt || '');
+        }
       } catch {}
       try {
         const taskId = localStorage.getItem('hydra-contest-task-id');
@@ -220,6 +225,22 @@ export function ContestSummary() {
           <SummaryItem icon={<Workflow className="h-3.5 w-3.5" />} label={isRu ? 'Пайплайн' : 'Pipeline'} value={label(PIPELINE_LABELS, pipeline)} />
         </div>
 
+        {/* Round 1 prompt preview */}
+        {roundPrompt && (
+          <>
+            <Separator className="opacity-30" />
+            <div className="space-y-1">
+              <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                <FileText className="h-3 w-3" />
+                {isRu ? 'Промпт тура 1' : 'Round 1 Prompt'}
+              </div>
+              <p className="text-[11px] text-foreground/80 leading-relaxed line-clamp-4 whitespace-pre-wrap rounded-md bg-muted/20 border border-border/20 p-2">
+                {roundPrompt}
+              </p>
+            </div>
+          </>
+        )}
+
         {/* Arbitration details */}
         {arbitration && (
           <>
@@ -340,8 +361,8 @@ export function ContestSummary() {
               />
             </div>
 
-            {/* Mermaid diagram preview */}
-            <div className="rounded-md border border-border/30 bg-muted/10 overflow-hidden">
+            {/* Mermaid diagram preview (compact) */}
+            <div className="rounded-md border border-border/30 bg-muted/10 overflow-hidden max-h-[200px] overflow-y-auto">
               <MermaidPreview content={savedPlan.mermaidCode} />
             </div>
           </div>
