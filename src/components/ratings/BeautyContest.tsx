@@ -3,7 +3,8 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useContestSession, type ContestResult } from '@/hooks/useContestSession';
 import { useContestExecution } from '@/hooks/useContestExecution';
-import { Crown, Play, History, Loader2, Clock, CheckCircle2, AlertCircle, MessageSquare, Scale, Trophy, ChevronDown, ChevronUp, Send, BarChart3, Archive, Star, Maximize2, Minimize2 } from 'lucide-react';
+import { Crown, Play, History, Loader2, Clock, CheckCircle2, AlertCircle, MessageSquare, Scale, Trophy, ChevronDown, ChevronUp, Send, BarChart3, Archive, Star, Maximize2, Minimize2, FileText } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
@@ -402,15 +403,13 @@ function UserScoreWidget({
   );
 }
 
-/** Filtered responses chat */
+/** Filtered responses chat — now rendered inside a tab, no own header */
 function ContestResponsesPanel({
   results,
   rounds,
   streamingTexts,
   isRu,
   onScore,
-  expanded,
-  onToggleExpand,
   activeModel,
   onActiveModelChange,
 }: {
@@ -419,14 +418,11 @@ function ContestResponsesPanel({
   streamingTexts: Record<string, string>;
   isRu: boolean;
   onScore?: (resultId: string, score: number) => void;
-  expanded?: boolean;
-  onToggleExpand?: () => void;
   activeModel: string;
   onActiveModelChange: (model: string) => void;
 }) {
   const modelIds = [...new Set(results.map(r => r.model_id))];
 
-  // Include streaming results that don't have response_text yet
   const allDisplayable = activeModel === 'all'
     ? results.filter(r => r.response_text || streamingTexts[r.model_id])
     : results.filter(r => r.model_id === activeModel && (r.response_text || streamingTexts[r.model_id]));
@@ -437,26 +433,15 @@ function ContestResponsesPanel({
     <div className="flex flex-col h-full">
       <Tabs value={activeModel} onValueChange={onActiveModelChange} className="flex flex-col h-full">
         <div className="px-3 pt-2 pb-1 border-b border-border/50">
-          <div className="flex items-center gap-2 mb-1">
-            <MessageSquare className="h-3.5 w-3.5 text-muted-foreground" />
-            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex-1">
-              {isRu ? 'Ответы конкурсантов' : 'Contestant Responses'}
-            </span>
-            {onToggleExpand && (
-              <Button size="sm" variant="ghost" className="h-6 w-6 p-0" onClick={onToggleExpand}>
-                {expanded ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
-              </Button>
-            )}
-          </div>
-          <TabsList className="h-9 p-1 bg-muted/30 w-full justify-start gap-1">
-            <TabsTrigger value="all" className="text-xs h-7 px-4">
+          <TabsList className="h-8 p-1 bg-muted/30 w-full justify-start gap-1">
+            <TabsTrigger value="all" className="text-xs h-6 px-3">
               {isRu ? 'Все' : 'All'}
             </TabsTrigger>
             {modelIds.map(id => {
               const entry = getModelRegistryEntry(id);
               const short = entry?.displayName || id.split('/').pop() || id;
               return (
-                <TabsTrigger key={id} value={id} className="text-xs h-7 px-4 max-w-[160px] truncate">
+                <TabsTrigger key={id} value={id} className="text-xs h-6 px-3 max-w-[140px] truncate">
                   {short}
                 </TabsTrigger>
               );
@@ -505,7 +490,6 @@ function ContestResponsesPanel({
                         <Loader2 className="h-3 w-3 animate-spin text-primary inline ml-1" />
                       )}
                     </div>
-                    {/* Scoring widget — always visible & editable (even after arbiter judging) */}
                     {(result.status === 'ready' || result.status === 'judged') && onScore && (
                       <UserScoreWidget
                         resultId={result.id}
@@ -663,9 +647,10 @@ export function BeautyContest() {
 
   const [followUpText, setFollowUpText] = useState('');
   const [initialLoad, setInitialLoad] = useState(true);
-  const [responsesExpanded, setResponsesExpanded] = useState(false);
   const [activeModel, setActiveModel] = useState<string>('all');
   const [sendingFollowUp, setSendingFollowUp] = useState(false);
+  const [activeMainTab, setActiveMainTab] = useState<string>('responses');
+  const [promptOpen, setPromptOpen] = useState(false);
 
   // On mount, try to restore last session
   useEffect(() => {
@@ -810,50 +795,76 @@ export function BeautyContest() {
         onNewContest={() => { contest.setSession(null); }}
       />
 
-      {/* Main content area */}
+      {/* Collapsible prompt */}
+      {currentRound?.prompt && (
+        <Collapsible open={promptOpen} onOpenChange={setPromptOpen}>
+          <CollapsibleTrigger className="w-full flex items-center gap-2 px-4 py-1.5 border-b border-border/30 hover:bg-muted/20 transition-colors text-left">
+            <FileText className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+            <span className="text-[11px] font-medium text-muted-foreground truncate flex-1">
+              {isRu ? `Промпт тура ${(currentRoundIndex >= 0 ? currentRoundIndex : 0) + 1}` : `Round ${(currentRoundIndex >= 0 ? currentRoundIndex : 0) + 1} prompt`}
+            </span>
+            {promptOpen ? <ChevronUp className="h-3 w-3 text-muted-foreground" /> : <ChevronDown className="h-3 w-3 text-muted-foreground" />}
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <div className="px-4 py-2 border-b border-border/30 bg-muted/10">
+              <p className="text-xs text-foreground/80 whitespace-pre-wrap">{currentRound.prompt}</p>
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
+      )}
+
+      {/* Unified tabset — fills remaining space */}
       <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
-        {/* Responses chat */}
-        <div className={cn(
-          "border-b border-border/30 overflow-hidden flex flex-col",
-          responsesExpanded ? "flex-1" : "flex-1 min-h-[200px]"
-        )}>
-           <ContestResponsesPanel
-            results={contest.results}
-            rounds={contest.rounds}
-            streamingTexts={execution.streamingTexts}
-            isRu={isRu}
-            onScore={async (resultId, score) => {
-              await contest.updateResult(resultId, { user_score: score } as any);
-            }}
-            expanded={responsesExpanded}
-            onToggleExpand={() => setResponsesExpanded(e => !e)}
-            activeModel={activeModel}
-            onActiveModelChange={setActiveModel}
-          />
-        </div>
+        <Tabs value={activeMainTab} onValueChange={setActiveMainTab} className="flex flex-col flex-1 min-h-0">
+          <div className="px-3 pt-2 flex-shrink-0">
+            <TabsList className="h-8 p-1 bg-muted/30 w-full justify-start gap-1">
+              <TabsTrigger value="responses" className="text-xs h-6 px-3 gap-1">
+                <MessageSquare className="h-3 w-3" />
+                {isRu ? 'Ответы' : 'Responses'}
+              </TabsTrigger>
+              <TabsTrigger value="scores" className="text-xs h-6 px-3 gap-1">
+                <BarChart3 className="h-3 w-3" />
+                {isRu ? 'Оценки' : 'Scores'}
+              </TabsTrigger>
+              <TabsTrigger value="arbiter" className="text-xs h-6 px-3 gap-1">
+                <Scale className="h-3 w-3" />
+                {isRu ? 'Арбитраж' : 'Arbiter'}
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
-        {/* Arbiter + Scores — hidden when expanded */}
-        {!responsesExpanded && (
-          <>
-            <div className="h-[140px] flex-shrink-0 border-b border-border/30 overflow-hidden">
-              <ContestArbiterPanel
-                results={contest.results}
-                isRu={isRu}
-              />
-            </div>
-            <div className="flex-shrink-0 max-h-[160px] overflow-auto p-3">
-              <ContestScoresTable
-                results={contest.results}
-                rounds={contest.rounds}
-                isRu={isRu}
-              />
-            </div>
-          </>
-        )}
+          <TabsContent value="responses" className="flex-1 min-h-0 overflow-hidden mt-0">
+            <ContestResponsesPanel
+              results={contest.results}
+              rounds={contest.rounds}
+              streamingTexts={execution.streamingTexts}
+              isRu={isRu}
+              onScore={async (resultId, score) => {
+                await contest.updateResult(resultId, { user_score: score } as any);
+              }}
+              activeModel={activeModel}
+              onActiveModelChange={setActiveModel}
+            />
+          </TabsContent>
 
-        {/* Follow-up input */}
+          <TabsContent value="scores" className="flex-1 min-h-0 overflow-auto mt-0 p-3">
+            <ContestScoresTable
+              results={contest.results}
+              rounds={contest.rounds}
+              isRu={isRu}
+            />
+          </TabsContent>
+
+          <TabsContent value="arbiter" className="flex-1 min-h-0 overflow-hidden mt-0">
+            <ContestArbiterPanel
+              results={contest.results}
+              isRu={isRu}
+            />
+          </TabsContent>
+        </Tabs>
+
+        {/* Follow-up input — pinned at bottom */}
         <div className="border-t border-border px-3 py-2 flex-shrink-0">
-          {/* Target indicator */}
           {activeModel !== 'all' && (
             <div className="flex items-center gap-1.5 mb-1.5">
               <Badge variant="outline" className="text-[10px] gap-1 border-primary/40 bg-primary/5">
