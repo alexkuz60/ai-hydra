@@ -75,18 +75,29 @@ export function ContestSummary() {
   const navigate = useNavigate();
   const { saveDiagram, isSaving } = useFlowDiagrams();
 
-  const [modelCount, setModelCount] = useState(0);
-  const [roundCount, setRoundCount] = useState(1);
-  const [taskTitle, setTaskTitle] = useState('');
-  const [mode, setMode] = useState('contest');
-  const [pipeline, setPipeline] = useState('none');
-  const [arbitration, setArbitration] = useState<ArbitrationConfig | null>(null);
-  const [roundPrompt, setRoundPrompt] = useState('');
+  const [modelCount, setModelCount] = useState(() => {
+    try { const m = localStorage.getItem('hydra-contest-models'); return m ? Object.keys(JSON.parse(m)).length : 0; } catch { return 0; }
+  });
+  const [roundCount, setRoundCount] = useState(() => {
+    try { const r = localStorage.getItem('hydra-contest-rules'); return r ? (JSON.parse(r).roundCount || 1) : 1; } catch { return 1; }
+  });
+  const [taskTitle, setTaskTitle] = useState(() => {
+    try { const t = localStorage.getItem('hydra-contest-task-id'); return t ? (isRu ? 'Выбрана' : 'Selected') : ''; } catch { return ''; }
+  });
+  const [mode, setMode] = useState(() => {
+    try { return localStorage.getItem('hydra-contest-mode') || 'contest'; } catch { return 'contest'; }
+  });
+  const [pipeline, setPipeline] = useState(() => {
+    try { return localStorage.getItem('hydra-contest-pipeline') || 'none'; } catch { return 'none'; }
+  });
+  const [arbitration, setArbitration] = useState<ArbitrationConfig | null>(() => {
+    try { const a = localStorage.getItem('hydra-contest-arbitration'); return a ? JSON.parse(a) : null; } catch { return null; }
+  });
+  const [roundPrompt, setRoundPrompt] = useState(() => {
+    try { const r = localStorage.getItem('hydra-contest-rules'); if (r) { const p = JSON.parse(r); return p.rounds?.[0]?.prompt || ''; } return ''; } catch { return ''; }
+  });
   const [savedPlan, setSavedPlan] = useState<SavedPlan | null>(() => {
-    try {
-      const stored = localStorage.getItem(SAVED_PLAN_KEY);
-      return stored ? JSON.parse(stored) : null;
-    } catch { return null; }
+    try { const s = localStorage.getItem(SAVED_PLAN_KEY); return s ? JSON.parse(s) : null; } catch { return null; }
   });
 
   useEffect(() => {
