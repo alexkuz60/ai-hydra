@@ -388,7 +388,7 @@ Buttons in the dashboard header:
 - **Справка** — доступные форматы (Markdown, HTML, JSON, скриншоты), режимы извлечения (страница, краулинг, карта сайта, поиск) и лимиты бесплатного тарифа (500 кредитов, ~10 req/min)
 
 > [!WARNING] VPN для пользователей из России
-> Прямые запросы к API Gemini, OpenRouter, Mistral и Firecrawl **заблокированы** из России. Для использования кнопок диагностики необходим **VPN**. Это ограничение касается только клиентских тестов — серверные вызовы через Hydra работают без VPN.
+> Сайты провайдеров Gemini, OpenRouter, Mistral и Firecrawl **заблокированы** из России. **VPN** необходим для регистрации, получения API-ключей и использования кнопок диагностики (клиентские запросы). При этом серверные вызовы через Hydra на облаке Lovable работают **без VPN** — после получения ключа всё функционирует штатно.
 
 > [!TIP] Когда использовать диагностику
 > Запускайте тесты после добавления нового ключа, при подозрении на блокировку или для проверки, какие модели доступны на вашем тарифе.`,
@@ -446,7 +446,7 @@ Each provider has a **"Limits"** button (⚡) next to the API key field, opening
 - **Reference** — available formats (Markdown, HTML, JSON, screenshots), extraction modes (page, crawl, sitemap, search) and free tier limits (500 credits, ~10 req/min)
 
 > [!WARNING] VPN Required for Users in Russia
-> Direct requests to Gemini, OpenRouter, Mistral, and Firecrawl APIs are **blocked** from Russia. A **VPN** is required to use the diagnostics buttons. This restriction applies only to client-side tests — server-side calls through Hydra work without VPN.
+> Gemini, OpenRouter, Mistral, and Firecrawl provider websites are **blocked** from Russia. A **VPN** is required to register, obtain API keys, and use the diagnostics buttons (client-side requests). However, server-side calls through Hydra on Lovable Cloud work **without VPN** — once you have the key, everything works normally.
 
 > [!TIP] When to Use Diagnostics
 > Run tests after adding a new key, when suspecting a block, or to check which models are available on your tier.`,
