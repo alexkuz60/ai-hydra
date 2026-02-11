@@ -131,6 +131,7 @@ function ContestScoreboard({
   sessionName,
   arbiterCount,
   isRu,
+  onNewContest,
 }: {
   results: ContestResult[];
   currentRound: number;
@@ -139,6 +140,7 @@ function ContestScoreboard({
   sessionName: string;
   arbiterCount: number;
   isRu: boolean;
+  onNewContest?: () => void;
 }) {
   const modelIds = [...new Set(results.map(r => r.model_id))];
   const { phase, activeModelId } = detectPhase(results, status);
@@ -193,6 +195,12 @@ function ContestScoreboard({
           >
             {statusBadge}
           </Badge>
+          {onNewContest && (
+            <Button size="sm" variant="outline" className="h-6 text-[10px] gap-1 px-2" onClick={onNewContest}>
+              <Play className="h-2.5 w-2.5" />
+              {isRu ? 'Новый' : 'New'}
+            </Button>
+          )}
         </div>
       </div>
 
@@ -636,6 +644,7 @@ export function BeautyContest() {
         sessionName={contest.session?.name || (isRu ? 'Конкурс' : 'Contest')}
         arbiterCount={contest.session?.config?.arbitration?.juryMode === 'ai' ? 1 : contest.session?.config?.arbitration?.juryMode === 'hybrid' ? 2 : 0}
         isRu={isRu}
+        onNewContest={() => { contest.setSession(null); }}
       />
 
       {/* Main content area */}
