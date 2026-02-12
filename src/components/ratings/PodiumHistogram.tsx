@@ -36,7 +36,7 @@ export function PodiumHistogram({ results, className }: { results: ContestResult
 
   const podiumColors = hasAnyScore
     ? ['hsl(var(--hydra-expert))', 'hsl(var(--hydra-arbiter))', 'hsl(var(--primary))']
-    : ['hsl(var(--foreground) / 0.25)', 'hsl(var(--foreground) / 0.25)', 'hsl(var(--foreground) / 0.25)'];
+    : ['hsl(220 10% 50%)', 'hsl(220 10% 50%)', 'hsl(220 10% 50%)'];
   const podiumLabels = ['2', '1', '3'];
 
   return (
