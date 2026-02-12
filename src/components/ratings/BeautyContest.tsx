@@ -12,7 +12,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Textarea } from '@/components/ui/textarea';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import { getModelRegistryEntry } from '@/config/modelRegistry';
 import { PROVIDER_LOGOS, PROVIDER_COLORS } from '@/components/ui/ProviderLogos';
@@ -41,6 +41,7 @@ export function BeautyContest() {
   const [activeMainTab, setActiveMainTab] = useState<string>('responses');
   const [promptOpen, setPromptOpen] = useState(false);
   const [selectedWinners, setSelectedWinners] = useState<Set<string>>(new Set());
+  const [finishDialogOpen, setFinishDialogOpen] = useState(false);
 
   const handleToggleWinner = useCallback((modelId: string) => {
     setSelectedWinners(prev => {
@@ -220,10 +221,7 @@ export function BeautyContest() {
          arbiterCount={contest.session?.config?.arbitration?.juryMode === 'ai' ? 1 : contest.session?.config?.arbitration?.juryMode === 'hybrid' ? 2 : 0}
          isRu={isRu}
          onNewContest={() => { contest.setSession(null); }}
-         onFinishContest={async () => {
-           await contest.updateSessionStatus('completed');
-           toast({ description: isRu ? 'Конкурс завершён' : 'Contest finished' });
-         }}
+         onFinishContest={() => setFinishDialogOpen(true)}
        />
 
       {/* Collapsible prompt */}
@@ -384,8 +382,37 @@ export function BeautyContest() {
               </Tooltip>
             </TooltipProvider>
           </div>
-        </div>
-      </div>
-    </div>
-  );
+         </div>
+       </div>
+
+       {/* Finish confirmation dialog */}
+       <Dialog open={finishDialogOpen} onOpenChange={setFinishDialogOpen}>
+         <DialogContent className="max-w-sm">
+           <DialogHeader>
+             <DialogTitle>{isRu ? 'Завершить конкурс?' : 'Finish contest?'}</DialogTitle>
+           </DialogHeader>
+           <p className="text-sm text-muted-foreground">
+             {isRu 
+               ? 'Все текущие раунды будут завершены. Это действие нельзя отменить.'
+               : 'All current rounds will be completed. This action cannot be undone.'}
+           </p>
+           <div className="flex gap-2 justify-end mt-4">
+             <Button variant="outline" onClick={() => setFinishDialogOpen(false)}>
+               {isRu ? 'Отмена' : 'Cancel'}
+             </Button>
+             <Button 
+               variant="destructive"
+               onClick={async () => {
+                 await contest.updateSessionStatus('completed');
+                 setFinishDialogOpen(false);
+                 toast({ description: isRu ? 'Конкурс завершён' : 'Contest finished' });
+               }}
+             >
+               {isRu ? 'Завершить' : 'Finish'}
+             </Button>
+           </div>
+         </DialogContent>
+       </Dialog>
+     </div>
+   );
 }
