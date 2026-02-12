@@ -80,8 +80,15 @@ function dispatchConfigChanged() {
 
 export interface ValidationError {
   field: string;
-  message: string;
+  messageKey: string;
 }
+
+export const VALIDATION_MESSAGES: Record<string, { ru: string; en: string }> = {
+  'taskRequired': { ru: 'Выберите задачу', en: 'Task is required' },
+  'participantsRequired': { ru: 'Добавьте хотя бы одного участника', en: 'At least one participant is required' },
+  'promptRequired': { ru: 'Напишите промпт для первого тура', en: 'Round prompt is required' },
+  'pipelineRequired': { ru: 'Выберите шаблон пайплайна', en: 'Pipeline is required' },
+};
 
 export function useContestConfig() {
   const [config, setConfig] = useState<ContestConfigData>(loadConfig);
@@ -202,22 +209,22 @@ export function useContestConfig() {
 
     // Проверка наличия задачи
     if (!config.taskId || !config.taskTitle) {
-      errors.push({ field: 'taskId', message: 'Task is required' });
+      errors.push({ field: 'taskId', messageKey: 'taskRequired' });
     }
 
     // Проверка наличия участников
     if (Object.keys(config.models).length === 0) {
-      errors.push({ field: 'models', message: 'At least one participant is required' });
+      errors.push({ field: 'models', messageKey: 'participantsRequired' });
     }
 
     // Проверка наличия промпта
     if (!config.rules?.rounds?.[0]?.prompt || !config.rules.rounds[0].prompt.trim()) {
-      errors.push({ field: 'prompt', message: 'Round prompt is required' });
+      errors.push({ field: 'prompt', messageKey: 'promptRequired' });
     }
 
     // Проверка наличия пайплайна
     if (!config.pipeline || config.pipeline === 'none') {
-      errors.push({ field: 'pipeline', message: 'Pipeline is required' });
+      errors.push({ field: 'pipeline', messageKey: 'pipelineRequired' });
     }
 
     return errors;
