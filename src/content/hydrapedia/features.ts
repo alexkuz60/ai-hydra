@@ -164,7 +164,10 @@ export const featuresSections: HydrapediaSection[] = [
 | **Идеальное количество раундов** | 1–3 | 3–5 | 4+ |
 | **Учитывает прогноз** | Нет | Нет | Да |
 | **Поддерживает ничьи** | Да | Да | Да |
-| **Лучше для** | Быстрой оценки | Чемпионата | Долгосрочного рейтинга |`,
+| **Лучше для** | Быстрой оценки | Чемпионата | Долгосрочного рейтинга |
+
+> [!TIP] Визуальное сравнение
+> После завершения конкурса на вкладке «Оценки» автоматически появляется визуальное сравнение всех трёх схем. Для каждой модели отображаются горизонтальные бары с нормализованными баллами по каждой схеме и индикаторы ▲▼ изменения позиции относительно средневзвешенного балла. Подсвеченные строки указывают на модели, чья позиция различается между схемами — это помогает понять, когда выбор метода критичен.`,
       en: `# AI Model Podium
 
 The Model Podium — a rating, portfolio, and usage statistics system for AI models. The interface follows the master-detail pattern with ResizablePanel and supports Min/Max navigator modes.
@@ -323,7 +326,10 @@ Round 2:
 | **Ideal round count** | 1–3 | 3–5 | 4+ |
 | **Accounts for prediction** | No | No | Yes |
 | **Supports draws** | Yes | Yes | Yes |
-| **Best for** | Quick evaluation | Championship | Long-term rating |`,
+| **Best for** | Quick evaluation | Championship | Long-term rating |
+
+> [!TIP] Visual Comparison
+> After a contest completes, the "Scores" tab automatically shows a visual comparison of all three schemes. For each model, horizontal bars display normalized scores per scheme with ▲▼ indicators showing rank changes relative to the weighted average baseline. Highlighted rows indicate models whose ranking differs between schemes — helping you understand when the choice of method matters.`,
     },
   },
   {
