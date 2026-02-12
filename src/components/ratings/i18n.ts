@@ -191,6 +191,10 @@ export const RATINGS_I18N = {
   duelFinish: { ru: 'Завершить дуэль', en: 'Finish Duel' },
   duelScore: { ru: 'Счёт', en: 'Score' },
   duelSelectModel: { ru: 'Выберите модель', en: 'Select model' },
+  // Contest Rules tabs
+  tabContest: { ru: 'Конкурс', en: 'Contest' },
+  tabDuel: { ru: 'Дуэль', en: 'Duel' },
+  duelPlanTitle: { ru: 'План дуэли «К барьеру»', en: 'Duel Plan «En Garde»' },
 } as const;
 
 export type RatingsI18nKey = keyof typeof RATINGS_I18N;
