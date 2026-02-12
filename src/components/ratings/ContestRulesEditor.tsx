@@ -78,7 +78,7 @@ export function ContestRulesEditor() {
   return (
     <HydraCard variant="default" className="border-border/50">
       <HydraCardHeader>
-        <div className="flex items-center gap-2 text-hydra-purple">
+        <div className="flex items-center gap-2 text-hydra-expert">
           <Settings2 className="h-4 w-4" />
           <span className="text-xs font-bold uppercase tracking-wider opacity-60">
             {isRu ? 'Шаг 2' : 'Step 2'}

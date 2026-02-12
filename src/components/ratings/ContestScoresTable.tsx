@@ -83,7 +83,7 @@ export function ContestScoresTable({ results, rounds, isRu, selectedWinners, onT
                   <div className="flex items-center gap-1.5">
                     {ProviderLogo && <ProviderLogo className={cn("h-3 w-3", color)} />}
                     <span className="truncate max-w-[140px]">{shortName}</span>
-                    {isSelected && <Crown className="h-3 w-3 text-amber-400 shrink-0" />}
+                    {isSelected && <Crown className="h-3 w-3 text-hydra-arbiter shrink-0" />}
                   </div>
                 </TableCell>
                 <TableCell className="text-center">{row.avgUser != null ? row.avgUser.toFixed(1) : '—'}</TableCell>

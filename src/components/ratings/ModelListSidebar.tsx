@@ -75,9 +75,9 @@ function ModelRow({ model, isAvailable, isActive, isOnPodium, isVeteran, onClick
       </div>
       <div className="flex items-center gap-1.5 shrink-0">
         {isVeteran && <Activity className="h-3.5 w-3.5 text-hydra-cyan" />}
-        {isOnPodium && <Crown className="h-3.5 w-3.5 text-amber-400" />}
+        {isOnPodium && <Crown className="h-3.5 w-3.5 text-hydra-arbiter" />}
         {isAvailable ? (
-          <Check className="h-3.5 w-3.5 text-green-500" />
+          <Check className="h-3.5 w-3.5 text-hydra-success" />
         ) : (
           <X className="h-3.5 w-3.5 text-muted-foreground" />
         )}
@@ -106,7 +106,7 @@ function ProviderHeader({ provider, hasKey, loading, language }: {
           <TooltipTrigger asChild>
             <span className={cn(
               "w-2 h-2 rounded-full shrink-0",
-              hasKey ? "bg-green-500" : "bg-muted-foreground/40"
+              hasKey ? "bg-hydra-success" : "bg-muted-foreground/40"
             )} />
           </TooltipTrigger>
           <TooltipContent side="right" className="text-xs">
