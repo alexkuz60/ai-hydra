@@ -195,6 +195,14 @@ export function useDuelExecution() {
       .update({ status: 'completed', completed_at: new Date().toISOString() })
       .eq('id', round.id);
 
+    // Stop duel after 1st round (no auto-advance to round 2)
+    if (round.round_index === 0) {
+      // Mark session as completed
+      await supabase.from('contest_sessions')
+        .update({ status: 'completed', completed_at: new Date().toISOString() })
+        .eq('id', session.id);
+    }
+
     setState(prev => ({ ...prev, executing: false, streamingTexts: {} }));
     abortRef.current = null;
 

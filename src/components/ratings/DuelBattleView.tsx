@@ -133,7 +133,7 @@ export function DuelBattleView({
                       <span className="text-xs font-medium truncate">{nameA}</span>
                       {scoreA != null && <Badge variant="outline" className="text-[10px] ml-auto">{scoreA.toFixed(1)}</Badge>}
                     </div>
-                    <div className="text-xs text-foreground/80 whitespace-pre-wrap min-h-[40px]">
+                    <div className="text-xs text-foreground/80 whitespace-pre-wrap min-h-[40px] line-clamp-3">
                       {textA || <span className="text-muted-foreground italic">{executing ? '...' : '—'}</span>}
                     </div>
                   </div>
@@ -145,7 +145,7 @@ export function DuelBattleView({
                       <span className="text-xs font-medium truncate">{nameB}</span>
                       {scoreB != null && <Badge variant="outline" className="text-[10px] ml-auto">{scoreB.toFixed(1)}</Badge>}
                     </div>
-                    <div className="text-xs text-foreground/80 whitespace-pre-wrap min-h-[40px]">
+                    <div className="text-xs text-foreground/80 whitespace-pre-wrap min-h-[40px] line-clamp-3">
                       {textB || <span className="text-muted-foreground italic">{executing ? '...' : '—'}</span>}
                     </div>
                   </div>
