@@ -15,9 +15,10 @@ interface ContestScoresTableProps {
   isRu: boolean;
   selectedWinners: Set<string>;
   onToggleWinner: (modelId: string) => void;
+  arbitration?: { userWeight?: number };
 }
 
-export function ContestScoresTable({ results, rounds, isRu, selectedWinners, onToggleWinner }: ContestScoresTableProps) {
+export function ContestScoresTable({ results, rounds, isRu, selectedWinners, onToggleWinner, arbitration }: ContestScoresTableProps) {
   const modelIds = [...new Set(results.map(r => r.model_id))];
 
   // Collect all unique criteria keys across all results
@@ -27,13 +28,19 @@ export function ContestScoresTable({ results, rounds, isRu, selectedWinners, onT
       .flatMap(r => Object.keys(r.criteria_scores!))
   )];
 
+  const userWeight = (arbitration?.userWeight ?? 50) / 100;
+  const arbiterWeight = 1 - userWeight;
+
   const aggregated = modelIds.map(modelId => {
     const modelResults = results.filter(r => r.model_id === modelId);
     const userScores = modelResults.filter(r => r.user_score != null).map(r => r.user_score!);
     const arbiterScores = modelResults.filter(r => r.arbiter_score != null).map(r => r.arbiter_score!);
     const avgUser = userScores.length ? userScores.reduce((a, b) => a + b, 0) / userScores.length : null;
     const avgArbiter = arbiterScores.length ? arbiterScores.reduce((a, b) => a + b, 0) / arbiterScores.length : null;
-    const totalScore = (avgUser ?? 0) + (avgArbiter ?? 0) || null;
+    // Weighted total (0-10 scale)
+    const totalScore = (avgUser != null || avgArbiter != null)
+      ? (avgUser ?? 0) * userWeight + (avgArbiter ?? 0) * arbiterWeight
+      : null;
 
     // Average per-criteria scores
     const criteriaAvg: Record<string, number | null> = {};
