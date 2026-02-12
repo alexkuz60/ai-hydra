@@ -36,7 +36,7 @@ export function PodiumHistogram({ results, className }: { results: ContestResult
 
   const podiumColors = hasAnyScore
     ? ['hsl(var(--hydra-expert))', 'hsl(var(--hydra-arbiter))', 'hsl(var(--primary))']
-    : ['hsl(var(--muted))', 'hsl(var(--muted))', 'hsl(var(--muted))'];
+    : ['hsl(var(--muted-foreground))', 'hsl(var(--muted-foreground))', 'hsl(var(--muted-foreground))'];
   const podiumLabels = ['2', '1', '3'];
 
   return (
@@ -60,7 +60,7 @@ export function PodiumHistogram({ results, className }: { results: ContestResult
                     style={{
                       height: `${heightPct}%`,
                       backgroundColor: color || 'hsl(var(--muted))',
-                      opacity: entry?.hasScore ? 1 : 0.75,
+                      opacity: entry?.hasScore ? 1 : 0.9,
                       transition: 'height 0.8s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.4s ease, opacity 0.4s ease',
                     }}
                   />
