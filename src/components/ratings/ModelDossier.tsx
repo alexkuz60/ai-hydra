@@ -141,7 +141,7 @@ export function ModelDossier({ modelId, contestModels = {}, onToggleContest, onC
         {duels.length > 0 && (
           <HydraCard variant="default">
             <HydraCardHeader className="py-3">
-              <Swords className="h-5 w-5 text-hydra-amber" />
+              <Swords className="h-5 w-5 text-hydra-arbiter" />
               <HydraCardTitle>{isRu ? 'Дуэли в Д-чате' : 'D-Chat Duels'}</HydraCardTitle>
             </HydraCardHeader>
             <HydraCardContent>
@@ -156,8 +156,8 @@ export function ModelDossier({ modelId, contestModels = {}, onToggleContest, onC
                       variant={duel.result === 'win' ? 'default' : 'secondary'}
                       className={cn(
                         "text-[10px]",
-                        duel.result === 'win' && 'bg-green-500/20 text-green-400 border-green-500/30',
-                        duel.result === 'loss' && 'bg-red-500/20 text-red-400 border-red-500/30',
+                        duel.result === 'win' && 'bg-hydra-success/20 text-hydra-success border-hydra-success/30',
+                        duel.result === 'loss' && 'bg-hydra-critical/20 text-hydra-critical border-hydra-critical/30',
                         duel.result === 'draw' && 'bg-muted text-muted-foreground'
                       )}
                     >

@@ -127,7 +127,7 @@ export function ModelStatsChart({ stats, selectedPeriod, onPeriodChange }: Model
             <div className="text-xs text-muted-foreground">{t('stats.totalBrains')}</div>
           </div>
           <div className="text-center p-3 rounded-lg bg-muted/50">
-            <div className="text-2xl font-bold text-hydra-amber">{overallAvg.toFixed(1)}</div>
+            <div className="text-2xl font-bold text-hydra-arbiter">{overallAvg.toFixed(1)}</div>
             <div className="text-xs text-muted-foreground">{t('ratings.overallAvg')}</div>
           </div>
         </div>

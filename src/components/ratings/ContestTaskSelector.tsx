@@ -39,7 +39,7 @@ function TaskFilesDisplay({ sessionId, isRu }: { sessionId: string | null; isRu:
 
   function getIcon(mime: string | null) {
     if (!mime) return <File className="h-3 w-3 text-muted-foreground" />;
-    if (mime.startsWith('image/')) return <Image className="h-3 w-3 text-blue-400" />;
+    if (mime.startsWith('image/')) return <Image className="h-3 w-3 text-hydra-info" />;
     return <FileText className="h-3 w-3 text-muted-foreground" />;
   }
 
@@ -190,7 +190,7 @@ export function ContestTaskSelector() {
             <Users className="h-3 w-3" />
             {isRu ? 'Участники подиума' : 'Podium Participants'}
             {contestModels.length > 0 && (
-              <Badge variant="secondary" className="text-[10px] px-1.5 py-0 bg-amber-500/20 text-amber-400 border-amber-500/30">
+              <Badge variant="secondary" className="text-[10px] px-1.5 py-0 bg-hydra-arbiter/20 text-hydra-arbiter border-hydra-arbiter/30">
                 {contestModels.length}
               </Badge>
             )}
@@ -198,7 +198,7 @@ export function ContestTaskSelector() {
 
           {contestModels.length === 0 ? (
             <div className="p-3 rounded-md border border-dashed border-border/40 bg-muted/10 text-center">
-              <Crown className="h-4 w-4 text-amber-400/40 mx-auto mb-1" />
+              <Crown className="h-4 w-4 text-hydra-arbiter/40 mx-auto mb-1" />
               <p className="text-[11px] text-muted-foreground/60">
                 {isRu
                   ? 'Пригласите моделей на вкладке «Отборочные кандидаты»'

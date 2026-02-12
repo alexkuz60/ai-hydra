@@ -77,7 +77,7 @@ export function CandidateDetail({
                       )}
                     </Badge>
                     {isSelectedForContest && (
-                      <Badge variant="default" className="text-[10px] px-1.5 py-0 bg-amber-500/20 text-amber-400 border-amber-500/30">
+                      <Badge variant="default" className="text-[10px] px-1.5 py-0 bg-hydra-arbiter/20 text-hydra-arbiter border-hydra-arbiter/30">
                         <Crown className="h-3 w-3 mr-0.5" />
                         {isRu ? 'На подиуме' : 'On podium'}
                       </Badge>
@@ -159,7 +159,7 @@ export function CandidateDetail({
                         disabled={!isAvailable}
                         onClick={() => onToggleContest?.(model.id)}
                       >
-                        <Crown className="h-3.5 w-3.5 mr-1.5 text-amber-400" />
+                        <Crown className="h-3.5 w-3.5 mr-1.5 text-hydra-arbiter" />
                         {isSelectedForContest
                           ? (isRu ? 'Убрать с подиума' : 'Remove from podium')
                           : (isRu ? 'Пригласить на подиум' : 'Invite to podium')}

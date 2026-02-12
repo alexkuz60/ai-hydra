@@ -108,7 +108,7 @@ export function ContestSummary() {
   return (
     <HydraCard variant="default" glow className="border-border/50">
       <HydraCardHeader>
-        <div className="flex items-center gap-2 text-hydra-amber">
+        <div className="flex items-center gap-2 text-hydra-arbiter">
           <Trophy className="h-4 w-4" />
           <span className="text-xs font-bold uppercase tracking-wider opacity-60">
             {isRu ? 'Шаг 5' : 'Step 5'}
