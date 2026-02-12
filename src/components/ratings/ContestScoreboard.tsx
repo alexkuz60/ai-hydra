@@ -52,7 +52,7 @@ export function ContestScoreboard({
      : status;
 
   return (
-    <div className="border-b-2 border-primary/30 bg-gradient-to-r from-primary/15 via-primary/8 to-accent/10 px-4 py-3">
+    <div className="border-b-2 border-primary/30 bg-gradient-to-r from-primary/15 via-primary/8 to-accent/10 px-3 py-3">
       <div className="flex gap-0">
         {/* Column A: Icon (below header level) */}
         <div className="flex-shrink-0 w-14 flex flex-col">
@@ -67,7 +67,7 @@ export function ContestScoreboard({
         </div>
 
         {/* Vertical separator after icon */}
-        <div className="flex-shrink-0 w-[2px] bg-foreground/20 mx-2" />
+        <div className="flex-shrink-0 w-[2px] bg-foreground/20 mx-3" />
 
         {/* Column B: Header + messages + badges */}
         <div className="flex-1 min-w-0 flex flex-col gap-2">
@@ -171,7 +171,7 @@ export function ContestScoreboard({
         </div>
 
         {/* Vertical separator before podium */}
-        <div className="flex-shrink-0 w-[2px] bg-foreground/20 mx-2" />
+        <div className="flex-shrink-0 w-[2px] bg-foreground/20 mx-3" />
 
         {/* Column C: Podium — full height */}
         <div className="flex-shrink-0 w-24 flex items-stretch">
