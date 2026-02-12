@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Layout } from '@/components/layout/Layout';
-import { Loader2, Briefcase, Crown, BarChart3, ScrollText } from 'lucide-react';
+import { Loader2, Briefcase, Crown, BarChart3, ScrollText, Swords } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   ResizablePanelGroup,
@@ -17,13 +17,15 @@ import { ModelPortfolio } from '@/components/ratings/ModelPortfolio';
 import { BeautyContest } from '@/components/ratings/BeautyContest';
 import { ContestPodium } from '@/components/ratings/ContestPodium';
 import { RatingsContent } from '@/components/ratings/RatingsContent';
+import { DuelArena } from '@/components/ratings/DuelArena';
 
-type Section = 'portfolio' | 'rules' | 'contest' | 'ratings';
+type Section = 'portfolio' | 'rules' | 'contest' | 'duel' | 'ratings';
 
 const SECTIONS: { id: Section; icon: React.ComponentType<{ className?: string }>; labelRu: string; labelEn: string; descRu: string; descEn: string }[] = [
   { id: 'portfolio', icon: Briefcase, labelRu: 'Портфолио ИИ-моделей', labelEn: 'AI Model Portfolio', descRu: 'Каталог всех доступных моделей', descEn: 'Catalog of all available models' },
   { id: 'rules', icon: ScrollText, labelRu: 'Правила конкурса', labelEn: 'Contest Rules', descRu: 'Настройка туров и критериев', descEn: 'Rounds and criteria setup' },
   { id: 'contest', icon: Crown, labelRu: 'Конкурс интеллект-красоты', labelEn: 'Intelligence Contest', descRu: 'Соревнования между моделями', descEn: 'AI model competitions' },
+  { id: 'duel', icon: Swords, labelRu: 'Дуэль «К барьеру»', labelEn: 'Duel «En Garde»', descRu: 'Попарное состязание кандидатов', descEn: 'Head-to-head candidate battle' },
   { id: 'ratings', icon: BarChart3, labelRu: 'Рейтинги ИИ-моделей', labelEn: 'AI Model Ratings', descRu: 'Статистика и оценки', descEn: 'Stats and evaluations' },
 ];
 
@@ -33,7 +35,7 @@ export default function ModelRatings() {
   const navigate = useNavigate();
   const [activeSection, setActiveSection] = useState<Section>(() => {
     const saved = localStorage.getItem('podium-active-section');
-    return (saved === 'portfolio' || saved === 'rules' || saved === 'contest' || saved === 'ratings') ? saved : 'ratings';
+    return (saved === 'portfolio' || saved === 'rules' || saved === 'contest' || saved === 'duel' || saved === 'ratings') ? saved : 'ratings';
   });
 
   // Persist active section
@@ -154,6 +156,7 @@ export default function ModelRatings() {
               {activeSection === 'portfolio' && <ModelPortfolio />}
               {activeSection === 'rules' && <ContestPodium />}
               {activeSection === 'contest' && <BeautyContest />}
+              {activeSection === 'duel' && <DuelArena />}
               {activeSection === 'ratings' && <RatingsContent />}
             </div>
           </ResizablePanel>

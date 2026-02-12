@@ -266,6 +266,22 @@ export const CONTEST_FLOW_TEMPLATES = {
     descriptionEn: 'Linear loop: task → candidate responses → ratings → arbitration → results',
     generate: generateContestFreePromptFlow,
   },
+  'duel-critic': {
+    id: 'duel-critic',
+    ru: 'Дуэль: Отбор критиков',
+    en: 'Duel: Critic Selection',
+    descriptionRu: 'Попарная дуэль: промпт → модель A → модель B → арбитр → слияние аргументов → следующий раунд',
+    descriptionEn: 'Head-to-head: prompt → Model A → Model B → arbiter → merge arguments → next round',
+    generate: generateContestFreePromptFlow, // reuses same generator for now
+  },
+  'duel-arbiter': {
+    id: 'duel-arbiter',
+    ru: 'Дуэль: Отбор арбитров',
+    en: 'Duel: Arbiter Selection',
+    descriptionRu: 'Попарная дуэль арбитров: дуэлянты оцениваются критиками',
+    descriptionEn: 'Arbiter duel: duelists evaluated by critics',
+    generate: generateContestFreePromptFlow, // reuses same generator for now
+  },
 } as const;
 
 export type ContestFlowTemplateId = keyof typeof CONTEST_FLOW_TEMPLATES | 'none';

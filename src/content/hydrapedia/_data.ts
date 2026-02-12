@@ -3,7 +3,7 @@ import { basicsSections } from './basics';
 import { chatSections } from './chat';
 import { contentSections } from './content';
 import { flowSections } from './flow';
-import { featuresSections } from './features';
+import { featuresSections, duelModeSections } from './features';
 import { referenceSections } from './reference';
 import { adminSections } from './admin';
 import { guideSections } from './guide';
@@ -41,4 +41,5 @@ export const allHydrapediaSections: HydrapediaSection[] = [
   pick(featuresSections, 'roleMemory'),
   pick(referenceSections, 'faq'),
   pick(guideSections, 'guide-tours'),
+  pick(duelModeSections, 'duel-mode'),
 ];
