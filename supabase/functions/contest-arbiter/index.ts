@@ -82,9 +82,11 @@ ${criteriaDesc}
 ## Ответы конкурсантов
 ${responsesDesc}
 
-Оцените ответ каждого конкурсанта. Для каждой модели укажите:
-1. Взвешенный балл от 1 до 10 (с учётом весов критериев)
-2. Краткий аналитический комментарий (2-3 предложения) с указанием сильных и слабых сторон. Комментарий ОБЯЗАТЕЛЬНО на русском языке.`
+Оцените ответ каждого конкурсанта по КАЖДОМУ критерию отдельно. Для каждой модели укажите:
+1. Оценки по каждому критерию (1-10 для каждого)
+2. Краткий аналитический комментарий (2-3 предложения) с указанием сильных и слабых сторон. Комментарий ОБЯЗАТЕЛЬНО на русском языке.
+
+ВАЖНО: Возвращайте оценки ПО КАЖДОМУ критерию отдельно в объекте criteria_scores.`
       : `## Original Prompt Given to Contestants
 ${prompt}
 
@@ -94,9 +96,11 @@ ${criteriaDesc}
 ## Contestant Responses
 ${responsesDesc}
 
-Evaluate each contestant's response. For each model, provide:
-1. A weighted score from 1-10 (considering criteria weights)
-2. A brief analytical comment (2-3 sentences) highlighting strengths and weaknesses`;
+Evaluate each contestant's response BY EACH CRITERION separately. For each model, provide:
+1. A score for each criterion (1-10 for each)
+2. A brief analytical comment (2-3 sentences) highlighting strengths and weaknesses
+
+IMPORTANT: Return scores FOR EACH CRITERION separately in the criteria_scores object.`;
 
     // Use tool calling for structured output
     const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -117,8 +121,8 @@ Evaluate each contestant's response. For each model, provide:
             function: {
               name: "submit_evaluations",
               description: isRu
-                ? "Отправить оценки и комментарии (на русском языке) для каждой модели-конкурсанта."
-                : "Submit evaluation scores and comments for each contestant model.",
+                ? "Отправить оценки по критериям и финальный балл для каждой модели-конкурсанта."
+                : "Submit per-criterion scores and overall evaluation for each contestant model.",
               parameters: {
                 type: "object",
                 properties: {
@@ -131,9 +135,10 @@ Evaluate each contestant's response. For each model, provide:
                           type: "string",
                           description: "The EXACT model_id string as shown in parentheses after 'model_id:' for each contestant. Copy it verbatim.",
                         },
-                        score: {
-                          type: "number",
-                          description: "Weighted overall score from 1 to 10 (can use decimals like 7.5)",
+                        criteria_scores: {
+                          type: "object",
+                          description: "Object with criterion names as keys and scores 1-10 as values (e.g., {\"Factuality\": 8.5, \"Relevance\": 9.0})",
+                          additionalProperties: { type: "number" },
                         },
                         comment: {
                           type: "string",
@@ -142,7 +147,7 @@ Evaluate each contestant's response. For each model, provide:
                             : "Brief analytical comment (2-3 sentences) on the response quality",
                         },
                       },
-                      required: ["model_id", "score", "comment"],
+                      required: ["model_id", "criteria_scores", "comment"],
                       additionalProperties: false,
                     },
                   },
@@ -191,7 +196,7 @@ Evaluate each contestant's response. For each model, provide:
       );
     }
 
-    let evaluations: { model_id: string; score: number; comment: string }[];
+    let evaluations: { model_id: string; criteria_scores: Record<string, number>; comment: string }[];
     try {
       const parsed = JSON.parse(toolCall.function.arguments);
       evaluations = parsed.evaluations;
@@ -202,6 +207,23 @@ Evaluate each contestant's response. For each model, provide:
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+
+    // Calculate weighted score from per-criteria scores
+    const calculateWeightedScore = (criteriaScores: Record<string, number>, weights: Record<string, number>): number => {
+      const scoredCriteria = Object.entries(criteriaScores);
+      if (scoredCriteria.length === 0) return 0;
+      
+      let totalWeight = 0;
+      let weightedSum = 0;
+      
+      for (const [criterion, score] of scoredCriteria) {
+        const weight = weights[criterion] ?? 10; // default 10% if weight not specified
+        weightedSum += score * weight;
+        totalWeight += weight;
+      }
+      
+      return totalWeight > 0 ? Math.round((weightedSum / totalWeight) * 10) / 10 : 0;
+    };
 
     // Map evaluations back to result_ids — robust matching
     const results = responses.map(r => {
@@ -214,12 +236,19 @@ Evaluate each contestant's response. For each model, provide:
           shortId.includes(e.model_id.toLowerCase().split('/').pop() || '???')
         );
       }
+      
+      const criteriaScores = eval_?.criteria_scores || {};
+      const arbitration = (req as any).body?.arbitration || {};
+      const weights = arbitration.criteriaWeights || {};
+      const arbiterScore = calculateWeightedScore(criteriaScores, weights);
+      
       return {
         result_id: r.result_id,
         model_id: r.model_id,
-        arbiter_score: eval_ ? Math.round(eval_.score * 10) / 10 : null,
+        arbiter_score: arbiterScore,
         arbiter_comment: eval_?.comment || null,
         arbiter_model: model,
+        criteria_scores: criteriaScores,
       };
     });
 

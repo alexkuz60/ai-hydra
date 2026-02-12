@@ -82,7 +82,7 @@ export function useContestExecution() {
       }
 
       const data = await response.json();
-      const evaluations: { result_id: string; arbiter_score: number | null; arbiter_comment: string | null; arbiter_model: string }[] = data.evaluations || [];
+      const evaluations: { result_id: string; arbiter_score: number | null; arbiter_comment: string | null; arbiter_model: string; criteria_scores?: Record<string, number> }[] = data.evaluations || [];
 
       // Save each evaluation — include response_text to prevent state loss
       for (const eval_ of evaluations) {
@@ -93,6 +93,10 @@ export function useContestExecution() {
             arbiter_comment: eval_.arbiter_comment,
             arbiter_model: eval_.arbiter_model,
             status: 'judged',
+            metadata: {
+              ...(originalResult?.metadata || {}),
+              criteria_scores: eval_.criteria_scores || {},
+            },
             // Preserve response fields to prevent UI from losing them
             ...(originalResult ? {
               response_text: originalResult.response_text,
