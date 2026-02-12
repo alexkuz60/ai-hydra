@@ -5,6 +5,7 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { getModelRegistryEntry } from '@/config/modelRegistry';
+import { getRatingsText } from './i18n';
 import type { ContestResult } from '@/hooks/useContestSession';
 
 interface ContestArbiterPanelProps {
@@ -20,19 +21,19 @@ export function ContestArbiterPanel({ results, rounds, isRu, initialRoundCount =
   return (
     <div className="flex flex-col h-full">
       <div className="px-3 pt-2 pb-1 border-b border-border/50">
-        <div className="flex items-center gap-2">
-          <Scale className="h-3.5 w-3.5 text-muted-foreground" />
-          <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            {isRu ? 'Комментарии арбитра' : 'Arbiter Comments'}
-          </span>
-        </div>
+         <div className="flex items-center gap-2">
+           <Scale className="h-3.5 w-3.5 text-muted-foreground" />
+           <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+             {getRatingsText('arbiterComments', isRu)}
+           </span>
+         </div>
       </div>
       <ScrollArea className="flex-1 p-3">
         <div className="space-y-2">
-          {judged.length === 0 ? (
-            <div className="text-xs text-muted-foreground text-center py-6">
-              {isRu ? 'Арбитр ещё не оценивал' : 'Arbiter has not judged yet'}
-            </div>
+           {judged.length === 0 ? (
+             <div className="text-xs text-muted-foreground text-center py-6">
+               {getRatingsText('arbiterHasNotJudgedYet', isRu)}
+             </div>
           ) : (
             <ArbiterRoundGroups judged={judged} rounds={rounds} initialRoundCount={initialRoundCount} isRu={isRu} />
           )}

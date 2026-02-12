@@ -9,6 +9,7 @@ import { getModelRegistryEntry } from '@/config/modelRegistry';
 import { PROVIDER_LOGOS, PROVIDER_COLORS } from '@/components/ui/ProviderLogos';
 import { MarkdownRenderer } from '@/components/warroom/MarkdownRenderer';
 import { UserScoreWidget } from './UserScoreWidget';
+import { getRatingsText } from './i18n';
 import type { ContestResult } from '@/hooks/useContestSession';
 
 interface ContestResponsesPanelProps {
@@ -36,10 +37,10 @@ export function ContestResponsesPanel({
     <div className="flex flex-col h-full">
       <Tabs value={activeModel} onValueChange={onActiveModelChange} className="flex flex-col h-full">
         <div className="px-3 pt-2 pb-1 border-b border-border/50">
-          <TabsList className="h-8 p-1 bg-muted/30 w-full justify-start gap-1">
-            <TabsTrigger value="all" className="text-xs h-6 px-3">
-              {isRu ? 'Все' : 'All'}
-            </TabsTrigger>
+           <TabsList className="h-8 p-1 bg-muted/30 w-full justify-start gap-1">
+             <TabsTrigger value="all" className="text-xs h-6 px-3">
+               {getRatingsText('allResponses', isRu)}
+             </TabsTrigger>
             {modelIds.map(id => {
               const entry = getModelRegistryEntry(id);
               const short = entry?.displayName || id.split('/').pop() || id;
@@ -54,10 +55,10 @@ export function ContestResponsesPanel({
 
         <ScrollArea className="flex-1 p-3">
           <div className="space-y-3">
-            {displayable.length === 0 ? (
-              <div className="text-xs text-muted-foreground text-center py-8">
-                {isRu ? 'Ответы появятся здесь после запуска' : 'Responses will appear here after launch'}
-              </div>
+             {displayable.length === 0 ? (
+               <div className="text-xs text-muted-foreground text-center py-8">
+                 {getRatingsText('responsesWillAppearAfterLaunch', isRu)}
+               </div>
             ) : (
               <RoundGroupedResults
                 filtered={displayable}
