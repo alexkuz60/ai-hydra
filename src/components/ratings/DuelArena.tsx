@@ -1,7 +1,6 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
 import { useDuelConfig } from '@/hooks/useDuelConfig';
 import { useDuelSession } from '@/hooks/useDuelSession';
 import { useDuelExecution } from '@/hooks/useDuelExecution';
@@ -12,7 +11,6 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { getRatingsText } from './i18n';
-import { DuelPlanEditor } from './DuelPlanEditor';
 import { DuelBattleView } from './DuelBattleView';
 
 export function DuelArena() {
@@ -30,6 +28,33 @@ export function DuelArena() {
       duelSession.loadLatestDuel().finally(() => setInitialLoad(false));
     }
   }, [user]);
+
+  // Auto-advance to next round after arbiter finishes (when userEvaluation is off)
+  useEffect(() => {
+    if (execution.executing || execution.arbiterRunning) return;
+    if (!duelSession.session || duelSession.session.status === 'completed') return;
+    if (duelConfig.config.userEvaluation) return; // user picks winner manually
+
+    const completedRounds = duelSession.rounds.filter(r => r.status === 'completed');
+    const lastCompleted = completedRounds[completedRounds.length - 1];
+    if (!lastCompleted) return;
+
+    // Check if last completed round has been judged
+    const roundResults = duelSession.results.filter(r => r.round_id === lastCompleted.id);
+    const allJudged = roundResults.length >= 2 && roundResults.every(r => r.status === 'judged');
+    if (!allJudged) return;
+
+    const nextRound = duelSession.rounds.find(r => r.round_index === lastCompleted.round_index + 1);
+    if (nextRound && nextRound.status !== 'completed') {
+      execution.executeDuelRound(
+        duelSession.session!, nextRound, duelSession.results,
+        duelSession.updateResult, duelConfig.config,
+      );
+    } else if (!nextRound) {
+      // All rounds done — mark session completed
+      duelSession.updateSessionStatus('completed');
+    }
+  }, [duelSession.results, execution.executing, execution.arbiterRunning]);
 
   const handleLaunch = async () => {
     const errors = duelConfig.validate();
@@ -58,7 +83,7 @@ export function DuelArena() {
     await duelSession.loadSession(sessionId);
   };
 
-  // No session — config/launch UI
+  // No session — launch UI (plan is in Contest Rules tab)
   if (!duelSession.session && !initialLoad) {
     return (
       <div className="h-full flex flex-col">
@@ -73,8 +98,6 @@ export function DuelArena() {
                 <p className="text-sm text-muted-foreground">{getRatingsText('duelConfigureAndLaunch', isRu)}</p>
               </div>
             </div>
-
-            <DuelPlanEditor config={duelConfig} isRu={isRu} />
 
             <div className="flex flex-col gap-2">
               <Button onClick={handleLaunch} className="gap-2" size="lg">
@@ -165,6 +188,9 @@ export function DuelArena() {
               duelSession.session!, nextRound, duelSession.results,
               duelSession.updateResult, duelConfig.config,
             );
+          } else {
+            // All rounds done
+            await duelSession.updateSessionStatus('completed');
           }
         }
       }}
