@@ -170,6 +170,9 @@ export function ContestScoreboard({
           </div>
         </div>
 
+        {/* Vertical separator */}
+        <div className="flex-shrink-0 w-px bg-border/50 mx-2" />
+
         {/* Column C: Podium — full height */}
         <div className="flex-shrink-0 w-20 flex items-end">
           <PodiumHistogram results={results} className="w-full h-full" />
