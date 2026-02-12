@@ -5,8 +5,18 @@ import { getModelRegistryEntry } from '@/config/modelRegistry';
 import type { ContestResult } from '@/hooks/useContestSession';
 
 /** Mini podium histogram — vertical bars representing top 3 */
-export function PodiumHistogram({ results, className }: { results: ContestResult[]; className?: string }) {
+export function PodiumHistogram({ 
+  results, className, arbitration 
+}: { 
+  results: ContestResult[]; 
+  className?: string;
+  arbitration?: { userWeight?: number; criteriaWeights?: Record<string, number> };
+}) {
   const modelIds = [...new Set(results.map(r => r.model_id))];
+
+  // Get userWeight from arbitration config (default 50 = 50/50 split)
+  const userWeight = arbitration?.userWeight ?? 50;
+  const arbiterWeight = 100 - userWeight;
 
   const scored = modelIds.map(modelId => {
     const mrs = results.filter(r => r.model_id === modelId);
@@ -14,9 +24,13 @@ export function PodiumHistogram({ results, className }: { results: ContestResult
     const aScores = mrs.filter(r => r.arbiter_score != null).map(r => r.arbiter_score!);
     const avgU = uScores.length ? uScores.reduce((a, b) => a + b, 0) / uScores.length : 0;
     const avgA = aScores.length ? aScores.reduce((a, b) => a + b, 0) / aScores.length : 0;
-    const total = avgU + avgA;
+    
+    // Apply weights: total = avgU * (userWeight/100) + avgA * (arbiterWeight/100)
+    // Result is normalized to 0-10 range
+    const total = avgU * (userWeight / 100) + avgA * (arbiterWeight / 100);
+    
     const hasScore = uScores.length > 0 || aScores.length > 0;
-    return { modelId, total, hasScore };
+    return { modelId, total, hasScore, avgU, avgA };
   }).sort((a, b) => b.total - a.total);
 
   const hasAnyScore = scored.some(s => s.hasScore);
@@ -24,9 +38,8 @@ export function PodiumHistogram({ results, className }: { results: ContestResult
   const podium = [scored[1], scored[0], scored[2]]; // 2nd, 1st, 3rd
   const defaultHeights = [60, 100, 40];
 
-  // Use absolute scale (0-20) instead of min-max normalization
-  // so that each score change visibly affects ALL bars
-  const MAX_POSSIBLE = 20; // avgUser(0-10) + avgArbiter(0-10)
+  // Use absolute scale (0-10) since weighted score is already normalized
+  const MAX_POSSIBLE = 10;
   const dynamicHeight = (total: number) => {
     const normalized = Math.min(total / MAX_POSSIBLE, 1);
     return 15 + normalized * 85;
@@ -66,7 +79,14 @@ export function PodiumHistogram({ results, className }: { results: ContestResult
               </TooltipTrigger>
               {entry && (
                 <TooltipContent side="bottom" className="text-[10px]">
-                  {shortName}{entry.hasScore ? `: ${entry.total.toFixed(1)}` : ''}
+                  <div>{shortName}</div>
+                  {entry.hasScore && (
+                    <>
+                      <div className="mt-1 opacity-80">👤 {entry.avgU.toFixed(1)}</div>
+                      <div className="opacity-80">⚖️ {entry.avgA.toFixed(1)}</div>
+                      <div className="mt-1 font-semibold">{entry.total.toFixed(1)}</div>
+                    </>
+                  )}
                 </TooltipContent>
               )}
             </Tooltip>
