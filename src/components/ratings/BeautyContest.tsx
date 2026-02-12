@@ -25,6 +25,7 @@ import { ContestScoreboard } from './ContestScoreboard';
 import { ContestResponsesPanel } from './ContestResponsesPanel';
 import { ContestArbiterPanel } from './ContestArbiterPanel';
 import { ContestScoresTable } from './ContestScoresTable';
+import { ScoringSchemeComparison } from './ScoringSchemeComparison';
 
 export function BeautyContest() {
   const { language } = useLanguage();
@@ -404,6 +405,10 @@ export function BeautyContest() {
               selectedWinners={selectedWinners}
               onToggleWinner={handleToggleWinner}
               arbitration={contest.session?.config?.arbitration as any}
+            />
+            <ScoringSchemeComparison
+              results={contest.results}
+              userWeight={(contest.session?.config?.arbitration as any)?.userWeight}
             />
              {selectedWinners.size > 0 && (
                 <Button onClick={handleMigrateToExpertPanel} className="w-full gap-2" variant="outline">
