@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import { useContestSession } from '@/hooks/useContestSession';
 import { useContestExecution } from '@/hooks/useContestExecution';
-import { Crown, Play, Loader2, ChevronDown, ChevronUp, Send, BarChart3, Archive, MessageSquare, Scale, FileText, Users } from 'lucide-react';
+import { Crown, Play, Loader2, ChevronDown, ChevronUp, Send, BarChart3, Archive, MessageSquare, Scale, FileText, Users, ClipboardList } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Button } from '@/components/ui/button';
@@ -42,6 +43,7 @@ export function BeautyContest() {
   const [promptOpen, setPromptOpen] = useState(false);
   const [selectedWinners, setSelectedWinners] = useState<Set<string>>(new Set());
   const [finishDialogOpen, setFinishDialogOpen] = useState(false);
+  const [savingToTask, setSavingToTask] = useState(false);
 
   const handleToggleWinner = useCallback((modelId: string) => {
     setSelectedWinners(prev => {
@@ -85,6 +87,88 @@ export function BeautyContest() {
     navigate('/expert-panel');
     toast({ description: `${selectedWinners.size} ${getRatingsText('winnersToExpertPanel', isRu)}` });
   }, [selectedWinners, contest.session, contest.results, contest.rounds, navigate, isRu, toast]);
+
+  const handleSaveToTask = useCallback(async () => {
+    if (!user || !contest.session) return;
+    const scoredResults = contest.results.filter(r => r.response_text && (r.user_score != null || r.arbiter_score != null));
+    if (scoredResults.length === 0) {
+      toast({ variant: 'destructive', description: getRatingsText('noScoredResponses', isRu) });
+      return;
+    }
+    setSavingToTask(true);
+    try {
+      const taskTitle = contest.session.name || (isRu ? 'Результаты конкурса' : 'Contest Results');
+      const taskPrompt = contest.rounds[0]?.prompt || '';
+
+      // Create a new session (task)
+      const { data: newSession, error: sessionErr } = await supabase
+        .from('sessions')
+        .insert({ user_id: user.id, title: `🏆 ${taskTitle}`, description: taskPrompt || null })
+        .select()
+        .single();
+      if (sessionErr) throw sessionErr;
+
+      // Build messages: 1 user message (prompt) + N assistant messages (responses)
+      const messages: Array<{
+        session_id: string; user_id: string; role: string;
+        content: string; model_name: string | null; metadata: Record<string, unknown>;
+      }> = [];
+
+      if (taskPrompt) {
+        messages.push({
+          session_id: newSession.id,
+          user_id: user.id,
+          role: 'user',
+          content: taskPrompt,
+          model_name: null,
+          metadata: { source: 'contest', contest_session_id: contest.session.id },
+        });
+      }
+
+      // Group by round for ordering
+      const roundOrder = contest.rounds.map(r => r.id);
+      const sorted = [...scoredResults].sort((a, b) => {
+        const ai = roundOrder.indexOf(a.round_id);
+        const bi = roundOrder.indexOf(b.round_id);
+        return ai - bi || a.model_id.localeCompare(b.model_id);
+      });
+
+      for (const result of sorted) {
+        const entry = getModelRegistryEntry(result.model_id);
+        const displayName = entry?.displayName || result.model_id.split('/').pop() || result.model_id;
+        const round = contest.rounds.find(r => r.id === result.round_id);
+        const roundLabel = round ? `R${round.round_index + 1}` : '';
+
+        messages.push({
+          session_id: newSession.id,
+          user_id: user.id,
+          role: 'assistant',
+          content: result.response_text!,
+          model_name: result.model_id,
+          metadata: {
+            source: 'contest',
+            contest_session_id: contest.session.id,
+            round_index: round?.round_index,
+            user_score: result.user_score,
+            arbiter_score: result.arbiter_score,
+            criteria_scores: result.criteria_scores,
+            response_time_ms: result.response_time_ms,
+            token_count: result.token_count,
+          },
+        });
+      }
+
+      const { error: msgErr } = await supabase.from('messages').insert(messages as any);
+      if (msgErr) throw msgErr;
+
+      toast({ description: getRatingsText('savedToTask', isRu) });
+      navigate('/tasks');
+    } catch (err: any) {
+      toast({ variant: 'destructive', description: err.message });
+    } finally {
+      setSavingToTask(false);
+    }
+  }, [user, contest.session, contest.results, contest.rounds, isRu, toast, navigate]);
 
   useEffect(() => {
     if (user && initialLoad) {
@@ -285,15 +369,24 @@ export function BeautyContest() {
               selectedWinners={selectedWinners}
               onToggleWinner={handleToggleWinner}
             />
-            {selectedWinners.size > 0 && (
-               <Button onClick={handleMigrateToExpertPanel} className="w-full gap-2" variant="outline">
-                 <Crown className="h-3.5 w-3.5 text-primary" />
-                 <Users className="h-3.5 w-3.5" />
-                 {isRu
-                   ? `Отправить ${selectedWinners.size} победител${selectedWinners.size === 1 ? 'я' : 'ей'} в Панель экспертов`
-                   : `Send ${selectedWinners.size} winner${selectedWinners.size > 1 ? 's' : ''} to Expert Panel`}
-               </Button>
-            )}
+             {selectedWinners.size > 0 && (
+                <Button onClick={handleMigrateToExpertPanel} className="w-full gap-2" variant="outline">
+                  <Crown className="h-3.5 w-3.5 text-primary" />
+                  <Users className="h-3.5 w-3.5" />
+                  {isRu
+                    ? `Отправить ${selectedWinners.size} победител${selectedWinners.size === 1 ? 'я' : 'ей'} в Панель экспертов`
+                    : `Send ${selectedWinners.size} winner${selectedWinners.size > 1 ? 's' : ''} to Expert Panel`}
+                </Button>
+             )}
+             <Button
+               onClick={handleSaveToTask}
+               disabled={savingToTask}
+               className="w-full gap-2"
+               variant="outline"
+             >
+               {savingToTask ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ClipboardList className="h-3.5 w-3.5" />}
+               {savingToTask ? getRatingsText('savingToTask', isRu) : getRatingsText('saveToTask', isRu)}
+             </Button>
           </TabsContent>
 
           <TabsContent value="arbiter" className="flex-1 min-h-0 overflow-hidden mt-0">
