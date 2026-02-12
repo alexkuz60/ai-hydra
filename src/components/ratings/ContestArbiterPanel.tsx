@@ -90,21 +90,32 @@ function ArbiterRoundGroups({
                 {round.prompt}
               </p>
             )}
-            {roundResults.map(r => {
-              const entry = getModelRegistryEntry(r.model_id);
-              const shortName = entry?.displayName || r.model_id.split('/').pop() || r.model_id;
-              return (
-                <div key={r.id} className="rounded-md border border-border/30 bg-muted/10 p-2 space-y-1">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-medium">{shortName}</span>
-                    {r.arbiter_score != null && (
-                      <Badge variant="secondary" className="text-[10px]">{r.arbiter_score}/10</Badge>
+              {roundResults.map(r => {
+                const entry = getModelRegistryEntry(r.model_id);
+                const shortName = entry?.displayName || r.model_id.split('/').pop() || r.model_id;
+                const criteriaScores = (r as any).criteria_scores as Record<string, number> | null;
+                return (
+                  <div key={r.id} className="rounded-md border border-border/30 bg-muted/10 p-2 space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-medium">{shortName}</span>
+                      {r.arbiter_score != null && (
+                        <Badge variant="secondary" className="text-[10px]">{r.arbiter_score}/10</Badge>
+                      )}
+                    </div>
+                    {criteriaScores && Object.keys(criteriaScores).length > 0 && (
+                      <div className="flex flex-wrap gap-1">
+                        {Object.entries(criteriaScores).map(([key, val]) => (
+                          <Badge key={key} variant="outline" className="text-[9px] px-1.5 py-0 font-normal gap-1">
+                            <span className="text-muted-foreground">{key}</span>
+                            <span className="font-semibold">{val}</span>
+                          </Badge>
+                        ))}
+                      </div>
                     )}
+                    <p className="text-xs text-muted-foreground leading-relaxed">{r.arbiter_comment}</p>
                   </div>
-                  <p className="text-xs text-muted-foreground leading-relaxed">{r.arbiter_comment}</p>
-                </div>
-              );
-            })}
+                );
+              })}
           </div>
         );
       })}
