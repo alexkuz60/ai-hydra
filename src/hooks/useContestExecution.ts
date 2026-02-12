@@ -92,6 +92,7 @@ export function useContestExecution() {
             arbiter_score: eval_.arbiter_score,
             arbiter_comment: eval_.arbiter_comment,
             arbiter_model: eval_.arbiter_model,
+            criteria_scores: eval_.criteria_scores || {},
             status: 'judged',
             metadata: {
               ...(originalResult?.metadata || {}),
