@@ -20,6 +20,7 @@ export type Database = {
           arbiter_model: string | null
           arbiter_score: number | null
           created_at: string
+          criteria_scores: Json | null
           id: string
           metadata: Json | null
           model_id: string
@@ -37,6 +38,7 @@ export type Database = {
           arbiter_model?: string | null
           arbiter_score?: number | null
           created_at?: string
+          criteria_scores?: Json | null
           id?: string
           metadata?: Json | null
           model_id: string
@@ -54,6 +56,7 @@ export type Database = {
           arbiter_model?: string | null
           arbiter_score?: number | null
           created_at?: string
+          criteria_scores?: Json | null
           id?: string
           metadata?: Json | null
           model_id?: string
