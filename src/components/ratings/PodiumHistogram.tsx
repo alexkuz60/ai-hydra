@@ -1,10 +1,11 @@
 import React from 'react';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
+import { cn } from '@/lib/utils';
 import { getModelRegistryEntry } from '@/config/modelRegistry';
 import type { ContestResult } from '@/hooks/useContestSession';
 
 /** Mini podium histogram — vertical bars representing top 3 */
-export function PodiumHistogram({ results }: { results: ContestResult[] }) {
+export function PodiumHistogram({ results, className }: { results: ContestResult[]; className?: string }) {
   const modelIds = [...new Set(results.map(r => r.model_id))];
 
   const scored = modelIds.map(modelId => {
@@ -39,7 +40,7 @@ export function PodiumHistogram({ results }: { results: ContestResult[] }) {
   const podiumLabels = ['2', '1', '3'];
 
   return (
-    <div className="flex-shrink-0 w-16 h-14 flex items-end justify-center gap-[3px]">
+    <div className={cn("flex-shrink-0 w-16 h-14 flex items-end justify-center gap-[3px]", className)}>
       {podium.map((entry, i) => {
         const heightPct = entry?.hasScore
           ? dynamicHeight(entry.total)
