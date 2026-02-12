@@ -403,7 +403,7 @@ export function BeautyContest() {
               isRu={isRu}
               selectedWinners={selectedWinners}
               onToggleWinner={handleToggleWinner}
-              arbitration={contest.session?.config?.arbitration}
+              arbitration={contest.session?.config?.arbitration as any}
             />
              {selectedWinners.size > 0 && (
                 <Button onClick={handleMigrateToExpertPanel} className="w-full gap-2" variant="outline">
