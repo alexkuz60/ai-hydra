@@ -49,7 +49,7 @@ export function ContestArbitration() {
       juryMode: 'both',
       criteria: ['factuality', 'relevance', 'completeness', 'clarity'],
       criteriaWeights: { factuality: 30, relevance: 25, completeness: 25, clarity: 20 },
-      userWeight: 60,
+      userWeight: 40,
       scoringScheme: 'weighted-avg',
     }
   );
