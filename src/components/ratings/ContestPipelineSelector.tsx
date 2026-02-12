@@ -1,11 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { HydraCard, HydraCardHeader, HydraCardTitle, HydraCardContent } from '@/components/ui/hydra-card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Workflow, Info } from 'lucide-react';
 import { CONTEST_FLOW_TEMPLATES, type ContestFlowTemplateId } from '@/lib/contestFlowTemplates';
-
-const STORAGE_KEY = 'hydra-contest-pipeline';
+import { useContestConfig } from '@/hooks/useContestConfig';
 
 const PIPELINE_OPTIONS: { id: ContestFlowTemplateId; ru: string; en: string; descRu?: string; descEn?: string }[] = [
   { id: 'none', ru: 'Не нужен', en: 'Not needed' },
@@ -21,15 +20,7 @@ const PIPELINE_OPTIONS: { id: ContestFlowTemplateId; ru: string; en: string; des
 export function ContestPipelineSelector() {
   const { language } = useLanguage();
   const isRu = language === 'ru';
-
-  const [pipeline, setPipeline] = useState<string>(() => {
-    try { return localStorage.getItem(STORAGE_KEY) || 'none'; } catch { return 'none'; }
-  });
-
-  useEffect(() => {
-    try { localStorage.setItem(STORAGE_KEY, pipeline); } catch {}
-    window.dispatchEvent(new Event('contest-config-changed'));
-  }, [pipeline]);
+  const { pipeline, updatePipeline } = useContestConfig();
 
   const selectedOption = PIPELINE_OPTIONS.find(o => o.id === pipeline);
 
@@ -52,7 +43,7 @@ export function ContestPipelineSelector() {
           <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
             {isRu ? 'Шаблон потока выполнения' : 'Execution Flow Template'}
           </label>
-          <Select value={pipeline} onValueChange={setPipeline}>
+           <Select value={pipeline} onValueChange={updatePipeline}>
             <SelectTrigger className="h-9">
               <SelectValue />
             </SelectTrigger>

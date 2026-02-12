@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { HydraCard, HydraCardHeader, HydraCardTitle, HydraCardContent } from '@/components/ui/hydra-card';
 import { Badge } from '@/components/ui/badge';
@@ -7,15 +7,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Separator } from '@/components/ui/separator';
 import { Slider } from '@/components/ui/slider';
 import { Scale, Users, BarChart3, Calculator, Weight } from 'lucide-react';
-
-const STORAGE_KEY = 'hydra-contest-arbitration';
+import { useContestConfig } from '@/hooks/useContestConfig';
 
 interface ArbitrationConfig {
   juryMode: 'user' | 'arbiter' | 'both';
-  arbiterModel: string;
   criteria: string[];
   criteriaWeights: Record<string, number>;
-  userWeight: number; // 0-100, arbiterWeight = 100 - userWeight
+  userWeight: number;
   scoringScheme: 'weighted-avg' | 'tournament' | 'elo';
 }
 
@@ -42,78 +40,70 @@ const SCORING_OPTIONS = [
   { id: 'elo', ru: 'Рейтинг Эло', en: 'Elo Rating' },
 ];
 
-const DEFAULT_CONFIG: ArbitrationConfig = {
-  juryMode: 'both',
-  arbiterModel: '',
-  criteria: ['factuality', 'relevance', 'completeness', 'clarity'],
-  criteriaWeights: { factuality: 30, relevance: 25, completeness: 25, clarity: 20 },
-  userWeight: 40,
-  scoringScheme: 'weighted-avg',
-};
-
-function loadConfig(): ArbitrationConfig {
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      const parsed = JSON.parse(stored);
-      // Merge with defaults to handle missing fields from old data
-      return { ...DEFAULT_CONFIG, ...parsed };
-    }
-  } catch {}
-  return {
-    juryMode: 'both',
-    arbiterModel: '',
-    criteria: ['factuality', 'relevance', 'completeness', 'clarity'],
-    criteriaWeights: { factuality: 30, relevance: 25, completeness: 25, clarity: 20 },
-    userWeight: 40,
-    scoringScheme: 'weighted-avg',
-  };
-}
-
 export function ContestArbitration() {
   const { language } = useLanguage();
   const isRu = language === 'ru';
-  const [config, setConfig] = useState<ArbitrationConfig>(loadConfig);
-
-  useEffect(() => {
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(config)); } catch {}
-    window.dispatchEvent(new Event('contest-config-changed'));
-  }, [config]);
+  const { arbitration, updateArbitration } = useContestConfig();
+  const [config, setConfig] = useState<ArbitrationConfig>(
+    arbitration || {
+      juryMode: 'both',
+      criteria: ['factuality', 'relevance', 'completeness', 'clarity'],
+      criteriaWeights: { factuality: 30, relevance: 25, completeness: 25, clarity: 20 },
+      userWeight: 40,
+      scoringScheme: 'weighted-avg',
+    }
+  );
 
   const toggleCriterion = (id: string) => {
-    setConfig(prev => {
-      const criteria = [...prev.criteria];
-      const weights = { ...prev.criteriaWeights };
-      const idx = criteria.indexOf(id);
-      if (idx >= 0) {
-        criteria.splice(idx, 1);
-        delete weights[id];
-      } else {
-        criteria.push(id);
-        weights[id] = 25; // default weight for new criterion
+    const updated = { ...config };
+    const criteria = [...updated.criteria];
+    const weights = { ...updated.criteriaWeights };
+    const idx = criteria.indexOf(id);
+    if (idx >= 0) {
+      criteria.splice(idx, 1);
+      delete weights[id];
+    } else {
+      criteria.push(id);
+      weights[id] = 25;
+    }
+    const total = Object.values(weights).reduce((s, v) => s + v, 0);
+    if (total > 0 && criteria.length > 0) {
+      for (const k of Object.keys(weights)) {
+        weights[k] = Math.round((weights[k] / total) * 100);
       }
-      // Normalize weights to sum to 100
-      const total = Object.values(weights).reduce((s, v) => s + v, 0);
-      if (total > 0 && criteria.length > 0) {
-        for (const k of Object.keys(weights)) {
-          weights[k] = Math.round((weights[k] / total) * 100);
-        }
-        // Fix rounding errors
-        const diff = 100 - Object.values(weights).reduce((s, v) => s + v, 0);
-        if (diff !== 0 && criteria.length > 0) {
-          weights[criteria[0]] += diff;
-        }
+      const diff = 100 - Object.values(weights).reduce((s, v) => s + v, 0);
+      if (diff !== 0 && criteria.length > 0) {
+        weights[criteria[0]] += diff;
       }
-      return { ...prev, criteria, criteriaWeights: weights };
-    });
+    }
+    const newConfig = { ...updated, criteria, criteriaWeights: weights };
+    setConfig(newConfig);
+    updateArbitration(newConfig);
   };
 
   const setCriterionWeight = useCallback((id: string, value: number) => {
-    setConfig(prev => {
-      const weights = { ...prev.criteriaWeights, [id]: value };
-      return { ...prev, criteriaWeights: weights };
-    });
-  }, []);
+    const updated = { ...config, criteriaWeights: { ...config.criteriaWeights, [id]: value } };
+    setConfig(updated);
+    updateArbitration(updated);
+  }, [config, updateArbitration]);
+
+  const updateJuryMode = useCallback((juryMode: ArbitrationConfig['juryMode']) => {
+    const updated = { ...config, juryMode };
+    setConfig(updated);
+    updateArbitration(updated);
+  }, [config, updateArbitration]);
+
+  const updateUserWeight = useCallback((userWeight: number) => {
+    const updated = { ...config, userWeight };
+    setConfig(updated);
+    updateArbitration(updated);
+  }, [config, updateArbitration]);
+
+  const updateScoringScheme = useCallback((scoringScheme: ArbitrationConfig['scoringScheme']) => {
+    const updated = { ...config, scoringScheme };
+    setConfig(updated);
+    updateArbitration(updated);
+  }, [config, updateArbitration]);
 
   return (
     <HydraCard variant="default" className="border-border/50">
@@ -138,7 +128,7 @@ export function ContestArbitration() {
           </label>
           <Select
             value={config.juryMode}
-            onValueChange={v => setConfig(prev => ({ ...prev, juryMode: v as ArbitrationConfig['juryMode'] }))}
+            onValueChange={updateJuryMode}
           >
             <SelectTrigger className="h-9">
               <SelectValue />
@@ -167,7 +157,7 @@ export function ContestArbitration() {
                 </span>
                 <Slider
                   value={[config.userWeight]}
-                  onValueChange={([v]) => setConfig(prev => ({ ...prev, userWeight: v }))}
+                  onValueChange={([v]) => updateUserWeight(v)}
                   min={0}
                   max={100}
                   step={5}
@@ -253,7 +243,7 @@ export function ContestArbitration() {
           </label>
           <Select
             value={config.scoringScheme}
-            onValueChange={v => setConfig(prev => ({ ...prev, scoringScheme: v as ArbitrationConfig['scoringScheme'] }))}
+            onValueChange={updateScoringScheme}
           >
             <SelectTrigger className="h-9">
               <SelectValue />
