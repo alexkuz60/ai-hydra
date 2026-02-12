@@ -40,12 +40,12 @@ export function PodiumHistogram({ results, className }: { results: ContestResult
   const podiumLabels = ['2', '1', '3'];
 
   return (
-    <div className={cn("flex-shrink-0 w-16 h-14 flex items-end justify-center gap-[3px]", className)}>
+    <div className={cn("flex-shrink-0 flex items-end justify-center gap-[3px]", className)}>
       {podium.map((entry, i) => {
         const heightPct = entry?.hasScore
           ? dynamicHeight(entry.total)
-          : defaultHeights[i] * 0.4;
-        const color = entry?.hasScore ? podiumColors[i] : 'hsl(var(--muted))';
+          : defaultHeights[i];
+        const color = entry?.hasScore ? podiumColors[i] : undefined;
         const entryData = entry ? getModelRegistryEntry(entry.modelId) : null;
         const shortName = entryData?.displayName || entry?.modelId?.split('/').pop() || '';
 
@@ -56,11 +56,11 @@ export function PodiumHistogram({ results, className }: { results: ContestResult
                 <div className="flex flex-col items-center gap-0.5" style={{ height: '100%', justifyContent: 'flex-end' }}>
                   <span className="text-[8px] font-bold text-muted-foreground">{podiumLabels[i]}</span>
                   <div
-                    className="w-4 rounded-t-sm"
+                    className="w-5 rounded-t-sm"
                     style={{
                       height: `${heightPct}%`,
-                      backgroundColor: color,
-                      opacity: entry?.hasScore ? 1 : 0.3,
+                      backgroundColor: color || 'hsl(var(--muted))',
+                      opacity: entry?.hasScore ? 1 : 0.25,
                       transition: 'height 0.8s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.4s ease, opacity 0.4s ease',
                     }}
                   />
