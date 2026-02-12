@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Crown, Loader2, MessageSquare, FileText } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -158,6 +158,25 @@ function RoundGroupedResults({
     </>
   );
 }
+function CollapsibleResponse({ content, isStreaming }: { content: string; isStreaming: boolean }) {
+  const [expanded, setExpanded] = useState(false);
+  return (
+    <div className="text-sm relative">
+      <div className={cn(!expanded && "line-clamp-3", "transition-all")}>
+        <MarkdownRenderer content={content} />
+        {isStreaming && <Loader2 className="h-3 w-3 animate-spin text-primary inline ml-1" />}
+      </div>
+      {content.length > 200 && (
+        <button
+          onClick={() => setExpanded(v => !v)}
+          className="text-[10px] text-primary hover:underline mt-0.5"
+        >
+          {expanded ? '▲ Свернуть' : '▼ Развернуть'}
+        </button>
+      )}
+    </div>
+  );
+}
 
 function ResponseCard({
   result, streamingTexts, isRu, onScore,
@@ -184,12 +203,10 @@ function ResponseCard({
           {result.token_count && <span>{result.token_count} tok</span>}
         </div>
       </div>
-      <div className="text-sm">
-        <MarkdownRenderer content={result.response_text || streamingTexts[result.model_id] || ''} />
-        {result.status === 'generating' && !result.response_text && streamingTexts[result.model_id] && (
-          <Loader2 className="h-3 w-3 animate-spin text-primary inline ml-1" />
-        )}
-      </div>
+      <CollapsibleResponse
+        content={result.response_text || streamingTexts[result.model_id] || ''}
+        isStreaming={result.status === 'generating' && !result.response_text && !!streamingTexts[result.model_id]}
+      />
       {(result.status === 'ready' || result.status === 'judged') && onScore && (
         <UserScoreWidget resultId={result.id} currentScore={result.user_score} onScore={onScore} isRu={isRu} />
       )}
