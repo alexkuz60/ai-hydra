@@ -29,6 +29,7 @@ serve(async (req) => {
       max_tokens = 4096,
       memory_context = [],
       proxyapi_settings,
+      history,
     }: StreamRequest = await req.json();
 
     if (!message || !model_id) {
@@ -45,6 +46,9 @@ serve(async (req) => {
     if (memory_context.length > 0) {
       console.log(`[hydra-stream] Including ${memory_context.length} memory chunks`);
     }
+    if (history && history.length > 0) {
+      console.log(`[hydra-stream] Including ${history.length} history messages for multi-turn context`);
+    }
 
     // Route to the correct provider
     const params = {
@@ -55,6 +59,7 @@ serve(async (req) => {
       temperature,
       max_tokens,
       proxyapi_settings,
+      history,
     };
 
     if (DEEPSEEK_MODELS.includes(model_id)) {

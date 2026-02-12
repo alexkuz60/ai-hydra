@@ -63,6 +63,8 @@ export interface StreamRequest {
   max_tokens?: number;
   memory_context?: MemoryChunk[];
   proxyapi_settings?: ProxyApiSettings;
+  /** Conversation history for multi-turn (follow-up) contexts */
+  history?: { role: string; content: string }[];
 }
 
 // DeepSeek models that need direct API access

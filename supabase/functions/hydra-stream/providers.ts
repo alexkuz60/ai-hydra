@@ -25,7 +25,7 @@ export async function streamGemini(params: ProviderStreamParams): Promise<Respon
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        contents: [{ parts: [{ text: `${systemPrompt}\n\nUser: ${message}` }] }],
+        contents: [{ parts: [{ text: `${systemPrompt}\n\n${params.history?.map(h => `${h.role === 'user' ? 'User' : 'Assistant'}: ${h.content}`).join('\n\n') || ''}${params.history?.length ? '\n\n' : ''}User: ${message}` }] }],
         generationConfig: { temperature, maxOutputTokens: max_tokens },
       }),
     }
@@ -133,6 +133,20 @@ interface ProviderStreamParams {
   temperature: number;
   max_tokens: number;
   proxyapi_settings?: ProxyApiSettings;
+  /** Conversation history for multi-turn contexts */
+  history?: { role: string; content: string }[];
+}
+
+/** Build messages array with optional conversation history */
+function buildMessages(systemPrompt: string, message: string, history?: { role: string; content: string }[]): { role: string; content: string }[] {
+  const messages: { role: string; content: string }[] = [
+    { role: "system", content: systemPrompt },
+  ];
+  if (history && history.length > 0) {
+    messages.push(...history);
+  }
+  messages.push({ role: "user", content: message });
+  return messages;
 }
 
 // ── DeepSeek ────────────────────────────────────────────
@@ -157,10 +171,7 @@ export async function streamDeepSeek(params: ProviderStreamParams): Promise<Resp
     },
     body: JSON.stringify({
       model: model_id,
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: message },
-      ],
+      messages: buildMessages(systemPrompt, message, params.history),
       stream: true,
       temperature: isReasoning ? undefined : temperature,
       max_tokens,
@@ -201,10 +212,7 @@ export async function streamMistral(params: ProviderStreamParams): Promise<Respo
     },
     body: JSON.stringify({
       model: model_id,
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: message },
-      ],
+      messages: buildMessages(systemPrompt, message, params.history),
       stream: true,
       temperature,
       max_tokens,
@@ -245,10 +253,7 @@ export async function streamGroq(params: ProviderStreamParams): Promise<Response
     },
     body: JSON.stringify({
       model: model_id,
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: message },
-      ],
+      messages: buildMessages(systemPrompt, message, params.history),
       stream: true,
       temperature,
       max_tokens,
@@ -298,10 +303,7 @@ export async function streamLovableAI(params: ProviderStreamParams): Promise<Res
     },
     body: JSON.stringify({
       model: model_id,
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: message },
-      ],
+      messages: buildMessages(systemPrompt, message, params.history),
       stream: true,
       ...tempParam,
       ...tokenParam,
@@ -404,10 +406,7 @@ export async function streamProxyApi(params: ProviderStreamParams): Promise<Resp
 
   const requestBody = JSON.stringify({
     model: realModel,
-    messages: [
-      { role: "system", content: systemPrompt },
-      { role: "user", content: message },
-    ],
+    messages: buildMessages(systemPrompt, message, params.history),
     stream: true,
     temperature: (isReasoning || isOpenAIModel) ? undefined : temperature,
     ...tokenParam,
@@ -550,10 +549,7 @@ export async function streamOpenRouter(params: ProviderStreamParams): Promise<Re
     },
     body: JSON.stringify({
       model: model_id,
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: message },
-      ],
+      messages: buildMessages(systemPrompt, message, params.history),
       stream: true,
       temperature,
       max_tokens,

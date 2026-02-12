@@ -150,6 +150,7 @@ export function useContestExecution() {
     round: ContestRound,
     results: ContestResult[],
     updateResult: (id: string, updates: Partial<ContestResult>) => Promise<void>,
+    allRounds?: ContestRound[],
   ) => {
     const roundResults = results.filter(r => r.round_id === round.id);
     if (roundResults.length === 0) return;
@@ -163,6 +164,30 @@ export function useContestExecution() {
     const systemPrompt = session.config.arbitration
       ? `You are a contestant in an AI model competition. Answer the prompt as best you can.`
       : undefined;
+
+    // Build conversation history from previous rounds for each model
+    const buildHistory = (modelId: string): { role: string; content: string }[] => {
+      if (!allRounds) return [];
+      const previousRounds = allRounds
+        .filter(r => r.round_index < round.round_index && r.status === 'completed')
+        .sort((a, b) => a.round_index - b.round_index);
+
+      const history: { role: string; content: string }[] = [];
+      for (const prevRound of previousRounds) {
+        // Add the prompt as user message
+        if (prevRound.prompt) {
+          history.push({ role: 'user', content: prevRound.prompt });
+        }
+        // Find this model's response in that round
+        const prevResult = results.find(
+          r => r.round_id === prevRound.id && r.model_id === modelId && r.response_text
+        );
+        if (prevResult?.response_text) {
+          history.push({ role: 'assistant', content: prevResult.response_text });
+        }
+      }
+      return history;
+    };
 
     // Track completed results for arbiter
     const completedResults: ContestResult[] = [];
@@ -183,6 +208,9 @@ export function useContestExecution() {
         const { data: { session: authSession } } = await supabase.auth.getSession();
         const authToken = authSession?.access_token;
 
+        // Build messages with history for follow-up rounds
+        const conversationHistory = buildHistory(modelId);
+
         const response = await fetch(`${supabaseUrl}/functions/v1/hydra-stream`, {
           method: 'POST',
           headers: {
@@ -197,6 +225,7 @@ export function useContestExecution() {
             system_prompt: systemPrompt,
             temperature: 0.7,
             max_tokens: 8192,
+            ...(conversationHistory.length > 0 ? { history: conversationHistory } : {}),
           }),
           signal: abortController.signal,
         });
