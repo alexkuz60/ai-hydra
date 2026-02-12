@@ -66,8 +66,8 @@ export function ContestScoreboard({
           </div>
         </div>
 
-        {/* Vertical separator */}
-        <div className="flex-shrink-0 w-px bg-border/50 mx-2" />
+        {/* Vertical separator after icon */}
+        <div className="flex-shrink-0 w-[2px] bg-border/80 mx-2" />
 
         {/* Column B: Header + messages + badges */}
         <div className="flex-1 min-w-0 flex flex-col gap-2">
@@ -170,8 +170,8 @@ export function ContestScoreboard({
           </div>
         </div>
 
-        {/* Vertical separator */}
-        <div className="flex-shrink-0 w-px bg-border/50 mx-2" />
+        {/* Vertical separator before podium */}
+        <div className="flex-shrink-0 w-[2px] bg-border/80 mx-2" />
 
         {/* Column C: Podium — full height */}
         <div className="flex-shrink-0 w-20 flex items-end">
