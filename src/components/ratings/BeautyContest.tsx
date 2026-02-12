@@ -108,35 +108,58 @@ export function BeautyContest() {
         content: string; model_name: string | null; metadata: Record<string, unknown>;
       }> = [];
 
-      // Group by round for ordering
+      // Group results by round
       const roundOrder = contest.rounds.map(r => r.id);
-      const sorted = [...scoredResults].sort((a, b) => {
-        const ai = roundOrder.indexOf(a.round_id);
-        const bi = roundOrder.indexOf(b.round_id);
-        return ai - bi || a.model_id.localeCompare(b.model_id);
-      });
+      const resultsByRound = new Map<string, typeof scoredResults>();
+      for (const result of scoredResults) {
+        const arr = resultsByRound.get(result.round_id) || [];
+        arr.push(result);
+        resultsByRound.set(result.round_id, arr);
+      }
 
-      for (const result of sorted) {
-        const round = contest.rounds.find(r => r.id === result.round_id);
+      // For each round in order, insert prompt as user message, then responses
+      for (const round of contest.rounds) {
+        const roundResults = resultsByRound.get(round.id);
+        if (!roundResults || roundResults.length === 0) continue;
 
-        messages.push({
-          session_id: taskId,
-          user_id: user.id,
-          role: 'assistant',
-          content: result.response_text!,
-          model_name: result.model_id,
-          metadata: {
-            source: 'contest',
-            contest_session_id: contest.session.id,
-            round_index: round?.round_index,
-            user_score: result.user_score,
-            arbiter_score: result.arbiter_score,
-            criteria_scores: result.criteria_scores,
-            response_time_ms: result.response_time_ms,
-            token_count: result.token_count,
-            rating: result.user_score != null ? result.user_score : 0,
-          },
-        });
+        // Insert round prompt as supervisor (user) message
+        if (round.prompt) {
+          messages.push({
+            session_id: taskId,
+            user_id: user.id,
+            role: 'user',
+            content: round.prompt,
+            model_name: null,
+            metadata: {
+              source: 'contest',
+              contest_session_id: contest.session.id,
+              round_index: round.round_index,
+            },
+          });
+        }
+
+        // Insert responses sorted by model
+        const sorted = [...roundResults].sort((a, b) => a.model_id.localeCompare(b.model_id));
+        for (const result of sorted) {
+          messages.push({
+            session_id: taskId,
+            user_id: user.id,
+            role: 'assistant',
+            content: result.response_text!,
+            model_name: result.model_id,
+            metadata: {
+              source: 'contest',
+              contest_session_id: contest.session.id,
+              round_index: round.round_index,
+              user_score: result.user_score,
+              arbiter_score: result.arbiter_score,
+              criteria_scores: result.criteria_scores,
+              response_time_ms: result.response_time_ms,
+              token_count: result.token_count,
+              rating: result.user_score != null ? result.user_score : 0,
+            },
+          });
+        }
       }
 
       const { error: msgErr } = await supabase.from('messages').insert(messages as any);
