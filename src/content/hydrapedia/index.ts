@@ -10,6 +10,6 @@ export { basicsSections } from './basics';
 export { chatSections } from './chat';
 export { contentSections } from './content';
 export { flowSections } from './flow';
-export { featuresSections } from './features';
+export { featuresSections, duelModeSections } from './features';
 export { referenceSections } from './reference';
 export { adminSections } from './admin';

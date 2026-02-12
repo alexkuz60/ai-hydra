@@ -783,3 +783,90 @@ Role Memory — a mechanism for accumulating long-term experience by technical r
     },
   },
 ];
+
+// ──── Duel Mode Section ────
+export const duelModeSections: HydrapediaSection[] = [
+  {
+    id: 'duel-mode',
+    titleKey: 'hydrapedia.sections.duelMode',
+    icon: 'Swords',
+    content: {
+      ru: `# Дуэль «К барьеру»
+
+Режим дуэли — специальный формат попарного состязания (1v1) для отбора кандидатов на роли Критика и Арбитра. В отличие от многоуровневого Конкурса, дуэль включает ровно 2 модели, обменивающиеся аргументами через несколько раундов.
+
+## Ключевые отличия от Конкурса
+
+| Аспект | Конкурс | Дуэль |
+|--------|---------|-------|
+| Участники | N моделей, параллельно | 2 модели, последовательный обмен |
+| Поток промптов | Одинаковый для всех | Раунд N включает ответ оппонента из раунда N-1 |
+| Память | Только своя история | Свои + чужие аргументы (слияние в промпте) |
+| Оценка | Арбитр оценивает каждую модель | Арбитр выбирает **победителя раунда** |
+
+## Механика перекрёстного промпта
+
+В раунде 1 оба дуэлянта получают одинаковый стартовый промпт. Начиная с раунда 2, каждый дуэлянт получает:
+
+\`\`\`
+[Исходный промпт дуэли]
+---
+Ваш предыдущий аргумент: [свой ответ из раунда N-1]
+Аргумент противника: [ответ оппонента из раунда N-1]
+---
+Сформулируйте свой следующий аргумент.
+\`\`\`
+
+## Два типа дуэли
+
+- **Отбор критиков**: Дуэлянты — кандидаты в Критики, оценку проводит Арбитр
+- **Отбор арбитров**: Дуэлянты — кандидаты в Арбитры, оценку проводят Критики
+
+## Оценка пользователем
+
+Если включена опция «Оценка пользователя», после каждого раунда дуэль ставится на паузу для выбора победителя пользователем.
+
+## Итоги
+
+Победитель определяется по количеству выигранных раундов. При равном счёте — ничья.`,
+      en: `# Duel «En Garde»
+
+The Duel mode is a specialized head-to-head (1v1) competition format for selecting Critic and Arbiter candidates. Unlike the multi-model Contest, a duel involves exactly 2 models exchanging arguments across multiple rounds.
+
+## Key Differences from Contest
+
+| Aspect | Contest | Duel |
+|--------|---------|------|
+| Participants | N models, parallel | 2 models, sequential exchange |
+| Prompt flow | Same for all | Round N includes opponent's answer from Round N-1 |
+| Memory | Own history only | Own + opponent's arguments merged into prompt |
+| Evaluation | Arbiter scores each model | Arbiter picks a **round winner** |
+
+## Cross-pollination Prompt Mechanics
+
+In Round 1, both duelists receive the same starting prompt. From Round 2 onward, each duelist receives:
+
+\`\`\`
+[Original duel prompt]
+---
+Your previous argument: [own response from Round N-1]
+Opponent's argument: [opponent's response from Round N-1]
+---
+Formulate your next argument.
+\`\`\`
+
+## Two Duel Types
+
+- **Critic Selection**: Duelists are Critic candidates, evaluated by Arbiter
+- **Arbiter Selection**: Duelists are Arbiter candidates, evaluated by Critics
+
+## User Evaluation
+
+If "User evaluation" is enabled, the duel pauses after each round for the user to pick the winner.
+
+## Results
+
+The winner is determined by the number of rounds won. Equal score means a draw.`,
+    },
+  },
+];
