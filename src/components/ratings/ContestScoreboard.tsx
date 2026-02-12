@@ -174,7 +174,7 @@ export function ContestScoreboard({
         <div className="flex-shrink-0 w-[2px] bg-border/80 mx-2" />
 
         {/* Column C: Podium — full height */}
-        <div className="flex-shrink-0 w-20 flex items-end">
+        <div className="flex-shrink-0 w-24 flex items-stretch">
           <PodiumHistogram results={results} className="w-full h-full" />
         </div>
       </div>
