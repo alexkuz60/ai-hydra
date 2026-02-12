@@ -188,6 +188,38 @@ export function useModelStatistics(userId: string | undefined) {
     }
   }, [userId, findExisting]);
 
+  // Update criteria_averages (running average per criterion)
+  const updateCriteriaAverages = useCallback(async (
+    modelId: string, sessionId: string, criteriaScores: Record<string, number>
+  ) => {
+    if (!userId || !criteriaScores || Object.keys(criteriaScores).length === 0) return;
+    try {
+      const existing = await findExisting(modelId, sessionId);
+      const prev: Record<string, { sum: number; count: number }> =
+        (existing as any)?.criteria_averages || {};
+
+      const updated: Record<string, { sum: number; count: number }> = { ...prev };
+      for (const [key, score] of Object.entries(criteriaScores)) {
+        const entry = updated[key] || { sum: 0, count: 0 };
+        updated[key] = { sum: entry.sum + score, count: entry.count + 1 };
+      }
+
+      if (existing) {
+        await supabase.from('model_statistics')
+          .update({ criteria_averages: updated } as any)
+          .eq('id', existing.id);
+      } else {
+        await supabase.from('model_statistics').insert({
+          user_id: userId, model_id: modelId, session_id: sessionId,
+          criteria_averages: updated,
+          first_used_at: new Date().toISOString(),
+          last_used_at: new Date().toISOString(),
+        } as any);
+      }
+    } catch (error) {
+      console.error('Failed to update criteria averages:', error);
+    }
+  }, [userId, findExisting]);
   // Get statistics for a specific model (aggregated across all sessions)
   const getModelStats = useCallback(async (modelId: string): Promise<AggregatedModelStats | null> => {
     if (!userId) return null;
@@ -281,6 +313,7 @@ export function useModelStatistics(userId: string | undefined) {
     incrementHallucination,
     addArbiterEval,
     addContestResult,
+    updateCriteriaAverages,
     getModelStats,
     getSessionStats,
     getLeaderboard,

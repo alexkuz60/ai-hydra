@@ -10,12 +10,13 @@ import { cn } from '@/lib/utils';
 import { 
   Brain, Sparkles, 
   Swords, ClipboardList, MessageSquare, AlertTriangle,
-  Crown, Trophy, FileText, Scale
+  Crown, Trophy, FileText, Scale, Radar
 } from 'lucide-react';
 import { CandidateDetail } from './CandidateDetail';
 import { getModelInfo, type ModelOption } from '@/hooks/useAvailableModels';
 import { format } from 'date-fns';
 import { ru as ruLocale, enUS } from 'date-fns/locale';
+import { getCriterionLabel } from './i18n';
 
 interface ModelDossierProps {
   modelId: string;
@@ -96,6 +97,36 @@ export function ModelDossier({ modelId, contestModels = {}, onToggleContest, onC
             </div>
           </HydraCardContent>
         </HydraCard>
+
+        {/* ── Criteria Averages ── */}
+        {Object.keys(stats.criteriaAverages).length > 0 && (
+          <HydraCard variant="default">
+            <HydraCardHeader className="py-3">
+              <Radar className="h-5 w-5 text-hydra-arbiter" />
+              <HydraCardTitle>{isRu ? 'Профиль по критериям' : 'Criteria Profile'}</HydraCardTitle>
+            </HydraCardHeader>
+            <HydraCardContent>
+              <div className="space-y-2">
+                {Object.entries(stats.criteriaAverages)
+                  .sort(([, a], [, b]) => b - a)
+                  .map(([key, avg]) => (
+                    <div key={key} className="flex items-center gap-3">
+                      <span className="text-xs text-muted-foreground w-28 truncate shrink-0">
+                        {getCriterionLabel(key, isRu)}
+                      </span>
+                      <div className="flex-1 h-2.5 rounded-full bg-muted/50 overflow-hidden">
+                        <div
+                          className="h-full rounded-full bg-hydra-arbiter/70 transition-all duration-500"
+                          style={{ width: `${Math.min(avg * 10, 100)}%` }}
+                        />
+                      </div>
+                      <span className="text-xs font-semibold w-8 text-right">{avg.toFixed(1)}</span>
+                    </div>
+                  ))}
+              </div>
+            </HydraCardContent>
+          </HydraCard>
+        )}
 
         {/* ── Role Distribution (from model_statistics) ── */}
         {statsRoleDistribution.length > 0 && (

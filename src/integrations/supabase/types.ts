@@ -494,6 +494,7 @@ export type Database = {
           contest_count: number
           contest_total_score: number
           created_at: string | null
+          criteria_averages: Json | null
           critique_summary: string | null
           dismissal_count: number
           first_used_at: string | null
@@ -515,6 +516,7 @@ export type Database = {
           contest_count?: number
           contest_total_score?: number
           created_at?: string | null
+          criteria_averages?: Json | null
           critique_summary?: string | null
           dismissal_count?: number
           first_used_at?: string | null
@@ -536,6 +538,7 @@ export type Database = {
           contest_count?: number
           contest_total_score?: number
           created_at?: string | null
+          criteria_averages?: Json | null
           critique_summary?: string | null
           dismissal_count?: number
           first_used_at?: string | null
