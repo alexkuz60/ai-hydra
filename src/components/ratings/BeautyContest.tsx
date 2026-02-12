@@ -97,7 +97,7 @@ export function BeautyContest() {
        toast({ description: getRatingsText('contestLaunched', isRu) });
        const firstRound = result.rounds.find(r => r.status === 'running') || result.rounds[0];
       if (firstRound) {
-        await execution.executeRound(result.session, firstRound, result.results, contest.updateResult);
+        await execution.executeRound(result.session, firstRound, result.results, contest.updateResult, result.rounds);
       }
     }
   };
@@ -118,7 +118,7 @@ export function BeautyContest() {
            ? getRatingsText('all', isRu)
            : (getModelRegistryEntry(activeModel)?.displayName || activeModel.split('/').pop());
          toast({ description: `${getRatingsText('questionSentTo', isRu)} ${targetName}` });
-        await execution.executeRound(contest.session, followUp.round, followUp.results, contest.updateResult);
+        await execution.executeRound(contest.session, followUp.round, [...contest.results, ...followUp.results], contest.updateResult, contest.rounds);
       }
     } catch (err: any) {
       toast({ variant: 'destructive', description: err.message });
