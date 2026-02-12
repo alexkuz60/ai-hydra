@@ -20,17 +20,15 @@ export function PodiumHistogram({ results, className }: { results: ContestResult
   }).sort((a, b) => b.total - a.total);
 
   const hasAnyScore = scored.some(s => s.hasScore);
-  const maxScore = hasAnyScore ? Math.max(...scored.map(s => s.total), 1) : 1;
 
   const podium = [scored[1], scored[0], scored[2]]; // 2nd, 1st, 3rd
   const defaultHeights = [60, 100, 40];
 
-  const scores = scored.filter(s => s.hasScore).map(s => s.total);
-  const minScore = scores.length > 1 ? Math.min(...scores) : 0;
-  const range = maxScore - minScore;
+  // Use absolute scale (0-20) instead of min-max normalization
+  // so that each score change visibly affects ALL bars
+  const MAX_POSSIBLE = 20; // avgUser(0-10) + avgArbiter(0-10)
   const dynamicHeight = (total: number) => {
-    if (range < 0.01) return 100;
-    const normalized = (total - minScore) / range;
+    const normalized = Math.min(total / MAX_POSSIBLE, 1);
     return 15 + normalized * 85;
   };
 
