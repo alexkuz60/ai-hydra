@@ -23,7 +23,7 @@ interface RoundConfig {
 }
 
 // Expert roles available for role-based contests (excluding critic — has its own specifics)
-const CONTEST_EXPERT_ROLES = EXPERT_ROLES.filter(r => r !== 'critic');
+const CONTEST_EXPERT_ROLES = EXPERT_ROLES.filter(r => r !== 'critic' && r !== 'arbiter');
 
 const CRITERIA_OPTIONS = [
   { id: 'accuracy', ru: 'Точность', en: 'Accuracy' },
@@ -129,12 +129,12 @@ export function ContestRulesEditor() {
               </Badge>
             </div>
 
-            {/* Task type */}
+            {/* Task type + inline role selector */}
             <div className="space-y-1.5">
               <label className="text-[11px] text-muted-foreground">
                 {isRu ? 'Тип задания' : 'Assignment Type'}
               </label>
-              <div className="flex gap-1.5">
+              <div className="flex items-center gap-1.5">
                 {(['free', 'role'] as const).map(t => (
                   <Button
                     key={t}
@@ -148,64 +148,61 @@ export function ContestRulesEditor() {
                       : (isRu ? 'По роли' : 'Role-based')}
                   </Button>
                 ))}
-              </div>
-            </div>
 
-            {/* Role selector (only for role-based type) */}
-            {round.type === 'role' && (
-              <div className="space-y-1.5">
-                <label className="text-[11px] text-muted-foreground flex items-center gap-1">
-                  {isRu ? 'Роль для оценки' : 'Role for Evaluation'}
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Info className="h-3 w-3 text-muted-foreground/50 cursor-help" />
-                      </TooltipTrigger>
-                      <TooltipContent side="top" className="max-w-[220px]">
-                        <p className="text-[10px]">
-                          {isRu
-                            ? 'Ролевой промпт из Штатного расписания будет автоматически объединён с промптом тура. Ролевые критерии оценки добавятся к плану.'
-                            : 'Role system prompt from Staff will be merged with round prompt. Role-specific evaluation criteria will be added to the plan.'}
-                        </p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                </label>
-                <Select
-                  value={round.roleForEvaluation || ''}
-                  onValueChange={v => updateRound(idx, { roleForEvaluation: v || undefined })}
-                >
-                  <SelectTrigger className="h-8 text-xs">
-                    <SelectValue placeholder={isRu ? 'Выберите роль...' : 'Select role...'}>
-                      {round.roleForEvaluation && (
-                        <RoleDisplay role={round.roleForEvaluation as AgentRole} />
-                      )}
-                    </SelectValue>
-                  </SelectTrigger>
-                  <SelectContent>
-                    {CONTEST_EXPERT_ROLES.map(role => (
-                      <RoleSelectItem key={role} value={role} />
-                    ))}
-                  </SelectContent>
-                </Select>
-
-                {/* Show merged criteria preview */}
-                {round.roleForEvaluation && (
-                  <div className="p-2 rounded-md bg-muted/20 border border-border/20 space-y-1">
-                    <p className="text-[10px] text-muted-foreground font-medium">
-                      {isRu ? 'Критерии роли (добавятся автоматически):' : 'Role criteria (auto-added):'}
-                    </p>
-                    <div className="flex flex-wrap gap-1">
-                      {(ROLE_SPECIFIC_CRITERIA[round.roleForEvaluation as AgentRole] || []).map(c => (
-                        <Badge key={c} variant="outline" className="text-[9px] px-1.5 py-0 bg-primary/5 border-primary/20">
-                          {getCriteriaLabel(c)}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
+                {/* Inline role selector */}
+                {round.type === 'role' && (
+                  <>
+                    <Select
+                      value={round.roleForEvaluation || ''}
+                      onValueChange={v => updateRound(idx, { roleForEvaluation: v || undefined })}
+                    >
+                      <SelectTrigger className="h-7 text-xs w-[160px]">
+                        <SelectValue placeholder={isRu ? 'Роль...' : 'Role...'}>
+                          {round.roleForEvaluation && (
+                            <RoleDisplay role={round.roleForEvaluation as AgentRole} />
+                          )}
+                        </SelectValue>
+                      </SelectTrigger>
+                      <SelectContent>
+                        {CONTEST_EXPERT_ROLES.map(role => (
+                          <RoleSelectItem key={role} value={role} />
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Info className="h-3 w-3 text-muted-foreground/50 cursor-help shrink-0" />
+                        </TooltipTrigger>
+                        <TooltipContent side="top" className="max-w-[220px]">
+                          <p className="text-[10px]">
+                            {isRu
+                              ? 'Ролевой промпт из Штатного расписания будет автоматически объединён с промптом тура. Ролевые критерии оценки добавятся к плану.'
+                              : 'Role system prompt from Staff will be merged with round prompt. Role-specific evaluation criteria will be added to the plan.'}
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </>
                 )}
               </div>
-            )}
+
+              {/* Role criteria preview below */}
+              {round.type === 'role' && round.roleForEvaluation && (
+                <div className="p-2 rounded-md bg-muted/20 border border-border/20 space-y-1">
+                  <p className="text-[10px] text-muted-foreground font-medium">
+                    {isRu ? 'Критерии роли (добавятся автоматически):' : 'Role criteria (auto-added):'}
+                  </p>
+                  <div className="flex flex-wrap gap-1">
+                    {(ROLE_SPECIFIC_CRITERIA[round.roleForEvaluation as AgentRole] || []).map(c => (
+                      <Badge key={c} variant="outline" className="text-[9px] px-1.5 py-0 bg-primary/5 border-primary/20">
+                        {getCriteriaLabel(c)}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
 
             {/* Prompt */}
             <div className="space-y-1.5">
