@@ -11,7 +11,7 @@ export interface ContestSessionConfig {
   models: Record<string, string>; // modelId -> role
   rules: {
     roundCount: number;
-    rounds: { prompt: string; label?: string }[];
+    rounds: { prompt: string; label?: string; roleForEvaluation?: string }[];
   };
   taskId?: string;
   taskTitle?: string;
