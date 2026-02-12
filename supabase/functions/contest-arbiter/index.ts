@@ -137,8 +137,11 @@ IMPORTANT: Return scores FOR EACH CRITERION separately in the criteria_scores ob
                         },
                         criteria_scores: {
                           type: "object",
-                          description: "Object with criterion names as keys and scores 1-10 as values (e.g., {\"Factuality\": 8.5, \"Relevance\": 9.0})",
-                          additionalProperties: { type: "number" },
+                          description: `Score each criterion on a 1-10 scale. Keys MUST be exactly: ${criteria.map(c => `"${c}"`).join(", ")}`,
+                          properties: Object.fromEntries(
+                            criteria.map(c => [c, { type: "number", description: `Score 1-10 for ${c}` }])
+                          ),
+                          required: criteria,
                         },
                         comment: {
                           type: "string",
@@ -148,12 +151,10 @@ IMPORTANT: Return scores FOR EACH CRITERION separately in the criteria_scores ob
                         },
                       },
                       required: ["model_id", "criteria_scores", "comment"],
-                      additionalProperties: false,
                     },
                   },
                 },
                 required: ["evaluations"],
-                additionalProperties: false,
               },
             },
           },
