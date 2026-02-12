@@ -40,11 +40,15 @@ export function PodiumHistogram({
   const podium = [scored[1], scored[0], scored[2]]; // 2nd, 1st, 3rd
   const defaultHeights = [60, 100, 40];
 
-  // Use absolute scale (0-10) since weighted score is already normalized
-  const MAX_POSSIBLE = 10;
+  // Relative scale: min-max normalization so even small differences are visible
+  const scoredWithScores = scored.filter(s => s.hasScore);
+  const minScore = scoredWithScores.length ? Math.min(...scoredWithScores.map(s => s.total)) : 0;
+  const maxScore = scoredWithScores.length ? Math.max(...scoredWithScores.map(s => s.total)) : 10;
+  const range = maxScore - minScore;
   const dynamicHeight = (total: number) => {
-    const normalized = Math.min(total / MAX_POSSIBLE, 1);
-    return 15 + normalized * 85;
+    if (range < 0.01) return 85; // all equal — show same height
+    const normalized = (total - minScore) / range; // 0..1
+    return 15 + normalized * 85; // worst=15%, best=100%
   };
 
   const podiumColors = hasAnyScore
