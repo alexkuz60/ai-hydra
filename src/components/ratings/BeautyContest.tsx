@@ -220,6 +220,10 @@ export function BeautyContest() {
          arbiterCount={contest.session?.config?.arbitration?.juryMode === 'ai' ? 1 : contest.session?.config?.arbitration?.juryMode === 'hybrid' ? 2 : 0}
          isRu={isRu}
          onNewContest={() => { contest.setSession(null); }}
+         onFinishContest={async () => {
+           await contest.updateSessionStatus('completed');
+           toast({ description: isRu ? 'Конкурс завершён' : 'Contest finished' });
+         }}
        />
 
       {/* Collapsible prompt */}

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Crown, Play, Loader2, CheckCircle2, AlertCircle, Trophy, Scale } from 'lucide-react';
+import { Crown, Play, Loader2, CheckCircle2, AlertCircle, Trophy, Scale, Square } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -21,11 +21,12 @@ interface ContestScoreboardProps {
   arbiterCount: number;
   isRu: boolean;
   onNewContest?: () => void;
+  onFinishContest?: () => void;
 }
 
 export function ContestScoreboard({
   results, currentRound, totalRounds, completedRounds = 0,
-  status, sessionName, arbiterCount, isRu, onNewContest,
+  status, sessionName, arbiterCount, isRu, onNewContest, onFinishContest,
 }: ContestScoreboardProps) {
   const modelIds = [...new Set(results.map(r => r.model_id))];
   const { phase, activeModelId } = detectPhase(results, status);
@@ -86,12 +87,18 @@ export function ContestScoreboard({
           >
             {statusBadge}
           </Badge>
+          {onFinishContest && status === 'running' && (
+             <Button size="sm" variant="outline" className="h-6 text-[10px] gap-1 px-2 border-destructive/40 hover:bg-destructive/10 text-destructive" onClick={onFinishContest}>
+               <Square className="h-2.5 w-2.5" />
+               {isRu ? 'Завершить' : 'Finish'}
+             </Button>
+           )}
           {onNewContest && (
              <Button size="sm" variant="outline" className="h-6 text-[10px] gap-1 px-2" onClick={onNewContest}>
                <Play className="h-2.5 w-2.5" />
                {getRatingsText('new', isRu)}
              </Button>
-          )}
+           )}
         </div>
       </div>
 
