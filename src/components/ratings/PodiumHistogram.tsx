@@ -18,6 +18,8 @@ export function PodiumHistogram({
   const userWeight = arbitration?.userWeight ?? 50;
   const arbiterWeight = 100 - userWeight;
 
+  
+
   const scored = modelIds.map(modelId => {
     const mrs = results.filter(r => r.model_id === modelId);
     const uScores = mrs.filter(r => r.user_score != null).map(r => r.user_score!);
