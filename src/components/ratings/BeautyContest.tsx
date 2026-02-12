@@ -17,6 +17,7 @@ import { cn } from '@/lib/utils';
 import { getModelRegistryEntry } from '@/config/modelRegistry';
 import { PROVIDER_LOGOS, PROVIDER_COLORS } from '@/components/ui/ProviderLogos';
 import { useToast } from '@/hooks/use-toast';
+import { RATINGS_I18N, getRatingsText } from './i18n';
 
 // Extracted sub-components
 import { ContestScoreboard } from './ContestScoreboard';
@@ -81,7 +82,7 @@ export function BeautyContest() {
 
     sessionStorage.setItem('contest-migration', JSON.stringify(migrationData));
     navigate('/expert-panel');
-    toast({ description: isRu ? `${selectedWinners.size} победитель(ей) отправлено в Панель экспертов` : `${selectedWinners.size} winner(s) sent to Expert Panel` });
+    toast({ description: `${selectedWinners.size} ${getRatingsText('winnersToExpertPanel', isRu)}` });
   }, [selectedWinners, contest.session, contest.results, contest.rounds, navigate, isRu, toast]);
 
   useEffect(() => {
@@ -91,10 +92,10 @@ export function BeautyContest() {
   }, [user]);
 
   const handleLaunch = async () => {
-    const result = await contest.createFromWizard();
-    if (result) {
-      toast({ description: isRu ? 'Конкурс запущен!' : 'Contest launched!' });
-      const firstRound = result.rounds.find(r => r.status === 'running') || result.rounds[0];
+       const result = await contest.createFromWizard();
+     if (result) {
+       toast({ description: getRatingsText('contestLaunched', isRu) });
+       const firstRound = result.rounds.find(r => r.status === 'running') || result.rounds[0];
       if (firstRound) {
         await execution.executeRound(result.session, firstRound, result.results, contest.updateResult);
       }
@@ -109,14 +110,14 @@ export function BeautyContest() {
     if (!followUpText.trim() || !contest.session) return;
     setSendingFollowUp(true);
     try {
-      const targetModels = activeModel === 'all' ? undefined : [activeModel];
-      const followUp = await contest.createFollowUpRound(followUpText.trim(), targetModels);
-      if (followUp) {
-        setFollowUpText('');
-        const targetName = activeModel === 'all'
-          ? (isRu ? 'всем' : 'all')
-          : (getModelRegistryEntry(activeModel)?.displayName || activeModel.split('/').pop());
-        toast({ description: isRu ? `Вопрос отправлен: ${targetName}` : `Question sent to: ${targetName}` });
+       const targetModels = activeModel === 'all' ? undefined : [activeModel];
+       const followUp = await contest.createFollowUpRound(followUpText.trim(), targetModels);
+       if (followUp) {
+         setFollowUpText('');
+         const targetName = activeModel === 'all'
+           ? getRatingsText('all', isRu)
+           : (getModelRegistryEntry(activeModel)?.displayName || activeModel.split('/').pop());
+         toast({ description: `${getRatingsText('questionSentTo', isRu)} ${targetName}` });
         await execution.executeRound(contest.session, followUp.round, followUp.results, contest.updateResult);
       }
     } catch (err: any) {
@@ -137,36 +138,34 @@ export function BeautyContest() {
             </div>
             <div>
               <h2 className="text-xl font-bold mb-2">
-                {isRu ? 'Конкурс интеллект-красоты' : 'Intelligence Beauty Contest'}
+                {getRatingsText('intelligenceBeautyContest', isRu)}
               </h2>
               <p className="text-sm text-muted-foreground">
-                {isRu
-                  ? 'Настройте конкурс в разделе «Правила» и запустите его здесь, или восстановите предыдущую сессию.'
-                  : 'Configure the contest in "Rules" section and launch it here, or restore a previous session.'}
+                {getRatingsText('configureContestAndLaunch', isRu)}
               </p>
             </div>
             <div className="flex flex-col gap-2">
               <Button onClick={handleLaunch} className="gap-2" size="lg">
                 <Play className="h-4 w-4" />
-                {isRu ? 'Запустить из плана' : 'Launch from Plan'}
+                {getRatingsText('launchFromPlan', isRu)}
               </Button>
               <Dialog>
                 <DialogTrigger asChild>
                   <Button variant="outline" className="gap-2" onClick={() => contest.loadHistory()}>
                     <Archive className="h-4 w-4" />
-                    {isRu ? 'Загрузить из архива' : 'Load from Archive'}
+                    {getRatingsText('loadFromArchive', isRu)}
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="max-w-lg max-h-[70vh]">
-                  <DialogHeader>
-                    <DialogTitle>{isRu ? 'Архив конкурсов' : 'Contest Archive'}</DialogTitle>
-                  </DialogHeader>
+                   <DialogHeader>
+                     <DialogTitle>{getRatingsText('contestArchive', isRu)}</DialogTitle>
+                   </DialogHeader>
                   <ScrollArea className="max-h-[50vh]">
                     <div className="space-y-2 pr-2">
                       {contest.sessionHistory.length === 0 ? (
-                        <p className="text-sm text-muted-foreground text-center py-4">
-                          {isRu ? 'Нет сохранённых конкурсов' : 'No saved contests'}
-                        </p>
+                         <p className="text-sm text-muted-foreground text-center py-4">
+                           {getRatingsText('noSavedContests', isRu)}
+                         </p>
                       ) : (
                         contest.sessionHistory.map(s => (
                           <button
@@ -180,9 +179,9 @@ export function BeautyContest() {
                                 {s.status}
                               </Badge>
                             </div>
-                            <div className="text-[10px] text-muted-foreground">
-                              {new Date(s.created_at).toLocaleDateString()} • {Object.keys(s.config.models || {}).length} {isRu ? 'моделей' : 'models'}
-                            </div>
+                             <div className="text-[10px] text-muted-foreground">
+                               {new Date(s.created_at).toLocaleDateString()} • {Object.keys(s.config.models || {}).length} {getRatingsText('models', isRu)}
+                             </div>
                           </button>
                         ))
                       )}
@@ -211,26 +210,26 @@ export function BeautyContest() {
 
   return (
     <div className="h-full flex flex-col">
-      <ContestScoreboard
-        results={contest.results}
-        currentRound={currentRoundIndex >= 0 ? currentRoundIndex : 0}
-        totalRounds={contest.rounds.length || 1}
-        completedRounds={contest.rounds.filter(r => r.status === 'completed').length}
-        status={contest.session?.status || 'draft'}
-        sessionName={contest.session?.name || (isRu ? 'Конкурс' : 'Contest')}
-        arbiterCount={contest.session?.config?.arbitration?.juryMode === 'ai' ? 1 : contest.session?.config?.arbitration?.juryMode === 'hybrid' ? 2 : 0}
-        isRu={isRu}
-        onNewContest={() => { contest.setSession(null); }}
-      />
+       <ContestScoreboard
+         results={contest.results}
+         currentRound={currentRoundIndex >= 0 ? currentRoundIndex : 0}
+         totalRounds={contest.rounds.length || 1}
+         completedRounds={contest.rounds.filter(r => r.status === 'completed').length}
+         status={contest.session?.status || 'draft'}
+         sessionName={contest.session?.name || getRatingsText('contest', isRu)}
+         arbiterCount={contest.session?.config?.arbitration?.juryMode === 'ai' ? 1 : contest.session?.config?.arbitration?.juryMode === 'hybrid' ? 2 : 0}
+         isRu={isRu}
+         onNewContest={() => { contest.setSession(null); }}
+       />
 
       {/* Collapsible prompt */}
       {currentRound?.prompt && (
         <Collapsible open={promptOpen} onOpenChange={setPromptOpen}>
-          <CollapsibleTrigger className="w-full flex items-center gap-2 px-4 py-1.5 border-b border-border/30 hover:bg-muted/20 transition-colors text-left">
-            <FileText className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-            <span className="text-[11px] font-medium text-muted-foreground truncate flex-1">
-              {isRu ? `Промпт тура ${(currentRoundIndex >= 0 ? currentRoundIndex : 0) + 1}` : `Round ${(currentRoundIndex >= 0 ? currentRoundIndex : 0) + 1} prompt`}
-            </span>
+           <CollapsibleTrigger className="w-full flex items-center gap-2 px-4 py-1.5 border-b border-border/30 hover:bg-muted/20 transition-colors text-left">
+             <FileText className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+             <span className="text-[11px] font-medium text-muted-foreground truncate flex-1">
+               {isRu ? `Промпт ${getRatingsText('round', isRu)} ${(currentRoundIndex >= 0 ? currentRoundIndex : 0) + 1}` : `Round ${(currentRoundIndex >= 0 ? currentRoundIndex : 0) + 1} prompt`}
+             </span>
             {promptOpen ? <ChevronUp className="h-3 w-3 text-muted-foreground" /> : <ChevronDown className="h-3 w-3 text-muted-foreground" />}
           </CollapsibleTrigger>
           <CollapsibleContent>
@@ -243,23 +242,23 @@ export function BeautyContest() {
 
       {/* Unified tabset */}
       <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
-        <Tabs value={activeMainTab} onValueChange={setActiveMainTab} className="flex flex-col flex-1 min-h-0">
-          <div className="px-3 pt-2 flex-shrink-0">
-            <TabsList className="h-8 p-1 bg-muted/30 w-full justify-start gap-1">
-              <TabsTrigger value="responses" className="text-xs h-6 px-3 gap-1">
-                <MessageSquare className="h-3 w-3" />
-                {isRu ? 'Ответы' : 'Responses'}
-              </TabsTrigger>
-              <TabsTrigger value="scores" className="text-xs h-6 px-3 gap-1">
-                <BarChart3 className="h-3 w-3" />
-                {isRu ? 'Оценки' : 'Scores'}
-              </TabsTrigger>
-              <TabsTrigger value="arbiter" className="text-xs h-6 px-3 gap-1">
-                <Scale className="h-3 w-3" />
-                {isRu ? 'Арбитраж' : 'Arbiter'}
-              </TabsTrigger>
-            </TabsList>
-          </div>
+         <Tabs value={activeMainTab} onValueChange={setActiveMainTab} className="flex flex-col flex-1 min-h-0">
+           <div className="px-3 pt-2 flex-shrink-0">
+             <TabsList className="h-8 p-1 bg-muted/30 w-full justify-start gap-1">
+               <TabsTrigger value="responses" className="text-xs h-6 px-3 gap-1">
+                 <MessageSquare className="h-3 w-3" />
+                 {getRatingsText('responses', isRu)}
+               </TabsTrigger>
+               <TabsTrigger value="scores" className="text-xs h-6 px-3 gap-1">
+                 <BarChart3 className="h-3 w-3" />
+                 {getRatingsText('scores', isRu)}
+               </TabsTrigger>
+               <TabsTrigger value="arbiter" className="text-xs h-6 px-3 gap-1">
+                 <Scale className="h-3 w-3" />
+                 {getRatingsText('contestArbitration', isRu)}
+               </TabsTrigger>
+             </TabsList>
+           </div>
 
           <TabsContent value="responses" className="flex-1 min-h-0 overflow-hidden mt-0">
             <ContestResponsesPanel
@@ -285,13 +284,13 @@ export function BeautyContest() {
               onToggleWinner={handleToggleWinner}
             />
             {selectedWinners.size > 0 && (
-              <Button onClick={handleMigrateToExpertPanel} className="w-full gap-2" variant="outline">
-                <Crown className="h-3.5 w-3.5 text-primary" />
-                <Users className="h-3.5 w-3.5" />
-                {isRu
-                  ? `Отправить ${selectedWinners.size} победител${selectedWinners.size === 1 ? 'я' : 'ей'} в Панель экспертов`
-                  : `Send ${selectedWinners.size} winner${selectedWinners.size > 1 ? 's' : ''} to Expert Panel`}
-              </Button>
+               <Button onClick={handleMigrateToExpertPanel} className="w-full gap-2" variant="outline">
+                 <Crown className="h-3.5 w-3.5 text-primary" />
+                 <Users className="h-3.5 w-3.5" />
+                 {isRu
+                   ? `Отправить ${selectedWinners.size} победител${selectedWinners.size === 1 ? 'я' : 'ей'} в Панель экспертов`
+                   : `Send ${selectedWinners.size} winner${selectedWinners.size > 1 ? 's' : ''} to Expert Panel`}
+               </Button>
             )}
           </TabsContent>
 
@@ -323,12 +322,12 @@ export function BeautyContest() {
                   );
                 })()}
               </Badge>
-              <button
-                className="text-[10px] text-muted-foreground hover:text-foreground transition-colors"
-                onClick={() => setActiveModel('all')}
-              >
-                {isRu ? '(всем)' : '(all)'}
-              </button>
+               <button
+                 className="text-[10px] text-muted-foreground hover:text-foreground transition-colors"
+                 onClick={() => setActiveModel('all')}
+               >
+                 {isRu ? '(всем)' : '(all)'}
+               </button>
             </div>
           )}
           <div className="flex items-end gap-2">
@@ -336,10 +335,10 @@ export function BeautyContest() {
               value={followUpText}
               onChange={e => setFollowUpText(e.target.value)}
               placeholder={
-                activeModel === 'all'
-                  ? (isRu ? 'Дополнительный вопрос всем конкурсантам...' : 'Follow-up question for all contestants...')
-                  : (isRu ? `Вопрос для ${getModelRegistryEntry(activeModel)?.displayName || activeModel.split('/').pop()}...` : `Question for ${getModelRegistryEntry(activeModel)?.displayName || activeModel.split('/').pop()}...`)
-              }
+                 activeModel === 'all'
+                   ? getRatingsText('followUpQuestionForAll', isRu)
+                   : `${getRatingsText('questionForModel', isRu).replace('{model}', getModelRegistryEntry(activeModel)?.displayName || activeModel.split('/').pop() || '')}`
+               }
               className="min-h-[36px] max-h-[100px] text-sm resize-none"
               rows={1}
               onKeyDown={e => {

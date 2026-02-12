@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils';
 import { getModelRegistryEntry } from '@/config/modelRegistry';
 import { PROVIDER_LOGOS, PROVIDER_COLORS } from '@/components/ui/ProviderLogos';
 import { PodiumHistogram } from './PodiumHistogram';
+import { getRatingsText } from './i18n';
 import { detectPhase, PHASE_MESSAGES_RU, PHASE_MESSAGES_EN, PHASE_ICONS, PROVIDER_ACCENT } from './contestPhases';
 import type { ContestResult } from '@/hooks/useContestSession';
 
@@ -44,10 +45,10 @@ export function ContestScoreboard({
   const activeDisplayName = activeEntry?.displayName || activeModelId?.split('/').pop() || '…';
   const currentMsg = (msgs[msgIndex % msgs.length] || '').replace(/\{model\}/g, activeDisplayName);
 
-  const statusBadge = status === 'running' ? (isRu ? 'Идёт' : 'Live')
-    : status === 'completed' ? (isRu ? 'Завершён' : 'Done')
-    : status === 'paused' ? (isRu ? 'Пауза' : 'Paused')
-    : status;
+   const statusBadge = status === 'running' ? getRatingsText('live', isRu)
+     : status === 'completed' ? getRatingsText('done', isRu)
+     : status === 'paused' ? getRatingsText('paused', isRu)
+     : status;
 
   return (
     <div className="border-b-2 border-primary/30 bg-gradient-to-r from-primary/15 via-primary/8 to-accent/10 px-4 py-3">
@@ -59,9 +60,9 @@ export function ContestScoreboard({
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
           <div className="flex items-center gap-1.5">
-            <Badge variant="outline" className="text-[10px] border-primary/40 bg-primary/10 gap-1">
-              {isRu ? `Тур ${currentRound + 1}/${totalRounds}` : `R${currentRound + 1}/${totalRounds}`}
-            </Badge>
+             <Badge variant="outline" className="text-[10px] border-primary/40 bg-primary/10 gap-1">
+               {isRu ? `Тур ${currentRound + 1}/${totalRounds}` : `R${currentRound + 1}/${totalRounds}`}
+             </Badge>
             <div className="w-16 h-1.5 rounded-full bg-muted/40 overflow-hidden">
               <div
                 className="h-full rounded-full bg-primary transition-all duration-700 ease-out"
@@ -86,10 +87,10 @@ export function ContestScoreboard({
             {statusBadge}
           </Badge>
           {onNewContest && (
-            <Button size="sm" variant="outline" className="h-6 text-[10px] gap-1 px-2" onClick={onNewContest}>
-              <Play className="h-2.5 w-2.5" />
-              {isRu ? 'Новый' : 'New'}
-            </Button>
+             <Button size="sm" variant="outline" className="h-6 text-[10px] gap-1 px-2" onClick={onNewContest}>
+               <Play className="h-2.5 w-2.5" />
+               {getRatingsText('new', isRu)}
+             </Button>
           )}
         </div>
       </div>

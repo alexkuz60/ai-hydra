@@ -10,6 +10,7 @@ import { useFlowDiagrams } from '@/hooks/useFlowDiagrams';
 import { exportToMermaid } from '@/hooks/useFlowDiagrams';
 import { useToast } from '@/hooks/use-toast';
 import { useContestConfig, VALIDATION_MESSAGES } from '@/hooks/useContestConfig';
+import { getRatingsText } from './i18n';
 import { ContestSummaryConfig } from './ContestSummaryConfig';
 import { ContestPromptPreview } from './ContestPromptPreview';
 import { ContestArbitrationDetails } from './ContestArbitrationDetails';
@@ -109,17 +110,17 @@ export function ContestSummary() {
 
   return (
     <HydraCard variant="default" glow className="border-border/50">
-      <HydraCardHeader>
-        <div className="flex items-center gap-2 text-hydra-arbiter">
-          <Trophy className="h-4 w-4" />
-          <span className="text-xs font-bold uppercase tracking-wider opacity-60">
-            {isRu ? 'Шаг 5' : 'Step 5'}
-          </span>
-        </div>
-        <HydraCardTitle>
-          {isRu ? 'Предпросмотр и запуск' : 'Preview & Launch'}
-        </HydraCardTitle>
-      </HydraCardHeader>
+       <HydraCardHeader>
+         <div className="flex items-center gap-2 text-hydra-arbiter">
+           <Trophy className="h-4 w-4" />
+           <span className="text-xs font-bold uppercase tracking-wider opacity-60">
+             {getRatingsText('step5', isRu)}
+           </span>
+         </div>
+         <HydraCardTitle>
+           {getRatingsText('previewAndLaunch', isRu)}
+         </HydraCardTitle>
+       </HydraCardHeader>
 
       <HydraCardContent className="space-y-3">
         <ContestSummaryConfig
@@ -153,27 +154,23 @@ export function ContestSummary() {
                   onClick={handleSavePlan}
                 >
                   {isSaving ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : savedPlan ? (
-                    <CheckCircle2 className="h-4 w-4" />
-                  ) : (
-                    <Save className="h-4 w-4" />
-                  )}
-                  {isRu
-                    ? (savedPlan ? 'Пересохранить план конкурса' : 'Сохранить план конкурса')
-                    : (savedPlan ? 'Re-save Contest Plan' : 'Save Contest Plan')}
+                     <Loader2 className="h-4 w-4 animate-spin" />
+                   ) : savedPlan ? (
+                     <CheckCircle2 className="h-4 w-4" />
+                   ) : (
+                     <Save className="h-4 w-4" />
+                   )}
+                   {savedPlan ? getRatingsText('reSaveContestPlan', isRu) : getRatingsText('saveContestPlan', isRu)}
                 </Button>
               </div>
             </TooltipTrigger>
-            {!canSave && (
-              <TooltipContent>
-                <p className="text-xs">
-                  {isRu
-                    ? 'Выберите шаблон пайплайна в Шаге 3'
-                    : 'Select a pipeline template in Step 3'}
-                </p>
-              </TooltipContent>
-            )}
+             {!canSave && (
+               <TooltipContent>
+                 <p className="text-xs">
+                   {getRatingsText('selectPipelineTemplateInStep3', isRu)}
+                 </p>
+               </TooltipContent>
+             )}
           </Tooltip>
         </TooltipProvider>
 
