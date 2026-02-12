@@ -12,6 +12,7 @@ export interface RoundConfig {
   type: 'free' | 'role';
   prompt: string;
   criteria: string[];
+  roleForEvaluation?: string;  // Optional: expert role for role-based contests
 }
 
 export interface ContestRules {
