@@ -45,7 +45,7 @@ export function PodiumHistogram({ results, className }: { results: ContestResult
         const heightPct = entry?.hasScore
           ? dynamicHeight(entry.total)
           : defaultHeights[i];
-        const color = entry?.hasScore ? podiumColors[i] : undefined;
+        const color = podiumColors[i];
         const entryData = entry ? getModelRegistryEntry(entry.modelId) : null;
         const shortName = entryData?.displayName || entry?.modelId?.split('/').pop() || '';
 
@@ -59,7 +59,7 @@ export function PodiumHistogram({ results, className }: { results: ContestResult
                     className="w-5 rounded-t-sm"
                     style={{
                       height: `${heightPct}%`,
-                      backgroundColor: color || 'hsl(var(--muted))',
+                      backgroundColor: color,
                       opacity: 1,
                       transition: 'height 0.8s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.4s ease, opacity 0.4s ease',
                     }}
