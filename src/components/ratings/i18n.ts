@@ -194,7 +194,10 @@ export const RATINGS_I18N = {
   // Contest Rules tabs
   tabContest: { ru: 'Конкурс', en: 'Contest' },
   tabDuel: { ru: 'Дуэль', en: 'Duel' },
+  tabInterview: { ru: 'Собеседование', en: 'Interview' },
   duelPlanTitle: { ru: 'План дуэли «К барьеру»', en: 'Duel Plan «En Garde»' },
+  duelFlowTemplate: { ru: 'Шаблон потока дуэли', en: 'Duel Flow Template' },
+  duelArbitration: { ru: 'Арбитраж дуэли', en: 'Duel Arbitration' },
 } as const;
 
 export type RatingsI18nKey = keyof typeof RATINGS_I18N;
