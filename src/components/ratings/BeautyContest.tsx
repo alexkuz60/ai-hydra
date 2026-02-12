@@ -90,6 +90,11 @@ export function BeautyContest() {
 
   const handleSaveToTask = useCallback(async () => {
     if (!user || !contest.session) return;
+    const taskId = contest.session.config?.taskId;
+    if (!taskId) {
+      toast({ variant: 'destructive', description: isRu ? 'Задача не выбрана в конфигурации конкурса' : 'No task selected in contest config' });
+      return;
+    }
     const scoredResults = contest.results.filter(r => r.response_text && (r.user_score != null || r.arbiter_score != null));
     if (scoredResults.length === 0) {
       toast({ variant: 'destructive', description: getRatingsText('noScoredResponses', isRu) });
@@ -97,33 +102,11 @@ export function BeautyContest() {
     }
     setSavingToTask(true);
     try {
-      const taskTitle = contest.session.name || (isRu ? 'Результаты конкурса' : 'Contest Results');
-      const taskPrompt = contest.rounds[0]?.prompt || '';
-
-      // Create a new session (task)
-      const { data: newSession, error: sessionErr } = await supabase
-        .from('sessions')
-        .insert({ user_id: user.id, title: `🏆 ${taskTitle}`, description: taskPrompt || null })
-        .select()
-        .single();
-      if (sessionErr) throw sessionErr;
-
-      // Build messages: 1 user message (prompt) + N assistant messages (responses)
+      // Build messages to insert into the existing task
       const messages: Array<{
         session_id: string; user_id: string; role: string;
         content: string; model_name: string | null; metadata: Record<string, unknown>;
       }> = [];
-
-      if (taskPrompt) {
-        messages.push({
-          session_id: newSession.id,
-          user_id: user.id,
-          role: 'user',
-          content: taskPrompt,
-          model_name: null,
-          metadata: { source: 'contest', contest_session_id: contest.session.id },
-        });
-      }
 
       // Group by round for ordering
       const roundOrder = contest.rounds.map(r => r.id);
@@ -134,13 +117,10 @@ export function BeautyContest() {
       });
 
       for (const result of sorted) {
-        const entry = getModelRegistryEntry(result.model_id);
-        const displayName = entry?.displayName || result.model_id.split('/').pop() || result.model_id;
         const round = contest.rounds.find(r => r.id === result.round_id);
-        const roundLabel = round ? `R${round.round_index + 1}` : '';
 
         messages.push({
-          session_id: newSession.id,
+          session_id: taskId,
           user_id: user.id,
           role: 'assistant',
           content: result.response_text!,

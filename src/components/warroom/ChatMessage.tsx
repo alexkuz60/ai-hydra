@@ -100,6 +100,7 @@ export function ChatMessage({ message, userDisplayInfo, onDelete, onRatingChange
   const proposals = metadataObj.proposals as Proposal[] | undefined;
   const interactiveChecklists = forceInteractiveChecklists || metadataObj.interactive_checklists === true;
   const checklistState = (metadataObj.checklist_state as Record<number, boolean>) || {};
+  const isFromContest = (metadataObj as Record<string, unknown>).source === 'contest';
 
   const handleChecklistItemChange = useCallback((index: number, checked: boolean) => {
     if (!onChecklistChange) return;
@@ -150,6 +151,20 @@ export function ChatMessage({ message, userDisplayInfo, onDelete, onRatingChange
             </TooltipProvider>
           )}
           {providerInfo && isAiMessage && !usedFallback && <ProviderBadge providerInfo={providerInfo} />}
+          {isFromContest && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="ml-1.5 inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-primary/20 text-primary border border-primary/30">
+                    <Crown className="h-3 w-3" />
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">
+                  <p className="text-xs">{t('common.locale') === 'ru' ? 'Из конкурса моделей' : 'From model contest'}</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
         </HydraCardTitle>
         <span className="text-xs text-muted-foreground ml-auto flex items-center gap-2">
           {format(new Date(message.created_at), 'dd MMM, HH:mm', { locale: t('common.locale') === 'ru' ? ru : enUS })}
