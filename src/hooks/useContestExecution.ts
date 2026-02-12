@@ -23,7 +23,7 @@ export function useContestExecution() {
   const { language } = useLanguage();
   const isRu = language === 'ru';
   const { user } = useAuth();
-  const { updateCriteriaAverages } = useModelStatistics(user?.id);
+  const { updateCriteriaAverages, addContestResult, addArbiterEval } = useModelStatistics(user?.id);
   const [state, setState] = useState<ExecutionState>({ running: false, streamingTexts: {}, arbiterRunning: false });
   const abortRef = useRef<AbortController | null>(null);
 
@@ -110,12 +110,27 @@ export function useContestExecution() {
             } : {}),
           } as any);
 
-          // Aggregate criteria scores into model_statistics
+          // Aggregate criteria scores into model_statistics (null session_id for contest data)
           if (eval_.criteria_scores && originalResult) {
             await updateCriteriaAverages(
               originalResult.model_id,
-              session.id,
+              null,
               eval_.criteria_scores,
+            );
+          }
+
+          // Record arbiter eval + contest participation in model_statistics
+          if (originalResult) {
+            await addArbiterEval(
+              originalResult.model_id,
+              null,
+              eval_.arbiter_score,
+              eval_.arbiter_comment || undefined,
+            );
+            await addContestResult(
+              originalResult.model_id,
+              null,
+              eval_.arbiter_score,
             );
           }
         }
@@ -128,7 +143,7 @@ export function useContestExecution() {
     } finally {
       setState(prev => ({ ...prev, arbiterRunning: false }));
     }
-  }, [toast, isRu, language]);
+  }, [toast, isRu, language, updateCriteriaAverages, addArbiterEval, addContestResult]);
 
   const executeRound = useCallback(async (
     session: ContestSession,
