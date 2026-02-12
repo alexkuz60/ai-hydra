@@ -238,9 +238,7 @@ IMPORTANT: Return scores FOR EACH CRITERION separately in the criteria_scores ob
       }
       
       const criteriaScores = eval_?.criteria_scores || {};
-      const arbitration = (req as any).body?.arbitration || {};
-      const weights = arbitration.criteriaWeights || {};
-      const arbiterScore = calculateWeightedScore(criteriaScores, weights);
+      const arbiterScore = calculateWeightedScore(criteriaScores, criteria_weights);
       
       return {
         result_id: r.result_id,
