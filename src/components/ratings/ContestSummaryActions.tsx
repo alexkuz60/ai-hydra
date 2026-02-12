@@ -4,20 +4,10 @@ import { Upload, Download, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
-
-const CONTEST_STORAGE_KEYS = [
-  'hydra-contest-models',
-  'hydra-contest-rules',
-  'hydra-contest-task-id',
-  'hydra-contest-task-title',
-  'hydra-contest-mode',
-  'hydra-contest-pipeline',
-  'hydra-contest-arbitration',
-  'hydra-contest-saved-plan',
-];
+import { CONTEST_STORAGE_KEYS } from '@/hooks/useContestConfig';
 
 interface ContestSummaryActionsProps {
-  onImport: () => void;
+  onImport: (data: Record<string, unknown>) => void;
   onReset: () => void;
 }
 
@@ -65,16 +55,7 @@ export function ContestSummaryActions({
       reader.onload = (ev) => {
         try {
           const data = JSON.parse(ev.target?.result as string);
-          CONTEST_STORAGE_KEYS.forEach((k) => {
-            if (k in data) {
-              localStorage.setItem(
-                k,
-                typeof data[k] === 'string' ? data[k] : JSON.stringify(data[k])
-              );
-            }
-          });
-          window.dispatchEvent(new Event('contest-config-changed'));
-          onImport();
+          onImport(data);
           toast({
             description: isRu
               ? 'Настройки импортированы'
