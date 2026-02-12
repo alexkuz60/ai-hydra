@@ -22,11 +22,13 @@ interface ContestScoreboardProps {
   isRu: boolean;
   onNewContest?: () => void;
   onFinishContest?: () => void;
+  arbitration?: { userWeight?: number; criteriaWeights?: Record<string, number> };
 }
 
 export function ContestScoreboard({
   results, currentRound, totalRounds, completedRounds = 0,
   status, sessionName, arbiterCount, isRu, onNewContest, onFinishContest,
+  arbitration,
 }: ContestScoreboardProps) {
   const modelIds = [...new Set(results.map(r => r.model_id))];
   const { phase, activeModelId } = detectPhase(results, status);
@@ -175,7 +177,7 @@ export function ContestScoreboard({
 
         {/* Column C: Podium — full height */}
         <div className="flex-shrink-0 w-24 flex items-stretch">
-          <PodiumHistogram results={results} className="w-full h-full" />
+          <PodiumHistogram results={results} arbitration={arbitration} className="w-full h-full" />
         </div>
       </div>
     </div>

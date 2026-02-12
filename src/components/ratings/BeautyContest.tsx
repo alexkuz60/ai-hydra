@@ -330,17 +330,18 @@ export function BeautyContest() {
   return (
     <div className="h-full flex flex-col">
        <ContestScoreboard
-         results={contest.results}
-         currentRound={currentRoundIndex >= 0 ? currentRoundIndex : 0}
-         totalRounds={contest.rounds.length || 1}
-         completedRounds={contest.rounds.filter(r => r.status === 'completed').length}
-         status={contest.session?.status || 'draft'}
-         sessionName={contest.session?.name || getRatingsText('contest', isRu)}
-         arbiterCount={contest.session?.config?.arbitration?.juryMode === 'ai' ? 1 : contest.session?.config?.arbitration?.juryMode === 'hybrid' ? 2 : 0}
-         isRu={isRu}
-         onNewContest={() => { contest.setSession(null); }}
-         onFinishContest={() => setFinishDialogOpen(true)}
-       />
+          results={contest.results}
+          currentRound={currentRoundIndex >= 0 ? currentRoundIndex : 0}
+          totalRounds={contest.rounds.length || 1}
+          completedRounds={contest.rounds.filter(r => r.status === 'completed').length}
+          status={contest.session?.status || 'draft'}
+          sessionName={contest.session?.name || getRatingsText('contest', isRu)}
+          arbiterCount={contest.session?.config?.arbitration?.juryMode === 'ai' ? 1 : contest.session?.config?.arbitration?.juryMode === 'hybrid' ? 2 : 0}
+          isRu={isRu}
+          onNewContest={() => { contest.setSession(null); }}
+          onFinishContest={() => setFinishDialogOpen(true)}
+          arbitration={contest.session?.config?.arbitration}
+        />
 
       {/* Collapsible prompt */}
       {currentRound?.prompt && (
