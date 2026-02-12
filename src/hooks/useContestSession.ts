@@ -62,6 +62,7 @@ export interface ContestResult {
   arbiter_score: number | null;
   arbiter_model: string | null;
   arbiter_comment: string | null;
+  criteria_scores: Record<string, number> | null;
   status: 'pending' | 'generating' | 'ready' | 'judged' | 'failed';
   metadata: Record<string, unknown>;
   created_at: string;
