@@ -128,6 +128,10 @@ export const RATINGS_I18N = {
 
   // ===== WINNERS MIGRATION =====
   winnersToExpertPanel: { ru: 'победитель(ей) отправлено в Панель экспертов', en: 'winner(s) sent to Expert Panel' },
+  saveToTask: { ru: 'Занести в задачу', en: 'Save to Task' },
+  savedToTask: { ru: 'Ответы конкурса сохранены в задачу', en: 'Contest responses saved to task' },
+  savingToTask: { ru: 'Сохраняем...', en: 'Saving...' },
+  noScoredResponses: { ru: 'Нет оценённых ответов для сохранения', en: 'No scored responses to save' },
 
   // ===== FOLLOW-UP INPUT =====
   questionFor: { ru: 'Вопрос для:', en: 'Question for:' },
