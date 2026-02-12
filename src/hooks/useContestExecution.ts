@@ -48,6 +48,16 @@ export function useContestExecution() {
       const { data: { session: authSession } } = await supabase.auth.getSession();
       const authToken = authSession?.access_token;
 
+      // Merge role-specific criteria if role-based contest
+      const roundConfig = session.config.rules?.rounds?.[round.round_index];
+      const roleForEvaluation = roundConfig?.roleForEvaluation;
+      let effectiveCriteria = arbitration.criteria || [];
+      
+      if (roleForEvaluation) {
+        const { mergeRoleCriteria } = await import('@/lib/contestRoleCriteria');
+        effectiveCriteria = mergeRoleCriteria(effectiveCriteria, roleForEvaluation as any);
+      }
+
       const response = await fetch(`${supabaseUrl}/functions/v1/contest-arbiter`, {
         method: 'POST',
         headers: {
@@ -64,10 +74,11 @@ export function useContestExecution() {
             response_time_ms: r.response_time_ms,
             token_count: r.token_count,
           })),
-          criteria: arbitration.criteria || [],
+          criteria: effectiveCriteria,
           criteria_weights: arbitration.criteriaWeights || {},
           arbiter_model: arbitration.arbiterModel || undefined,
           language,
+          role_context: roleForEvaluation || undefined,
         }),
       });
 
@@ -161,9 +172,21 @@ export function useContestExecution() {
     setState({ running: true, streamingTexts: {}, arbiterRunning: false });
 
     const prompt = round.prompt;
-    const systemPrompt = session.config.arbitration
-      ? `You are a contestant in an AI model competition. Answer the prompt as best you can.`
-      : undefined;
+    
+    // Build system prompt: merge role prompt if role-based contest
+    const roundConfig = session.config.rules?.rounds?.[round.round_index];
+    const roleForEvaluation = roundConfig?.roleForEvaluation;
+    let systemPrompt: string | undefined;
+    
+    if (roleForEvaluation) {
+      // Import role system prompt dynamically
+      const { DEFAULT_SYSTEM_PROMPTS } = await import('@/config/roles');
+      const rolePrompt = DEFAULT_SYSTEM_PROMPTS[roleForEvaluation as keyof typeof DEFAULT_SYSTEM_PROMPTS];
+      const contestPreamble = `You are a contestant in an AI model competition. Answer the prompt in the role described below.\n\n`;
+      systemPrompt = contestPreamble + (rolePrompt || '');
+    } else if (session.config.arbitration) {
+      systemPrompt = `You are a contestant in an AI model competition. Answer the prompt as best you can.`;
+    }
 
     // Build conversation history from previous rounds for each model
     const buildHistory = (modelId: string): { role: string; content: string }[] => {

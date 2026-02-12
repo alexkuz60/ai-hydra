@@ -21,6 +21,7 @@ interface ArbiterRequest {
   criteria_weights: Record<string, number>;
   arbiter_model?: string;
   language?: string; // 'ru' | 'en'
+  role_context?: string; // expert role name for role-based evaluation
 }
 
 serve(async (req) => {
@@ -30,7 +31,7 @@ serve(async (req) => {
 
   try {
     const body: ArbiterRequest = await req.json();
-    const { prompt, responses, criteria, criteria_weights, arbiter_model, language } = body;
+    const { prompt, responses, criteria, criteria_weights, arbiter_model, language, role_context } = body;
     const isRu = language === 'ru';
 
     if (!responses?.length || !criteria?.length) {
@@ -61,16 +62,23 @@ serve(async (req) => {
       })
       .join("\n\n---\n\n");
 
+    // Build role context instruction if role-based contest
+    const roleInstruction = role_context
+      ? (isRu
+        ? `\nКонтекст: Это ролевой конкурс. Конкурсанты отвечали в роли "${role_context}". Оценивайте, насколько хорошо каждый ответ соответствует ожиданиям от этой роли.`
+        : `\nContext: This is a role-based contest. Contestants answered in the role of "${role_context}". Evaluate how well each response meets the expectations for this role.`)
+      : '';
+
     const systemPrompt = isRu
       ? `Вы — беспристрастный ИИ-арбитр, оценивающий ответы нескольких ИИ-моделей в конкурсе.
 Вы должны оценить каждый ответ на основе заданных критериев и выставить справедливые, детализированные оценки.
 Будьте объективны и аналитичны. Учитывайте как сильные, так и слабые стороны каждого ответа.
 Оценивайте ТОЛЬКО по предоставленным критериям с учётом их весов.
-ВАЖНО: Все комментарии пишите ТОЛЬКО на русском языке.`
+ВАЖНО: Все комментарии пишите ТОЛЬКО на русском языке.${roleInstruction}`
       : `You are an impartial AI arbiter evaluating responses from multiple AI models in a competition. 
 You must evaluate each response based on the given criteria and provide fair, detailed scores.
 Be objective and analytical. Consider both strengths and weaknesses of each response.
-Evaluate ONLY based on the criteria provided, with their respective weights.`;
+Evaluate ONLY based on the criteria provided, with their respective weights.${roleInstruction}`;
 
     const userPrompt = isRu
       ? `## Исходный промпт для конкурсантов

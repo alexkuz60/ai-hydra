@@ -188,6 +188,29 @@ const CRITERIA_I18N_MAP: Record<string, { ru: string; en: string }> = {
   structure: { ru: 'Структура', en: 'Structure' },
   practicality: { ru: 'Практичность', en: 'Practicality' },
   accuracy: { ru: 'Точность', en: 'Accuracy' },
+  // Role-specific criteria (arbiter)
+  synthesis_quality: { ru: 'Качество синтеза', en: 'Synthesis Quality' },
+  fairness: { ru: 'Объективность', en: 'Fairness' },
+  decision_justification: { ru: 'Обоснование решения', en: 'Decision Justification' },
+  nuance_preservation: { ru: 'Сохранение нюансов', en: 'Nuance Preservation' },
+  consensus_strength: { ru: 'Сила консенсуса', en: 'Consensus Strength' },
+  // Role-specific criteria (advisor)
+  actionability: { ru: 'Применяемость', en: 'Actionability' },
+  risk_awareness: { ru: 'Осознание рисков', en: 'Risk Awareness' },
+  timeline_clarity: { ru: 'Ясность сроков', en: 'Timeline Clarity' },
+  resource_feasibility: { ru: 'Доступность ресурсов', en: 'Resource Feasibility' },
+  // Role-specific criteria (analyst)
+  data_accuracy: { ru: 'Точность данных', en: 'Data Accuracy' },
+  methodology_rigor: { ru: 'Строгость методологии', en: 'Methodology Rigor' },
+  insight_depth: { ru: 'Глубина инсайта', en: 'Insight Depth' },
+  correlation_vs_causation: { ru: 'Корреляция vs причинность', en: 'Correlation vs Causation' },
+  limitation_acknowledgment: { ru: 'Признание ограничений', en: 'Limitation Acknowledgment' },
+  // Role-specific criteria (assistant)
+  argument_strength: { ru: 'Сила аргументов', en: 'Argument Strength' },
+  logic_coherence: { ru: 'Логическая согласованность', en: 'Logic Coherence' },
+  evidence_quality: { ru: 'Качество доказательств', en: 'Evidence Quality' },
+  bias_detection: { ru: 'Обнаружение предубеждений', en: 'Bias Detection' },
+  counter_example_coverage: { ru: 'Охват контраргументов', en: 'Counter-example Coverage' },
 };
 
 /**
