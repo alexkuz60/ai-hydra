@@ -110,19 +110,22 @@ export function ContestScoreboard({
             <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-background/60 border border-border/50 flex items-center justify-center shadow-sm">
               {PHASE_ICONS[phase]}
             </div>
-            <div className="flex-1 min-w-0">
-              <AnimatePresence mode="wait">
-                <motion.p
-                  key={`${phase}-${msgIndex}`}
-                  className="text-sm font-medium leading-snug"
-                  initial={{ opacity: 0, x: 40 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -40 }}
-                  transition={{ duration: 0.75, ease: [0.4, 0, 0.2, 1] }}
-                >
-                  {currentMsg}
-                </motion.p>
-              </AnimatePresence>
+            <div className="flex-1 min-w-0 relative">
+              <div className="absolute left-0 top-0 bottom-0 w-px bg-border/60 z-10" />
+              <div className="overflow-hidden pl-2">
+                <AnimatePresence mode="wait">
+                  <motion.p
+                    key={`${phase}-${msgIndex}`}
+                    className="text-sm font-medium leading-snug"
+                    initial={{ opacity: 0, x: 40 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -40 }}
+                    transition={{ duration: 0.75, ease: [0.4, 0, 0.2, 1] }}
+                  >
+                    {currentMsg}
+                  </motion.p>
+                </AnimatePresence>
+              </div>
               <div className="flex flex-wrap gap-1.5 mt-1.5">
                 {modelIds.map(modelId => {
                   const entry = getModelRegistryEntry(modelId);
