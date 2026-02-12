@@ -2,7 +2,7 @@ import React from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Crown, Swords } from 'lucide-react';
+import { Crown, Swords, UserCheck } from 'lucide-react';
 import { ContestTaskSelector } from './ContestTaskSelector';
 import { ContestRulesEditor } from './ContestRulesEditor';
 import { ContestPipelineSelector } from './ContestPipelineSelector';
@@ -34,6 +34,10 @@ export function ContestPodium() {
               <Swords className="h-3.5 w-3.5" />
               {getRatingsText('tabDuel', isRu)}
             </TabsTrigger>
+            <TabsTrigger value="interview" className="gap-1.5 text-xs px-4">
+              <UserCheck className="h-3.5 w-3.5" />
+              {getRatingsText('tabInterview', isRu)}
+            </TabsTrigger>
           </TabsList>
         </div>
 
@@ -53,6 +57,19 @@ export function ContestPodium() {
           <ScrollArea className="h-full">
             <div className="p-4">
               <DuelPlanEditor config={duelConfig} isRu={isRu} />
+            </div>
+          </ScrollArea>
+        </TabsContent>
+
+        <TabsContent value="interview" className="flex-1 mt-0 overflow-hidden">
+          <ScrollArea className="h-full">
+            <div className="p-4">
+              <div className="text-center py-12 space-y-3">
+                <UserCheck className="h-10 w-10 text-muted-foreground/40 mx-auto" />
+                <p className="text-sm text-muted-foreground">
+                  {isRu ? 'Режим собеседования — в разработке' : 'Interview mode — coming soon'}
+                </p>
+              </div>
             </div>
           </ScrollArea>
         </TabsContent>
