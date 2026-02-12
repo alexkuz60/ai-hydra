@@ -5,7 +5,7 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { getModelRegistryEntry } from '@/config/modelRegistry';
-import { getRatingsText } from './i18n';
+import { getRatingsText, getCriterionLabel } from './i18n';
 import type { ContestResult } from '@/hooks/useContestSession';
 
 interface ContestArbiterPanelProps {
@@ -106,7 +106,7 @@ function ArbiterRoundGroups({
                       <div className="flex flex-wrap gap-1">
                         {Object.entries(criteriaScores).map(([key, val]) => (
                           <Badge key={key} variant="outline" className="text-[9px] px-1.5 py-0 font-normal gap-1">
-                            <span className="text-muted-foreground">{key}</span>
+                            <span className="text-muted-foreground">{getCriterionLabel(key, isRu)}</span>
                             <span className="font-semibold">{val}</span>
                           </Badge>
                         ))}

@@ -67,6 +67,8 @@ export const RATINGS_I18N = {
   consistency: { ru: 'Консистентность', en: 'Consistency' },
   costTokens: { ru: 'Стоимость (токены)', en: 'Cost (tokens)' },
   responseSpeed: { ru: 'Скорость ответа', en: 'Response Speed' },
+  costEfficiency: { ru: 'Эффективность', en: 'Cost Efficiency' },
+  speed: { ru: 'Скорость', en: 'Speed' },
 
   // ===== CONTEST SUMMARY =====
   previewAndLaunch: { ru: 'Предпросмотр и запуск', en: 'Preview & Launch' },
@@ -161,10 +163,33 @@ export type RatingsI18nKey = keyof typeof RATINGS_I18N;
 
 /**
  * Get localized text by key and language
- * Usage: t('taskRequired', true) returns Russian string
- * Usage: t('taskRequired', false) returns English string
  */
 export function getRatingsText(key: RatingsI18nKey, isRu: boolean): string {
   const value = RATINGS_I18N[key];
   return isRu ? value.ru : value.en;
+}
+
+/**
+ * Map of criteria keys (from arbiter) to i18n keys for localization
+ */
+const CRITERIA_I18N_MAP: Record<string, { ru: string; en: string }> = {
+  factuality: { ru: 'Фактологичность', en: 'Factuality' },
+  relevance: { ru: 'Релевантность', en: 'Relevance' },
+  completeness: { ru: 'Полнота', en: 'Completeness' },
+  clarity: { ru: 'Ясность', en: 'Clarity' },
+  consistency: { ru: 'Консистентность', en: 'Consistency' },
+  creativity: { ru: 'Креативность', en: 'Creativity' },
+  cost_efficiency: { ru: 'Эффективность', en: 'Cost Efficiency' },
+  speed: { ru: 'Скорость', en: 'Speed' },
+  structure: { ru: 'Структура', en: 'Structure' },
+  practicality: { ru: 'Практичность', en: 'Practicality' },
+  accuracy: { ru: 'Точность', en: 'Accuracy' },
+};
+
+/**
+ * Get localized criterion label. Falls back to raw key if not found.
+ */
+export function getCriterionLabel(key: string, isRu: boolean): string {
+  const entry = CRITERIA_I18N_MAP[key];
+  return entry ? (isRu ? entry.ru : entry.en) : key;
 }
