@@ -24,14 +24,20 @@ interface AggregatedModelStats {
 export function useModelStatistics(userId: string | undefined) {
 
   // Helper: find existing record for (user, model, session)
-  const findExisting = useCallback(async (modelId: string, sessionId: string) => {
-    const { data } = await supabase
+  const findExisting = useCallback(async (modelId: string, sessionId: string | null) => {
+    let query = supabase
       .from('model_statistics')
       .select('*')
       .eq('user_id', userId!)
-      .eq('model_id', modelId)
-      .eq('session_id', sessionId)
-      .maybeSingle();
+      .eq('model_id', modelId);
+    
+    if (sessionId) {
+      query = query.eq('session_id', sessionId);
+    } else {
+      query = query.is('session_id', null);
+    }
+    
+    const { data } = await query.maybeSingle();
     return data;
   }, [userId]);
 
@@ -132,7 +138,7 @@ export function useModelStatistics(userId: string | undefined) {
   }, [userId, findExisting]);
 
   // Record arbiter evaluation score
-  const addArbiterEval = useCallback(async (modelId: string, sessionId: string, score: number, summary?: string) => {
+  const addArbiterEval = useCallback(async (modelId: string, sessionId: string | null, score: number, summary?: string) => {
     if (!userId) return;
     try {
       const existing = await findExisting(modelId, sessionId);
@@ -151,7 +157,7 @@ export function useModelStatistics(userId: string | undefined) {
         await supabase.from('model_statistics').update(updates as any).eq('id', existing.id);
       } else {
         await supabase.from('model_statistics').insert({
-          user_id: userId, model_id: modelId, session_id: sessionId,
+          user_id: userId, model_id: modelId, session_id: sessionId || undefined,
           ...updates,
           first_used_at: new Date().toISOString(),
           last_used_at: new Date().toISOString(),
@@ -163,7 +169,7 @@ export function useModelStatistics(userId: string | undefined) {
   }, [userId, findExisting]);
 
   // Record contest participation
-  const addContestResult = useCallback(async (modelId: string, sessionId: string, score: number) => {
+  const addContestResult = useCallback(async (modelId: string, sessionId: string | null, score: number) => {
     if (!userId) return;
     try {
       const existing = await findExisting(modelId, sessionId);
@@ -177,7 +183,7 @@ export function useModelStatistics(userId: string | undefined) {
         } as any).eq('id', existing.id);
       } else {
         await supabase.from('model_statistics').insert({
-          user_id: userId, model_id: modelId, session_id: sessionId,
+          user_id: userId, model_id: modelId, session_id: sessionId || undefined,
           contest_count: 1, contest_total_score: score,
           first_used_at: new Date().toISOString(),
           last_used_at: new Date().toISOString(),
@@ -190,7 +196,7 @@ export function useModelStatistics(userId: string | undefined) {
 
   // Update criteria_averages (running average per criterion)
   const updateCriteriaAverages = useCallback(async (
-    modelId: string, sessionId: string, criteriaScores: Record<string, number>
+    modelId: string, sessionId: string | null, criteriaScores: Record<string, number>
   ) => {
     if (!userId || !criteriaScores || Object.keys(criteriaScores).length === 0) return;
     try {
@@ -210,7 +216,7 @@ export function useModelStatistics(userId: string | undefined) {
           .eq('id', existing.id);
       } else {
         await supabase.from('model_statistics').insert({
-          user_id: userId, model_id: modelId, session_id: sessionId,
+          user_id: userId, model_id: modelId, session_id: sessionId || undefined,
           criteria_averages: updated,
           first_used_at: new Date().toISOString(),
           last_used_at: new Date().toISOString(),
