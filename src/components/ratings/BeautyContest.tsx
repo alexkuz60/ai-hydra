@@ -134,6 +134,7 @@ export function BeautyContest() {
             criteria_scores: result.criteria_scores,
             response_time_ms: result.response_time_ms,
             token_count: result.token_count,
+            rating: result.user_score != null ? result.user_score : 0,
           },
         });
       }
