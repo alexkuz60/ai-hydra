@@ -218,6 +218,34 @@ export const AGENT_ROLES: AgentRole[] = [
   'guide',
 ];
 
+// Expert roles (5 core roles with evaluation capabilities)
+export const EXPERT_ROLES: AgentRole[] = [
+  'assistant',
+  'critic',
+  'arbiter',
+  'advisor',
+  'analyst',
+];
+
+// Role-specific evaluation criteria
+// Each expert role has default criteria tailored to their expertise
+export const ROLE_SPECIFIC_CRITERIA: Record<AgentRole, string[]> = {
+  assistant: ['factuality', 'relevance', 'completeness', 'clarity', 'creativity'],
+  critic: ['argument_strength', 'logic_coherence', 'evidence_quality', 'bias_detection', 'counter_example_coverage'],
+  arbiter: ['synthesis_quality', 'fairness', 'decision_justification', 'nuance_preservation', 'consensus_strength'],
+  advisor: ['practicality', 'actionability', 'risk_awareness', 'timeline_clarity', 'resource_feasibility'],
+  analyst: ['data_accuracy', 'methodology_rigor', 'insight_depth', 'correlation_vs_causation', 'limitation_acknowledgment'],
+  // Non-expert roles have no specific criteria override
+  consultant: [],
+  moderator: [],
+  archivist: [],
+  webhunter: [],
+  promptengineer: [],
+  flowregulator: [],
+  toolsmith: [],
+  guide: [],
+};
+
 
 // Default system prompts for each agent role
 // These are synchronized with prompt_library entries marked as is_default=true
