@@ -9,7 +9,7 @@ import { CONTEST_FLOW_TEMPLATES } from '@/lib/contestFlowTemplates';
 import { useFlowDiagrams } from '@/hooks/useFlowDiagrams';
 import { exportToMermaid } from '@/hooks/useFlowDiagrams';
 import { useToast } from '@/hooks/use-toast';
-import { useContestConfig, type ValidationError } from '@/hooks/useContestConfig';
+import { useContestConfig, VALIDATION_MESSAGES } from '@/hooks/useContestConfig';
 import { ContestSummaryConfig } from './ContestSummaryConfig';
 import { ContestPromptPreview } from './ContestPromptPreview';
 import { ContestArbitrationDetails } from './ContestArbitrationDetails';
@@ -42,7 +42,9 @@ export function ContestSummary() {
     // Проверка обязательных полей
     const validationErrors = validateForSave();
     if (validationErrors.length > 0) {
-      const errorMessages = validationErrors.map(e => `${e.field}: ${e.message}`).join(', ');
+      const errorMessages = validationErrors
+        .map(e => VALIDATION_MESSAGES[e.messageKey]?.[isRu ? 'ru' : 'en'] || e.messageKey)
+        .join(', ');
       toast({
         variant: 'destructive',
         description: isRu 
