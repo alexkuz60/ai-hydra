@@ -9,7 +9,7 @@ import { CONTEST_FLOW_TEMPLATES } from '@/lib/contestFlowTemplates';
 import { useFlowDiagrams } from '@/hooks/useFlowDiagrams';
 import { exportToMermaid } from '@/hooks/useFlowDiagrams';
 import { useToast } from '@/hooks/use-toast';
-import { useContestConfig } from '@/hooks/useContestConfig';
+import { useContestConfig, type ValidationError } from '@/hooks/useContestConfig';
 import { ContestSummaryConfig } from './ContestSummaryConfig';
 import { ContestPromptPreview } from './ContestPromptPreview';
 import { ContestArbitrationDetails } from './ContestArbitrationDetails';
@@ -33,11 +33,25 @@ export function ContestSummary() {
     updateSavedPlan,
     resetAll,
     importConfig,
+    validateForSave,
   } = useContestConfig();
 
   const canSave = pipeline !== 'none' && pipeline in CONTEST_FLOW_TEMPLATES;
 
   const handleSavePlan = useCallback(async () => {
+    // Проверка обязательных полей
+    const validationErrors = validateForSave();
+    if (validationErrors.length > 0) {
+      const errorMessages = validationErrors.map(e => `${e.field}: ${e.message}`).join(', ');
+      toast({
+        variant: 'destructive',
+        description: isRu 
+          ? `Ошибка валидации: ${errorMessages}` 
+          : `Validation error: ${errorMessages}`,
+      });
+      return;
+    }
+
     if (!canSave) return;
 
     const templateKey = pipeline as keyof typeof CONTEST_FLOW_TEMPLATES;
@@ -89,7 +103,7 @@ export function ContestSummary() {
         description: isRu ? `Ошибка: ${err.message}` : `Error: ${err.message}`,
       });
     }
-  }, [canSave, pipeline, arbitration, roundCount, isRu, saveDiagram, toast, roundPrompt, updateSavedPlan]);
+  }, [canSave, pipeline, arbitration, roundCount, isRu, saveDiagram, toast, roundPrompt, updateSavedPlan, validateForSave]);
 
   return (
     <HydraCard variant="default" glow className="border-border/50">

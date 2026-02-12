@@ -78,6 +78,11 @@ function dispatchConfigChanged() {
   window.dispatchEvent(new Event('contest-config-changed'));
 }
 
+export interface ValidationError {
+  field: string;
+  message: string;
+}
+
 export function useContestConfig() {
   const [config, setConfig] = useState<ContestConfigData>(loadConfig);
 
@@ -192,6 +197,32 @@ export function useContestConfig() {
     dispatchConfigChanged();
   }, []);
 
+  const validateForSave = useCallback((): ValidationError[] => {
+    const errors: ValidationError[] = [];
+
+    // Проверка наличия задачи
+    if (!config.taskId || !config.taskTitle) {
+      errors.push({ field: 'taskId', message: 'Task is required' });
+    }
+
+    // Проверка наличия участников
+    if (Object.keys(config.models).length === 0) {
+      errors.push({ field: 'models', message: 'At least one participant is required' });
+    }
+
+    // Проверка наличия промпта
+    if (!config.rules?.rounds?.[0]?.prompt || !config.rules.rounds[0].prompt.trim()) {
+      errors.push({ field: 'prompt', message: 'Round prompt is required' });
+    }
+
+    // Проверка наличия пайплайна
+    if (!config.pipeline || config.pipeline === 'none') {
+      errors.push({ field: 'pipeline', message: 'Pipeline is required' });
+    }
+
+    return errors;
+  }, [config]);
+
   return {
     // Состояние
     config,
@@ -223,5 +254,6 @@ export function useContestConfig() {
     exportConfig,
     importConfig,
     resetAll,
+    validateForSave,
   };
 }
