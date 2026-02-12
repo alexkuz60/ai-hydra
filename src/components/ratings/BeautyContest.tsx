@@ -305,32 +305,42 @@ export function BeautyContest() {
         </Tabs>
 
         {/* Follow-up input */}
-        <div className="border-t border-border px-3 py-2 flex-shrink-0">
-          {activeModel !== 'all' && (
-            <div className="flex items-center gap-1.5 mb-1.5">
-              <Badge variant="outline" className="text-[10px] gap-1 border-primary/40 bg-primary/5">
-                {(() => {
-                  const entry = getModelRegistryEntry(activeModel);
-                  const ProviderLogo = entry?.provider ? PROVIDER_LOGOS[entry.provider] : undefined;
-                  const color = entry?.provider ? PROVIDER_COLORS[entry.provider] : '';
-                  const name = entry?.displayName || activeModel.split('/').pop() || activeModel;
-                  return (
-                    <>
-                      {ProviderLogo && <ProviderLogo className={cn("h-2.5 w-2.5", color)} />}
-                      {isRu ? `Вопрос для: ${name}` : `Question for: ${name}`}
-                    </>
-                  );
-                })()}
-              </Badge>
-               <button
-                 className="text-[10px] text-muted-foreground hover:text-foreground transition-colors"
-                 onClick={() => setActiveModel('all')}
-               >
-                 {isRu ? '(всем)' : '(all)'}
-               </button>
-            </div>
-          )}
-          <div className="flex items-end gap-2">
+         <div className="border-t border-border px-3 py-2 flex-shrink-0">
+           {activeModel !== 'all' && (
+             <div className="flex items-center gap-1.5 mb-1.5">
+               <Badge variant="outline" className="text-[10px] gap-1 border-primary/40 bg-primary/5">
+                 {(() => {
+                   const entry = getModelRegistryEntry(activeModel);
+                   const ProviderLogo = entry?.provider ? PROVIDER_LOGOS[entry.provider] : undefined;
+                   const color = entry?.provider ? PROVIDER_COLORS[entry.provider] : '';
+                   const name = entry?.displayName || activeModel.split('/').pop() || activeModel;
+                   return (
+                     <>
+                       {ProviderLogo && <ProviderLogo className={cn("h-2.5 w-2.5", color)} />}
+                       {isRu ? `Вопрос для: ${name}` : `Question for: ${name}`}
+                     </>
+                   );
+                 })()}
+               </Badge>
+                <button
+                  className="text-[10px] text-muted-foreground hover:text-foreground transition-colors"
+                  onClick={() => setActiveModel('all')}
+                >
+                  {isRu ? '(всем)' : '(all)'}
+                </button>
+             </div>
+           )}
+           {currentRoundIndex > 0 && (
+             <div className="flex items-center gap-1.5 mb-1.5">
+               <Badge variant="secondary" className="text-[10px] gap-1 py-0.5 px-2">
+                 <MessageSquare className="h-3 w-3 opacity-70" />
+                 {isRu 
+                   ? `с контекстом ${currentRoundIndex} ${currentRoundIndex === 1 ? 'тура' : currentRoundIndex < 5 ? 'туров' : 'туров'}`
+                   : `with ${currentRoundIndex} round${currentRoundIndex !== 1 ? 's' : ''} context`}
+               </Badge>
+             </div>
+           )}
+           <div className="flex items-end gap-2">
             <Textarea
               value={followUpText}
               onChange={e => setFollowUpText(e.target.value)}
