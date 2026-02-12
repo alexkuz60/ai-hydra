@@ -53,8 +53,23 @@ export function ContestScoreboard({
 
   return (
     <div className="border-b-2 border-primary/30 bg-gradient-to-r from-primary/15 via-primary/8 to-accent/10 px-4 py-3">
-      <div className="flex gap-4">
-        {/* Column 1: header + phase + model badges */}
+      <div className="flex gap-0">
+        {/* Column A: Icon (below header level) */}
+        <div className="flex-shrink-0 w-14 flex flex-col">
+          {/* Spacer for header row height */}
+          <div className="h-7" />
+          {/* Phase icon centered vertically in remaining space */}
+          <div className="flex-1 flex items-center justify-center">
+            <div className="w-12 h-12 rounded-xl bg-background/60 border border-border/50 flex items-center justify-center shadow-sm">
+              {PHASE_ICONS[phase]}
+            </div>
+          </div>
+        </div>
+
+        {/* Vertical separator */}
+        <div className="flex-shrink-0 w-px bg-border/50 mx-2" />
+
+        {/* Column B: Header + messages + badges */}
         <div className="flex-1 min-w-0 flex flex-col gap-2">
           {/* Header row */}
           <div className="flex items-center justify-between">
@@ -105,65 +120,57 @@ export function ContestScoreboard({
             </div>
           </div>
 
-          {/* Phase area */}
-          <div className="flex items-center gap-3">
-            <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-background/60 border border-border/50 flex items-center justify-center shadow-sm">
-              {PHASE_ICONS[phase]}
-            </div>
-            <div className="flex-1 min-w-0 relative">
-              <div className="absolute left-0 top-0 bottom-0 w-px bg-border/60 z-10" />
-              <div className="overflow-hidden pl-2">
-                <AnimatePresence mode="wait">
-                  <motion.p
-                    key={`${phase}-${msgIndex}`}
-                    className="text-sm font-medium leading-snug"
-                    initial={{ opacity: 0, x: 40 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -40 }}
-                    transition={{ duration: 0.75, ease: [0.4, 0, 0.2, 1] }}
-                  >
-                    {currentMsg}
-                  </motion.p>
-                </AnimatePresence>
-              </div>
-              <div className="flex flex-wrap gap-1.5 mt-1.5">
-                {modelIds.map(modelId => {
-                  const entry = getModelRegistryEntry(modelId);
-                  const shortName = entry?.displayName || modelId.split('/').pop() || modelId;
-                  const result = results.find(r => r.model_id === modelId);
-                  const ProviderLogo = entry?.provider ? PROVIDER_LOGOS[entry.provider] : undefined;
-                  const color = entry?.provider ? PROVIDER_COLORS[entry.provider] : '';
-                  const isActive = modelId === activeModelId;
-                  const accent = entry?.provider ? PROVIDER_ACCENT[entry.provider] : undefined;
+          {/* Animated messages + model badges */}
+          <div className="overflow-hidden">
+            <AnimatePresence mode="wait">
+              <motion.p
+                key={`${phase}-${msgIndex}`}
+                className="text-sm font-medium leading-snug"
+                initial={{ opacity: 0, x: 40 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -40 }}
+                transition={{ duration: 0.75, ease: [0.4, 0, 0.2, 1] }}
+              >
+                {currentMsg}
+              </motion.p>
+            </AnimatePresence>
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {modelIds.map(modelId => {
+              const entry = getModelRegistryEntry(modelId);
+              const shortName = entry?.displayName || modelId.split('/').pop() || modelId;
+              const result = results.find(r => r.model_id === modelId);
+              const ProviderLogo = entry?.provider ? PROVIDER_LOGOS[entry.provider] : undefined;
+              const color = entry?.provider ? PROVIDER_COLORS[entry.provider] : '';
+              const isActive = modelId === activeModelId;
+              const accent = entry?.provider ? PROVIDER_ACCENT[entry.provider] : undefined;
 
-                  return (
-                    <div
-                      key={modelId}
-                      className={cn(
-                        "flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] border transition-all",
-                        isActive ? "font-semibold ring-1" : "bg-background/50 border-border/30"
-                      )}
-                      style={isActive ? {
-                        backgroundColor: accent ? `hsl(${accent} / 0.15)` : 'hsl(var(--primary) / 0.15)',
-                        borderColor: accent ? `hsl(${accent} / 0.5)` : 'hsl(var(--primary) / 0.5)',
-                        boxShadow: `0 0 0 1px ${accent ? `hsl(${accent} / 0.3)` : 'hsl(var(--primary) / 0.3)'}`,
-                      } : undefined}
-                    >
-                      {ProviderLogo && <ProviderLogo className={cn("h-2.5 w-2.5", color)} />}
-                      <span className="truncate max-w-[120px]">{shortName}</span>
-                      {result?.status === 'generating' && <Loader2 className="h-2.5 w-2.5 animate-spin text-primary" />}
-                      {result?.status === 'ready' && <CheckCircle2 className="h-2.5 w-2.5 text-[hsl(var(--hydra-success))]" />}
-                      {result?.status === 'judged' && <Trophy className="h-2.5 w-2.5 text-[hsl(var(--hydra-arbiter))]" />}
-                      {result?.status === 'failed' && <AlertCircle className="h-2.5 w-2.5 text-destructive" />}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
+              return (
+                <div
+                  key={modelId}
+                  className={cn(
+                    "flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] border transition-all",
+                    isActive ? "font-semibold ring-1" : "bg-background/50 border-border/30"
+                  )}
+                  style={isActive ? {
+                    backgroundColor: accent ? `hsl(${accent} / 0.15)` : 'hsl(var(--primary) / 0.15)',
+                    borderColor: accent ? `hsl(${accent} / 0.5)` : 'hsl(var(--primary) / 0.5)',
+                    boxShadow: `0 0 0 1px ${accent ? `hsl(${accent} / 0.3)` : 'hsl(var(--primary) / 0.3)'}`,
+                  } : undefined}
+                >
+                  {ProviderLogo && <ProviderLogo className={cn("h-2.5 w-2.5", color)} />}
+                  <span className="truncate max-w-[120px]">{shortName}</span>
+                  {result?.status === 'generating' && <Loader2 className="h-2.5 w-2.5 animate-spin text-primary" />}
+                  {result?.status === 'ready' && <CheckCircle2 className="h-2.5 w-2.5 text-[hsl(var(--hydra-success))]" />}
+                  {result?.status === 'judged' && <Trophy className="h-2.5 w-2.5 text-[hsl(var(--hydra-arbiter))]" />}
+                  {result?.status === 'failed' && <AlertCircle className="h-2.5 w-2.5 text-destructive" />}
+                </div>
+              );
+            })}
           </div>
         </div>
 
-        {/* Column 2: Podium — full height */}
+        {/* Column C: Podium — full height */}
         <div className="flex-shrink-0 w-20 flex items-end">
           <PodiumHistogram results={results} className="w-full h-full" />
         </div>
