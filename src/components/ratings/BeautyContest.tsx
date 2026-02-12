@@ -138,7 +138,7 @@ export function BeautyContest() {
           });
         }
 
-        // Insert responses sorted by model
+        // Insert responses sorted by model, each followed by arbiter summary
         const sorted = [...roundResults].sort((a, b) => a.model_id.localeCompare(b.model_id));
         for (const result of sorted) {
           messages.push({
@@ -159,6 +159,36 @@ export function BeautyContest() {
               rating: result.user_score != null ? result.user_score : 0,
             },
           });
+
+          // Insert arbiter evaluation as arbiter message right after the response
+          if (result.arbiter_score != null || result.arbiter_comment) {
+            const criteriaLines = result.criteria_scores
+              ? Object.entries(result.criteria_scores as Record<string, number>)
+                  .map(([k, v]) => `- **${k}**: ${v}/10`)
+                  .join('\n')
+              : '';
+            const arbiterContent = [
+              result.arbiter_comment || '',
+              criteriaLines ? `\n${criteriaLines}` : '',
+              result.arbiter_score != null ? `\n**⚖️ ${result.arbiter_score}/10**` : '',
+            ].filter(Boolean).join('\n');
+
+            messages.push({
+              session_id: taskId,
+              user_id: user.id,
+              role: 'arbiter',
+              content: arbiterContent,
+              model_name: result.arbiter_model || null,
+              metadata: {
+                source: 'contest',
+                contest_session_id: contest.session.id,
+                round_index: round.round_index,
+                arbiter_score: result.arbiter_score,
+                criteria_scores: result.criteria_scores,
+                evaluated_model: result.model_id,
+              },
+            });
+          }
         }
       }
 
