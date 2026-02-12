@@ -16,6 +16,7 @@ export interface DossierStats {
   firstUsedAt: string | null;
   lastUsedAt: string | null;
   critiqueSummary: string | null;
+  criteriaAverages: Record<string, number>;
 }
 
 
@@ -62,6 +63,7 @@ const EMPTY_STATS: DossierStats = {
   firstUsedAt: null,
   lastUsedAt: null,
   critiqueSummary: null,
+  criteriaAverages: {},
 };
 
 export function useModelDossier(modelId: string | null) {
@@ -102,6 +104,7 @@ export function useModelDossier(modelId: string | null) {
 
       // Aggregate stats
       const stats: DossierStats = { ...EMPTY_STATS };
+      const criteriaAccum: Record<string, { sum: number; count: number }> = {};
       if (statsRows && statsRows.length > 0) {
         let totalArbiterScore = 0;
         for (const row of statsRows) {
@@ -122,11 +125,24 @@ export function useModelDossier(modelId: string | null) {
           if ((row as any).critique_summary) {
             stats.critiqueSummary = (row as any).critique_summary;
           }
+          // Merge criteria_averages from each row
+          const rowCriteria = (row as any).criteria_averages as Record<string, { sum: number; count: number }> | null;
+          if (rowCriteria) {
+            for (const [key, val] of Object.entries(rowCriteria)) {
+              if (!criteriaAccum[key]) criteriaAccum[key] = { sum: 0, count: 0 };
+              criteriaAccum[key].sum += val.sum;
+              criteriaAccum[key].count += val.count;
+            }
+          }
         }
         stats.sessionsCount = statsRows.length;
         stats.arbiterAvgScore = stats.arbiterEvalCount > 0 
           ? totalArbiterScore / stats.arbiterEvalCount 
           : 0;
+        // Compute final averages per criterion
+        for (const [key, val] of Object.entries(criteriaAccum)) {
+          stats.criteriaAverages[key] = val.count > 0 ? val.sum / val.count : 0;
+        }
       }
 
       // Role distribution from model_statistics (role_used)

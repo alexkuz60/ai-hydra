@@ -2,6 +2,8 @@ import { useCallback, useRef, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useAuth } from '@/contexts/AuthContext';
+import { useModelStatistics } from '@/hooks/useModelStatistics';
 import type { ContestResult, ContestRound, ContestSession } from './useContestSession';
 
 interface ExecutionState {
@@ -20,6 +22,8 @@ export function useContestExecution() {
   const { toast } = useToast();
   const { language } = useLanguage();
   const isRu = language === 'ru';
+  const { user } = useAuth();
+  const { updateCriteriaAverages } = useModelStatistics(user?.id);
   const [state, setState] = useState<ExecutionState>({ running: false, streamingTexts: {}, arbiterRunning: false });
   const abortRef = useRef<AbortController | null>(null);
 
@@ -105,6 +109,15 @@ export function useContestExecution() {
               token_count: originalResult.token_count,
             } : {}),
           } as any);
+
+          // Aggregate criteria scores into model_statistics
+          if (eval_.criteria_scores && originalResult) {
+            await updateCriteriaAverages(
+              originalResult.model_id,
+              session.id,
+              eval_.criteria_scores,
+            );
+          }
         }
       }
 
