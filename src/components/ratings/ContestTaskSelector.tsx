@@ -11,6 +11,7 @@ import { PROVIDER_LOGOS, PROVIDER_COLORS } from '@/components/ui/ProviderLogos';
 import { cn } from '@/lib/utils';
 import { getModelRegistryEntry, type ModelRegistryEntry } from '@/config/modelRegistry';
 import { useTaskFiles } from '@/hooks/useTaskFiles';
+import { useContestConfig } from '@/hooks/useContestConfig';
 
 export type ContestMode = 'contest' | 'interview';
 
@@ -25,13 +26,8 @@ interface ContestModel {
   role: string;
 }
 
-function getContestModels(): ContestModel[] {
-  try {
-    const stored = localStorage.getItem('hydra-contest-models');
-    if (!stored) return [];
-    const obj = JSON.parse(stored) as Record<string, string>;
-    return Object.entries(obj).map(([modelId, role]) => ({ modelId, role }));
-  } catch { return []; }
+function getContestModels(models: Record<string, string>): ContestModel[] {
+  return Object.entries(models).map(([modelId, role]) => ({ modelId, role }));
 }
 
 function getRegistryEntry(modelId: string): ModelRegistryEntry | undefined {
@@ -82,21 +78,9 @@ export function ContestTaskSelector() {
   const { language } = useLanguage();
   const { user } = useAuth();
   const isRu = language === 'ru';
+  const { taskId, mode, updateTaskId, updateMode, models } = useContestConfig();
 
   const [sessions, setSessions] = useState<Session[]>([]);
-  const [selectedTaskId, setSelectedTaskId] = useState<string>(() => {
-    try { return localStorage.getItem('hydra-contest-task-id') || ''; } catch { return ''; }
-  });
-  const [contestModels, setContestModels] = useState<ContestModel[]>(getContestModels);
-  const [contestMode, setContestMode] = useState<ContestMode>(() => {
-    try { return (localStorage.getItem('hydra-contest-mode') as ContestMode) || 'contest'; } catch { return 'contest'; }
-  });
-
-  // Persist mode
-  useEffect(() => {
-    try { localStorage.setItem('hydra-contest-mode', contestMode); } catch {}
-    window.dispatchEvent(new Event('contest-config-changed'));
-  }, [contestMode]);
 
   // Load sessions
   useEffect(() => {
@@ -109,24 +93,8 @@ export function ContestTaskSelector() {
       .then(({ data }) => { if (data) setSessions(data); });
   }, [user]);
 
-  // Persist selected task
-  useEffect(() => {
-    try {
-      localStorage.setItem('hydra-contest-task-id', selectedTaskId);
-      const session = sessions.find(s => s.id === selectedTaskId);
-      localStorage.setItem('hydra-contest-task-title', session?.title || '');
-    } catch {}
-    window.dispatchEvent(new Event('contest-config-changed'));
-  }, [selectedTaskId, sessions]);
-
-  // Sync contest models from localStorage
-  useEffect(() => {
-    const handler = () => setContestModels(getContestModels());
-    window.addEventListener('storage', handler);
-    return () => window.removeEventListener('storage', handler);
-  }, []);
-
-  const selectedSession = sessions.find(s => s.id === selectedTaskId);
+  const selectedSession = sessions.find(s => s.id === taskId);
+  const contestModels = getContestModels(models);
 
   const ROLE_LABELS: Record<string, { ru: string; en: string }> = {
     assistant: { ru: 'Эксперт', en: 'Expert' },
@@ -158,28 +126,28 @@ export function ContestTaskSelector() {
           <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
             {isRu ? 'Режим' : 'Mode'}
           </label>
-          <div className="flex gap-2">
-            <Button
-              variant={contestMode === 'contest' ? 'default' : 'outline'}
-              size="sm"
-              className="flex-1 gap-2 h-9"
-              onClick={() => setContestMode('contest')}
-            >
-              <Trophy className="h-3.5 w-3.5" />
-              {isRu ? 'Конкурс' : 'Contest'}
-            </Button>
-            <Button
-              variant={contestMode === 'interview' ? 'default' : 'outline'}
-              size="sm"
-              className="flex-1 gap-2 h-9"
-              onClick={() => setContestMode('interview')}
-            >
-              <UserCheck className="h-3.5 w-3.5" />
-              {isRu ? 'Собеседование' : 'Interview'}
-            </Button>
-          </div>
-          <p className="text-[10px] text-muted-foreground/60">
-            {contestMode === 'contest'
+           <div className="flex gap-2">
+             <Button
+               variant={mode === 'contest' ? 'default' : 'outline'}
+               size="sm"
+               className="flex-1 gap-2 h-9"
+               onClick={() => updateMode('contest')}
+             >
+               <Trophy className="h-3.5 w-3.5" />
+               {isRu ? 'Конкурс' : 'Contest'}
+             </Button>
+             <Button
+               variant={mode === 'interview' ? 'default' : 'outline'}
+               size="sm"
+               className="flex-1 gap-2 h-9"
+               onClick={() => updateMode('interview')}
+             >
+               <UserCheck className="h-3.5 w-3.5" />
+               {isRu ? 'Собеседование' : 'Interview'}
+             </Button>
+           </div>
+           <p className="text-[10px] text-muted-foreground/60">
+             {mode === 'contest'
               ? (isRu ? 'Отбор моделей для ролей Панели экспертов (Эксперт, Критик, Консультант...)' : 'Select models for Expert Panel roles (Expert, Critic, Consultant...)')
               : (isRu ? 'Отбор моделей для ролей техперсонала (Модератор, Архивариус, Аналитик...)' : 'Select models for technical staff roles (Moderator, Archivist, Analyst...)')
             }
@@ -191,10 +159,10 @@ export function ContestTaskSelector() {
           <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
             {isRu ? 'Задача' : 'Task'}
           </label>
-          <Select value={selectedTaskId} onValueChange={setSelectedTaskId}>
-            <SelectTrigger className="h-9">
-              <SelectValue placeholder={isRu ? 'Выберите задачу...' : 'Select a task...'} />
-            </SelectTrigger>
+           <Select value={taskId || ''} onValueChange={updateTaskId}>
+             <SelectTrigger className="h-9">
+               <SelectValue placeholder={isRu ? 'Выберите задачу...' : 'Select a task...'} />
+             </SelectTrigger>
             <SelectContent>
               {sessions.map(s => (
                 <SelectItem key={s.id} value={s.id}>
@@ -213,8 +181,8 @@ export function ContestTaskSelector() {
           )}
         </div>
 
-        {/* Files */}
-        <TaskFilesDisplay sessionId={selectedTaskId || null} isRu={isRu} />
+         {/* Files */}
+         <TaskFilesDisplay sessionId={taskId || null} isRu={isRu} />
 
         {/* Participants */}
         <div className="space-y-2">

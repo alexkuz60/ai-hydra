@@ -1,11 +1,23 @@
 import { useState, useEffect, useCallback } from 'react';
 
 export interface ArbitrationConfig {
-  juryMode: string;
+  juryMode: 'user' | 'arbiter' | 'both';
   criteria: string[];
   criteriaWeights: Record<string, number>;
   userWeight: number;
-  scoringScheme: string;
+  scoringScheme: 'weighted-avg' | 'tournament' | 'elo';
+}
+
+export interface RoundConfig {
+  type: 'free' | 'role';
+  prompt: string;
+  criteria: string[];
+}
+
+export interface ContestRules {
+  roundCount: number;
+  rounds: RoundConfig[];
+  elimination: string;
 }
 
 export interface SavedPlan {
@@ -18,7 +30,7 @@ export interface SavedPlan {
 
 export interface ContestConfigData {
   models: Record<string, string>;
-  rules: { roundCount: number; rounds?: Array<{ prompt: string }> } | null;
+  rules: ContestRules | null;
   taskId: string | null;
   taskTitle: string | null;
   mode: string;

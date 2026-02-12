@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { HydraCard, HydraCardHeader, HydraCardTitle, HydraCardContent } from '@/components/ui/hydra-card';
 import { Badge } from '@/components/ui/badge';
@@ -9,19 +9,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Settings2, ListOrdered } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
-
-const STORAGE_KEY = 'hydra-contest-rules';
+import { useContestConfig } from '@/hooks/useContestConfig';
 
 interface RoundConfig {
   type: 'free' | 'role';
   prompt: string;
   criteria: string[];
-}
-
-interface ContestRules {
-  roundCount: number;
-  rounds: RoundConfig[];
-  elimination: string;
 }
 
 const CRITERIA_OPTIONS = [
@@ -43,49 +36,43 @@ function defaultRound(): RoundConfig {
   return { type: 'free', prompt: '', criteria: ['accuracy', 'completeness'] };
 }
 
-function loadRules(): ContestRules {
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) return JSON.parse(stored);
-  } catch {}
-  return { roundCount: 1, rounds: [defaultRound()], elimination: 'all-pass' };
-}
-
 export function ContestRulesEditor() {
   const { language } = useLanguage();
   const isRu = language === 'ru';
-  const [rules, setRules] = useState<ContestRules>(loadRules);
-
-  useEffect(() => {
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(rules)); } catch {}
-    window.dispatchEvent(new Event('contest-config-changed'));
-  }, [rules]);
+  const { rules, updateRules } = useContestConfig();
+  
+  const defaultRules = { roundCount: 1, rounds: [defaultRound()], elimination: 'all-pass' };
+  const [localRules, setLocalRules] = useState(rules || defaultRules);
 
   const setRoundCount = (count: number) => {
-    setRules(prev => {
-      const rounds = [...prev.rounds];
-      while (rounds.length < count) rounds.push(defaultRound());
-      return { ...prev, roundCount: count, rounds: rounds.slice(0, count) };
-    });
+    const updated = { ...localRules };
+    const rounds = [...updated.rounds];
+    while (rounds.length < count) rounds.push(defaultRound());
+    updated.roundCount = count;
+    updated.rounds = rounds.slice(0, count);
+    setLocalRules(updated);
+    updateRules(updated);
   };
 
   const updateRound = (idx: number, patch: Partial<RoundConfig>) => {
-    setRules(prev => {
-      const rounds = [...prev.rounds];
-      rounds[idx] = { ...rounds[idx], ...patch };
-      return { ...prev, rounds };
-    });
+    const updated = { ...localRules };
+    const rounds = [...updated.rounds];
+    rounds[idx] = { ...rounds[idx], ...patch };
+    updated.rounds = rounds;
+    setLocalRules(updated);
+    updateRules(updated);
   };
 
   const toggleCriterion = (roundIdx: number, criterionId: string) => {
-    setRules(prev => {
-      const rounds = [...prev.rounds];
-      const criteria = [...rounds[roundIdx].criteria];
-      const idx = criteria.indexOf(criterionId);
-      if (idx >= 0) criteria.splice(idx, 1); else criteria.push(criterionId);
-      rounds[roundIdx] = { ...rounds[roundIdx], criteria };
-      return { ...prev, rounds };
-    });
+    const updated = { ...localRules };
+    const rounds = [...updated.rounds];
+    const criteria = [...rounds[roundIdx].criteria];
+    const idx = criteria.indexOf(criterionId);
+    if (idx >= 0) criteria.splice(idx, 1); else criteria.push(criterionId);
+    rounds[roundIdx] = { ...rounds[roundIdx], criteria };
+    updated.rounds = rounds;
+    setLocalRules(updated);
+    updateRules(updated);
   };
 
   return (
@@ -113,7 +100,7 @@ export function ContestRulesEditor() {
             {[1, 2, 3].map(n => (
               <Button
                 key={n}
-                variant={rules.roundCount === n ? 'default' : 'outline'}
+                variant={localRules.roundCount === n ? 'default' : 'outline'}
                 size="sm"
                 className="w-10 h-8"
                 onClick={() => setRoundCount(n)}
@@ -125,7 +112,7 @@ export function ContestRulesEditor() {
         </div>
 
         {/* Each round */}
-        {rules.rounds.slice(0, rules.roundCount).map((round, idx) => (
+         {localRules.rounds.slice(0, localRules.roundCount).map((round, idx) => (
           <div key={idx} className="space-y-3">
             {idx > 0 && <Separator className="opacity-30" />}
             <div className="flex items-center gap-2">
@@ -191,7 +178,7 @@ export function ContestRulesEditor() {
         ))}
 
         {/* Elimination rule */}
-        {rules.roundCount > 1 && (
+         {localRules.roundCount > 1 && (
           <>
             <Separator className="opacity-30" />
             <div className="space-y-1.5">
@@ -199,8 +186,12 @@ export function ContestRulesEditor() {
                 {isRu ? 'Правило прохождения' : 'Elimination Rule'}
               </label>
               <Select
-                value={rules.elimination}
-                onValueChange={v => setRules(prev => ({ ...prev, elimination: v }))}
+                value={localRules.elimination}
+                onValueChange={v => {
+                  const updated = { ...localRules, elimination: v };
+                  setLocalRules(updated);
+                  updateRules(updated);
+                }}
               >
                 <SelectTrigger className="h-8 text-xs">
                   <SelectValue />
