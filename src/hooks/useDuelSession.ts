@@ -267,7 +267,7 @@ export function useDuelSession() {
     ].join('\n');
   }, []);
 
-  // Realtime subscription
+  // Realtime subscription for results
   useEffect(() => {
     if (!session) return;
     const channel = supabase
@@ -284,6 +284,12 @@ export function useDuelSession() {
         } else if (payload.eventType === 'UPDATE') {
           setResults(prev => prev.map(r => r.id === (payload.new as ContestResult).id ? { ...r, ...(payload.new as ContestResult) } : r));
         }
+      })
+      .on('postgres_changes', {
+        event: 'UPDATE', schema: 'public', table: 'contest_rounds',
+        filter: `session_id=eq.${session.id}`,
+      }, (payload) => {
+        setRounds(prev => prev.map(r => r.id === (payload.new as ContestRound).id ? { ...r, ...(payload.new as ContestRound) } : r));
       })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
