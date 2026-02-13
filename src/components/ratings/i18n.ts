@@ -206,6 +206,11 @@ export const RATINGS_I18N = {
   duelUserEvalEnabled: { ru: 'Пользовательская оценка', en: 'User Evaluation' },
   duelYes: { ru: 'Да', en: 'Yes' },
   duelNo: { ru: 'Нет', en: 'No' },
+  duelLaunchButton: { ru: 'К барьеру!', en: 'En Garde!' },
+  duelSavedFlow: { ru: 'Сохранённый поток', en: 'Saved Flow' },
+  duelOpenInEditor: { ru: 'Открыть в редакторе', en: 'Open in Editor' },
+  duelNodes: { ru: 'Узлов', en: 'Nodes' },
+  duelEdges: { ru: 'Связей', en: 'Edges' },
 } as const;
 
 export type RatingsI18nKey = keyof typeof RATINGS_I18N;
