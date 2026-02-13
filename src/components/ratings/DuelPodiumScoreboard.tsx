@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Swords, Play, Loader2, CheckCircle2, AlertCircle, Trophy, Scale, Square, PlusCircle, Pause, RotateCcw, Flag } from 'lucide-react';
+import { Swords, Play, Loader2, CheckCircle2, AlertCircle, Trophy, Scale, Square, PlusCircle, Pause, RotateCcw, Flag, Crown } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -9,6 +9,7 @@ import { PROVIDER_LOGOS, PROVIDER_COLORS } from '@/components/ui/ProviderLogos';
 import { getRatingsText } from './i18n';
 import { detectDuelPhase, DUEL_PHASE_MESSAGES_RU, DUEL_PHASE_MESSAGES_EN, DUEL_PHASE_ICONS } from './duelPhases';
 import { PROVIDER_ACCENT } from './contestPhases';
+import { DuelConfetti } from './DuelConfetti';
 import type { ContestSession, ContestRound, ContestResult } from '@/hooks/useContestSession';
 
 const TournamentIcon = ({ className = '' }: { className?: string }) => (
@@ -50,6 +51,13 @@ export function DuelPodiumScoreboard({
   const { phase, activeModelId } = detectDuelPhase(results, session.status, modelA, modelB);
   const [msgIndex, setMsgIndex] = useState(0);
 
+  const isCompleted = session.status === 'completed';
+  const winnerId = isCompleted
+    ? winsA > winsB ? modelA : winsB > winsA ? modelB : null
+    : null;
+  const winnerName = winnerId === modelA ? nameA : winnerId === modelB ? nameB : null;
+  const isDraw = isCompleted && winsA === winsB;
+
   useEffect(() => {
     const msgs = isRu ? DUEL_PHASE_MESSAGES_RU[phase] : DUEL_PHASE_MESSAGES_EN[phase];
     if (msgs.length <= 1) { setMsgIndex(0); return; }
@@ -67,7 +75,7 @@ export function DuelPodiumScoreboard({
     .replace(/\{modelB\}/g, nameB)
     .replace(/\{model\}/g, activeDisplayName);
 
-  const statusBadge = session.status === 'completed'
+  const statusBadge = isCompleted
     ? getRatingsText('done', isRu)
     : executing || arbiterRunning
       ? getRatingsText('live', isRu)
@@ -88,13 +96,67 @@ export function DuelPodiumScoreboard({
   ];
 
   return (
-    <div className="border-b-2 border-primary/30 bg-gradient-to-r from-primary/15 via-primary/8 to-accent/10 px-3 py-3">
+    <div className={cn(
+      "border-b-2 px-3 py-3 relative overflow-hidden transition-all duration-500",
+      isCompleted && !isDraw
+        ? "border-[hsl(45_100%_50%/0.5)] bg-gradient-to-r from-[hsl(45_100%_50%/0.12)] via-[hsl(var(--hydra-arbiter)/0.08)] to-[hsl(45_100%_50%/0.06)]"
+        : isCompleted && isDraw
+          ? "border-primary/40 bg-gradient-to-r from-primary/12 via-primary/6 to-accent/8"
+          : "border-primary/30 bg-gradient-to-r from-primary/15 via-primary/8 to-accent/10"
+    )}>
+      {/* Confetti overlay */}
+      <DuelConfetti show={isCompleted} />
+
+      {/* Victory banner */}
+      <AnimatePresence>
+        {isCompleted && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
+            className="mb-2"
+          >
+            <div className={cn(
+              "flex items-center justify-center gap-2 py-1.5 px-3 rounded-lg text-xs font-bold",
+              winnerId
+                ? "bg-[hsl(45_100%_50%/0.15)] border border-[hsl(45_100%_50%/0.3)] text-[hsl(45_80%_55%)]"
+                : "bg-primary/10 border border-primary/30 text-primary"
+            )}>
+              {winnerId ? (
+                <>
+                  <Crown className="h-4 w-4 text-[hsl(45_80%_55%)]" />
+                  <span>{isRu ? `Победитель: ${winnerName}` : `Winner: ${winnerName}`}</span>
+                  <span className="text-muted-foreground font-normal ml-1">
+                    ({winsA}:{winsB}{draws > 0 ? `, ${isRu ? 'ничьих' : 'draws'}: ${draws}` : ''})
+                  </span>
+                  <Crown className="h-4 w-4 text-[hsl(45_80%_55%)]" />
+                </>
+              ) : (
+                <>
+                  <Swords className="h-4 w-4" />
+                  <span>{isRu ? 'Ничья!' : 'Draw!'}</span>
+                  <span className="text-muted-foreground font-normal ml-1">
+                    ({winsA}:{winsB}, {isRu ? 'ничьих' : 'draws'}: {draws})
+                  </span>
+                </>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <div className="flex gap-0">
         {/* Column A: Phase icon */}
         <div className="flex-shrink-0 w-14 flex flex-col">
           <div className="h-7" />
           <div className="flex-1 flex items-center justify-center">
-            <div className="w-12 h-12 rounded-xl bg-background/60 border border-border/50 flex items-center justify-center shadow-sm">
+            <div className={cn(
+              "w-12 h-12 rounded-xl bg-background/60 border flex items-center justify-center shadow-sm transition-all duration-500",
+              isCompleted && winnerId
+                ? "border-[hsl(45_100%_50%/0.4)] shadow-[0_0_12px_hsl(45_100%_50%/0.2)]"
+                : "border-border/50"
+            )}>
               {DUEL_PHASE_ICONS[phase]}
             </div>
           </div>
@@ -128,7 +190,7 @@ export function DuelPodiumScoreboard({
               >
                 {statusBadge}
               </Badge>
-              {session.status !== 'completed' && (
+              {!isCompleted && (
                 <Button
                   size="sm" variant="outline"
                   className="h-6 text-[10px] gap-1 px-2"
@@ -138,7 +200,7 @@ export function DuelPodiumScoreboard({
                   {paused ? (isRu ? 'Продолжить' : 'Resume') : (isRu ? 'Пауза' : 'Pause')}
                 </Button>
               )}
-              {session.status !== 'completed' && (
+              {!isCompleted && (
                 <Button
                   size="sm" variant="outline"
                   className="h-6 text-[10px] gap-1 px-2 border-destructive/40 hover:bg-destructive/10 text-destructive"
@@ -171,27 +233,33 @@ export function DuelPodiumScoreboard({
             </AnimatePresence>
           </div>
 
-          {/* Duelist badges with status */}
+          {/* Duelist badges with status + crown for winner */}
           <div className="flex flex-wrap gap-1.5">
             {duelists.map(({ id, name, Logo, entry, isActive }) => {
               const ProviderLogo = Logo;
               const color = entry?.provider ? PROVIDER_COLORS[entry.provider] : '';
               const accent = entry?.provider ? PROVIDER_ACCENT[entry.provider] : undefined;
               const latestResult = results.filter(r => r.model_id === id).slice(-1)[0];
+              const isWinner = winnerId === id;
 
               return (
                 <div
                   key={id}
                   className={cn(
                     "flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] border transition-all",
-                    isActive ? "font-semibold ring-1" : "bg-background/50 border-border/30"
+                    isWinner
+                      ? "font-bold ring-1 border-[hsl(45_100%_50%/0.5)] bg-[hsl(45_100%_50%/0.12)]"
+                      : isActive ? "font-semibold ring-1" : "bg-background/50 border-border/30"
                   )}
-                  style={isActive ? {
+                  style={isWinner ? {
+                    boxShadow: '0 0 8px hsl(45 100% 50% / 0.25)',
+                  } : isActive ? {
                     backgroundColor: accent ? `hsl(${accent} / 0.15)` : 'hsl(var(--primary) / 0.15)',
                     borderColor: accent ? `hsl(${accent} / 0.5)` : 'hsl(var(--primary) / 0.5)',
                     boxShadow: `0 0 0 1px ${accent ? `hsl(${accent} / 0.3)` : 'hsl(var(--primary) / 0.3)'}`,
                   } : undefined}
                 >
+                  {isWinner && <Crown className="h-3 w-3 text-[hsl(45_80%_55%)]" />}
                   {ProviderLogo && <ProviderLogo className={cn("h-2.5 w-2.5", color)} />}
                   <span className="truncate max-w-[120px]">{name}</span>
                   {latestResult?.status === 'generating' && <Loader2 className="h-2.5 w-2.5 animate-spin text-primary" />}
@@ -210,6 +278,11 @@ export function DuelPodiumScoreboard({
         <div className="flex-shrink-0 w-24 flex items-end justify-center gap-[6px] py-1">
           {/* Model A bar */}
           <div className="flex flex-col items-center gap-0.5" style={{ height: '100%', justifyContent: 'flex-end' }}>
+            {winnerId === modelA && (
+              <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.3, type: 'spring' }}>
+                <Crown className="h-3 w-3 text-[hsl(45_80%_55%)]" />
+              </motion.div>
+            )}
             <span className="text-[8px] font-bold text-muted-foreground truncate max-w-[40px]">
               {nameA.slice(0, 6)}
             </span>
@@ -232,6 +305,11 @@ export function DuelPodiumScoreboard({
           )}
           {/* Model B bar */}
           <div className="flex flex-col items-center gap-0.5" style={{ height: '100%', justifyContent: 'flex-end' }}>
+            {winnerId === modelB && (
+              <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.3, type: 'spring' }}>
+                <Crown className="h-3 w-3 text-[hsl(45_80%_55%)]" />
+              </motion.div>
+            )}
             <span className="text-[8px] font-bold text-muted-foreground truncate max-w-[40px]">
               {nameB.slice(0, 6)}
             </span>
