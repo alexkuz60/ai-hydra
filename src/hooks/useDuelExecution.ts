@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { streamWithTimeout } from '@/lib/streamWithTimeout';
 import type { ContestSession, ContestRound, ContestResult } from './useContestSession';
 import type { DuelConfigData } from './useDuelConfig';
 
@@ -164,78 +165,41 @@ export function useDuelExecution() {
         const { data: { session: authSession } } = await supabase.auth.getSession();
         const authToken = authSession?.access_token;
 
-        const response = await fetch(`${supabaseUrl}/functions/v1/hydra-stream`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${authToken || supabaseKey}`,
-            'apikey': supabaseKey,
-          },
-          body: JSON.stringify({
+        const streamResult = await streamWithTimeout({
+          url: `${supabaseUrl}/functions/v1/hydra-stream`,
+          body: {
             message: prompt,
             model_id: modelId,
             role: 'assistant',
             system_prompt: systemPrompt,
             temperature: 0.7,
             max_tokens: 4096,
-          }),
+          },
+          authToken: authToken || null,
+          apiKey: supabaseKey,
           signal: abortController.signal,
+          onToken: (accumulated) => {
+            setState(prev => ({
+              ...prev,
+              streamingTexts: { ...prev.streamingTexts, [modelId]: accumulated },
+            }));
+          },
         });
 
-        if (!response.ok) {
-          const errText = await response.text();
-          throw new Error(`${response.status}: ${errText}`);
-        }
-
-        const reader = response.body!.getReader();
-        const decoder = new TextDecoder();
-        let accumulated = '';
-        let buffer = '';
-        let tokenCount = 0;
-
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          buffer += decoder.decode(value, { stream: true });
-
-          let newlineIdx: number;
-          while ((newlineIdx = buffer.indexOf('\n')) !== -1) {
-            let line = buffer.slice(0, newlineIdx);
-            buffer = buffer.slice(newlineIdx + 1);
-            if (line.endsWith('\r')) line = line.slice(0, -1);
-            if (line.startsWith(':') || line.trim() === '' || line.startsWith('event:')) continue;
-            if (!line.startsWith('data: ')) continue;
-            const jsonStr = line.slice(6).trim();
-            if (jsonStr === '[DONE]') break;
-            try {
-              const parsed = JSON.parse(jsonStr);
-              const content = parsed.choices?.[0]?.delta?.content as string | undefined;
-              if (content) {
-                accumulated += content;
-                tokenCount++;
-                setState(prev => ({
-                  ...prev,
-                  streamingTexts: { ...prev.streamingTexts, [modelId]: accumulated },
-                }));
-              }
-            } catch { /* skip partial JSON */ }
-          }
-        }
-
-        const elapsed = Date.now() - startTime;
         await updateResult(result.id, {
-          response_text: accumulated,
-          response_time_ms: elapsed,
-          token_count: tokenCount,
+          response_text: streamResult.text,
+          response_time_ms: streamResult.elapsedMs,
+          token_count: streamResult.tokenCount,
           status: 'ready',
         } as any);
 
-        completedResults.push({ ...result, response_text: accumulated, response_time_ms: elapsed, token_count: tokenCount, status: 'ready' as const });
+        completedResults.push({ ...result, response_text: streamResult.text, response_time_ms: streamResult.elapsedMs, token_count: streamResult.tokenCount, status: 'ready' as const });
 
       } catch (err: any) {
         if (err.name === 'AbortError') return;
         console.error(`[duel-exec] ${modelId} failed:`, err);
-        await updateResult(result.id, { status: 'failed', metadata: { error: err.message } as any } as any);
+        const isTimeout = err.message?.includes('Empty response') || err.message?.includes('aborted');
+        await updateResult(result.id, { status: 'failed', metadata: { error: isTimeout ? `Timeout: ${err.message}` : err.message } as any } as any);
       }
     }
 

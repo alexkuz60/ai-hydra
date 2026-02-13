@@ -4,6 +4,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useModelStatistics } from '@/hooks/useModelStatistics';
+import { streamWithTimeout } from '@/lib/streamWithTimeout';
 import type { ContestResult, ContestRound, ContestSession } from './useContestSession';
 
 interface ExecutionState {
@@ -226,22 +227,13 @@ export function useContestExecution() {
       try {
         const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
         const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-
-        // Get auth token for the edge function
         const { data: { session: authSession } } = await supabase.auth.getSession();
         const authToken = authSession?.access_token;
-
-        // Build messages with history for follow-up rounds
         const conversationHistory = buildHistory(modelId);
 
-        const response = await fetch(`${supabaseUrl}/functions/v1/hydra-stream`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${authToken || supabaseKey}`,
-            'apikey': supabaseKey,
-          },
-          body: JSON.stringify({
+        const streamResult = await streamWithTimeout({
+          url: `${supabaseUrl}/functions/v1/hydra-stream`,
+          body: {
             message: prompt,
             model_id: modelId,
             role: 'assistant',
@@ -249,76 +241,30 @@ export function useContestExecution() {
             temperature: 0.7,
             max_tokens: 8192,
             ...(conversationHistory.length > 0 ? { history: conversationHistory } : {}),
-          }),
+          },
+          authToken: authToken || null,
+          apiKey: supabaseKey,
           signal: abortController.signal,
+          onToken: (accumulated) => {
+            setState(prev => ({
+              ...prev,
+              streamingTexts: { ...prev.streamingTexts, [modelId]: accumulated },
+            }));
+          },
         });
-
-        if (!response.ok) {
-          const errText = await response.text();
-          throw new Error(`${response.status}: ${errText}`);
-        }
-
-        // Read SSE stream
-        const reader = response.body!.getReader();
-        const decoder = new TextDecoder();
-        let accumulated = '';
-        let buffer = '';
-        let tokenCount = 0;
-
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-
-          buffer += decoder.decode(value, { stream: true });
-
-          let newlineIdx: number;
-          while ((newlineIdx = buffer.indexOf('\n')) !== -1) {
-            let line = buffer.slice(0, newlineIdx);
-            buffer = buffer.slice(newlineIdx + 1);
-
-            if (line.endsWith('\r')) line = line.slice(0, -1);
-            if (line.startsWith(':') || line.trim() === '') continue;
-
-            // Skip provider metadata events
-            if (line.startsWith('event:')) continue;
-
-            if (!line.startsWith('data: ')) continue;
-            const jsonStr = line.slice(6).trim();
-            if (jsonStr === '[DONE]') break;
-
-            try {
-              const parsed = JSON.parse(jsonStr);
-              const content = parsed.choices?.[0]?.delta?.content as string | undefined;
-              if (content) {
-                accumulated += content;
-                tokenCount++;
-                // Update streaming preview
-                setState(prev => ({
-                  ...prev,
-                  streamingTexts: { ...prev.streamingTexts, [modelId]: accumulated },
-                }));
-              }
-            } catch {
-              // partial JSON, skip
-            }
-          }
-        }
-
-        const elapsed = Date.now() - startTime;
 
         const updatedResult = {
           ...result,
-          response_text: accumulated,
-          response_time_ms: elapsed,
-          token_count: tokenCount,
+          response_text: streamResult.text,
+          response_time_ms: streamResult.elapsedMs,
+          token_count: streamResult.tokenCount,
           status: 'ready' as const,
         };
 
-        // Write final result
         await updateResult(result.id, {
-          response_text: accumulated,
-          response_time_ms: elapsed,
-          token_count: tokenCount,
+          response_text: streamResult.text,
+          response_time_ms: streamResult.elapsedMs,
+          token_count: streamResult.tokenCount,
           status: 'ready',
         } as any);
 
@@ -327,9 +273,10 @@ export function useContestExecution() {
       } catch (err: any) {
         if (err.name === 'AbortError') return;
         console.error(`[contest-exec] ${modelId} failed:`, err);
+        const isTimeout = err.message?.includes('Empty response') || err.message?.includes('aborted');
         await updateResult(result.id, {
           status: 'failed',
-          metadata: { error: err.message } as any,
+          metadata: { error: isTimeout ? `Timeout: ${err.message}` : err.message } as any,
         } as any);
       }
     });
