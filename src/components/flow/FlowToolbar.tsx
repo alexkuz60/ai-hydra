@@ -49,6 +49,7 @@ import {
 import { FlowDiagram, FlowNodeData } from '@/types/flow';
 import { EdgeStyleSettings } from '@/types/edgeTypes';
 import { EdgeStyleSelector } from './EdgeStyleSelector';
+import { CloudSyncIndicator } from '@/components/ui/CloudSyncIndicator';
 import { DiagramHistoryDialog } from './DiagramHistoryDialog';
 import { CONTEST_FLOW_TEMPLATES } from '@/lib/contestFlowTemplates';
 import { Swords } from 'lucide-react';
@@ -473,6 +474,7 @@ export function FlowToolbar({
         syncLoaded={edgeSettingsLoaded}
       />
       </span>
+      <CloudSyncIndicator loaded={edgeSettingsLoaded} className="text-xs" />
     </div>
   );
 }
