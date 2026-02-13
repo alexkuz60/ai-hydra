@@ -2,14 +2,11 @@ import React, { useMemo, useState } from 'react';
 import { getRatingsText } from './i18n';
 import { getModelRegistryEntry } from '@/config/modelRegistry';
 import { PROVIDER_LOGOS } from '@/components/ui/ProviderLogos';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { cn } from '@/lib/utils';
-import { Swords, RotateCcw, Flag, Pause, Play, MessageSquare, BarChart3, Scale, PlusCircle } from 'lucide-react';
+import { Swords, MessageSquare, BarChart3, Scale, PlusCircle } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
-import { DuelScoreboard } from './DuelScoreboard';
+import { DuelPodiumScoreboard } from './DuelPodiumScoreboard';
 import { DuelResponsesPanel } from './DuelResponsesPanel';
 import { ContestArbiterPanel } from './ContestArbiterPanel';
 import { DuelScoresPanel } from './DuelScoresPanel';
@@ -81,49 +78,37 @@ export function DuelBattleView({
 
   return (
     <div className="h-full flex flex-col">
-      {/* Scoreboard header */}
-      <DuelScoreboard
-        nameA={nameA} nameB={nameB} LogoA={LogoA} LogoB={LogoB}
+      {/* Podium scoreboard — replaces old banner + scoreboard */}
+      <DuelPodiumScoreboard
+        session={session}
+        rounds={rounds}
+        results={results}
+        modelA={modelA} modelB={modelB}
+        nameA={nameA} nameB={nameB}
+        LogoA={LogoA} LogoB={LogoB}
         winsA={roundWins.winsA} winsB={roundWins.winsB} draws={roundWins.draws}
         currentRound={completedRounds} totalRounds={totalRounds}
-        status={session.status} executing={executing} arbiterRunning={arbiterRunning} isRu={isRu}
+        executing={executing} arbiterRunning={arbiterRunning}
+        paused={paused} isRu={isRu}
+        onNewDuel={onNewDuel}
+        onFinishDuel={() => setFinishDialogOpen(true)}
+        onTogglePause={onTogglePause}
       />
 
-      {/* Action buttons */}
-      <div className="px-3 py-1.5 border-b border-border/30 flex items-center gap-2 justify-between">
-        <div className="flex items-center gap-2">
-          {session.status !== 'completed' && (
-            <Button variant={paused ? 'default' : 'outline'} size="sm" className="h-7 text-xs gap-1" onClick={onTogglePause}>
-              {paused ? <Play className="h-3 w-3" /> : <Pause className="h-3 w-3" />}
-              {paused ? (isRu ? 'Продолжить' : 'Resume') : (isRu ? 'Пауза' : 'Pause')}
-            </Button>
-          )}
-          {canAdvance && (paused || (config as any).userEvaluation) && (
-            <Button variant="default" size="sm" className="h-7 text-xs gap-1" onClick={onNextRound}>
-              <Swords className="h-3 w-3" />
-              {isRu ? 'Следующий раунд' : 'Next Round'}
-            </Button>
-          )}
-          {/* Extra round button — visible when all planned rounds are done or session completed */}
-          {onAddExtraRound && !executing && !arbiterRunning && (
-            <Button variant="outline" size="sm" className="h-7 text-xs gap-1" onClick={() => setExtraRoundOpen(true)}>
-              <PlusCircle className="h-3 w-3" />
-              {isRu ? 'Доп. раунд' : 'Extra Round'}
-            </Button>
-          )}
-        </div>
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm" className="h-7 text-xs gap-1" onClick={onNewDuel}>
-            <RotateCcw className="h-3 w-3" />
-            {getRatingsText('duelNewDuel', isRu)}
+      {/* Action row: next round + extra round */}
+      <div className="px-3 py-1.5 border-b border-border/30 flex items-center gap-2">
+        {canAdvance && (paused || (config as any).userEvaluation) && (
+          <Button variant="default" size="sm" className="h-7 text-xs gap-1" onClick={onNextRound}>
+            <Swords className="h-3 w-3" />
+            {isRu ? 'Следующий раунд' : 'Next Round'}
           </Button>
-          {session.status !== 'completed' && (
-            <Button variant="outline" size="sm" className="h-7 text-xs gap-1" onClick={() => setFinishDialogOpen(true)}>
-              <Flag className="h-3 w-3" />
-              {getRatingsText('duelFinish', isRu)}
-            </Button>
-          )}
-        </div>
+        )}
+        {onAddExtraRound && !executing && !arbiterRunning && (
+          <Button variant="outline" size="sm" className="h-7 text-xs gap-1" onClick={() => setExtraRoundOpen(true)}>
+            <PlusCircle className="h-3 w-3" />
+            {isRu ? 'Доп. раунд' : 'Extra Round'}
+          </Button>
+        )}
       </div>
 
       {/* Tabbed content area */}
@@ -148,62 +133,30 @@ export function DuelBattleView({
 
           <TabsContent value="responses" className="flex-1 min-h-0 overflow-hidden mt-0">
             <DuelResponsesPanel
-              session={session}
-              rounds={rounds}
-              results={results}
-              streamingTexts={streamingTexts}
-              executing={executing}
-              isRu={isRu}
-              modelA={modelA} modelB={modelB}
-              nameA={nameA} nameB={nameB}
-              LogoA={LogoA} LogoB={LogoB}
-              roundWins={roundWins}
-              onPickRoundWinner={onPickRoundWinner}
-              onScoreResult={onScoreResult}
+              session={session} rounds={rounds} results={results}
+              streamingTexts={streamingTexts} executing={executing} isRu={isRu}
+              modelA={modelA} modelB={modelB} nameA={nameA} nameB={nameB}
+              LogoA={LogoA} LogoB={LogoB} roundWins={roundWins}
+              onPickRoundWinner={onPickRoundWinner} onScoreResult={onScoreResult}
             />
           </TabsContent>
 
           <TabsContent value="scores" className="flex-1 min-h-0 overflow-auto mt-0 p-3 space-y-3">
             <DuelScoresPanel
-              results={results}
-              rounds={rounds}
-              isRu={isRu}
-              modelA={modelA} modelB={modelB}
-              nameA={nameA} nameB={nameB}
-              LogoA={LogoA} LogoB={LogoB}
-              roundWins={roundWins}
+              results={results} rounds={rounds} isRu={isRu}
+              modelA={modelA} modelB={modelB} nameA={nameA} nameB={nameB}
+              LogoA={LogoA} LogoB={LogoB} roundWins={roundWins}
               arbitration={session.config.arbitration}
             />
           </TabsContent>
 
           <TabsContent value="arbiter" className="flex-1 min-h-0 overflow-hidden mt-0">
             <ContestArbiterPanel
-              results={results}
-              rounds={rounds}
-              isRu={isRu}
-              initialRoundCount={totalRounds}
+              results={results} rounds={rounds} isRu={isRu} initialRoundCount={totalRounds}
             />
           </TabsContent>
         </Tabs>
       </div>
-
-      {/* Final result banner */}
-      {session.status === 'completed' && (
-        <div className="border-t border-primary/30 bg-primary/5 px-4 py-3 text-center space-y-1">
-          <div className="flex items-center justify-center gap-2">
-            <Swords className="h-4 w-4 text-primary" />
-            <span className="text-sm font-bold">{getRatingsText('duelComplete', isRu)}</span>
-          </div>
-          <div className="text-xs text-muted-foreground">
-            {getRatingsText('duelScore', isRu)}: {nameA} {roundWins.winsA} — {roundWins.draws} — {roundWins.winsB} {nameB}
-          </div>
-          {(roundWins.winsA !== roundWins.winsB) && (
-            <div className="text-sm font-medium text-primary">
-              {getRatingsText('duelOverallWinner', isRu)}: {roundWins.winsA > roundWins.winsB ? nameA : nameB}
-            </div>
-          )}
-        </div>
-      )}
 
       {/* Finish confirmation dialog */}
       <Dialog open={finishDialogOpen} onOpenChange={setFinishDialogOpen}>
@@ -218,13 +171,7 @@ export function DuelBattleView({
             <Button variant="outline" onClick={() => setFinishDialogOpen(false)}>
               {getRatingsText('duelCancel', isRu)}
             </Button>
-            <Button
-              variant="destructive"
-              onClick={() => {
-                onFinishDuel();
-                setFinishDialogOpen(false);
-              }}
-            >
+            <Button variant="destructive" onClick={() => { onFinishDuel(); setFinishDialogOpen(false); }}>
               {getRatingsText('duelFinishConfirm', isRu)}
             </Button>
           </div>
@@ -243,8 +190,8 @@ export function DuelBattleView({
           <div className="space-y-3">
             <p className="text-sm text-muted-foreground">
               {isRu
-                ? 'Введите задание для дополнительного раунда дуэли. Оба дуэлянта получат этот промпт вместе с контекстом предыдущих раундов.'
-                : 'Enter the prompt for the extra duel round. Both duelists will receive this prompt along with previous rounds context.'}
+                ? 'Введите задание для дополнительного раунда дуэли.'
+                : 'Enter the prompt for the extra duel round.'}
             </p>
             <Textarea
               value={extraRoundPrompt}
@@ -257,13 +204,8 @@ export function DuelBattleView({
                 {getRatingsText('duelCancel', isRu)}
               </Button>
               <Button
-                size="sm"
-                disabled={!extraRoundPrompt.trim()}
-                onClick={() => {
-                  onAddExtraRound?.(extraRoundPrompt.trim());
-                  setExtraRoundOpen(false);
-                  setExtraRoundPrompt('');
-                }}
+                size="sm" disabled={!extraRoundPrompt.trim()}
+                onClick={() => { onAddExtraRound?.(extraRoundPrompt.trim()); setExtraRoundOpen(false); setExtraRoundPrompt(''); }}
               >
                 <Swords className="h-3 w-3 mr-1" />
                 {isRu ? 'Запустить раунд' : 'Start Round'}

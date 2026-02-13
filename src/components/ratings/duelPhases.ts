@@ -1,5 +1,6 @@
 import React from 'react';
 import { Swords, Loader2, CheckCircle2, AlertCircle, MessageSquare, Scale, Trophy, ShieldAlert } from 'lucide-react';
+import type { ContestResult } from '@/hooks/useContestSession';
 
 export type DuelPhase =
   | 'idle'
@@ -10,6 +11,36 @@ export type DuelPhase =
   | 'round_complete'
   | 'completed'
   | 'failed';
+
+/** Detect current duel phase from results and session status */
+export function detectDuelPhase(
+  results: ContestResult[],
+  status: string,
+  modelA: string,
+  modelB: string,
+): { phase: DuelPhase; activeModelId?: string } {
+  if (status === 'completed') return { phase: 'completed' };
+  if (status === 'draft' || status === 'paused') return { phase: 'idle' };
+
+  const generatingA = results.find(r => r.status === 'generating' && r.model_id === modelA);
+  if (generatingA) return { phase: 'generating_a', activeModelId: modelA };
+
+  const generatingB = results.find(r => r.status === 'generating' && r.model_id === modelB);
+  if (generatingB) return { phase: 'generating_b', activeModelId: modelB };
+
+  const readyNoUserScore = results.find(r => r.status === 'ready' && r.user_score == null);
+  if (readyNoUserScore) return { phase: 'user_pick', activeModelId: readyNoUserScore.model_id };
+
+  const readyNoArbiter = results.find(r => r.status === 'ready' && r.arbiter_score == null && r.user_score != null);
+  if (readyNoArbiter) return { phase: 'arbiter_judging', activeModelId: readyNoArbiter.model_id };
+
+  const failed = results.find(r => r.status === 'failed');
+  if (failed) return { phase: 'failed', activeModelId: failed.model_id };
+
+  if (results.length > 0 && results.every(r => r.status === 'judged')) return { phase: 'round_complete' };
+
+  return { phase: 'idle' };
+}
 
 export const DUEL_PHASE_MESSAGES_RU: Record<DuelPhase, string[]> = {
   idle: ['Дуэлянты ожидают сигнала…', 'Секунданты проверяют оружие.'],
