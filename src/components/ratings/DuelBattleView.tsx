@@ -54,10 +54,13 @@ export function DuelBattleView({
   const roundWins = useMemo(() => {
     let winsA = 0, winsB = 0, draws = 0;
     for (const round of rounds) {
-      if (round.status !== 'completed') continue;
       const rResults = results.filter(r => r.round_id === round.id);
-      const scoreA = rResults.find(r => r.model_id === modelA)?.arbiter_score ?? 0;
-      const scoreB = rResults.find(r => r.model_id === modelB)?.arbiter_score ?? 0;
+      const resA = rResults.find(r => r.model_id === modelA);
+      const resB = rResults.find(r => r.model_id === modelB);
+      // Use arbiter_score if available, fall back to user_score
+      const scoreA = resA?.arbiter_score ?? resA?.user_score ?? null;
+      const scoreB = resB?.arbiter_score ?? resB?.user_score ?? null;
+      if (scoreA == null || scoreB == null) continue;
       if (scoreA > scoreB) winsA++;
       else if (scoreB > scoreA) winsB++;
       else draws++;
@@ -66,6 +69,12 @@ export function DuelBattleView({
   }, [rounds, results, modelA, modelB]);
 
   const completedRounds = rounds.filter(r => r.status === 'completed').length;
+  // Current active round = first non-completed, or total if all done
+  const activeRoundNum = useMemo(() => {
+    const running = rounds.find(r => r.status === 'running');
+    if (running) return running.round_index + 1;
+    return completedRounds + (completedRounds < rounds.length ? 1 : 0);
+  }, [rounds, completedRounds]);
   const totalRounds = rounds.length || 1;
   const allJudgedLastRound = useMemo(() => {
     const lastCompleted = rounds.filter(r => r.status === 'completed').slice(-1)[0];
@@ -87,7 +96,7 @@ export function DuelBattleView({
         nameA={nameA} nameB={nameB}
         LogoA={LogoA} LogoB={LogoB}
         winsA={roundWins.winsA} winsB={roundWins.winsB} draws={roundWins.draws}
-        currentRound={completedRounds} totalRounds={totalRounds}
+        currentRound={activeRoundNum} totalRounds={totalRounds}
         executing={executing} arbiterRunning={arbiterRunning}
         paused={paused} isRu={isRu}
         onNewDuel={onNewDuel}
