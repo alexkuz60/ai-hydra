@@ -11,6 +11,7 @@ import { ROLE_CONFIG, DEFAULT_SYSTEM_PROMPTS, type AgentRole } from '@/config/ro
 import { cn } from '@/lib/utils';
 import { useRoleBehavior } from '@/hooks/useRoleBehavior';
 import { useRolePromptEditor } from '@/hooks/useRolePromptEditor';
+import { useTechRoleDefaults } from '@/hooks/useTechRoleDefaults';
 import { RolePromptSection } from './RolePromptSection';
 import { RoleHierarchySection } from './RoleHierarchySection';
 import { RoleSettingsSection } from './RoleSettingsSection';
@@ -26,6 +27,7 @@ const RoleDetailsPanel = forwardRef<HTMLDivElement, RoleDetailsPanelProps>(
     const { user } = useAuth();
     const { behavior, isLoading: isLoadingBehavior, isSaving, saveRequiresApproval } = useRoleBehavior(selectedRole);
     const promptEditor = useRolePromptEditor(selectedRole, user?.id);
+    const { loaded: techRoleLoaded } = useTechRoleDefaults();
 
     if (!selectedRole) {
       return (
@@ -114,6 +116,7 @@ const RoleDetailsPanel = forwardRef<HTMLDivElement, RoleDetailsPanelProps>(
               isSaving={isSaving}
               isLoading={isLoadingBehavior}
               userId={user?.id}
+              syncLoaded={techRoleLoaded}
               onSaveRequiresApproval={saveRequiresApproval}
             />
             </div>

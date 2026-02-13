@@ -24,7 +24,7 @@ export function useProxyApiData(hasKey: boolean) {
   const [testResults, setTestResults] = useState<Record<string, TestResult>>({});
   const [testingModel, setTestingModel] = useState<string | null>(null);
   // Cloud-synced settings
-  const { value: cloudSettings, update: updateCloudSettings } = useCloudSettings<ProxyApiSettings>(
+  const { value: cloudSettings, update: updateCloudSettings, loaded: settingsLoaded } = useCloudSettings<ProxyApiSettings>(
     'proxyapi-settings', DEFAULT_SETTINGS, SETTINGS_KEY,
   );
   const { value: cloudHidden, update: updateCloudHidden } = useCloudSettings<string[]>(
@@ -284,7 +284,7 @@ export function useProxyApiData(hasKey: boolean) {
     testResults, testingModel,
     goneModel, setGoneModel,
     logs, logsLoading,
-    settings, setSettings,
+    settings, setSettings, settingsLoaded,
     catalogSearch, setCatalogSearch,
     proxyCatalog, catalogLoading, catalogLoaded,
     massTestRunning, massTestProgress,

@@ -18,6 +18,7 @@ import {
   CornerDownRight,
   Minus,
 } from 'lucide-react';
+import { CloudSyncIndicator } from '@/components/ui/CloudSyncIndicator';
 import {
   EdgeLineType,
   EdgeMarkerType,
@@ -29,6 +30,7 @@ import {
 interface EdgeStyleSelectorProps {
   settings: EdgeStyleSettings;
   onSettingsChange: (settings: EdgeStyleSettings) => void;
+  syncLoaded?: boolean;
 }
 
 const LINE_TYPE_ICONS: Record<EdgeLineType, React.ReactNode> = {
@@ -38,7 +40,7 @@ const LINE_TYPE_ICONS: Record<EdgeLineType, React.ReactNode> = {
   straight: <Minus className="h-4 w-4" />,
 };
 
-export function EdgeStyleSelector({ settings, onSettingsChange }: EdgeStyleSelectorProps) {
+export function EdgeStyleSelector({ settings, onSettingsChange, syncLoaded = true }: EdgeStyleSelectorProps) {
   const { language } = useLanguage();
   const isRu = language === 'ru';
 
@@ -64,12 +66,15 @@ export function EdgeStyleSelector({ settings, onSettingsChange }: EdgeStyleSelec
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="sm" className="gap-1.5">
+        <Button variant="outline" size="sm" className="gap-1.5 relative">
           {LINE_TYPE_ICONS[settings.defaultLineType]}
           <span className="hidden md:inline">
             {isRu ? 'Стиль связей' : 'Edge Style'}
           </span>
           <ChevronDown className="h-3 w-3" />
+          <div className="absolute -top-1 -right-1">
+            <CloudSyncIndicator loaded={syncLoaded} className="text-xs" />
+          </div>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
