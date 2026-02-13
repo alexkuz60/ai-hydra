@@ -11,6 +11,12 @@ import { detectDuelPhase, DUEL_PHASE_MESSAGES_RU, DUEL_PHASE_MESSAGES_EN, DUEL_P
 import { PROVIDER_ACCENT } from './contestPhases';
 import type { ContestSession, ContestRound, ContestResult } from '@/hooks/useContestSession';
 
+const TournamentIcon = ({ className = '' }: { className?: string }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" className={className}>
+    <path d="m4.5 17.42l1.08 1.08l-2.3 2.28c-.28.29-.78.29-1.06 0s-.29-.78 0-1.06zm13.79-12V4L12 10.29L5.71 4v1.42L11.29 11L7.5 14.81c-1.18-.84-2.82-.74-3.87.31l4.25 4.25c1.05-1.05 1.15-2.69.32-3.87zm3.49 14.3l-2.28-2.3l-1.08 1.08l2.3 2.28c.28.29.78.29 1.06 0s.29-.78 0-1.06m-5.28-4.91l-3.08-3.1l-.71.71l3.1 3.08c-.84 1.18-.74 2.82.31 3.87l4.25-4.25c-1.05-1.05-2.69-1.15-3.87-.31" />
+  </svg>
+);
+
 interface DuelPodiumScoreboardProps {
   session: ContestSession;
   rounds: ContestRound[];
@@ -101,7 +107,7 @@ export function DuelPodiumScoreboard({
           {/* Header row */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 min-w-0">
-              <Trophy className="h-4 w-4 text-primary flex-shrink-0" />
+              <TournamentIcon className="h-4 w-4 text-primary flex-shrink-0" />
               <span className="text-sm font-bold truncate">{getRatingsText('duelTitle', isRu)}</span>
             </div>
             <div className="flex items-center gap-2 flex-shrink-0 flex-wrap">
@@ -190,7 +196,7 @@ export function DuelPodiumScoreboard({
                   <span className="truncate max-w-[120px]">{name}</span>
                   {latestResult?.status === 'generating' && <Loader2 className="h-2.5 w-2.5 animate-spin text-primary" />}
                   {latestResult?.status === 'ready' && <CheckCircle2 className="h-2.5 w-2.5 text-[hsl(var(--hydra-success))]" />}
-                  {latestResult?.status === 'judged' && <Trophy className="h-2.5 w-2.5 text-[hsl(var(--hydra-arbiter))]" />}
+                  {latestResult?.status === 'judged' && <TournamentIcon className="h-2.5 w-2.5 text-[hsl(var(--hydra-arbiter))]" />}
                   {latestResult?.status === 'failed' && <AlertCircle className="h-2.5 w-2.5 text-destructive" />}
                 </div>
               );
