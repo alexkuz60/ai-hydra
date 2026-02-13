@@ -51,6 +51,8 @@ export function DuelArena() {
       );
     } else if (!nextRound) {
       duelSession.updateSessionStatus('completed');
+      // Reload all rounds/results to ensure scores table is complete
+      duelSession.loadSession(duelSession.session!.id);
       saveDuelStats();
     }
   }, [duelSession.results, execution.executing, execution.arbiterRunning]);

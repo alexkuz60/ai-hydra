@@ -125,6 +125,15 @@ export function useDuelExecution() {
 
     const completedResults: ContestResult[] = [];
 
+    // Build prompt for the first model to save to the round record
+    const roundPrompt = buildPromptForModel(modelA);
+    if (round.round_index > 0 && roundPrompt) {
+      // Save the dynamically built prompt to the round record for preview
+      await supabase.from('contest_rounds')
+        .update({ prompt: roundPrompt })
+        .eq('id', round.id);
+    }
+
     // Execute both models sequentially (to allow cross-reference for round > 0)
     for (const result of roundResults) {
       const modelId = result.model_id;
