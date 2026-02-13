@@ -94,9 +94,15 @@ export function DuelResponsesPanel({
                 {/* Horizontal round divider */}
                 {ri > 0 && (
                   <div className={cn(
-                    'h-px w-full',
-                    isRunning ? 'bg-primary/40 animate-pulse' : 'bg-border/40',
-                  )} />
+                    'w-full relative z-10',
+                    isRunning ? 'h-[3px]' : 'h-px',
+                  )}>
+                    {isRunning ? (
+                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary to-transparent animate-pulse rounded-full shadow-[0_0_8px_hsl(var(--primary)/0.6)]" />
+                    ) : (
+                      <div className="absolute inset-0 bg-border/40" />
+                    )}
+                  </div>
                 )}
                 <div className={cn(
                   'rounded-lg border overflow-hidden',
