@@ -9,6 +9,7 @@ import { getModelRegistryEntry } from '@/config/modelRegistry';
 import { PROVIDER_LOGOS, PROVIDER_COLORS } from '@/components/ui/ProviderLogos';
 import { MarkdownRenderer } from '@/components/warroom/MarkdownRenderer';
 import { UserScoreWidget } from './UserScoreWidget';
+import { LikertEvaluationDisplay } from './LikertEvaluationDisplay';
 import { getRatingsText } from './i18n';
 import type { ContestResult } from '@/hooks/useContestSession';
 
@@ -191,6 +192,16 @@ function ResponseCard({
   const ProviderLogo = entry?.provider ? PROVIDER_LOGOS[entry.provider] : undefined;
   const color = entry?.provider ? PROVIDER_COLORS[entry.provider] : '';
 
+  // Parse Likert claims from criteria_scores if available
+  const likertClaims = (() => {
+    if (!result.criteria_scores) return null;
+    const scores = result.criteria_scores as any;
+    if (scores.claims && Array.isArray(scores.claims)) {
+      return scores.claims;
+    }
+    return null;
+  })();
+
   return (
     <div className="rounded-lg border border-border/40 bg-card p-3 space-y-2">
       <div className="flex items-center justify-between">
@@ -210,7 +221,12 @@ function ResponseCard({
       {(result.status === 'ready' || result.status === 'judged') && onScore && (
         <UserScoreWidget resultId={result.id} currentScore={result.user_score} onScore={onScore} isRu={isRu} />
       )}
-      {result.arbiter_score != null && (
+      {likertClaims && (
+        <div className="pt-2 border-t border-border/30">
+          <LikertEvaluationDisplay claims={likertClaims} isRu={isRu} />
+        </div>
+      )}
+      {result.arbiter_score != null && !likertClaims && (
         <div className="flex items-center gap-3 text-[10px] pt-1 border-t border-border/30">
           <span>⚖️ {result.arbiter_score}/10</span>
         </div>
