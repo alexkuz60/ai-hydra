@@ -33,7 +33,14 @@ export function useDuelExecution() {
     updateResult: (id: string, updates: Partial<ContestResult>) => Promise<void>,
     duelConfig: DuelConfigData,
   ) => {
-    let roundResults = allResults.filter(r => r.round_id === round.id);
+    // Always check DB for existing results to avoid duplicates from race conditions
+    const { data: existingResults } = await supabase
+      .from('contest_results')
+      .select('*')
+      .eq('round_id', round.id)
+      .eq('session_id', session.id);
+
+    let roundResults = (existingResults || []) as unknown as ContestResult[];
 
     // If no results exist for this round, create them (rounds 1+ aren't pre-populated)
     if (roundResults.length === 0) {
@@ -56,8 +63,6 @@ export function useDuelExecution() {
       await supabase.from('contest_rounds')
         .update({ status: 'running', started_at: new Date().toISOString() })
         .eq('id', round.id);
-
-      // Note: new results will be picked up by realtime subscription in useDuelSession
     }
 
     const abortController = new AbortController();
