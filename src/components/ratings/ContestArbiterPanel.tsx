@@ -5,6 +5,7 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { getModelRegistryEntry } from '@/config/modelRegistry';
+import { LikertEvaluationDisplay } from './LikertEvaluationDisplay';
 import { getRatingsText, getCriterionLabel } from './i18n';
 import type { ContestResult } from '@/hooks/useContestSession';
 
@@ -94,6 +95,19 @@ function ArbiterRoundGroups({
                 const entry = getModelRegistryEntry(r.model_id);
                 const shortName = entry?.displayName || r.model_id.split('/').pop() || r.model_id;
                 const criteriaScores = (r as any).criteria_scores as Record<string, number> | null;
+                
+                // Parse Likert claims if available
+                const likertClaims = (() => {
+                  if (!criteriaScores) return null;
+                  if (criteriaScores.claims && Array.isArray(criteriaScores.claims)) {
+                    return criteriaScores.claims;
+                  }
+                  return null;
+                })();
+
+                // Filter out 'claims' from criteria_scores for traditional display
+                const filteredCriteria = likertClaims ? null : criteriaScores;
+
                 return (
                   <div key={r.id} className="rounded-md border border-border/30 bg-muted/10 p-2 space-y-1.5">
                     <div className="flex items-center justify-between">
@@ -102,15 +116,23 @@ function ArbiterRoundGroups({
                         <Badge variant="secondary" className="text-[10px]">{r.arbiter_score}/10</Badge>
                       )}
                     </div>
-                    {criteriaScores && Object.keys(criteriaScores).length > 0 && (
-                      <div className="flex flex-wrap gap-1">
-                        {Object.entries(criteriaScores).map(([key, val]) => (
-                          <Badge key={key} variant="outline" className="text-[9px] px-1.5 py-0 font-normal gap-1">
-                            <span className="text-muted-foreground">{getCriterionLabel(key, isRu)}</span>
-                            <span className="font-semibold">{val}</span>
-                          </Badge>
-                        ))}
+                    {likertClaims ? (
+                      <div className="pt-1">
+                        <LikertEvaluationDisplay claims={likertClaims} isRu={isRu} />
                       </div>
+                    ) : (
+                      <>
+                        {filteredCriteria && Object.keys(filteredCriteria).length > 0 && (
+                          <div className="flex flex-wrap gap-1">
+                            {Object.entries(filteredCriteria).map(([key, val]) => (
+                              <Badge key={key} variant="outline" className="text-[9px] px-1.5 py-0 font-normal gap-1">
+                                <span className="text-muted-foreground">{getCriterionLabel(key, isRu)}</span>
+                                <span className="font-semibold">{val}</span>
+                              </Badge>
+                            ))}
+                          </div>
+                        )}
+                      </>
                     )}
                     <p className="text-xs text-muted-foreground leading-relaxed">{r.arbiter_comment}</p>
                   </div>
