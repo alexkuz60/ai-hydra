@@ -1,41 +1,23 @@
-import { useState, useEffect } from 'react';
+import { useCallback } from 'react';
+import { useCloudSettings } from './useCloudSettings';
 
 /**
- * Shared hook for managing Supervisor Wishes state with localStorage persistence.
+ * Shared hook for managing Supervisor Wishes state with DB persistence + localStorage cache.
  * Used by both ExpertPanel (main chat) and ConsultantPanel (D-Chat).
  */
 export function useSupervisorWishes(sessionId: string | null) {
-  const [selectedWishes, setSelectedWishes] = useState<string[]>([]);
+  const cacheKey = sessionId ? `hydra-supervisor-wishes-${sessionId}` : 'hydra-supervisor-wishes-none';
+  const settingKey = sessionId ? `supervisor-wishes-${sessionId}` : 'supervisor-wishes-none';
 
-  // Load from localStorage on session change
-  useEffect(() => {
-    if (!sessionId) return;
+  const { value: selectedWishes, update, loaded } =
+    useCloudSettings<string[]>(settingKey, [], cacheKey);
 
-    try {
-      const key = `hydra-supervisor-wishes-${sessionId}`;
-      const saved = localStorage.getItem(key);
-      if (saved) {
-        const wishes = JSON.parse(saved);
-        if (Array.isArray(wishes)) {
-          setSelectedWishes(wishes);
-        }
-      }
-    } catch (error) {
-      console.error('Failed to load supervisor wishes from localStorage:', error);
-    }
-  }, [sessionId]);
+  const setSelectedWishes = useCallback(
+    (wishes: string[] | ((prev: string[]) => string[])) => {
+      update(wishes as string[]);
+    },
+    [update],
+  );
 
-  // Save to localStorage when they change
-  useEffect(() => {
-    if (!sessionId) return;
-
-    try {
-      const key = `hydra-supervisor-wishes-${sessionId}`;
-      localStorage.setItem(key, JSON.stringify(selectedWishes));
-    } catch (error) {
-      console.error('Failed to save supervisor wishes to localStorage:', error);
-    }
-  }, [selectedWishes, sessionId]);
-
-  return { selectedWishes, setSelectedWishes };
+  return { selectedWishes, setSelectedWishes, loaded };
 }

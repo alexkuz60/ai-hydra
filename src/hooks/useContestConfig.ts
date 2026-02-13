@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
+import { useCloudSettings } from './useCloudSettings';
 
 export interface ArbitrationConfig {
   juryMode: 'user' | 'arbiter' | 'both';
@@ -12,7 +13,7 @@ export interface RoundConfig {
   type: 'free' | 'role';
   prompt: string;
   criteria: string[];
-  roleForEvaluation?: string;  // Optional: expert role for role-based contests
+  roleForEvaluation?: string;
 }
 
 export interface ContestRules {
@@ -40,43 +41,50 @@ export interface ContestConfigData {
   savedPlan: SavedPlan | null;
 }
 
-const STORAGE_KEYS = {
-  models: 'hydra-contest-models',
-  rules: 'hydra-contest-rules',
-  taskId: 'hydra-contest-task-id',
-  taskTitle: 'hydra-contest-task-title',
-  mode: 'hydra-contest-mode',
-  pipeline: 'hydra-contest-pipeline',
-  arbitration: 'hydra-contest-arbitration',
-  savedPlan: 'hydra-contest-saved-plan',
-} as const;
+const DEFAULT_CONTEST_CONFIG: ContestConfigData = {
+  models: {},
+  rules: null,
+  taskId: null,
+  taskTitle: null,
+  mode: 'contest',
+  pipeline: 'none',
+  arbitration: null,
+  savedPlan: null,
+};
 
-export const CONTEST_STORAGE_KEYS = Object.values(STORAGE_KEYS);
+// Legacy keys for migration
+const LEGACY_STORAGE_KEYS = [
+  'hydra-contest-models', 'hydra-contest-rules', 'hydra-contest-task-id',
+  'hydra-contest-task-title', 'hydra-contest-mode', 'hydra-contest-pipeline',
+  'hydra-contest-arbitration', 'hydra-contest-saved-plan',
+];
+
+export const CONTEST_STORAGE_KEYS = LEGACY_STORAGE_KEYS;
 
 function tryParse<T>(value: string | null, defaultValue: T): T {
   if (!value) return defaultValue;
-  try {
-    return JSON.parse(value);
-  } catch {
-    return defaultValue;
-  }
+  try { return JSON.parse(value); } catch { return defaultValue; }
 }
 
-function loadConfig(): ContestConfigData {
-  return {
-    models: tryParse(localStorage.getItem(STORAGE_KEYS.models), {}),
-    rules: tryParse(localStorage.getItem(STORAGE_KEYS.rules), null),
-    taskId: localStorage.getItem(STORAGE_KEYS.taskId),
-    taskTitle: localStorage.getItem(STORAGE_KEYS.taskTitle),
-    mode: localStorage.getItem(STORAGE_KEYS.mode) || 'contest',
-    pipeline: localStorage.getItem(STORAGE_KEYS.pipeline) || 'none',
-    arbitration: tryParse(localStorage.getItem(STORAGE_KEYS.arbitration), null),
-    savedPlan: tryParse(localStorage.getItem(STORAGE_KEYS.savedPlan), null),
+/** One-time migration from legacy per-key localStorage */
+function migrateLegacyConfig(): ContestConfigData | null {
+  const hasLegacy = LEGACY_STORAGE_KEYS.some(k => localStorage.getItem(k) !== null);
+  if (!hasLegacy) return null;
+
+  const config: ContestConfigData = {
+    models: tryParse(localStorage.getItem('hydra-contest-models'), {}),
+    rules: tryParse(localStorage.getItem('hydra-contest-rules'), null),
+    taskId: localStorage.getItem('hydra-contest-task-id'),
+    taskTitle: localStorage.getItem('hydra-contest-task-title'),
+    mode: localStorage.getItem('hydra-contest-mode') || 'contest',
+    pipeline: localStorage.getItem('hydra-contest-pipeline') || 'none',
+    arbitration: tryParse(localStorage.getItem('hydra-contest-arbitration'), null),
+    savedPlan: tryParse(localStorage.getItem('hydra-contest-saved-plan'), null),
   };
-}
 
-function dispatchConfigChanged() {
-  window.dispatchEvent(new Event('contest-config-changed'));
+  LEGACY_STORAGE_KEYS.forEach(k => { try { localStorage.removeItem(k); } catch {} });
+
+  return config;
 }
 
 export interface ValidationError {
@@ -92,153 +100,105 @@ export const VALIDATION_MESSAGES: Record<string, { ru: string; en: string }> = {
 };
 
 export function useContestConfig() {
-  const [config, setConfig] = useState<ContestConfigData>(loadConfig);
+  const legacyData = useMemo(() => migrateLegacyConfig(), []);
+  const initialDefault = legacyData || DEFAULT_CONTEST_CONFIG;
 
-  // Синхронизация с localStorage и cross-tab событиями
-  useEffect(() => {
-    const handleSync = () => setConfig(loadConfig());
+  const { value: config, update: setConfig, reset: resetAllCloud, loaded } =
+    useCloudSettings<ContestConfigData>('contest-config', initialDefault, 'hydra-cloud-contest-config');
 
-    window.addEventListener('storage', handleSync);
-    window.addEventListener('contest-config-changed', handleSync);
+  // Push migrated legacy data
+  useMemo(() => {
+    if (legacyData) {
+      try {
+        localStorage.setItem('hydra-cloud-contest-config', JSON.stringify(legacyData));
+      } catch {}
+    }
+  }, [legacyData]);
 
-    return () => {
-      window.removeEventListener('storage', handleSync);
-      window.removeEventListener('contest-config-changed', handleSync);
-    };
-  }, []);
-
-  // Вычисляемые значения
+  // Computed values
   const modelCount = Object.keys(config.models).length;
   const roundCount = config.rules?.roundCount || 1;
   const roundPrompt = config.rules?.rounds?.[0]?.prompt || '';
 
-  // Методы обновления
+  // Update methods
   const updateModels = useCallback((models: Record<string, string>) => {
-    localStorage.setItem(STORAGE_KEYS.models, JSON.stringify(models));
-    dispatchConfigChanged();
-  }, []);
+    setConfig(prev => ({ ...prev, models }));
+    // Dispatch legacy event for cross-component compat
+    window.dispatchEvent(new Event('contest-config-changed'));
+  }, [setConfig]);
 
   const updateRules = useCallback((rules: unknown) => {
-    localStorage.setItem(STORAGE_KEYS.rules, JSON.stringify(rules));
-    dispatchConfigChanged();
-  }, []);
+    setConfig(prev => ({ ...prev, rules: rules as ContestRules | null }));
+    window.dispatchEvent(new Event('contest-config-changed'));
+  }, [setConfig]);
 
   const updateTaskId = useCallback((taskId: string | null) => {
-    if (taskId) {
-      localStorage.setItem(STORAGE_KEYS.taskId, taskId);
-    } else {
-      localStorage.removeItem(STORAGE_KEYS.taskId);
-    }
-    dispatchConfigChanged();
-  }, []);
+    setConfig(prev => ({ ...prev, taskId }));
+    window.dispatchEvent(new Event('contest-config-changed'));
+  }, [setConfig]);
 
   const updateTaskTitle = useCallback((taskTitle: string | null) => {
-    if (taskTitle) {
-      localStorage.setItem(STORAGE_KEYS.taskTitle, taskTitle);
-    } else {
-      localStorage.removeItem(STORAGE_KEYS.taskTitle);
-    }
-    dispatchConfigChanged();
-  }, []);
+    setConfig(prev => ({ ...prev, taskTitle }));
+    window.dispatchEvent(new Event('contest-config-changed'));
+  }, [setConfig]);
 
   const updateMode = useCallback((mode: string) => {
-    localStorage.setItem(STORAGE_KEYS.mode, mode);
-    dispatchConfigChanged();
-  }, []);
+    setConfig(prev => ({ ...prev, mode }));
+    window.dispatchEvent(new Event('contest-config-changed'));
+  }, [setConfig]);
 
   const updatePipeline = useCallback((pipeline: string) => {
-    localStorage.setItem(STORAGE_KEYS.pipeline, pipeline);
-    dispatchConfigChanged();
-  }, []);
+    setConfig(prev => ({ ...prev, pipeline }));
+    window.dispatchEvent(new Event('contest-config-changed'));
+  }, [setConfig]);
 
   const updateArbitration = useCallback((arbitration: ArbitrationConfig | null) => {
-    if (arbitration) {
-      localStorage.setItem(STORAGE_KEYS.arbitration, JSON.stringify(arbitration));
-    } else {
-      localStorage.removeItem(STORAGE_KEYS.arbitration);
-    }
-    dispatchConfigChanged();
-  }, []);
+    setConfig(prev => ({ ...prev, arbitration }));
+    window.dispatchEvent(new Event('contest-config-changed'));
+  }, [setConfig]);
 
   const updateSavedPlan = useCallback((savedPlan: SavedPlan | null) => {
-    if (savedPlan) {
-      localStorage.setItem(STORAGE_KEYS.savedPlan, JSON.stringify(savedPlan));
-    } else {
-      localStorage.removeItem(STORAGE_KEYS.savedPlan);
-    }
-    dispatchConfigChanged();
-  }, []);
+    setConfig(prev => ({ ...prev, savedPlan }));
+    window.dispatchEvent(new Event('contest-config-changed'));
+  }, [setConfig]);
 
   const exportConfig = useCallback(() => {
-    const data: Record<string, unknown> = {};
-    CONTEST_STORAGE_KEYS.forEach((k) => {
-      const v = localStorage.getItem(k);
-      if (v) {
-        try {
-          data[k] = JSON.parse(v);
-        } catch {
-          data[k] = v;
-        }
-      }
-    });
-    return data;
-  }, []);
+    return config as unknown as Record<string, unknown>;
+  }, [config]);
 
   const importConfig = useCallback((data: Record<string, unknown>) => {
-    CONTEST_STORAGE_KEYS.forEach((k) => {
-      if (k in data) {
-        localStorage.setItem(
-          k,
-          typeof data[k] === 'string' ? (data[k] as string) : JSON.stringify(data[k])
-        );
-      }
-    });
-    dispatchConfigChanged();
-  }, []);
+    setConfig(prev => ({ ...prev, ...data } as ContestConfigData));
+    window.dispatchEvent(new Event('contest-config-changed'));
+  }, [setConfig]);
 
   const resetAll = useCallback(() => {
-    CONTEST_STORAGE_KEYS.forEach((k) => {
-      try {
-        localStorage.removeItem(k);
-      } catch {}
-    });
-    dispatchConfigChanged();
-  }, []);
+    resetAllCloud();
+    window.dispatchEvent(new Event('contest-config-changed'));
+  }, [resetAllCloud]);
 
   const validateForSave = useCallback((): ValidationError[] => {
     const errors: ValidationError[] = [];
-
-    // Проверка наличия задачи
     if (!config.taskId || !config.taskTitle) {
       errors.push({ field: 'taskId', messageKey: 'taskRequired' });
     }
-
-    // Проверка наличия участников
     if (Object.keys(config.models).length === 0) {
       errors.push({ field: 'models', messageKey: 'participantsRequired' });
     }
-
-    // Проверка наличия промпта
     if (!config.rules?.rounds?.[0]?.prompt || !config.rules.rounds[0].prompt.trim()) {
       errors.push({ field: 'prompt', messageKey: 'promptRequired' });
     }
-
-    // Проверка наличия пайплайна
     if (!config.pipeline || config.pipeline === 'none') {
       errors.push({ field: 'pipeline', messageKey: 'pipelineRequired' });
     }
-
     return errors;
   }, [config]);
 
   return {
-    // Состояние
     config,
+    loaded,
     modelCount,
     roundCount,
     roundPrompt,
-
-    // Данные
     models: config.models,
     rules: config.rules,
     taskId: config.taskId,
@@ -247,21 +207,8 @@ export function useContestConfig() {
     pipeline: config.pipeline,
     arbitration: config.arbitration,
     savedPlan: config.savedPlan,
-
-    // Методы обновления
-    updateModels,
-    updateRules,
-    updateTaskId,
-    updateTaskTitle,
-    updateMode,
-    updatePipeline,
-    updateArbitration,
-    updateSavedPlan,
-
-    // Методы работы с конфигурацией
-    exportConfig,
-    importConfig,
-    resetAll,
-    validateForSave,
+    updateModels, updateRules, updateTaskId, updateTaskTitle,
+    updateMode, updatePipeline, updateArbitration, updateSavedPlan,
+    exportConfig, importConfig, resetAll, validateForSave,
   };
 }
