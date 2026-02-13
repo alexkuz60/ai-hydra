@@ -14,8 +14,10 @@ import { useAvailableModels } from '@/hooks/useAvailableModels';
 import { getModelRegistryEntry } from '@/config/modelRegistry';
 import { PROVIDER_LOGOS } from '@/components/ui/ProviderLogos';
 import { CONTEST_FLOW_TEMPLATES, type ContestFlowTemplateId } from '@/lib/contestFlowTemplates';
-import { Swords, Workflow, Scale, Trophy, Weight, Calculator, BarChart3, Users, Info, Save, CheckCircle2, Loader2 } from 'lucide-react';
+import { Swords, Workflow, Scale, Trophy, Weight, Calculator, BarChart3, Users, Info, Save, CheckCircle2, Loader2, FileText, Maximize2, UserCheck } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
+import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
+import { SummaryItem } from './ContestSummaryItem';
 import type { useDuelConfig } from '@/hooks/useDuelConfig';
 
 const ALL_CRITERIA = [
@@ -283,6 +285,32 @@ export function DuelPlanEditor({ config, isRu }: DuelPlanEditorProps) {
 
           <Separator className="opacity-30" />
 
+          {/* Arbiter Model */}
+          <div className="space-y-1.5">
+            <Label className="text-xs font-medium">{getRatingsText('duelArbiterModel', isRu)}</Label>
+            <Select value={config.config.arbiterModel || ''} onValueChange={v => config.updateArbiterModel(v || null)}>
+              <SelectTrigger className="h-9 text-xs">
+                <SelectValue placeholder={getRatingsText('duelSelectModel', isRu)} />
+              </SelectTrigger>
+              <SelectContent>
+                {availableModelIds.map(id => {
+                  const entry = getModelRegistryEntry(id);
+                  const Logo = entry?.provider ? PROVIDER_LOGOS[entry.provider] : null;
+                  return (
+                    <SelectItem key={id} value={id} className="text-xs">
+                      <div className="flex items-center gap-2">
+                        {Logo && <Logo className="h-3.5 w-3.5" />}
+                        <span>{entry?.displayName || id.split('/').pop()}</span>
+                      </div>
+                    </SelectItem>
+                  );
+                })}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <Separator className="opacity-30" />
+
           {/* Scoring Scheme */}
           <div className="space-y-1.5">
             <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
@@ -327,55 +355,114 @@ export function DuelPlanEditor({ config, isRu }: DuelPlanEditorProps) {
           <HydraCardTitle>{getRatingsText('previewAndLaunch', isRu)}</HydraCardTitle>
         </HydraCardHeader>
         <HydraCardContent className="space-y-3">
-          {/* Summary items */}
-          <div className="space-y-1.5">
-            {config.config.modelA && (
-              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                <Swords className="h-3.5 w-3.5" />
-                <span>{getRatingsText('duelModelA', isRu)}:</span>
-                <span className="font-semibold text-foreground">
-                  {getModelRegistryEntry(config.config.modelA)?.displayName || config.config.modelA.split('/').pop()}
-                </span>
-              </div>
-            )}
-            {config.config.modelB && (
-              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                <Swords className="h-3.5 w-3.5" />
-                <span>{getRatingsText('duelModelB', isRu)}:</span>
-                <span className="font-semibold text-foreground">
-                  {getModelRegistryEntry(config.config.modelB)?.displayName || config.config.modelB.split('/').pop()}
-                </span>
-              </div>
-            )}
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <BarChart3 className="h-3.5 w-3.5" />
-              <span>{getRatingsText('duelRounds', isRu)}:</span>
-              <span className="font-semibold text-foreground">{config.config.roundCount}</span>
-            </div>
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <Workflow className="h-3.5 w-3.5" />
-              <span>{getRatingsText('duelFlowTemplate', isRu)}:</span>
-              <span className="font-semibold text-foreground">
-                {pipeline === 'none'
-                  ? (isRu ? 'Не выбран' : 'Not selected')
-                  : (isRu
-                      ? CONTEST_FLOW_TEMPLATES[pipeline as keyof typeof CONTEST_FLOW_TEMPLATES]?.ru
-                      : CONTEST_FLOW_TEMPLATES[pipeline as keyof typeof CONTEST_FLOW_TEMPLATES]?.en)}
-              </span>
-            </div>
+          {/* Config summary */}
+          <div className="flex flex-wrap gap-x-4 gap-y-1.5">
+            <SummaryItem
+              icon={<Swords className="h-3.5 w-3.5" />}
+              label={getRatingsText('duelModelA', isRu)}
+              value={config.config.modelA
+                ? (getModelRegistryEntry(config.config.modelA)?.displayName || config.config.modelA.split('/').pop() || '—')
+                : '—'}
+            />
+            <SummaryItem
+              icon={<Swords className="h-3.5 w-3.5" />}
+              label={getRatingsText('duelModelB', isRu)}
+              value={config.config.modelB
+                ? (getModelRegistryEntry(config.config.modelB)?.displayName || config.config.modelB.split('/').pop() || '—')
+                : '—'}
+            />
+            <SummaryItem
+              icon={<BarChart3 className="h-3.5 w-3.5" />}
+              label={getRatingsText('duelRounds', isRu)}
+              value={String(config.config.roundCount)}
+            />
+            <SummaryItem
+              icon={<Workflow className="h-3.5 w-3.5" />}
+              label={getRatingsText('duelFlowTemplate', isRu)}
+              value={pipeline === 'none'
+                ? (isRu ? 'Не выбран' : 'Not selected')
+                : (isRu
+                    ? CONTEST_FLOW_TEMPLATES[pipeline as keyof typeof CONTEST_FLOW_TEMPLATES]?.ru
+                    : CONTEST_FLOW_TEMPLATES[pipeline as keyof typeof CONTEST_FLOW_TEMPLATES]?.en) || '—'}
+            />
           </div>
 
+          {/* Arbitration summary */}
+          <Separator className="opacity-30" />
+          <div className="space-y-2">
+            <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wider">
+              <Scale className="h-3 w-3" />
+              {getRatingsText('duelArbitration', isRu)}
+            </div>
+            <div className="flex flex-wrap gap-x-4 gap-y-1.5">
+              <SummaryItem
+                icon={<Calculator className="h-3.5 w-3.5" />}
+                label={getRatingsText('duelScoringScheme', isRu)}
+                value={SCORING_OPTIONS.find(o => o.id === config.config.scoringScheme)?.[isRu ? 'ru' : 'en'] || config.config.scoringScheme}
+              />
+              {config.config.arbiterModel && (
+                <SummaryItem
+                  icon={<Scale className="h-3.5 w-3.5" />}
+                  label={getRatingsText('duelArbiterModel', isRu)}
+                  value={getModelRegistryEntry(config.config.arbiterModel)?.displayName || config.config.arbiterModel.split('/').pop() || '—'}
+                />
+              )}
+              <SummaryItem
+                icon={<UserCheck className="h-3.5 w-3.5" />}
+                label={getRatingsText('duelUserEvalEnabled', isRu)}
+                value={config.config.userEvaluation ? getRatingsText('duelYes', isRu) : getRatingsText('duelNo', isRu)}
+              />
+            </div>
+
+            {/* Criteria badges */}
+            {config.config.criteria.length > 0 && (
+              <div className="flex items-start gap-2">
+                <BarChart3 className="h-3 w-3 text-muted-foreground shrink-0 mt-0.5" />
+                <div className="flex flex-wrap gap-1">
+                  {config.config.criteria.map(c => {
+                    const w = config.config.criteriaWeights?.[c];
+                    return (
+                      <Badge key={c} variant="secondary" className="text-[10px] px-1.5 py-0 gap-1">
+                        {getCriterionLabel(c, isRu)}
+                        {config.config.scoringScheme === 'weighted-avg' && w != null && (
+                          <span className="opacity-50">{w}%</span>
+                        )}
+                      </Badge>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Prompt preview */}
           {config.config.duelPrompt && (
             <>
               <Separator className="opacity-30" />
-              <div className="space-y-1">
-                <label className="text-[10px] text-muted-foreground uppercase tracking-wider">
-                  {getRatingsText('duelPromptLabel', isRu)}
-                </label>
-                <p className="text-[11px] text-foreground/80 leading-relaxed line-clamp-2 whitespace-pre-wrap">
-                  {config.config.duelPrompt}
-                </p>
-              </div>
+              <Dialog>
+                <DialogTrigger asChild>
+                  <button className="w-full text-left space-y-1 group cursor-pointer rounded-md hover:bg-muted/30 transition-colors p-1 -m-1">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                        <FileText className="h-3 w-3" />
+                        {getRatingsText('duelPromptLabel', isRu)}
+                      </div>
+                      <Maximize2 className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </div>
+                    <p className="text-[11px] text-foreground/80 leading-relaxed line-clamp-2 whitespace-pre-wrap">
+                      {config.config.duelPrompt}
+                    </p>
+                  </button>
+                </DialogTrigger>
+                <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                  <div className="space-y-2">
+                    <h3 className="text-sm font-semibold">{getRatingsText('duelPromptLabel', isRu)}</h3>
+                    <p className="text-sm text-foreground/90 whitespace-pre-wrap leading-relaxed">
+                      {config.config.duelPrompt}
+                    </p>
+                  </div>
+                </DialogContent>
+              </Dialog>
             </>
           )}
 

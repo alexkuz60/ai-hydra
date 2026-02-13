@@ -198,6 +198,14 @@ export const RATINGS_I18N = {
   duelPlanTitle: { ru: 'План дуэли «К барьеру»', en: 'Duel Plan «En Garde»' },
   duelFlowTemplate: { ru: 'Шаблон потока дуэли', en: 'Duel Flow Template' },
   duelArbitration: { ru: 'Арбитраж дуэли', en: 'Duel Arbitration' },
+  duelArbiterModel: { ru: 'Модель-арбитр', en: 'Arbiter Model' },
+  duelSavePlan: { ru: 'Сохранить план дуэли', en: 'Save Duel Plan' },
+  duelReSavePlan: { ru: 'Пересохранить план', en: 'Re-save Plan' },
+  duelScoringScheme: { ru: 'Схема оценки', en: 'Scoring Scheme' },
+  duelCriteria: { ru: 'Критерии', en: 'Criteria' },
+  duelUserEvalEnabled: { ru: 'Пользовательская оценка', en: 'User Evaluation' },
+  duelYes: { ru: 'Да', en: 'Yes' },
+  duelNo: { ru: 'Нет', en: 'No' },
 } as const;
 
 export type RatingsI18nKey = keyof typeof RATINGS_I18N;
