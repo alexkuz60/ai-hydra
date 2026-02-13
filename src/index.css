@@ -644,3 +644,30 @@
 .hydra-font-xlarge {
   font-size: 20px;
 }
+
+/* Duel response uniform formatting */
+.duel-response-content .markdown-content {
+  font-size: 0.75rem;
+  line-height: 1.4;
+}
+.duel-response-content .markdown-content h1,
+.duel-response-content .markdown-content h2,
+.duel-response-content .markdown-content h3 {
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin: 0.5em 0 0.25em;
+}
+.duel-response-content .markdown-content h1 {
+  font-size: 0.85rem;
+}
+.duel-response-content .markdown-content ul,
+.duel-response-content .markdown-content ol {
+  padding-left: 1.25em;
+  margin: 0.25em 0;
+}
+.duel-response-content .markdown-content li {
+  margin: 0.1em 0;
+}
+.duel-response-content .markdown-content p {
+  margin: 0.25em 0;
+}
