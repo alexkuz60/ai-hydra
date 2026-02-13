@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
+import { useCloudSettings } from './useCloudSettings';
 
 export type DuelType = 'critic' | 'arbiter';
 
@@ -15,43 +16,56 @@ export interface DuelConfigData {
   arbiterModel: string | null;
 }
 
-const STORAGE_KEYS = {
-  modelA: 'hydra-duel-model-a',
-  modelB: 'hydra-duel-model-b',
-  roundCount: 'hydra-duel-round-count',
-  duelPrompt: 'hydra-duel-prompt',
-  duelType: 'hydra-duel-type',
-  criteria: 'hydra-duel-criteria',
-  criteriaWeights: 'hydra-duel-criteria-weights',
-  userEvaluation: 'hydra-duel-user-eval',
-  scoringScheme: 'hydra-duel-scoring',
-  arbiterModel: 'hydra-duel-arbiter-model',
-} as const;
+const DEFAULT_DUEL_CONFIG: DuelConfigData = {
+  modelA: null,
+  modelB: null,
+  roundCount: 3,
+  duelPrompt: '',
+  duelType: 'critic',
+  criteria: ['factuality', 'relevance', 'clarity', 'argument_strength'],
+  criteriaWeights: {},
+  userEvaluation: false,
+  scoringScheme: 'weighted-avg',
+  arbiterModel: null,
+};
 
-export const DUEL_STORAGE_KEYS = Object.values(STORAGE_KEYS);
+// Legacy keys for migration
+const LEGACY_STORAGE_KEYS = [
+  'hydra-duel-model-a', 'hydra-duel-model-b', 'hydra-duel-round-count',
+  'hydra-duel-prompt', 'hydra-duel-type', 'hydra-duel-criteria',
+  'hydra-duel-criteria-weights', 'hydra-duel-user-eval',
+  'hydra-duel-scoring', 'hydra-duel-arbiter-model',
+];
+
+export const DUEL_STORAGE_KEYS = LEGACY_STORAGE_KEYS;
 
 function tryParse<T>(value: string | null, defaultValue: T): T {
   if (!value) return defaultValue;
   try { return JSON.parse(value); } catch { return defaultValue; }
 }
 
-function loadConfig(): DuelConfigData {
-  return {
-    modelA: localStorage.getItem(STORAGE_KEYS.modelA),
-    modelB: localStorage.getItem(STORAGE_KEYS.modelB),
-    roundCount: tryParse(localStorage.getItem(STORAGE_KEYS.roundCount), 3),
-    duelPrompt: localStorage.getItem(STORAGE_KEYS.duelPrompt) || '',
-    duelType: (localStorage.getItem(STORAGE_KEYS.duelType) as DuelType) || 'critic',
-    criteria: tryParse(localStorage.getItem(STORAGE_KEYS.criteria), ['factuality', 'relevance', 'clarity', 'argument_strength']),
-    criteriaWeights: tryParse(localStorage.getItem(STORAGE_KEYS.criteriaWeights), {}),
-    userEvaluation: tryParse(localStorage.getItem(STORAGE_KEYS.userEvaluation), false),
-    scoringScheme: (localStorage.getItem(STORAGE_KEYS.scoringScheme) as DuelConfigData['scoringScheme']) || 'weighted-avg',
-    arbiterModel: localStorage.getItem(STORAGE_KEYS.arbiterModel),
-  };
-}
+/** Migrate old per-key localStorage to single JSON (one-time) */
+function migrateLegacyConfig(): DuelConfigData | null {
+  const hasLegacy = LEGACY_STORAGE_KEYS.some(k => localStorage.getItem(k) !== null);
+  if (!hasLegacy) return null;
 
-function dispatchChanged() {
-  window.dispatchEvent(new Event('duel-config-changed'));
+  const config: DuelConfigData = {
+    modelA: localStorage.getItem('hydra-duel-model-a'),
+    modelB: localStorage.getItem('hydra-duel-model-b'),
+    roundCount: tryParse(localStorage.getItem('hydra-duel-round-count'), 3),
+    duelPrompt: localStorage.getItem('hydra-duel-prompt') || '',
+    duelType: (localStorage.getItem('hydra-duel-type') as DuelType) || 'critic',
+    criteria: tryParse(localStorage.getItem('hydra-duel-criteria'), DEFAULT_DUEL_CONFIG.criteria),
+    criteriaWeights: tryParse(localStorage.getItem('hydra-duel-criteria-weights'), {}),
+    userEvaluation: tryParse(localStorage.getItem('hydra-duel-user-eval'), false),
+    scoringScheme: (localStorage.getItem('hydra-duel-scoring') as DuelConfigData['scoringScheme']) || 'weighted-avg',
+    arbiterModel: localStorage.getItem('hydra-duel-arbiter-model'),
+  };
+
+  // Clean up legacy keys
+  LEGACY_STORAGE_KEYS.forEach(k => { try { localStorage.removeItem(k); } catch {} });
+
+  return config;
 }
 
 export interface DuelValidationError {
@@ -67,43 +81,37 @@ export const DUEL_VALIDATION_MESSAGES: Record<string, { ru: string; en: string }
 };
 
 export function useDuelConfig() {
-  const [config, setConfig] = useState<DuelConfigData>(loadConfig);
+  // One-time migration from legacy per-key format
+  const legacyData = useMemo(() => migrateLegacyConfig(), []);
+  const initialDefault = legacyData || DEFAULT_DUEL_CONFIG;
 
-  useEffect(() => {
-    const sync = () => setConfig(loadConfig());
-    window.addEventListener('storage', sync);
-    window.addEventListener('duel-config-changed', sync);
-    return () => {
-      window.removeEventListener('storage', sync);
-      window.removeEventListener('duel-config-changed', sync);
-    };
-  }, []);
+  const { value: config, update: setConfig, reset: resetAll, loaded } =
+    useCloudSettings<DuelConfigData>('duel-config', initialDefault, 'hydra-cloud-duel-config');
 
-  const set = useCallback((key: keyof typeof STORAGE_KEYS, value: unknown) => {
-    const storageKey = STORAGE_KEYS[key];
-    if (value == null || value === '') {
-      localStorage.removeItem(storageKey);
-    } else {
-      localStorage.setItem(storageKey, typeof value === 'string' ? value : JSON.stringify(value));
+  // If we migrated legacy data, push it into the cloud settings
+  useMemo(() => {
+    if (legacyData) {
+      // Write migrated data to cache key so useCloudSettings picks it up
+      try {
+        localStorage.setItem('hydra-cloud-duel-config', JSON.stringify(legacyData));
+      } catch {}
     }
-    dispatchChanged();
-  }, []);
+  }, [legacyData]);
 
-  const updateModelA = useCallback((v: string | null) => set('modelA', v), [set]);
-  const updateModelB = useCallback((v: string | null) => set('modelB', v), [set]);
-  const updateRoundCount = useCallback((v: number) => set('roundCount', v), [set]);
-  const updateDuelPrompt = useCallback((v: string) => set('duelPrompt', v), [set]);
-  const updateDuelType = useCallback((v: DuelType) => set('duelType', v), [set]);
-  const updateCriteria = useCallback((v: string[]) => set('criteria', v), [set]);
-  const updateCriteriaWeights = useCallback((v: Record<string, number>) => set('criteriaWeights', v), [set]);
-  const updateUserEvaluation = useCallback((v: boolean) => set('userEvaluation', v), [set]);
-  const updateScoringScheme = useCallback((v: DuelConfigData['scoringScheme']) => set('scoringScheme', v), [set]);
-  const updateArbiterModel = useCallback((v: string | null) => set('arbiterModel', v), [set]);
+  const updateField = useCallback(<K extends keyof DuelConfigData>(key: K, value: DuelConfigData[K]) => {
+    setConfig(prev => ({ ...prev, [key]: value }));
+  }, [setConfig]);
 
-  const resetAll = useCallback(() => {
-    DUEL_STORAGE_KEYS.forEach(k => { try { localStorage.removeItem(k); } catch {} });
-    dispatchChanged();
-  }, []);
+  const updateModelA = useCallback((v: string | null) => updateField('modelA', v), [updateField]);
+  const updateModelB = useCallback((v: string | null) => updateField('modelB', v), [updateField]);
+  const updateRoundCount = useCallback((v: number) => updateField('roundCount', v), [updateField]);
+  const updateDuelPrompt = useCallback((v: string) => updateField('duelPrompt', v), [updateField]);
+  const updateDuelType = useCallback((v: DuelType) => updateField('duelType', v), [updateField]);
+  const updateCriteria = useCallback((v: string[]) => updateField('criteria', v), [updateField]);
+  const updateCriteriaWeights = useCallback((v: Record<string, number>) => updateField('criteriaWeights', v), [updateField]);
+  const updateUserEvaluation = useCallback((v: boolean) => updateField('userEvaluation', v), [updateField]);
+  const updateScoringScheme = useCallback((v: DuelConfigData['scoringScheme']) => updateField('scoringScheme', v), [updateField]);
+  const updateArbiterModel = useCallback((v: string | null) => updateField('arbiterModel', v), [updateField]);
 
   const validate = useCallback((): DuelValidationError[] => {
     const errors: DuelValidationError[] = [];
@@ -118,6 +126,7 @@ export function useDuelConfig() {
 
   return {
     config,
+    loaded,
     updateModelA, updateModelB, updateRoundCount, updateDuelPrompt,
     updateDuelType, updateCriteria, updateCriteriaWeights,
     updateUserEvaluation, updateScoringScheme, updateArbiterModel,

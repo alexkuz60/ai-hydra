@@ -23,6 +23,7 @@ export function ContestSummary() {
   const { toast } = useToast();
   const { saveDiagram, isSaving } = useFlowDiagrams();
   const {
+    models,
     modelCount,
     roundCount,
     roundPrompt,
@@ -59,10 +60,8 @@ export function ContestSummary() {
 
     const templateKey = pipeline as keyof typeof CONTEST_FLOW_TEMPLATES;
     const template = CONTEST_FLOW_TEMPLATES[templateKey];
-    const configData = useContestConfig();
-    const models = configData.models;
-    const taskNameForFlow = configData.taskTitle || '';
     const candidates = Object.keys(models);
+    const taskNameForFlow = taskTitle || '';
     const taskPrompt = roundPrompt;
 
     const { nodes, edges } = template.generate({
