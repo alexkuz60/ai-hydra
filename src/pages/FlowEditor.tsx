@@ -25,31 +25,10 @@ import { useToast } from '@/hooks/use-toast';
 import { useNavigatorResize } from '@/hooks/useNavigatorResize';
 import { NavigatorHeader } from '@/components/layout/NavigatorHeader';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
+import { useCloudSettings } from '@/hooks/useCloudSettings';
 
 const initialNodes: Node[] = [];
 const initialEdges: Edge[] = [];
-
-// Load edge settings from localStorage
-function loadEdgeSettings(): EdgeStyleSettings {
-  try {
-    const saved = localStorage.getItem('flowEditor.edgeSettings');
-    if (saved) {
-      return { ...DEFAULT_EDGE_SETTINGS, ...JSON.parse(saved) };
-    }
-  } catch (e) {
-    console.warn('Failed to load edge settings:', e);
-  }
-  return DEFAULT_EDGE_SETTINGS;
-}
-
-// Save edge settings to localStorage
-function saveEdgeSettings(settings: EdgeStyleSettings) {
-  try {
-    localStorage.setItem('flowEditor.edgeSettings', JSON.stringify(settings));
-  } catch (e) {
-    console.warn('Failed to save edge settings:', e);
-  }
-}
 
 function FlowEditorContent() {
   const { t } = useLanguage();
@@ -67,7 +46,9 @@ function FlowEditorContent() {
   const [hasChanges, setHasChanges] = useState(false);
   const [selectedNode, setSelectedNode] = useState<Node | null>(null);
   const [selectedEdge, setSelectedEdge] = useState<Edge | null>(null);
-  const [edgeSettings, setEdgeSettings] = useState<EdgeStyleSettings>(loadEdgeSettings);
+  const { value: edgeSettings, update: setEdgeSettingsCloud } = useCloudSettings<EdgeStyleSettings>(
+    'flow-edge-settings', DEFAULT_EDGE_SETTINGS, 'flowEditor.edgeSettings',
+  );
   const [showExecutionPanel, setShowExecutionPanel] = useState(false);
   const [showLogisticsPanel, setShowLogisticsPanel] = useState(false);
   const [logisticsInitialQuestion, setLogisticsInitialQuestion] = useState<string | undefined>();
@@ -219,9 +200,8 @@ function FlowEditorContent() {
 
   // Save edge settings when they change
   const handleEdgeSettingsChange = useCallback((newSettings: EdgeStyleSettings) => {
-    setEdgeSettings(newSettings);
-    saveEdgeSettings(newSettings);
-  }, []);
+    setEdgeSettingsCloud(newSettings);
+  }, [setEdgeSettingsCloud]);
 
   const onInit = useCallback((instance: ReactFlowInstance) => {
     reactFlowInstance.current = instance;
