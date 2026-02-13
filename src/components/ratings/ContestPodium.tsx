@@ -56,7 +56,9 @@ export function ContestPodium() {
         <TabsContent value="duel" className="flex-1 mt-0 overflow-hidden">
           <ScrollArea className="h-full">
             <div className="p-4">
-              <DuelPlanEditor config={duelConfig} isRu={isRu} />
+              <DuelPlanEditor config={duelConfig} isRu={isRu} onLaunch={() => {
+                window.dispatchEvent(new CustomEvent('podium-navigate', { detail: { section: 'duel' } }));
+              }} />
             </div>
           </ScrollArea>
         </TabsContent>

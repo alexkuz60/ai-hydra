@@ -14,10 +14,16 @@ import { useAvailableModels } from '@/hooks/useAvailableModels';
 import { getModelRegistryEntry } from '@/config/modelRegistry';
 import { PROVIDER_LOGOS } from '@/components/ui/ProviderLogos';
 import { CONTEST_FLOW_TEMPLATES, type ContestFlowTemplateId } from '@/lib/contestFlowTemplates';
-import { Swords, Workflow, Scale, Trophy, Weight, Calculator, BarChart3, Users, Info, Save, CheckCircle2, Loader2, FileText, Maximize2, UserCheck } from 'lucide-react';
+import { useFlowDiagrams, exportToMermaid } from '@/hooks/useFlowDiagrams';
+import { useToast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
+import { Swords, Workflow, Scale, Trophy, Weight, Calculator, BarChart3, Users, Info, Save, CheckCircle2, Loader2, FileText, Maximize2, UserCheck, ExternalLink, Play } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import { SummaryItem } from './ContestSummaryItem';
+import { MermaidPreview } from '@/components/warroom/MermaidPreview';
+import { MermaidBlock } from '@/components/warroom/MermaidBlock';
+import { DUEL_VALIDATION_MESSAGES } from '@/hooks/useDuelConfig';
 import type { useDuelConfig } from '@/hooks/useDuelConfig';
 
 const ALL_CRITERIA = [
@@ -40,14 +46,32 @@ const DUEL_PIPELINE_OPTIONS: { id: ContestFlowTemplateId; ru: string; en: string
 interface DuelPlanEditorProps {
   config: ReturnType<typeof useDuelConfig>;
   isRu: boolean;
+  onLaunch?: () => void;
 }
 
-export function DuelPlanEditor({ config, isRu }: DuelPlanEditorProps) {
+interface DuelSavedPlan {
+  diagramId: string;
+  diagramName: string;
+  mermaidCode: string;
+  nodeCount: number;
+  edgeCount: number;
+}
+
+export function DuelPlanEditor({ config, isRu, onLaunch }: DuelPlanEditorProps) {
   const { lovableModels, personalModels } = useAvailableModels();
+  const { saveDiagram, isSaving } = useFlowDiagrams();
+  const { toast } = useToast();
+  const navigate = useNavigate();
   const availableModelIds = [...lovableModels, ...personalModels].map(m => m.id);
   const [pipeline, setPipeline] = useState<ContestFlowTemplateId>(() =>
     (localStorage.getItem('hydra-duel-pipeline') as ContestFlowTemplateId) || 'duel-critic'
   );
+  const [savedPlan, setSavedPlan] = useState<DuelSavedPlan | null>(() => {
+    try {
+      const raw = localStorage.getItem('hydra-duel-saved-plan');
+      return raw ? JSON.parse(raw) : null;
+    } catch { return null; }
+  });
 
   const updatePipeline = useCallback((v: ContestFlowTemplateId) => {
     setPipeline(v);
@@ -91,6 +115,59 @@ export function DuelPlanEditor({ config, isRu }: DuelPlanEditorProps) {
     const weights = { ...config.config.criteriaWeights, [id]: value };
     config.updateCriteriaWeights(weights);
   }, [config]);
+
+  const canSavePlan = pipeline !== 'none' && pipeline in CONTEST_FLOW_TEMPLATES;
+
+  const handleSavePlan = useCallback(async () => {
+    const errors = config.validate();
+    if (errors.length > 0) {
+      const msg = errors.map(e => DUEL_VALIDATION_MESSAGES[e.messageKey]?.[isRu ? 'ru' : 'en'] || e.messageKey).join('; ');
+      toast({ variant: 'destructive', description: msg });
+      return;
+    }
+    if (!canSavePlan) return;
+
+    const templateKey = pipeline as keyof typeof CONTEST_FLOW_TEMPLATES;
+    const template = CONTEST_FLOW_TEMPLATES[templateKey];
+    const { nodes, edges } = template.generate({
+      modelA: config.config.modelA || undefined,
+      modelB: config.config.modelB || undefined,
+      arbiterModel: config.config.arbiterModel || 'google/gemini-2.5-pro',
+      criteria: config.config.criteria,
+      roundCount: config.config.roundCount,
+      duelPrompt: config.config.duelPrompt,
+    } as any);
+
+    const diagramName = `${isRu ? 'Дуэль' : 'Duel'}: ${isRu ? template.ru : template.en}`;
+
+    try {
+      const result = await saveDiagram({
+        name: diagramName,
+        description: isRu
+          ? `Автогенерация из плана дуэли. Раундов: ${config.config.roundCount}`
+          : `Auto-generated from duel plan. Rounds: ${config.config.roundCount}`,
+        nodes,
+        edges,
+        viewport: { x: 0, y: 0, zoom: 0.75 },
+        source: 'pattern' as const,
+      });
+
+      const mermaidCode = exportToMermaid(nodes, edges);
+      const plan: DuelSavedPlan = {
+        diagramId: result.id,
+        diagramName,
+        mermaidCode,
+        nodeCount: nodes.length,
+        edgeCount: edges.length,
+      };
+      setSavedPlan(plan);
+      localStorage.setItem('hydra-duel-saved-plan', JSON.stringify(plan));
+
+      toast({ description: isRu ? 'План дуэли сохранён' : 'Duel plan saved' });
+    } catch (err: any) {
+      toast({ variant: 'destructive', description: `${isRu ? 'Ошибка' : 'Error'}: ${err.message}` });
+    }
+  }, [canSavePlan, pipeline, config, isRu, saveDiagram, toast]);
 
   const totalWeight = config.config.criteria.reduce((s, c) => s + (config.config.criteriaWeights[c] || 0), 0);
 
@@ -468,11 +545,95 @@ export function DuelPlanEditor({ config, isRu }: DuelPlanEditorProps) {
 
           <Separator className="opacity-30" />
 
-          <p className="text-[10px] text-muted-foreground/60 text-center">
-            {isRu
-              ? 'Перейдите на вкладку «Дуэль» в левой панели для запуска'
-              : 'Go to the "Duel" tab in the left panel to launch'}
-          </p>
+          {/* Save Plan + Launch buttons */}
+          <div className="flex gap-2">
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex-1">
+                    <Button
+                      disabled={!canSavePlan || isSaving}
+                      className="w-full gap-2"
+                      variant="outline"
+                      onClick={handleSavePlan}
+                    >
+                      {isSaving ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : savedPlan ? (
+                        <CheckCircle2 className="h-4 w-4" />
+                      ) : (
+                        <Save className="h-4 w-4" />
+                      )}
+                      {savedPlan ? getRatingsText('duelReSavePlan', isRu) : getRatingsText('duelSavePlan', isRu)}
+                    </Button>
+                  </div>
+                </TooltipTrigger>
+                {!canSavePlan && (
+                  <TooltipContent>
+                    <p className="text-xs">
+                      {isRu ? 'Выберите шаблон потока в шаге 2' : 'Select flow template in step 2'}
+                    </p>
+                  </TooltipContent>
+                )}
+              </Tooltip>
+            </TooltipProvider>
+
+            <Button
+              className="flex-1 gap-2"
+              size="default"
+              onClick={onLaunch}
+            >
+              <Play className="h-4 w-4" />
+              {getRatingsText('duelLaunchButton', isRu)}
+            </Button>
+          </div>
+
+          {/* Saved Flow preview */}
+          {savedPlan && (
+            <div className="space-y-2">
+              <Separator className="opacity-30" />
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                  <Workflow className="h-3 w-3" />
+                  {getRatingsText('duelSavedFlow', isRu)}
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 text-[10px] gap-1 px-2"
+                  onClick={() => navigate(`/flow-editor?diagram=${savedPlan.diagramId}`)}
+                >
+                  <ExternalLink className="h-3 w-3" />
+                  {getRatingsText('duelOpenInEditor', isRu)}
+                </Button>
+              </div>
+              <div className="flex flex-wrap gap-x-4 gap-y-1">
+                <SummaryItem
+                  icon={<Workflow className="h-3.5 w-3.5" />}
+                  label={getRatingsText('duelNodes', isRu)}
+                  value={String(savedPlan.nodeCount)}
+                />
+                <SummaryItem
+                  icon={<Workflow className="h-3.5 w-3.5" />}
+                  label={getRatingsText('duelEdges', isRu)}
+                  value={String(savedPlan.edgeCount)}
+                />
+              </div>
+              <Dialog>
+                <DialogTrigger asChild>
+                  <button className="w-full rounded-md border border-border/30 bg-muted/10 overflow-hidden cursor-pointer hover:border-border/60 transition-colors group relative">
+                    <MermaidPreview content={savedPlan.mermaidCode} maxHeight={100} />
+                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-background/40">
+                      <Maximize2 className="h-4 w-4 text-foreground" />
+                    </div>
+                  </button>
+                </DialogTrigger>
+                <DialogContent className="max-w-4xl max-h-[90vh] p-4">
+                  <MermaidBlock content={savedPlan.mermaidCode} />
+                </DialogContent>
+              </Dialog>
+            </div>
+          )}
         </HydraCardContent>
       </HydraCard>
     </div>

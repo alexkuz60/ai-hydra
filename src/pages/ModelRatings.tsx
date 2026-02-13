@@ -43,6 +43,16 @@ export default function ModelRatings() {
     localStorage.setItem('podium-active-section', activeSection);
   }, [activeSection]);
 
+  // Listen for navigation events from child components (e.g., DuelPlanEditor "К барьеру!")
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const section = (e as CustomEvent).detail?.section;
+      if (section) setActiveSection(section);
+    };
+    window.addEventListener('podium-navigate', handler);
+    return () => window.removeEventListener('podium-navigate', handler);
+  }, []);
+
   const nav = useNavigatorResize({ storageKey: 'model-ratings', defaultMaxSize: 25 });
 
   useEffect(() => {

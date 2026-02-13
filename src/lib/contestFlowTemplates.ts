@@ -1,5 +1,6 @@
 import { Node, Edge } from '@xyflow/react';
 import type { FlowNodeData } from '@/types/flow';
+import { generateDuelCriticFlow, generateDuelArbiterFlow } from '@/lib/duelFlowTemplates';
 
 /**
  * Contest Flow Template: "Free Prompt" (Linear)
@@ -272,15 +273,15 @@ export const CONTEST_FLOW_TEMPLATES = {
     en: 'Duel: Critic Selection',
     descriptionRu: 'Попарная дуэль: промпт → модель A → модель B → арбитр → слияние аргументов → следующий раунд',
     descriptionEn: 'Head-to-head: prompt → Model A → Model B → arbiter → merge arguments → next round',
-    generate: generateContestFreePromptFlow, // reuses same generator for now
+    generate: generateDuelCriticFlow,
   },
   'duel-arbiter': {
     id: 'duel-arbiter',
     ru: 'Дуэль: Отбор арбитров',
     en: 'Duel: Arbiter Selection',
-    descriptionRu: 'Попарная дуэль арбитров: дуэлянты оцениваются критиками',
-    descriptionEn: 'Arbiter duel: duelists evaluated by critics',
-    generate: generateContestFreePromptFlow, // reuses same generator for now
+    descriptionRu: 'Попарная дуэль арбитров: дуэлянты оцениваются мета-критиком',
+    descriptionEn: 'Arbiter duel: duelists evaluated by meta-critic',
+    generate: generateDuelArbiterFlow,
   },
 } as const;
 

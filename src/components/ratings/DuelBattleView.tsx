@@ -104,8 +104,8 @@ export function DuelBattleView({
               {paused ? (isRu ? 'Продолжить' : 'Resume') : (isRu ? 'Пауза' : 'Pause')}
             </Button>
           )}
-          {/* Next Round button (visible when paused or userEval and can advance) */}
-          {canAdvance && paused && (
+          {/* Next Round button (visible when paused OR userEvaluation enabled) */}
+          {canAdvance && (paused || (config as any).userEvaluation) && (
             <Button
               variant="default"
               size="sm"
@@ -236,7 +236,7 @@ export function DuelBattleView({
                 </div>
 
                 {/* User pick buttons (if enabled & round ready but not judged by user yet) */}
-                {(config as any).userEvaluation && round.status === 'completed' && !arbiterDone && (
+                {(config as any).userEvaluation && arbiterDone && (
                   <div className="flex items-center justify-center gap-2 px-3 py-2 bg-muted/10 border-t border-border/20">
                     <span className="text-[10px] text-muted-foreground">{getRatingsText('duelPickWinner', isRu)}:</span>
                     <Button size="sm" variant="outline" className="h-6 text-[10px]" onClick={() => onPickRoundWinner(round.id, modelA)}>
