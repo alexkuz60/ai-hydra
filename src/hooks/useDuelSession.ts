@@ -237,36 +237,6 @@ export function useDuelSession() {
     return { round: newRound, results: newResults };
   }, [session, user, rounds, toast]);
 
-  /** Build the composite prompt for round N, including previous arguments */
-  const buildDuelPrompt = useCallback((
-    roundIndex: number,
-    modelId: string,
-    originalPrompt: string,
-    allResults: ContestResult[],
-    allRounds: ContestRound[],
-    modelA: string,
-    modelB: string,
-  ): string => {
-    if (roundIndex === 0) return originalPrompt;
-
-    const opponentId = modelId === modelA ? modelB : modelA;
-    const prevRound = allRounds.find(r => r.round_index === roundIndex - 1);
-    if (!prevRound) return originalPrompt;
-
-    const ownPrev = allResults.find(r => r.round_id === prevRound.id && r.model_id === modelId);
-    const oppPrev = allResults.find(r => r.round_id === prevRound.id && r.model_id === opponentId);
-
-    return [
-      originalPrompt,
-      '---',
-      `Ваш предыдущий аргумент:\n${ownPrev?.response_text || '(нет)'}`,
-      '',
-      `Аргумент противника:\n${oppPrev?.response_text || '(нет)'}`,
-      '---',
-      'Сформулируйте свой следующий аргумент, учитывая позицию противника.',
-    ].join('\n');
-  }, []);
-
   // Realtime subscription for results
   useEffect(() => {
     if (!session) return;
@@ -299,7 +269,7 @@ export function useDuelSession() {
     session, rounds, results, loading, sessionHistory,
     loadLatestDuel, loadHistory, loadSession,
     createFromConfig, updateResult, updateSessionStatus,
-    addExtraRound, buildDuelPrompt, setSession,
+    addExtraRound, setSession,
   };
 }
 

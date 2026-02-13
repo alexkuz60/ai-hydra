@@ -18,7 +18,7 @@ import { cn } from '@/lib/utils';
 import { getModelRegistryEntry } from '@/config/modelRegistry';
 import { PROVIDER_LOGOS, PROVIDER_COLORS } from '@/components/ui/ProviderLogos';
 import { useToast } from '@/hooks/use-toast';
-import { RATINGS_I18N, getRatingsText } from './i18n';
+import { getRatingsText } from './i18n';
 
 // Extracted sub-components
 import { ContestScoreboard } from './ContestScoreboard';
