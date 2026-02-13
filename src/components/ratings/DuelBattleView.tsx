@@ -5,6 +5,7 @@ import { PROVIDER_LOGOS } from '@/components/ui/ProviderLogos';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Swords, MessageSquare, BarChart3, Scale, PlusCircle, FileText } from 'lucide-react';
+import { PromptSyntaxHighlight } from './PromptSyntaxHighlight';
 import { Textarea } from '@/components/ui/textarea';
 import { DuelPodiumScoreboard } from './DuelPodiumScoreboard';
 import { DuelResponsesPanel } from './DuelResponsesPanel';
@@ -265,9 +266,7 @@ export function DuelBattleView({
               )}
             </DialogTitle>
           </DialogHeader>
-          <p className="text-sm text-foreground/90 whitespace-pre-wrap leading-relaxed">
-            {activePrompt}
-          </p>
+          <PromptSyntaxHighlight text={activePrompt} />
         </DialogContent>
       </Dialog>
     </div>
