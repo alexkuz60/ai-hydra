@@ -28,6 +28,7 @@ export function useDuelExecution() {
     session: ContestSession,
     round: ContestRound,
     allResults: ContestResult[],
+    allRounds: ContestRound[],
     updateResult: (id: string, updates: Partial<ContestResult>) => Promise<void>,
     duelConfig: DuelConfigData,
   ) => {
@@ -67,52 +68,65 @@ export function useDuelExecution() {
     const originalPrompt = duelConfig.duelPrompt;
 
     // Build prompts for this round (cross-pollination for round > 0)
+    // Includes cumulative history: condensed excerpts of earlier rounds + full previous round
     const buildPromptForModel = (modelId: string): string => {
       if (round.round_index === 0) return originalPrompt;
 
       const opponentId = modelId === modelA ? modelB : modelA;
-      const prevRounds = (session.config.rules?.rounds || [])
-        .map((_, i) => i)
-        .filter(i => i < round.round_index);
 
-      // Find the most recent previous round results
-      const prevRoundIndex = round.round_index - 1;
-      const prevResults = allResults.filter(r => {
-        // Match by round_index via finding the round
-        return true; // We'll match via status below
-      });
+      // Collect all previous rounds in order
+      const prevRoundsSorted = allRounds
+        .filter(r => r.round_index < round.round_index)
+        .sort((a, b) => a.round_index - b.round_index);
 
-      // Find previous round's results for both models
-      const ownPrev = allResults.find(r =>
-        r.model_id === modelId && r.response_text && r.status === 'judged' &&
-        r.round_id !== round.id
-      );
-      const oppPrev = allResults.find(r =>
-        r.model_id === opponentId && r.response_text && r.status === 'judged' &&
-        r.round_id !== round.id
-      );
+      if (prevRoundsSorted.length === 0) return originalPrompt;
 
-      // Sort by created_at desc to get the latest
-      const ownLatest = allResults
-        .filter(r => r.model_id === modelId && r.response_text && r.round_id !== round.id)
-        .sort((a, b) => b.created_at.localeCompare(a.created_at))[0];
-      const oppLatest = allResults
-        .filter(r => r.model_id === opponentId && r.response_text && r.round_id !== round.id)
-        .sort((a, b) => b.created_at.localeCompare(a.created_at))[0];
+      const EXCERPT_LENGTH = 300; // chars for condensed earlier rounds
+      const sections: string[] = [originalPrompt, '\n---'];
 
-      return [
-        originalPrompt,
-        '---',
-        isRu ? 'Ваш предыдущий аргумент:' : 'Your previous argument:',
-        ownLatest?.response_text || (isRu ? '(нет)' : '(none)'),
-        '',
-        isRu ? 'Аргумент противника:' : 'Opponent\'s argument:',
-        oppLatest?.response_text || (isRu ? '(нет)' : '(none)'),
-        '---',
+      if (isRu) {
+        sections.push('## История дебатов');
+      } else {
+        sections.push('## Debate History');
+      }
+
+      for (let i = 0; i < prevRoundsSorted.length; i++) {
+        const prevRound = prevRoundsSorted[i];
+        const isLastPrevRound = i === prevRoundsSorted.length - 1;
+
+        const ownResult = allResults.find(r => r.round_id === prevRound.id && r.model_id === modelId);
+        const oppResult = allResults.find(r => r.round_id === prevRound.id && r.model_id === opponentId);
+
+        const ownText = ownResult?.response_text || (isRu ? '(нет ответа)' : '(no response)');
+        const oppText = oppResult?.response_text || (isRu ? '(нет ответа)' : '(no response)');
+
+        // Full text for the last previous round, condensed for earlier ones
+        const formatText = (text: string) => {
+          if (isLastPrevRound) return text;
+          if (text.length <= EXCERPT_LENGTH) return text;
+          return text.slice(0, EXCERPT_LENGTH) + '…';
+        };
+
+        const roundLabel = isRu ? `Раунд ${prevRound.round_index + 1}` : `Round ${prevRound.round_index + 1}`;
+        const condensedNote = !isLastPrevRound && ownText.length > EXCERPT_LENGTH
+          ? (isRu ? ' (сокращено)' : ' (condensed)')
+          : '';
+
+        sections.push(`\n### ${roundLabel}${condensedNote}`);
+        sections.push(isRu ? '**Ваш аргумент:**' : '**Your argument:**');
+        sections.push(formatText(ownText));
+        sections.push(isRu ? '**Аргумент противника:**' : '**Opponent\'s argument:**');
+        sections.push(formatText(oppText));
+      }
+
+      sections.push('\n---');
+      sections.push(
         isRu
-          ? 'Сформулируйте свой следующий аргумент, учитывая позицию противника.'
-          : 'Formulate your next argument, considering the opponent\'s position.',
-      ].join('\n');
+          ? 'Сформулируйте свой следующий аргумент, учитывая всю историю дебатов и позицию противника.'
+          : 'Formulate your next argument, considering the full debate history and the opponent\'s position.',
+      );
+
+      return sections.join('\n');
     };
 
     const systemPrompt = duelConfig.duelType === 'critic'
@@ -125,12 +139,14 @@ export function useDuelExecution() {
 
     const completedResults: ContestResult[] = [];
 
-    // Build prompt for the first model to save to the round record
-    const roundPrompt = buildPromptForModel(modelA);
-    if (round.round_index > 0 && roundPrompt) {
-      // Save the dynamically built prompt to the round record for preview
+    // Build and save both model prompts to round record for preview
+    const promptA = buildPromptForModel(modelA);
+    const promptB = buildPromptForModel(modelB);
+    if (round.round_index > 0) {
+      // Save promptA as the main prompt, encode promptB in a marker block at the end
+      const combinedPrompt = promptA + '\n\n<!-- PROMPT_B_START -->\n' + promptB + '\n<!-- PROMPT_B_END -->';
       await supabase.from('contest_rounds')
-        .update({ prompt: roundPrompt })
+        .update({ prompt: combinedPrompt })
         .eq('id', round.id);
     }
 

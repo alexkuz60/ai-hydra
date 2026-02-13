@@ -47,7 +47,7 @@ export function DuelArena() {
     if (nextRound && nextRound.status !== 'completed') {
       execution.executeDuelRound(
         duelSession.session!, nextRound, duelSession.results,
-        duelSession.updateResult, duelConfig.config,
+        duelSession.rounds, duelSession.updateResult, duelConfig.config,
       );
     } else if (!nextRound) {
       duelSession.updateSessionStatus('completed');
@@ -77,7 +77,7 @@ export function DuelArena() {
     const result = await duelSession.createFromConfig(duelConfig.config);
     if (result) {
       toast({ description: isRu ? 'Дуэль началась!' : 'Duel started!' });
-      await execution.executeDuelRound(result.session, result.rounds[0], result.results, duelSession.updateResult, duelConfig.config);
+      await execution.executeDuelRound(result.session, result.rounds[0], result.results, result.rounds, duelSession.updateResult, duelConfig.config);
     }
   };
 
@@ -267,7 +267,7 @@ export function DuelArena() {
           toast({ description: isRu ? 'Дополнительный раунд добавлен' : 'Extra round added' });
           await execution.executeDuelRound(
             duelSession.session!, result.round, duelSession.results,
-            duelSession.updateResult, duelConfig.config,
+            [...duelSession.rounds, result.round], duelSession.updateResult, duelConfig.config,
           );
         }
       }}
