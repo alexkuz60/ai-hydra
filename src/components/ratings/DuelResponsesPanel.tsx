@@ -225,54 +225,43 @@ function RoundTimelineDivider({
         isRunning ? "bg-primary/40" : isCompleted ? "bg-border" : "bg-border/30"
       )} />
 
-      {/* Round node — clickable to expand/collapse */}
-      <button
+      {/* Round node — the circle IS the expand/collapse button */}
+      <div
+        role={hasContent ? "button" : undefined}
+        tabIndex={hasContent ? 0 : undefined}
         onClick={hasContent ? onToggle : undefined}
+        onKeyDown={hasContent ? (e) => { if (e.key === 'Enter' || e.key === ' ') onToggle(); } : undefined}
         className={cn(
-          "relative flex items-center justify-center py-1 group transition-transform hover:scale-110",
-          hasContent && "cursor-pointer"
-        )}
-        disabled={!hasContent}
-        title={hasContent
-          ? (isExpanded ? (isRu ? 'Свернуть' : 'Collapse') : (isRu ? 'Развернуть' : 'Expand'))
-          : undefined}
-      >
-        {/* Status circle with chevron indicator */}
-        <div className={cn(
-          "relative w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold border-2 transition-colors",
+          "relative w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold border-2 transition-all my-1",
           isRunning && "border-primary bg-primary/10 text-primary",
           isCompleted && arbiterDone && "border-green-500/60 bg-green-500/10 text-green-600",
           isCompleted && !arbiterDone && "border-muted-foreground/40 bg-muted/30 text-muted-foreground",
           isPending && "border-border bg-background text-muted-foreground/50",
-        )}>
-          {isRunning ? (
-            <Loader2 className="h-3 w-3 animate-spin" />
-          ) : (
-            <span>{roundIndex + 1}</span>
-          )}
-          
-          {/* Chevron indicator in top-right corner */}
-          {hasContent && (
-            <div className="absolute -top-1 -right-1 bg-background rounded-full p-0.5 border border-border/50 group-hover:border-border">
-              {isExpanded
-                ? <ChevronUp className="h-2 w-2 text-muted-foreground" />
-                : <ChevronDown className="h-2 w-2 text-muted-foreground" />}
-            </div>
-          )}
-        </div>
-
-        {/* Winner badge below */}
-        {roundWinner && (
-          <Badge
-            variant={roundWinner === 'draw' ? 'secondary' : 'default'}
-            className="text-[8px] px-1 py-0 leading-tight whitespace-nowrap absolute -bottom-2"
-          >
-            {roundWinner === 'draw'
-              ? '='
-              : (roundWinner === 'A' ? '◀' : '▶')}
-          </Badge>
+          hasContent && "cursor-pointer hover:scale-125 hover:shadow-md",
+          hasContent && isExpanded && "ring-2 ring-primary/30",
         )}
-      </button>
+        title={hasContent
+          ? (isExpanded ? (isRu ? 'Свернуть' : 'Collapse') : (isRu ? 'Развернуть' : 'Expand'))
+          : undefined}
+      >
+        {isRunning ? (
+          <Loader2 className="h-3 w-3 animate-spin" />
+        ) : (
+          <span>{roundIndex + 1}</span>
+        )}
+      </div>
+
+      {/* Winner badge */}
+      {roundWinner && (
+        <Badge
+          variant={roundWinner === 'draw' ? 'secondary' : 'default'}
+          className="text-[8px] px-1 py-0 leading-tight whitespace-nowrap"
+        >
+          {roundWinner === 'draw'
+            ? '='
+            : (roundWinner === 'A' ? '◀' : '▶')}
+        </Badge>
+      )}
 
       {/* Bottom connector line */}
       <div className={cn(
