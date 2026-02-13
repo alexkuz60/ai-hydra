@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useDuelConfig } from '@/hooks/useDuelConfig';
 import { useDuelSession } from '@/hooks/useDuelSession';
 import { useDuelExecution } from '@/hooks/useDuelExecution';
+import { supabase } from '@/integrations/supabase/client';
 import { Swords, Play, Loader2, Archive } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -102,6 +103,85 @@ export function DuelArena() {
     await duelSession.loadSession(sessionId);
   };
 
+  // Collect duel statistics into model_statistics
+  const saveDuelStats = useCallback(async () => {
+    if (!user || !duelSession.session) return;
+    const modelA = duelConfig.config.modelA;
+    const modelB = duelConfig.config.modelB;
+    if (!modelA || !modelB) return;
+
+    const completedRnds = duelSession.rounds.filter(r => r.status === 'completed');
+    let winsA = 0, winsB = 0;
+    for (const round of completedRnds) {
+      const rResults = duelSession.results.filter(r => r.round_id === round.id);
+      const scoreA = rResults.find(r => r.model_id === modelA)?.arbiter_score ?? 0;
+      const scoreB = rResults.find(r => r.model_id === modelB)?.arbiter_score ?? 0;
+      if (scoreA > scoreB) winsA++;
+      else if (scoreB > scoreA) winsB++;
+    }
+
+    for (const modelId of [modelA, modelB]) {
+      const modelResults = duelSession.results.filter(r => r.model_id === modelId && r.criteria_scores);
+      const criteriaAgg: Record<string, { sum: number; count: number }> = {};
+      for (const r of modelResults) {
+        const cs = r.criteria_scores as Record<string, number>;
+        for (const [k, v] of Object.entries(cs)) {
+          if (!criteriaAgg[k]) criteriaAgg[k] = { sum: 0, count: 0 };
+          criteriaAgg[k].sum += v;
+          criteriaAgg[k].count += 1;
+        }
+      }
+
+      const arbiterScores = duelSession.results.filter(r => r.model_id === modelId && r.arbiter_score != null);
+      const avgArbiter = arbiterScores.length
+        ? arbiterScores.reduce((s, r) => s + (r.arbiter_score ?? 0), 0) / arbiterScores.length
+        : 0;
+
+      const { data: existing } = await supabase
+        .from('model_statistics')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('model_id', modelId)
+        .is('session_id', null)
+        .maybeSingle();
+
+      if (existing) {
+        const prevCriteria = (existing.criteria_averages as Record<string, { sum: number; count: number }>) || {};
+        const merged: Record<string, { sum: number; count: number }> = { ...prevCriteria };
+        for (const [k, v] of Object.entries(criteriaAgg)) {
+          if (merged[k]) {
+            merged[k] = { sum: merged[k].sum + v.sum, count: merged[k].count + v.count };
+          } else {
+            merged[k] = v;
+          }
+        }
+
+        await supabase.from('model_statistics').update({
+          contest_count: (existing.contest_count || 0) + 1,
+          contest_total_score: (existing.contest_total_score || 0) + avgArbiter,
+          arbiter_score: (existing.arbiter_score || 0) + avgArbiter,
+          arbiter_eval_count: (existing.arbiter_eval_count || 0) + arbiterScores.length,
+          criteria_averages: merged as any,
+          last_used_at: new Date().toISOString(),
+        }).eq('id', existing.id);
+      } else {
+        await supabase.from('model_statistics').insert({
+          user_id: user.id,
+          model_id: modelId,
+          session_id: null,
+          contest_count: 1,
+          contest_total_score: avgArbiter,
+          arbiter_score: avgArbiter,
+          arbiter_eval_count: arbiterScores.length,
+          criteria_averages: criteriaAgg as any,
+          last_used_at: new Date().toISOString(),
+        });
+      }
+    }
+
+    toast({ description: getRatingsText('duelStatsSaved', isRu) });
+  }, [user, duelSession.session, duelSession.rounds, duelSession.results, duelConfig.config, toast, isRu]);
+
   // No session — launch UI
   if (!duelSession.session && !initialLoad) {
     return (
@@ -178,6 +258,8 @@ export function DuelArena() {
     );
   }
 
+
+
   // Active duel view
   return (
     <DuelBattleView
@@ -192,7 +274,14 @@ export function DuelArena() {
       onTogglePause={() => setPaused(p => !p)}
       onNextRound={advanceToNextRound}
       onNewDuel={() => { duelSession.setSession(null); setPaused(false); }}
-      onFinishDuel={() => duelSession.updateSessionStatus('completed')}
+      onFinishDuel={async () => {
+        await duelSession.updateSessionStatus('completed');
+        await saveDuelStats();
+        toast({ description: getRatingsText('duelFinished', isRu) });
+      }}
+      onScoreResult={async (resultId, score) => {
+        await duelSession.updateResult(resultId, { user_score: score } as any);
+      }}
       onPickRoundWinner={async (roundId, winnerId) => {
         const roundResults = duelSession.results.filter(r => r.round_id === roundId);
         for (const r of roundResults) {
@@ -211,6 +300,7 @@ export function DuelArena() {
               );
             } else {
               await duelSession.updateSessionStatus('completed');
+              await saveDuelStats();
             }
           }
         }
