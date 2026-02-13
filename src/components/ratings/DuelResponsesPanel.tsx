@@ -1,11 +1,9 @@
 import React, { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
+import { TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
-import { ChevronDown, ChevronUp, Swords } from 'lucide-react';
+import { ChevronDown, ChevronUp, Circle, CheckCircle2, Loader2, Clock } from 'lucide-react';
 import { MarkdownRenderer } from '@/components/warroom/MarkdownRenderer';
 import { UserScoreWidget } from './UserScoreWidget';
 import { getRatingsText } from './i18n';
@@ -33,10 +31,10 @@ export function DuelResponsesPanel({
   modelA, modelB, nameA, nameB, LogoA, LogoB, roundWins,
   onScoreResult,
 }: DuelResponsesPanelProps) {
-  const config = session.config;
   const [activeModel, setActiveModel] = useState<string>('all');
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
-  const toggleExpand = (key: string) => setExpanded(prev => ({ ...prev, [key]: !prev[key] }));
+  const toggleRoundExpand = (roundId: string) =>
+    setExpanded(prev => ({ ...prev, [roundId]: !prev[roundId] }));
 
   return (
     <div className="flex flex-col h-full">
@@ -82,84 +80,105 @@ export function DuelResponsesPanel({
               ? (scoreA != null && scoreB != null ? (scoreA > scoreB ? 'A' : scoreB > scoreA ? 'B' : 'draw') : null)
               : null;
 
-            const completedRounds = rounds.filter(r => r.status === 'completed').length;
-            const isCurrentRound = round.status === 'running' || (round.status === 'completed' && ri === completedRounds - 1);
             const isRunning = round.status === 'running';
+            const isCompleted = round.status === 'completed';
+            const isPending = round.status === 'pending';
+            const isExpanded = expanded[round.id] ?? false;
 
-            // Filter by active model
             const showA = activeModel === 'all' || activeModel === modelA;
             const showB = activeModel === 'all' || activeModel === modelB;
-
             if (!showA && !showB) return null;
 
             return (
               <div key={round.id} className={cn(
                 'rounded-lg border overflow-hidden',
-                isCurrentRound ? 'border-primary/40' : 'border-border/30',
+                isRunning ? 'border-primary/40' : 'border-border/30',
               )}>
-                {/* Round header */}
-                <div className="flex items-center justify-between px-3 py-1.5 bg-muted/20 border-b border-border/20">
-                  <span className="text-xs font-medium">
-                    {getRatingsText('duelRoundN', isRu)} {ri + 1}
-                  </span>
-                  {roundWinner && (
-                    <Badge variant={roundWinner === 'draw' ? 'secondary' : 'default'} className="text-[10px]">
-                      {roundWinner === 'draw'
-                        ? getRatingsText('duelDraw', isRu)
-                        : `${getRatingsText('duelRoundWinner', isRu)}: ${roundWinner === 'A' ? nameA : nameB}`}
-                    </Badge>
-                  )}
-                </div>
-
-                {/* Split or single view */}
                 {activeModel === 'all' ? (
-                  <div className="grid grid-cols-2 divide-x divide-border/20">
+                  /* ── Split view with central timeline ── */
+                  <div className="grid grid-cols-[1fr_auto_1fr] min-h-0">
+                    {/* Left: Model A */}
                     <DuelResponseCard
                       result={resultA}
                       streamingText={isRunning ? streamingTexts[modelA] : undefined}
                       name={nameA}
                       Logo={LogoA}
                       score={scoreA}
-                      expandKey={`${round.id}-A`}
-                      expanded={expanded}
-                      toggleExpand={toggleExpand}
                       executing={executing && isRunning}
                       isRu={isRu}
+                      isExpanded={isExpanded}
                       onScore={onScoreResult}
                     />
+
+                    {/* Center: Timeline separator */}
+                    <RoundTimelineDivider
+                      roundIndex={ri}
+                      status={round.status}
+                      isRunning={isRunning}
+                      isCompleted={isCompleted}
+                      isPending={isPending}
+                      arbiterDone={arbiterDone}
+                      roundWinner={roundWinner}
+                      nameA={nameA}
+                      nameB={nameB}
+                      isExpanded={isExpanded}
+                      onToggle={() => toggleRoundExpand(round.id)}
+                      isRu={isRu}
+                      hasContent={!!(resultA?.response_text || resultB?.response_text || (isRunning && (streamingTexts[modelA] || streamingTexts[modelB])))}
+                    />
+
+                    {/* Right: Model B */}
                     <DuelResponseCard
                       result={resultB}
                       streamingText={isRunning ? streamingTexts[modelB] : undefined}
                       name={nameB}
                       Logo={LogoB}
                       score={scoreB}
-                      expandKey={`${round.id}-B`}
-                      expanded={expanded}
-                      toggleExpand={toggleExpand}
                       executing={executing && isRunning}
                       isRu={isRu}
+                      isExpanded={isExpanded}
                       onScore={onScoreResult}
                     />
                   </div>
                 ) : (
-                  <div className="p-0">
+                  /* ── Single model view ── */
+                  <div>
+                    {/* Compact round header for single view */}
+                    <button
+                      onClick={() => toggleRoundExpand(round.id)}
+                      className="w-full flex items-center justify-between px-3 py-1.5 bg-muted/20 border-b border-border/20 hover:bg-muted/30 transition-colors"
+                    >
+                      <div className="flex items-center gap-2">
+                        <TimelineIcon status={round.status} isRunning={isRunning} arbiterDone={arbiterDone} />
+                        <span className="text-xs font-medium">
+                          {getRatingsText('duelRoundN', isRu)} {ri + 1}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {roundWinner && (
+                          <Badge variant={roundWinner === 'draw' ? 'secondary' : 'default'} className="text-[10px]">
+                            {roundWinner === 'draw'
+                              ? getRatingsText('duelDraw', isRu)
+                              : `${roundWinner === 'A' ? nameA : nameB}`}
+                          </Badge>
+                        )}
+                        {isExpanded ? <ChevronUp className="h-3 w-3 text-muted-foreground" /> : <ChevronDown className="h-3 w-3 text-muted-foreground" />}
+                      </div>
+                    </button>
                     <DuelResponseCard
                       result={showA ? resultA : resultB}
                       streamingText={isRunning ? (showA ? streamingTexts[modelA] : streamingTexts[modelB]) : undefined}
                       name={showA ? nameA : nameB}
                       Logo={showA ? LogoA : LogoB}
                       score={showA ? scoreA : scoreB}
-                      expandKey={`${round.id}-${showA ? 'A' : 'B'}`}
-                      expanded={expanded}
-                      toggleExpand={toggleExpand}
                       executing={executing && isRunning}
                       isRu={isRu}
+                      isExpanded={isExpanded}
                       fullWidth
                       onScore={onScoreResult}
                     />
                   </div>
                 )}
-
               </div>
             );
           })}
@@ -169,25 +188,118 @@ export function DuelResponsesPanel({
   );
 }
 
+/* ── Timeline status icon ── */
+function TimelineIcon({ status, isRunning, arbiterDone }: {
+  status: string; isRunning: boolean; arbiterDone: boolean;
+}) {
+  if (isRunning) return <Loader2 className="h-3 w-3 animate-spin text-primary" />;
+  if (arbiterDone) return <CheckCircle2 className="h-3 w-3 text-green-500" />;
+  if (status === 'completed') return <CheckCircle2 className="h-3 w-3 text-muted-foreground" />;
+  return <Circle className="h-3 w-3 text-muted-foreground/50" />;
+}
+
+/* ── Central timeline divider between duelists ── */
+function RoundTimelineDivider({
+  roundIndex, status, isRunning, isCompleted, isPending, arbiterDone,
+  roundWinner, nameA, nameB, isExpanded, onToggle, isRu, hasContent,
+}: {
+  roundIndex: number;
+  status: string;
+  isRunning: boolean;
+  isCompleted: boolean;
+  isPending: boolean;
+  arbiterDone: boolean;
+  roundWinner: string | null;
+  nameA: string;
+  nameB: string;
+  isExpanded: boolean;
+  onToggle: () => void;
+  isRu: boolean;
+  hasContent: boolean;
+}) {
+  return (
+    <div className="flex flex-col items-center w-10 py-2 relative">
+      {/* Top connector line */}
+      <div className={cn(
+        "w-px flex-1 min-h-[8px]",
+        isRunning ? "bg-primary/40" : isCompleted ? "bg-border" : "bg-border/30"
+      )} />
+
+      {/* Round node */}
+      <button
+        onClick={hasContent ? onToggle : undefined}
+        className={cn(
+          "relative flex flex-col items-center gap-0.5 py-1 group",
+          hasContent && "cursor-pointer"
+        )}
+        disabled={!hasContent}
+        title={hasContent
+          ? (isExpanded ? (isRu ? 'Свернуть' : 'Collapse') : (isRu ? 'Развернуть' : 'Expand'))
+          : undefined}
+      >
+        {/* Status icon */}
+        <div className={cn(
+          "w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold border-2 transition-colors",
+          isRunning && "border-primary bg-primary/10 text-primary",
+          isCompleted && arbiterDone && "border-green-500/60 bg-green-500/10 text-green-600",
+          isCompleted && !arbiterDone && "border-muted-foreground/40 bg-muted/30 text-muted-foreground",
+          isPending && "border-border bg-background text-muted-foreground/50",
+        )}>
+          {isRunning ? (
+            <Loader2 className="h-3 w-3 animate-spin" />
+          ) : (
+            <span>{roundIndex + 1}</span>
+          )}
+        </div>
+
+        {/* Winner badge */}
+        {roundWinner && (
+          <Badge
+            variant={roundWinner === 'draw' ? 'secondary' : 'default'}
+            className="text-[8px] px-1 py-0 leading-tight whitespace-nowrap"
+          >
+            {roundWinner === 'draw'
+              ? '='
+              : (roundWinner === 'A' ? '◀' : '▶')}
+          </Badge>
+        )}
+
+        {/* Expand/collapse indicator */}
+        {hasContent && (
+          <div className="opacity-50 group-hover:opacity-100 transition-opacity">
+            {isExpanded
+              ? <ChevronUp className="h-3 w-3 text-muted-foreground" />
+              : <ChevronDown className="h-3 w-3 text-muted-foreground" />}
+          </div>
+        )}
+      </button>
+
+      {/* Bottom connector line */}
+      <div className={cn(
+        "w-px flex-1 min-h-[8px]",
+        isRunning ? "bg-primary/40" : isCompleted ? "bg-border" : "bg-border/30"
+      )} />
+    </div>
+  );
+}
+
+/* ── Single duelist response card (no expand button inside) ── */
 function DuelResponseCard({
-  result, streamingText, name, Logo, score, expandKey, expanded, toggleExpand,
-  executing, isRu, fullWidth, onScore,
+  result, streamingText, name, Logo, score,
+  executing, isRu, isExpanded, fullWidth, onScore,
 }: {
   result?: ContestResult;
   streamingText?: string;
   name: string;
   Logo: React.ComponentType<{ className?: string }> | null;
   score?: number | null;
-  expandKey: string;
-  expanded: Record<string, boolean>;
-  toggleExpand: (key: string) => void;
   executing: boolean;
   isRu: boolean;
+  isExpanded: boolean;
   fullWidth?: boolean;
   onScore?: (resultId: string, score: number) => void;
 }) {
   const text = result?.response_text || streamingText || '';
-  const isExpanded = expanded[expandKey];
   const canScore = result && (result.status === 'ready' || result.status === 'judged') && onScore;
 
   return (
@@ -204,15 +316,9 @@ function DuelResponseCard({
         {score != null && <Badge variant="outline" className="text-[10px] ml-1">{score.toFixed(1)}</Badge>}
       </div>
       {text ? (
-        <button onClick={() => toggleExpand(expandKey)} className="w-full text-left group">
-          <div className={cn('text-xs text-foreground/80 whitespace-pre-wrap min-h-[40px]', !isExpanded && 'line-clamp-3')}>
-            <MarkdownRenderer content={text} />
-          </div>
-          <div className="flex items-center gap-1 mt-1 text-[10px] text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity">
-            {isExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-            {isExpanded ? (isRu ? 'Свернуть' : 'Collapse') : (isRu ? 'Развернуть' : 'Expand')}
-          </div>
-        </button>
+        <div className={cn('text-xs text-foreground/80 whitespace-pre-wrap min-h-[40px]', !isExpanded && 'line-clamp-3')}>
+          <MarkdownRenderer content={text} />
+        </div>
       ) : (
         <div className="text-xs text-foreground/80 whitespace-pre-wrap min-h-[40px]">
           <span className="text-muted-foreground italic">{executing ? '...' : '—'}</span>
