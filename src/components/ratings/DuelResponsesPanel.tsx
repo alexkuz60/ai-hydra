@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -296,6 +296,18 @@ function DuelResponseCard({
   const text = result?.response_text || streamingText || '';
   const canScore = result && (result.status === 'ready' || result.status === 'judged') && onScore;
   const isPending = !text && executing;
+  
+  // Track elapsed time if executing - moved to top for hooks
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  
+  useEffect(() => {
+    if (!executing) {
+      setElapsedSeconds(0);
+      return;
+    }
+    const interval = setInterval(() => setElapsedSeconds(s => s + 1), 1000);
+    return () => clearInterval(interval);
+  }, [executing]);
 
   return (
     <div className={cn(
@@ -304,8 +316,8 @@ function DuelResponseCard({
       isPending && "after:absolute after:bottom-0 after:left-3 after:right-3 after:h-px after:bg-gradient-to-r after:from-transparent after:via-primary/60 after:to-transparent after:animate-pulse",
     )}>
       <div className="flex items-center gap-1.5">
-        {Logo && <Logo className="h-3.5 w-3.5" />}
-        <span className="text-xs font-medium truncate">{name}</span>
+         {Logo && <Logo className="h-3.5 w-3.5" />}
+         <span className="text-xs font-medium truncate">{name}</span>
         {result?.response_time_ms && (
           <span className="text-[10px] text-muted-foreground ml-auto">{(result.response_time_ms / 1000).toFixed(1)}s</span>
         )}
@@ -314,19 +326,27 @@ function DuelResponseCard({
         )}
         {score != null && <Badge variant="outline" className="text-[10px] ml-1">{score.toFixed(1)}</Badge>}
       </div>
-      {text ? (
-        <div className={cn(
-          'text-xs text-foreground/80 whitespace-pre-wrap min-h-[40px]',
-          'duel-response-content',
-          !isExpanded && 'line-clamp-3',
-        )}>
-          <MarkdownRenderer content={text} />
-        </div>
-      ) : (
-        <div className="text-xs text-foreground/80 whitespace-pre-wrap min-h-[40px]">
-          <span className="text-muted-foreground italic">{executing ? '...' : '—'}</span>
-        </div>
-      )}
+       {/* Slow response warning */}
+       {isPending && elapsedSeconds > 60 && (
+         <div className="flex items-center gap-2 px-2 py-1.5 rounded border border-border/40 bg-muted/50">
+           <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
+           <span className="text-xs text-foreground/70">{isRu ? 'Модель отвечает медленно...' : 'Model responding slowly...'}</span>
+         </div>
+       )}
+       
+       {text ? (
+         <div className={cn(
+           'text-xs text-foreground/80 whitespace-pre-wrap min-h-[40px]',
+           'duel-response-content',
+           !isExpanded && 'line-clamp-3',
+         )}>
+           <MarkdownRenderer content={text} />
+         </div>
+       ) : (
+         <div className="text-xs text-foreground/80 whitespace-pre-wrap min-h-[40px]">
+           <span className="text-muted-foreground italic">{executing ? '...' : '—'}</span>
+         </div>
+       )}
       {/* User score widget */}
       {canScore && (
         <UserScoreWidget resultId={result.id} currentScore={result.user_score} onScore={onScore!} isRu={isRu} />

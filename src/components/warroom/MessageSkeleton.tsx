@@ -163,10 +163,18 @@ export function MessageSkeleton({ pending, timeoutSeconds = 120, onRetry, onDism
       </HydraCardHeader>
       
       <HydraCardContent className="space-y-3">
-        {/* Progress bar with remaining time */}
-        <div className="space-y-1">
-          <div className="flex items-center justify-between text-xs text-muted-foreground">
-            <span>{t('skeleton.timeRemaining')}</span>
+         {/* Slow response warning */}
+         {pending.elapsedSeconds > 60 && pending.status === 'waiting' && (
+           <div className="flex items-center gap-2 px-2 py-1.5 rounded bg-muted/50 border border-border/40">
+             <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
+             <span className="text-xs text-foreground/70">{t('skeleton.modelSlow') || 'Модель отвечает медленно...'}</span>
+           </div>
+         )}
+         
+         {/* Progress bar with remaining time */}
+         <div className="space-y-1">
+           <div className="flex items-center justify-between text-xs text-muted-foreground">
+             <span>{t('skeleton.timeRemaining')}</span>
             <span className={cn(
               'font-mono',
               progressPercent >= 75 && 'text-destructive',
