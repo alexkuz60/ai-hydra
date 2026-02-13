@@ -13,6 +13,7 @@ import {
   Crown, Trophy, FileText, Scale, Radar
 } from 'lucide-react';
 import { CandidateDetail } from './CandidateDetail';
+import { LikertSummaryCard } from './LikertSummaryCard';
 import { getModelInfo, type ModelOption } from '@/hooks/useAvailableModels';
 import { format } from 'date-fns';
 import { ru as ruLocale, enUS } from 'date-fns/locale';
@@ -127,6 +128,9 @@ export function ModelDossier({ modelId, contestModels = {}, onToggleContest, onC
             </HydraCardContent>
           </HydraCard>
         )}
+
+        {/* ── Likert Arbitration Summary ── */}
+        <LikertSummaryCard modelId={modelId} isRu={isRu} />
 
         {/* ── Role Distribution (from model_statistics) ── */}
         {statsRoleDistribution.length > 0 && (
