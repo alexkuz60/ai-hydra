@@ -272,6 +272,16 @@ const CRITERIA_I18N_MAP: Record<string, { ru: string; en: string }> = {
   evidence_quality: { ru: 'Качество доказательств', en: 'Evidence Quality' },
   bias_detection: { ru: 'Обнаружение предубеждений', en: 'Bias Detection' },
   counter_example_coverage: { ru: 'Охват контраргументов', en: 'Counter-example Coverage' },
+
+  // ===== LIKERT SCALE (Arbiter Duel Meta-Critic) =====
+  likertFullyAgree: { ru: 'Полностью согласен', en: 'Fully agree' },
+  likertAgreeNuance: { ru: 'Согласен, но есть нюансы', en: 'Agree, but with nuance' },
+  likertNeedsClarification: { ru: 'Требует разъяснения', en: 'Needs clarification' },
+  likertMostlyDisagree: { ru: 'Скорее нет, чем да', en: 'Mostly disagree' },
+  likertDisagree: { ru: 'Не согласен', en: 'Disagree' },
+  likertNonsense: { ru: 'Бред', en: 'Nonsense' },
+  arbitrationQuality: { ru: 'Качество судейства', en: 'Arbitration Quality' },
+  verdictAnalysis: { ru: 'Анализ вердиктов', en: 'Verdict Analysis' },
 };
 
 /**

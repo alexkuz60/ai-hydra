@@ -119,9 +119,20 @@ export function useDuelExecution() {
           : '';
 
         sections.push(`\n### ${roundLabel}${condensedNote}`);
-        sections.push(isRu ? '**Ваш аргумент:**' : '**Your argument:**');
+        
+        // Adapt headers based on duel type (critic vs arbiter)
+        if (duelConfig.duelType === 'arbiter') {
+          sections.push(isRu ? '**Ваш вердикт:**' : '**Your verdict:**');
+        } else {
+          sections.push(isRu ? '**Ваш аргумент:**' : '**Your argument:**');
+        }
         sections.push(formatText(ownText));
-        sections.push(isRu ? '**Аргумент противника:**' : '**Opponent\'s argument:**');
+        
+        if (duelConfig.duelType === 'arbiter') {
+          sections.push(isRu ? '**Вердикт противника:**' : '**Opponent\'s verdict:**');
+        } else {
+          sections.push(isRu ? '**Аргумент противника:**' : '**Opponent\'s argument:**');
+        }
         sections.push(formatText(oppText));
       }
 
@@ -244,6 +255,7 @@ export function useDuelExecution() {
             criteria: duelConfig.criteria,
             criteria_weights: duelConfig.criteriaWeights || {},
             language,
+            duel_mode: duelConfig.duelType === 'arbiter', // Enable Likert evaluation for arbiter duels
           }),
         });
 
