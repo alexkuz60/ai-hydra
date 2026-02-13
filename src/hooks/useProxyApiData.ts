@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { getAllRegistryEntries, type ModelRegistryEntry } from '@/config/modelRegistry';
+import { useCloudSettings } from '@/hooks/useCloudSettings';
 import {
   type ProxyApiCatalogModel,
   type PingResult,
@@ -22,28 +23,30 @@ export function useProxyApiData(hasKey: boolean) {
   const [pinging, setPinging] = useState(false);
   const [testResults, setTestResults] = useState<Record<string, TestResult>>({});
   const [testingModel, setTestingModel] = useState<string | null>(null);
-  const [hiddenModels, setHiddenModels] = useState<Set<string>>(() => {
-    try {
-      const saved = localStorage.getItem('proxyapi_hidden_models');
-      return saved ? new Set(JSON.parse(saved)) : new Set();
-    } catch { return new Set(); }
-  });
+  // Cloud-synced settings
+  const { value: cloudSettings, update: updateCloudSettings } = useCloudSettings<ProxyApiSettings>(
+    'proxyapi-settings', DEFAULT_SETTINGS, SETTINGS_KEY,
+  );
+  const { value: cloudHidden, update: updateCloudHidden } = useCloudSettings<string[]>(
+    'proxyapi-hidden-models', [], 'proxyapi_hidden_models',
+  );
+  const { value: cloudUserModels, update: updateCloudUserModels } = useCloudSettings<string[]>(
+    'proxyapi-user-models', [], USER_MODELS_KEY,
+  );
+
+  // Derived state from cloud values
+  const settings = cloudSettings;
+  const setSettings = useCallback((val: ProxyApiSettings | ((prev: ProxyApiSettings) => ProxyApiSettings)) => {
+    updateCloudSettings(val as any);
+  }, [updateCloudSettings]);
+
+  const hiddenModels = useMemo(() => new Set(cloudHidden), [cloudHidden]);
+  const userModelIds = useMemo(() => new Set(cloudUserModels), [cloudUserModels]);
+
   const [goneModel, setGoneModel] = useState<ModelRegistryEntry | null>(null);
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [logsLoading, setLogsLoading] = useState(false);
-  const [settings, setSettings] = useState<ProxyApiSettings>(() => {
-    try {
-      const saved = localStorage.getItem(SETTINGS_KEY);
-      return saved ? { ...DEFAULT_SETTINGS, ...JSON.parse(saved) } : DEFAULT_SETTINGS;
-    } catch { return DEFAULT_SETTINGS; }
-  });
   const [catalogSearch, setCatalogSearch] = useState('');
-  const [userModelIds, setUserModelIds] = useState<Set<string>>(() => {
-    try {
-      const saved = localStorage.getItem(USER_MODELS_KEY);
-      return saved ? new Set(JSON.parse(saved)) : new Set();
-    } catch { return new Set(); }
-  });
   const [proxyCatalog, setProxyCatalog] = useState<ProxyApiCatalogModel[]>([]);
   const [catalogLoading, setCatalogLoading] = useState(false);
   const [catalogLoaded, setCatalogLoaded] = useState(false);
@@ -212,25 +215,19 @@ export function useProxyApiData(hasKey: boolean) {
   }, [user, massTestRunning, proxyModels, userAddedModels, fetchLogs]);
 
   const addUserModel = useCallback((modelId: string) => {
-    const next = new Set(userModelIds);
-    next.add(modelId);
-    setUserModelIds(next);
-    localStorage.setItem(USER_MODELS_KEY, JSON.stringify([...next]));
+    updateCloudUserModels(prev => [...new Set([...prev, modelId])]);
     setCatalogSearch('');
-  }, [userModelIds]);
+  }, [updateCloudUserModels]);
 
   const removeUserModel = useCallback(async (modelId: string) => {
-    const next = new Set(userModelIds);
-    next.delete(modelId);
-    setUserModelIds(next);
-    localStorage.setItem(USER_MODELS_KEY, JSON.stringify([...next]));
+    updateCloudUserModels(prev => prev.filter(id => id !== modelId));
     if (user) {
       try {
         await supabase.from('proxy_api_logs').delete().eq('user_id', user.id).eq('model_id', modelId);
         setLogsRefreshTrigger(prev => prev + 1);
       } catch { /* silent */ }
     }
-  }, [userModelIds, user]);
+  }, [updateCloudUserModels, user]);
 
   const deleteModelStats = useCallback(async (rawModelId: string, displayModel: string) => {
     if (user) {
@@ -239,25 +236,19 @@ export function useProxyApiData(hasKey: boolean) {
       } catch { /* silent */ }
     }
     // Also remove from user list if applicable
-    const userModelKey = userModelIds.has(displayModel) ? displayModel
-      : [...userModelIds].find(id => id === displayModel || id.endsWith(`/${displayModel}`)) || null;
-    if (userModelKey) {
-      const next = new Set(userModelIds);
-      next.delete(userModelKey);
-      setUserModelIds(next);
-      localStorage.setItem(USER_MODELS_KEY, JSON.stringify([...next]));
-    }
+    updateCloudUserModels(prev => {
+      const key = prev.includes(displayModel) ? displayModel
+        : prev.find(id => id === displayModel || id.endsWith(`/${displayModel}`)) || null;
+      return key ? prev.filter(id => id !== key) : prev;
+    });
     setLogsRefreshTrigger(prev => prev + 1);
-  }, [user, userModelIds]);
+  }, [user, updateCloudUserModels]);
 
   const handleConfirmRemove = useCallback(() => {
     if (!goneModel) return;
-    const next = new Set(hiddenModels);
-    next.add(goneModel.id);
-    setHiddenModels(next);
-    localStorage.setItem('proxyapi_hidden_models', JSON.stringify([...next]));
+    updateCloudHidden(prev => [...new Set([...prev, goneModel.id])]);
     setGoneModel(null);
-  }, [goneModel, hiddenModels]);
+  }, [goneModel, updateCloudHidden]);
 
   const handleExportCSV = useCallback(() => {
     if (logs.length === 0) return;
@@ -285,9 +276,7 @@ export function useProxyApiData(hasKey: boolean) {
     if (hasKey && user) fetchLogs();
   }, [hasKey, user, fetchLogs, logsRefreshTrigger]);
 
-  useEffect(() => {
-    localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
-  }, [settings]);
+  // Settings are now auto-synced via useCloudSettings
 
   return {
     // State
