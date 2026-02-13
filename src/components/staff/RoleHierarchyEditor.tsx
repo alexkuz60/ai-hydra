@@ -7,7 +7,6 @@ import {
   ArrowUp, 
   ArrowLeftRight,
   Swords,
-  Plus,
   X,
 } from 'lucide-react';
 import { 
@@ -124,11 +123,9 @@ const RoleHierarchyEditor: React.FC<RoleHierarchyEditorProps> = ({
         <span className={cn("text-sm flex-1 truncate font-medium", isInList ? "text-primary" : config.color)}>
           {t(config.label)}
         </span>
-        {isInList ? (
-          <X className="h-3 w-3 text-primary" />
-        ) : (
-          <Plus className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100" />
-        )}
+         {isInList && (
+           <X className="h-3 w-3 text-primary" />
+         )}
       </label>
     );
   };
