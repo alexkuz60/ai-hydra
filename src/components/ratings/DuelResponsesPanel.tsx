@@ -25,14 +25,13 @@ interface DuelResponsesPanelProps {
   LogoA: React.ComponentType<{ className?: string }> | null;
   LogoB: React.ComponentType<{ className?: string }> | null;
   roundWins: { winsA: number; winsB: number; draws: number };
-  onPickRoundWinner: (roundId: string, winnerId: string) => void;
   onScoreResult?: (resultId: string, score: number) => void;
 }
 
 export function DuelResponsesPanel({
   session, rounds, results, streamingTexts, executing, isRu,
   modelA, modelB, nameA, nameB, LogoA, LogoB, roundWins,
-  onPickRoundWinner, onScoreResult,
+  onScoreResult,
 }: DuelResponsesPanelProps) {
   const config = session.config;
   const [activeModel, setActiveModel] = useState<string>('all');
@@ -161,18 +160,6 @@ export function DuelResponsesPanel({
                   </div>
                 )}
 
-                {/* User pick buttons */}
-                {(config as any).userEvaluation && arbiterDone && (
-                  <div className="flex items-center justify-center gap-2 px-3 py-2 bg-muted/10 border-t border-border/20">
-                    <span className="text-[10px] text-muted-foreground">{getRatingsText('duelPickWinner', isRu)}:</span>
-                    <Button size="sm" variant="outline" className="h-6 text-[10px]" onClick={() => onPickRoundWinner(round.id, modelA)}>
-                      {nameA}
-                    </Button>
-                    <Button size="sm" variant="outline" className="h-6 text-[10px]" onClick={() => onPickRoundWinner(round.id, modelB)}>
-                      {nameB}
-                    </Button>
-                  </div>
-                )}
               </div>
             );
           })}

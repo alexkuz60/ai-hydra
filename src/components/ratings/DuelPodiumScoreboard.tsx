@@ -35,18 +35,16 @@ interface DuelPodiumScoreboardProps {
   totalRounds: number;
   executing: boolean;
   arbiterRunning: boolean;
-  paused: boolean;
   isRu: boolean;
   onNewDuel: () => void;
   onFinishDuel: () => void;
-  onTogglePause: () => void;
 }
 
 export function DuelPodiumScoreboard({
   session, rounds, results, modelA, modelB, nameA, nameB, LogoA, LogoB,
   winsA, winsB, draws, currentRound, totalRounds,
-  executing, arbiterRunning, paused, isRu,
-  onNewDuel, onFinishDuel, onTogglePause,
+  executing, arbiterRunning, isRu,
+  onNewDuel, onFinishDuel,
 }: DuelPodiumScoreboardProps) {
   const { phase, activeModelId } = detectDuelPhase(results, session.status, modelA, modelB);
   const [msgIndex, setMsgIndex] = useState(0);
@@ -79,9 +77,7 @@ export function DuelPodiumScoreboard({
     ? getRatingsText('done', isRu)
     : executing || arbiterRunning
       ? getRatingsText('live', isRu)
-      : paused
-        ? getRatingsText('paused', isRu)
-        : session.status;
+      : session.status;
 
   // Mini duel podium — two bars for A/B
   const maxWins = Math.max(winsA, winsB, 1);
@@ -198,16 +194,6 @@ export function DuelPodiumScoreboard({
               >
                 {statusBadge}
               </Badge>
-              {!isCompleted && (
-                <Button
-                  size="sm" variant="outline"
-                  className="h-6 text-[10px] gap-1 px-2"
-                  onClick={onTogglePause}
-                >
-                  {paused ? <Play className="h-2.5 w-2.5" /> : <Pause className="h-2.5 w-2.5" />}
-                  {paused ? (isRu ? 'Продолжить' : 'Resume') : (isRu ? 'Пауза' : 'Pause')}
-                </Button>
-              )}
               {!isCompleted && (
                 <Button
                   size="sm" variant="outline"

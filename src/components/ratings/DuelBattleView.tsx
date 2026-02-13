@@ -21,19 +21,15 @@ interface DuelBattleViewProps {
   executing: boolean;
   arbiterRunning: boolean;
   isRu: boolean;
-  paused: boolean;
   onNewDuel: () => void;
   onFinishDuel: () => void;
-  onPickRoundWinner: (roundId: string, winnerId: string) => void;
-  onTogglePause: () => void;
-  onNextRound: () => void;
   onAddExtraRound?: (prompt: string) => void;
   onScoreResult?: (resultId: string, score: number) => void;
 }
 
 export function DuelBattleView({
   session, rounds, results, streamingTexts, executing, arbiterRunning,
-  isRu, paused, onNewDuel, onFinishDuel, onPickRoundWinner, onTogglePause, onNextRound,
+  isRu, onNewDuel, onFinishDuel,
   onAddExtraRound, onScoreResult,
 }: DuelBattleViewProps) {
   const config = session.config;
@@ -98,20 +94,13 @@ export function DuelBattleView({
         winsA={roundWins.winsA} winsB={roundWins.winsB} draws={roundWins.draws}
         currentRound={activeRoundNum} totalRounds={totalRounds}
         executing={executing} arbiterRunning={arbiterRunning}
-        paused={paused} isRu={isRu}
+        isRu={isRu}
         onNewDuel={onNewDuel}
         onFinishDuel={() => setFinishDialogOpen(true)}
-        onTogglePause={onTogglePause}
       />
 
-      {/* Action row: next round + extra round */}
+      {/* Action row: extra round */}
       <div className="px-3 py-1.5 border-b border-border/30 flex items-center gap-2">
-        {canAdvance && (paused || (config as any).userEvaluation) && (
-          <Button variant="default" size="sm" className="h-7 text-xs gap-1" onClick={onNextRound}>
-            <Swords className="h-3 w-3" />
-            {isRu ? 'Следующий раунд' : 'Next Round'}
-          </Button>
-        )}
         {onAddExtraRound && !executing && !arbiterRunning && (
           <Button variant="outline" size="sm" className="h-7 text-xs gap-1" onClick={() => setExtraRoundOpen(true)}>
             <PlusCircle className="h-3 w-3" />
@@ -146,7 +135,7 @@ export function DuelBattleView({
               streamingTexts={streamingTexts} executing={executing} isRu={isRu}
               modelA={modelA} modelB={modelB} nameA={nameA} nameB={nameB}
               LogoA={LogoA} LogoB={LogoB} roundWins={roundWins}
-              onPickRoundWinner={onPickRoundWinner} onScoreResult={onScoreResult}
+              onScoreResult={onScoreResult}
             />
           </TabsContent>
 

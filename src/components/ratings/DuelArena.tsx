@@ -23,7 +23,6 @@ export function DuelArena() {
   const duelSession = useDuelSession();
   const execution = useDuelExecution();
   const [initialLoad, setInitialLoad] = useState(true);
-  const [paused, setPaused] = useState(false);
 
   useEffect(() => {
     if (user && initialLoad) {
@@ -31,12 +30,10 @@ export function DuelArena() {
     }
   }, [user]);
 
-  // Auto-advance to next round after arbiter finishes (when not paused and userEvaluation is off)
+  // Auto-advance to next round after arbiter finishes
   useEffect(() => {
     if (execution.executing || execution.arbiterRunning) return;
     if (!duelSession.session || duelSession.session.status === 'completed') return;
-    if (duelConfig.config.userEvaluation) return;
-    if (paused) return;
 
     const completedRounds = duelSession.rounds.filter(r => r.status === 'completed');
     const lastCompleted = completedRounds[completedRounds.length - 1];
@@ -54,26 +51,10 @@ export function DuelArena() {
       );
     } else if (!nextRound) {
       duelSession.updateSessionStatus('completed');
+      saveDuelStats();
     }
-  }, [duelSession.results, execution.executing, execution.arbiterRunning, paused]);
+  }, [duelSession.results, execution.executing, execution.arbiterRunning]);
 
-  const advanceToNextRound = useCallback(() => {
-    if (!duelSession.session || execution.executing || execution.arbiterRunning) return;
-
-    const completedRounds = duelSession.rounds.filter(r => r.status === 'completed');
-    const lastCompleted = completedRounds[completedRounds.length - 1];
-    if (!lastCompleted) return;
-
-    const nextRound = duelSession.rounds.find(r => r.round_index === lastCompleted.round_index + 1);
-    if (nextRound && nextRound.status !== 'completed') {
-      execution.executeDuelRound(
-        duelSession.session!, nextRound, duelSession.results,
-        duelSession.updateResult, duelConfig.config,
-      );
-    } else if (!nextRound) {
-      duelSession.updateSessionStatus('completed');
-    }
-  }, [duelSession, execution, duelConfig.config]);
 
   const handleLaunch = async () => {
     const errors = duelConfig.validate();
@@ -91,7 +72,6 @@ export function DuelArena() {
       return;
     }
 
-    setPaused(false);
     const result = await duelSession.createFromConfig(duelConfig.config);
     if (result) {
       toast({ description: isRu ? 'Дуэль началась!' : 'Duel started!' });
@@ -270,10 +250,7 @@ export function DuelArena() {
       executing={execution.executing}
       arbiterRunning={execution.arbiterRunning}
       isRu={isRu}
-      paused={paused}
-      onTogglePause={() => setPaused(p => !p)}
-      onNextRound={advanceToNextRound}
-      onNewDuel={() => { duelSession.setSession(null); setPaused(false); }}
+      onNewDuel={() => { duelSession.setSession(null); }}
       onFinishDuel={async () => {
         await duelSession.updateSessionStatus('completed');
         await saveDuelStats();
@@ -290,29 +267,6 @@ export function DuelArena() {
             duelSession.session!, result.round, duelSession.results,
             duelSession.updateResult, duelConfig.config,
           );
-        }
-      }}
-      onPickRoundWinner={async (roundId, winnerId) => {
-        const roundResults = duelSession.results.filter(r => r.round_id === roundId);
-        for (const r of roundResults) {
-          await duelSession.updateResult(r.id, {
-            metadata: { ...(r.metadata || {}), user_winner: winnerId },
-          } as any);
-        }
-        if (!paused) {
-          const currentRound = duelSession.rounds.find(r => r.id === roundId);
-          if (currentRound) {
-            const nextRound = duelSession.rounds.find(r => r.round_index === currentRound.round_index + 1);
-            if (nextRound) {
-              await execution.executeDuelRound(
-                duelSession.session!, nextRound, duelSession.results,
-                duelSession.updateResult, duelConfig.config,
-              );
-            } else {
-              await duelSession.updateSessionStatus('completed');
-              await saveDuelStats();
-            }
-          }
         }
       }}
     />
