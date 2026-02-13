@@ -255,22 +255,12 @@ function RoundTimelineDivider({
       >
         {isRunning ? (
           <Loader2 className="h-3 w-3 animate-spin" />
+        ) : roundWinner ? (
+          <span>{roundWinner === 'draw' ? '=' : (roundWinner === 'A' ? '◀' : '▶')}</span>
         ) : (
           <span>{roundIndex + 1}</span>
         )}
       </div>
-
-      {/* Winner badge */}
-      {roundWinner && (
-        <Badge
-          variant={roundWinner === 'draw' ? 'secondary' : 'default'}
-          className="text-[8px] px-1 py-0 leading-tight whitespace-nowrap"
-        >
-          {roundWinner === 'draw'
-            ? '='
-            : (roundWinner === 'A' ? '◀' : '▶')}
-        </Badge>
-      )}
 
       {/* Bottom connector line */}
       <div className={cn(
