@@ -225,11 +225,11 @@ function RoundTimelineDivider({
         isRunning ? "bg-primary/40" : isCompleted ? "bg-border" : "bg-border/30"
       )} />
 
-      {/* Round node */}
+      {/* Round node — clickable to expand/collapse */}
       <button
         onClick={hasContent ? onToggle : undefined}
         className={cn(
-          "relative flex flex-col items-center gap-0.5 py-1 group",
+          "relative flex items-center justify-center py-1 group transition-transform hover:scale-110",
           hasContent && "cursor-pointer"
         )}
         disabled={!hasContent}
@@ -237,9 +237,9 @@ function RoundTimelineDivider({
           ? (isExpanded ? (isRu ? 'Свернуть' : 'Collapse') : (isRu ? 'Развернуть' : 'Expand'))
           : undefined}
       >
-        {/* Status icon */}
+        {/* Status circle with chevron indicator */}
         <div className={cn(
-          "w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold border-2 transition-colors",
+          "relative w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold border-2 transition-colors",
           isRunning && "border-primary bg-primary/10 text-primary",
           isCompleted && arbiterDone && "border-green-500/60 bg-green-500/10 text-green-600",
           isCompleted && !arbiterDone && "border-muted-foreground/40 bg-muted/30 text-muted-foreground",
@@ -250,27 +250,27 @@ function RoundTimelineDivider({
           ) : (
             <span>{roundIndex + 1}</span>
           )}
+          
+          {/* Chevron indicator in top-right corner */}
+          {hasContent && (
+            <div className="absolute -top-1 -right-1 bg-background rounded-full p-0.5 border border-border/50 group-hover:border-border">
+              {isExpanded
+                ? <ChevronUp className="h-2 w-2 text-muted-foreground" />
+                : <ChevronDown className="h-2 w-2 text-muted-foreground" />}
+            </div>
+          )}
         </div>
 
-        {/* Winner badge */}
+        {/* Winner badge below */}
         {roundWinner && (
           <Badge
             variant={roundWinner === 'draw' ? 'secondary' : 'default'}
-            className="text-[8px] px-1 py-0 leading-tight whitespace-nowrap"
+            className="text-[8px] px-1 py-0 leading-tight whitespace-nowrap absolute -bottom-2"
           >
             {roundWinner === 'draw'
               ? '='
               : (roundWinner === 'A' ? '◀' : '▶')}
           </Badge>
-        )}
-
-        {/* Expand/collapse indicator */}
-        {hasContent && (
-          <div className="opacity-50 group-hover:opacity-100 transition-opacity">
-            {isExpanded
-              ? <ChevronUp className="h-3 w-3 text-muted-foreground" />
-              : <ChevronDown className="h-3 w-3 text-muted-foreground" />}
-          </div>
         )}
       </button>
 
