@@ -4,7 +4,8 @@ import { getModelRegistryEntry } from '@/config/modelRegistry';
 import { PROVIDER_LOGOS } from '@/components/ui/ProviderLogos';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Swords, MessageSquare, BarChart3, Scale, PlusCircle } from 'lucide-react';
+import { Swords, MessageSquare, BarChart3, Scale, PlusCircle, FileText } from 'lucide-react';
+import PromptPreviewDialog from '@/components/staff/PromptPreviewDialog';
 import { Textarea } from '@/components/ui/textarea';
 import { DuelPodiumScoreboard } from './DuelPodiumScoreboard';
 import { DuelResponsesPanel } from './DuelResponsesPanel';
@@ -46,6 +47,13 @@ export function DuelBattleView({
   const [finishDialogOpen, setFinishDialogOpen] = useState(false);
   const [extraRoundOpen, setExtraRoundOpen] = useState(false);
   const [extraRoundPrompt, setExtraRoundPrompt] = useState('');
+  const [promptPreviewOpen, setPromptPreviewOpen] = useState(false);
+
+  const lastRoundPrompt = useMemo(() => {
+    const completed = rounds.filter(r => r.status === 'completed' || r.status === 'running');
+    const last = completed.length > 0 ? completed[completed.length - 1] : rounds[rounds.length - 1];
+    return last?.prompt || '';
+  }, [rounds]);
 
   const roundWins = useMemo(() => {
     let winsA = 0, winsB = 0, draws = 0;
@@ -99,8 +107,14 @@ export function DuelBattleView({
         onFinishDuel={() => setFinishDialogOpen(true)}
       />
 
-      {/* Action row: extra round */}
+      {/* Action row: extra round + prompt preview */}
       <div className="px-3 py-1.5 border-b border-border/30 flex items-center gap-2">
+        {lastRoundPrompt && (
+          <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={() => setPromptPreviewOpen(true)}
+            title={isRu ? 'Промпт последнего раунда' : 'Last round prompt'}>
+            <FileText className="h-3.5 w-3.5" />
+          </Button>
+        )}
         {onAddExtraRound && !executing && !arbiterRunning && (
           <Button variant="outline" size="sm" className="h-7 text-xs gap-1" onClick={() => setExtraRoundOpen(true)}>
             <PlusCircle className="h-3 w-3" />
@@ -212,6 +226,14 @@ export function DuelBattleView({
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Last round prompt preview */}
+      <PromptPreviewDialog
+        open={promptPreviewOpen}
+        onOpenChange={setPromptPreviewOpen}
+        title={isRu ? 'Промпт последнего раунда' : 'Last Round Prompt'}
+        content={lastRoundPrompt}
+      />
     </div>
   );
 }
