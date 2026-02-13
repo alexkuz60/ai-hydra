@@ -211,6 +211,17 @@ export const RATINGS_I18N = {
   duelOpenInEditor: { ru: 'Открыть в редакторе', en: 'Open in Editor' },
   duelNodes: { ru: 'Узлов', en: 'Nodes' },
   duelEdges: { ru: 'Связей', en: 'Edges' },
+
+  // ===== DUEL ARENA TABS =====
+  duelTabResponses: { ru: 'Ответы', en: 'Responses' },
+  duelTabScores: { ru: 'Оценки', en: 'Scores' },
+  duelTabArbiter: { ru: 'Арбитраж', en: 'Arbitration' },
+  duelFinishConfirmTitle: { ru: 'Завершить дуэль?', en: 'Finish duel?' },
+  duelFinishConfirmDesc: { ru: 'Все текущие раунды будут завершены. Это действие нельзя отменить.', en: 'All current rounds will be completed. This action cannot be undone.' },
+  duelCancel: { ru: 'Отмена', en: 'Cancel' },
+  duelFinishConfirm: { ru: 'Завершить', en: 'Finish' },
+  duelFinished: { ru: 'Дуэль завершена', en: 'Duel finished' },
+  duelStatsSaved: { ru: 'Статистика дуэли обновлена', en: 'Duel statistics updated' },
 } as const;
 
 export type RatingsI18nKey = keyof typeof RATINGS_I18N;
