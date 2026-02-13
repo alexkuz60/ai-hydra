@@ -46,7 +46,7 @@ function FlowEditorContent() {
   const [hasChanges, setHasChanges] = useState(false);
   const [selectedNode, setSelectedNode] = useState<Node | null>(null);
   const [selectedEdge, setSelectedEdge] = useState<Edge | null>(null);
-  const { value: edgeSettings, update: setEdgeSettingsCloud } = useCloudSettings<EdgeStyleSettings>(
+  const { value: edgeSettings, update: setEdgeSettingsCloud, loaded: edgeSettingsLoaded } = useCloudSettings<EdgeStyleSettings>(
     'flow-edge-settings', DEFAULT_EDGE_SETTINGS, 'flowEditor.edgeSettings',
   );
   const [showExecutionPanel, setShowExecutionPanel] = useState(false);
@@ -500,6 +500,7 @@ function FlowEditorContent() {
             onNameChange={setDiagramName}
             edgeSettings={edgeSettings}
             onEdgeSettingsChange={handleEdgeSettingsChange}
+            edgeSettingsLoaded={edgeSettingsLoaded}
             canUndo={history.canUndo}
             canRedo={history.canRedo}
             onUndo={handleUndo}

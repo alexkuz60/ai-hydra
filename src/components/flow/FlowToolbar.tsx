@@ -74,6 +74,7 @@ interface FlowToolbarProps {
   hasChanges: boolean;
   edgeSettings: EdgeStyleSettings;
   onEdgeSettingsChange: (settings: EdgeStyleSettings) => void;
+  edgeSettingsLoaded?: boolean;
   canUndo: boolean;
   canRedo: boolean;
   onUndo: () => void;
@@ -323,6 +324,7 @@ export function FlowToolbar({
   onNameChange,
   edgeSettings,
   onEdgeSettingsChange,
+  edgeSettingsLoaded = true,
   canUndo,
   canRedo,
   onUndo,
@@ -336,7 +338,7 @@ export function FlowToolbar({
   onToggleLogistics,
   isLogisticsOpen,
 }: Pick<FlowToolbarProps, 
-  'diagramName' | 'onNameChange' | 'edgeSettings' | 'onEdgeSettingsChange' |
+  'diagramName' | 'onNameChange' | 'edgeSettings' | 'onEdgeSettingsChange' | 'edgeSettingsLoaded' |
   'canUndo' | 'canRedo' | 'onUndo' | 'onRedo' | 'onAutoLayout' | 'hasChanges' |
   'isExecuting' | 'onStartExecution' | 'onStopExecution' | 'canExecute' |
   'onToggleLogistics' | 'isLogisticsOpen'
@@ -468,6 +470,7 @@ export function FlowToolbar({
       <EdgeStyleSelector
         settings={edgeSettings}
         onSettingsChange={onEdgeSettingsChange}
+        syncLoaded={edgeSettingsLoaded}
       />
       </span>
     </div>

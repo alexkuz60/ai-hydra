@@ -18,6 +18,7 @@ import { useFlowDiagrams, exportToMermaid } from '@/hooks/useFlowDiagrams';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { Swords, Workflow, Scale, Trophy, Weight, Calculator, BarChart3, Users, Info, Save, CheckCircle2, Loader2, FileText, Maximize2, UserCheck, ExternalLink, Play } from 'lucide-react';
+import { CloudSyncIndicator } from '@/components/ui/CloudSyncIndicator';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import { SummaryItem } from './ContestSummaryItem';
@@ -63,6 +64,7 @@ export function DuelPlanEditor({ config, isRu, onLaunch }: DuelPlanEditorProps) 
   const { toast } = useToast();
   const navigate = useNavigate();
   const availableModelIds = [...lovableModels, ...personalModels].map(m => m.id);
+  const { loaded: cloudLoaded } = config;
   const [pipeline, setPipeline] = useState<ContestFlowTemplateId>(() =>
     (localStorage.getItem('hydra-duel-pipeline') as ContestFlowTemplateId) || 'duel-critic'
   );
@@ -176,11 +178,14 @@ export function DuelPlanEditor({ config, isRu, onLaunch }: DuelPlanEditorProps) 
       {/* ── Step 1: Duel Configuration ── */}
       <HydraCard variant="default" className="border-border/50">
         <HydraCardHeader>
-          <div className="flex items-center gap-2 text-primary">
-            <Swords className="h-4 w-4" />
-            <span className="text-xs font-bold uppercase tracking-wider opacity-60">
-              {isRu ? 'Шаг 1' : 'Step 1'}
-            </span>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 text-primary">
+              <Swords className="h-4 w-4" />
+              <span className="text-xs font-bold uppercase tracking-wider opacity-60">
+                {isRu ? 'Шаг 1' : 'Step 1'}
+              </span>
+            </div>
+            <CloudSyncIndicator loaded={cloudLoaded} />
           </div>
           <HydraCardTitle>{getRatingsText('duelPlanTitle', isRu)}</HydraCardTitle>
         </HydraCardHeader>

@@ -5,20 +5,25 @@ import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Settings2 } from 'lucide-react';
+import { CloudSyncIndicator } from '@/components/ui/CloudSyncIndicator';
 import type { ProxyApiSettings } from './types';
 
 interface ProxySettingsSectionProps {
   settings: ProxyApiSettings;
   onSettingsChange: (updater: (s: ProxyApiSettings) => ProxyApiSettings) => void;
+  syncLoaded?: boolean;
 }
 
-export function ProxySettingsSection({ settings, onSettingsChange }: ProxySettingsSectionProps) {
+export function ProxySettingsSection({ settings, onSettingsChange, syncLoaded = true }: ProxySettingsSectionProps) {
   return (
     <AccordionItem value="settings" className="border rounded-lg px-4">
       <AccordionTrigger className="hover:no-underline">
-        <div className="flex items-center gap-2">
-          <Settings2 className="h-4 w-4 text-primary" />
-          <span className="font-semibold">Настройки</span>
+        <div className="flex items-center justify-between w-full pr-4">
+          <div className="flex items-center gap-2">
+            <Settings2 className="h-4 w-4 text-primary" />
+            <span className="font-semibold">Настройки</span>
+          </div>
+          <CloudSyncIndicator loaded={syncLoaded} />
         </div>
       </AccordionTrigger>
       <AccordionContent className="pb-4 space-y-4">

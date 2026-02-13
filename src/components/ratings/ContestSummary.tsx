@@ -4,6 +4,7 @@ import { HydraCard, HydraCardHeader, HydraCardTitle, HydraCardContent } from '@/
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Save, Trophy, CheckCircle2, Loader2 } from 'lucide-react';
+import { CloudSyncIndicator } from '@/components/ui/CloudSyncIndicator';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { CONTEST_FLOW_TEMPLATES } from '@/lib/contestFlowTemplates';
 import { useFlowDiagrams } from '@/hooks/useFlowDiagrams';
@@ -36,6 +37,7 @@ export function ContestSummary() {
     resetAll,
     importConfig,
     validateForSave,
+    loaded: cloudLoaded,
   } = useContestConfig();
 
   const canSave = pipeline !== 'none' && pipeline in CONTEST_FLOW_TEMPLATES;
@@ -108,18 +110,21 @@ export function ContestSummary() {
   }, [canSave, pipeline, arbitration, roundCount, isRu, saveDiagram, toast, roundPrompt, updateSavedPlan, validateForSave]);
 
   return (
-    <HydraCard variant="default" glow className="border-border/50">
-       <HydraCardHeader>
-         <div className="flex items-center gap-2 text-hydra-arbiter">
-           <Trophy className="h-4 w-4" />
-           <span className="text-xs font-bold uppercase tracking-wider opacity-60">
-             {getRatingsText('step5', isRu)}
-           </span>
-         </div>
-         <HydraCardTitle>
-           {getRatingsText('previewAndLaunch', isRu)}
-         </HydraCardTitle>
-       </HydraCardHeader>
+     <HydraCard variant="default" glow className="border-border/50">
+        <HydraCardHeader>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 text-hydra-arbiter">
+              <Trophy className="h-4 w-4" />
+              <span className="text-xs font-bold uppercase tracking-wider opacity-60">
+                {getRatingsText('step5', isRu)}
+              </span>
+            </div>
+            <CloudSyncIndicator loaded={cloudLoaded} />
+          </div>
+          <HydraCardTitle>
+            {getRatingsText('previewAndLaunch', isRu)}
+          </HydraCardTitle>
+        </HydraCardHeader>
 
       <HydraCardContent className="space-y-3">
         <ContestSummaryConfig
