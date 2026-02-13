@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { useNodesState, useEdgesState, Node, Edge, ReactFlowInstance, ReactFlowProvider } from '@xyflow/react';
+import { CONTEST_FLOW_TEMPLATES } from '@/lib/contestFlowTemplates';
 import { Layout } from '@/components/layout/Layout';
 import { FlowCanvas } from '@/components/flow/FlowCanvas';
 import { FlowSidebar } from '@/components/flow/FlowSidebar';
@@ -260,6 +261,24 @@ function FlowEditorContent() {
     lastStateRef.current = JSON.stringify({ nodes: [], edges: [] });
   }, [setNodes, setEdges, t, history]);
 
+  const handleNewFromTemplate = useCallback((templateId: string) => {
+    const template = CONTEST_FLOW_TEMPLATES[templateId as keyof typeof CONTEST_FLOW_TEMPLATES];
+    if (!template) return;
+    const { nodes: tplNodes, edges: tplEdges } = template.generate({});
+    setNodes(tplNodes);
+    setEdges(tplEdges);
+    setDiagramName(template.ru);
+    setCurrentDiagramId(null);
+    setHasChanges(true);
+    setSelectedNode(null);
+    setSelectedEdge(null);
+    history.clear();
+    lastStateRef.current = JSON.stringify({ nodes: tplNodes, edges: tplEdges });
+    setTimeout(() => {
+      reactFlowInstance.current?.fitView({ padding: 0.2 });
+    }, 100);
+  }, [setNodes, setEdges, history]);
+
   const handleNodeClick = useCallback((_event: React.MouseEvent, node: Node) => {
     setSelectedNode(node);
     setSelectedEdge(null);
@@ -471,6 +490,7 @@ function FlowEditorContent() {
       onDeleteDiagram={deleteDiagram}
       onSave={handleSave}
       onNew={handleNew}
+      onNewFromTemplate={handleNewFromTemplate}
       onExportPng={exportPng}
       onExportSvg={exportSvg}
       onExportJson={exportJson}
@@ -483,7 +503,7 @@ function FlowEditorContent() {
     />
     </div>
   ), [diagramName, diagrams, currentDiagramId, handleLoadDiagram, deleteDiagram, 
-      handleSave, handleNew, exportPng, exportSvg, exportJson, exportYaml, 
+      handleSave, handleNew, handleNewFromTemplate, exportPng, exportSvg, exportJson, exportYaml, 
       exportPdf, copyToClipboard, handleGenerateMermaid, isSaving, hasChanges]);
 
   if (!user) {

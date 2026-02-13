@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Swords, BarChart3, Trophy } from 'lucide-react';
+import { Swords, BarChart3, Trophy, TrendingUp, Scale as ScaleIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getCriterionLabel, getRatingsText } from './i18n';
 import { ScoringSchemeComparison } from './ScoringSchemeComparison';
+import { computeScores, type ScoringScheme, type ScoredModel } from '@/lib/contestScoring';
 import type { ContestResult } from '@/hooks/useContestSession';
 
 interface DuelScoresPanelProps {
@@ -70,8 +71,20 @@ export function DuelScoresPanel({
     if (valsB.length) criteriaAvgB[key] = valsB.reduce((a, b) => a + b, 0) / valsB.length;
   }
 
-  const winnerA = roundWins.winsA > roundWins.winsB;
-  const winnerB = roundWins.winsB > roundWins.winsA;
+  const scoringScheme = (arbitration?.scoringScheme as ScoringScheme) || 'weighted-avg';
+  const userWeight = arbitration?.userWeight != null ? Math.round(arbitration.userWeight * 100) : 50;
+
+  // Compute scores using the selected scheme
+  const scored = useMemo(() => {
+    if (results.length === 0) return [] as ScoredModel[];
+    return computeScores({ results, scheme: scoringScheme, userWeight });
+  }, [results, scoringScheme, userWeight]);
+
+  const scoredA = scored.find(s => s.modelId === modelA);
+  const scoredB = scored.find(s => s.modelId === modelB);
+
+  const winnerA = scoredA && scoredB ? scoredA.rank < scoredB.rank : roundWins.winsA > roundWins.winsB;
+  const winnerB = scoredA && scoredB ? scoredB.rank < scoredA.rank : roundWins.winsB > roundWins.winsA;
 
   return (
     <div className="space-y-4">
@@ -84,6 +97,11 @@ export function DuelScoresPanel({
           </span>
           <Badge variant="outline" className="text-[10px] ml-1">
             {roundWins.winsA}W — {roundWins.draws}D — {roundWins.winsB}W
+          </Badge>
+          <Badge variant="secondary" className="text-[10px] ml-auto">
+            {scoringScheme === 'weighted-avg' ? (isRu ? 'Средневзвеш.' : 'Weighted')
+              : scoringScheme === 'tournament' ? (isRu ? 'Турнир' : 'Tournament')
+              : (isRu ? 'Эло' : 'Elo')}
           </Badge>
         </div>
 
@@ -98,6 +116,7 @@ export function DuelScoresPanel({
                 <TableHead className="text-center">L</TableHead>
                 <TableHead className="text-center">👤</TableHead>
                 <TableHead className="text-center">⚖️</TableHead>
+                <TableHead className="text-center font-bold">{isRu ? 'Итог' : 'Score'}</TableHead>
                 {allCriteriaKeys.map(key => (
                   <TableHead key={key} className="text-center text-[10px] px-1.5">
                     {getCriterionLabel(key, isRu)}
@@ -121,6 +140,9 @@ export function DuelScoresPanel({
                 <TableCell className="text-center text-destructive">{roundWins.winsB}</TableCell>
                 <TableCell className="text-center">{avgUserA != null ? avgUserA.toFixed(1) : '—'}</TableCell>
                 <TableCell className="text-center">{avgArbiterA != null ? avgArbiterA.toFixed(1) : '—'}</TableCell>
+                <TableCell className="text-center font-bold text-primary">
+                  {scoredA ? (scoringScheme === 'elo' ? Math.round(scoredA.finalScore) : scoredA.finalScore.toFixed(1)) : '—'}
+                </TableCell>
                 {allCriteriaKeys.map(key => (
                   <TableCell key={key} className="text-center text-muted-foreground px-1.5">
                     {criteriaAvgA[key] != null ? criteriaAvgA[key].toFixed(1) : '—'}
@@ -142,6 +164,9 @@ export function DuelScoresPanel({
                 <TableCell className="text-center text-destructive">{roundWins.winsA}</TableCell>
                 <TableCell className="text-center">{avgUserB != null ? avgUserB.toFixed(1) : '—'}</TableCell>
                 <TableCell className="text-center">{avgArbiterB != null ? avgArbiterB.toFixed(1) : '—'}</TableCell>
+                <TableCell className="text-center font-bold text-primary">
+                  {scoredB ? (scoringScheme === 'elo' ? Math.round(scoredB.finalScore) : scoredB.finalScore.toFixed(1)) : '—'}
+                </TableCell>
                 {allCriteriaKeys.map(key => (
                   <TableCell key={key} className="text-center text-muted-foreground px-1.5">
                     {criteriaAvgB[key] != null ? criteriaAvgB[key].toFixed(1) : '—'}
