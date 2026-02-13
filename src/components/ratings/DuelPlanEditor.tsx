@@ -178,16 +178,18 @@ export function DuelPlanEditor({ config, isRu, onLaunch }: DuelPlanEditorProps) 
       {/* ── Step 1: Duel Configuration ── */}
       <HydraCard variant="default" className="border-border/50">
         <HydraCardHeader>
-          <div className="flex items-center justify-between w-full">
-            <div className="flex items-center gap-2 text-primary">
-              <Swords className="h-4 w-4" />
-              <span className="text-xs font-bold uppercase tracking-wider opacity-60">
-                {isRu ? 'Шаг 1' : 'Step 1'}
-              </span>
+          <div className="flex items-start justify-between w-full">
+            <div>
+              <div className="flex items-center gap-2 text-primary mb-1">
+                <Swords className="h-4 w-4" />
+                <span className="text-xs font-bold uppercase tracking-wider opacity-60">
+                  {isRu ? 'Шаг 1' : 'Step 1'}
+                </span>
+              </div>
+              <HydraCardTitle>{getRatingsText('duelPlanTitle', isRu)}</HydraCardTitle>
             </div>
             <CloudSyncIndicator loaded={cloudLoaded} />
           </div>
-          <HydraCardTitle>{getRatingsText('duelPlanTitle', isRu)}</HydraCardTitle>
         </HydraCardHeader>
         <HydraCardContent className="space-y-4">
           {/* Model Selectors */}
