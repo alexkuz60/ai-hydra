@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX idx_contest_results_round_model ON public.contest_results(round_id, model_id);
