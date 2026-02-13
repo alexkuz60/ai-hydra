@@ -228,14 +228,6 @@ export function DuelPlanEditor({ config, isRu, onLaunch }: DuelPlanEditorProps) 
             />
           </div>
 
-          {/* User Evaluation Toggle */}
-          <div className="flex items-center justify-between">
-            <Label className="text-xs">{getRatingsText('duelUserEval', isRu)}</Label>
-            <Switch
-              checked={config.config.userEvaluation}
-              onCheckedChange={config.updateUserEvaluation}
-            />
-          </div>
         </HydraCardContent>
       </HydraCard>
 
