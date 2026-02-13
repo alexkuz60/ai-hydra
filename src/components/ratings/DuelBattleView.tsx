@@ -5,7 +5,6 @@ import { PROVIDER_LOGOS } from '@/components/ui/ProviderLogos';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Swords, MessageSquare, BarChart3, Scale, PlusCircle, FileText } from 'lucide-react';
-import PromptPreviewDialog from '@/components/staff/PromptPreviewDialog';
 import { Textarea } from '@/components/ui/textarea';
 import { DuelPodiumScoreboard } from './DuelPodiumScoreboard';
 import { DuelResponsesPanel } from './DuelResponsesPanel';
@@ -48,12 +47,26 @@ export function DuelBattleView({
   const [extraRoundOpen, setExtraRoundOpen] = useState(false);
   const [extraRoundPrompt, setExtraRoundPrompt] = useState('');
   const [promptPreviewOpen, setPromptPreviewOpen] = useState(false);
+  const [promptPerspective, setPromptPerspective] = useState<'A' | 'B'>('A');
 
-  const lastRoundPrompt = useMemo(() => {
+  // Parse dual prompts from stored format: promptA <!-- PROMPT_B_START --> promptB <!-- PROMPT_B_END -->
+  const { promptA, promptB } = useMemo(() => {
     const completed = rounds.filter(r => r.status === 'completed' || r.status === 'running');
     const last = completed.length > 0 ? completed[completed.length - 1] : rounds[rounds.length - 1];
-    return last?.prompt || '';
+    const raw = last?.prompt || '';
+    const markerStart = '<!-- PROMPT_B_START -->';
+    const markerEnd = '<!-- PROMPT_B_END -->';
+    const startIdx = raw.indexOf(markerStart);
+    if (startIdx === -1) return { promptA: raw, promptB: '' };
+    const pA = raw.slice(0, startIdx).trim();
+    const endIdx = raw.indexOf(markerEnd);
+    const pB = endIdx === -1
+      ? raw.slice(startIdx + markerStart.length).trim()
+      : raw.slice(startIdx + markerStart.length, endIdx).trim();
+    return { promptA: pA, promptB: pB };
   }, [rounds]);
+
+  const activePrompt = promptPerspective === 'A' ? promptA : (promptB || promptA);
 
   const roundWins = useMemo(() => {
     let winsA = 0, winsB = 0, draws = 0;
@@ -225,13 +238,38 @@ export function DuelBattleView({
         </DialogContent>
       </Dialog>
 
-      {/* Last round prompt preview */}
-      <PromptPreviewDialog
-        open={promptPreviewOpen}
-        onOpenChange={setPromptPreviewOpen}
-        title={isRu ? 'Промпт последнего раунда' : 'Last Round Prompt'}
-        content={lastRoundPrompt}
-      />
+      {/* Last round prompt preview with A/B toggle */}
+      <Dialog open={promptPreviewOpen} onOpenChange={setPromptPreviewOpen}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-3">
+              <FileText className="h-4 w-4" />
+              {isRu ? 'Промпт последнего раунда' : 'Last Round Prompt'}
+              {promptB && (
+                <div className="flex gap-1 ml-auto">
+                  <Button
+                    variant={promptPerspective === 'A' ? 'default' : 'outline'}
+                    size="sm" className="h-6 text-[10px] px-2"
+                    onClick={() => setPromptPerspective('A')}
+                  >
+                    {nameA}
+                  </Button>
+                  <Button
+                    variant={promptPerspective === 'B' ? 'default' : 'outline'}
+                    size="sm" className="h-6 text-[10px] px-2"
+                    onClick={() => setPromptPerspective('B')}
+                  >
+                    {nameB}
+                  </Button>
+                </div>
+              )}
+            </DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-foreground/90 whitespace-pre-wrap leading-relaxed">
+            {activePrompt}
+          </p>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
