@@ -57,7 +57,6 @@ export function DuelArena() {
     }
   }, [duelSession.results, execution.executing, execution.arbiterRunning]);
 
-
   const handleLaunch = async () => {
     const errors = duelConfig.validate();
     if (errors.length > 0) {
@@ -239,8 +238,6 @@ export function DuelArena() {
       </div>
     );
   }
-
-
 
   // Active duel view
   return (

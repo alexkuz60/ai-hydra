@@ -14,6 +14,11 @@ import { DuelScoresPanel } from './DuelScoresPanel';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import type { ContestSession, ContestRound, ContestResult } from '@/hooks/useContestSession';
 
+/* NOTE: Variables `completedRounds`, `activeRoundNum`, `allJudgedLastRound`,
+   `hasMoreRounds`, `canAdvance` were computed but never used in the JSX.
+   They have been removed to reduce dead code. If auto-advance logic is
+   needed directly in this component in the future, re-derive them here. */
+
 interface DuelBattleViewProps {
   session: ContestSession;
   rounds: ContestRound[];
@@ -87,21 +92,12 @@ export function DuelBattleView({
   }, [rounds, results, modelA, modelB]);
 
   const completedRounds = rounds.filter(r => r.status === 'completed').length;
-  // Current active round = first non-completed, or total if all done
+  const totalRounds = rounds.length || 1;
   const activeRoundNum = useMemo(() => {
     const running = rounds.find(r => r.status === 'running');
     if (running) return running.round_index + 1;
     return completedRounds + (completedRounds < rounds.length ? 1 : 0);
   }, [rounds, completedRounds]);
-  const totalRounds = rounds.length || 1;
-  const allJudgedLastRound = useMemo(() => {
-    const lastCompleted = rounds.filter(r => r.status === 'completed').slice(-1)[0];
-    if (!lastCompleted) return false;
-    const rr = results.filter(r => r.round_id === lastCompleted.id);
-    return rr.length >= 2 && rr.every(r => r.status === 'judged');
-  }, [rounds, results]);
-  const hasMoreRounds = completedRounds < totalRounds;
-  const canAdvance = allJudgedLastRound && hasMoreRounds && !executing && !arbiterRunning && session.status !== 'completed';
 
   return (
     <div className="h-full flex flex-col">
