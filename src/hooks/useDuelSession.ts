@@ -185,6 +185,58 @@ export function useDuelSession() {
     setSession(prev => prev ? { ...prev, ...updates } : null);
   }, [session]);
 
+  /** Add an extra round on-the-fly after all planned rounds are done */
+  const addExtraRound = useCallback(async (prompt: string): Promise<{ round: ContestRound; results: ContestResult[] } | null> => {
+    if (!session || !user) return null;
+    const nextIndex = rounds.length;
+    const modelA = Object.keys(session.config.models || {})[0];
+    const modelB = Object.keys(session.config.models || {})[1];
+    if (!modelA || !modelB) return null;
+
+    // Create round
+    const { data: roundData, error: roundErr } = await supabase
+      .from('contest_rounds')
+      .insert({
+        session_id: session.id,
+        round_index: nextIndex,
+        prompt,
+        status: 'running',
+        started_at: new Date().toISOString(),
+      })
+      .select()
+      .single();
+
+    if (roundErr || !roundData) {
+      toast({ variant: 'destructive', description: roundErr?.message || 'Failed to create round' });
+      return null;
+    }
+
+    const newRound = roundData as unknown as ContestRound;
+    setRounds(prev => [...prev, newRound]);
+
+    // Create results for both models
+    const { data: resultsData } = await supabase
+      .from('contest_results')
+      .insert([modelA, modelB].map(modelId => ({
+        round_id: newRound.id,
+        session_id: session.id,
+        model_id: modelId,
+        status: 'pending',
+      })))
+      .select();
+
+    const newResults = (resultsData || []) as unknown as ContestResult[];
+    setResults(prev => [...prev, ...newResults]);
+
+    // Re-open session if it was completed
+    if (session.status === 'completed') {
+      await supabase.from('contest_sessions').update({ status: 'running', completed_at: null }).eq('id', session.id);
+      setSession(prev => prev ? { ...prev, status: 'running', completed_at: null } : null);
+    }
+
+    return { round: newRound, results: newResults };
+  }, [session, user, rounds, toast]);
+
   /** Build the composite prompt for round N, including previous arguments */
   const buildDuelPrompt = useCallback((
     roundIndex: number,
@@ -241,7 +293,7 @@ export function useDuelSession() {
     session, rounds, results, loading, sessionHistory,
     loadLatestDuel, loadHistory, loadSession,
     createFromConfig, updateResult, updateSessionStatus,
-    buildDuelPrompt, setSession,
+    addExtraRound, buildDuelPrompt, setSession,
   };
 }
 

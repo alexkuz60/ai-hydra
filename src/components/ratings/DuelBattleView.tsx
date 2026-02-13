@@ -7,7 +7,8 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
-import { Swords, RotateCcw, Flag, Pause, Play, MessageSquare, BarChart3, Scale } from 'lucide-react';
+import { Swords, RotateCcw, Flag, Pause, Play, MessageSquare, BarChart3, Scale, PlusCircle } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
 import { DuelScoreboard } from './DuelScoreboard';
 import { DuelResponsesPanel } from './DuelResponsesPanel';
 import { ContestArbiterPanel } from './ContestArbiterPanel';
@@ -29,13 +30,14 @@ interface DuelBattleViewProps {
   onPickRoundWinner: (roundId: string, winnerId: string) => void;
   onTogglePause: () => void;
   onNextRound: () => void;
+  onAddExtraRound?: (prompt: string) => void;
   onScoreResult?: (resultId: string, score: number) => void;
 }
 
 export function DuelBattleView({
   session, rounds, results, streamingTexts, executing, arbiterRunning,
   isRu, paused, onNewDuel, onFinishDuel, onPickRoundWinner, onTogglePause, onNextRound,
-  onScoreResult,
+  onAddExtraRound, onScoreResult,
 }: DuelBattleViewProps) {
   const config = session.config;
   const modelA = Object.keys(config.models || {})[0] || '';
@@ -49,6 +51,8 @@ export function DuelBattleView({
 
   const [activeTab, setActiveTab] = useState<string>('responses');
   const [finishDialogOpen, setFinishDialogOpen] = useState(false);
+  const [extraRoundOpen, setExtraRoundOpen] = useState(false);
+  const [extraRoundPrompt, setExtraRoundPrompt] = useState('');
 
   const roundWins = useMemo(() => {
     let winsA = 0, winsB = 0, draws = 0;
@@ -98,6 +102,13 @@ export function DuelBattleView({
             <Button variant="default" size="sm" className="h-7 text-xs gap-1" onClick={onNextRound}>
               <Swords className="h-3 w-3" />
               {isRu ? 'Следующий раунд' : 'Next Round'}
+            </Button>
+          )}
+          {/* Extra round button — visible when all planned rounds are done or session completed */}
+          {onAddExtraRound && !executing && !arbiterRunning && (
+            <Button variant="outline" size="sm" className="h-7 text-xs gap-1" onClick={() => setExtraRoundOpen(true)}>
+              <PlusCircle className="h-3 w-3" />
+              {isRu ? 'Доп. раунд' : 'Extra Round'}
             </Button>
           )}
         </div>
@@ -216,6 +227,48 @@ export function DuelBattleView({
             >
               {getRatingsText('duelFinishConfirm', isRu)}
             </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Extra round dialog */}
+      <Dialog open={extraRoundOpen} onOpenChange={setExtraRoundOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <PlusCircle className="h-4 w-4" />
+              {isRu ? 'Дополнительный раунд' : 'Extra Round'}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              {isRu
+                ? 'Введите задание для дополнительного раунда дуэли. Оба дуэлянта получат этот промпт вместе с контекстом предыдущих раундов.'
+                : 'Enter the prompt for the extra duel round. Both duelists will receive this prompt along with previous rounds context.'}
+            </p>
+            <Textarea
+              value={extraRoundPrompt}
+              onChange={e => setExtraRoundPrompt(e.target.value)}
+              placeholder={isRu ? 'Задание для дополнительного раунда...' : 'Extra round prompt...'}
+              className="min-h-[80px] text-xs resize-y"
+            />
+            <div className="flex gap-2 justify-end">
+              <Button variant="outline" size="sm" onClick={() => { setExtraRoundOpen(false); setExtraRoundPrompt(''); }}>
+                {getRatingsText('duelCancel', isRu)}
+              </Button>
+              <Button
+                size="sm"
+                disabled={!extraRoundPrompt.trim()}
+                onClick={() => {
+                  onAddExtraRound?.(extraRoundPrompt.trim());
+                  setExtraRoundOpen(false);
+                  setExtraRoundPrompt('');
+                }}
+              >
+                <Swords className="h-3 w-3 mr-1" />
+                {isRu ? 'Запустить раунд' : 'Start Round'}
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>

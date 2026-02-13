@@ -282,6 +282,16 @@ export function DuelArena() {
       onScoreResult={async (resultId, score) => {
         await duelSession.updateResult(resultId, { user_score: score } as any);
       }}
+      onAddExtraRound={async (prompt) => {
+        const result = await duelSession.addExtraRound(prompt);
+        if (result) {
+          toast({ description: isRu ? 'Дополнительный раунд добавлен' : 'Extra round added' });
+          await execution.executeDuelRound(
+            duelSession.session!, result.round, duelSession.results,
+            duelSession.updateResult, duelConfig.config,
+          );
+        }
+      }}
       onPickRoundWinner={async (roundId, winnerId) => {
         const roundResults = duelSession.results.filter(r => r.round_id === roundId);
         for (const r of roundResults) {

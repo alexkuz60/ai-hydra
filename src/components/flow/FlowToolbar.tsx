@@ -46,16 +46,19 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { FlowDiagram } from '@/types/flow';
+import { FlowDiagram, FlowNodeData } from '@/types/flow';
 import { EdgeStyleSettings } from '@/types/edgeTypes';
 import { EdgeStyleSelector } from './EdgeStyleSelector';
 import { DiagramHistoryDialog } from './DiagramHistoryDialog';
+import { CONTEST_FLOW_TEMPLATES } from '@/lib/contestFlowTemplates';
+import { Swords } from 'lucide-react';
 
 interface FlowToolbarProps {
   diagramName: string;
   onNameChange: (name: string) => void;
   onSave: () => void;
   onNew: () => void;
+  onNewFromTemplate?: (templateId: string) => void;
   onExportPng: () => void;
   onExportSvg: () => void;
   onExportJson: () => void;
@@ -95,6 +98,7 @@ export function FlowHeaderActions({
   onDeleteDiagram,
   onSave,
   onNew,
+  onNewFromTemplate,
   onExportPng,
   onExportSvg,
   onExportJson,
@@ -106,10 +110,10 @@ export function FlowHeaderActions({
   hasChanges,
 }: Pick<FlowToolbarProps, 
   'diagramName' | 'savedDiagrams' | 'currentDiagramId' | 'onLoadDiagram' | 'onDeleteDiagram' |
-  'onSave' | 'onNew' | 'onExportPng' | 'onExportSvg' | 'onExportJson' | 'onExportYaml' |
+  'onSave' | 'onNew' | 'onNewFromTemplate' | 'onExportPng' | 'onExportSvg' | 'onExportJson' | 'onExportYaml' |
   'onExportPdf' | 'onCopyToClipboard' | 'onGenerateMermaid' | 'isSaving' | 'hasChanges'
 >) {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [mermaidCode, setMermaidCode] = useState('');
   const [mermaidOpen, setMermaidOpen] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -201,11 +205,32 @@ export function FlowHeaderActions({
         {hasChanges && <span className="ml-1 text-hydra-warning">•</span>}
       </Button>
 
-      {/* New */}
-      <Button variant="ghost" size="sm" onClick={onNew} className="h-7 text-xs">
-        <Plus className="h-3.5 w-3.5 mr-1" />
-        {t('flowEditor.newDiagram')}
-      </Button>
+      {/* New — with template dropdown */}
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" size="sm" className="h-7 text-xs">
+            <Plus className="h-3.5 w-3.5 mr-1" />
+            {t('flowEditor.newDiagram')}
+            <ChevronDown className="h-3 w-3 ml-1" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem onClick={onNew}>
+            <Plus className="h-4 w-4 mr-2" />
+            {t('flowEditor.newDiagram')}
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          {Object.entries(CONTEST_FLOW_TEMPLATES).map(([key, tpl]) => (
+            <DropdownMenuItem
+              key={key}
+              onClick={() => onNewFromTemplate?.(key)}
+            >
+              <Swords className="h-4 w-4 mr-2" />
+              {language === 'ru' ? tpl.ru : tpl.en}
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
 
       {/* Export dropdown */}
       <DropdownMenu>
