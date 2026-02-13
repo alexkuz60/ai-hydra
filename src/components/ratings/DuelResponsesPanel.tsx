@@ -85,6 +85,7 @@ export function DuelResponsesPanel({
 
             const completedRounds = rounds.filter(r => r.status === 'completed').length;
             const isCurrentRound = round.status === 'running' || (round.status === 'completed' && ri === completedRounds - 1);
+            const isRunning = round.status === 'running';
 
             // Filter by active model
             const showA = activeModel === 'all' || activeModel === modelA;
@@ -116,27 +117,27 @@ export function DuelResponsesPanel({
                   <div className="grid grid-cols-2 divide-x divide-border/20">
                     <DuelResponseCard
                       result={resultA}
-                      streamingText={streamingTexts[modelA]}
+                      streamingText={isRunning ? streamingTexts[modelA] : undefined}
                       name={nameA}
                       Logo={LogoA}
                       score={scoreA}
                       expandKey={`${round.id}-A`}
                       expanded={expanded}
                       toggleExpand={toggleExpand}
-                      executing={executing}
+                      executing={executing && isRunning}
                       isRu={isRu}
                       onScore={onScoreResult}
                     />
                     <DuelResponseCard
                       result={resultB}
-                      streamingText={streamingTexts[modelB]}
+                      streamingText={isRunning ? streamingTexts[modelB] : undefined}
                       name={nameB}
                       Logo={LogoB}
                       score={scoreB}
                       expandKey={`${round.id}-B`}
                       expanded={expanded}
                       toggleExpand={toggleExpand}
-                      executing={executing}
+                      executing={executing && isRunning}
                       isRu={isRu}
                       onScore={onScoreResult}
                     />
@@ -145,14 +146,14 @@ export function DuelResponsesPanel({
                   <div className="p-0">
                     <DuelResponseCard
                       result={showA ? resultA : resultB}
-                      streamingText={showA ? streamingTexts[modelA] : streamingTexts[modelB]}
+                      streamingText={isRunning ? (showA ? streamingTexts[modelA] : streamingTexts[modelB]) : undefined}
                       name={showA ? nameA : nameB}
                       Logo={showA ? LogoA : LogoB}
                       score={showA ? scoreA : scoreB}
                       expandKey={`${round.id}-${showA ? 'A' : 'B'}`}
                       expanded={expanded}
                       toggleExpand={toggleExpand}
-                      executing={executing}
+                      executing={executing && isRunning}
                       isRu={isRu}
                       fullWidth
                       onScore={onScoreResult}
