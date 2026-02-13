@@ -66,17 +66,19 @@ export function EdgeStyleSelector({ settings, onSettingsChange, syncLoaded = tru
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="sm" className="gap-1.5 relative">
-          {LINE_TYPE_ICONS[settings.defaultLineType]}
-          <span className="hidden md:inline">
-            {isRu ? 'Стиль связей' : 'Edge Style'}
-          </span>
-          <ChevronDown className="h-3 w-3" />
-          <div className="absolute -top-1 -right-1">
-            <CloudSyncIndicator loaded={syncLoaded} className="text-xs" />
-          </div>
-        </Button>
-      </DropdownMenuTrigger>
+         <Button variant="outline" size="sm" className="gap-1.5 flex items-center justify-between">
+           <div className="flex items-center gap-1.5">
+             {LINE_TYPE_ICONS[settings.defaultLineType]}
+             <span className="hidden md:inline">
+               {isRu ? 'Стиль связей' : 'Edge Style'}
+             </span>
+           </div>
+           <div className="flex items-center gap-1.5">
+             <ChevronDown className="h-3 w-3" />
+             <CloudSyncIndicator loaded={syncLoaded} className="text-xs" />
+           </div>
+         </Button>
+       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
         <DropdownMenuLabel>
           {isRu ? 'Тип линии' : 'Line Type'}
