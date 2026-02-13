@@ -116,8 +116,13 @@ export function ProxyApiDashboard({ hasKey, proxyapiPriority, onPriorityChange, 
   return (
     <HydraCard variant="glass" className="p-6">
       <HydraCardHeader>
-        <ProxyApiLogo className="h-5 w-5" />
-        <HydraCardTitle>ProxyAPI Dashboard</HydraCardTitle>
+        <div className="flex items-center justify-between w-full">
+          <div className="flex items-center gap-2">
+            <ProxyApiLogo className="h-5 w-5" />
+            <HydraCardTitle>ProxyAPI Dashboard</HydraCardTitle>
+          </div>
+          <CloudSyncIndicator loaded={api.settingsLoaded} />
+        </div>
       </HydraCardHeader>
       <HydraCardContent>
         {renderInfoBlock()}
