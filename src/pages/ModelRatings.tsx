@@ -3,8 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Layout } from '@/components/layout/Layout';
-import { Loader2, Briefcase, Crown, BarChart3, ScrollText, Swords } from 'lucide-react';
+import { Loader2, Briefcase, Crown, BarChart3, ScrollText } from 'lucide-react';
 import { cn } from '@/lib/utils';
+
+const TournamentIcon = ({ className = '' }: { className?: string }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" className={className}>
+    <path d="m4.5 17.42l1.08 1.08l-2.3 2.28c-.28.29-.78.29-1.06 0s-.29-.78 0-1.06zm13.79-12V4L12 10.29L5.71 4v1.42L11.29 11L7.5 14.81c-1.18-.84-2.82-.74-3.87.31l4.25 4.25c1.05-1.05 1.15-2.69.32-3.87zm3.49 14.3l-2.28-2.3l-1.08 1.08l2.3 2.28c.28.29.78.29 1.06 0s.29-.78 0-1.06m-5.28-4.91l-3.08-3.1l-.71.71l3.1 3.08c-.84 1.18-.74 2.82.31 3.87l4.25-4.25c-1.05-1.05-2.69-1.15-3.87-.31" />
+  </svg>
+);
 import {
   ResizablePanelGroup,
   ResizablePanel,
@@ -25,7 +31,7 @@ const SECTIONS: { id: Section; icon: React.ComponentType<{ className?: string }>
   { id: 'portfolio', icon: Briefcase, labelRu: 'Портфолио ИИ-моделей', labelEn: 'AI Model Portfolio', descRu: 'Каталог всех доступных моделей', descEn: 'Catalog of all available models' },
   { id: 'rules', icon: ScrollText, labelRu: 'Правила конкурса', labelEn: 'Contest Rules', descRu: 'Настройка туров и критериев', descEn: 'Rounds and criteria setup' },
   { id: 'contest', icon: Crown, labelRu: 'Конкурс интеллект-красоты', labelEn: 'Intelligence Contest', descRu: 'Соревнования между моделями', descEn: 'AI model competitions' },
-  { id: 'duel', icon: Swords, labelRu: 'Дуэль «К барьеру»', labelEn: 'Duel «En Garde»', descRu: 'Попарное состязание кандидатов', descEn: 'Head-to-head candidate battle' },
+  { id: 'duel', icon: TournamentIcon, labelRu: 'Дуэль «К барьеру»', labelEn: 'Duel «En Garde»', descRu: 'Попарное состязание кандидатов', descEn: 'Head-to-head candidate battle' },
   { id: 'ratings', icon: BarChart3, labelRu: 'Рейтинги ИИ-моделей', labelEn: 'AI Model Ratings', descRu: 'Статистика и оценки', descEn: 'Stats and evaluations' },
 ];
 
