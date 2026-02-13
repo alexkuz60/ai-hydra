@@ -90,10 +90,18 @@ export function DuelResponsesPanel({
             if (!showA && !showB) return null;
 
             return (
-              <div key={round.id} className={cn(
-                'rounded-lg border overflow-hidden',
-                isRunning ? 'border-primary/40' : 'border-border/30',
-              )}>
+              <React.Fragment key={round.id}>
+                {/* Horizontal round divider */}
+                {ri > 0 && (
+                  <div className={cn(
+                    'h-px w-full',
+                    isRunning ? 'bg-primary/40 animate-pulse' : 'bg-border/40',
+                  )} />
+                )}
+                <div className={cn(
+                  'rounded-lg border overflow-hidden',
+                  isRunning ? 'border-primary/40' : 'border-border/30',
+                )}>
                 {activeModel === 'all' ? (
                   /* ── Split view with central timeline ── */
                   <div className="grid grid-cols-[1fr_auto_1fr] min-h-0">
@@ -180,6 +188,7 @@ export function DuelResponsesPanel({
                   </div>
                 )}
               </div>
+              </React.Fragment>
             );
           })}
         </div>
@@ -290,9 +299,14 @@ function DuelResponseCard({
 }) {
   const text = result?.response_text || streamingText || '';
   const canScore = result && (result.status === 'ready' || result.status === 'judged') && onScore;
+  const isPending = !text && executing;
 
   return (
-    <div className={cn("p-3 space-y-2", fullWidth && "px-4")}>
+    <div className={cn(
+      "p-3 space-y-2 relative",
+      fullWidth && "px-4",
+      isPending && "after:absolute after:bottom-0 after:left-3 after:right-3 after:h-px after:bg-gradient-to-r after:from-transparent after:via-primary/60 after:to-transparent after:animate-pulse",
+    )}>
       <div className="flex items-center gap-1.5">
         {Logo && <Logo className="h-3.5 w-3.5" />}
         <span className="text-xs font-medium truncate">{name}</span>
@@ -305,7 +319,11 @@ function DuelResponseCard({
         {score != null && <Badge variant="outline" className="text-[10px] ml-1">{score.toFixed(1)}</Badge>}
       </div>
       {text ? (
-        <div className={cn('text-xs text-foreground/80 whitespace-pre-wrap min-h-[40px]', !isExpanded && 'line-clamp-3')}>
+        <div className={cn(
+          'text-xs text-foreground/80 whitespace-pre-wrap min-h-[40px]',
+          'duel-response-content',
+          !isExpanded && 'line-clamp-3',
+        )}>
           <MarkdownRenderer content={text} />
         </div>
       ) : (
