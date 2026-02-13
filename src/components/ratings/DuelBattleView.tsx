@@ -109,12 +109,10 @@ export function DuelBattleView({
 
       {/* Action row: extra round + prompt preview */}
       <div className="px-3 py-1.5 border-b border-border/30 flex items-center gap-2">
-        {lastRoundPrompt && (
-          <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={() => setPromptPreviewOpen(true)}
-            title={isRu ? 'Промпт последнего раунда' : 'Last round prompt'}>
-            <FileText className="h-3.5 w-3.5" />
-          </Button>
-        )}
+        <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={() => setPromptPreviewOpen(true)}
+          title={isRu ? 'Промпт последнего раунда' : 'Last round prompt'}>
+          <FileText className="h-3.5 w-3.5" />
+        </Button>
         {onAddExtraRound && !executing && !arbiterRunning && (
           <Button variant="outline" size="sm" className="h-7 text-xs gap-1" onClick={() => setExtraRoundOpen(true)}>
             <PlusCircle className="h-3 w-3" />
