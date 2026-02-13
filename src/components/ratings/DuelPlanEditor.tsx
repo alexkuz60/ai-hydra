@@ -178,7 +178,7 @@ export function DuelPlanEditor({ config, isRu, onLaunch }: DuelPlanEditorProps) 
       {/* ── Step 1: Duel Configuration ── */}
       <HydraCard variant="default" className="border-border/50">
         <HydraCardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between w-full">
             <div className="flex items-center gap-2 text-primary">
               <Swords className="h-4 w-4" />
               <span className="text-xs font-bold uppercase tracking-wider opacity-60">
