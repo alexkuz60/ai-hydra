@@ -152,12 +152,20 @@ export function DuelPodiumScoreboard({
           <div className="h-7" />
           <div className="flex-1 flex items-center justify-center">
             <div className={cn(
-              "w-12 h-12 rounded-xl bg-background/60 border flex items-center justify-center shadow-sm transition-all duration-500",
+              "w-12 h-12 rounded-xl bg-background/60 border flex items-center justify-center shadow-sm transition-all duration-500 relative",
               isCompleted && winnerId
                 ? "border-[hsl(45_100%_50%/0.4)] shadow-[0_0_12px_hsl(45_100%_50%/0.2)]"
                 : "border-border/50"
             )}>
-              {DUEL_PHASE_ICONS[phase]}
+              <TournamentIcon className={cn(
+                "h-7 w-7 transition-colors duration-300",
+                isCompleted && winnerId ? "text-[hsl(45_80%_55%)]" : "text-primary"
+              )} />
+              {(executing || arbiterRunning) && (
+                <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-background border border-border/50 flex items-center justify-center">
+                  <Loader2 className="h-2.5 w-2.5 animate-spin text-primary" />
+                </div>
+              )}
             </div>
           </div>
         </div>
