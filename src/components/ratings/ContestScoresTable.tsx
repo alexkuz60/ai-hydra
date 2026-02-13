@@ -29,11 +29,42 @@ export function ContestScoresTable({ results, rounds, isRu, selectedWinners, onT
   const scheme: ScoringScheme = arbitration?.scoringScheme || 'weighted-avg';
   const userWeight = arbitration?.userWeight ?? 50;
 
-  const scored = computeScores({ results, scheme, userWeight });
-  const allCriteriaKeys = collectCriteriaKeys(results);
+  // Deduplicate results: keep one per (round_id, model_id), prefer 'judged' status
+  const deduped = React.useMemo(() => {
+    const map = new Map<string, ContestResult>();
+    for (const r of results) {
+      const key = `${r.round_id}__${r.model_id}`;
+      const existing = map.get(key);
+      if (!existing || (r.status === 'judged' && existing.status !== 'judged')) {
+        map.set(key, r);
+      }
+    }
+    return [...map.values()];
+  }, [results]);
+
+  const scored = computeScores({ results: deduped, scheme, userWeight });
+  const allCriteriaKeys = collectCriteriaKeys(deduped);
   const hasCriteria = allCriteriaKeys.length > 0;
   const isTournament = scheme === 'tournament';
   const isElo = scheme === 'elo';
+
+  // Build per-round scores for each model
+  const sortedRounds = React.useMemo(() =>
+    [...rounds].sort((a, b) => a.round_index - b.round_index), [rounds]);
+
+  const roundScoreMap = React.useMemo(() => {
+    const map = new Map<string, Map<string, { user: number | null; arbiter: number | null }>>();
+    for (const r of deduped) {
+      if (!map.has(r.model_id)) map.set(r.model_id, new Map());
+      map.get(r.model_id)!.set(r.round_id, {
+        user: r.user_score ?? null,
+        arbiter: r.arbiter_score ?? null,
+      });
+    }
+    return map;
+  }, [deduped]);
+
+  const showRoundCols = sortedRounds.length > 1;
 
   const formatFinal = (m: ScoredModel) => {
     if (isElo) return `${m.details.eloRating}`;
@@ -76,6 +107,11 @@ export function ContestScoresTable({ results, rounds, isRu, selectedWinners, onT
                   <TableHead className="text-center text-[10px]">L</TableHead>
                 </>
               )}
+              {showRoundCols && sortedRounds.map(r => (
+                <TableHead key={r.id} className="text-center text-[10px] px-1">
+                  R{r.round_index + 1}
+                </TableHead>
+              ))}
               {hasCriteria && allCriteriaKeys.map(key => (
                 <TableHead key={key} className="text-center text-[10px] px-1.5">
                   {getCriterionLabel(key, isRu)}
@@ -123,6 +159,15 @@ export function ContestScoresTable({ results, rounds, isRu, selectedWinners, onT
                       <TableCell className="text-center text-destructive">{row.details.losses}</TableCell>
                     </>
                   )}
+                  {showRoundCols && sortedRounds.map(r => {
+                    const rs = roundScoreMap.get(row.modelId)?.get(r.id);
+                    const val = rs ? (rs.arbiter ?? rs.user) : null;
+                    return (
+                      <TableCell key={r.id} className="text-center text-muted-foreground px-1 text-[10px]">
+                        {val != null ? val.toFixed(1) : '—'}
+                      </TableCell>
+                    );
+                  })}
                   {hasCriteria && allCriteriaKeys.map(key => (
                     <TableCell key={key} className="text-center text-muted-foreground px-1.5">
                       {row.criteriaAvg[key] != null ? row.criteriaAvg[key]!.toFixed(1) : '—'}
