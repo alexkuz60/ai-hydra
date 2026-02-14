@@ -1,6 +1,7 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { getRatingsText, type RatingsI18nKey } from '@/components/ratings/i18n';
 
 interface UserLikertWidgetProps {
   resultId: string;
@@ -11,13 +12,13 @@ interface UserLikertWidgetProps {
   compact?: boolean;
 }
 
-const LIKERT_OPTIONS = [
-  { value: 5, ru: 'Отлично', en: 'Excellent', emoji: '🌟' },
-  { value: 4, ru: 'Хорошо', en: 'Good', emoji: '👍' },
-  { value: 3, ru: 'Нормально', en: 'Okay', emoji: '🤔' },
-  { value: 2, ru: 'Слабо', en: 'Weak', emoji: '👎' },
-  { value: 1, ru: 'Плохо', en: 'Poor', emoji: '😕' },
-  { value: 0, ru: 'Бред', en: 'Nonsense', emoji: '😱' },
+const LIKERT_OPTIONS: { value: number; i18nKey: RatingsI18nKey; emoji: string }[] = [
+  { value: 5, i18nKey: 'likertExcellent', emoji: '🌟' },
+  { value: 4, i18nKey: 'likertGood', emoji: '👍' },
+  { value: 3, i18nKey: 'likertOkay', emoji: '🤔' },
+  { value: 2, i18nKey: 'likertWeak', emoji: '👎' },
+  { value: 1, i18nKey: 'likertPoor', emoji: '😕' },
+  { value: 0, i18nKey: 'likertNonsense', emoji: '😱' },
 ];
 
 export function UserLikertWidget({ resultId, currentValue, onRate, isRu, isExtraRound, compact }: UserLikertWidgetProps) {
@@ -26,7 +27,7 @@ export function UserLikertWidget({ resultId, currentValue, onRate, isRu, isExtra
       <div className="flex items-center gap-0.5">
         {LIKERT_OPTIONS.map(opt => {
           const isActive = currentValue === opt.value;
-          const label = isRu ? opt.ru : opt.en;
+          const label = getRatingsText(opt.i18nKey, isRu);
           return (
             <Tooltip key={opt.value}>
               <TooltipTrigger asChild>
