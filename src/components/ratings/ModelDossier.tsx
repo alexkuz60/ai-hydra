@@ -146,19 +146,31 @@ export function ModelDossier({ modelId, contestModels = {}, duelModels = {}, onT
               {/* Filtered criteria */}
               <div className="space-y-2">
                 {Object.entries(stats.criteriaAverages)
-                  .filter(([key]) => {
-                    if (criteriaFilter === 'all') return true;
-                    return key.startsWith(`${criteriaFilter}:`);
-                  })
-                  .sort(([, a], [, b]) => b - a)
-                  .map(([key, avg]) => {
-                    // Strip prefix for display
-                    const displayKey = key.includes(':') ? key.split(':')[1] : key;
-                    return (
-                      <div key={key} className="flex items-center gap-3">
-                        <span className="text-xs text-muted-foreground w-28 truncate shrink-0">
-                          {getCriterionLabel(displayKey, isRu)}
-                        </span>
+                   .filter(([key]) => {
+                     if (criteriaFilter === 'all') return true;
+                     return key.startsWith(`${criteriaFilter}:`);
+                   })
+                   .sort(([, a], [, b]) => b - a)
+                   .map(([key, avg]) => {
+                     // Strip prefix for display
+                     const displayKey = key.includes(':') ? key.split(':')[1] : key;
+                     const sourcePrefix = key.includes(':') ? key.split(':')[0] : 'contest';
+                     
+                     // Get source icon and color
+                     const sourceConfig = {
+                       contest: { icon: Trophy, color: 'text-primary' },
+                       duel_critic: { icon: Brain, color: 'text-hydra-critic' },
+                       duel_arbiter: { icon: Scale, color: 'text-hydra-arbiter' },
+                     }[sourcePrefix as keyof typeof sourceConfig] || { icon: Trophy, color: 'text-primary' };
+                     
+                     const SourceIcon = sourceConfig.icon;
+                     
+                     return (
+                       <div key={key} className="flex items-center gap-3">
+                         <SourceIcon className={cn("h-3.5 w-3.5 shrink-0", sourceConfig.color)} />
+                         <span className="text-xs text-muted-foreground w-24 truncate shrink-0">
+                           {getCriterionLabel(displayKey, isRu)}
+                         </span>
                         <div className="flex-1 h-2.5 rounded-full bg-muted/50 overflow-hidden">
                           <div
                             className="h-full rounded-full bg-hydra-arbiter/70 transition-all duration-500"
