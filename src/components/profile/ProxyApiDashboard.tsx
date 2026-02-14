@@ -6,7 +6,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Loader2, Wifi, Zap, AlertTriangle, Key, WifiOff } from 'lucide-react';
-import { CloudSyncIndicator } from '@/components/ui/CloudSyncIndicator';
+
 import { ProxyApiLogo } from '@/components/ui/ProviderLogos';
 import { ApiKeyField, type KeyMetadata } from '@/components/profile/ApiKeyField';
 import {
@@ -121,7 +121,6 @@ export function ProxyApiDashboard({ hasKey, proxyapiPriority, onPriorityChange, 
             <ProxyApiLogo className="h-5 w-5" />
             <HydraCardTitle>ProxyAPI Dashboard</HydraCardTitle>
           </div>
-          <CloudSyncIndicator loaded={api.settingsLoaded} />
         </div>
       </HydraCardHeader>
       <HydraCardContent>

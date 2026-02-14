@@ -4,7 +4,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ClipboardCheck, Bot, Lightbulb } from 'lucide-react';
-import { CloudSyncIndicator } from '@/components/ui/CloudSyncIndicator';
+
 import { useLanguage } from '@/contexts/LanguageContext';
 import { toast } from 'sonner';
 import { useAvailableModels } from '@/hooks/useAvailableModels';
@@ -75,14 +75,13 @@ export function RoleSettingsSection({ isTechnicalStaff, requiresApproval, isSavi
        {isTechnicalStaff && selectedRole && allModels.length > 0 && (
          <div className="pt-3 space-y-1.5">
            <div className="flex items-center justify-between">
-             <div className="flex items-center gap-2">
-               <Bot className="h-4 w-4 text-muted-foreground" />
-               <label className="text-sm font-medium">
-                 {language === 'ru' ? 'Модель по умолчанию' : 'Default Model'}
-               </label>
-             </div>
-             <CloudSyncIndicator loaded={syncLoaded} />
-           </div>
+              <div className="flex items-center gap-2">
+                <Bot className="h-4 w-4 text-muted-foreground" />
+                <label className="text-sm font-medium">
+                  {language === 'ru' ? 'Модель по умолчанию' : 'Default Model'}
+                </label>
+              </div>
+            </div>
           <p className="text-xs text-muted-foreground">
             {language === 'ru'
               ? 'Модель, используемая при вызове этого техника. Пользователь может переназначить.'

@@ -4,7 +4,7 @@ import { HydraCard, HydraCardHeader, HydraCardTitle, HydraCardContent } from '@/
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Save, Trophy, CheckCircle2, Loader2 } from 'lucide-react';
-import { CloudSyncIndicator } from '@/components/ui/CloudSyncIndicator';
+
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { CONTEST_FLOW_TEMPLATES } from '@/lib/contestFlowTemplates';
 import { useFlowDiagrams } from '@/hooks/useFlowDiagrams';
@@ -119,7 +119,6 @@ export function ContestSummary() {
                 {getRatingsText('step5', isRu)}
               </span>
             </div>
-            <CloudSyncIndicator loaded={cloudLoaded} />
           </div>
           <HydraCardTitle>
             {getRatingsText('previewAndLaunch', isRu)}

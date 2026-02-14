@@ -18,7 +18,7 @@ import { useFlowDiagrams, exportToMermaid } from '@/hooks/useFlowDiagrams';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { Swords, Workflow, Scale, Trophy, Weight, Calculator, BarChart3, Users, Info, Save, CheckCircle2, Loader2, FileText, Maximize2, UserCheck, ExternalLink, Play } from 'lucide-react';
-import { CloudSyncIndicator } from '@/components/ui/CloudSyncIndicator';
+
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import { SummaryItem } from './ContestSummaryItem';
@@ -200,7 +200,6 @@ export function DuelPlanEditor({ config, isRu, onLaunch }: DuelPlanEditorProps) 
               </div>
               <HydraCardTitle>{getRatingsText('duelPlanTitle', isRu)}</HydraCardTitle>
             </div>
-            <CloudSyncIndicator loaded={cloudLoaded} />
           </div>
         </HydraCardHeader>
         <HydraCardContent className="space-y-4">
