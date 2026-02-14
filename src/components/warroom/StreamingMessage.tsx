@@ -47,7 +47,7 @@ export function StreamingMessage({
   sourceMessageId,
   onStopStreaming,
 }: StreamingMessageProps) {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const isUser = role === 'user';
   const modeConfig = MODES.find((m) => m.id === mode);
 
@@ -74,7 +74,7 @@ export function StreamingMessage({
         </span>
         <span className="ml-auto">
           {format(new Date(createdAt), 'HH:mm', {
-            locale: t('common.locale') === 'ru' ? ru : enUS,
+            locale: language === 'ru' ? ru : enUS,
           })}
         </span>
       </div>

@@ -72,7 +72,7 @@ interface ChatMessageProps {
 const MAX_COLLAPSED_LINES = 3;
 
 export function ChatMessage({ message, userDisplayInfo, onDelete, onRatingChange, onLikertRate, isCollapsed, onToggleCollapse, onClarifyWithSpecialist, onSaveToMemory, isSavingToMemory, isAlreadySavedToMemory, onUpdateProposals, onRequestProposalDetails, onConsultInDChat, onRequestEvaluation, onHallucination, onChecklistChange, forceInteractiveChecklists }: ChatMessageProps) {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const contentRef = useRef<HTMLDivElement>(null);
   const [localExpanded, setLocalExpanded] = useState(true);
   const isExpanded = isCollapsed !== undefined ? !isCollapsed : localExpanded;
@@ -168,7 +168,7 @@ export function ChatMessage({ message, userDisplayInfo, onDelete, onRatingChange
                     </span>
                   </TooltipTrigger>
                   <TooltipContent side="bottom">
-                    <p className="text-xs">{t('common.locale') === 'ru' ? 'Из конкурса моделей' : 'From model contest'}</p>
+                    <p className="text-xs">{language === 'ru' ? 'Из конкурса моделей' : 'From model contest'}</p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
@@ -176,7 +176,7 @@ export function ChatMessage({ message, userDisplayInfo, onDelete, onRatingChange
           })()}
         </HydraCardTitle>
         <span className="text-xs text-muted-foreground ml-auto flex items-center gap-2">
-          {format(new Date(message.created_at), 'dd MMM, HH:mm', { locale: t('common.locale') === 'ru' ? ru : enUS })}
+          {format(new Date(message.created_at), 'dd MMM, HH:mm', { locale: language === 'ru' ? ru : enUS })}
           {message.confidence_score && <span>• {(message.confidence_score * 100).toFixed(0)}%</span>}
         </span>
       </HydraCardHeader>
@@ -212,7 +212,7 @@ export function ChatMessage({ message, userDisplayInfo, onDelete, onRatingChange
               resultId={message.id}
               currentValue={typeof metadataObj.user_likert === 'number' ? metadataObj.user_likert : null}
               onRate={onLikertRate}
-              isRu={t('common.locale') === 'ru'}
+              isRu={language === 'ru'}
               compact
             />
           )}
