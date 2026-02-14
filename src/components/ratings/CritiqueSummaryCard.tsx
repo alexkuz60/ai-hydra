@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { HydraCard, HydraCardHeader, HydraCardTitle, HydraCardContent } from '@/components/ui/hydra-card';
 import { FileText, Trophy, Swords, Brain, MessageSquare, Scale } from 'lucide-react';
 import { cn } from '@/lib/utils';
