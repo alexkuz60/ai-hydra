@@ -151,6 +151,9 @@ export function useDuelConfig() {
   const prevSyncRef = useRef<string>('');
   useEffect(() => {
     if (!loaded) return;
+    // Only push to portfolio when we actually have models selected;
+    // otherwise we'd wipe out selections made in Portfolio before Plan loads.
+    if (!config.modelA && !config.modelB) return;
     const record: Record<string, string> = {};
     if (config.modelA) record[config.modelA] = config.duelType;
     if (config.modelB) record[config.modelB] = config.duelType;
@@ -159,7 +162,6 @@ export function useDuelConfig() {
     prevSyncRef.current = serialized;
     try {
       localStorage.setItem('hydra-duel-models-selected', serialized);
-      // Notify other components in the same tab (StorageEvent only fires cross-tab)
       window.dispatchEvent(new StorageEvent('storage', {
         key: 'hydra-duel-models-selected',
         newValue: serialized,
@@ -170,6 +172,8 @@ export function useDuelConfig() {
   /** Auto-sync from portfolio on storage changes (same-tab + cross-tab) */
   useEffect(() => {
     if (!loaded) return;
+    // Initial sync on mount
+    syncFromPortfolio();
     const onStorage = (e: StorageEvent) => {
       if (e.key === 'hydra-duel-models-selected') syncFromPortfolio();
     };
