@@ -96,8 +96,9 @@ export function BeautyContest() {
       toast({ variant: 'destructive', description: isRu ? 'Задача не выбрана в конфигурации конкурса' : 'No task selected in contest config' });
       return;
     }
-    const scoredResults = contest.results.filter(r => r.response_text && (r.user_score != null || r.arbiter_score != null));
-    if (scoredResults.length === 0) {
+    // Include ALL results with response text, not just scored ones (follow-up answers may lack scores)
+    const exportableResults = contest.results.filter(r => r.response_text);
+    if (exportableResults.length === 0) {
       toast({ variant: 'destructive', description: getRatingsText('noScoredResponses', isRu) });
       return;
     }
@@ -111,8 +112,8 @@ export function BeautyContest() {
 
       // Group results by round
       const roundOrder = contest.rounds.map(r => r.id);
-      const resultsByRound = new Map<string, typeof scoredResults>();
-      for (const result of scoredResults) {
+      const resultsByRound = new Map<string, typeof exportableResults>();
+      for (const result of exportableResults) {
         const arr = resultsByRound.get(result.round_id) || [];
         arr.push(result);
         resultsByRound.set(result.round_id, arr);
