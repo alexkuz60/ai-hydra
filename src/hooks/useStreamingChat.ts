@@ -142,12 +142,19 @@ export function useStreamingChat({
               'Authorization': `Bearer ${authToken}`,
             },
             body: JSON.stringify({
-              message: content,
-              model_id: modelId,
-              role: role,
-              system_prompt: systemPrompt,
-              memory_context: memoryContext || [],
-              proxyapi_settings,
+      message: content,
+            model_id: modelId,
+            role: role,
+            system_prompt: systemPrompt,
+            memory_context: memoryContext || [],
+            proxyapi_settings,
+            history: messages
+              .filter(m => !m.isStreaming)
+              .slice(-10)
+              .map(m => ({
+                role: m.role === 'user' ? 'user' as const : 'assistant' as const,
+                content: m.content,
+              })),
             }),
             signal: abortControllerRef.current.signal,
           }
