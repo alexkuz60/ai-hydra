@@ -121,7 +121,7 @@ function ContestModelPicker({
             />
           </div>
         </div>
-        <ScrollArea className="max-h-[240px]">
+        <ScrollArea className="h-[240px]">
           <div className="p-1">
             {filtered.length === 0 ? (
               <p className="text-xs text-muted-foreground text-center py-4">
@@ -302,8 +302,7 @@ export function ContestTaskSelector() {
               </p>
             </div>
           ) : (
-            <ScrollArea className="max-h-[200px]">
-            <div className="flex flex-wrap gap-2 pr-2">
+            <div className="flex flex-wrap gap-2">
               {contestModels.map(({ modelId, role }) => {
                 const entry = getRegistryEntry(modelId);
                 const provider = entry?.provider || 'openai';
@@ -336,7 +335,6 @@ export function ContestTaskSelector() {
                 );
               })}
             </div>
-            </ScrollArea>
           )}
         </div>
       </HydraCardContent>
