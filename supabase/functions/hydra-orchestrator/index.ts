@@ -28,6 +28,7 @@ import type {
   MessageItem,
   UsageData,
   SuccessResult,
+  HistoryMessage,
 } from "./types.ts";
 
 import {
@@ -222,6 +223,29 @@ function buildEnhancedMessage(originalMessage: string, documentTexts: DocumentTe
 }
 
 // ============================================
+// Message Array Builder (with history)
+// ============================================
+
+function buildMessagesWithHistory(
+  systemPrompt: string,
+  userContent: string | ContentPart[],
+  history?: HistoryMessage[],
+): MessageItem[] {
+  const messages: MessageItem[] = [
+    { role: "system", content: systemPrompt },
+  ];
+
+  if (history && history.length > 0) {
+    for (const h of history) {
+      messages.push({ role: h.role, content: h.content });
+    }
+  }
+
+  messages.push({ role: "user", content: userContent });
+  return messages;
+}
+
+// ============================================
 // Lovable AI API
 // ============================================
 
@@ -235,7 +259,8 @@ async function callLovableAI(
   maxTokens: number,
   enableTools: boolean = true,
   enabledTools?: string[],
-  customTools?: CustomToolDefinition[]
+  customTools?: CustomToolDefinition[],
+  history?: HistoryMessage[],
 ): Promise<LovableAIResponse> {
   const isOpenAI = model.startsWith("openai/");
   const tokenParam = isOpenAI 
@@ -248,10 +273,7 @@ async function callLovableAI(
     ? buildMultimodalContent(message, attachments)
     : message;
 
-  const messages: MessageItem[] = [
-    { role: "system", content: systemPrompt },
-    { role: "user", content: userContent },
-  ];
+  const messages: MessageItem[] = buildMessagesWithHistory(systemPrompt, userContent, history);
 
   if (customTools && customTools.length > 0) {
     registerCustomTools(customTools);
@@ -424,6 +446,7 @@ async function callPersonalModel(
   maxTokens: number,
   useProxyApi = false,
   proxyapiKey: string | null = null,
+  history?: HistoryMessage[],
 ) {
   const imageAttachments = attachments.filter(a => a.type.startsWith('image/'));
   
@@ -440,10 +463,7 @@ async function callPersonalModel(
       },
       body: JSON.stringify({
         model,
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userContent },
-        ],
+        messages: buildMessagesWithHistory(systemPrompt, userContent, history),
         temperature,
         max_tokens: maxTokens,
       }),
@@ -460,17 +480,28 @@ async function callPersonalModel(
   }
 
   if (provider === "gemini") {
-    const parts: Array<{ text?: string; file_data?: { mime_type: string; file_uri: string } }> = [];
-    parts.push({ text: `${systemPrompt}\n\nUser: ${message}` });
+    // Build Gemini multi-turn contents array
+    const contents: Array<{ role: string; parts: Array<{ text?: string; file_data?: { mime_type: string; file_uri: string } }> }> = [];
     
+    // Add history as alternating user/model turns
+    if (history && history.length > 0) {
+      for (const h of history) {
+        contents.push({ role: h.role === 'assistant' ? 'model' : 'user', parts: [{ text: h.content }] });
+      }
+    }
+    
+    // Add current user message with attachments
+    const userParts: Array<{ text?: string; file_data?: { mime_type: string; file_uri: string } }> = [];
+    userParts.push({ text: message });
     for (const att of imageAttachments) {
-      parts.push({
+      userParts.push({
         file_data: {
           mime_type: att.type,
           file_uri: att.url
         }
       });
     }
+    contents.push({ role: 'user', parts: userParts });
 
     // Use the actual model name in the API URL (not hardcoded)
     const geminiModel = model || 'gemini-2.5-flash';
@@ -481,7 +512,8 @@ async function callPersonalModel(
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          contents: [{ parts }],
+          systemInstruction: { parts: [{ text: systemPrompt }] },
+          contents,
           generationConfig: { temperature, maxOutputTokens: maxTokens },
         }),
       }
@@ -541,7 +573,10 @@ async function callPersonalModel(
         model: actualModel,
         max_tokens: maxTokens,
         system: systemPrompt,
-        messages: [{ role: "user", content: userContent }],
+        messages: [
+          ...(history || []).map(h => ({ role: h.role, content: h.content })),
+          { role: "user", content: userContent },
+        ],
         temperature,
       }),
     });
@@ -573,10 +608,7 @@ async function callPersonalModel(
       },
       body: JSON.stringify({
         model,
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userContent },
-        ],
+        messages: buildMessagesWithHistory(systemPrompt, userContent, history),
         temperature,
         max_tokens: maxTokens,
       }),
@@ -620,10 +652,7 @@ async function callPersonalModel(
       },
       body: JSON.stringify({
         model,
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userContent },
-        ],
+        messages: buildMessagesWithHistory(systemPrompt, userContent, history),
         temperature,
         max_tokens: maxTokens,
       }),
@@ -685,10 +714,7 @@ async function callPersonalModel(
       },
       body: JSON.stringify({
         model,
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userContent },
-        ],
+        messages: buildMessagesWithHistory(systemPrompt, userContent, history),
         temperature,
         max_tokens: maxTokens,
       }),
@@ -724,10 +750,7 @@ async function callPersonalModel(
       },
       body: JSON.stringify({
         model,
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userContent },
-        ],
+        messages: buildMessagesWithHistory(systemPrompt, userContent, history),
         temperature: isReasoningModel ? undefined : temperature, // R1 doesn't support temperature
         max_tokens: maxTokens,
       }),
@@ -763,10 +786,7 @@ async function callPersonalModel(
       },
       body: JSON.stringify({
         model,
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userContent },
-        ],
+        messages: buildMessagesWithHistory(systemPrompt, userContent, history),
         temperature,
         max_tokens: maxTokens,
       }),
@@ -841,10 +861,7 @@ async function callPersonalModel(
       },
       body: JSON.stringify({
         model: realModel,
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userContent },
-        ],
+        messages: buildMessagesWithHistory(systemPrompt, userContent, history),
         temperature: (isReasoning || isOpenAIModel) ? undefined : temperature,
         ...tokenParam,
       }),
@@ -926,7 +943,7 @@ serve(async (req) => {
       });
     }
     
-    const { session_id, message, attachments, models } = requestBody;
+    const { session_id, message, attachments, models, history } = requestBody;
 
     if (!session_id || !message || !models || models.length === 0) {
       return new Response(JSON.stringify({ error: "session_id, message, and models are required" }), {
@@ -1095,7 +1112,7 @@ serve(async (req) => {
             }
           }
           
-          result = await callLovableAI(lovableKey, modelReq.model_id, enhancedMessage, images, systemPrompt, temperature, maxTokens, enableTools, enabledTools, modelCustomTools);
+          result = await callLovableAI(lovableKey, modelReq.model_id, enhancedMessage, images, systemPrompt, temperature, maxTokens, enableTools, enabledTools, modelCustomTools, history);
         } else {
           let apiKey: string | null = null;
           if (modelReq.provider === "openai") apiKey = apiKeys?.openai_api_key;
@@ -1117,7 +1134,7 @@ serve(async (req) => {
             throw new Error(`No API key configured for ${modelReq.provider}`);
           }
 
-          result = await callPersonalModel(modelReq.provider!, apiKey, modelReq.model_id, enhancedMessage, images, systemPrompt, temperature, maxTokens, useProxyApi, proxyapiKey);
+          result = await callPersonalModel(modelReq.provider!, apiKey, modelReq.model_id, enhancedMessage, images, systemPrompt, temperature, maxTokens, useProxyApi, proxyapiKey, history);
         }
         
         console.log(`Success for model: ${modelReq.model_id}`);
@@ -1142,7 +1159,7 @@ serve(async (req) => {
                   if (ct) modelCustomTools.push(ct);
                 }
               }
-              result = await callLovableAI(lovableKey, fallbackError.lovableModelId, enhancedMessage, images, systemPrompt, temperature, maxTokens, enableTools, enabledTools, modelCustomTools);
+              result = await callLovableAI(lovableKey, fallbackError.lovableModelId, enhancedMessage, images, systemPrompt, temperature, maxTokens, enableTools, enabledTools, modelCustomTools, history);
               console.log(`[hydra-orchestrator] Lovable AI fallback success for ${fallbackError.lovableModelId}`);
               return { ...result, role, fallback_metadata: { used_fallback: true, fallback_reason: 'unsupported' as const } };
             } catch (fallbackErr) {

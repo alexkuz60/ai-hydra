@@ -189,6 +189,7 @@ export default function ExpertPanel() {
     onRequestStart: handleRequestStart,
     onRequestError: handleRequestError,
     selectedModelsRef,
+    messages,
   });
 
   // All actions (consolidated hook)
