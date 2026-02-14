@@ -5,10 +5,11 @@ import { HydraCard, HydraCardHeader, HydraCardTitle, HydraCardContent } from '@/
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { ROLE_CONFIG, type AgentRole } from '@/config/roles';
-import { ModelNameWithIcon } from '@/components/ui/ModelNameWithIcon';
+import { ModelNameWithIcon, getProviderFromModelId } from '@/components/ui/ModelNameWithIcon';
+import { PROVIDER_LOGOS, PROVIDER_COLORS } from '@/components/ui/ProviderLogos';
 import { cn } from '@/lib/utils';
 import { 
-  Brain, Sparkles, 
+  Brain, Sparkles, ChevronRight,
   Swords, ClipboardList, MessageSquare, AlertTriangle,
   Crown, Trophy, FileText, Scale, Radar
 } from 'lucide-react';
@@ -242,32 +243,10 @@ export function ModelDossier({ modelId, contestModels = {}, duelModels = {}, onT
           <HydraCard variant="default">
             <HydraCardHeader className="py-3">
               <Swords className="h-5 w-5 text-hydra-arbiter" />
-              <HydraCardTitle>{isRu ? 'Дуэли в Д-чате' : 'D-Chat Duels'}</HydraCardTitle>
+              <HydraCardTitle>{isRu ? 'Диалоги в Д-чате' : 'D-Chat Dialogs'}</HydraCardTitle>
             </HydraCardHeader>
             <HydraCardContent>
-              <div className="space-y-2">
-                {duels.slice(0, 10).map((duel, i) => (
-                  <div key={i} className="flex items-center justify-between p-2 rounded-lg hover:bg-muted/30">
-                    <div className="flex items-center gap-2 min-w-0 flex-1">
-                      <span className="text-xs text-muted-foreground">vs</span>
-                      <ModelNameWithIcon modelName={duel.opponentModelId} className="text-sm" iconSize="h-3.5 w-3.5" />
-                    </div>
-                    <Badge 
-                      variant={duel.result === 'win' ? 'default' : 'secondary'}
-                      className={cn(
-                        "text-[10px]",
-                        duel.result === 'win' && 'bg-hydra-success/20 text-hydra-success border-hydra-success/30',
-                        duel.result === 'loss' && 'bg-hydra-critical/20 text-hydra-critical border-hydra-critical/30',
-                        duel.result === 'draw' && 'bg-muted text-muted-foreground'
-                      )}
-                    >
-                      {duel.result === 'win' ? (isRu ? 'Победа' : 'Win') :
-                       duel.result === 'loss' ? (isRu ? 'Поражение' : 'Loss') :
-                       (isRu ? 'Ничья' : 'Draw')}
-                    </Badge>
-                  </div>
-                ))}
-              </div>
+              <DuelsByProvider duels={duels} isRu={isRu} />
             </HydraCardContent>
           </HydraCard>
         )}
@@ -325,6 +304,69 @@ export function ModelDossier({ modelId, contestModels = {}, duelModels = {}, onT
 }
 
 // ── Helpers ──
+
+function DuelsByProvider({ duels, isRu }: { duels: { opponentModelId: string; result: string }[]; isRu: boolean }) {
+  const grouped = new Map<string, typeof duels>();
+  duels.forEach(d => {
+    const provider = getProviderFromModelId(d.opponentModelId) || 'other';
+    const list = grouped.get(provider) || [];
+    list.push(d);
+    grouped.set(provider, list);
+  });
+
+  const [open, setOpen] = useState<string | null>(null);
+
+  const LABELS: Record<string, string> = {
+    openai: 'OpenAI', anthropic: 'Anthropic', gemini: 'Google Gemini',
+    xai: 'xAI', groq: 'Groq', deepseek: 'DeepSeek', mistral: 'Mistral',
+    openrouter: 'OpenRouter', other: isRu ? 'Прочие' : 'Other',
+  };
+
+  return (
+    <div className="space-y-1">
+      {Array.from(grouped.entries()).map(([provider, items]) => {
+        const Logo = PROVIDER_LOGOS[provider];
+        const color = PROVIDER_COLORS[provider] || 'text-muted-foreground';
+        const isOpen = open === provider;
+        return (
+          <div key={provider}>
+            <button
+              onClick={() => setOpen(isOpen ? null : provider)}
+              className="flex items-center gap-2 w-full px-2 py-1.5 rounded-lg hover:bg-muted/30 transition-colors"
+            >
+              <ChevronRight className={cn("h-3.5 w-3.5 text-muted-foreground transition-transform", isOpen && "rotate-90")} />
+              {Logo && <Logo className={cn("h-3.5 w-3.5 shrink-0", color)} />}
+              <span className="text-sm">{LABELS[provider] || provider}</span>
+              <span className="text-xs text-muted-foreground ml-auto">{items.length}</span>
+            </button>
+            {isOpen && (
+              <div className="ml-6 space-y-1 mt-1">
+                {items.map((duel, i) => (
+                  <div key={i} className="flex items-center justify-between p-1.5 rounded-lg hover:bg-muted/20">
+                    <ModelNameWithIcon modelName={duel.opponentModelId} className="text-sm" iconSize="h-3.5 w-3.5" />
+                    <Badge
+                      variant={duel.result === 'win' ? 'default' : 'secondary'}
+                      className={cn(
+                        "text-[10px]",
+                        duel.result === 'win' && 'bg-hydra-success/20 text-hydra-success border-hydra-success/30',
+                        duel.result === 'loss' && 'bg-hydra-critical/20 text-hydra-critical border-hydra-critical/30',
+                        duel.result === 'draw' && 'bg-muted text-muted-foreground'
+                      )}
+                    >
+                      {duel.result === 'win' ? (isRu ? 'Победа' : 'Win') :
+                       duel.result === 'loss' ? (isRu ? 'Поражение' : 'Loss') :
+                       (isRu ? 'Ничья' : 'Draw')}
+                    </Badge>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
 function StatBadge({ icon: Icon, value, label, color }: {
   icon?: React.ComponentType<{ className?: string }>;
