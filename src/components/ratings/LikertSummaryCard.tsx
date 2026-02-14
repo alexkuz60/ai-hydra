@@ -187,12 +187,11 @@ export function LikertSummaryCard({ modelId, isRu }: LikertSummaryCardProps) {
                          expandedIndex === idx ? "rotate-180" : ""
                        )} />
                      </div>
-                     {claim.reasoning && (
-                       <p className={cn(
-                         "text-[10px] text-muted-foreground/70 pl-8 transition-all duration-200",
-                         expandedIndex === idx ? "" : "line-clamp-1"
-                       )}>{claim.reasoning}</p>
-                     )}
+                      {claim.reasoning && expandedIndex === idx && (
+                        <p className="text-[10px] text-muted-foreground/70 pl-8 animate-in fade-in-0 slide-in-from-top-1 duration-200">
+                          {claim.reasoning}
+                        </p>
+                      )}
                    </div>
                  ))}
                </div>
