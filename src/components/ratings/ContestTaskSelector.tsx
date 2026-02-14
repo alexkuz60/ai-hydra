@@ -157,7 +157,7 @@ export function ContestTaskSelector() {
   const { language } = useLanguage();
   const { user } = useAuth();
   const isRu = language === 'ru';
-  const { taskId, mode, updateTaskId, updateMode, models, updateModels } = useContestConfigContext();
+  const { taskId, mode, updateTaskId, updateTaskTitle, updateMode, models, updateModels } = useContestConfigContext();
 
   const [sessions, setSessions] = useState<Session[]>([]);
 
@@ -248,7 +248,11 @@ export function ContestTaskSelector() {
           <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
             {isRu ? 'Задача' : 'Task'}
           </label>
-           <Select value={taskId || ''} onValueChange={updateTaskId}>
+           <Select value={taskId || ''} onValueChange={(id) => {
+             updateTaskId(id);
+             const session = sessions.find(s => s.id === id);
+             updateTaskTitle(session?.title || id);
+           }}>
              <SelectTrigger className="h-9">
                <SelectValue placeholder={isRu ? 'Выберите задачу...' : 'Select a task...'} />
              </SelectTrigger>
