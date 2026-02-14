@@ -222,6 +222,14 @@ export const RATINGS_I18N = {
   duelFinishConfirm: { ru: 'Завершить', en: 'Finish' },
   duelFinished: { ru: 'Дуэль завершена', en: 'Duel finished' },
   duelStatsSaved: { ru: 'Статистика дуэли обновлена', en: 'Duel statistics updated' },
+
+  // ===== LIKERT WIDGET =====
+  likertExcellent: { ru: 'Отлично', en: 'Excellent' },
+  likertGood: { ru: 'Хорошо', en: 'Good' },
+  likertOkay: { ru: 'Нормально', en: 'Okay' },
+  likertWeak: { ru: 'Слабо', en: 'Weak' },
+  likertPoor: { ru: 'Плохо', en: 'Poor' },
+  likertNonsense: { ru: 'Бред', en: 'Nonsense' },
 } as const;
 
 export type RatingsI18nKey = keyof typeof RATINGS_I18N;
