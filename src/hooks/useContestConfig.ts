@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useCloudSettings } from './useCloudSettings';
 
 export interface ArbitrationConfig {
@@ -82,7 +82,8 @@ function migrateLegacyConfig(): ContestConfigData | null {
     savedPlan: tryParse(localStorage.getItem('hydra-contest-saved-plan'), null),
   };
 
-  LEGACY_STORAGE_KEYS.forEach(k => { try { localStorage.removeItem(k); } catch {} });
+  // Don't delete 'hydra-contest-models' — Portfolio still reads it for UI sync
+  LEGACY_STORAGE_KEYS.filter(k => k !== 'hydra-contest-models').forEach(k => { try { localStorage.removeItem(k); } catch {} });
 
   return config;
 }
@@ -115,6 +116,49 @@ export function useContestConfig() {
     }
   }, [legacyData]);
 
+  // ── Bidirectional sync with Portfolio localStorage key ──
+  const PORTFOLIO_KEY = 'hydra-contest-models';
+
+  /** Reverse sync: push config.models → localStorage for Portfolio to read */
+  const prevSyncRef = useRef<string>('');
+  useEffect(() => {
+    if (!loaded) return;
+    const serialized = JSON.stringify(config.models);
+    if (serialized === prevSyncRef.current) return;
+    prevSyncRef.current = serialized;
+    try {
+      localStorage.setItem(PORTFOLIO_KEY, serialized);
+      window.dispatchEvent(new StorageEvent('storage', {
+        key: PORTFOLIO_KEY,
+        newValue: serialized,
+      }));
+    } catch {}
+  }, [loaded, config.models]);
+
+  /** Forward sync: read Portfolio changes into config.models */
+  const syncFromPortfolio = useCallback(() => {
+    try {
+      const raw = localStorage.getItem(PORTFOLIO_KEY);
+      if (!raw) return;
+      const parsed = JSON.parse(raw) as Record<string, string>;
+      setConfig(prev => {
+        const prevSerialized = JSON.stringify(prev.models);
+        if (prevSerialized === JSON.stringify(parsed)) return prev;
+        return { ...prev, models: parsed };
+      });
+    } catch {}
+  }, [setConfig]);
+
+  useEffect(() => {
+    if (!loaded) return;
+    syncFromPortfolio();
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === PORTFOLIO_KEY) syncFromPortfolio();
+    };
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
+  }, [loaded, syncFromPortfolio]);
+
   // Computed values
   const modelCount = Object.keys(config.models).length;
   const roundCount = config.rules?.roundCount || 1;
@@ -123,7 +167,6 @@ export function useContestConfig() {
   // Update methods
   const updateModels = useCallback((models: Record<string, string>) => {
     setConfig(prev => ({ ...prev, models }));
-    // Dispatch legacy event for cross-component compat
     window.dispatchEvent(new Event('contest-config-changed'));
   }, [setConfig]);
 
