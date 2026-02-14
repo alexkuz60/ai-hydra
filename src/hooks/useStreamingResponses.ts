@@ -34,7 +34,8 @@ interface UseStreamingResponsesReturn {
     message: string,
     timeoutSeconds: number,
     perModelSettings?: Record<string, { temperature?: number; maxTokens?: number; systemPrompt?: string }>,
-    userMessageContent?: string
+    userMessageContent?: string,
+    streamContext?: { memoryContext?: Array<{ content: string; chunk_type: string; metadata?: Record<string, unknown> }>; history?: Array<{ role: string; content: string }> }
   ) => Promise<void>;
   stopStreaming: (modelId: string) => void;
   stopAllStreaming: () => void;
@@ -258,7 +259,8 @@ export function useStreamingResponses({
     message: string,
     timeoutSeconds: number,
     perModelSettings?: Record<string, { temperature?: number; maxTokens?: number; systemPrompt?: string }>,
-    userMessageContent?: string
+    userMessageContent?: string,
+    streamContext?: { memoryContext?: Array<{ content: string; chunk_type: string; metadata?: Record<string, unknown> }>; history?: Array<{ role: string; content: string }> }
   ) => {
     const now = Date.now();
 
@@ -332,7 +334,7 @@ export function useStreamingResponses({
       setTimeout(() => {
         // Check if not already aborted before starting
         if (!controller.signal.aborted) {
-          streamModel(model, message, controller, now, perModelSettings);
+          streamModel(model, message, controller, now, perModelSettings, streamContext);
         }
       }, delay);
     });
@@ -387,10 +389,20 @@ export function useStreamingResponses({
       messageContent: string,
       controller: AbortController,
       startTime: number,
-      modelSettings?: Record<string, { temperature?: number; maxTokens?: number; systemPrompt?: string }>
+      modelSettings?: Record<string, { temperature?: number; maxTokens?: number; systemPrompt?: string }>,
+      streamCtx?: { memoryContext?: Array<{ content: string; chunk_type: string; metadata?: Record<string, unknown> }>; history?: Array<{ role: string; content: string }> }
     ) {
       const settings = modelSettings?.[model.modelId] || {};
       
+      // Read ProxyAPI settings from localStorage
+      let proxyapi_settings: Record<string, unknown> | undefined;
+      if (model.modelId.startsWith('proxyapi/') || model.modelId.includes('/')) {
+        try {
+          const saved = localStorage.getItem('proxyapi_settings');
+          if (saved) proxyapi_settings = JSON.parse(saved);
+        } catch { /* ignore */ }
+      }
+
       try {
         // Get user's auth token for BYOK providers (Gemini, DeepSeek, etc.)
         const { data: { session } } = await supabase.auth.getSession();
@@ -411,6 +423,9 @@ export function useStreamingResponses({
               temperature: settings.temperature,
               max_tokens: settings.maxTokens,
               system_prompt: settings.systemPrompt,
+              memory_context: streamCtx?.memoryContext || [],
+              history: streamCtx?.history || [],
+              proxyapi_settings,
             }),
             signal: controller.signal,
           }
