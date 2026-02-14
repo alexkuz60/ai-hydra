@@ -8,28 +8,8 @@ const CORS_HEADERS = {
 
 const PROXYAPI_URL = "https://openai.api.proxyapi.ru/v1/chat/completions";
 
-/** ProxyAPI model ID → real model mapping */
-const PROXYAPI_MODEL_MAP: Record<string, string> = {
-  "proxyapi/gpt-4o": "openai/gpt-4o",
-  "proxyapi/gpt-4o-mini": "openai/gpt-4o-mini",
-  "proxyapi/o3-mini": "openai/o3-mini",
-  "proxyapi/gpt-5": "openai/gpt-5",
-  "proxyapi/gpt-5-mini": "openai/gpt-5-mini",
-  "proxyapi/gpt-5.2": "openai/gpt-5.2",
-  "proxyapi/gpt-oss-20b": "openai/gpt-oss-20b",
-  "proxyapi/gpt-oss-120b": "openai/gpt-oss-120b",
-  "proxyapi/claude-sonnet-4": "anthropic/claude-sonnet-4-20250514",
-  "proxyapi/claude-opus-4": "anthropic/claude-opus-4-6",
-  "proxyapi/claude-3-5-sonnet": "anthropic/claude-3-5-sonnet-20241022",
-  "proxyapi/claude-3-5-haiku": "anthropic/claude-3-5-haiku-20241022",
-  "proxyapi/gemini-3-pro-preview": "gemini/gemini-3-pro-preview",
-  "proxyapi/gemini-3-flash-preview": "gemini/gemini-3-flash-preview",
-  "proxyapi/gemini-2.5-pro": "gemini/gemini-2.5-pro",
-  "proxyapi/gemini-2.5-flash": "gemini/gemini-2.5-flash",
-  "proxyapi/gemini-2.0-flash": "gemini/gemini-2.0-flash",
-  "proxyapi/deepseek-chat": "deepseek/deepseek-chat",
-  "proxyapi/deepseek-reasoner": "deepseek/deepseek-reasoner",
-};
+// ProxyAPI maps imported from shared module
+import { PROXYAPI_MODEL_MAP, resolveProxyApiModel } from "../_shared/proxyapi.ts";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -124,7 +104,7 @@ Deno.serve(async (req) => {
 
     if (action === "test" && model_id) {
       // Test a specific model with a minimal request
-      const realModel = PROXYAPI_MODEL_MAP[model_id] || model_id.replace("proxyapi/", "");
+      const realModel = resolveProxyApiModel(model_id);
       const isOpenAI = realModel.startsWith("openai/");
       const start = Date.now();
 
