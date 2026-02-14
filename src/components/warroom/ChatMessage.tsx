@@ -1,4 +1,5 @@
 import React, { useState, useRef, useCallback } from 'react';
+import { UserLikertWidget } from '@/components/ratings/UserLikertWidget';
 import { HydraCard, HydraCardHeader, HydraCardTitle, HydraCardContent } from '@/components/ui/hydra-card';
 import { Button } from '@/components/ui/button';
 import { MarkdownRenderer } from './MarkdownRenderer';
@@ -52,6 +53,7 @@ interface ChatMessageProps {
   userDisplayInfo?: UserDisplayInfo;
   onDelete: (messageId: string) => void;
   onRatingChange: (messageId: string, rating: number) => void;
+  onLikertRate?: (messageId: string, value: number) => void;
   isCollapsed?: boolean;
   onToggleCollapse?: (messageId: string) => void;
   onClarifyWithSpecialist?: (selectedText: string, messageId: string) => void;
@@ -69,7 +71,7 @@ interface ChatMessageProps {
 
 const MAX_COLLAPSED_LINES = 3;
 
-export function ChatMessage({ message, userDisplayInfo, onDelete, onRatingChange, isCollapsed, onToggleCollapse, onClarifyWithSpecialist, onSaveToMemory, isSavingToMemory, isAlreadySavedToMemory, onUpdateProposals, onRequestProposalDetails, onConsultInDChat, onRequestEvaluation, onHallucination, onChecklistChange, forceInteractiveChecklists }: ChatMessageProps) {
+export function ChatMessage({ message, userDisplayInfo, onDelete, onRatingChange, onLikertRate, isCollapsed, onToggleCollapse, onClarifyWithSpecialist, onSaveToMemory, isSavingToMemory, isAlreadySavedToMemory, onUpdateProposals, onRequestProposalDetails, onConsultInDChat, onRequestEvaluation, onHallucination, onChecklistChange, forceInteractiveChecklists }: ChatMessageProps) {
   const { t } = useLanguage();
   const contentRef = useRef<HTMLDivElement>(null);
   const [localExpanded, setLocalExpanded] = useState(true);
@@ -203,8 +205,16 @@ export function ChatMessage({ message, userDisplayInfo, onDelete, onRatingChange
       </HydraCardContent>
 
       {isAiMessage && (
-        <div className="px-4 pb-3">
+        <div className="px-4 pb-3 space-y-2">
           <BrainRating value={rating} onChange={newRating => onRatingChange(message.id, newRating)} />
+          {onLikertRate && (
+            <UserLikertWidget
+              resultId={message.id}
+              currentValue={typeof metadataObj.user_likert === 'number' ? metadataObj.user_likert : null}
+              onRate={onLikertRate}
+              isRu={t('common.locale') === 'ru'}
+            />
+          )}
         </div>
       )}
 

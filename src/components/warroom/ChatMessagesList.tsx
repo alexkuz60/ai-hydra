@@ -24,6 +24,7 @@ interface ChatMessagesListProps {
   // Actions
   onDelete: (id: string) => void;
   onRatingChange: (id: string, rating: number) => void;
+  onLikertRate?: (id: string, value: number) => void;
   onClarifyWithSpecialist?: (selectedText: string, messageId: string) => void;
   // Memory
   onSaveToMemory?: (messageId: string, content: string) => Promise<void>;
@@ -64,6 +65,7 @@ export function ChatMessagesList({
   onToggleCollapse,
   onDelete,
   onRatingChange,
+  onLikertRate,
   onClarifyWithSpecialist,
   onSaveToMemory,
   isSavingToMemory,
@@ -136,6 +138,7 @@ export function ChatMessagesList({
                   userDisplayInfo={userDisplayInfo}
                   onDelete={onDelete}
                   onRatingChange={onRatingChange}
+                  onLikertRate={onLikertRate}
                   isCollapsed={isCollapsed(message.id)}
                   onToggleCollapse={onToggleCollapse}
                   onClarifyWithSpecialist={onClarifyWithSpecialist}

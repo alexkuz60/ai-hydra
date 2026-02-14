@@ -40,6 +40,8 @@ export interface MessageMetadata {
   // Interactive checklists
   interactive_checklists?: boolean;
   checklist_state?: Record<number, boolean>;
+  // User Likert rating (0-5 scale)
+  user_likert?: number;
   [key: string]: unknown;
 }
 
