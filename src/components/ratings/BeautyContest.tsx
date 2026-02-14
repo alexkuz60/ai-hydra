@@ -392,6 +392,11 @@ export function BeautyContest() {
               onScore={async (resultId, score) => {
                 await contest.updateResult(resultId, { user_score: score } as any);
               }}
+              onLikertScore={async (resultId, value) => {
+                const result = contest.results.find(r => r.id === resultId);
+                const meta = { ...(result?.metadata || {}), user_likert: value };
+                await contest.updateResult(resultId, { metadata: meta } as any);
+              }}
               activeModel={activeModel}
               onActiveModelChange={setActiveModel}
             />

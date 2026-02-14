@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 import { ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
 import { MarkdownRenderer } from '@/components/warroom/MarkdownRenderer';
 import { UserScoreWidget } from './UserScoreWidget';
+import { UserLikertWidget } from './UserLikertWidget';
 import { getRatingsText } from './i18n';
 import type { ContestSession, ContestRound, ContestResult } from '@/hooks/useContestSession';
 
@@ -24,12 +25,13 @@ interface DuelResponsesPanelProps {
   LogoB: React.ComponentType<{ className?: string }> | null;
   roundWins: { winsA: number; winsB: number; draws: number };
   onScoreResult?: (resultId: string, score: number) => void;
+  onLikertScore?: (resultId: string, value: number) => void;
 }
 
 export function DuelResponsesPanel({
   session, rounds, results, streamingTexts, executing, isRu,
   modelA, modelB, nameA, nameB, LogoA, LogoB, roundWins,
-  onScoreResult,
+  onScoreResult, onLikertScore,
 }: DuelResponsesPanelProps) {
   const [activeModel, setActiveModel] = useState<string>('all');
   const [expandedRound, setExpandedRound] = useState<string | null>(null);
@@ -126,6 +128,7 @@ export function DuelResponsesPanel({
                       isExpanded={isExpanded}
                       isExtraRound={isExtraRound}
                       onScore={onScoreResult}
+                      onLikertScore={onLikertScore}
                     />
 
                     {/* Center: Timeline separator */}
@@ -158,6 +161,7 @@ export function DuelResponsesPanel({
                       isRu={isRu}
                       isExpanded={isExpanded}
                       onScore={onScoreResult}
+                      onLikertScore={onLikertScore}
                     />
                   </div>
                 ) : (
@@ -211,6 +215,7 @@ export function DuelResponsesPanel({
                       isExtraRound={isExtraRound}
                       fullWidth
                       onScore={onScoreResult}
+                      onLikertScore={onLikertScore}
                     />
                   </div>
                 )}
@@ -289,7 +294,7 @@ function RoundTimelineDivider({
 /* ── Single duelist response card (no expand button inside) ── */
 function DuelResponseCard({
   result, streamingText, name, Logo, score,
-  executing, isRu, isExpanded, isExtraRound, fullWidth, onScore,
+  executing, isRu, isExpanded, isExtraRound, fullWidth, onScore, onLikertScore,
 }: {
   result?: ContestResult;
   streamingText?: string;
@@ -302,6 +307,7 @@ function DuelResponseCard({
   isExtraRound?: boolean;
   fullWidth?: boolean;
   onScore?: (resultId: string, score: number) => void;
+  onLikertScore?: (resultId: string, value: number) => void;
 }) {
   const text = result?.response_text || streamingText || '';
   const canScore = result && (result.status === 'ready' || result.status === 'judged') && onScore;
@@ -360,6 +366,16 @@ function DuelResponseCard({
       {/* User score widget */}
       {canScore && (
         <UserScoreWidget resultId={result.id} currentScore={result.user_score} onScore={onScore!} isRu={isRu} isExtraRound={isExtraRound} />
+      )}
+      {/* User Likert widget */}
+      {result && (result.status === 'ready' || result.status === 'judged') && onLikertScore && (
+        <UserLikertWidget
+          resultId={result.id}
+          currentValue={(result.metadata as any)?.user_likert ?? null}
+          onRate={onLikertScore}
+          isRu={isRu}
+          isExtraRound={isExtraRound}
+        />
       )}
       {/* Arbiter inline score */}
       {result?.arbiter_score != null && (

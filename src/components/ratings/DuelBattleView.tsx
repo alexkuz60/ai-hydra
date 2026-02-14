@@ -31,12 +31,13 @@ interface DuelBattleViewProps {
   onFinishDuel: () => void;
   onAddExtraRound?: (prompt: string) => void;
   onScoreResult?: (resultId: string, score: number) => void;
+  onLikertScore?: (resultId: string, value: number) => void;
 }
 
 export function DuelBattleView({
   session, rounds, results, streamingTexts, executing, arbiterRunning,
   isRu, onNewDuel, onFinishDuel,
-  onAddExtraRound, onScoreResult,
+  onAddExtraRound, onScoreResult, onLikertScore,
 }: DuelBattleViewProps) {
   const config = session.config;
   const modelA = Object.keys(config.models || {})[0] || '';
@@ -158,6 +159,7 @@ export function DuelBattleView({
               modelA={modelA} modelB={modelB} nameA={nameA} nameB={nameB}
               LogoA={LogoA} LogoB={LogoB} roundWins={roundWins}
               onScoreResult={onScoreResult}
+              onLikertScore={onLikertScore}
             />
           </TabsContent>
 

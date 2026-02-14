@@ -261,6 +261,11 @@ export function DuelArena({ duelConfig }: DuelArenaProps) {
       onScoreResult={async (resultId, score) => {
         await duelSession.updateResult(resultId, { user_score: score } as any);
       }}
+      onLikertScore={async (resultId, value) => {
+        const result = duelSession.results.find(r => r.id === resultId);
+        const meta = { ...(result?.metadata || {}), user_likert: value };
+        await duelSession.updateResult(resultId, { metadata: meta } as any);
+      }}
       onAddExtraRound={async (prompt) => {
         const result = await duelSession.addExtraRound(prompt);
         if (result) {
