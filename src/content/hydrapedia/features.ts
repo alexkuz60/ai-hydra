@@ -27,6 +27,52 @@ export const featuresSections: HydrapediaSection[] = [
 
 Статистика и аналитика использования моделей с визуализациями.
 
+## Досье модели
+
+При клике на модель в Портфолио открывается **Досье** — комплексная карточка с разделами:
+
+### Справочные данные
+Провайдер, семейство модели, контекстное окно, поддерживаемые возможности (vision, reasoning, function calling).
+
+### Динамическая статистика
+- Количество ответов, полученные 🧠, отклонения, галлюцинации
+- Средний рейтинг арбитра, количество конкурсов и дуэлей
+- Даты первого и последнего использования
+- Средние оценки по критериям (radar chart)
+
+### Гистограмма ролей
+Визуализация распределения использования модели по ролям (Эксперт, Критик, Арбитр и др.).
+
+### Сводка Likert-оценок арбитража
+
+Карточка **LikertSummaryCard** агрегирует данные всех дуэлей арбитров для данной модели:
+
+- **Средний балл** — нормализован в диапазон 0–10
+- **Распределение оценок** — гистограмма по 6-балльной шкале (0–5) с процентным соотношением
+- **Спорные аргументы** — список тезисов с оценкой ≤ 2, отсортированных по возрастанию балла
+- **Раскрытие деталей** — клик по спорному аргументу разворачивает полный текст reasoning с анимацией шеврона
+
+> [!TIP] Шкала согласия Likert
+> 5 — Полностью согласен · 4 — Есть нюансы · 3 — Требует разъяснения · 2 — Скорее нет · 1 — Не согласен · 0 — Бред
+
+### Секция «Критика»
+
+Агрегация всех критических отзывов из четырёх источников с тематическими иконками:
+
+| Источник | Иконка | Описание |
+|----------|--------|----------|
+| Панель экспертов | 🧠 Brain | Оценки из мультиагентных сессий |
+| D-чат | 💬 MessageSquare | Отзывы из прямых диалогов |
+| Конкурсы | 🏆 Trophy | Комментарии арбитра из конкурсов |
+| Дуэли | ⚔️ Swords | Вердикты из дуэльных сессий |
+
+Каждый отзыв содержит текст и числовую оценку арбитра (если доступна). Дедупликация текстов предотвращает повторение одинаковых отзывов из разных источников.
+
+### Действия в Досье
+
+- 👑 **Пригласить на подиум** — добавить модель в конкурс
+- ⚔️ **Выбрать для дуэли** — назначить модель дуэлянтом с выбором роли (Критик или Арбитр)
+
 ## Метрики
 
 - **Количество ответов** — сколько раз модель была использована
@@ -162,7 +208,14 @@ export const featuresSections: HydrapediaSection[] = [
 | **Лучше для** | Быстрой оценки | Чемпионата | Долгосрочного рейтинга |
 
 > [!TIP] Визуальное сравнение
-> После завершения конкурса на вкладке «Оценки» автоматически появляется визуальное сравнение всех трёх схем. Для каждой модели отображаются горизонтальные бары с нормализованными баллами по каждой схеме и индикаторы ▲▼ изменения позиции относительно средневзвешенного балла. Подсвеченные строки указывают на модели, чья позиция различается между схемами — это помогает понять, когда выбор метода критичен.`,
+> После завершения конкурса на вкладке «Оценки» автоматически появляется визуальное сравнение всех трёх схем. Для каждой модели отображаются горизонтальные бары с нормализованными баллами по каждой схеме и индикаторы ▲▼ изменения позиции относительно средневзвешенного балла. Подсвеченные строки указывают на модели, чья позиция различается между схемами — это помогает понять, когда выбор метода критичен.
+
+## Облачная синхронизация
+
+Индикатор облачной синхронизации ☁️ отображается в заголовке страницы «Подиум» и показывает статус сохранения настроек:
+- **Облако с анимацией** — идёт синхронизация
+- **Галочка** — все настройки сохранены
+Индикатор консолидирован в одном месте (хедер страницы) вместо дублирования в каждом компоненте.`,
       en: `# AI Model Podium
 
 The Model Podium — a rating, portfolio, and usage statistics system for AI models. The interface follows the master-detail pattern with ResizablePanel and supports Min/Max navigator modes.
@@ -183,6 +236,52 @@ A module for comparative model testing. Allows you to create a contest between s
 ### AI Model Ratings
 
 Usage statistics and analytics with visualizations.
+
+## Model Dossier
+
+Clicking a model in the Portfolio opens its **Dossier** — a comprehensive card with sections:
+
+### Reference Data
+Provider, model family, context window, supported capabilities (vision, reasoning, function calling).
+
+### Dynamic Statistics
+- Response count, received 🧠, dismissals, hallucinations
+- Average arbiter rating, contest and duel counts
+- First and last usage dates
+- Average scores per criteria (radar chart)
+
+### Role Histogram
+Visualization of the model's usage distribution across roles (Expert, Critic, Arbiter, etc.).
+
+### Likert Arbitration Assessment Summary
+
+The **LikertSummaryCard** aggregates data from all arbiter duels for the given model:
+
+- **Average score** — normalized to 0–10 range
+- **Score distribution** — histogram on a 6-point scale (0–5) with percentages
+- **Disputed arguments** — list of claims scoring ≤ 2, sorted by ascending score
+- **Detail expansion** — clicking a disputed argument reveals full reasoning text with animated chevron
+
+> [!TIP] Likert Agreement Scale
+> 5 — Fully agree · 4 — With nuances · 3 — Needs clarification · 2 — Rather disagree · 1 — Disagree · 0 — Nonsense
+
+### Critique Section
+
+Aggregation of all critical reviews from four sources with themed icons:
+
+| Source | Icon | Description |
+|--------|------|-------------|
+| Expert Panel | 🧠 Brain | Evaluations from multi-agent sessions |
+| D-Chat | 💬 MessageSquare | Reviews from direct dialogues |
+| Contests | 🏆 Trophy | Arbiter comments from contests |
+| Duels | ⚔️ Swords | Verdicts from duel sessions |
+
+Each review includes text and a numeric arbiter score (if available). Text deduplication prevents the same review from appearing across multiple sources.
+
+### Dossier Actions
+
+- 👑 **Invite to podium** — add model to a contest
+- ⚔️ **Select for duel** — assign model as duelist with role choice (Critic or Arbiter)
 
 ## Metrics
 
@@ -324,7 +423,14 @@ Round 2:
 | **Best for** | Quick evaluation | Championship | Long-term rating |
 
 > [!TIP] Visual Comparison
-> After a contest completes, the "Scores" tab automatically shows a visual comparison of all three schemes. For each model, horizontal bars display normalized scores per scheme with ▲▼ indicators showing rank changes relative to the weighted average baseline. Highlighted rows indicate models whose ranking differs between schemes — helping you understand when the choice of method matters.`,
+> After a contest completes, the "Scores" tab automatically shows a visual comparison of all three schemes. For each model, horizontal bars display normalized scores per scheme with ▲▼ indicators showing rank changes relative to the weighted average baseline. Highlighted rows indicate models whose ranking differs between schemes — helping you understand when the choice of method matters.
+
+## Cloud Sync
+
+The cloud sync indicator ☁️ is displayed in the page header of the Podium and shows settings save status:
+- **Cloud with animation** — syncing in progress
+- **Checkmark** — all settings saved
+The indicator is consolidated in one place (page header) instead of being duplicated in each component.`,
     },
   },
   {
@@ -817,10 +923,36 @@ export const duelModeSections: HydrapediaSection[] = [
 Сформулируйте свой следующий аргумент.
 \`\`\`
 
-## Два типа дуэли
+## Три типа дуэли
 
-- **Отбор критиков**: Дуэлянты — кандидаты в Критики, оценку проводит Арбитр
-- **Отбор арбитров**: Дуэлянты — кандидаты в Арбитры, оценку проводят Критики
+### Отбор критиков
+Дуэлянты — кандидаты в Критики, оценку проводит Арбитр. Заголовки промптов: «Ваш аргумент».
+
+### Отбор арбитров
+Дуэлянты — кандидаты в Арбитры, оценку проводят Критики. Заголовки промптов автоматически меняются на «Ваш вердикт» для соответствия роли судьи.
+
+### Дуэль Арбитров (Likert-оценка)
+
+Специализированный режим (\`duelType='arbiter'\`) для оценки **качества судейства**. Кандидаты выносят вердикты, а **Мета-критик** оценивает каждый тезис по 6-балльной шкале согласия Ликерта:
+
+| Балл | Значение |
+|------|----------|
+| 5 | Полностью согласен |
+| 4 | Согласен, но есть нюансы |
+| 3 | Согласен, но аргумент требует разъяснения |
+| 2 | Скорее нет, чем да |
+| 1 | Не согласен |
+| 0 | Бред |
+
+**Визуализация результатов**:
+- Гистограмма распределения уровней согласия по всем тезисам
+- Детализированный список тезисов с пояснениями (reasoning)
+- Итоговый балл нормализуется в диапазон 0–10
+
+**Критерии по умолчанию**: беспристрастность, обоснованность, сохранение нюансов и качество синтеза.
+
+> [!TIP] Данные в Досье
+> Результаты всех дуэлей арбитров агрегируются в карточке LikertSummaryCard в Досье модели — средний балл согласия и список наиболее спорных аргументов (балл ≤ 2) для выявления галлюцинаций или систематических ошибок.
 
 ## Оценка пользователем
 
@@ -855,10 +987,36 @@ Opponent's argument: [opponent's response from Round N-1]
 Formulate your next argument.
 \`\`\`
 
-## Two Duel Types
+## Three Duel Types
 
-- **Critic Selection**: Duelists are Critic candidates, evaluated by Arbiter
-- **Arbiter Selection**: Duelists are Arbiter candidates, evaluated by Critics
+### Critic Selection
+Duelists are Critic candidates, evaluated by Arbiter. Prompt headings: "Your argument".
+
+### Arbiter Selection
+Duelists are Arbiter candidates, evaluated by Critics. Prompt headings automatically change to "Your verdict" to match the judge role.
+
+### Arbiter Duel (Likert Evaluation)
+
+A specialized mode (\`duelType='arbiter'\`) for evaluating **judging quality**. Candidates deliver verdicts, and a **Meta-critic** evaluates each claim on a 6-point Likert agreement scale:
+
+| Score | Meaning |
+|-------|---------|
+| 5 | Fully agree |
+| 4 | Agree, but with nuances |
+| 3 | Agree, but argument needs clarification |
+| 2 | Rather disagree |
+| 1 | Disagree |
+| 0 | Nonsense |
+
+**Results visualization**:
+- Histogram of agreement level distribution across all claims
+- Detailed list of claims with reasoning explanations
+- Final score normalized to 0–10 range
+
+**Default criteria**: impartiality, substantiation, nuance preservation, and synthesis quality.
+
+> [!TIP] Data in Dossier
+> Results from all arbiter duels are aggregated in the LikertSummaryCard in the Model Dossier — average agreement score and a list of the most disputed arguments (score ≤ 2) for identifying hallucinations or systematic model errors.
 
 ## User Evaluation
 
