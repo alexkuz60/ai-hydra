@@ -119,10 +119,42 @@ export function useContestConfig() {
   // ── Bidirectional sync with Portfolio localStorage key ──
   const PORTFOLIO_KEY = 'hydra-contest-models';
 
-  /** Reverse sync: push config.models → localStorage for Portfolio to read */
-  const prevSyncRef = useRef<string>('');
+  /** Forward sync MUST run before reverse sync to prevent DB-loaded empty
+   *  models from overwriting localStorage that Portfolio just wrote. */
+  const syncFromPortfolio = useCallback(() => {
+    try {
+      const raw = localStorage.getItem(PORTFOLIO_KEY);
+      if (!raw) return;
+      const parsed = JSON.parse(raw) as Record<string, string>;
+      setConfig(prev => {
+        if (JSON.stringify(prev.models) === JSON.stringify(parsed)) return prev;
+        return { ...prev, models: parsed };
+      });
+    } catch {}
+  }, [setConfig]);
+
+  // Forward sync: ingest Portfolio localStorage into config on load & storage events
   useEffect(() => {
     if (!loaded) return;
+    syncFromPortfolio();
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === PORTFOLIO_KEY) syncFromPortfolio();
+    };
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
+  }, [loaded, syncFromPortfolio]);
+
+  /** Reverse sync: push config.models → localStorage for Portfolio to read.
+   *  Skip the FIRST firing after load to give forward sync a chance to merge
+   *  localStorage data before we overwrite it with (potentially stale) DB value. */
+  const prevSyncRef = useRef<string>('');
+  const skipFirstReverseSyncRef = useRef(true);
+  useEffect(() => {
+    if (!loaded) return;
+    if (skipFirstReverseSyncRef.current) {
+      skipFirstReverseSyncRef.current = false;
+      return;
+    }
     const serialized = JSON.stringify(config.models);
     if (serialized === prevSyncRef.current) return;
     prevSyncRef.current = serialized;
@@ -134,30 +166,6 @@ export function useContestConfig() {
       }));
     } catch {}
   }, [loaded, config.models]);
-
-  /** Forward sync: read Portfolio changes into config.models */
-  const syncFromPortfolio = useCallback(() => {
-    try {
-      const raw = localStorage.getItem(PORTFOLIO_KEY);
-      if (!raw) return;
-      const parsed = JSON.parse(raw) as Record<string, string>;
-      setConfig(prev => {
-        const prevSerialized = JSON.stringify(prev.models);
-        if (prevSerialized === JSON.stringify(parsed)) return prev;
-        return { ...prev, models: parsed };
-      });
-    } catch {}
-  }, [setConfig]);
-
-  useEffect(() => {
-    if (!loaded) return;
-    syncFromPortfolio();
-    const onStorage = (e: StorageEvent) => {
-      if (e.key === PORTFOLIO_KEY) syncFromPortfolio();
-    };
-    window.addEventListener('storage', onStorage);
-    return () => window.removeEventListener('storage', onStorage);
-  }, [loaded, syncFromPortfolio]);
 
   // Computed values
   const modelCount = Object.keys(config.models).length;
