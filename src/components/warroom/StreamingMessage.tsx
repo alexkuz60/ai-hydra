@@ -4,6 +4,7 @@ import { ru, enUS } from 'date-fns/locale';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
 import { MarkdownRenderer } from './MarkdownRenderer';
+import { UserLikertWidget } from '@/components/ratings/UserLikertWidget';
 import { cn } from '@/lib/utils';
 import { Copy, User, Search, Shield, Scale, Users, Lightbulb, Square } from 'lucide-react';
 import type { ConsultantMode } from '@/hooks/useStreamingChat';
@@ -34,9 +35,12 @@ interface StreamingMessageProps {
   onCopyToMainChat?: (content: string, sourceMessageId: string | null, modelName?: string | null) => void;
   sourceMessageId?: string | null;
   onStopStreaming?: () => void;
+  likert?: number | null;
+  onLikertRate?: (messageId: string, value: number) => void;
 }
 
 export function StreamingMessage({
+  id,
   role,
   content,
   mode,
@@ -46,6 +50,8 @@ export function StreamingMessage({
   onCopyToMainChat,
   sourceMessageId,
   onStopStreaming,
+  likert,
+  onLikertRate,
 }: StreamingMessageProps) {
   const { t, language } = useLanguage();
   const isUser = role === 'user';
@@ -104,18 +110,29 @@ export function StreamingMessage({
         </div>
       )}
 
-      {/* Copy to chat button (only for completed consultant responses) */}
-      {!isUser && !isStreaming && onCopyToMainChat && content && (
-        <div className="mt-2 pt-2 border-t border-border/50">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-6 text-xs"
-            onClick={() => onCopyToMainChat(content, sourceMessageId || null, modelName)}
-          >
-            <Copy className="h-3 w-3 mr-1" />
-            {t('dchat.copyToChat')}
-          </Button>
+      {/* Likert + Copy row for completed consultant responses */}
+      {!isUser && !isStreaming && (
+        <div className="mt-2 pt-2 border-t border-border/50 flex items-center gap-3 flex-wrap">
+          {onLikertRate && (
+            <UserLikertWidget
+              resultId={id}
+              currentValue={likert ?? null}
+              onRate={onLikertRate}
+              isRu={language === 'ru'}
+              compact
+            />
+          )}
+          {onCopyToMainChat && content && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 text-xs ml-auto"
+              onClick={() => onCopyToMainChat(content, sourceMessageId || null, modelName)}
+            >
+              <Copy className="h-3 w-3 mr-1" />
+              {t('dchat.copyToChat')}
+            </Button>
+          )}
         </div>
       )}
     </div>

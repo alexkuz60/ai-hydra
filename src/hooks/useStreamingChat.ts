@@ -16,6 +16,7 @@ export interface StreamingMessage {
   created_at: string;
   isStreaming?: boolean;
   sourceMessageId?: string | null;
+  likert?: number | null;
 }
 
 interface MemoryChunk {
@@ -43,6 +44,7 @@ interface UseStreamingChatReturn {
   ) => Promise<void>;
   stopStreaming: () => void;
   clearMessages: () => void;
+  rateMessage: (messageId: string, value: number) => void;
 }
 
 // Use centralized mapping from config/roles.ts
@@ -288,11 +290,18 @@ export function useStreamingChat({
     setMessages([]);
   }, [stopStreaming]);
 
+  const rateMessage = useCallback((messageId: string, value: number) => {
+    setMessages((prev) =>
+      prev.map((m) => m.id === messageId ? { ...m, likert: value } : m)
+    );
+  }, []);
+
   return {
     messages,
     streaming,
     sendQuery,
     stopStreaming,
     clearMessages,
+    rateMessage,
   };
 }
