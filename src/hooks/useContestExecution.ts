@@ -128,6 +128,7 @@ export function useContestExecution() {
               originalResult.model_id,
               null,
               eval_.criteria_scores,
+              'contest' // Mark as contest criteria
             );
           }
 

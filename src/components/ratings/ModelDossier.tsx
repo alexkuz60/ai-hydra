@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useModelDossier } from '@/hooks/useModelDossier';
 import { HydraCard, HydraCardHeader, HydraCardTitle, HydraCardContent } from '@/components/ui/hydra-card';
@@ -33,6 +33,7 @@ export function ModelDossier({ modelId, contestModels = {}, duelModels = {}, onT
   const { language } = useLanguage();
   const dossier = useModelDossier(modelId);
   const isRu = language === 'ru';
+  const [criteriaFilter, setCriteriaFilter] = useState<'all' | 'contest' | 'duel_critic' | 'duel_arbiter'>('all');
 
   if (dossier.loading) {
     return (
@@ -114,23 +115,68 @@ export function ModelDossier({ modelId, contestModels = {}, duelModels = {}, onT
               <HydraCardTitle>{isRu ? 'Профиль по критериям' : 'Criteria Profile'}</HydraCardTitle>
             </HydraCardHeader>
             <HydraCardContent>
+              {/* Filter chips */}
+              <div className="flex flex-wrap gap-2 mb-4">
+                {['all', 'contest', 'duel_critic', 'duel_arbiter'].map(filter => {
+                  const labels = {
+                    all: { ru: 'Все', en: 'All' },
+                    contest: { ru: 'Конкурс', en: 'Contest' },
+                    duel_critic: { ru: 'Дуэль (Критик)', en: 'Duel (Critic)' },
+                    duel_arbiter: { ru: 'Дуэль (Арбитр)', en: 'Duel (Arbiter)' },
+                  };
+                  const label = labels[filter as keyof typeof labels][isRu ? 'ru' : 'en'];
+                  const isActive = criteriaFilter === filter;
+                  return (
+                    <button
+                      key={filter}
+                      onClick={() => setCriteriaFilter(filter as any)}
+                      className={cn(
+                        'text-xs px-2.5 py-1 rounded-full transition-colors',
+                        isActive
+                          ? 'bg-primary text-primary-foreground'
+                          : 'bg-muted/60 text-muted-foreground hover:bg-muted'
+                      )}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Filtered criteria */}
               <div className="space-y-2">
                 {Object.entries(stats.criteriaAverages)
+                  .filter(([key]) => {
+                    if (criteriaFilter === 'all') return true;
+                    return key.startsWith(`${criteriaFilter}:`);
+                  })
                   .sort(([, a], [, b]) => b - a)
-                  .map(([key, avg]) => (
-                    <div key={key} className="flex items-center gap-3">
-                      <span className="text-xs text-muted-foreground w-28 truncate shrink-0">
-                        {getCriterionLabel(key, isRu)}
-                      </span>
-                      <div className="flex-1 h-2.5 rounded-full bg-muted/50 overflow-hidden">
-                        <div
-                          className="h-full rounded-full bg-hydra-arbiter/70 transition-all duration-500"
-                          style={{ width: `${Math.min(avg * 10, 100)}%` }}
-                        />
+                  .map(([key, avg]) => {
+                    // Strip prefix for display
+                    const displayKey = key.includes(':') ? key.split(':')[1] : key;
+                    return (
+                      <div key={key} className="flex items-center gap-3">
+                        <span className="text-xs text-muted-foreground w-28 truncate shrink-0">
+                          {getCriterionLabel(displayKey, isRu)}
+                        </span>
+                        <div className="flex-1 h-2.5 rounded-full bg-muted/50 overflow-hidden">
+                          <div
+                            className="h-full rounded-full bg-hydra-arbiter/70 transition-all duration-500"
+                            style={{ width: `${Math.min(avg * 10, 100)}%` }}
+                          />
+                        </div>
+                        <span className="text-xs font-semibold w-8 text-right">{avg.toFixed(1)}</span>
                       </div>
-                      <span className="text-xs font-semibold w-8 text-right">{avg.toFixed(1)}</span>
-                    </div>
-                  ))}
+                    );
+                  })}
+                {Object.entries(stats.criteriaAverages).filter(([key]) => {
+                  if (criteriaFilter === 'all') return true;
+                  return key.startsWith(`${criteriaFilter}:`);
+                }).length === 0 && (
+                  <p className="text-xs text-muted-foreground italic">
+                    {isRu ? 'Нет данных для этого фильтра' : 'No data for this filter'}
+                  </p>
+                )}
               </div>
             </HydraCardContent>
           </HydraCard>

@@ -194,9 +194,9 @@ export function useModelStatistics(userId: string | undefined) {
     }
   }, [userId, findExisting]);
 
-  // Update criteria_averages (running average per criterion)
+  // Update criteria_averages (running average per criterion) with optional prefix for source
   const updateCriteriaAverages = useCallback(async (
-    modelId: string, sessionId: string | null, criteriaScores: Record<string, number>
+    modelId: string, sessionId: string | null, criteriaScores: Record<string, number>, sourcePrefix?: 'contest' | 'duel_critic' | 'duel_arbiter'
   ) => {
     if (!userId || !criteriaScores || Object.keys(criteriaScores).length === 0) return;
     try {
@@ -206,8 +206,10 @@ export function useModelStatistics(userId: string | undefined) {
 
       const updated: Record<string, { sum: number; count: number }> = { ...prev };
       for (const [key, score] of Object.entries(criteriaScores)) {
-        const entry = updated[key] || { sum: 0, count: 0 };
-        updated[key] = { sum: entry.sum + score, count: entry.count + 1 };
+        // Add prefix if provided, e.g. "contest:factuality" or "duel_arbiter:impartiality"
+        const prefixedKey = sourcePrefix ? `${sourcePrefix}:${key}` : key;
+        const entry = updated[prefixedKey] || { sum: 0, count: 0 };
+        updated[prefixedKey] = { sum: entry.sum + score, count: entry.count + 1 };
       }
 
       if (existing) {
