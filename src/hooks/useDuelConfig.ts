@@ -147,12 +147,29 @@ export function useDuelConfig() {
     } catch {}
   }, [setConfig]);
 
-  /** Reverse sync: push modelA/modelB/duelType back to portfolio localStorage */
-  const prevSyncRef = useRef<string>('');
+  /** Auto-sync from portfolio on storage changes (same-tab + cross-tab).
+   *  Forward sync MUST be declared before reverse sync to run first on mount. */
   useEffect(() => {
     if (!loaded) return;
-    // Only push to portfolio when we actually have models selected;
-    // otherwise we'd wipe out selections made in Portfolio before Plan loads.
+    syncFromPortfolio();
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === 'hydra-duel-models-selected') syncFromPortfolio();
+    };
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
+  }, [loaded, syncFromPortfolio]);
+
+  /** Reverse sync: push modelA/modelB/duelType back to portfolio localStorage.
+   *  Skip first firing after load to let forward sync merge localStorage first. */
+  const prevSyncRef = useRef<string>('');
+  const skipFirstReverseSyncRef = useRef(true);
+  useEffect(() => {
+    if (!loaded) return;
+    if (skipFirstReverseSyncRef.current) {
+      skipFirstReverseSyncRef.current = false;
+      return;
+    }
+    // Only push to portfolio when we actually have models selected
     if (!config.modelA && !config.modelB) return;
     const record: Record<string, string> = {};
     if (config.modelA) record[config.modelA] = config.duelType;
@@ -168,18 +185,6 @@ export function useDuelConfig() {
       }));
     } catch {}
   }, [loaded, config.modelA, config.modelB, config.duelType]);
-
-  /** Auto-sync from portfolio on storage changes (same-tab + cross-tab) */
-  useEffect(() => {
-    if (!loaded) return;
-    // Initial sync on mount
-    syncFromPortfolio();
-    const onStorage = (e: StorageEvent) => {
-      if (e.key === 'hydra-duel-models-selected') syncFromPortfolio();
-    };
-    window.addEventListener('storage', onStorage);
-    return () => window.removeEventListener('storage', onStorage);
-  }, [loaded, syncFromPortfolio]);
 
   const validate = useCallback((): DuelValidationError[] => {
     const errors: DuelValidationError[] = [];
