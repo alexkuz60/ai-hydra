@@ -71,6 +71,8 @@ export function useStreamingResponses({
   const [pendingResponses, setPendingResponses] = useState<Map<string, PendingResponseState>>(new Map());
   const abortControllersRef = useRef<Map<string, AbortController>>(new Map());
   const timersRef = useRef<Map<string, NodeJS.Timeout>>(new Map());
+  const streamingResponsesRef = useRef(streamingResponses);
+  streamingResponsesRef.current = streamingResponses;
 
   // Stop streaming for a specific model
   const stopStreaming = useCallback((modelId: string) => {
@@ -86,8 +88,8 @@ export function useStreamingResponses({
       timersRef.current.delete(modelId);
     }
 
-    // Get the current content before marking as complete
-    const currentResponse = streamingResponses.get(modelId);
+    // Get the current content before marking as complete (use ref to avoid stale closure)
+    const currentResponse = streamingResponsesRef.current.get(modelId);
     const accumulatedContent = currentResponse?.content || '';
 
     // Mark as complete (not streaming)
@@ -111,7 +113,7 @@ export function useStreamingResponses({
     if (accumulatedContent.trim().length > 0) {
       onStreamComplete?.(modelId, accumulatedContent);
     }
-  }, [streamingResponses, onStreamComplete]);
+  }, [onStreamComplete]);
 
   // Stop all streaming
   const stopAllStreaming = useCallback(() => {
@@ -121,15 +123,17 @@ export function useStreamingResponses({
     timersRef.current.forEach(timer => clearInterval(timer));
     timersRef.current.clear();
 
-    // Collect all responses with content before marking as stopped
+    // Collect all responses with content using ref (avoid stale closure)
     const responsesToSave: Array<{ modelId: string; content: string }> = [];
+    for (const [key, value] of streamingResponsesRef.current) {
+      if (value.content?.trim().length > 0) {
+        responsesToSave.push({ modelId: key, content: value.content });
+      }
+    }
     
     setStreamingResponses(prev => {
       const updated = new Map(prev);
       for (const [key, value] of updated) {
-        if (value.content?.trim().length > 0) {
-          responsesToSave.push({ modelId: key, content: value.content });
-        }
         updated.set(key, { ...value, isStreaming: false });
       }
       return updated;
@@ -141,7 +145,7 @@ export function useStreamingResponses({
     responsesToSave.forEach(({ modelId, content }) => {
       onStreamComplete?.(modelId, content);
     });
-  }, [streamingResponses, onStreamComplete]);
+  }, [onStreamComplete]);
 
   // Clear completed (non-streaming) responses
   const clearCompleted = useCallback(() => {

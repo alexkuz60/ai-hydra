@@ -57,6 +57,8 @@ export function useStreamingChat({
   const [messages, setMessages] = useState<StreamingMessage[]>([]);
   const [streaming, setStreaming] = useState(false);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const messagesRef = useRef<StreamingMessage[]>(messages);
+  messagesRef.current = messages;
 
   const stopStreaming = useCallback(() => {
     if (abortControllerRef.current) {
@@ -148,7 +150,7 @@ export function useStreamingChat({
             system_prompt: systemPrompt,
             memory_context: memoryContext || [],
             proxyapi_settings,
-            history: messages
+            history: messagesRef.current
               .filter(m => !m.isStreaming)
               .slice(-10)
               .map(m => ({
