@@ -13,6 +13,7 @@ import {
 const STORAGE_KEY = 'portfolio-panel-size';
 const SELECTED_KEY = 'portfolio-selected-model';
 const CONTEST_MODELS_KEY = 'hydra-contest-models';
+const DUEL_MODELS_KEY = 'hydra-duel-models-selected';
 const DEFAULT_LIST_SIZE = 25;
 
 export function ModelPortfolio() {
@@ -34,6 +35,14 @@ export function ModelPortfolio() {
     return {};
   });
 
+  const [duelModels, setDuelModels] = useState<Set<string>>(() => {
+    try {
+      const stored = localStorage.getItem(DUEL_MODELS_KEY);
+      if (stored) return new Set(JSON.parse(stored));
+    } catch {}
+    return new Set();
+  });
+
   const [listSize, setListSize] = useState<number>(() => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
@@ -53,11 +62,18 @@ export function ModelPortfolio() {
     try { localStorage.setItem(CONTEST_MODELS_KEY, JSON.stringify(contestModels)); } catch {}
   }, [contestModels]);
 
-  // Sync contestModels from other tabs (e.g. ContestCandidates)
+  useEffect(() => {
+    try { localStorage.setItem(DUEL_MODELS_KEY, JSON.stringify(Array.from(duelModels))); } catch {}
+  }, [duelModels]);
+
+  // Sync contestModels and duelModels from other tabs
   useEffect(() => {
     const onStorage = (e: StorageEvent) => {
       if (e.key === CONTEST_MODELS_KEY && e.newValue) {
         try { setContestModels(JSON.parse(e.newValue)); } catch {}
+      }
+      if (e.key === DUEL_MODELS_KEY && e.newValue) {
+        try { setDuelModels(new Set(JSON.parse(e.newValue))); } catch {}
       }
     };
     window.addEventListener('storage', onStorage);
@@ -77,6 +93,15 @@ export function ModelPortfolio() {
     setContestModels(prev => ({ ...prev, [id]: role }));
   };
 
+  const handleToggleDuel = (id: string) => {
+    setDuelModels(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
   const handleListResize = (size: number) => {
     setListSize(size);
     try { localStorage.setItem(STORAGE_KEY, String(size)); } catch {}
@@ -94,11 +119,12 @@ export function ModelPortfolio() {
     <ResizablePanelGroup direction="horizontal" className="h-full">
       <ResizablePanel defaultSize={listSize} minSize={15} maxSize={50} onResize={handleListResize}>
         <ModelListSidebar
-          selectedModelId={selectedModelId}
-          onSelect={setSelectedModelId}
-          contestModels={contestModels}
-          veteranModelIds={veteranSet}
-        />
+           selectedModelId={selectedModelId}
+           onSelect={setSelectedModelId}
+           contestModels={contestModels}
+           duelModels={duelModels}
+           veteranModelIds={veteranSet}
+         />
       </ResizablePanel>
 
       <ResizableHandle withHandle />
@@ -108,7 +134,9 @@ export function ModelPortfolio() {
           <ModelDossier
             modelId={selectedModelId}
             contestModels={contestModels}
+            duelModels={duelModels}
             onToggleContest={handleToggleContest}
+            onToggleDuel={handleToggleDuel}
             onContestRoleChange={handleContestRoleChange}
           />
         ) : (
