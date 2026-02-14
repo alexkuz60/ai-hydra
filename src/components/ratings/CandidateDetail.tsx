@@ -90,7 +90,7 @@ export function CandidateDetail({
                     {isSelectedForDuel && (
                       <Badge variant="default" className="text-[10px] px-1.5 py-0 bg-primary/20 text-primary border-primary/30">
                         <Swords className="h-3 w-3 mr-0.5" />
-                        {isRu ? 'На ринге' : 'In duel'}
+                        {isRu ? 'Дуэлянт' : 'Duelist'}
                       </Badge>
                     )}
                     <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0 transition-transform group-data-[state=open]:rotate-180" />
@@ -178,8 +178,8 @@ export function CandidateDetail({
                       >
                         <Swords className="h-3.5 w-3.5 mr-1.5 text-primary" />
                         {isSelectedForDuel
-                          ? (isRu ? 'Убрать с ринга' : 'Remove from duel')
-                          : (isRu ? 'На ринг' : 'Add to duel')}
+                          ? (isRu ? 'Отменить дуэль' : 'Cancel duel')
+                          : (isRu ? 'Вызвать на дуэль' : 'Challenge to duel')}
                       </Button>
                     </div>
                   </div>
