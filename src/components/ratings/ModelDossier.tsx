@@ -14,6 +14,7 @@ import {
   Crown, Trophy, FileText, Scale, Radar
 } from 'lucide-react';
 import { CandidateDetail } from './CandidateDetail';
+import { CritiqueSummaryCard } from './CritiqueSummaryCard';
 import { LikertSummaryCard } from './LikertSummaryCard';
 import { getModelInfo, type ModelOption } from '@/hooks/useAvailableModels';
 import { format } from 'date-fns';
@@ -44,7 +45,7 @@ export function ModelDossier({ modelId, contestModels = {}, duelModels = {}, onT
     );
   }
 
-  const { registry, stats, statsRoleDistribution, taskHistory, duels } = dossier;
+  const { registry, stats, statsRoleDistribution, taskHistory, duels, critiques } = dossier;
 
   // Build ModelOption for CandidateDetail
   const modelInfo = getModelInfo(modelId);
@@ -277,17 +278,11 @@ export function ModelDossier({ modelId, contestModels = {}, duelModels = {}, onT
         )}
 
         {/* ── Critique Summary ── */}
-        {stats.critiqueSummary && (
-          <HydraCard variant="default">
-            <HydraCardHeader className="py-3">
-              <FileText className="h-5 w-5 text-hydra-critic" />
-              <HydraCardTitle>{isRu ? 'Критика' : 'Critique'}</HydraCardTitle>
-            </HydraCardHeader>
-            <HydraCardContent>
-              <p className="text-sm text-muted-foreground italic">"{stats.critiqueSummary}"</p>
-            </HydraCardContent>
-          </HydraCard>
-        )}
+        <CritiqueSummaryCard
+          critiques={critiques}
+          legacyCritique={stats.critiqueSummary}
+          isRu={isRu}
+        />
 
         {/* Empty state */}
         {stats.totalResponses === 0 && statsRoleDistribution.length === 0 && (
