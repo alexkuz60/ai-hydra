@@ -10,7 +10,7 @@ import { ChatMessageActions } from './ChatMessageActions';
 import { format } from 'date-fns';
 import { ru, enUS } from 'date-fns/locale';
 import { ToolCallDisplay } from './ToolCallDisplay';
-import { User, Crown, ChevronDown, ChevronUp, Brain, RefreshCw } from 'lucide-react';
+import { User, Crown, ChevronDown, ChevronUp, Brain, RefreshCw, MessageCircleQuestion } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { ModelNameWithIcon } from '@/components/ui/ModelNameWithIcon';
 import { cn } from '@/lib/utils';
@@ -103,6 +103,7 @@ export function ChatMessage({ message, userDisplayInfo, onDelete, onRatingChange
   const interactiveChecklists = forceInteractiveChecklists || metadataObj.interactive_checklists === true;
   const checklistState = (metadataObj.checklist_state as Record<number, boolean>) || {};
   const isFromContest = (metadataObj as Record<string, unknown>).source === 'contest';
+  const isFollowUp = isFromContest && (metadataObj as Record<string, unknown>).is_follow_up === true;
 
   const handleChecklistItemChange = useCallback((index: number, checked: boolean) => {
     if (!onChecklistChange) return;
@@ -174,6 +175,12 @@ export function ChatMessage({ message, userDisplayInfo, onDelete, onRatingChange
               </TooltipProvider>
             );
           })()}
+          {isFollowUp && (
+            <span className="ml-1 inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-[hsl(var(--hydra-arbiter))]/20 text-[hsl(var(--hydra-arbiter))] border border-[hsl(var(--hydra-arbiter))]/30">
+              <MessageCircleQuestion className="h-3 w-3" />
+              {language === 'ru' ? 'Доп. вопрос' : 'Follow-up'}
+            </span>
+          )}
         </HydraCardTitle>
         <span className="text-xs text-muted-foreground ml-auto flex items-center gap-2">
           {format(new Date(message.created_at), 'dd MMM, HH:mm', { locale: language === 'ru' ? ru : enUS })}

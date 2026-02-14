@@ -119,10 +119,15 @@ export function BeautyContest() {
         resultsByRound.set(result.round_id, arr);
       }
 
+      // Determine initial round count from config to identify follow-up rounds
+      const initialRoundCount = contest.session.config?.rules?.roundCount ?? contest.rounds.length;
+
       // For each round in order, insert prompt as user message, then responses
       for (const round of contest.rounds) {
         const roundResults = resultsByRound.get(round.id);
         if (!roundResults || roundResults.length === 0) continue;
+
+        const isFollowUp = round.round_index >= initialRoundCount;
 
         // Insert round prompt as supervisor (user) message
         if (round.prompt) {
@@ -136,6 +141,7 @@ export function BeautyContest() {
               source: 'contest',
               contest_session_id: contest.session.id,
               round_index: round.round_index,
+              ...(isFollowUp && { is_follow_up: true }),
             },
           });
         }
@@ -159,6 +165,7 @@ export function BeautyContest() {
               response_time_ms: result.response_time_ms,
               token_count: result.token_count,
               rating: result.user_score != null ? result.user_score : 0,
+              ...(isFollowUp && { is_follow_up: true }),
             },
           });
 
@@ -188,6 +195,7 @@ export function BeautyContest() {
                 arbiter_score: result.arbiter_score,
                 criteria_scores: result.criteria_scores,
                 evaluated_model: result.model_id,
+                ...(isFollowUp && { is_follow_up: true }),
               },
             });
           }
