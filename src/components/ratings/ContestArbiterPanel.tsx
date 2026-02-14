@@ -99,14 +99,20 @@ function ArbiterRoundGroups({
                 // Parse Likert claims if available
                 const likertClaims = (() => {
                   if (!criteriaScores) return null;
-                  if (criteriaScores.claims && Array.isArray(criteriaScores.claims)) {
-                    return criteriaScores.claims;
-                  }
+                  const arr = (criteriaScores as any).likert_claims ?? (criteriaScores as any).claims;
+                  if (arr && Array.isArray(arr)) return arr;
                   return null;
                 })();
 
-                // Filter out 'claims' from criteria_scores for traditional display
-                const filteredCriteria = likertClaims ? null : criteriaScores;
+                // Filter out non-numeric values from criteria_scores for traditional display
+                const filteredCriteria = (() => {
+                  if (likertClaims || !criteriaScores) return null;
+                  const filtered: Record<string, number> = {};
+                  for (const [key, val] of Object.entries(criteriaScores)) {
+                    if (typeof val === 'number') filtered[key] = val;
+                  }
+                  return Object.keys(filtered).length > 0 ? filtered : null;
+                })();
 
                 return (
                   <div key={r.id} className="rounded-md border border-border/30 bg-muted/10 p-2 space-y-1.5">
