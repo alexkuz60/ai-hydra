@@ -35,12 +35,21 @@ export function ModelPortfolio() {
     return {};
   });
 
-  const [duelModels, setDuelModels] = useState<Set<string>>(() => {
+  const [duelModels, setDuelModels] = useState<Record<string, string>>(() => {
     try {
       const stored = localStorage.getItem(DUEL_MODELS_KEY);
-      if (stored) return new Set(JSON.parse(stored));
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        // Migrate from old Set<string> format (array of strings) to Record<string, DuelType>
+        if (Array.isArray(parsed)) {
+          const migrated: Record<string, string> = {};
+          parsed.forEach((id: string) => { migrated[id] = 'critic'; });
+          return migrated;
+        }
+        return parsed;
+      }
     } catch {}
-    return new Set();
+    return {};
   });
 
   const [listSize, setListSize] = useState<number>(() => {
@@ -63,7 +72,7 @@ export function ModelPortfolio() {
   }, [contestModels]);
 
   useEffect(() => {
-    try { localStorage.setItem(DUEL_MODELS_KEY, JSON.stringify(Array.from(duelModels))); } catch {}
+    try { localStorage.setItem(DUEL_MODELS_KEY, JSON.stringify(duelModels)); } catch {}
   }, [duelModels]);
 
   // Sync contestModels and duelModels from other tabs
@@ -73,7 +82,16 @@ export function ModelPortfolio() {
         try { setContestModels(JSON.parse(e.newValue)); } catch {}
       }
       if (e.key === DUEL_MODELS_KEY && e.newValue) {
-        try { setDuelModels(new Set(JSON.parse(e.newValue))); } catch {}
+        try {
+          const parsed = JSON.parse(e.newValue);
+          if (Array.isArray(parsed)) {
+            const migrated: Record<string, string> = {};
+            parsed.forEach((id: string) => { migrated[id] = 'critic'; });
+            setDuelModels(migrated);
+          } else {
+            setDuelModels(parsed);
+          }
+        } catch {}
       }
     };
     window.addEventListener('storage', onStorage);
@@ -95,11 +113,15 @@ export function ModelPortfolio() {
 
   const handleToggleDuel = (id: string) => {
     setDuelModels(prev => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
+      const next = { ...prev };
+      if (id in next) delete next[id];
+      else next[id] = 'critic';
       return next;
     });
+  };
+
+  const handleDuelTypeChange = (id: string, type: string) => {
+    setDuelModels(prev => ({ ...prev, [id]: type }));
   };
 
   const handleListResize = (size: number) => {
@@ -137,6 +159,7 @@ export function ModelPortfolio() {
             duelModels={duelModels}
             onToggleContest={handleToggleContest}
             onToggleDuel={handleToggleDuel}
+            onDuelTypeChange={handleDuelTypeChange}
             onContestRoleChange={handleContestRoleChange}
           />
         ) : (

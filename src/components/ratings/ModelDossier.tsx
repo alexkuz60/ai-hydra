@@ -22,13 +22,14 @@ import { getCriterionLabel } from './i18n';
 interface ModelDossierProps {
   modelId: string;
   contestModels?: Record<string, string>;
-  duelModels?: Set<string>;
+  duelModels?: Record<string, string>;
   onToggleContest?: (modelId: string) => void;
   onToggleDuel?: (modelId: string) => void;
+  onDuelTypeChange?: (modelId: string, type: string) => void;
   onContestRoleChange?: (modelId: string, role: string) => void;
 }
 
-export function ModelDossier({ modelId, contestModels = {}, duelModels = new Set(), onToggleContest, onToggleDuel, onContestRoleChange }: ModelDossierProps) {
+export function ModelDossier({ modelId, contestModels = {}, duelModels = {}, onToggleContest, onToggleDuel, onDuelTypeChange, onContestRoleChange }: ModelDossierProps) {
   const { language } = useLanguage();
   const dossier = useModelDossier(modelId);
   const isRu = language === 'ru';
@@ -60,10 +61,12 @@ export function ModelDossier({ modelId, contestModels = {}, duelModels = new Set
           model={modelOption}
           isAvailable={true}
           isSelectedForContest={modelId in contestModels}
-          isSelectedForDuel={duelModels.has(modelId)}
+          isSelectedForDuel={modelId in duelModels}
+          duelType={(duelModels[modelId] as any) || 'critic'}
           contestRole={contestModels[modelId] || ''}
           onToggleContest={onToggleContest}
           onToggleDuel={onToggleDuel}
+          onDuelTypeChange={onDuelTypeChange}
           onContestRoleChange={onContestRoleChange}
           inline
         />
