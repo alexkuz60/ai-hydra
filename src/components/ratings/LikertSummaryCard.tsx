@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { HydraCard, HydraCardHeader, HydraCardTitle, HydraCardContent } from '@/components/ui/hydra-card';
@@ -63,9 +63,11 @@ export function LikertSummaryCard({ modelId, isRu }: LikertSummaryCardProps) {
 
       (data || []).forEach(row => {
         const scores = row.criteria_scores as any;
-        if (scores?.claims && Array.isArray(scores.claims)) {
+        // Support both legacy key "claims" and current "likert_claims"
+        const claimsArr = scores?.likert_claims ?? scores?.claims;
+        if (claimsArr && Array.isArray(claimsArr)) {
           sessionIds.add(row.session_id);
-          scores.claims.forEach((c: LikertClaim) => {
+          claimsArr.forEach((c: LikertClaim) => {
             if (typeof c.score === 'number') {
               claims.push(c);
             }

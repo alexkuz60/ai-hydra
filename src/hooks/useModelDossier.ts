@@ -119,22 +119,22 @@ export function useModelDossier(modelId: string | null) {
           stats.totalResponses += row.response_count;
           stats.totalBrains += row.total_brains;
           stats.totalDismissals += row.dismissal_count;
-          stats.totalHallucinations += (row as any).hallucination_count || 0;
-          stats.arbiterEvalCount += (row as any).arbiter_eval_count || 0;
-          totalArbiterScore += Number((row as any).arbiter_score) || 0;
-          stats.contestCount += (row as any).contest_count || 0;
-          stats.contestTotalScore += Number((row as any).contest_total_score) || 0;
+          stats.totalHallucinations += row.hallucination_count || 0;
+          stats.arbiterEvalCount += row.arbiter_eval_count || 0;
+          totalArbiterScore += Number(row.arbiter_score) || 0;
+          stats.contestCount += row.contest_count || 0;
+          stats.contestTotalScore += Number(row.contest_total_score) || 0;
           if (!stats.firstUsedAt || (row.first_used_at && row.first_used_at < stats.firstUsedAt)) {
             stats.firstUsedAt = row.first_used_at;
           }
           if (!stats.lastUsedAt || (row.last_used_at && row.last_used_at > stats.lastUsedAt)) {
             stats.lastUsedAt = row.last_used_at;
           }
-          if ((row as any).critique_summary) {
-            stats.critiqueSummary = (row as any).critique_summary;
+          if (row.critique_summary) {
+            stats.critiqueSummary = row.critique_summary;
           }
           // Merge criteria_averages from each row
-          const rowCriteria = (row as any).criteria_averages as Record<string, { sum: number; count: number }> | null;
+          const rowCriteria = row.criteria_averages as Record<string, { sum: number; count: number }> | null;
           if (rowCriteria) {
             for (const [key, val] of Object.entries(rowCriteria)) {
               if (!criteriaAccum[key]) criteriaAccum[key] = { sum: 0, count: 0 };
@@ -306,16 +306,16 @@ export function useModelDossier(modelId: string | null) {
       // 2) From model_statistics critique_summary (panel / dchat evaluations)
       if (statsRows) {
         for (const row of statsRows) {
-          const summary = (row as any).critique_summary as string | null;
+          const summary = row.critique_summary;
           if (!summary || summary.trim().length === 0) continue;
           if (seenTexts.has(summary)) continue;
           seenTexts.add(summary);
           // If row has contest data it's already covered; treat remaining as panel
-          const hasContestData = ((row as any).contest_count || 0) > 0;
+          const hasContestData = (row.contest_count || 0) > 0;
           if (!hasContestData) {
             critiques.push({
               text: summary,
-              score: (row as any).arbiter_score ? Number((row as any).arbiter_score) : null,
+              score: row.arbiter_score ? Number(row.arbiter_score) : null,
               source: 'panel',
             });
           }
