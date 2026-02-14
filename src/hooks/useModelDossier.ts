@@ -34,6 +34,12 @@ export interface DuelRecord {
   sessionTitle: string;
 }
 
+export interface CritiqueEntry {
+  text: string;
+  score: number | null;
+  source: 'panel' | 'dchat' | 'contest' | 'duel';
+}
+
 export interface StatsRoleDistribution {
   role: string;
   responseCount: number;
@@ -47,6 +53,7 @@ export interface ModelDossierData {
   statsRoleDistribution: StatsRoleDistribution[];
   taskHistory: TaskHistory[];
   duels: DuelRecord[];
+  critiques: CritiqueEntry[];
   loading: boolean;
 }
 
@@ -75,6 +82,7 @@ export function useModelDossier(modelId: string | null) {
     statsRoleDistribution: [],
     taskHistory: [],
     duels: [],
+    critiques: [],
     loading: true,
   });
 
@@ -255,6 +263,65 @@ export function useModelDossier(modelId: string | null) {
         }
       }
 
+      // ── Collect critiques from multiple sources ──
+      const critiques: CritiqueEntry[] = [];
+      const seenTexts = new Set<string>();
+
+      // 1) From contest_results arbiter_comment
+      const { data: contestCritiques } = await supabase
+        .from('contest_results')
+        .select('arbiter_comment, arbiter_score, session_id')
+        .eq('model_id', modelId)
+        .not('arbiter_comment', 'is', null);
+
+      if (contestCritiques) {
+        // Determine session types (contest vs duel)
+        const critiqueSessionIds = [...new Set(contestCritiques.map(c => c.session_id))];
+        let sessionTypeMap = new Map<string, string>();
+        if (critiqueSessionIds.length > 0) {
+          const { data: cSessions } = await supabase
+            .from('contest_sessions')
+            .select('id, config')
+            .in('id', critiqueSessionIds);
+          if (cSessions) {
+            for (const s of cSessions) {
+              const cfg = s.config as Record<string, unknown> | null;
+              sessionTypeMap.set(s.id, cfg?.type === 'duel' ? 'duel' : 'contest');
+            }
+          }
+        }
+        for (const cr of contestCritiques) {
+          if (!cr.arbiter_comment || cr.arbiter_comment.trim().length === 0) continue;
+          if (seenTexts.has(cr.arbiter_comment)) continue;
+          seenTexts.add(cr.arbiter_comment);
+          const source = sessionTypeMap.get(cr.session_id) === 'duel' ? 'duel' : 'contest';
+          critiques.push({
+            text: cr.arbiter_comment,
+            score: cr.arbiter_score != null ? Number(cr.arbiter_score) : null,
+            source,
+          });
+        }
+      }
+
+      // 2) From model_statistics critique_summary (panel / dchat evaluations)
+      if (statsRows) {
+        for (const row of statsRows) {
+          const summary = (row as any).critique_summary as string | null;
+          if (!summary || summary.trim().length === 0) continue;
+          if (seenTexts.has(summary)) continue;
+          seenTexts.add(summary);
+          // If row has contest data it's already covered; treat remaining as panel
+          const hasContestData = ((row as any).contest_count || 0) > 0;
+          if (!hasContestData) {
+            critiques.push({
+              text: summary,
+              score: (row as any).arbiter_score ? Number((row as any).arbiter_score) : null,
+              source: 'panel',
+            });
+          }
+        }
+      }
+
       setData({
         modelId,
         registry,
@@ -262,6 +329,7 @@ export function useModelDossier(modelId: string | null) {
         statsRoleDistribution,
         taskHistory,
         duels,
+        critiques,
         loading: false,
       });
     } catch (error) {
