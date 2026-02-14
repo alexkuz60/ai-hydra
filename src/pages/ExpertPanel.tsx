@@ -260,11 +260,25 @@ export default function ExpertPanel() {
           role: (settings?.role || 'assistant') as RequestStartInfo['role'],
         };
       });
-      startStreaming(requestInfo, messageContent, timeoutSeconds, perModelSettings);
+      // Build stream context: memory chunks + last 10 messages as history
+      const streamContext = {
+        memoryContext: memoryChunks.map(c => ({
+          content: c.content,
+          chunk_type: c.chunk_type,
+          metadata: c.metadata as Record<string, unknown> | undefined,
+        })),
+        history: messages
+          .slice(-10)
+          .map(m => ({
+            role: m.role === 'user' ? 'user' : 'assistant',
+            content: m.content,
+          })),
+      };
+      startStreaming(requestInfo, messageContent, timeoutSeconds, perModelSettings, undefined, streamContext);
     } else {
       await sendMessage(messageContent, extraMeta);
     }
-  }, [input, sendMessage, sendUserMessageOnly, useHybridStreaming, selectedModels, perModelSettings, startStreaming, timeoutSeconds, interactiveChecklists]);
+  }, [input, sendMessage, sendUserMessageOnly, useHybridStreaming, selectedModels, perModelSettings, startStreaming, timeoutSeconds, interactiveChecklists, memoryChunks, messages]);
 
   const handleSendToConsultant = useCallback(async () => {
     if (!input.trim() || !selectedConsultant) return;

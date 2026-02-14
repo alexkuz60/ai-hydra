@@ -40,7 +40,8 @@ interface UseStreamingChatReturn {
     sourceMessageId?: string | null,
     hideUserMessage?: boolean,
     memoryContext?: MemoryChunk[],
-    overrideRole?: AgentRole
+    overrideRole?: AgentRole,
+    options?: { temperature?: number; maxTokens?: number }
   ) => Promise<void>;
   stopStreaming: () => void;
   clearMessages: () => void;
@@ -76,7 +77,8 @@ export function useStreamingChat({
       sourceMessageId?: string | null,
       hideUserMessage?: boolean,
       memoryContext?: MemoryChunk[],
-      overrideRole?: AgentRole
+      overrideRole?: AgentRole,
+      options?: { temperature?: number; maxTokens?: number }
     ) => {
       if (!sessionId || !content.trim() || !modelId) return;
       
@@ -144,12 +146,14 @@ export function useStreamingChat({
               'Authorization': `Bearer ${authToken}`,
             },
             body: JSON.stringify({
-      message: content,
-            model_id: modelId,
-            role: role,
-            system_prompt: systemPrompt,
-            memory_context: memoryContext || [],
-            proxyapi_settings,
+              message: content,
+              model_id: modelId,
+              role: role,
+              system_prompt: systemPrompt,
+              temperature: options?.temperature,
+              max_tokens: options?.maxTokens,
+              memory_context: memoryContext || [],
+              proxyapi_settings,
             history: messagesRef.current
               .filter(m => !m.isStreaming)
               .slice(-10)
