@@ -22,6 +22,7 @@ interface UseMessagesReturn {
   handleDeleteMessage: (messageId: string) => Promise<void>;
   handleDeleteMessageGroup: (userMessageId: string) => Promise<void>;
   handleRatingChange: (messageId: string, rating: number) => Promise<void>;
+  handleLikertRate: (messageId: string, value: number) => Promise<void>;
   handleUpdateProposals: (messageId: string, proposals: Proposal[]) => Promise<void>;
   handleChecklistChange: (messageId: string, checklistState: Record<number, boolean>) => Promise<void>;
   fetchMessages: (taskId: string) => Promise<void>;
@@ -188,6 +189,31 @@ export function useMessages({ sessionId, onBeforeDeleteMessage }: UseMessagesPro
     }
   }, [messages]);
 
+  // Update message Likert rating (0-5 scale)
+  const handleLikertRate = useCallback(async (messageId: string, value: number) => {
+    try {
+      const message = messages.find(m => m.id === messageId);
+      const currentMetadata = (message?.metadata as MessageMetadata) || {};
+
+      const { error } = await supabase
+        .from('messages')
+        .update({
+          metadata: { ...currentMetadata, user_likert: value } as unknown as Record<string, never>
+        })
+        .eq('id', messageId);
+
+      if (error) throw error;
+
+      setMessages(msgs => msgs.map(m =>
+        m.id === messageId
+          ? { ...m, metadata: { ...currentMetadata, user_likert: value } }
+          : m
+      ));
+    } catch (error: any) {
+      toast.error(error.message);
+    }
+  }, [messages]);
+
   // Update message proposals (for Supervisor Approval feature)
   const handleUpdateProposals = useCallback(async (messageId: string, proposals: Proposal[]) => {
     try {
@@ -276,6 +302,7 @@ export function useMessages({ sessionId, onBeforeDeleteMessage }: UseMessagesPro
     handleDeleteMessage,
     handleDeleteMessageGroup,
     handleRatingChange,
+    handleLikertRate,
     handleUpdateProposals,
     handleChecklistChange,
     fetchMessages,

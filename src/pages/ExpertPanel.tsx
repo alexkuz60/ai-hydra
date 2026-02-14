@@ -130,7 +130,7 @@ export default function ExpertPanel() {
     messages, displayedMessages, filteredParticipant, setFilteredParticipant,
     activeParticipant, setActiveParticipant,
     handleDeleteMessage, handleDeleteMessageGroup,
-    handleRatingChange, handleUpdateProposals,
+    handleRatingChange, handleLikertRate, handleUpdateProposals,
     handleChecklistChange, fetchMessages,
   } = useMessages({
     sessionId: currentTask?.id || null,
@@ -391,6 +391,7 @@ export default function ExpertPanel() {
                 onToggleCollapse={toggleCollapsed}
                 onDelete={handleDeleteMessage}
                 onRatingChange={handleRatingChange}
+                onLikertRate={handleLikertRate}
                 onClarifyWithSpecialist={actions.handleClarifyWithSpecialist}
                 onSaveToMemory={saveDecision}
                 isSavingToMemory={isMemorySaving}
