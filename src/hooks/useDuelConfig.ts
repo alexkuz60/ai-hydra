@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useCloudSettings } from './useCloudSettings';
 
 export type DuelType = 'critic' | 'arbiter';
@@ -131,14 +131,41 @@ export function useDuelConfig() {
       const [firstId, firstType] = entries[0];
       const [secondId] = entries.length > 1 ? entries[1] : [null];
 
-      setConfig(prev => ({
-        ...prev,
-        modelA: firstId,
-        modelB: secondId,
-        duelType: (firstType === 'arbiter' ? 'arbiter' : 'critic') as DuelType,
-      }));
+      setConfig(prev => {
+        // Avoid no-op updates that would trigger the reverse sync loop
+        if (prev.modelA === firstId && prev.modelB === secondId &&
+            prev.duelType === (firstType === 'arbiter' ? 'arbiter' : 'critic')) {
+          return prev;
+        }
+        return {
+          ...prev,
+          modelA: firstId,
+          modelB: secondId,
+          duelType: (firstType === 'arbiter' ? 'arbiter' : 'critic') as DuelType,
+        };
+      });
     } catch {}
   }, [setConfig]);
+
+  /** Reverse sync: push modelA/modelB/duelType back to portfolio localStorage */
+  const prevSyncRef = useRef<string>('');
+  useEffect(() => {
+    if (!loaded) return;
+    const record: Record<string, string> = {};
+    if (config.modelA) record[config.modelA] = config.duelType;
+    if (config.modelB) record[config.modelB] = config.duelType;
+    const serialized = JSON.stringify(record);
+    if (serialized === prevSyncRef.current) return;
+    prevSyncRef.current = serialized;
+    try {
+      localStorage.setItem('hydra-duel-models-selected', serialized);
+      // Notify other components in the same tab (StorageEvent only fires cross-tab)
+      window.dispatchEvent(new StorageEvent('storage', {
+        key: 'hydra-duel-models-selected',
+        newValue: serialized,
+      }));
+    } catch {}
+  }, [loaded, config.modelA, config.modelB, config.duelType]);
 
   const validate = useCallback((): DuelValidationError[] => {
     const errors: DuelValidationError[] = [];
