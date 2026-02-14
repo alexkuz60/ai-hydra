@@ -128,13 +128,13 @@ interface ModelListSidebarProps {
   onSelect: (id: string) => void;
   /** Map of modelId -> role for podium crown indicators */
   contestModels?: Record<string, string>;
-  /** Set of model IDs selected for duel (swords icon) */
-  duelModels?: Set<string>;
+  /** Record of modelId -> duelType for duel (swords icon) */
+  duelModels?: Record<string, string>;
   /** Set of model IDs that have statistics data (veterans) */
   veteranModelIds?: Set<string>;
 }
 
-export function ModelListSidebar({ selectedModelId, onSelect, contestModels = {}, duelModels = new Set(), veteranModelIds }: ModelListSidebarProps) {
+export function ModelListSidebar({ selectedModelId, onSelect, contestModels = {}, duelModels = {}, veteranModelIds }: ModelListSidebarProps) {
   const { language } = useLanguage();
   const { allModels, loading, isLovableAvailable, availablePersonalIds } = useAllModels();
   const [search, setSearch] = useState('');
@@ -284,7 +284,7 @@ export function ModelListSidebar({ selectedModelId, onSelect, contestModels = {}
                            isAvailable={e.isAvailable}
                            isActive={selectedModelId === e.model.id}
                            isOnPodium={e.model.id in contestModels}
-                           isInDuel={duelModels?.has(e.model.id)}
+                           isInDuel={duelModels ? e.model.id in duelModels : false}
                            isVeteran={veteranModelIds?.has(e.model.id)}
                            onClick={() => onSelect(e.model.id)}
                          />
@@ -311,7 +311,7 @@ export function ModelListSidebar({ selectedModelId, onSelect, contestModels = {}
                              isAvailable={e.isAvailable}
                              isActive={selectedModelId === e.model.id}
                              isOnPodium={e.model.id in contestModels}
-                             isInDuel={duelModels?.has(e.model.id)}
+                             isInDuel={duelModels ? e.model.id in duelModels : false}
                              isVeteran={veteranModelIds?.has(e.model.id)}
                              onClick={() => onSelect(e.model.id)}
                            />

@@ -9,10 +9,12 @@ import { cn } from '@/lib/utils';
 import { Brain, Cpu, Calendar, Scale, DollarSign, Check, X, Crown, KeyRound, Globe, ChevronDown, Swords } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Separator } from '@/components/ui/separator';
 import { AGENT_ROLES, ROLE_CONFIG, type AgentRole } from '@/config/roles';
 import { RoleSelectOptions, RoleDisplay } from '@/components/ui/RoleSelectItem';
+import type { DuelType } from '@/hooks/useDuelConfig';
 
 const COLLAPSE_KEY = 'hydra-candidate-detail-open';
 
@@ -21,9 +23,11 @@ interface CandidateDetailProps {
   isAvailable: boolean;
   isSelectedForContest?: boolean;
   isSelectedForDuel?: boolean;
+  duelType?: DuelType;
   contestRole?: string;
   onToggleContest?: (modelId: string) => void;
   onToggleDuel?: (modelId: string) => void;
+  onDuelTypeChange?: (modelId: string, type: DuelType) => void;
   onContestRoleChange?: (modelId: string, role: string) => void;
   /** When true, renders inline without scroll wrapper (for embedding in other scrollable containers) */
   inline?: boolean;
@@ -34,9 +38,11 @@ export function CandidateDetail({
   isAvailable,
   isSelectedForContest = false,
   isSelectedForDuel = false,
+  duelType = 'critic',
   contestRole = '',
   onToggleContest,
   onToggleDuel,
+  onDuelTypeChange,
   onContestRoleChange,
   inline = false,
 }: CandidateDetailProps) {
@@ -181,6 +187,27 @@ export function CandidateDetail({
                           ? (isRu ? 'Отменить дуэль' : 'Cancel duel')
                           : (isRu ? 'Вызвать на дуэль' : 'Challenge to duel')}
                       </Button>
+
+                      <div className="flex items-center gap-3 text-xs">
+                        <label className="flex items-center gap-1.5 cursor-pointer">
+                          <Checkbox
+                            checked={duelType === 'critic'}
+                            onCheckedChange={() => onDuelTypeChange?.(model.id, 'critic')}
+                            disabled={!isAvailable}
+                            className="h-3.5 w-3.5"
+                          />
+                          <span className="text-muted-foreground">{isRu ? 'Критик' : 'Critic'}</span>
+                        </label>
+                        <label className="flex items-center gap-1.5 cursor-pointer">
+                          <Checkbox
+                            checked={duelType === 'arbiter'}
+                            onCheckedChange={() => onDuelTypeChange?.(model.id, 'arbiter')}
+                            disabled={!isAvailable}
+                            className="h-3.5 w-3.5"
+                          />
+                          <span className="text-muted-foreground">{isRu ? 'Арбитр' : 'Arbiter'}</span>
+                        </label>
+                      </div>
                     </div>
                   </div>
                 </CollapsibleContent>
