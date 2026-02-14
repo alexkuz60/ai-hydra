@@ -1,6 +1,38 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useSyncExternalStore } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+
+// ── Global registry for cloud-sync loaded status ──
+const _loadedMap = new Map<string, boolean>();
+const _registryListeners = new Set<() => void>();
+let _registrySnapshot = true;
+
+function _recalcSnapshot() {
+  if (_loadedMap.size === 0) { _registrySnapshot = true; return; }
+  _registrySnapshot = Array.from(_loadedMap.values()).every(Boolean);
+}
+
+function _notifyRegistry() {
+  _recalcSnapshot();
+  _registryListeners.forEach(l => l());
+}
+
+function _subscribeRegistry(listener: () => void) {
+  _registryListeners.add(listener);
+  return () => { _registryListeners.delete(listener); };
+}
+
+function _getRegistrySnapshot() {
+  return _registrySnapshot;
+}
+
+/**
+ * Returns `true` when ALL currently mounted useCloudSettings instances have finished loading.
+ * Use in page headers to show a single CloudSyncIndicator.
+ */
+export function useCloudSyncStatus(): boolean {
+  return useSyncExternalStore(_subscribeRegistry, _getRegistrySnapshot, _getRegistrySnapshot);
+}
 
 /**
  * Универсальный хук для синхронизации настроек между БД (user_settings) и localStorage.
@@ -27,6 +59,16 @@ export function useCloudSettings<T>(
     return defaultValue;
   });
   const [loaded, setLoaded] = useState(false);
+
+  // Register in global loaded registry
+  useEffect(() => {
+    _loadedMap.set(settingKey, loaded);
+    _notifyRegistry();
+    return () => {
+      _loadedMap.delete(settingKey);
+      _notifyRegistry();
+    };
+  }, [loaded, settingKey]);
 
   // При появлении пользователя — загружаем из БД
   useEffect(() => {

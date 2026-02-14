@@ -4,6 +4,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Layout } from '@/components/layout/Layout';
 import { Loader2, Briefcase, Crown, BarChart3, ScrollText } from 'lucide-react';
+import { CloudSyncIndicator } from '@/components/ui/CloudSyncIndicator';
+import { useCloudSyncStatus } from '@/hooks/useCloudSettings';
 import { cn } from '@/lib/utils';
 
 import TournamentIcon from '@/assets/TournamentIcon';
@@ -35,6 +37,7 @@ export default function ModelRatings() {
   const { user, loading: authLoading } = useAuth();
   const { language } = useLanguage();
   const navigate = useNavigate();
+  const cloudSynced = useCloudSyncStatus();
   const [activeSection, setActiveSection] = useState<Section>(() => {
     const saved = localStorage.getItem('podium-active-section');
     return (saved === 'portfolio' || saved === 'rules' || saved === 'contest' || saved === 'duel' || saved === 'ratings') ? saved : 'ratings';
@@ -74,13 +77,16 @@ export default function ModelRatings() {
   return (
     <Layout>
       <div className="h-[calc(100vh-4rem)] flex flex-col">
-        <div className="px-4 py-4 border-b border-border">
-          <h1 className="text-2xl font-bold">
-            {language === 'ru' ? 'Подиум ИИ-моделей' : 'AI Model Podium'}
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            {language === 'ru' ? 'Портфолио, конкурсы и рейтинги' : 'Portfolio, contests & ratings'}
-          </p>
+        <div className="px-4 py-4 border-b border-border flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold">
+              {language === 'ru' ? 'Подиум ИИ-моделей' : 'AI Model Podium'}
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              {language === 'ru' ? 'Портфолио, конкурсы и рейтинги' : 'Portfolio, contests & ratings'}
+            </p>
+          </div>
+          <CloudSyncIndicator loaded={cloudSynced} />
         </div>
 
         <ResizablePanelGroup direction="horizontal" className="flex-1">

@@ -17,6 +17,8 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Wrench, Users, Settings, ChevronDown, ChevronRight, Sparkles, Loader2, Cpu } from 'lucide-react';
+import { CloudSyncIndicator } from '@/components/ui/CloudSyncIndicator';
+import { useCloudSyncStatus } from '@/hooks/useCloudSettings';
 import { ROLE_CONFIG, AGENT_ROLES, type AgentRole } from '@/config/roles';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -34,6 +36,7 @@ const TECHNICAL_ROLES: AgentRole[] = ['archivist', 'analyst', 'promptengineer', 
 
 const StaffRoles = () => {
   const { t, language } = useLanguage();
+  const cloudSynced = useCloudSyncStatus();
   const [selectedRole, setSelectedRole] = useState<AgentRole | null>(null);
   const [expertsExpanded, setExpertsExpanded] = useState(true);
   const [technicalExpanded, setTechnicalExpanded] = useState(true);
@@ -197,17 +200,20 @@ const StaffRoles = () => {
             <h1 className="text-2xl font-bold">{t('nav.staffRoles')}</h1>
             <p className="text-sm text-muted-foreground">{t('staffRoles.description')}</p>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            className="gap-1.5"
-            onClick={handleBulkSeed}
-            disabled={isBulkSeeding}
-            data-guide="staff-seed-button"
-          >
-            {isBulkSeeding ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-            {language === 'ru' ? 'Обучить всех техников' : 'Seed All Tech Roles'}
-          </Button>
+          <div className="flex items-center gap-2">
+            <CloudSyncIndicator loaded={cloudSynced} />
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5"
+              onClick={handleBulkSeed}
+              disabled={isBulkSeeding}
+              data-guide="staff-seed-button"
+            >
+              {isBulkSeeding ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+              {language === 'ru' ? 'Обучить всех техников' : 'Seed All Tech Roles'}
+            </Button>
+          </div>
         </div>
 
         <ResizablePanelGroup direction="horizontal" className="flex-1">

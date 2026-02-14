@@ -13,6 +13,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { User, Key, Settings, Loader2, Check, Moon, Sun, Globe, Shield, BarChart3, Search, AlertTriangle, Type, Gauge } from 'lucide-react';
+import { CloudSyncIndicator } from '@/components/ui/CloudSyncIndicator';
+import { useCloudSyncStatus } from '@/hooks/useCloudSettings';
 import { Separator } from '@/components/ui/separator';
 import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -75,6 +77,7 @@ export default function Profile() {
   const { t, language, setLanguage, availableLanguages } = useLanguage();
   const { theme, setTheme, fontSize, setFontSize } = useTheme();
   const navigate = useNavigate();
+  const cloudSynced = useCloudSyncStatus();
 
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -267,7 +270,10 @@ export default function Profile() {
     <Layout>
       <div className="container max-w-4xl px-4 py-8">
         <div className="flex items-center justify-between mb-8">
-          <h1 className="text-3xl font-bold">{t('profile.title')}</h1>
+          <div className="flex items-center gap-3">
+            <h1 className="text-3xl font-bold">{t('profile.title')}</h1>
+            <CloudSyncIndicator loaded={cloudSynced} />
+          </div>
           {isAdmin && (
             <Button asChild variant="outline" className="border-hydra-arbiter text-hydra-arbiter hover:bg-hydra-arbiter/10">
               <Link to="/admin" className="flex items-center gap-2">

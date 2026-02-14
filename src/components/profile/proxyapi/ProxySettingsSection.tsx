@@ -5,7 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Settings2 } from 'lucide-react';
-import { CloudSyncIndicator } from '@/components/ui/CloudSyncIndicator';
+
 import type { ProxyApiSettings } from './types';
 
 interface ProxySettingsSectionProps {
@@ -23,7 +23,6 @@ export function ProxySettingsSection({ settings, onSettingsChange, syncLoaded = 
             <Settings2 className="h-4 w-4 text-primary" />
             <span className="font-semibold">Настройки</span>
           </div>
-          <CloudSyncIndicator loaded={syncLoaded} />
         </div>
       </AccordionTrigger>
       <AccordionContent className="pb-4 space-y-4">

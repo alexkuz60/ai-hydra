@@ -25,7 +25,8 @@ import { useToast } from '@/hooks/use-toast';
 import { useNavigatorResize } from '@/hooks/useNavigatorResize';
 import { NavigatorHeader } from '@/components/layout/NavigatorHeader';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
-import { useCloudSettings } from '@/hooks/useCloudSettings';
+import { useCloudSettings, useCloudSyncStatus } from '@/hooks/useCloudSettings';
+import { CloudSyncIndicator } from '@/components/ui/CloudSyncIndicator';
 
 const initialNodes: Node[] = [];
 const initialEdges: Edge[] = [];
@@ -33,6 +34,7 @@ const initialEdges: Edge[] = [];
 function FlowEditorContent() {
   const { t } = useLanguage();
   const { toast } = useToast();
+  const cloudSynced = useCloudSyncStatus();
   const nav = useNavigatorResize({ storageKey: 'flow-editor', defaultMaxSize: 18, minPanelSize: 4 });
   const { user } = useAuth();
   const [searchParams] = useSearchParams();
@@ -461,7 +463,8 @@ function FlowEditorContent() {
   }, [flowRuntime, currentDiagramId]);
 
   const headerActions = useMemo(() => (
-    <div data-guide="flow-header-actions">
+    <div data-guide="flow-header-actions" className="flex items-center gap-2">
+    <CloudSyncIndicator loaded={cloudSynced} />
     <FlowHeaderActions
       diagramName={diagramName}
       savedDiagrams={diagrams}
@@ -484,7 +487,7 @@ function FlowEditorContent() {
     </div>
   ), [diagramName, diagrams, currentDiagramId, handleLoadDiagram, deleteDiagram, 
       handleSave, handleNew, handleNewFromTemplate, exportPng, exportSvg, exportJson, exportYaml, 
-      exportPdf, copyToClipboard, handleGenerateMermaid, isSaving, hasChanges]);
+      exportPdf, copyToClipboard, handleGenerateMermaid, isSaving, hasChanges, cloudSynced]);
 
   if (!user) {
     return <Navigate to="/login" replace />;
