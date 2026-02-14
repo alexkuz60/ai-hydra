@@ -11,7 +11,7 @@ import { PROVIDER_LOGOS, PROVIDER_COLORS } from '@/components/ui/ProviderLogos';
 import { cn } from '@/lib/utils';
 import { getModelRegistryEntry, type ModelRegistryEntry } from '@/config/modelRegistry';
 import { useTaskFiles } from '@/hooks/useTaskFiles';
-import { useContestConfig } from '@/hooks/useContestConfig';
+import { useContestConfigContext } from '@/contexts/ContestConfigContext';
 import { useAllModels } from '@/components/ratings/ModelListSidebar';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -157,7 +157,7 @@ export function ContestTaskSelector() {
   const { language } = useLanguage();
   const { user } = useAuth();
   const isRu = language === 'ru';
-  const { taskId, mode, updateTaskId, updateMode, models, updateModels } = useContestConfig();
+  const { taskId, mode, updateTaskId, updateMode, models, updateModels } = useContestConfigContext();
 
   const [sessions, setSessions] = useState<Session[]>([]);
 
