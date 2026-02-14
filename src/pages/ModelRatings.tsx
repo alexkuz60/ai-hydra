@@ -7,6 +7,7 @@ import { Loader2, Briefcase, Crown, BarChart3, ScrollText } from 'lucide-react';
 import { CloudSyncIndicator } from '@/components/ui/CloudSyncIndicator';
 import { useCloudSyncStatus } from '@/hooks/useCloudSettings';
 import { cn } from '@/lib/utils';
+import { useDuelConfig } from '@/hooks/useDuelConfig';
 
 import TournamentIcon from '@/assets/TournamentIcon';
 import {
@@ -38,6 +39,7 @@ export default function ModelRatings() {
   const { language } = useLanguage();
   const navigate = useNavigate();
   const cloudSynced = useCloudSyncStatus();
+  const duelConfig = useDuelConfig();
   const [activeSection, setActiveSection] = useState<Section>(() => {
     const saved = localStorage.getItem('podium-active-section');
     return (saved === 'portfolio' || saved === 'rules' || saved === 'contest' || saved === 'duel' || saved === 'ratings') ? saved : 'ratings';
@@ -172,9 +174,9 @@ export default function ModelRatings() {
           <ResizablePanel defaultSize={100 - nav.panelSize} minSize={50}>
             <div className="h-full" data-guide="podium-content">
               {activeSection === 'portfolio' && <ModelPortfolio />}
-              {activeSection === 'rules' && <ContestPodium />}
+              {activeSection === 'rules' && <ContestPodium duelConfig={duelConfig} />}
               {activeSection === 'contest' && <BeautyContest />}
-              {activeSection === 'duel' && <DuelArena />}
+              {activeSection === 'duel' && <DuelArena duelConfig={duelConfig} />}
               {activeSection === 'ratings' && <RatingsContent />}
             </div>
           </ResizablePanel>

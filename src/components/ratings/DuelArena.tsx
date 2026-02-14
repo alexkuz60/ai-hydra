@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
-import { useDuelConfig } from '@/hooks/useDuelConfig';
+import type { useDuelConfig as UseDuelConfigType } from '@/hooks/useDuelConfig';
 import { useDuelSession } from '@/hooks/useDuelSession';
 import { useDuelExecution } from '@/hooks/useDuelExecution';
 import { supabase } from '@/integrations/supabase/client';
@@ -14,26 +14,18 @@ import { useToast } from '@/hooks/use-toast';
 import { getRatingsText } from './i18n';
 import { DuelBattleView } from './DuelBattleView';
 
-export function DuelArena() {
+interface DuelArenaProps {
+  duelConfig: ReturnType<typeof UseDuelConfigType>;
+}
+
+export function DuelArena({ duelConfig }: DuelArenaProps) {
   const { language } = useLanguage();
   const { user } = useAuth();
   const { toast } = useToast();
   const isRu = language === 'ru';
-  const duelConfig = useDuelConfig();
   const duelSession = useDuelSession();
   const execution = useDuelExecution();
   const [initialLoad, setInitialLoad] = useState(true);
-
-  // Sync duel selections from portfolio AFTER cloud settings are loaded
-  useEffect(() => {
-    if (!duelConfig.loaded) return;
-    duelConfig.syncFromPortfolio();
-    const onStorage = (e: StorageEvent) => {
-      if (e.key === 'hydra-duel-models-selected') duelConfig.syncFromPortfolio();
-    };
-    window.addEventListener('storage', onStorage);
-    return () => window.removeEventListener('storage', onStorage);
-  }, [duelConfig.loaded, duelConfig.syncFromPortfolio]);
 
   useEffect(() => {
     if (user && initialLoad) {
