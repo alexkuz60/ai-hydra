@@ -32,7 +32,9 @@ export function DuelScoresPanel({
   const allCriteriaKeys = [...new Set(
     results
       .filter(r => r.criteria_scores)
-      .flatMap(r => Object.keys(r.criteria_scores as Record<string, number>))
+      .flatMap(r => Object.entries(r.criteria_scores as Record<string, any>)
+        .filter(([_, v]) => typeof v === 'number')
+        .map(([k]) => k))
   )];
 
   // Per-round data
