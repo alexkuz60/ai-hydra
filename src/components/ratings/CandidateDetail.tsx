@@ -6,7 +6,7 @@ import { PROVIDER_LOGOS, PROVIDER_COLORS } from '@/components/ui/ProviderLogos';
 import { getModelRegistryEntry, STRENGTH_LABELS } from '@/config/modelRegistry';
 import { type ModelOption } from '@/hooks/useAvailableModels';
 import { cn } from '@/lib/utils';
-import { Brain, Cpu, Calendar, Scale, DollarSign, Check, X, Crown, KeyRound, Globe, ChevronDown } from 'lucide-react';
+import { Brain, Cpu, Calendar, Scale, DollarSign, Check, X, Crown, KeyRound, Globe, ChevronDown, Swords } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -19,8 +19,10 @@ interface CandidateDetailProps {
   model: ModelOption;
   isAvailable: boolean;
   isSelectedForContest?: boolean;
+  isSelectedForDuel?: boolean;
   contestRole?: string;
   onToggleContest?: (modelId: string) => void;
+  onToggleDuel?: (modelId: string) => void;
   onContestRoleChange?: (modelId: string, role: string) => void;
   /** When true, renders inline without scroll wrapper (for embedding in other scrollable containers) */
   inline?: boolean;
@@ -30,8 +32,10 @@ export function CandidateDetail({
   model,
   isAvailable,
   isSelectedForContest = false,
+  isSelectedForDuel = false,
   contestRole = '',
   onToggleContest,
+  onToggleDuel,
   onContestRoleChange,
   inline = false,
 }: CandidateDetailProps) {
@@ -82,6 +86,12 @@ export function CandidateDetail({
                         {isRu ? 'На подиуме' : 'On podium'}
                       </Badge>
                     )}
+                    {isSelectedForDuel && (
+                      <Badge variant="default" className="text-[10px] px-1.5 py-0 bg-primary/20 text-primary border-primary/30">
+                        <Swords className="h-3 w-3 mr-0.5" />
+                        {isRu ? 'На ринге' : 'In duel'}
+                      </Badge>
+                    )}
                     <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0 transition-transform group-data-[state=open]:rotate-180" />
                   </div>
                 </CollapsibleTrigger>
@@ -120,7 +130,7 @@ export function CandidateDetail({
                       </div>
                     )}
 
-                    {/* Column 3: Podium controls */}
+                    {/* Column 3: Podium + Duel controls */}
                     <div className="w-52 shrink-0 pl-4 space-y-2.5">
                       {!isAvailable && model.requiresApiKey && (
                         <p className="text-[10px] text-muted-foreground p-1.5 rounded bg-muted/30">
@@ -163,6 +173,19 @@ export function CandidateDetail({
                         {isSelectedForContest
                           ? (isRu ? 'Убрать с подиума' : 'Remove from podium')
                           : (isRu ? 'Пригласить на подиум' : 'Invite to podium')}
+                      </Button>
+
+                      <Button
+                        size="sm"
+                        variant={isSelectedForDuel ? 'default' : 'outline'}
+                        className="w-full h-8 text-xs"
+                        disabled={!isAvailable}
+                        onClick={() => onToggleDuel?.(model.id)}
+                      >
+                        <Swords className="h-3.5 w-3.5 mr-1.5 text-primary" />
+                        {isSelectedForDuel
+                          ? (isRu ? 'Убрать с ринга' : 'Remove from duel')
+                          : (isRu ? 'На ринг' : 'Add to duel')}
                       </Button>
                     </div>
                   </div>
