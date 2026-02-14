@@ -71,7 +71,7 @@ export function ConsultantPanel({
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Streaming chat
-  const { messages, streaming, sendQuery, stopStreaming, clearMessages } = useStreamingChat({
+  const { messages, streaming, sendQuery, stopStreaming, clearMessages, rateMessage } = useStreamingChat({
     sessionId, onResponseComplete,
   });
 
@@ -280,6 +280,8 @@ export function ConsultantPanel({
                 sourceMessageId={message.sourceMessageId}
                 onCopyToMainChat={onCopyToMainChat ? (c, s, m) => onCopyToMainChat(c, s, m, message.mode) : undefined}
                 onStopStreaming={message.isStreaming ? stopStreaming : undefined}
+                likert={message.likert}
+                onLikertRate={rateMessage}
               />
             ))
           )}
