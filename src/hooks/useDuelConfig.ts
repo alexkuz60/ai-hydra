@@ -113,6 +113,33 @@ export function useDuelConfig() {
   const updateScoringScheme = useCallback((v: DuelConfigData['scoringScheme']) => updateField('scoringScheme', v), [updateField]);
   const updateArbiterModel = useCallback((v: string | null) => updateField('arbiterModel', v), [updateField]);
 
+  /** Sync modelA, modelB & duelType from portfolio duel selections (localStorage key) */
+  const syncFromPortfolio = useCallback(() => {
+    try {
+      const raw = localStorage.getItem('hydra-duel-models-selected');
+      if (!raw) return;
+      let parsed = JSON.parse(raw);
+      // Migrate old array format
+      if (Array.isArray(parsed)) {
+        const migrated: Record<string, string> = {};
+        parsed.forEach((id: string) => { migrated[id] = 'critic'; });
+        parsed = migrated;
+      }
+      const entries = Object.entries(parsed as Record<string, string>);
+      if (entries.length === 0) return;
+
+      const [firstId, firstType] = entries[0];
+      const [secondId] = entries.length > 1 ? entries[1] : [null];
+
+      setConfig(prev => ({
+        ...prev,
+        modelA: firstId,
+        modelB: secondId,
+        duelType: (firstType === 'arbiter' ? 'arbiter' : 'critic') as DuelType,
+      }));
+    } catch {}
+  }, [setConfig]);
+
   const validate = useCallback((): DuelValidationError[] => {
     const errors: DuelValidationError[] = [];
     if (!config.modelA) errors.push({ field: 'modelA', messageKey: 'modelARequired' });
@@ -130,6 +157,6 @@ export function useDuelConfig() {
     updateModelA, updateModelB, updateRoundCount, updateDuelPrompt,
     updateDuelType, updateCriteria, updateCriteriaWeights,
     updateUserEvaluation, updateScoringScheme, updateArbiterModel,
-    resetAll, validate,
+    resetAll, validate, syncFromPortfolio,
   };
 }

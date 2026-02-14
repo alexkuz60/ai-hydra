@@ -64,6 +64,16 @@ export function DuelPlanEditor({ config, isRu, onLaunch }: DuelPlanEditorProps) 
   const { toast } = useToast();
   const navigate = useNavigate();
   const availableModelIds = [...lovableModels, ...personalModels].map(m => m.id);
+
+  // Sync duel selections from portfolio on mount & when localStorage changes
+  React.useEffect(() => {
+    config.syncFromPortfolio();
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === 'hydra-duel-models-selected') config.syncFromPortfolio();
+    };
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
+  }, [config.syncFromPortfolio]);
   const { loaded: cloudLoaded } = config;
   const [pipeline, setPipeline] = useState<ContestFlowTemplateId>(() =>
     (localStorage.getItem('hydra-duel-pipeline') as ContestFlowTemplateId) || 'duel-critic'

@@ -24,6 +24,16 @@ export function DuelArena() {
   const execution = useDuelExecution();
   const [initialLoad, setInitialLoad] = useState(true);
 
+  // Sync duel selections from portfolio on mount & cross-tab changes
+  useEffect(() => {
+    duelConfig.syncFromPortfolio();
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === 'hydra-duel-models-selected') duelConfig.syncFromPortfolio();
+    };
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
+  }, [duelConfig.syncFromPortfolio]);
+
   useEffect(() => {
     if (user && initialLoad) {
       duelSession.loadLatestDuel().finally(() => setInitialLoad(false));
