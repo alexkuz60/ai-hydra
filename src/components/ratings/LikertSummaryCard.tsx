@@ -41,6 +41,7 @@ export function LikertSummaryCard({ modelId, isRu }: LikertSummaryCardProps) {
   const [allClaims, setAllClaims] = useState<LikertClaim[]>([]);
   const [sessionCount, setSessionCount] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -161,27 +162,36 @@ export function LikertSummaryCard({ modelId, isRu }: LikertSummaryCardProps) {
                   {isRu ? 'Спорные аргументы' : 'Disputed Arguments'}
                 </p>
               </div>
-              <div className="space-y-1.5 pl-2 border-l-2 border-destructive/30">
-                {disputed.map((claim, idx) => (
-                  <div key={idx} className="space-y-0.5">
-                    <div className="flex items-start gap-2">
-                      <Badge
-                        variant="outline"
-                        className="text-[9px] px-1.5 py-0 flex-shrink-0 h-fit"
-                        style={{ borderColor: LIKERT_COLORS[claim.score] }}
-                      >
-                        <span style={{ color: LIKERT_COLORS[claim.score] }}>{claim.score}/5</span>
-                      </Badge>
-                      <span className="text-[11px] text-muted-foreground italic line-clamp-2 flex-1">
-                        "{claim.claim}"
-                      </span>
-                    </div>
-                    {claim.reasoning && (
-                      <p className="text-[10px] text-muted-foreground/70 pl-8 line-clamp-1">{claim.reasoning}</p>
-                    )}
-                  </div>
-                ))}
-              </div>
+               <div className="space-y-1.5 pl-2 border-l-2 border-destructive/30">
+                 {disputed.map((claim, idx) => (
+                   <div key={idx} className="space-y-0.5">
+                     <div
+                       className="flex items-start gap-2 cursor-pointer hover:opacity-80 transition-opacity"
+                       onClick={() => setExpandedIndex(expandedIndex === idx ? null : idx)}
+                     >
+                       <Badge
+                         variant="outline"
+                         className="text-[9px] px-1.5 py-0 flex-shrink-0 h-fit"
+                         style={{ borderColor: LIKERT_COLORS[claim.score] }}
+                       >
+                         <span style={{ color: LIKERT_COLORS[claim.score] }}>{claim.score}/5</span>
+                       </Badge>
+                       <span className={cn(
+                         "text-[11px] text-muted-foreground italic flex-1",
+                         expandedIndex === idx ? "" : "line-clamp-2"
+                       )}>
+                         "{claim.claim}"
+                       </span>
+                     </div>
+                     {claim.reasoning && (
+                       <p className={cn(
+                         "text-[10px] text-muted-foreground/70 pl-8 transition-all duration-200",
+                         expandedIndex === idx ? "" : "line-clamp-1"
+                       )}>{claim.reasoning}</p>
+                     )}
+                   </div>
+                 ))}
+               </div>
             </div>
           )}
         </div>
