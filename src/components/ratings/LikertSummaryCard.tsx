@@ -158,7 +158,7 @@ export function LikertSummaryCard({ modelId, isRu }: LikertSummaryCardProps) {
             <div className="space-y-2">
               <div className="flex items-center gap-1.5">
                 <AlertTriangle className="h-3.5 w-3.5 text-destructive" />
-                <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+                <p className="text-[12px] font-semibold text-muted-foreground uppercase tracking-wider">
                   {isRu ? 'Спорные аргументы' : 'Disputed Arguments'}
                 </p>
               </div>
@@ -169,26 +169,26 @@ export function LikertSummaryCard({ modelId, isRu }: LikertSummaryCardProps) {
                        className="flex items-start gap-2 cursor-pointer hover:opacity-80 transition-opacity group"
                        onClick={() => setExpandedIndex(expandedIndex === idx ? null : idx)}
                      >
-                       <Badge
-                         variant="outline"
-                         className="text-[9px] px-1.5 py-0 flex-shrink-0 h-fit"
-                         style={{ borderColor: LIKERT_COLORS[claim.score] }}
-                       >
+                        <Badge
+                          variant="outline"
+                          className="text-[10px] px-1.5 py-0 flex-shrink-0 h-fit"
+                          style={{ borderColor: LIKERT_COLORS[claim.score] }}
+                        >
                          <span style={{ color: LIKERT_COLORS[claim.score] }}>{claim.score}/5</span>
                        </Badge>
-                       <span className={cn(
-                         "text-[11px] text-muted-foreground italic flex-1",
-                         expandedIndex === idx ? "" : "line-clamp-2"
-                       )}>
-                         "{claim.claim}"
-                       </span>
+                        <span className={cn(
+                          "text-[12px] text-muted-foreground italic flex-1",
+                          expandedIndex === idx ? "" : "line-clamp-2"
+                        )}>
+                          "{claim.claim}"
+                        </span>
                        <ChevronDown className={cn(
                          "h-3 w-3 text-muted-foreground/50 transition-transform duration-200 mt-0.5",
                          expandedIndex === idx ? "rotate-180" : ""
                        )} />
                      </div>
                       {claim.reasoning && expandedIndex === idx && (
-                        <p className="text-[10px] text-muted-foreground/70 pl-8 animate-in fade-in-0 slide-in-from-top-1 duration-200">
+                        <p className="text-[11px] text-muted-foreground/70 pl-8 animate-in fade-in-0 slide-in-from-top-1 duration-200">
                           {claim.reasoning}
                         </p>
                       )}
