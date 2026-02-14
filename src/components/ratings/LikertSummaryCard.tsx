@@ -177,7 +177,7 @@ export function LikertSummaryCard({ modelId, isRu }: LikertSummaryCardProps) {
                          <span style={{ color: LIKERT_COLORS[claim.score] }}>{claim.score}/5</span>
                        </Badge>
                         <span className={cn(
-                          "text-[12px] text-muted-foreground italic flex-1",
+                          "text-[12px] text-muted-foreground flex-1",
                           expandedIndex === idx ? "" : "line-clamp-2"
                         )}>
                           "{claim.claim}"
@@ -188,7 +188,7 @@ export function LikertSummaryCard({ modelId, isRu }: LikertSummaryCardProps) {
                        )} />
                      </div>
                       {claim.reasoning && expandedIndex === idx && (
-                        <p className="text-[11px] text-muted-foreground/70 pl-8 animate-in fade-in-0 slide-in-from-top-1 duration-200">
+                        <p className="text-[12px] text-muted-foreground/70 pl-8 animate-in fade-in-0 slide-in-from-top-1 duration-200">
                           {claim.reasoning}
                         </p>
                       )}
