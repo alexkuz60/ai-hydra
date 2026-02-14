@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Separator } from '@/components/ui/separator';
 import { AGENT_ROLES, ROLE_CONFIG, type AgentRole } from '@/config/roles';
+import { RoleSelectOptions, RoleDisplay } from '@/components/ui/RoleSelectItem';
 
 const COLLAPSE_KEY = 'hydra-candidate-detail-open';
 
@@ -39,7 +40,7 @@ export function CandidateDetail({
   onContestRoleChange,
   inline = false,
 }: CandidateDetailProps) {
-  const { language } = useLanguage();
+  const { language, t } = useLanguage();
   const isRu = language === 'ru';
   const registry = getModelRegistryEntry(model.id);
   const Logo = PROVIDER_LOGOS[model.provider];
@@ -144,21 +145,14 @@ export function CandidateDetail({
                         disabled={!isAvailable}
                       >
                         <SelectTrigger className="h-8 text-xs">
-                          <SelectValue placeholder={isRu ? 'Роль...' : 'Role...'} />
+                          <SelectValue placeholder={isRu ? 'Роль...' : 'Role...'}>
+                            {contestRole && ROLE_CONFIG[contestRole as AgentRole] ? (
+                              <RoleDisplay role={contestRole as AgentRole} className="text-xs [&_svg]:h-3.5 [&_svg]:w-3.5" />
+                            ) : undefined}
+                          </SelectValue>
                         </SelectTrigger>
                         <SelectContent>
-                          {AGENT_ROLES.map(role => {
-                            const config = ROLE_CONFIG[role];
-                            const Icon = config.icon;
-                            return (
-                              <SelectItem key={role} value={role} className="text-xs">
-                                <div className="flex items-center gap-1.5">
-                                  <Icon className={cn("h-3.5 w-3.5", config.color)} />
-                                  <span>{isRu ? config.label.replace('roles.', '') : role}</span>
-                                </div>
-                              </SelectItem>
-                            );
-                          })}
+                          <RoleSelectOptions />
                         </SelectContent>
                       </Select>
 
