@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { compressImage } from '@/lib/imageCompression';
@@ -58,6 +58,8 @@ interface UseSendMessageProps {
   onRequestError?: (modelIds: string[]) => void;
   // Reference to current selectedModels for filtering errors from dismissed models
   selectedModelsRef?: React.MutableRefObject<string[]>;
+  // Messages for building conversation history
+  messages?: Array<{ role: string; content: string; isStreaming?: boolean }>;
 }
 
 interface UseSendMessageReturn {
@@ -80,11 +82,14 @@ export function useSendMessage({
   onRequestStart,
   onRequestError,
   selectedModelsRef,
+  messages: externalMessages,
 }: UseSendMessageProps): UseSendMessageReturn {
   const { t } = useLanguage();
   const [sending, setSending] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<{ current: number; total: number } | null>(null);
   const [attachedFiles, setAttachedFiles] = useState<AttachedFile[]>([]);
+  const messagesRef = useRef(externalMessages);
+  messagesRef.current = externalMessages;
 
   // Upload files and return URLs
   const uploadFiles = useCallback(async (
@@ -176,6 +181,10 @@ export function useSendMessage({
           message: messageContent,
           attachments: attachmentUrls,
           models,
+          history: (messagesRef.current || [])
+            .filter((m: any) => !m.isStreaming && (m.role === 'user' || m.role === 'assistant'))
+            .slice(-10)
+            .map((m: any) => ({ role: m.role, content: m.content })),
         }),
       }
     );

@@ -111,11 +111,19 @@ export interface Attachment {
   type: string;
 }
 
+/** A history message for multi-turn context */
+export interface HistoryMessage {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
 export interface RequestBody {
   session_id: string;
   message: string;
   attachments?: Attachment[];
   models: ModelRequest[];
+  /** Conversation history for multi-turn context */
+  history?: HistoryMessage[];
   // HTTP tool testing action
   action?: 'test_http_tool';
   http_config?: HttpConfig;
