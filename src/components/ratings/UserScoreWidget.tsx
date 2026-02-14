@@ -7,17 +7,21 @@ interface UserScoreWidgetProps {
   currentScore: number | null;
   onScore: (resultId: string, score: number) => void;
   isRu: boolean;
+  isExtraRound?: boolean;
 }
 
 /** Inline scoring widget for user evaluation — always editable */
-export function UserScoreWidget({ resultId, currentScore, onScore, isRu }: UserScoreWidgetProps) {
+export function UserScoreWidget({ resultId, currentScore, onScore, isRu, isExtraRound }: UserScoreWidgetProps) {
   const [hover, setHover] = useState<number | null>(null);
 
+  const accentColor = isExtraRound ? 'text-[hsl(var(--hydra-arbiter))]' : 'text-primary';
+  const borderColor = isExtraRound ? 'border-[hsl(var(--hydra-arbiter))]/20' : 'border-primary/20';
+
   return (
-    <div className="pt-2 border-t border-primary/20 space-y-1.5">
+    <div className={cn("pt-2 border-t space-y-1.5", borderColor)}>
       <div className="flex items-center gap-1.5">
-        <Star className="h-3 w-3 text-primary" />
-        <span className="text-[11px] font-medium text-primary">
+        <Star className={cn("h-3 w-3", accentColor)} />
+        <span className={cn("text-[11px] font-medium", accentColor)}>
           {isRu ? 'Ваша оценка:' : 'Your score:'}
         </span>
       </div>
