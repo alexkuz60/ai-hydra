@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Separator } from '@/components/ui/separator';
 import { Slider } from '@/components/ui/slider';
 import { Scale, Users, BarChart3, Calculator, Weight } from 'lucide-react';
-import { useContestConfig } from '@/hooks/useContestConfig';
+import { useContestConfigContext } from '@/contexts/ContestConfigContext';
 
 interface ArbitrationConfig {
   juryMode: 'user' | 'arbiter' | 'both';
@@ -43,7 +43,7 @@ const SCORING_OPTIONS = [
 export function ContestArbitration() {
   const { language } = useLanguage();
   const isRu = language === 'ru';
-  const { arbitration, updateArbitration } = useContestConfig();
+  const { arbitration, updateArbitration } = useContestConfigContext();
   const [config, setConfig] = useState<ArbitrationConfig>(
     arbitration || {
       juryMode: 'both',

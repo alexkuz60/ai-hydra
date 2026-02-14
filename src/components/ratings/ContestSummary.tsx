@@ -10,7 +10,8 @@ import { CONTEST_FLOW_TEMPLATES } from '@/lib/contestFlowTemplates';
 import { useFlowDiagrams } from '@/hooks/useFlowDiagrams';
 import { exportToMermaid } from '@/hooks/useFlowDiagrams';
 import { useToast } from '@/hooks/use-toast';
-import { useContestConfig, VALIDATION_MESSAGES } from '@/hooks/useContestConfig';
+import { VALIDATION_MESSAGES } from '@/hooks/useContestConfig';
+import { useContestConfigContext } from '@/contexts/ContestConfigContext';
 import { getRatingsText } from './i18n';
 import { ContestSummaryConfig } from './ContestSummaryConfig';
 import { ContestPromptPreview } from './ContestPromptPreview';
@@ -38,7 +39,7 @@ export function ContestSummary() {
     importConfig,
     validateForSave,
     loaded: cloudLoaded,
-  } = useContestConfig();
+  } = useContestConfigContext();
 
   const canSave = pipeline !== 'none' && pipeline in CONTEST_FLOW_TEMPLATES;
 

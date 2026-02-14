@@ -3,6 +3,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Crown, Swords, UserCheck } from 'lucide-react';
+import { ContestConfigProvider } from '@/contexts/ContestConfigContext';
 import { ContestTaskSelector } from './ContestTaskSelector';
 import { ContestRulesEditor } from './ContestRulesEditor';
 import { ContestPipelineSelector } from './ContestPipelineSelector';
@@ -45,15 +46,17 @@ export function ContestPodium({ duelConfig }: ContestPodiumProps) {
         </div>
 
         <TabsContent value="contest" className="flex-1 mt-0 overflow-hidden">
-          <ScrollArea className="h-full">
-            <div className="p-4 space-y-4">
-              <ContestTaskSelector />
-              <ContestRulesEditor />
-              <ContestPipelineSelector />
-              <ContestArbitration />
-              <ContestSummary />
-            </div>
-          </ScrollArea>
+          <ContestConfigProvider>
+            <ScrollArea className="h-full">
+              <div className="p-4 space-y-4">
+                <ContestTaskSelector />
+                <ContestRulesEditor />
+                <ContestPipelineSelector />
+                <ContestArbitration />
+                <ContestSummary />
+              </div>
+            </ScrollArea>
+          </ContestConfigProvider>
         </TabsContent>
 
         <TabsContent value="duel" className="flex-1 mt-0 overflow-hidden">

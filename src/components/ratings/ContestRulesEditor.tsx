@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Settings2, ListOrdered, Info } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
-import { useContestConfig } from '@/hooks/useContestConfig';
+import { useContestConfigContext } from '@/contexts/ContestConfigContext';
 import { EXPERT_ROLES, ROLE_CONFIG, ROLE_SPECIFIC_CRITERIA, type AgentRole } from '@/config/roles';
 import { RoleSelectItem, RoleDisplay } from '@/components/ui/RoleSelectItem';
 import { mergeRoleCriteria, getCriteriaLabel, isRoleSpecificCriteria } from '@/lib/contestRoleCriteria';
@@ -47,7 +47,7 @@ function defaultRound(): RoundConfig {
 export function ContestRulesEditor() {
   const { language } = useLanguage();
   const isRu = language === 'ru';
-  const { rules, updateRules } = useContestConfig();
+  const { rules, updateRules } = useContestConfigContext();
   
   const defaultRules = { roundCount: 1, rounds: [defaultRound()], elimination: 'all-pass' };
   const [localRules, setLocalRules] = useState(rules || defaultRules);

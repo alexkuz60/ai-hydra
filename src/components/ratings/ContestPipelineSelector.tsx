@@ -4,7 +4,7 @@ import { HydraCard, HydraCardHeader, HydraCardTitle, HydraCardContent } from '@/
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Workflow, Info } from 'lucide-react';
 import { CONTEST_FLOW_TEMPLATES, type ContestFlowTemplateId } from '@/lib/contestFlowTemplates';
-import { useContestConfig } from '@/hooks/useContestConfig';
+import { useContestConfigContext } from '@/contexts/ContestConfigContext';
 
 const PIPELINE_OPTIONS: { id: ContestFlowTemplateId; ru: string; en: string; descRu?: string; descEn?: string }[] = [
   { id: 'none', ru: 'Не нужен', en: 'Not needed' },
@@ -20,7 +20,7 @@ const PIPELINE_OPTIONS: { id: ContestFlowTemplateId; ru: string; en: string; des
 export function ContestPipelineSelector() {
   const { language } = useLanguage();
   const isRu = language === 'ru';
-  const { pipeline, updatePipeline } = useContestConfig();
+  const { pipeline, updatePipeline } = useContestConfigContext();
 
   const selectedOption = PIPELINE_OPTIONS.find(o => o.id === pipeline);
 
