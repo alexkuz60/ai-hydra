@@ -167,6 +167,16 @@ export function useDuelConfig() {
     } catch {}
   }, [loaded, config.modelA, config.modelB, config.duelType]);
 
+  /** Auto-sync from portfolio on storage changes (same-tab + cross-tab) */
+  useEffect(() => {
+    if (!loaded) return;
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === 'hydra-duel-models-selected') syncFromPortfolio();
+    };
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
+  }, [loaded, syncFromPortfolio]);
+
   const validate = useCallback((): DuelValidationError[] => {
     const errors: DuelValidationError[] = [];
     if (!config.modelA) errors.push({ field: 'modelA', messageKey: 'modelARequired' });
