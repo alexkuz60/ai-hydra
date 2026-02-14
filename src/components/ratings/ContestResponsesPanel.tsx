@@ -9,6 +9,7 @@ import { getModelRegistryEntry } from '@/config/modelRegistry';
 import { PROVIDER_LOGOS, PROVIDER_COLORS } from '@/components/ui/ProviderLogos';
 import { MarkdownRenderer } from '@/components/warroom/MarkdownRenderer';
 import { UserScoreWidget } from './UserScoreWidget';
+import { UserLikertWidget } from './UserLikertWidget';
 import { LikertEvaluationDisplay } from './LikertEvaluationDisplay';
 import { getRatingsText } from './i18n';
 import type { ContestResult } from '@/hooks/useContestSession';
@@ -20,13 +21,14 @@ interface ContestResponsesPanelProps {
   isRu: boolean;
   initialRoundCount?: number;
   onScore?: (resultId: string, score: number) => void;
+  onLikertScore?: (resultId: string, value: number) => void;
   activeModel: string;
   onActiveModelChange: (model: string) => void;
 }
 
 export function ContestResponsesPanel({
   results, rounds, streamingTexts, isRu,
-  initialRoundCount = 1, onScore, activeModel, onActiveModelChange,
+  initialRoundCount = 1, onScore, onLikertScore, activeModel, onActiveModelChange,
 }: ContestResponsesPanelProps) {
   const modelIds = [...new Set(results.map(r => r.model_id))];
 
@@ -68,6 +70,7 @@ export function ContestResponsesPanel({
                 initialRoundCount={initialRoundCount}
                 isRu={isRu}
                 onScore={onScore}
+                onLikertScore={onLikertScore}
               />
             )}
           </div>
@@ -79,7 +82,7 @@ export function ContestResponsesPanel({
 
 /** Groups results by round and renders them */
 function RoundGroupedResults({
-  filtered, rounds, streamingTexts, initialRoundCount, isRu, onScore,
+  filtered, rounds, streamingTexts, initialRoundCount, isRu, onScore, onLikertScore,
 }: {
   filtered: ContestResult[];
   rounds: { id: string; round_index: number; prompt: string }[];
@@ -87,6 +90,7 @@ function RoundGroupedResults({
   initialRoundCount: number;
   isRu: boolean;
   onScore?: (resultId: string, score: number) => void;
+  onLikertScore?: (resultId: string, value: number) => void;
 }) {
   const roundGroups = rounds
     .filter(round => filtered.some(r => r.round_id === round.id))
@@ -151,6 +155,7 @@ function RoundGroupedResults({
                 streamingTexts={streamingTexts}
                 isRu={isRu}
                 onScore={onScore}
+                onLikertScore={onLikertScore}
               />
             ))}
           </div>
@@ -180,12 +185,13 @@ function CollapsibleResponse({ content, isStreaming }: { content: string; isStre
 }
 
 function ResponseCard({
-  result, streamingTexts, isRu, onScore,
+  result, streamingTexts, isRu, onScore, onLikertScore,
 }: {
   result: ContestResult;
   streamingTexts: Record<string, string>;
   isRu: boolean;
   onScore?: (resultId: string, score: number) => void;
+  onLikertScore?: (resultId: string, value: number) => void;
 }) {
   const entry = getModelRegistryEntry(result.model_id);
   const shortName = entry?.displayName || result.model_id.split('/').pop() || result.model_id;
@@ -229,6 +235,14 @@ function ResponseCard({
       />
       {(result.status === 'ready' || result.status === 'judged') && onScore && (
         <UserScoreWidget resultId={result.id} currentScore={result.user_score} onScore={onScore} isRu={isRu} />
+      )}
+      {(result.status === 'ready' || result.status === 'judged') && onLikertScore && (
+        <UserLikertWidget
+          resultId={result.id}
+          currentValue={(result.metadata as any)?.user_likert ?? null}
+          onRate={onLikertScore}
+          isRu={isRu}
+        />
       )}
       {likertClaims && (
         <div className="pt-2 border-t border-border/30">
