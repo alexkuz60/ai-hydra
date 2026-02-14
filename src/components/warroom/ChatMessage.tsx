@@ -205,7 +205,7 @@ export function ChatMessage({ message, userDisplayInfo, onDelete, onRatingChange
       </HydraCardContent>
 
       {isAiMessage && (
-        <div className="px-4 pb-3 space-y-2">
+        <div className="px-4 pb-3 flex items-center justify-between gap-2">
           <BrainRating value={rating} onChange={newRating => onRatingChange(message.id, newRating)} />
           {onLikertRate && (
             <UserLikertWidget
@@ -213,6 +213,7 @@ export function ChatMessage({ message, userDisplayInfo, onDelete, onRatingChange
               currentValue={typeof metadataObj.user_likert === 'number' ? metadataObj.user_likert : null}
               onRate={onLikertRate}
               isRu={t('common.locale') === 'ru'}
+              compact
             />
           )}
         </div>
