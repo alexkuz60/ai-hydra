@@ -1,0 +1,2 @@
+ALTER TABLE public.session_memory DROP CONSTRAINT valid_chunk_type;
+ALTER TABLE public.session_memory ADD CONSTRAINT valid_chunk_type CHECK (chunk_type = ANY (ARRAY['message'::text, 'summary'::text, 'decision'::text, 'context'::text, 'instruction'::text, 'evaluation'::text]));
