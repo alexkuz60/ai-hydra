@@ -328,6 +328,12 @@ function DuelsByProvider({ duels, isRu }: { duels: { opponentModelId: string; re
         const Logo = PROVIDER_LOGOS[provider];
         const color = PROVIDER_COLORS[provider] || 'text-muted-foreground';
         const isOpen = open === provider;
+        
+        // Count wins, losses, draws
+        const wins = items.filter(d => d.result === 'win').length;
+        const losses = items.filter(d => d.result === 'loss').length;
+        const draws = items.filter(d => d.result === 'draw').length;
+        
         return (
           <div key={provider}>
             <button
@@ -337,7 +343,11 @@ function DuelsByProvider({ duels, isRu }: { duels: { opponentModelId: string; re
               <ChevronRight className={cn("h-3.5 w-3.5 text-muted-foreground transition-transform", isOpen && "rotate-90")} />
               {Logo && <Logo className={cn("h-3.5 w-3.5 shrink-0", color)} />}
               <span className="text-sm">{LABELS[provider] || provider}</span>
-              <span className="text-xs text-muted-foreground ml-auto">{items.length}</span>
+              <span className="text-xs text-muted-foreground ml-auto flex items-center gap-1.5">
+                {wins > 0 && <span className="text-hydra-success font-semibold">{wins}W</span>}
+                {losses > 0 && <span className="text-hydra-critical font-semibold">{losses}L</span>}
+                {draws > 0 && <span className="text-muted-foreground font-semibold">{draws}D</span>}
+              </span>
             </button>
             {isOpen && (
               <div className="ml-6 space-y-1 mt-1">
