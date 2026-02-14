@@ -4,7 +4,7 @@ import { HydraCard, HydraCardHeader, HydraCardTitle, HydraCardContent } from '@/
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Brain, ClipboardList, Paperclip, Users, Crown, Info, FileText, Image, File, Trophy, UserCheck } from 'lucide-react';
+import { Brain, ClipboardList, Paperclip, Users, Crown, Info, FileText, Image, File, Trophy, UserCheck, Plus, X, Search } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { PROVIDER_LOGOS, PROVIDER_COLORS } from '@/components/ui/ProviderLogos';
@@ -12,6 +12,10 @@ import { cn } from '@/lib/utils';
 import { getModelRegistryEntry, type ModelRegistryEntry } from '@/config/modelRegistry';
 import { useTaskFiles } from '@/hooks/useTaskFiles';
 import { useContestConfig } from '@/hooks/useContestConfig';
+import { useAllModels } from '@/components/ratings/ModelListSidebar';
+import { Input } from '@/components/ui/input';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 export type ContestMode = 'contest' | 'interview';
 
@@ -74,11 +78,86 @@ function TaskFilesDisplay({ sessionId, isRu }: { sessionId: string | null; isRu:
   );
 }
 
+/** Inline model picker for adding contest participants */
+function ContestModelPicker({
+  models,
+  onAdd,
+  isRu,
+}: {
+  models: Record<string, string>;
+  onAdd: (modelId: string) => void;
+  isRu: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState('');
+  const { allModels } = useAllModels();
+
+  const filtered = useMemo(() => {
+    const q = search.toLowerCase();
+    return allModels.filter(e =>
+      !(e.model.id in models) &&
+      (e.model.name.toLowerCase().includes(q) || e.model.id.toLowerCase().includes(q))
+    );
+  }, [allModels, models, search]);
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button variant="outline" size="sm" className="gap-1.5 h-8 text-xs">
+          <Plus className="h-3.5 w-3.5" />
+          {isRu ? 'Добавить модель' : 'Add model'}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-72 p-0" align="start">
+        <div className="p-2 border-b border-border/40">
+          <div className="relative">
+            <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+            <Input
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder={isRu ? 'Поиск модели...' : 'Search model...'}
+              className="h-8 pl-7 text-xs"
+              autoFocus
+            />
+          </div>
+        </div>
+        <ScrollArea className="max-h-[240px]">
+          <div className="p-1">
+            {filtered.length === 0 ? (
+              <p className="text-xs text-muted-foreground text-center py-4">
+                {isRu ? 'Нет доступных моделей' : 'No available models'}
+              </p>
+            ) : (
+              filtered.map(e => {
+                const Logo = PROVIDER_LOGOS[e.model.provider];
+                const color = PROVIDER_COLORS[e.model.provider] || 'text-muted-foreground';
+                return (
+                  <button
+                    key={e.model.id}
+                    onClick={() => { onAdd(e.model.id); setSearch(''); setOpen(false); }}
+                    className={cn(
+                      "w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-left transition-colors",
+                      e.isAvailable ? "hover:bg-muted/40" : "opacity-50 hover:bg-muted/20"
+                    )}
+                  >
+                    {Logo && <Logo className={cn("h-3.5 w-3.5 shrink-0", color)} />}
+                    <span className="text-xs font-medium truncate">{e.model.name}</span>
+                  </button>
+                );
+              })
+            )}
+          </div>
+        </ScrollArea>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 export function ContestTaskSelector() {
   const { language } = useLanguage();
   const { user } = useAuth();
   const isRu = language === 'ru';
-  const { taskId, mode, updateTaskId, updateMode, models } = useContestConfig();
+  const { taskId, mode, updateTaskId, updateMode, models, updateModels } = useContestConfig();
 
   const [sessions, setSessions] = useState<Session[]>([]);
 
@@ -95,6 +174,16 @@ export function ContestTaskSelector() {
 
   const selectedSession = sessions.find(s => s.id === taskId);
   const contestModels = getContestModels(models);
+
+  const handleAddModel = (modelId: string) => {
+    updateModels({ ...models, [modelId]: '' });
+  };
+
+  const handleRemoveModel = (modelId: string) => {
+    const next = { ...models };
+    delete next[modelId];
+    updateModels(next);
+  };
 
   const ROLE_LABELS: Record<string, { ru: string; en: string }> = {
     assistant: { ru: 'Эксперт', en: 'Expert' },
@@ -186,23 +275,26 @@ export function ContestTaskSelector() {
 
         {/* Participants */}
         <div className="space-y-2">
-          <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-            <Users className="h-3 w-3" />
-            {isRu ? 'Участники подиума' : 'Podium Participants'}
-            {contestModels.length > 0 && (
-              <Badge variant="secondary" className="text-[10px] px-1.5 py-0 bg-hydra-arbiter/20 text-hydra-arbiter border-hydra-arbiter/30">
-                {contestModels.length}
-              </Badge>
-            )}
-          </label>
+          <div className="flex items-center justify-between">
+            <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+              <Users className="h-3 w-3" />
+              {isRu ? 'Участники подиума' : 'Podium Participants'}
+              {contestModels.length > 0 && (
+                <Badge variant="secondary" className="text-[10px] px-1.5 py-0 bg-hydra-arbiter/20 text-hydra-arbiter border-hydra-arbiter/30">
+                  {contestModels.length}
+                </Badge>
+              )}
+            </label>
+            <ContestModelPicker models={models} onAdd={handleAddModel} isRu={isRu} />
+          </div>
 
           {contestModels.length === 0 ? (
             <div className="p-3 rounded-md border border-dashed border-border/40 bg-muted/10 text-center">
               <Crown className="h-4 w-4 text-hydra-arbiter/40 mx-auto mb-1" />
               <p className="text-[11px] text-muted-foreground/60">
                 {isRu
-                  ? 'Пригласите моделей на вкладке «Отборочные кандидаты»'
-                  : 'Invite models from the "Qualifying Candidates" tab'}
+                  ? 'Добавьте модели кнопкой выше или на вкладке «Портфолио»'
+                  : 'Add models with the button above or from the "Portfolio" tab'}
               </p>
             </div>
           ) : (
@@ -217,7 +309,7 @@ export function ContestTaskSelector() {
                 return (
                   <div
                     key={modelId}
-                    className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-muted/20 border border-border/30"
+                    className="group flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-muted/20 border border-border/30 transition-colors hover:border-border/60"
                   >
                     {Logo && <Logo className={cn("h-3.5 w-3.5 shrink-0", color)} />}
                     <span className="text-xs font-medium truncate max-w-[120px]">
@@ -228,6 +320,13 @@ export function ContestTaskSelector() {
                         {roleLabel}
                       </Badge>
                     )}
+                    <button
+                      onClick={() => handleRemoveModel(modelId)}
+                      className="ml-0.5 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
+                      title={isRu ? 'Убрать' : 'Remove'}
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
                   </div>
                 );
               })}
