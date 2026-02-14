@@ -298,7 +298,8 @@ export function ContestTaskSelector() {
               </p>
             </div>
           ) : (
-            <div className="flex flex-wrap gap-2">
+            <ScrollArea className="max-h-[200px]">
+            <div className="flex flex-wrap gap-2 pr-2">
               {contestModels.map(({ modelId, role }) => {
                 const entry = getRegistryEntry(modelId);
                 const provider = entry?.provider || 'openai';
@@ -331,6 +332,7 @@ export function ContestTaskSelector() {
                 );
               })}
             </div>
+            </ScrollArea>
           )}
         </div>
       </HydraCardContent>
