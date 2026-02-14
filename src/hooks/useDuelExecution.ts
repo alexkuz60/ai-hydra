@@ -75,6 +75,7 @@ export function useDuelExecution() {
 
     // Build prompts for this round (cross-pollination for round > 0)
     // Includes cumulative history: condensed excerpts of earlier rounds + full previous round
+    // Extra rounds use their own prompt as additional context on top of the original task
     const buildPromptForModel = (modelId: string): string => {
       if (round.round_index === 0) return originalPrompt;
 
@@ -89,6 +90,18 @@ export function useDuelExecution() {
 
       const EXCERPT_LENGTH = 300; // chars for condensed earlier rounds
       const sections: string[] = [originalPrompt, '\n---'];
+
+      // If this round has its own prompt (extra round), inject it as additional context
+      const roundOwnPrompt = round.prompt?.trim();
+      if (roundOwnPrompt && roundOwnPrompt !== originalPrompt) {
+        sections.push(
+          isRu
+            ? '## Дополнительное задание'
+            : '## Additional Task',
+        );
+        sections.push(roundOwnPrompt);
+        sections.push('\n---');
+      }
 
       if (isRu) {
         sections.push('## История дебатов');
@@ -138,9 +151,13 @@ export function useDuelExecution() {
 
       sections.push('\n---');
       sections.push(
-        isRu
-          ? 'Сформулируйте свой следующий аргумент, учитывая всю историю дебатов и позицию противника.'
-          : 'Formulate your next argument, considering the full debate history and the opponent\'s position.',
+        roundOwnPrompt && roundOwnPrompt !== originalPrompt
+          ? (isRu
+              ? 'Учитывая дополнительное задание и всю историю дебатов, скорректируйте своё заключение.'
+              : 'Considering the additional task and full debate history, revise your conclusion.')
+          : (isRu
+              ? 'Сформулируйте свой следующий аргумент, учитывая всю историю дебатов и позицию противника.'
+              : 'Formulate your next argument, considering the full debate history and the opponent\'s position.'),
       );
 
       return sections.join('\n');
