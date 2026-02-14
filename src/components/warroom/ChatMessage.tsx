@@ -205,7 +205,7 @@ export function ChatMessage({ message, userDisplayInfo, onDelete, onRatingChange
       </HydraCardContent>
 
       {isAiMessage && (
-        <div className="px-4 pb-3 flex items-center justify-between gap-2">
+        <div className="px-4 pb-3 flex items-center gap-4 flex-wrap">
           <BrainRating value={rating} onChange={newRating => onRatingChange(message.id, newRating)} />
           {onLikertRate && (
             <UserLikertWidget
