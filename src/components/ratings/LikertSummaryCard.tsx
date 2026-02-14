@@ -3,7 +3,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { HydraCard, HydraCardHeader, HydraCardTitle, HydraCardContent } from '@/components/ui/hydra-card';
 import { Badge } from '@/components/ui/badge';
-import { Scale, TrendingUp, AlertTriangle } from 'lucide-react';
+import { Scale, TrendingUp, AlertTriangle, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface LikertClaim {
@@ -166,7 +166,7 @@ export function LikertSummaryCard({ modelId, isRu }: LikertSummaryCardProps) {
                  {disputed.map((claim, idx) => (
                    <div key={idx} className="space-y-0.5">
                      <div
-                       className="flex items-start gap-2 cursor-pointer hover:opacity-80 transition-opacity"
+                       className="flex items-start gap-2 cursor-pointer hover:opacity-80 transition-opacity group"
                        onClick={() => setExpandedIndex(expandedIndex === idx ? null : idx)}
                      >
                        <Badge
@@ -182,6 +182,10 @@ export function LikertSummaryCard({ modelId, isRu }: LikertSummaryCardProps) {
                        )}>
                          "{claim.claim}"
                        </span>
+                       <ChevronDown className={cn(
+                         "h-3 w-3 text-muted-foreground/50 transition-transform duration-200 mt-0.5",
+                         expandedIndex === idx ? "rotate-180" : ""
+                       )} />
                      </div>
                      {claim.reasoning && (
                        <p className={cn(
