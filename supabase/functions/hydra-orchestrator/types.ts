@@ -93,8 +93,6 @@ export interface ModelRequest {
   role?: 'assistant' | 'critic' | 'arbiter';
   enable_tools?: boolean;
   enabled_tools?: string[];
-  /** Tool settings with usage modes (new format) */
-  tool_settings?: Record<string, ToolSettings>;
   enabled_custom_tools?: string[];
   /** Search provider for web_search tool: tavily, perplexity, or both */
   search_provider?: 'tavily' | 'perplexity' | 'both';
