@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { useModelStatistics } from '@/hooks/useModelStatistics';
 import { streamWithTimeout } from '@/lib/streamWithTimeout';
 import type { ContestSession, ContestRound, ContestResult } from './useContestSession';
 import type { DuelConfigData } from './useDuelConfig';
@@ -22,6 +23,7 @@ export function useDuelExecution() {
   const { language } = useLanguage();
   const isRu = language === 'ru';
   const { user } = useAuth();
+  const { updateCriteriaAverages } = useModelStatistics(user?.id);
   const [state, setState] = useState<DuelExecutionState>({ executing: false, streamingTexts: {}, arbiterRunning: false });
   const abortRef = useRef<AbortController | null>(null);
 
@@ -278,19 +280,25 @@ export function useDuelExecution() {
 
         if (arbResponse.ok) {
           const data = await arbResponse.json();
-          for (const eval_ of (data.evaluations || [])) {
-            if (eval_.arbiter_score != null) {
-              const orig = completedResults.find(r => r.id === eval_.result_id);
-              await updateResult(eval_.result_id, {
-                arbiter_score: eval_.arbiter_score,
-                arbiter_comment: eval_.arbiter_comment,
-                arbiter_model: eval_.arbiter_model,
-                criteria_scores: eval_.criteria_scores || {},
-                status: 'judged',
-                ...(orig ? { response_text: orig.response_text, response_time_ms: orig.response_time_ms, token_count: orig.token_count } : {}),
-              } as any);
-            }
-          }
+           for (const eval_ of (data.evaluations || [])) {
+             if (eval_.arbiter_score != null) {
+               const orig = completedResults.find(r => r.id === eval_.result_id);
+               await updateResult(eval_.result_id, {
+                 arbiter_score: eval_.arbiter_score,
+                 arbiter_comment: eval_.arbiter_comment,
+                 arbiter_model: eval_.arbiter_model,
+                 criteria_scores: eval_.criteria_scores || {},
+                 status: 'judged',
+                 ...(orig ? { response_text: orig.response_text, response_time_ms: orig.response_time_ms, token_count: orig.token_count } : {}),
+               } as any);
+
+               // Also save criteria scores to model_statistics with duel type prefix
+               if (eval_.criteria_scores && orig) {
+                 const sourcePrefix = duelConfig.duelType === 'arbiter' ? 'duel_arbiter' : 'duel_critic';
+                 await updateCriteriaAverages(orig.model_id, null, eval_.criteria_scores, sourcePrefix);
+               }
+             }
+           }
           toast({ description: isRu ? 'Арбитр оценил раунд дуэли' : 'Arbiter evaluated the duel round' });
         }
       } catch (err: any) {
@@ -303,7 +311,7 @@ export function useDuelExecution() {
       // When userEvaluation is true, execution pauses for user to pick a winner.
       // When userEvaluation is false, DuelArena auto-advances after arbiter evaluation.
     }
-  }, [toast, isRu, language]);
+  }, [toast, isRu, language, updateCriteriaAverages]);
 
   const cancel = useCallback(() => {
     abortRef.current?.abort();
