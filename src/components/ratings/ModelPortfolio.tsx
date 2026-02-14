@@ -72,7 +72,15 @@ export function ModelPortfolio() {
   }, [contestModels]);
 
   useEffect(() => {
-    try { localStorage.setItem(DUEL_MODELS_KEY, JSON.stringify(duelModels)); } catch {}
+    try {
+      const serialized = JSON.stringify(duelModels);
+      localStorage.setItem(DUEL_MODELS_KEY, serialized);
+      // Notify same-tab listeners (StorageEvent only fires cross-tab natively)
+      window.dispatchEvent(new StorageEvent('storage', {
+        key: DUEL_MODELS_KEY,
+        newValue: serialized,
+      }));
+    } catch {}
   }, [duelModels]);
 
   // Sync contestModels and duelModels from other tabs
