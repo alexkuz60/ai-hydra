@@ -20,12 +20,13 @@ interface DuelScoresPanelProps {
   LogoB: React.ComponentType<{ className?: string }> | null;
   roundWins: { winsA: number; winsB: number; draws: number };
   arbitration?: any;
+  initialRoundCount?: number;
 }
 
 export function DuelScoresPanel({
   results, rounds, isRu,
   modelA, modelB, nameA, nameB, LogoA, LogoB,
-  roundWins, arbitration,
+  roundWins, arbitration, initialRoundCount,
 }: DuelScoresPanelProps) {
   // Collect all criteria keys
   const allCriteriaKeys = [...new Set(
@@ -198,12 +199,13 @@ export function DuelScoresPanel({
             </TableHeader>
             <TableBody>
               {roundData.map(({ round, scoreA, scoreB }) => {
+                const isExtraRound = round.round_index >= (initialRoundCount ?? rounds.length);
                 const winner = scoreA != null && scoreB != null
                   ? (scoreA > scoreB ? 'A' : scoreB > scoreA ? 'B' : 'draw')
                   : null;
                 return (
-                  <TableRow key={round.id} className="text-xs">
-                    <TableCell className="font-medium">{round.round_index + 1}</TableCell>
+                  <TableRow key={round.id} className={cn("text-xs", isExtraRound && "bg-[hsl(var(--hydra-arbiter))]/5")}>
+                    <TableCell className={cn("font-medium", isExtraRound && "text-[hsl(var(--hydra-arbiter))]")}>{round.round_index + 1}</TableCell>
                     <TableCell className={cn("text-center", winner === 'A' && "font-bold text-primary")}>
                       {scoreA != null ? scoreA.toFixed(1) : '—'}
                     </TableCell>

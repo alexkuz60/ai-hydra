@@ -167,6 +167,7 @@ export function DuelBattleView({
               modelA={modelA} modelB={modelB} nameA={nameA} nameB={nameB}
               LogoA={LogoA} LogoB={LogoB} roundWins={roundWins}
               arbitration={session.config.arbitration}
+              initialRoundCount={(session.config as any)?.rules?.roundCount ?? rounds.length}
             />
           </TabsContent>
 
