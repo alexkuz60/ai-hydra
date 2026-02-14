@@ -9,15 +9,15 @@ interface DateSeparatorProps {
 }
 
 export function DateSeparator({ date }: DateSeparatorProps) {
-  const { t } = useLanguage();
-  const locale = t('common.locale') === 'ru' ? ru : enUS;
+  const { language } = useLanguage();
+  const locale = language === 'ru' ? ru : enUS;
 
   const getDateLabel = () => {
     if (isToday(date)) {
-      return t('common.locale') === 'ru' ? 'Сегодня' : 'Today';
+      return language === 'ru' ? 'Сегодня' : 'Today';
     }
     if (isYesterday(date)) {
-      return t('common.locale') === 'ru' ? 'Вчера' : 'Yesterday';
+      return language === 'ru' ? 'Вчера' : 'Yesterday';
     }
     return format(date, 'd MMMM yyyy', { locale });
   };
