@@ -196,10 +196,19 @@ function ResponseCard({
   const likertClaims = (() => {
     if (!result.criteria_scores) return null;
     const scores = result.criteria_scores as any;
-    if (scores.claims && Array.isArray(scores.claims)) {
-      return scores.claims;
-    }
+    const arr = scores.likert_claims ?? scores.claims;
+    if (arr && Array.isArray(arr)) return arr;
     return null;
+  })();
+
+  // Filter out non-numeric values from criteria_scores for display
+  const filteredCriteria = (() => {
+    if (likertClaims || !result.criteria_scores) return null;
+    const filtered: Record<string, number> = {};
+    for (const [key, val] of Object.entries(result.criteria_scores)) {
+      if (typeof val === 'number') filtered[key] = val;
+    }
+    return Object.keys(filtered).length > 0 ? filtered : null;
   })();
 
   return (

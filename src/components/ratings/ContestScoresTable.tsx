@@ -43,7 +43,9 @@ export function ContestScoresTable({ results, rounds, isRu, selectedWinners, onT
   }, [results]);
 
   const scored = computeScores({ results: deduped, scheme, userWeight });
-  const allCriteriaKeys = collectCriteriaKeys(deduped);
+  const allCriteriaKeys = collectCriteriaKeys(deduped).filter(key =>
+    scored.some(row => row.criteriaAvg[key] != null && typeof row.criteriaAvg[key] === 'number')
+  );
   const hasCriteria = allCriteriaKeys.length > 0;
   const isTournament = scheme === 'tournament';
   const isElo = scheme === 'elo';
