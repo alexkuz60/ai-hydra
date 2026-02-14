@@ -9,13 +9,16 @@ import { ContestPipelineSelector } from './ContestPipelineSelector';
 import { ContestArbitration } from './ContestArbitration';
 import { ContestSummary } from './ContestSummary';
 import { DuelPlanEditor } from './DuelPlanEditor';
-import { useDuelConfig } from '@/hooks/useDuelConfig';
+import type { useDuelConfig } from '@/hooks/useDuelConfig';
 import { getRatingsText } from './i18n';
 
-export function ContestPodium() {
+interface ContestPodiumProps {
+  duelConfig: ReturnType<typeof useDuelConfig>;
+}
+
+export function ContestPodium({ duelConfig }: ContestPodiumProps) {
   const { language } = useLanguage();
   const isRu = language === 'ru';
-  const duelConfig = useDuelConfig();
 
   return (
     <div className="h-full flex flex-col">
