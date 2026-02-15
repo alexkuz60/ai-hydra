@@ -22,6 +22,58 @@ import {
 import type { AgentRole } from '@/config/roles';
 import { ROLE_CONFIG } from '@/config/roles';
 
+/** Localized competency names */
+const COMPETENCY_I18N: Record<string, { ru: string; en: string }> = {
+  // archivist
+  knowledge_management: { ru: 'Управление знаниями', en: 'Knowledge Management' },
+  experience_distillation: { ru: 'Дистилляция опыта', en: 'Experience Distillation' },
+  cataloging: { ru: 'Каталогизация', en: 'Cataloging' },
+  // analyst
+  pattern_recognition: { ru: 'Распознавание паттернов', en: 'Pattern Recognition' },
+  specification_writing: { ru: 'Написание ТЗ', en: 'Specification Writing' },
+  methodology: { ru: 'Методология', en: 'Methodology' },
+  // webhunter
+  query_formulation: { ru: 'Формулирование запросов', en: 'Query Formulation' },
+  source_assessment: { ru: 'Оценка источников', en: 'Source Assessment' },
+  // promptengineer
+  optimization: { ru: 'Оптимизация', en: 'Optimization' },
+  template_creation: { ru: 'Создание шаблонов', en: 'Template Creation' },
+  diagnosis: { ru: 'Диагностика', en: 'Diagnosis' },
+  // flowregulator
+  architecture: { ru: 'Архитектура', en: 'Architecture' },
+  // toolsmith
+  api_design: { ru: 'Проектирование API', en: 'API Design' },
+  planning: { ru: 'Планирование', en: 'Planning' },
+  // guide
+  onboarding: { ru: 'Онбординг', en: 'Onboarding' },
+  documentation: { ru: 'Документация', en: 'Documentation' },
+  // critic
+  error_detection: { ru: 'Обнаружение ошибок', en: 'Error Detection' },
+  prompt_review: { ru: 'Обзор промпта', en: 'Prompt Review' },
+  bias_analysis: { ru: 'Анализ предвзятостей', en: 'Bias Analysis' },
+  // moderator
+  mediation: { ru: 'Медиация', en: 'Mediation' },
+  facilitation: { ru: 'Фасилитация', en: 'Facilitation' },
+  quality_assessment: { ru: 'Оценка качества', en: 'Quality Assessment' },
+  // advisor
+  strategic_thinking: { ru: 'Стратегическое мышление', en: 'Strategic Thinking' },
+  risk_analysis: { ru: 'Анализ рисков', en: 'Risk Analysis' },
+  // consultant
+  domain_expertise: { ru: 'Предметная экспертиза', en: 'Domain Expertise' },
+  comparative_analysis: { ru: 'Сравнительный анализ', en: 'Comparative Analysis' },
+  practical_guidance: { ru: 'Практическое руководство', en: 'Practical Guidance' },
+  // generic
+  self_awareness: { ru: 'Самоанализ', en: 'Self-Awareness' },
+  teamwork: { ru: 'Командная работа', en: 'Teamwork' },
+};
+
+function getCompetencyLabel(key: string, isRu: boolean): string {
+  const entry = COMPETENCY_I18N[key];
+  if (entry) return isRu ? entry.ru : entry.en;
+  // fallback: capitalize and replace underscores
+  return key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+}
+
 interface InterviewPanelProps {
   role: AgentRole;
   onClose: () => void;
@@ -308,7 +360,7 @@ function StepCard({
         )}>
           {statusIcon}
           <div className="flex-1 min-w-0">
-            <span className="font-medium">{step.competency}</span>
+            <span className="font-medium">{getCompetencyLabel(step.competency, isRu)}</span>
             <span className="text-muted-foreground ml-2">#{index + 1}</span>
           </div>
           {step.elapsed_ms > 0 && (
@@ -372,7 +424,7 @@ function SideBySideCard({
       <CollapsibleTrigger asChild>
         <div className="flex items-center gap-2 p-2 rounded-md cursor-pointer hover:bg-muted/20 transition-colors text-xs">
           <Columns2 className="h-3.5 w-3.5 text-primary" />
-          <span className="font-medium flex-1">{step.competency}</span>
+          <span className="font-medium flex-1">{getCompetencyLabel(step.competency, isRu)}</span>
           <Badge variant="outline" className="text-[10px]">#{index + 1}</Badge>
           {expanded ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
         </div>
