@@ -140,8 +140,10 @@ export function getToolSettingsForModel(modelSettings: SingleModelSettings): Rec
 export function getModelShortName(modelId: string): string {
   const parts = modelId.split('/');
   const name = parts[parts.length - 1];
+  if (name.includes('gemini-3-pro-image')) return 'Gemini 3 Pro Img';
   if (name.includes('gemini-3-flash')) return 'Gemini 3 Flash';
   if (name.includes('gemini-3-pro')) return 'Gemini 3 Pro';
+  if (name.includes('gemini-2.5-flash-lite')) return 'Gemini 2.5 Flash Lite';
   if (name.includes('gemini-2.5-pro')) return 'Gemini 2.5 Pro';
   if (name.includes('gemini-2.5-flash')) return 'Gemini 2.5 Flash';
   if (name.includes('gpt-5-mini')) return 'GPT-5 Mini';
