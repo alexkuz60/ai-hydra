@@ -233,16 +233,21 @@ function ResponseCard({
         content={result.response_text || streamingTexts[result.model_id] || ''}
         isStreaming={result.status === 'generating' && !result.response_text && !!streamingTexts[result.model_id]}
       />
-      {(result.status === 'ready' || result.status === 'judged') && onScore && (
-        <UserScoreWidget resultId={result.id} currentScore={result.user_score} onScore={onScore} isRu={isRu} />
-      )}
-      {(result.status === 'ready' || result.status === 'judged') && onLikertScore && (
-        <UserLikertWidget
-          resultId={result.id}
-          currentValue={(result.metadata as any)?.user_likert ?? null}
-          onRate={onLikertScore}
-          isRu={isRu}
-        />
+      {(result.status === 'ready' || result.status === 'judged') && (onScore || onLikertScore) && (
+        <div className="flex items-center gap-4 flex-wrap pt-2 border-t border-border/40">
+          {onScore && (
+            <UserScoreWidget resultId={result.id} currentScore={result.user_score} onScore={onScore} isRu={isRu} />
+          )}
+          {onLikertScore && (
+            <UserLikertWidget
+              resultId={result.id}
+              currentValue={(result.metadata as any)?.user_likert ?? null}
+              onRate={onLikertScore}
+              isRu={isRu}
+              compact
+            />
+          )}
+        </div>
       )}
       {likertClaims && (
         <div className="pt-2 border-t border-border/30">
