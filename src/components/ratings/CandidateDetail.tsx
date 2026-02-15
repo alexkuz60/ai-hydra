@@ -25,6 +25,8 @@ interface CandidateDetailProps {
   isSelectedForDuel?: boolean;
   duelType?: DuelType;
   contestRole?: string;
+  contestModelCount?: number;
+  duelModelCount?: number;
   onToggleContest?: (modelId: string) => void;
   onToggleDuel?: (modelId: string) => void;
   onDuelTypeChange?: (modelId: string, type: DuelType) => void;
@@ -42,6 +44,8 @@ export function CandidateDetail({
   isSelectedForDuel = false,
   duelType = 'critic',
   contestRole = '',
+  contestModelCount = 0,
+  duelModelCount = 0,
   onToggleContest,
   onToggleDuel,
   onDuelTypeChange,
@@ -167,18 +171,23 @@ export function CandidateDetail({
                         </SelectContent>
                       </Select>
 
-                      <Button
-                        size="sm"
-                        variant={isSelectedForContest ? 'default' : 'outline'}
-                        className="w-full h-8 text-xs"
-                        disabled={!isAvailable}
-                        onClick={() => onToggleContest?.(model.id)}
-                      >
-                        <Crown className="h-3.5 w-3.5 mr-1.5 text-hydra-arbiter" />
-                        {isSelectedForContest
-                          ? (isRu ? 'Убрать с подиума' : 'Remove from podium')
-                          : (isRu ? 'Пригласить на подиум' : 'Invite to podium')}
-                      </Button>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          size="sm"
+                          variant={isSelectedForContest ? 'default' : 'outline'}
+                          className="flex-1 h-8 text-xs"
+                          disabled={!isAvailable}
+                          onClick={() => onToggleContest?.(model.id)}
+                        >
+                          <Crown className="h-3.5 w-3.5 mr-1.5 text-hydra-arbiter" />
+                          {isSelectedForContest
+                            ? (isRu ? 'Убрать с подиума' : 'Remove from podium')
+                            : (isRu ? 'Пригласить на подиум' : 'Invite to podium')}
+                        </Button>
+                        <Badge variant="secondary" className="text-[10px] px-1.5 py-0.5 shrink-0">
+                          {contestModelCount}/8
+                        </Badge>
+                      </div>
 
                       <Separator className="my-1" />
 
@@ -221,28 +230,32 @@ export function CandidateDetail({
                         </p>
                       )}
 
-                      <Button
-                        size="sm"
-                        variant={isSelectedForDuel ? 'default' : 'outline'}
-                        className="w-full h-8 text-xs"
-                        disabled={!isAvailable || isDuelRunning || (!isSelectedForDuel && !pendingDuelType)}
-                        onClick={() => {
-                          if (isSelectedForDuel) {
-                            onToggleDuel?.(model.id);
-                            setPendingDuelType(null);
-                          } else if (pendingDuelType) {
-                            onToggleDuel?.(model.id);
-                            // Set the type after adding
-                            setTimeout(() => onDuelTypeChange?.(model.id, pendingDuelType), 0);
-                            setPendingDuelType(null);
-                          }
-                        }}
-                      >
-                        <Swords className="h-3.5 w-3.5 mr-1.5 text-primary" />
-                        {isSelectedForDuel
-                          ? (isRu ? 'Отменить дуэль' : 'Cancel duel')
-                          : (isRu ? 'Вызвать на дуэль' : 'Challenge to duel')}
-                      </Button>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          size="sm"
+                          variant={isSelectedForDuel ? 'default' : 'outline'}
+                          className="flex-1 h-8 text-xs"
+                          disabled={!isAvailable || isDuelRunning || (!isSelectedForDuel && !pendingDuelType)}
+                          onClick={() => {
+                            if (isSelectedForDuel) {
+                              onToggleDuel?.(model.id);
+                              setPendingDuelType(null);
+                            } else if (pendingDuelType) {
+                              onToggleDuel?.(model.id);
+                              setTimeout(() => onDuelTypeChange?.(model.id, pendingDuelType), 0);
+                              setPendingDuelType(null);
+                            }
+                          }}
+                        >
+                          <Swords className="h-3.5 w-3.5 mr-1.5 text-primary" />
+                          {isSelectedForDuel
+                            ? (isRu ? 'Отменить дуэль' : 'Cancel duel')
+                            : (isRu ? 'Вызвать на дуэль' : 'Challenge to duel')}
+                        </Button>
+                        <Badge variant="secondary" className="text-[10px] px-1.5 py-0.5 shrink-0">
+                          {duelModelCount}/2
+                        </Badge>
+                      </div>
                     </div>
                   </div>
                 </CollapsibleContent>

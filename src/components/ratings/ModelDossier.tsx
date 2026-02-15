@@ -68,6 +68,8 @@ export function ModelDossier({ modelId, contestModels = {}, duelModels = {}, onT
           isSelectedForDuel={modelId in duelModels}
           duelType={(duelModels[modelId] as any) || 'critic'}
           contestRole={contestModels[modelId] || ''}
+          contestModelCount={Object.keys(contestModels).length}
+          duelModelCount={Object.keys(duelModels).length}
           onToggleContest={onToggleContest}
           onToggleDuel={onToggleDuel}
           onDuelTypeChange={onDuelTypeChange}
