@@ -27,7 +27,12 @@ import { ContestArbiterPanel } from './ContestArbiterPanel';
 import { ContestScoresTable } from './ContestScoresTable';
 import { ScoringSchemeComparison } from './ScoringSchemeComparison';
 
-export function BeautyContest() {
+interface BeautyContestProps {
+  selectedWinners: Set<string>;
+  onToggleWinner: (modelId: string) => void;
+}
+
+export function BeautyContest({ selectedWinners, onToggleWinner: handleToggleWinner }: BeautyContestProps) {
   const { language } = useLanguage();
   const { user } = useAuth();
   const { toast } = useToast();
@@ -42,19 +47,10 @@ export function BeautyContest() {
   const [sendingFollowUp, setSendingFollowUp] = useState(false);
   const [activeMainTab, setActiveMainTab] = useState<string>('responses');
   const [promptOpen, setPromptOpen] = useState(false);
-  const [selectedWinners, setSelectedWinners] = useState<Set<string>>(new Set());
   const [finishDialogOpen, setFinishDialogOpen] = useState(false);
   const [savingToTask, setSavingToTask] = useState(false);
   const [roundTransition, setRoundTransition] = useState(false);
   const prevRoundIndexRef = React.useRef<number>(-1);
-
-  const handleToggleWinner = useCallback((modelId: string) => {
-    setSelectedWinners(prev => {
-      const next = new Set(prev);
-      if (next.has(modelId)) next.delete(modelId); else next.add(modelId);
-      return next;
-    });
-  }, []);
 
   const handleMigrateToExpertPanel = useCallback(() => {
     if (selectedWinners.size === 0 || !contest.session) return;

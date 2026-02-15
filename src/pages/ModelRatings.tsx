@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -44,6 +44,14 @@ export default function ModelRatings() {
     const saved = localStorage.getItem('podium-active-section');
     return (saved === 'portfolio' || saved === 'rules' || saved === 'contest' || saved === 'duel' || saved === 'ratings') ? saved : 'ratings';
   });
+  const [contestWinners, setContestWinners] = useState<Set<string>>(new Set());
+  const handleToggleContestWinner = useCallback((modelId: string) => {
+    setContestWinners(prev => {
+      const next = new Set(prev);
+      if (next.has(modelId)) next.delete(modelId); else next.add(modelId);
+      return next;
+    });
+  }, []);
 
   // Persist active section
   useEffect(() => {
@@ -175,7 +183,7 @@ export default function ModelRatings() {
             <div className="h-full" data-guide="podium-content">
               {activeSection === 'portfolio' && <ModelPortfolio />}
               {activeSection === 'rules' && <ContestPodium duelConfig={duelConfig} />}
-              {activeSection === 'contest' && <BeautyContest />}
+              {activeSection === 'contest' && <BeautyContest selectedWinners={contestWinners} onToggleWinner={handleToggleContestWinner} />}
               {activeSection === 'duel' && <DuelArena duelConfig={duelConfig} />}
               {activeSection === 'ratings' && <RatingsContent />}
             </div>
