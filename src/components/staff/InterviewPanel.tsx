@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useInterviewSession, type InterviewSession, type InterviewTestStep } from '@/hooks/useInterviewSession';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -15,13 +15,14 @@ import { cn } from '@/lib/utils';
 import {
   X, Play, Loader2, CheckCircle2, XCircle, Clock,
   ChevronDown, ChevronRight, FileText, Columns2,
-  SquareArrowOutUpRight, RefreshCw, Plus,
+  SquareArrowOutUpRight, RefreshCw, Plus, DollarSign,
 } from 'lucide-react';
 import {
   Tooltip, TooltipContent, TooltipProvider, TooltipTrigger,
 } from '@/components/ui/tooltip';
 import type { AgentRole } from '@/config/roles';
 import { ROLE_CONFIG } from '@/config/roles';
+import { getModelRegistryEntry } from '@/config/modelRegistry';
 
 /** Localized competency names */
 const COMPETENCY_I18N: Record<string, { ru: string; en: string }> = {
@@ -79,8 +80,34 @@ const COMPETENCY_I18N: Record<string, { ru: string; en: string }> = {
 function getCompetencyLabel(key: string, isRu: boolean): string {
   const entry = COMPETENCY_I18N[key];
   if (entry) return isRu ? entry.ru : entry.en;
-  // fallback: capitalize and replace underscores
   return key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+}
+
+/** Parse pricing string like '$0.15' or '≈$0.15' to number (per 1M tokens) */
+function parsePricePerMillion(priceStr: string): number {
+  const cleaned = priceStr.replace(/[≈$,]/g, '').trim();
+  const val = parseFloat(cleaned);
+  return isNaN(val) ? 0 : val;
+}
+
+/** Calculate estimated cost from token count and model pricing */
+function estimateCost(modelId: string, tokenCount: number): { input: number; output: number; total: number } | null {
+  const entry = getModelRegistryEntry(modelId);
+  if (!entry || typeof entry.pricing === 'string') return null;
+  const inputPrice = parsePricePerMillion(entry.pricing.input);
+  const outputPrice = parsePricePerMillion(entry.pricing.output);
+  // Interview tokens are mostly output (model generates), estimate 10% input / 90% output
+  const inputTokens = Math.round(tokenCount * 0.1);
+  const outputTokens = Math.round(tokenCount * 0.9);
+  const inputCost = (inputTokens / 1_000_000) * inputPrice;
+  const outputCost = (outputTokens / 1_000_000) * outputPrice;
+  return { input: inputCost, output: outputCost, total: inputCost + outputCost };
+}
+
+function formatCost(cost: number): string {
+  if (cost < 0.001) return '<$0.001';
+  if (cost < 0.01) return `$${cost.toFixed(4)}`;
+  return `$${cost.toFixed(3)}`;
 }
 
 interface InterviewPanelProps {
@@ -131,6 +158,27 @@ export function InterviewPanel({ role, onClose }: InterviewPanelProps) {
   const completedCount = interview.testing ? liveCompleted : steps.filter(s => s.status === 'completed').length;
   const totalCount = interview.testing && liveTotal > 0 ? liveTotal : (testResults?.total_steps ?? steps.length);
   const progressPct = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+
+  // Cost calculation
+  const totalTokens = useMemo(() => {
+    if (interview.testing && interview.stepStatuses.size > 0) {
+      return Array.from(interview.stepStatuses.values()).reduce((sum, s) => sum + (s.token_count || 0), 0);
+    }
+    return steps.reduce((sum, s) => sum + (s.token_count || 0), 0);
+  }, [interview.testing, interview.stepStatuses, steps]);
+
+  const totalElapsed = useMemo(() => {
+    if (interview.testing && interview.stepStatuses.size > 0) {
+      return Array.from(interview.stepStatuses.values()).reduce((sum, s) => sum + (s.elapsed_ms || 0), 0);
+    }
+    return steps.reduce((sum, s) => sum + (s.elapsed_ms || 0), 0);
+  }, [interview.testing, interview.stepStatuses, steps]);
+
+  const costEstimate = useMemo(() => {
+    const modelId = session?.candidate_model;
+    if (!modelId || totalTokens === 0) return null;
+    return estimateCost(modelId, totalTokens);
+  }, [session?.candidate_model, totalTokens]);
 
   const toggleStep = useCallback((idx: number) => {
     setExpandedSteps(prev => {
@@ -311,7 +359,7 @@ export function InterviewPanel({ role, onClose }: InterviewPanelProps) {
               </span>
             )}
           </div>
-          {(interview.testing || steps.length > 0) && (
+          {(interview.testing || steps.length > 0 || totalTokens > 0) && (
             <div className="mt-2 space-y-1">
               <div className="flex items-center justify-between text-[10px] text-muted-foreground">
                 <span>
@@ -325,15 +373,18 @@ export function InterviewPanel({ role, onClose }: InterviewPanelProps) {
                 <span>{progressPct}%</span>
               </div>
               <Progress value={progressPct} className="h-1.5" />
-              {/* Live step tokens/time during testing */}
-              {interview.testing && interview.stepStatuses.size > 0 && (
-                <div className="flex items-center gap-3 text-[10px] text-muted-foreground mt-1">
-                  <span>
-                    🪙 {Array.from(interview.stepStatuses.values()).reduce((sum, s) => sum + (s.token_count || 0), 0)} tok
-                  </span>
-                  <span>
-                    ⏱ {(Array.from(interview.stepStatuses.values()).reduce((sum, s) => sum + (s.elapsed_ms || 0), 0) / 1000).toFixed(1)}s
-                  </span>
+              {/* Metrics: tokens, time, cost */}
+              {totalTokens > 0 && (
+                <div className="flex items-center gap-3 text-[10px] text-muted-foreground mt-1 flex-wrap">
+                  <span>🪙 {totalTokens.toLocaleString()} tok</span>
+                  {totalElapsed > 0 && (
+                    <span>⏱ {(totalElapsed / 1000).toFixed(1)}s</span>
+                  )}
+                  {costEstimate && (
+                    <span className="text-amber-500 font-medium">
+                      💰 {formatCost(costEstimate.total)}
+                    </span>
+                  )}
                 </div>
               )}
             </div>
@@ -399,12 +450,13 @@ export function InterviewPanel({ role, onClose }: InterviewPanelProps) {
               onToggle={() => toggleStep(idx)}
               statusIcon={getStepStatusIcon(step.status)}
               isRu={isRu}
+              modelId={session?.candidate_model}
             />
           ))}
 
           {/* Side-by-side results view */}
           {viewMode === 'results' && steps.filter(s => s.status === 'completed').map((step, idx) => (
-            <SideBySideCard key={idx} step={step} index={idx} isRu={isRu} />
+            <SideBySideCard key={idx} step={step} index={idx} isRu={isRu} modelId={session?.candidate_model} />
           ))}
 
           {/* Session history */}
@@ -446,7 +498,7 @@ export function InterviewPanel({ role, onClose }: InterviewPanelProps) {
 // ── Step Card (progress view) ──
 
 function StepCard({
-  step, index, expanded, onToggle, statusIcon, isRu,
+  step, index, expanded, onToggle, statusIcon, isRu, modelId,
 }: {
   step: InterviewTestStep;
   index: number;
@@ -454,7 +506,9 @@ function StepCard({
   onToggle: () => void;
   statusIcon: React.ReactNode;
   isRu: boolean;
+  modelId?: string;
 }) {
+  const stepCost = modelId && step.token_count > 0 ? estimateCost(modelId, step.token_count) : null;
   return (
     <Collapsible open={expanded} onOpenChange={onToggle}>
       <CollapsibleTrigger asChild>
@@ -475,6 +529,11 @@ function StepCard({
           {step.token_count > 0 && (
             <span className="text-[10px] text-muted-foreground">
               {step.token_count} tok
+            </span>
+          )}
+          {stepCost && (
+            <span className="text-[10px] text-amber-500 font-medium">
+              {formatCost(stepCost.total)}
             </span>
           )}
           {expanded ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
@@ -513,15 +572,17 @@ function StepCard({
 // ── Side-by-Side Card (results comparison view) ──
 
 function SideBySideCard({
-  step, index, isRu,
+  step, index, isRu, modelId,
 }: {
   step: InterviewTestStep;
   index: number;
   isRu: boolean;
+  modelId?: string;
 }) {
   const [expanded, setExpanded] = useState(true);
   const hasBaseline = !!step.baseline?.current_value;
   const hasCandidate = !!step.candidate_output?.proposed_value;
+  const stepCost = modelId && step.token_count > 0 ? estimateCost(modelId, step.token_count) : null;
 
   return (
     <Collapsible open={expanded} onOpenChange={setExpanded}>
@@ -569,6 +630,7 @@ function SideBySideCard({
           <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
             {step.elapsed_ms > 0 && <span>⏱ {(step.elapsed_ms / 1000).toFixed(1)}s</span>}
             {step.token_count > 0 && <span>🪙 {step.token_count} tok</span>}
+            {stepCost && <span className="text-amber-500 font-medium">💰 {formatCost(stepCost.total)}</span>}
           </div>
         </div>
       </CollapsibleContent>
