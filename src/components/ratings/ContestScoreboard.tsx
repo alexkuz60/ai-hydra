@@ -23,14 +23,17 @@ interface ContestScoreboardProps {
   onNewContest?: () => void;
   onFinishContest?: () => void;
   arbitration?: { userWeight?: number; criteriaWeights?: Record<string, number> };
+  eliminatedModels?: string[];
 }
 
 export function ContestScoreboard({
   results, currentRound, totalRounds, completedRounds = 0,
   status, sessionName, arbiterCount, isRu, onNewContest, onFinishContest,
-  arbitration,
+  arbitration, eliminatedModels = [],
 }: ContestScoreboardProps) {
   const modelIds = [...new Set(results.map(r => r.model_id))];
+  const activeCount = modelIds.filter(id => !eliminatedModels.includes(id)).length;
+  const eliminatedCount = modelIds.length - activeCount;
   const { phase, activeModelId } = detectPhase(results, status);
   const [msgIndex, setMsgIndex] = useState(0);
 
@@ -93,7 +96,10 @@ export function ContestScoreboard({
               </div>
               <Badge variant="outline" className="text-[10px] gap-1">
                 <Play className="h-2.5 w-2.5" />
-                {modelIds.length}
+                {activeCount}
+                {eliminatedCount > 0 && (
+                  <span className="text-destructive/70">/ -{eliminatedCount}</span>
+                )}
               </Badge>
               {arbiterCount > 0 && (
                 <Badge variant="outline" className="text-[10px] gap-1 border-[hsl(var(--hydra-expert))]/40">
@@ -145,6 +151,7 @@ export function ContestScoreboard({
               const ProviderLogo = entry?.provider ? PROVIDER_LOGOS[entry.provider] : undefined;
               const color = entry?.provider ? PROVIDER_COLORS[entry.provider] : '';
               const isActive = modelId === activeModelId;
+              const isEliminated = eliminatedModels.includes(modelId);
               const accent = entry?.provider ? PROVIDER_ACCENT[entry.provider] : undefined;
 
               return (
@@ -152,6 +159,7 @@ export function ContestScoreboard({
                   key={modelId}
                   className={cn(
                     "flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] border transition-all",
+                    isEliminated && "opacity-40 line-through",
                     isActive ? "font-semibold ring-1" : "bg-background/50 border-border/30"
                   )}
                   style={isActive ? {
