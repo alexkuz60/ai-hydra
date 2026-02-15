@@ -119,8 +119,17 @@ export function InterviewPanel({ role, onClose }: InterviewPanelProps) {
   const testResults = session?.test_results;
   const steps = testResults?.steps ?? [];
 
-  const completedCount = steps.filter(s => s.status === 'completed').length;
-  const totalCount = testResults?.total_steps ?? steps.length;
+  // Use live SSE data when testing, fallback to saved test_results
+  const liveTotal = interview.totalSteps;
+  const liveCompleted = Array.from(interview.stepStatuses.values()).filter(
+    s => s.status === 'completed' || s.status === 'failed'
+  ).length;
+  const liveRunning = Array.from(interview.stepStatuses.values()).filter(
+    s => s.status === 'running'
+  ).length;
+
+  const completedCount = interview.testing ? liveCompleted : steps.filter(s => s.status === 'completed').length;
+  const totalCount = interview.testing && liveTotal > 0 ? liveTotal : (testResults?.total_steps ?? steps.length);
   const progressPct = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
 
   const toggleStep = useCallback((idx: number) => {
@@ -305,10 +314,28 @@ export function InterviewPanel({ role, onClose }: InterviewPanelProps) {
           {(interview.testing || steps.length > 0) && (
             <div className="mt-2 space-y-1">
               <div className="flex items-center justify-between text-[10px] text-muted-foreground">
-                <span>{completedCount}/{totalCount} {isRu ? 'шагов' : 'steps'}</span>
+                <span>
+                  {completedCount}/{totalCount} {isRu ? 'шагов' : 'steps'}
+                  {interview.testing && liveRunning > 0 && (
+                    <span className="text-primary ml-1">
+                      ({liveRunning} {isRu ? 'выполняется' : 'running'})
+                    </span>
+                  )}
+                </span>
                 <span>{progressPct}%</span>
               </div>
               <Progress value={progressPct} className="h-1.5" />
+              {/* Live step tokens/time during testing */}
+              {interview.testing && interview.stepStatuses.size > 0 && (
+                <div className="flex items-center gap-3 text-[10px] text-muted-foreground mt-1">
+                  <span>
+                    🪙 {Array.from(interview.stepStatuses.values()).reduce((sum, s) => sum + (s.token_count || 0), 0)} tok
+                  </span>
+                  <span>
+                    ⏱ {(Array.from(interview.stepStatuses.values()).reduce((sum, s) => sum + (s.elapsed_ms || 0), 0) / 1000).toFixed(1)}s
+                  </span>
+                </div>
+              )}
             </div>
           )}
         </div>
