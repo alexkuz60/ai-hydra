@@ -412,23 +412,25 @@ export function BeautyContest() {
           </TabsContent>
 
           <TabsContent value="scores" className="flex-1 min-h-0 overflow-auto mt-0 p-3 space-y-3">
-            <ContestScoresTable
-              results={contest.results}
-              rounds={contest.rounds}
-              isRu={isRu}
-              selectedWinners={selectedWinners}
-              onToggleWinner={handleToggleWinner}
-              arbitration={contest.session?.config?.arbitration as any}
-              eliminatedModels={contest.getEliminatedModels()}
-              onEliminateModel={async (modelId) => {
-                await contest.eliminateModel(modelId);
-                toast({ description: isRu ? 'Модель отсеяна из конкурса' : 'Model eliminated from contest' });
-              }}
-              onRestoreModel={async (modelId) => {
-                await contest.restoreModel(modelId);
-                toast({ description: isRu ? 'Модель возвращена в конкурс' : 'Model restored to contest' });
-              }}
-            />
+             <ContestScoresTable
+               results={contest.results}
+               rounds={contest.rounds}
+               isRu={isRu}
+               selectedWinners={selectedWinners}
+               onToggleWinner={handleToggleWinner}
+               arbitration={contest.session?.config?.arbitration as any}
+               eliminatedModels={contest.getEliminatedModels()}
+               eliminationRule={(contest.session?.config?.rules as any)?.elimination}
+               eliminationThreshold={(contest.session?.config as any)?.rules?.eliminationThreshold ?? 3}
+               onEliminateModel={async (modelId) => {
+                 await contest.eliminateModel(modelId);
+                 toast({ description: isRu ? 'Модель отсеяна из конкурса' : 'Model eliminated from contest' });
+               }}
+               onRestoreModel={async (modelId) => {
+                 await contest.restoreModel(modelId);
+                 toast({ description: isRu ? 'Модель возвращена в конкурс' : 'Model restored to contest' });
+               }}
+             />
             <ScoringSchemeComparison
               results={contest.results}
               userWeight={(contest.session?.config?.arbitration as any)?.userWeight}

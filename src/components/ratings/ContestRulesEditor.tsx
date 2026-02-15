@@ -276,12 +276,12 @@ export function ContestRulesEditor() {
                   <Input
                     type="number"
                     min={1}
-                    max={9}
+                    max={7}
                     step={0.5}
                     value={(localRules as any).eliminationThreshold ?? 3}
                     onChange={e => {
                       const val = parseFloat(e.target.value);
-                      if (!isNaN(val) && val >= 0 && val <= 10) {
+                      if (!isNaN(val) && val >= 1 && val <= 7) {
                         const updated = { ...localRules, eliminationThreshold: val };
                         setLocalRules(updated);
                         updateRules(updated);
