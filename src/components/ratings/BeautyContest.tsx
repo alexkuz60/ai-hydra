@@ -1,11 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
 import { useContestSession } from '@/hooks/useContestSession';
 import { useContestExecution } from '@/hooks/useContestExecution';
+import { useContestActions } from '@/hooks/useContestActions';
 import { Crown, Play, Loader2, ChevronDown, ChevronUp, Send, BarChart3, Archive, MessageSquare, Scale, FileText, Users, ClipboardList } from 'lucide-react';
-// Note: All icons above are actively used in this component
 import { useNavigate } from 'react-router-dom';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Button } from '@/components/ui/button';
@@ -36,6 +35,13 @@ export function BeautyContest() {
   const isRu = language === 'ru';
   const contest = useContestSession();
   const execution = useContestExecution();
+  const { handleMigrateToExpertPanel: migrateToExpertPanel, handleSaveToTask, savingToTask } = useContestActions({
+    userId: user?.id,
+    session: contest.session,
+    results: contest.results,
+    rounds: contest.rounds,
+    isRu,
+  });
 
   const [followUpText, setFollowUpText] = useState('');
   const [initialLoad, setInitialLoad] = useState(true);
@@ -45,7 +51,6 @@ export function BeautyContest() {
   const [promptOpen, setPromptOpen] = useState(false);
   const [selectedWinners, setSelectedWinners] = useState<Set<string>>(new Set());
   const [finishDialogOpen, setFinishDialogOpen] = useState(false);
-  const [savingToTask, setSavingToTask] = useState(false);
 
   const handleToggleWinner = useCallback((modelId: string) => {
     setSelectedWinners(prev => {
@@ -56,164 +61,8 @@ export function BeautyContest() {
   }, []);
 
   const handleMigrateToExpertPanel = useCallback(() => {
-    if (selectedWinners.size === 0 || !contest.session) return;
-
-    const winnerModels = [...selectedWinners];
-    const winnerResults = contest.results.filter(r => winnerModels.includes(r.model_id));
-    const taskPrompt = contest.rounds[0]?.prompt || '';
-
-    const migrationData = {
-      contestName: contest.session.name,
-      taskPrompt,
-      winners: winnerModels.map(modelId => {
-        const entry = getModelRegistryEntry(modelId);
-        const modelResults = winnerResults.filter(r => r.model_id === modelId);
-        const userScores = modelResults.filter(r => r.user_score != null).map(r => r.user_score!);
-        const arbiterScores = modelResults.filter(r => r.arbiter_score != null).map(r => r.arbiter_score!);
-        const avgUser = userScores.length ? userScores.reduce((a, b) => a + b, 0) / userScores.length : null;
-        const avgArbiter = arbiterScores.length ? arbiterScores.reduce((a, b) => a + b, 0) / arbiterScores.length : null;
-        const bestResponse = modelResults.find(r => r.response_text)?.response_text || '';
-        return {
-          modelId,
-          displayName: entry?.displayName || modelId.split('/').pop() || modelId,
-          provider: entry?.provider || null,
-          avgUserScore: avgUser,
-          avgArbiterScore: avgArbiter,
-          totalScore: (avgUser ?? 0) + (avgArbiter ?? 0),
-          bestResponse,
-        };
-      }).sort((a, b) => b.totalScore - a.totalScore),
-    };
-
-    sessionStorage.setItem('contest-migration', JSON.stringify(migrationData));
-    navigate('/expert-panel');
-    toast({ description: `${selectedWinners.size} ${getRatingsText('winnersToExpertPanel', isRu)}` });
-  }, [selectedWinners, contest.session, contest.results, contest.rounds, navigate, isRu, toast]);
-
-  const handleSaveToTask = useCallback(async () => {
-    if (!user || !contest.session) return;
-    const taskId = contest.session.config?.taskId;
-    if (!taskId) {
-      toast({ variant: 'destructive', description: isRu ? 'Задача не выбрана в конфигурации конкурса' : 'No task selected in contest config' });
-      return;
-    }
-    // Include ALL results with response text, not just scored ones (follow-up answers may lack scores)
-    const exportableResults = contest.results.filter(r => r.response_text);
-    if (exportableResults.length === 0) {
-      toast({ variant: 'destructive', description: getRatingsText('noScoredResponses', isRu) });
-      return;
-    }
-    setSavingToTask(true);
-    try {
-      // Build messages to insert into the existing task
-      const messages: Array<{
-        session_id: string; user_id: string; role: string;
-        content: string; model_name: string | null; metadata: Record<string, unknown>;
-      }> = [];
-
-      // Group results by round
-      const roundOrder = contest.rounds.map(r => r.id);
-      const resultsByRound = new Map<string, typeof exportableResults>();
-      for (const result of exportableResults) {
-        const arr = resultsByRound.get(result.round_id) || [];
-        arr.push(result);
-        resultsByRound.set(result.round_id, arr);
-      }
-
-      // Determine initial round count from config to identify follow-up rounds
-      const initialRoundCount = contest.session.config?.rules?.roundCount ?? contest.rounds.length;
-
-      // For each round in order, insert prompt as user message, then responses
-      for (const round of contest.rounds) {
-        const roundResults = resultsByRound.get(round.id);
-        if (!roundResults || roundResults.length === 0) continue;
-
-        const isFollowUp = round.round_index >= initialRoundCount;
-
-        // Insert round prompt as supervisor (user) message
-        if (round.prompt) {
-          messages.push({
-            session_id: taskId,
-            user_id: user.id,
-            role: 'user',
-            content: round.prompt,
-            model_name: null,
-            metadata: {
-              source: 'contest',
-              contest_session_id: contest.session.id,
-              round_index: round.round_index,
-              ...(isFollowUp && { is_follow_up: true }),
-            },
-          });
-        }
-
-        // Insert responses sorted by model, each followed by arbiter summary
-        const sorted = [...roundResults].sort((a, b) => a.model_id.localeCompare(b.model_id));
-        for (const result of sorted) {
-          messages.push({
-            session_id: taskId,
-            user_id: user.id,
-            role: 'assistant',
-            content: result.response_text!,
-            model_name: result.model_id,
-            metadata: {
-              source: 'contest',
-              contest_session_id: contest.session.id,
-              round_index: round.round_index,
-              user_score: result.user_score,
-              arbiter_score: result.arbiter_score,
-              criteria_scores: result.criteria_scores,
-              response_time_ms: result.response_time_ms,
-              token_count: result.token_count,
-              rating: result.user_score != null ? result.user_score : 0,
-              ...(isFollowUp && { is_follow_up: true }),
-            },
-          });
-
-          // Insert arbiter evaluation as arbiter message right after the response
-          if (result.arbiter_score != null || result.arbiter_comment) {
-            const criteriaLines = result.criteria_scores
-              ? Object.entries(result.criteria_scores as Record<string, number>)
-                  .map(([k, v]) => `- **${k}**: ${v}/10`)
-                  .join('\n')
-              : '';
-            const arbiterContent = [
-              result.arbiter_comment || '',
-              criteriaLines ? `\n${criteriaLines}` : '',
-              result.arbiter_score != null ? `\n**⚖️ ${result.arbiter_score}/10**` : '',
-            ].filter(Boolean).join('\n');
-
-            messages.push({
-              session_id: taskId,
-              user_id: user.id,
-              role: 'arbiter',
-              content: arbiterContent,
-              model_name: result.arbiter_model || null,
-              metadata: {
-                source: 'contest',
-                contest_session_id: contest.session.id,
-                round_index: round.round_index,
-                arbiter_score: result.arbiter_score,
-                criteria_scores: result.criteria_scores,
-                evaluated_model: result.model_id,
-                ...(isFollowUp && { is_follow_up: true }),
-              },
-            });
-          }
-        }
-      }
-
-      const { error: msgErr } = await supabase.from('messages').insert(messages as any);
-      if (msgErr) throw msgErr;
-
-      toast({ description: getRatingsText('savedToTask', isRu) });
-      navigate('/tasks');
-    } catch (err: any) {
-      toast({ variant: 'destructive', description: err.message });
-    } finally {
-      setSavingToTask(false);
-    }
-  }, [user, contest.session, contest.results, contest.rounds, isRu, toast, navigate]);
+    migrateToExpertPanel(selectedWinners);
+  }, [migrateToExpertPanel, selectedWinners]);
 
   useEffect(() => {
     if (user && initialLoad) {
