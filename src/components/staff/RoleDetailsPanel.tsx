@@ -1,4 +1,5 @@
 import React, { forwardRef } from 'react';
+import { ClipboardCheck } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { Badge } from '@/components/ui/badge';
@@ -19,11 +20,12 @@ import { RoleSettingsSection } from './RoleSettingsSection';
 interface RoleDetailsPanelProps {
   selectedRole: AgentRole | null;
   onHasUnsavedChanges?: (hasChanges: boolean) => void;
+  onOpenInterview?: (role: AgentRole) => void;
 }
 
 const RoleDetailsPanel = forwardRef<HTMLDivElement, RoleDetailsPanelProps>(
-  ({ selectedRole, onHasUnsavedChanges }, ref) => {
-    const { t } = useLanguage();
+  ({ selectedRole, onHasUnsavedChanges, onOpenInterview }, ref) => {
+    const { t, language } = useLanguage();
     const { user } = useAuth();
     const { behavior, isLoading: isLoadingBehavior, isSaving, saveRequiresApproval } = useRoleBehavior(selectedRole);
     const promptEditor = useRolePromptEditor(selectedRole, user?.id);
@@ -54,6 +56,23 @@ const RoleDetailsPanel = forwardRef<HTMLDivElement, RoleDetailsPanelProps>(
                 <h2 className={cn("text-xl font-semibold", config.color)}>{t(config.label)}</h2>
                 <code className="text-xs text-muted-foreground font-mono">{selectedRole}</code>
               </div>
+              {onOpenInterview && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        className="p-2 rounded-lg hover:bg-muted/50 transition-colors"
+                        onClick={() => onOpenInterview(selectedRole)}
+                      >
+                        <ClipboardCheck className="h-5 w-5 text-muted-foreground hover:text-primary transition-colors" />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>{language === 'ru' ? 'Собеседование' : 'Interview'}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
               {config.isTechnicalStaff && (
                 <TooltipProvider>
                   <Tooltip>

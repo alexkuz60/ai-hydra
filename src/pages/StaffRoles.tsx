@@ -9,7 +9,7 @@ import {
 } from '@/components/ui/resizable';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Wrench, Users, Settings, ChevronDown, ChevronRight, Sparkles, Loader2, Cpu } from 'lucide-react';
+import { Wrench, Users, Settings, ChevronDown, ChevronRight, Sparkles, Loader2, Cpu, ClipboardCheck } from 'lucide-react';
 import { CloudSyncIndicator } from '@/components/ui/CloudSyncIndicator';
 import { useCloudSyncStatus } from '@/hooks/useCloudSettings';
 import { ROLE_CONFIG, AGENT_ROLES, type AgentRole } from '@/config/roles';
@@ -17,6 +17,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import RoleDetailsPanel from '@/components/staff/RoleDetailsPanel';
+import { InterviewPanel } from '@/components/staff/InterviewPanel';
 import { useUnsavedChanges } from '@/hooks/useUnsavedChanges';
 import { UnsavedChangesDialog } from '@/components/ui/unsaved-changes-dialog';
 import { useNavigatorResize } from '@/hooks/useNavigatorResize';
@@ -32,9 +33,42 @@ const StaffRoles = () => {
   const [expertsExpanded, setExpertsExpanded] = useState(true);
   const [technicalExpanded, setTechnicalExpanded] = useState(true);
   const [isBulkSeeding, setIsBulkSeeding] = useState(false);
+  const [interviewRole, setInterviewRole] = useState<AgentRole | null>(() => {
+    try {
+      const stored = localStorage.getItem('hydra-interview-panel-role');
+      return stored ? (stored as AgentRole) : null;
+    } catch { return null; }
+  });
+
+  const [interviewPanelSize, setInterviewPanelSize] = useState<number>(() => {
+    try {
+      const stored = localStorage.getItem('hydra-interview-panel-size');
+      return stored ? parseFloat(stored) : 30;
+    } catch { return 30; }
+  });
+
+  // Persist interview panel state
+  React.useEffect(() => {
+    try {
+      if (interviewRole) localStorage.setItem('hydra-interview-panel-role', interviewRole);
+      else localStorage.removeItem('hydra-interview-panel-role');
+    } catch { /* ignore */ }
+  }, [interviewRole]);
+
+  React.useEffect(() => {
+    try { localStorage.setItem('hydra-interview-panel-size', String(interviewPanelSize)); } catch { /* ignore */ }
+  }, [interviewPanelSize]);
 
   const unsavedChanges = useUnsavedChanges();
   const nav = useNavigatorResize({ storageKey: 'staff-roles', defaultMaxSize: 35 });
+
+  const handleOpenInterview = useCallback((role: AgentRole) => {
+    setInterviewRole(role);
+  }, []);
+
+  const handleCloseInterview = useCallback(() => {
+    setInterviewRole(null);
+  }, []);
 
   // Группируем роли на экспертов и технический персонал
   const { expertRoles, technicalRoles } = useMemo(() => {
@@ -275,14 +309,36 @@ const StaffRoles = () => {
 
           <ResizableHandle withHandle />
 
-          <ResizablePanel defaultSize={100 - nav.panelSize} minSize={50} maxSize={96}>
+          <ResizablePanel
+            defaultSize={interviewRole ? (100 - nav.panelSize - interviewPanelSize) : (100 - nav.panelSize)}
+            minSize={30}
+            maxSize={96}
+          >
             <div className="h-full border-l border-border bg-card" data-guide="role-details">
               <RoleDetailsPanel
                 selectedRole={selectedRole}
                 onHasUnsavedChanges={handleHasUnsavedChanges}
+                onOpenInterview={handleOpenInterview}
               />
             </div>
           </ResizablePanel>
+
+          {/* Interview Panel (right slide-in) */}
+          {interviewRole && (
+            <>
+              <ResizableHandle withHandle />
+              <ResizablePanel
+                defaultSize={interviewPanelSize}
+                minSize={15}
+                maxSize={50}
+                onResize={setInterviewPanelSize}
+              >
+                <div className="h-full border-l border-border">
+                  <InterviewPanel role={interviewRole} onClose={handleCloseInterview} />
+                </div>
+              </ResizablePanel>
+            </>
+          )}
         </ResizablePanelGroup>
 
         <UnsavedChangesDialog
