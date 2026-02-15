@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Crown, Play, Loader2, CheckCircle2, AlertCircle, Trophy, Scale, Square } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -31,8 +31,9 @@ export function ContestScoreboard({
   status, sessionName, arbiterCount, isRu, onNewContest, onFinishContest,
   arbitration, eliminatedModels = [],
 }: ContestScoreboardProps) {
-  const modelIds = [...new Set(results.map(r => r.model_id))];
-  const activeCount = modelIds.filter(id => !eliminatedModels.includes(id)).length;
+  const modelIds = useMemo(() => [...new Set(results.map(r => r.model_id))], [results]);
+  const eliminatedSet = useMemo(() => new Set(eliminatedModels), [eliminatedModels]);
+  const activeCount = useMemo(() => modelIds.filter(id => !eliminatedSet.has(id)).length, [modelIds, eliminatedSet]);
   const eliminatedCount = modelIds.length - activeCount;
   const { phase, activeModelId } = detectPhase(results, status);
   const [msgIndex, setMsgIndex] = useState(0);
@@ -151,7 +152,7 @@ export function ContestScoreboard({
               const ProviderLogo = entry?.provider ? PROVIDER_LOGOS[entry.provider] : undefined;
               const color = entry?.provider ? PROVIDER_COLORS[entry.provider] : '';
               const isActive = modelId === activeModelId;
-              const isEliminated = eliminatedModels.includes(modelId);
+              const isEliminated = eliminatedSet.has(modelId);
               const accent = entry?.provider ? PROVIDER_ACCENT[entry.provider] : undefined;
 
               return (

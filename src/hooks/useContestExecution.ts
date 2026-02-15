@@ -28,6 +28,10 @@ export function useContestExecution() {
   const [state, setState] = useState<ExecutionState>({ running: false, streamingTexts: {}, arbiterRunning: false });
   const abortRef = useRef<AbortController | null>(null);
 
+  // Cached env values (stable across renders)
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+  const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+
   /** Call the contest-arbiter edge function to evaluate all responses */
   const runArbiterEvaluation = useCallback(async (
     session: ContestSession,
@@ -44,8 +48,6 @@ export function useContestExecution() {
     setState(prev => ({ ...prev, arbiterRunning: true }));
 
     try {
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
       const { data: { session: authSession } } = await supabase.auth.getSession();
       const authToken = authSession?.access_token;
 
@@ -227,8 +229,6 @@ export function useContestExecution() {
       await updateResult(result.id, { status: 'generating' } as any);
 
       try {
-        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-        const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
         const { data: { session: authSession } } = await supabase.auth.getSession();
         const authToken = authSession?.access_token;
         const conversationHistory = buildHistory(modelId);
