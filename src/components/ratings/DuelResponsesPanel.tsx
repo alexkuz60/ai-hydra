@@ -364,7 +364,7 @@ function DuelResponseCard({
          </div>
        )}
       {/* User score + Likert inline row */}
-      {(canScore || ((result.status === 'ready' || result.status === 'judged') && onLikertScore)) && (
+      {result && (canScore || ((result.status === 'ready' || result.status === 'judged') && onLikertScore)) && (
         <div className="flex items-center gap-4 flex-wrap pt-2 border-t border-border/40">
           {canScore && (
             <UserScoreWidget resultId={result.id} currentScore={result.user_score} onScore={onScore!} isRu={isRu} isExtraRound={isExtraRound} />
