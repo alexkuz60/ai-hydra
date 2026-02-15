@@ -87,6 +87,7 @@ export function ContestScoresTable({ results, rounds, isRu, selectedWinners, onT
   const schemeLabel = isRu ? SCHEME_LABELS[scheme].ru : SCHEME_LABELS[scheme].en;
 
   return (
+    <TooltipProvider>
     <div className="rounded-lg border border-border/40 overflow-hidden">
       <div className="px-3 py-2 border-b border-border/30 flex items-center gap-2">
         <BarChart3 className="h-3.5 w-3.5 text-muted-foreground" />
@@ -101,21 +102,19 @@ export function ContestScoresTable({ results, rounds, isRu, selectedWinners, onT
           </Badge>
         )}
       </div>
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto overflow-y-visible">
         <Table>
           <TableHeader>
             <TableRow className="text-[11px]">
               <TableHead className="w-8">
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Crown className="h-3 w-3 text-primary mx-auto cursor-help" />
-                    </TooltipTrigger>
-                    <TooltipContent side="bottom" className="text-[10px]">
-                      {isRu ? 'Выбрать победителей для отправки в Панель экспертов' : 'Select winners to send to Expert Panel'}
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Crown className="h-3 w-3 text-primary mx-auto cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" className="text-[10px]">
+                    {isRu ? 'Выбрать победителей для отправки в Панель экспертов' : 'Select winners to send to Expert Panel'}
+                  </TooltipContent>
+                </Tooltip>
               </TableHead>
               <TableHead className="w-8">#</TableHead>
               <TableHead>{isRu ? 'Модель' : 'Model'}</TableHead>
@@ -190,35 +189,33 @@ export function ContestScoresTable({ results, rounds, isRu, selectedWinners, onT
                         </Badge>
                       )}
                       {isCandidateForElimination && (
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <button
-                                className="inline-flex items-center shrink-0"
-                                onClick={e => {
-                                  e.stopPropagation();
-                                  if (onEliminateModel && activeModelCount > 2) {
-                                    setConfirmEliminate(row.modelId);
-                                  }
-                                }}
-                                disabled={!onEliminateModel || activeModelCount <= 2}
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <button
+                              className="inline-flex items-center shrink-0"
+                              onClick={e => {
+                                e.stopPropagation();
+                                if (onEliminateModel && activeModelCount > 2) {
+                                  setConfirmEliminate(row.modelId);
+                                }
+                              }}
+                              disabled={!onEliminateModel || activeModelCount <= 2}
+                            >
+                              <Badge
+                                variant="outline"
+                                className="text-[9px] px-1.5 py-0 h-4 gap-0.5 animate-pulse border-destructive/50 text-destructive cursor-pointer hover:bg-destructive/10 transition-colors"
                               >
-                                <Badge
-                                  variant="outline"
-                                  className="text-[9px] px-1.5 py-0 h-4 gap-0.5 animate-pulse border-destructive/50 text-destructive cursor-pointer hover:bg-destructive/10 transition-colors"
-                                >
-                                  <AlertTriangle className="h-2.5 w-2.5" />
-                                  {isRu ? 'снять?' : 'drop?'}
-                                </Badge>
-                              </button>
-                            </TooltipTrigger>
-                            <TooltipContent side="top" className="text-[10px]">
-                              {isRu
-                                 ? `Средний балл ${avgScore.toFixed(1)} ниже порога ${eliminationThreshold}. Нажмите, чтобы снять.`
-                                 : `Avg score ${avgScore.toFixed(1)} below threshold ${eliminationThreshold}. Click to eliminate.`}
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
+                                <AlertTriangle className="h-2.5 w-2.5" />
+                                {isRu ? 'снять?' : 'drop?'}
+                              </Badge>
+                            </button>
+                          </TooltipTrigger>
+                          <TooltipContent side="top" className="text-[10px]">
+                            {isRu
+                              ? `Средний балл ${avgScore.toFixed(1)} ниже порога ${eliminationThreshold}. Нажмите, чтобы снять.`
+                              : `Avg score ${avgScore.toFixed(1)} below threshold ${eliminationThreshold}. Click to eliminate.`}
+                          </TooltipContent>
+                        </Tooltip>
                       )}
                     </div>
                   </TableCell>
@@ -248,7 +245,6 @@ export function ContestScoresTable({ results, rounds, isRu, selectedWinners, onT
                   <TableCell className="text-center font-semibold">{formatFinal(row)}</TableCell>
                   {onEliminateModel && (
                     <TableCell className="text-center" onClick={e => e.stopPropagation()}>
-                      <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger asChild>
                             {isEliminated ? (
@@ -258,7 +254,7 @@ export function ContestScoresTable({ results, rounds, isRu, selectedWinners, onT
                                 className="h-6 w-6 p-0"
                                 onClick={() => onRestoreModel?.(row.modelId)}
                               >
-                                <UserPlus className="h-3 w-3 text-green-500" />
+                                <UserPlus className="h-3 w-3 text-[hsl(var(--hydra-success))]" />
                               </Button>
                             ) : (
                               <Button
@@ -281,7 +277,6 @@ export function ContestScoresTable({ results, rounds, isRu, selectedWinners, onT
                             }
                           </TooltipContent>
                         </Tooltip>
-                      </TooltipProvider>
                     </TableCell>
                   )}
                 </TableRow>
@@ -356,5 +351,6 @@ export function ContestScoresTable({ results, rounds, isRu, selectedWinners, onT
         </AlertDialogContent>
       </AlertDialog>
     </div>
+    </TooltipProvider>
   );
 }
