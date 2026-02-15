@@ -138,8 +138,29 @@ export function ModelPortfolio() {
   const handleToggleContest = (id: string) => {
     setContestModels(prev => {
       const next = { ...prev };
-      if (id in next) delete next[id];
-      else next[id] = '';
+      if (id in next) {
+        if (Object.keys(next).length <= 3) {
+          toast({
+            variant: 'destructive',
+            description: isRu
+              ? 'Минимум 3 участника конкурса для корректного пьедестала.'
+              : 'Minimum 3 contest participants for a valid podium.',
+          });
+          return prev;
+        }
+        delete next[id];
+      } else {
+        if (Object.keys(next).length >= 8) {
+          toast({
+            variant: 'destructive',
+            description: isRu
+              ? 'Максимум 8 участников конкурса.'
+              : 'Maximum 8 contest participants.',
+          });
+          return prev;
+        }
+        next[id] = '';
+      }
       return next;
     });
   };

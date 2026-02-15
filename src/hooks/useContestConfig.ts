@@ -95,7 +95,8 @@ export interface ValidationError {
 
 export const VALIDATION_MESSAGES: Record<string, { ru: string; en: string }> = {
   'taskRequired': { ru: 'Выберите задачу', en: 'Task is required' },
-  'participantsRequired': { ru: 'Добавьте хотя бы одного участника', en: 'At least one participant is required' },
+  'participantsMin': { ru: 'Нужно минимум 3 участника для пьедестала', en: 'At least 3 participants required for podium' },
+  'participantsMax': { ru: 'Максимум 8 участников конкурса', en: 'Maximum 8 contest participants' },
   'promptRequired': { ru: 'Напишите промпт для первого тура', en: 'Round prompt is required' },
   'pipelineRequired': { ru: 'Выберите шаблон пайплайна', en: 'Pipeline is required' },
 };
@@ -226,8 +227,11 @@ export function useContestConfig() {
     if (!config.taskId || !config.taskTitle) {
       errors.push({ field: 'taskId', messageKey: 'taskRequired' });
     }
-    if (Object.keys(config.models).length === 0) {
-      errors.push({ field: 'models', messageKey: 'participantsRequired' });
+    const mc = Object.keys(config.models).length;
+    if (mc < 3) {
+      errors.push({ field: 'models', messageKey: 'participantsMin' });
+    } else if (mc > 8) {
+      errors.push({ field: 'models', messageKey: 'participantsMax' });
     }
     if (!config.rules?.rounds?.[0]?.prompt || !config.rules.rounds[0].prompt.trim()) {
       errors.push({ field: 'prompt', messageKey: 'promptRequired' });
