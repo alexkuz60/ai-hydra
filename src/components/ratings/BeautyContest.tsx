@@ -246,6 +246,9 @@ export function BeautyContest() {
 
     // Create results for the next round if they don't exist yet
     const nextRoundResults = contest.results.filter(r => r.round_id === nextRound.id);
+    const roundLabel = `${isRu ? 'Тур' : 'Round'} ${nextRound.round_index + 1}`;
+    toast({ description: isRu ? `⏭ Автопереход: ${roundLabel} начинается…` : `⏭ Auto-advance: ${roundLabel} starting…` });
+
     if (nextRoundResults.length > 0) {
       // Results already exist, execute
       execution.executeRound(
