@@ -363,19 +363,23 @@ function DuelResponseCard({
            <span className="text-muted-foreground italic">{executing ? '...' : '—'}</span>
          </div>
        )}
-      {/* User score widget */}
-      {canScore && (
-        <UserScoreWidget resultId={result.id} currentScore={result.user_score} onScore={onScore!} isRu={isRu} isExtraRound={isExtraRound} />
-      )}
-      {/* User Likert widget */}
-      {result && (result.status === 'ready' || result.status === 'judged') && onLikertScore && (
-        <UserLikertWidget
-          resultId={result.id}
-          currentValue={(result.metadata as any)?.user_likert ?? null}
-          onRate={onLikertScore}
-          isRu={isRu}
-          isExtraRound={isExtraRound}
-        />
+      {/* User score + Likert inline row */}
+      {(canScore || ((result.status === 'ready' || result.status === 'judged') && onLikertScore)) && (
+        <div className="flex items-center gap-4 flex-wrap pt-2 border-t border-border/40">
+          {canScore && (
+            <UserScoreWidget resultId={result.id} currentScore={result.user_score} onScore={onScore!} isRu={isRu} isExtraRound={isExtraRound} />
+          )}
+          {(result.status === 'ready' || result.status === 'judged') && onLikertScore && (
+            <UserLikertWidget
+              resultId={result.id}
+              currentValue={(result.metadata as any)?.user_likert ?? null}
+              onRate={onLikertScore}
+              isRu={isRu}
+              isExtraRound={isExtraRound}
+              compact
+            />
+          )}
+        </div>
       )}
       {/* Arbiter inline score */}
       {result?.arbiter_score != null && (
