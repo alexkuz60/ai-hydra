@@ -342,7 +342,7 @@ export function InterviewPanel({ role, onClose }: InterviewPanelProps) {
       )}
 
       {/* Actions */}
-      {session && (session.status === 'briefed' || (session.status === 'testing' && !interview.testing)) && (
+      {session && (session.status === 'briefed' || session.status === 'briefing' || (session.status === 'testing' && !interview.testing)) && (
         <div className="p-3 border-b border-border shrink-0">
           <Button size="sm" className="w-full gap-2" onClick={handleRunTests}>
             {session.status === 'testing' ? (
