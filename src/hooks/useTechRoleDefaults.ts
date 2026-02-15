@@ -6,6 +6,14 @@ const STORAGE_KEY = 'hydra-tech-role-defaults';
 
 /** Built-in defaults chosen for cost/speed/quality fit per role */
 const BUILTIN_DEFAULTS: Record<string, string> = {
+  // Expert roles
+  assistant: 'google/gemini-2.5-pro',
+  critic: 'openai/gpt-5',
+  arbiter: 'openai/gpt-5',
+  consultant: 'google/gemini-2.5-pro',
+  moderator: 'google/gemini-2.5-flash',
+  advisor: 'google/gemini-2.5-pro',
+  // Technical staff
   archivist: 'google/gemini-2.5-flash',
   analyst: 'google/gemini-2.5-pro',
   promptengineer: 'openai/gpt-5',
