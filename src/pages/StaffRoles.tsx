@@ -173,15 +173,6 @@ const StaffRoles = () => {
                   </Badge>
                 ) : null;
               })()}
-              {config.isTechnicalStaff && (() => {
-                const defaultModel = getTechRoleDefaultModel(role);
-                return defaultModel ? (
-                  <Badge variant="outline" className="gap-1 text-[10px] py-0 font-mono text-muted-foreground">
-                    <Cpu className="h-2.5 w-2.5" />
-                    {getModelShortName(defaultModel)}
-                  </Badge>
-                ) : null;
-              })()}
             </div>
             <span className="text-xs text-muted-foreground font-mono">
               {role}
