@@ -236,6 +236,52 @@ const ROLE_TEST_TASKS: Record<string, TestTask[]> = {
       needs_baseline: false,
     },
   ],
+  assistant: [
+    {
+      task_type: 'comprehensive_answer',
+      prompt_ru: 'Пользователь спрашивает: "Объясни разницу между fine-tuning, RAG и prompt engineering. Когда использовать каждый подход? Какие ресурсы потребуются?" Дай исчерпывающий, структурированный ответ с примерами и рекомендациями.',
+      prompt_en: 'User asks: "Explain the difference between fine-tuning, RAG, and prompt engineering. When to use each approach? What resources are needed?" Give a comprehensive, structured answer with examples and recommendations.',
+      competency: 'deep_analysis',
+      needs_baseline: false,
+    },
+    {
+      task_type: 'creative_solution',
+      prompt_ru: 'Пользователь описывает проблему: "Мой чат-бот отвечает слишком шаблонно, пользователи жалуются на роботизированность. Бюджет ограничен, менять модель не вариант." Предложи 3 разных подхода к решению с разным соотношением сложность/эффект.',
+      prompt_en: 'User describes a problem: "My chatbot responds too formulaically, users complain about robotic feel. Budget is limited, changing the model is not an option." Propose 3 different approaches with varying complexity/effect trade-offs.',
+      competency: 'creative_problem_solving',
+      needs_baseline: false,
+    },
+    {
+      task_type: 'multi_perspective',
+      prompt_ru: 'Пользователь готовит доклад на тему "Влияние ИИ на рынок труда в 2025-2030". Помоги ему: представь анализ с трёх точек зрения — оптимистичной, пессимистичной и реалистичной. Для каждой приведи данные и аргументы.',
+      prompt_en: 'User is preparing a report on "AI impact on the job market 2025-2030". Help them: present analysis from three perspectives — optimistic, pessimistic, and realistic. For each, provide data and arguments.',
+      competency: 'multi_perspective_analysis',
+      needs_baseline: false,
+    },
+  ],
+  arbiter: [
+    {
+      task_type: 'synthesis',
+      prompt_ru: 'Эксперт предложил использовать GPT-5 для задачи суммаризации (аргументы: точность, длинный контекст). Критик возразил (аргументы: стоимость, латентность, достаточно Gemini Flash). Как Арбитр, синтезируй финальное решение: взвесь аргументы, предложи оптимальный вариант с обоснованием.',
+      prompt_en: 'Expert proposed using GPT-5 for summarization (arguments: accuracy, long context). Critic objected (arguments: cost, latency, Gemini Flash is sufficient). As Arbiter, synthesize the final decision: weigh arguments, propose optimal solution with justification.',
+      competency: 'decision_synthesis',
+      needs_baseline: false,
+    },
+    {
+      task_type: 'objective_scoring',
+      prompt_ru: 'Оцени два ответа на вопрос "Как настроить CI/CD для ML-проекта?" по критериям: полнота (0-10), практичность (0-10), актуальность (0-10). Ответ А — подробный, но устаревший (использует Jenkins). Ответ Б — краткий, но современный (GitHub Actions + MLflow). Обоснуй каждую оценку.',
+      prompt_en: 'Evaluate two answers to "How to set up CI/CD for an ML project?" by criteria: completeness (0-10), practicality (0-10), relevance (0-10). Answer A — detailed but outdated (uses Jenkins). Answer B — concise but modern (GitHub Actions + MLflow). Justify each score.',
+      competency: 'objective_evaluation',
+      needs_baseline: false,
+    },
+    {
+      task_type: 'fairness_check',
+      prompt_ru: 'В конкурсе моделей по задаче "Генерация маркетингового текста" участвовали GPT-5, Gemini Pro и Claude. GPT-5 получил высший балл, но использовал в 3 раза больше токенов. Как учесть эффективность при финальной оценке? Предложи корректирующую формулу и обоснуй.',
+      prompt_en: 'In a model contest for "Marketing text generation", GPT-5, Gemini Pro, and Claude participated. GPT-5 scored highest but used 3x more tokens. How to factor efficiency into the final evaluation? Propose a corrective formula and justify it.',
+      competency: 'fairness_assessment',
+      needs_baseline: false,
+    },
+  ],
   consultant: [
     {
       task_type: 'deep_expertise',
