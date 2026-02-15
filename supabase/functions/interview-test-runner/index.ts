@@ -515,7 +515,7 @@ serve(async (req) => {
                 role: 'assistant',
                 system_prompt: briefText,
                 temperature: 0.7,
-                max_tokens: 4096,
+                max_tokens: 2048,
               }),
             });
 
@@ -590,6 +590,26 @@ serve(async (req) => {
             token_count: tokenCount,
             error: error,
           });
+
+          // Incremental save after each step to survive timeouts
+          const completedSoFar = testResults.filter((r: any) => r.status === 'completed').length;
+          await supabase
+            .from('interview_sessions')
+            .update({
+              test_results: {
+                steps: testResults,
+                total_steps: allTasks.length,
+                completed_steps: completedSoFar,
+                started_at: session.started_at,
+              },
+              config: {
+                ...(session.config as Record<string, unknown> || {}),
+                phase: 'testing',
+                total_steps: allTasks.length,
+                completed_steps: completedSoFar,
+              },
+            })
+            .eq('id', session_id);
         }
 
         // Save all results to the session
