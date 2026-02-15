@@ -106,7 +106,16 @@ export function ContestScoresTable({ results, rounds, isRu, selectedWinners, onT
           <TableHeader>
             <TableRow className="text-[11px]">
               <TableHead className="w-8">
-                <Crown className="h-3 w-3 text-primary mx-auto" />
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Crown className="h-3 w-3 text-primary mx-auto cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" className="text-[10px]">
+                      {isRu ? 'Выбрать победителей для отправки в Панель экспертов' : 'Select winners to send to Expert Panel'}
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               </TableHead>
               <TableHead className="w-8">#</TableHead>
               <TableHead>{isRu ? 'Модель' : 'Model'}</TableHead>
