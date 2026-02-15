@@ -1,9 +1,12 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Brain } from 'lucide-react';
 import { ModelDossier } from '@/components/ratings/ModelDossier';
 import { ModelListSidebar, useAllModels } from '@/components/ratings/ModelListSidebar';
 import { useVeteranModels } from '@/hooks/useModelDossier';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 import {
   ResizablePanelGroup,
   ResizablePanel,
@@ -18,10 +21,36 @@ const DEFAULT_LIST_SIZE = 25;
 
 export function ModelPortfolio() {
   const { language } = useLanguage();
+  const { user } = useAuth();
+  const { toast } = useToast();
   const { loading } = useAllModels();
   const { veteranIds } = useVeteranModels();
   const veteranSet = useMemo(() => new Set(veteranIds), [veteranIds]);
   const isRu = language === 'ru';
+
+  // Track if a duel is currently running (not completed) — blocks model changes
+  const [isDuelRunning, setIsDuelRunning] = useState(false);
+  useEffect(() => {
+    if (!user) return;
+    const check = async () => {
+      const { data } = await supabase
+        .from('contest_sessions')
+        .select('id')
+        .eq('user_id', user.id)
+        .filter('config->>mode', 'eq', 'duel')
+        .eq('status', 'running')
+        .limit(1)
+        .maybeSingle();
+      setIsDuelRunning(!!data);
+    };
+    check();
+    // Re-check when storage changes (duel started/completed from other tab)
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === DUEL_MODELS_KEY) check();
+    };
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
+  }, [user]);
 
   const [selectedModelId, setSelectedModelId] = useState<string | null>(() => {
     try { return localStorage.getItem(SELECTED_KEY) || null; } catch { return null; }
@@ -120,15 +149,45 @@ export function ModelPortfolio() {
   };
 
   const handleToggleDuel = (id: string) => {
+    if (isDuelRunning) {
+      toast({
+        variant: 'destructive',
+        description: isRu
+          ? 'Нельзя менять дуэлянтов во время дуэли. Дождитесь завершения.'
+          : 'Cannot change duelists while a duel is running. Wait for it to finish.',
+      });
+      return;
+    }
     setDuelModels(prev => {
       const next = { ...prev };
-      if (id in next) delete next[id];
-      else next[id] = 'critic';
+      if (id in next) {
+        delete next[id];
+      } else {
+        if (Object.keys(next).length >= 2) {
+          toast({
+            variant: 'destructive',
+            description: isRu
+              ? 'Максимум 2 дуэлянта. Сначала уберите одного из выбранных.'
+              : 'Maximum 2 duelists. Remove one first.',
+          });
+          return prev;
+        }
+        next[id] = 'critic';
+      }
       return next;
     });
   };
 
   const handleDuelTypeChange = (id: string, type: string) => {
+    if (isDuelRunning) {
+      toast({
+        variant: 'destructive',
+        description: isRu
+          ? 'Нельзя менять тип дуэлянта во время дуэли.'
+          : 'Cannot change duelist type during a running duel.',
+      });
+      return;
+    }
     setDuelModels(prev => ({ ...prev, [id]: type }));
   };
 
@@ -169,6 +228,7 @@ export function ModelPortfolio() {
             onToggleDuel={handleToggleDuel}
             onDuelTypeChange={handleDuelTypeChange}
             onContestRoleChange={handleContestRoleChange}
+            isDuelRunning={isDuelRunning}
           />
         ) : (
           <div className="h-full flex items-center justify-center text-muted-foreground">

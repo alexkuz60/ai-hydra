@@ -31,6 +31,8 @@ interface CandidateDetailProps {
   onContestRoleChange?: (modelId: string, role: string) => void;
   /** When true, renders inline without scroll wrapper (for embedding in other scrollable containers) */
   inline?: boolean;
+  /** When true, duel controls are disabled because a duel is in progress */
+  isDuelRunning?: boolean;
 }
 
 export function CandidateDetail({
@@ -45,6 +47,7 @@ export function CandidateDetail({
   onDuelTypeChange,
   onContestRoleChange,
   inline = false,
+  isDuelRunning = false,
 }: CandidateDetailProps) {
   const { language, t } = useLanguage();
   const isRu = language === 'ru';
@@ -190,7 +193,7 @@ export function CandidateDetail({
                                 setPendingDuelType(prev => prev === 'critic' ? null : 'critic');
                               }
                             }}
-                            disabled={!isAvailable}
+                            disabled={!isAvailable || isDuelRunning}
                             className="h-3.5 w-3.5"
                           />
                           <span className="text-muted-foreground">{isRu ? 'Критик' : 'Critic'}</span>
@@ -205,18 +208,24 @@ export function CandidateDetail({
                                 setPendingDuelType(prev => prev === 'arbiter' ? null : 'arbiter');
                               }
                             }}
-                            disabled={!isAvailable}
+                            disabled={!isAvailable || isDuelRunning}
                             className="h-3.5 w-3.5"
                           />
                           <span className="text-muted-foreground">{isRu ? 'Арбитр' : 'Arbiter'}</span>
                         </label>
                       </div>
 
+                      {isDuelRunning && (
+                        <p className="text-[10px] text-muted-foreground italic">
+                          {isRu ? 'Дуэль идёт — замена запрещена' : 'Duel in progress — changes locked'}
+                        </p>
+                      )}
+
                       <Button
                         size="sm"
                         variant={isSelectedForDuel ? 'default' : 'outline'}
                         className="w-full h-8 text-xs"
-                        disabled={!isAvailable || (!isSelectedForDuel && !pendingDuelType)}
+                        disabled={!isAvailable || isDuelRunning || (!isSelectedForDuel && !pendingDuelType)}
                         onClick={() => {
                           if (isSelectedForDuel) {
                             onToggleDuel?.(model.id);
