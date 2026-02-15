@@ -36,7 +36,7 @@ const translations: Translations = {
   'nav.admin': { ru: 'Админ-панель', en: 'Admin Panel' },
   'nav.warRoom': { ru: 'Экспертный Совет', en: 'Expert Council' },
    'nav.modelRatings': { ru: 'Подиум ИИ-моделей', en: 'AI Model Podium' },
-  'nav.hydrapedia': { ru: 'Гидропедия', en: 'Hydrapedia' },
+  'nav.hydrapedia': { ru: 'Гидрапедия', en: 'Hydrapedia' },
   'nav.staffRoles': { ru: 'Штат специалистов', en: 'AI Staff' },
    'nav.behavioralPatterns': { ru: 'Паттерны поведения', en: 'Behavioral Patterns' },
    'nav.expand': { ru: 'Развернуть', en: 'Expand' },
@@ -201,7 +201,7 @@ const translations: Translations = {
   'patterns.publicPattern': { ru: 'Публичный паттерн', en: 'Public pattern' },
   
   // Hydrapedia
-  'hydrapedia.title': { ru: 'Гидропедия', en: 'Hydrapedia' },
+  'hydrapedia.title': { ru: 'Гидрапедия', en: 'Hydrapedia' },
   'hydrapedia.subtitle': { ru: 'Руководство пользователя AI-Hydra', en: 'AI-Hydra User Guide' },
   'hydrapedia.sections.intro': { ru: 'Введение', en: 'Introduction' },
   'hydrapedia.sections.gettingStarted': { ru: 'Начало работы', en: 'Getting Started' },
