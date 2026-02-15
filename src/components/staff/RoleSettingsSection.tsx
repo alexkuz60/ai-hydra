@@ -13,6 +13,32 @@ import { ModelNameWithIcon } from '@/components/ui/ModelNameWithIcon';
 import type { AgentRole } from '@/config/roles';
 
 const MODEL_CHOICE_RATIONALE: Record<string, { ru: string; en: string }> = {
+  // Expert roles
+  assistant: {
+    ru: 'Gemini 2.5 Pro — сильные аналитические и генеративные способности. Идеальный баланс глубины и универсальности для роли первичного эксперта.',
+    en: 'Gemini 2.5 Pro — strong analytical and generative capabilities. Ideal balance of depth and versatility for the primary expert role.',
+  },
+  critic: {
+    ru: 'GPT-5 — высочайшая точность рассуждений для выявления логических изъянов. Превосходит аналоги в детальном анализе аргументации.',
+    en: 'GPT-5 — top-tier reasoning precision for detecting logical flaws. Excels at detailed argumentation analysis.',
+  },
+  arbiter: {
+    ru: 'GPT-5 — объективный синтез множественных точек зрения. Сильнейшая модель для взвешенного принятия решений и разрешения противоречий.',
+    en: 'GPT-5 — objective synthesis of multiple viewpoints. Strongest model for balanced decision-making and conflict resolution.',
+  },
+  consultant: {
+    ru: 'Gemini 2.5 Pro — глубокая экспертиза для изолированных запросов. Большой контекст позволяет дать исчерпывающий ответ за один раз.',
+    en: 'Gemini 2.5 Pro — deep expertise for isolated queries. Large context window enables comprehensive single-turn answers.',
+  },
+  moderator: {
+    ru: 'Gemini 2.5 Flash — быстрая обработка и суммаризация дискуссий. Оптимальная скорость для оперативного обобщения ключевых тезисов.',
+    en: 'Gemini 2.5 Flash — fast processing and discussion summarization. Optimal speed for promptly distilling key points.',
+  },
+  advisor: {
+    ru: 'Gemini 2.5 Pro — практичные рекомендации требуют глубокого понимания контекста. Большой контекст и аналитика обеспечивают качественные советы.',
+    en: 'Gemini 2.5 Pro — practical recommendations require deep contextual understanding. Large context and analytics ensure quality advice.',
+  },
+  // Technical staff
   archivist: {
     ru: 'Gemini 2.5 Flash — баланс скорости и качества для суммаризации и поиска по архивам. Хорошо справляется с большими контекстами при умеренной стоимости.',
     en: 'Gemini 2.5 Flash — balanced speed and quality for summarization and archive retrieval. Handles large contexts well at moderate cost.',
@@ -72,7 +98,7 @@ export function RoleSettingsSection({ isTechnicalStaff, requiresApproval, isSavi
       </div>
 
        {/* Default model selector for technical staff */}
-       {isTechnicalStaff && selectedRole && allModels.length > 0 && (
+       {selectedRole && allModels.length > 0 && (
          <div className="pt-3 space-y-1.5">
            <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
