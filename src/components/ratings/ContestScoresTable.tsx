@@ -111,7 +111,7 @@ export function ContestScoresTable({ results, rounds, isRu, selectedWinners, onT
                   <TooltipTrigger asChild>
                     <Crown className="h-3 w-3 text-primary mx-auto cursor-help" />
                   </TooltipTrigger>
-                  <TooltipContent side="bottom" className="text-[10px]">
+                  <TooltipContent side="left" className="text-[10px]">
                     {isRu ? 'Выбрать победителей для отправки в Панель экспертов' : 'Select winners to send to Expert Panel'}
                   </TooltipContent>
                 </Tooltip>
