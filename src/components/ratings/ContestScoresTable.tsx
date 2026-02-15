@@ -1,8 +1,10 @@
 import React from 'react';
-import { Crown, BarChart3 } from 'lucide-react';
+import { Crown, BarChart3, UserMinus, UserPlus } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { getModelRegistryEntry } from '@/config/modelRegistry';
 import { PROVIDER_LOGOS, PROVIDER_COLORS } from '@/components/ui/ProviderLogos';
@@ -17,6 +19,9 @@ interface ContestScoresTableProps {
   selectedWinners: Set<string>;
   onToggleWinner: (modelId: string) => void;
   arbitration?: { userWeight?: number; scoringScheme?: ScoringScheme };
+  eliminatedModels?: string[];
+  onEliminateModel?: (modelId: string) => void;
+  onRestoreModel?: (modelId: string) => void;
 }
 
 const SCHEME_LABELS: Record<ScoringScheme, { ru: string; en: string }> = {
@@ -25,7 +30,8 @@ const SCHEME_LABELS: Record<ScoringScheme, { ru: string; en: string }> = {
   'elo': { ru: 'Эло', en: 'Elo' },
 };
 
-export function ContestScoresTable({ results, rounds, isRu, selectedWinners, onToggleWinner, arbitration }: ContestScoresTableProps) {
+export function ContestScoresTable({ results, rounds, isRu, selectedWinners, onToggleWinner, arbitration, eliminatedModels = [], onEliminateModel, onRestoreModel }: ContestScoresTableProps) {
+  const eliminatedSet = React.useMemo(() => new Set(eliminatedModels), [eliminatedModels]);
   const scheme: ScoringScheme = arbitration?.scoringScheme || 'weighted-avg';
   const userWeight = arbitration?.userWeight ?? 50;
 
@@ -120,6 +126,11 @@ export function ContestScoresTable({ results, rounds, isRu, selectedWinners, onT
                 </TableHead>
               ))}
               <TableHead className="text-center">{schemeLabel}</TableHead>
+              {onEliminateModel && (
+                <TableHead className="w-8 text-center">
+                  <UserMinus className="h-3 w-3 text-muted-foreground mx-auto" />
+                </TableHead>
+              )}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -129,11 +140,17 @@ export function ContestScoresTable({ results, rounds, isRu, selectedWinners, onT
               const ProviderLogo = entry?.provider ? PROVIDER_LOGOS[entry.provider] : undefined;
               const color = entry?.provider ? PROVIDER_COLORS[entry.provider] : '';
               const isSelected = selectedWinners.has(row.modelId);
+              const isEliminated = eliminatedSet.has(row.modelId);
+              const activeModelCount = scored.length - eliminatedModels.length;
 
               return (
                 <TableRow
                   key={row.modelId}
-                  className={cn("text-xs cursor-pointer transition-colors", isSelected && "bg-primary/5")}
+                  className={cn(
+                    "text-xs cursor-pointer transition-colors",
+                    isSelected && "bg-primary/5",
+                    isEliminated && "opacity-40 line-through"
+                  )}
                   onClick={() => onToggleWinner(row.modelId)}
                 >
                   <TableCell className="text-center">
@@ -150,6 +167,11 @@ export function ContestScoresTable({ results, rounds, isRu, selectedWinners, onT
                       {ProviderLogo && <ProviderLogo className={cn("h-3 w-3", color)} />}
                       <span className="truncate max-w-[140px]">{shortName}</span>
                       {isSelected && <Crown className="h-3 w-3 text-hydra-arbiter shrink-0" />}
+                      {isEliminated && (
+                        <Badge variant="destructive" className="text-[9px] px-1 py-0 h-4 shrink-0">
+                          {isRu ? 'отсеяна' : 'out'}
+                        </Badge>
+                      )}
                     </div>
                   </TableCell>
                   <TableCell className="text-center">{row.avgUser != null ? row.avgUser.toFixed(1) : '—'}</TableCell>
@@ -176,6 +198,44 @@ export function ContestScoresTable({ results, rounds, isRu, selectedWinners, onT
                     </TableCell>
                   ))}
                   <TableCell className="text-center font-semibold">{formatFinal(row)}</TableCell>
+                  {onEliminateModel && (
+                    <TableCell className="text-center" onClick={e => e.stopPropagation()}>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            {isEliminated ? (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-6 w-6 p-0"
+                                onClick={() => onRestoreModel?.(row.modelId)}
+                              >
+                                <UserPlus className="h-3 w-3 text-green-500" />
+                              </Button>
+                            ) : (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-6 w-6 p-0"
+                                disabled={activeModelCount <= 2}
+                                onClick={() => onEliminateModel(row.modelId)}
+                              >
+                                <UserMinus className="h-3 w-3 text-destructive" />
+                              </Button>
+                            )}
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            {isEliminated
+                              ? (isRu ? 'Вернуть в конкурс' : 'Restore to contest')
+                              : activeModelCount <= 2
+                                ? (isRu ? 'Минимум 2 модели должны остаться' : 'At least 2 models must remain')
+                                : (isRu ? 'Отсеять из конкурса' : 'Eliminate from contest')
+                            }
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </TableCell>
+                  )}
                 </TableRow>
               );
             })}

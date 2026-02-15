@@ -230,6 +230,16 @@ export const RATINGS_I18N = {
   likertWeak: { ru: 'Слабо', en: 'Weak' },
   likertPoor: { ru: 'Плохо', en: 'Poor' },
   likertNonsense: { ru: 'Бред', en: 'Nonsense' },
+
+  // ===== ELIMINATION =====
+  eliminate: { ru: 'Отсеять', en: 'Eliminate' },
+  restore: { ru: 'Вернуть', en: 'Restore' },
+  eliminated: { ru: 'Отсеяна', en: 'Eliminated' },
+  eliminationThreshold: { ru: 'Порог отсева (баллов из 10)', en: 'Elimination threshold (score out of 10)' },
+  autoEliminatedBelow: { ru: 'Автоотсев ниже', en: 'Auto-eliminated below' },
+  modelEliminated: { ru: 'Модель отсеяна из конкурса', en: 'Model eliminated from contest' },
+  modelRestored: { ru: 'Модель возвращена в конкурс', en: 'Model restored to contest' },
+  cannotEliminateMinModels: { ru: 'Нельзя отсеять — минимум 2 модели должны остаться', en: 'Cannot eliminate — at least 2 models must remain' },
 } as const;
 
 export type RatingsI18nKey = keyof typeof RATINGS_I18N;
