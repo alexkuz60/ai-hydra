@@ -419,6 +419,15 @@ export function BeautyContest() {
               selectedWinners={selectedWinners}
               onToggleWinner={handleToggleWinner}
               arbitration={contest.session?.config?.arbitration as any}
+              eliminatedModels={contest.getEliminatedModels()}
+              onEliminateModel={async (modelId) => {
+                await contest.eliminateModel(modelId);
+                toast({ description: isRu ? 'Модель отсеяна из конкурса' : 'Model eliminated from contest' });
+              }}
+              onRestoreModel={async (modelId) => {
+                await contest.restoreModel(modelId);
+                toast({ description: isRu ? 'Модель возвращена в конкурс' : 'Model restored to contest' });
+              }}
             />
             <ScoringSchemeComparison
               results={contest.results}

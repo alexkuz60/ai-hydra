@@ -165,7 +165,8 @@ export function useContestExecution() {
     updateResult: (id: string, updates: Partial<ContestResult>) => Promise<void>,
     allRounds?: ContestRound[],
   ) => {
-    const roundResults = results.filter(r => r.round_id === round.id);
+    const eliminated: string[] = (session.config as any).eliminatedModels || [];
+    const roundResults = results.filter(r => r.round_id === round.id && !eliminated.includes(r.model_id));
     if (roundResults.length === 0) return;
 
     const abortController = new AbortController();
@@ -296,6 +297,37 @@ export function useContestExecution() {
     // Auto-trigger arbiter evaluation if configured
     if (completedResults.length > 0 && session.config.arbitration) {
       await runArbiterEvaluation(session, round, completedResults, updateResult);
+    }
+
+    // ── Auto-elimination by threshold ──
+    const elimination = (session.config as any).rules?.elimination;
+    const threshold = (session.config as any).rules?.eliminationThreshold;
+    if (elimination === 'threshold' && typeof threshold === 'number' && threshold > 0) {
+      // Compute average arbiter score per model across ALL results so far
+      const allResults = [...results.filter(r => r.round_id !== round.id), ...completedResults];
+      const modelScores = new Map<string, number[]>();
+      for (const r of allResults) {
+        if (r.arbiter_score != null) {
+          const arr = modelScores.get(r.model_id) || [];
+          arr.push(r.arbiter_score);
+          modelScores.set(r.model_id, arr);
+        }
+      }
+      const toEliminate: string[] = [];
+      for (const [modelId, scores] of modelScores) {
+        if (eliminated.includes(modelId)) continue;
+        const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
+        if (avg < threshold) toEliminate.push(modelId);
+      }
+      if (toEliminate.length > 0) {
+        const currentEliminated = (session.config as any).eliminatedModels || [];
+        const newEliminated = [...new Set([...currentEliminated, ...toEliminate])];
+        const newConfig = { ...session.config, eliminatedModels: newEliminated };
+        await supabase
+          .from('contest_sessions')
+          .update({ config: newConfig as any })
+          .eq('id', session.id);
+      }
     }
   }, [toast, runArbiterEvaluation]);
 

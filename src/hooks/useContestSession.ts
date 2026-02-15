@@ -273,7 +273,9 @@ export function useContestSession() {
     if (!session) return null;
     setLoading(true);
     try {
-      const allModelIds = targetModelIds || Object.keys(session.config.models || {});
+      const eliminated: string[] = (session.config as any).eliminatedModels || [];
+      const allModelIds = (targetModelIds || Object.keys(session.config.models || {}))
+        .filter(id => !eliminated.includes(id));
       if (allModelIds.length === 0) return null;
 
       const nextIndex = rounds.length;
@@ -360,6 +362,46 @@ export function useContestSession() {
     };
   }, [session?.id]);
 
+  // ── Elimination helpers ──
+
+  const getEliminatedModels = useCallback((): string[] => {
+    if (!session) return [];
+    return (session.config as any).eliminatedModels || [];
+  }, [session]);
+
+  const eliminateModel = useCallback(async (modelId: string) => {
+    if (!session) return;
+    const current: string[] = (session.config as any).eliminatedModels || [];
+    if (current.includes(modelId)) return;
+    const updated = [...current, modelId];
+    const newConfig = { ...session.config, eliminatedModels: updated };
+    const { error } = await supabase
+      .from('contest_sessions')
+      .update({ config: newConfig as any })
+      .eq('id', session.id);
+    if (error) {
+      toast({ variant: 'destructive', description: error.message });
+      return;
+    }
+    setSession(prev => prev ? { ...prev, config: newConfig } : null);
+  }, [session, toast]);
+
+  const restoreModel = useCallback(async (modelId: string) => {
+    if (!session) return;
+    const current: string[] = (session.config as any).eliminatedModels || [];
+    const updated = current.filter(id => id !== modelId);
+    const newConfig = { ...session.config, eliminatedModels: updated };
+    const { error } = await supabase
+      .from('contest_sessions')
+      .update({ config: newConfig as any })
+      .eq('id', session.id);
+    if (error) {
+      toast({ variant: 'destructive', description: error.message });
+      return;
+    }
+    setSession(prev => prev ? { ...prev, config: newConfig } : null);
+  }, [session, toast]);
+
   return {
     session,
     rounds,
@@ -374,5 +416,8 @@ export function useContestSession() {
     updateResult,
     updateSessionStatus,
     setSession,
+    getEliminatedModels,
+    eliminateModel,
+    restoreModel,
   };
 }

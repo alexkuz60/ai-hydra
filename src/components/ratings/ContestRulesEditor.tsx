@@ -4,6 +4,7 @@ import { HydraCard, HydraCardHeader, HydraCardTitle, HydraCardContent } from '@/
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Settings2, ListOrdered, Info } from 'lucide-react';
@@ -265,6 +266,34 @@ export function ContestRulesEditor() {
                   ))}
                 </SelectContent>
               </Select>
+
+              {/* Threshold input */}
+              {localRules.elimination === 'threshold' && (
+                <div className="flex items-center gap-2 mt-2">
+                  <label className="text-[11px] text-muted-foreground shrink-0">
+                    {isRu ? 'Порог (из 10):' : 'Threshold (of 10):'}
+                  </label>
+                  <Input
+                    type="number"
+                    min={1}
+                    max={9}
+                    step={0.5}
+                    value={(localRules as any).eliminationThreshold ?? 3}
+                    onChange={e => {
+                      const val = parseFloat(e.target.value);
+                      if (!isNaN(val) && val >= 0 && val <= 10) {
+                        const updated = { ...localRules, eliminationThreshold: val };
+                        setLocalRules(updated);
+                        updateRules(updated);
+                      }
+                    }}
+                    className="h-7 w-20 text-xs"
+                  />
+                  <span className="text-[10px] text-muted-foreground">
+                    {isRu ? 'Модели с баллом ниже будут автоматически отсеяны' : 'Models scoring below will be auto-eliminated'}
+                  </span>
+                </div>
+              )}
             </div>
           </>
         )}
