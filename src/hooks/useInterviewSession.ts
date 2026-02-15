@@ -257,6 +257,13 @@ export function useInterviewSession() {
           return { ...prev, currentStep: payload.step_index, stepStatuses: newMap };
         });
         break;
+      case 'step_skipped':
+        setState(prev => {
+          const newMap = new Map(prev.stepStatuses);
+          newMap.set(payload.step_index, { status: 'skipped' });
+          return { ...prev, stepStatuses: newMap };
+        });
+        break;
       case 'step_progress':
         // Could update streaming preview here
         break;
