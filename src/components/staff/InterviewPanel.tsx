@@ -16,6 +16,9 @@ import {
   ChevronDown, ChevronRight, FileText, Columns2,
   SquareArrowOutUpRight, RefreshCw,
 } from 'lucide-react';
+import {
+  Tooltip, TooltipContent, TooltipProvider, TooltipTrigger,
+} from '@/components/ui/tooltip';
 import type { AgentRole } from '@/config/roles';
 import { ROLE_CONFIG } from '@/config/roles';
 
@@ -97,7 +100,7 @@ export function InterviewPanel({ role, onClose }: InterviewPanelProps) {
         <IconComponent className={cn("h-5 w-5", config.color)} />
         <div className="flex-1 min-w-0">
           <h3 className="text-sm font-semibold truncate">
-            {isRu ? 'Собеседование' : 'Interview'}: {isRu ? config.label.replace('roles.', '') : role}
+            {isRu ? 'Собеседование' : 'Interview'}: {role}
           </h3>
           {session && (
             <span className="text-[10px] text-muted-foreground font-mono">
@@ -105,37 +108,67 @@ export function InterviewPanel({ role, onClose }: InterviewPanelProps) {
             </span>
           )}
         </div>
-        <div className="flex items-center gap-1">
-          {/* View mode toggle */}
-          {steps.length > 0 && (
-            <div className="flex border border-border rounded-md overflow-hidden">
-              <button
-                className={cn(
-                  "px-2 py-1 text-xs transition-colors",
-                  viewMode === 'progress' ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted/50"
-                )}
-                onClick={() => setViewMode('progress')}
-              >
-                <FileText className="h-3.5 w-3.5" />
-              </button>
-              <button
-                className={cn(
-                  "px-2 py-1 text-xs transition-colors",
-                  viewMode === 'results' ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted/50"
-                )}
-                onClick={() => setViewMode('results')}
-              >
-                <Columns2 className="h-3.5 w-3.5" />
-              </button>
-            </div>
-          )}
-          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleReload} disabled={interview.loading}>
-            <RefreshCw className={cn("h-3.5 w-3.5", interview.loading && "animate-spin")} />
-          </Button>
-          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onClose}>
-            <X className="h-4 w-4" />
-          </Button>
-        </div>
+        <TooltipProvider delayDuration={300}>
+          <div className="flex items-center gap-1">
+            {/* View mode toggle */}
+            {steps.length > 0 && (
+              <div className="flex border border-border rounded-md overflow-hidden">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      className={cn(
+                        "px-2 py-1 text-xs transition-colors",
+                        viewMode === 'progress' ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted/50"
+                      )}
+                      onClick={() => setViewMode('progress')}
+                    >
+                      <FileText className="h-3.5 w-3.5" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">
+                    {isRu ? 'Прогресс' : 'Progress'}
+                  </TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      className={cn(
+                        "px-2 py-1 text-xs transition-colors",
+                        viewMode === 'results' ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted/50"
+                      )}
+                      onClick={() => setViewMode('results')}
+                    >
+                      <Columns2 className="h-3.5 w-3.5" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">
+                    {isRu ? 'Сравнение' : 'Comparison'}
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+            )}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleReload} disabled={interview.loading}>
+                  <RefreshCw className={cn("h-3.5 w-3.5", interview.loading && "animate-spin")} />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">
+                {isRu ? 'Обновить' : 'Refresh'}
+              </TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onClose}>
+                  <X className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">
+                {isRu ? 'Закрыть' : 'Close'}
+              </TooltipContent>
+            </Tooltip>
+          </div>
+        </TooltipProvider>
       </div>
 
       {/* Session status bar */}
