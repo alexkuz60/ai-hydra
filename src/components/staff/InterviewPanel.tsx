@@ -62,6 +62,14 @@ const COMPETENCY_I18N: Record<string, { ru: string; en: string }> = {
   domain_expertise: { ru: 'Предметная экспертиза', en: 'Domain Expertise' },
   comparative_analysis: { ru: 'Сравнительный анализ', en: 'Comparative Analysis' },
   practical_guidance: { ru: 'Практическое руководство', en: 'Practical Guidance' },
+  // assistant
+  deep_analysis: { ru: 'Глубокий анализ', en: 'Deep Analysis' },
+  creative_problem_solving: { ru: 'Креативное решение проблем', en: 'Creative Problem Solving' },
+  multi_perspective_analysis: { ru: 'Многоракурсный анализ', en: 'Multi-Perspective Analysis' },
+  // arbiter
+  decision_synthesis: { ru: 'Синтез решений', en: 'Decision Synthesis' },
+  objective_evaluation: { ru: 'Объективная оценка', en: 'Objective Evaluation' },
+  fairness_assessment: { ru: 'Оценка справедливости', en: 'Fairness Assessment' },
   // generic
   self_awareness: { ru: 'Самоанализ', en: 'Self-Awareness' },
   teamwork: { ru: 'Командная работа', en: 'Teamwork' },
