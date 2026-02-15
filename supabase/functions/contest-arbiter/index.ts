@@ -82,12 +82,17 @@ You must evaluate each response based on the given criteria and provide fair, de
 Be objective and analytical. Consider both strengths and weaknesses of each response.
 Evaluate ONLY based on the criteria provided, with their respective weights.${roleInstruction}`;
 
+    const inverseNote = isRu
+      ? `\nВАЖНО: Критерии «стоимость» (cost, tokens) и «скорость» (speed) — ОБРАТНЫЕ. Для них 10 = лучший результат (самый дешёвый / самый быстрый), 1 = худший (самый дорогой / самый медленный). Ориентируйтесь на response_time и token_count каждого конкурсанта.`
+      : `\nIMPORTANT: Cost and speed criteria are INVERSE. For these, 10 = best (cheapest / fastest), 1 = worst (most expensive / slowest). Use the response_time and token_count of each contestant as reference.`;
+
     const userPrompt = isRu
       ? `## Исходный промпт для конкурсантов
 ${prompt}
 
 ## Критерии оценки (с весами)
 ${criteriaDesc}
+${inverseNote}
 
 ## Ответы конкурсантов
 ${responsesDesc}
@@ -102,6 +107,7 @@ ${prompt}
 
 ## Evaluation Criteria (with weights)
 ${criteriaDesc}
+${inverseNote}
 
 ## Contestant Responses
 ${responsesDesc}
