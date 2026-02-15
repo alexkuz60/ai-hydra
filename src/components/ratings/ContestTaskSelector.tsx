@@ -4,7 +4,7 @@ import { HydraCard, HydraCardHeader, HydraCardTitle, HydraCardContent } from '@/
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Brain, ClipboardList, Paperclip, Users, Crown, Info, FileText, Image, File, Trophy, UserCheck, Plus, X, Search } from 'lucide-react';
+import { Brain, ClipboardList, Paperclip, Users, Crown, Info, FileText, Image, File, Plus, X, Search } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { PROVIDER_LOGOS, PROVIDER_COLORS } from '@/components/ui/ProviderLogos';
@@ -17,7 +17,7 @@ import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
-export type ContestMode = 'contest' | 'interview';
+
 
 interface Session {
   id: string;
@@ -157,7 +157,7 @@ export function ContestTaskSelector() {
   const { language } = useLanguage();
   const { user } = useAuth();
   const isRu = language === 'ru';
-  const { taskId, mode, updateTaskId, updateTaskTitle, updateMode, models, updateModels } = useContestConfigContext();
+  const { taskId, updateTaskId, updateTaskTitle, models, updateModels } = useContestConfigContext();
 
   const [sessions, setSessions] = useState<Session[]>([]);
 
@@ -210,39 +210,6 @@ export function ContestTaskSelector() {
       </HydraCardHeader>
 
       <HydraCardContent className="space-y-4">
-        {/* Mode selector: Contest vs Interview */}
-        <div className="space-y-1.5">
-          <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-            {isRu ? 'Режим' : 'Mode'}
-          </label>
-           <div className="flex gap-2">
-             <Button
-               variant={mode === 'contest' ? 'default' : 'outline'}
-               size="sm"
-               className="flex-1 gap-2 h-9"
-               onClick={() => updateMode('contest')}
-             >
-               <Trophy className="h-3.5 w-3.5" />
-               {isRu ? 'Конкурс' : 'Contest'}
-             </Button>
-             <Button
-               variant={mode === 'interview' ? 'default' : 'outline'}
-               size="sm"
-               className="flex-1 gap-2 h-9"
-               onClick={() => updateMode('interview')}
-             >
-               <UserCheck className="h-3.5 w-3.5" />
-               {isRu ? 'Собеседование' : 'Interview'}
-             </Button>
-           </div>
-           <p className="text-[10px] text-muted-foreground/60">
-             {mode === 'contest'
-              ? (isRu ? 'Отбор моделей для ролей Панели экспертов (Эксперт, Критик, Консультант...)' : 'Select models for Expert Panel roles (Expert, Critic, Consultant...)')
-              : (isRu ? 'Отбор моделей для ролей техперсонала (Модератор, Архивариус, Аналитик...)' : 'Select models for technical staff roles (Moderator, Archivist, Analyst...)')
-            }
-          </p>
-        </div>
-
         {/* Task selector */}
         <div className="space-y-2">
           <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">

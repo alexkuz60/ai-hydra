@@ -145,16 +145,10 @@ export function useContestConfig() {
   }, [loaded, syncFromPortfolio]);
 
   /** Reverse sync: push config.models → localStorage for Portfolio to read.
-   *  Skip the FIRST firing after load to give forward sync a chance to merge
-   *  localStorage data before we overwrite it with (potentially stale) DB value. */
+   *  Always sync when models change to keep Portfolio crown indicators up-to-date. */
   const prevSyncRef = useRef<string>('');
-  const skipFirstReverseSyncRef = useRef(true);
   useEffect(() => {
     if (!loaded) return;
-    if (skipFirstReverseSyncRef.current) {
-      skipFirstReverseSyncRef.current = false;
-      return;
-    }
     const serialized = JSON.stringify(config.models);
     if (serialized === prevSyncRef.current) return;
     prevSyncRef.current = serialized;
