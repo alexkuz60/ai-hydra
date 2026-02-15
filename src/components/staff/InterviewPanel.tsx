@@ -260,11 +260,25 @@ export function InterviewPanel({ role, onClose }: InterviewPanelProps) {
       )}
 
       {/* Actions */}
-      {session && session.status === 'briefed' && !interview.testing && (
+      {session && (session.status === 'briefed' || (session.status === 'testing' && !interview.testing)) && (
         <div className="p-3 border-b border-border shrink-0">
           <Button size="sm" className="w-full gap-2" onClick={handleRunTests}>
-            <Play className="h-3.5 w-3.5" />
-            {isRu ? 'Запустить тесты' : 'Run Tests'}
+            {session.status === 'testing' ? (
+              <>
+                <RefreshCw className="h-3.5 w-3.5" />
+                {isRu ? 'Возобновить тесты' : 'Resume Tests'}
+                {completedCount > 0 && (
+                  <Badge variant="secondary" className="text-[10px] ml-1">
+                    {completedCount}/{totalCount}
+                  </Badge>
+                )}
+              </>
+            ) : (
+              <>
+                <Play className="h-3.5 w-3.5" />
+                {isRu ? 'Запустить тесты' : 'Run Tests'}
+              </>
+            )}
           </Button>
         </div>
       )}

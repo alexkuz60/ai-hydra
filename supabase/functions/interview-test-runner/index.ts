@@ -460,7 +460,7 @@ serve(async (req) => {
       );
     }
 
-    if (session.status !== 'briefing' && session.status !== 'testing') {
+    if (session.status !== 'briefing' && session.status !== 'testing' && session.status !== 'briefed') {
       return new Response(
         JSON.stringify({ error: `Cannot run tests in status: ${session.status}` }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -480,12 +480,25 @@ serve(async (req) => {
 
     const isRu = language === 'ru';
 
+    // ── Resume logic: detect previously completed steps ──
+    const existingResults = (session.test_results as any)?.steps as any[] || [];
+    const completedTaskTypes = new Set(
+      existingResults
+        .filter((s: any) => s.status === 'completed')
+        .map((s: any) => s.task_type)
+    );
+    const isResume = completedTaskTypes.size > 0;
+
+    if (isResume) {
+      console.log(`[interview-test] Resuming session ${session_id}: ${completedTaskTypes.size} steps already completed`);
+    }
+
     // Update session to 'testing'
     await supabase
       .from('interview_sessions')
       .update({
         status: 'testing',
-        started_at: new Date().toISOString(),
+        started_at: session.started_at || new Date().toISOString(),
         config: {
           ...(session.config as Record<string, unknown> || {}),
           phase: 'testing',
@@ -507,13 +520,27 @@ serve(async (req) => {
           role,
           candidate_model: candidateModel,
           total_steps: allTasks.length,
+          resumed: isResume,
+          already_completed: completedTaskTypes.size,
         });
 
-        const testResults: unknown[] = [];
+        // Seed testResults with previously completed steps
+        const testResults: unknown[] = isResume ? [...existingResults] : [];
 
         for (let i = 0; i < allTasks.length; i++) {
           const task = allTasks[i];
           const stepIndex = i;
+
+          // Skip already completed steps on resume
+          if (isResume && completedTaskTypes.has(task.task_type)) {
+            send('step_skipped', {
+              step_index: stepIndex,
+              task_type: task.task_type,
+              competency: task.competency,
+              reason: 'already_completed',
+            });
+            continue;
+          }
 
           send('step_start', {
             step_index: stepIndex,
