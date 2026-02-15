@@ -512,7 +512,7 @@ export function BeautyContest() {
                eliminationThreshold={(contest.session?.config as any)?.rules?.eliminationThreshold ?? 3}
                onEliminateModel={async (modelId) => {
                  await contest.eliminateModel(modelId);
-                 toast({ description: isRu ? 'Модель отсеяна из конкурса' : 'Model eliminated from contest' });
+                 toast({ description: isRu ? 'Модель снята с конкурса' : 'Model eliminated from contest' });
                }}
                onRestoreModel={async (modelId) => {
                  await contest.restoreModel(modelId);
