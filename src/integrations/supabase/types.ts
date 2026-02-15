@@ -401,6 +401,60 @@ export type Database = {
         }
         Relationships: []
       }
+      interview_sessions: {
+        Row: {
+          briefing_data: Json | null
+          briefing_token_count: number | null
+          candidate_model: string
+          completed_at: string | null
+          config: Json | null
+          created_at: string | null
+          id: string
+          role: string
+          source_contest_id: string | null
+          started_at: string | null
+          status: string
+          test_results: Json | null
+          updated_at: string | null
+          user_id: string
+          verdict: Json | null
+        }
+        Insert: {
+          briefing_data?: Json | null
+          briefing_token_count?: number | null
+          candidate_model: string
+          completed_at?: string | null
+          config?: Json | null
+          created_at?: string | null
+          id?: string
+          role: string
+          source_contest_id?: string | null
+          started_at?: string | null
+          status?: string
+          test_results?: Json | null
+          updated_at?: string | null
+          user_id: string
+          verdict?: Json | null
+        }
+        Update: {
+          briefing_data?: Json | null
+          briefing_token_count?: number | null
+          candidate_model?: string
+          completed_at?: string | null
+          config?: Json | null
+          created_at?: string | null
+          id?: string
+          role?: string
+          source_contest_id?: string | null
+          started_at?: string | null
+          status?: string
+          test_results?: Json | null
+          updated_at?: string | null
+          user_id?: string
+          verdict?: Json | null
+        }
+        Relationships: []
+      }
       messages: {
         Row: {
           confidence_score: number | null
