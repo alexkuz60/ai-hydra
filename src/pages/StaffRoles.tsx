@@ -66,6 +66,13 @@ const StaffRoles = () => {
     setInterviewRole(role);
   }, []);
 
+  // Sync interview panel with selected role
+  React.useEffect(() => {
+    if (interviewRole && selectedRole && interviewRole !== selectedRole) {
+      setInterviewRole(selectedRole);
+    }
+  }, [selectedRole]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const handleCloseInterview = useCallback(() => {
     setInterviewRole(null);
   }, []);
