@@ -432,7 +432,7 @@ const Index = () => {
               <Button variant="outline" asChild className="hydra-border-glow">
                 <Link to="/hydrapedia">
                   <BookOpen className="mr-2 h-4 w-4" />
-                  Узнать больше в Гидропедии
+                  Узнать больше в Гидрапедии
                 </Link>
               </Button>
             </motion.div>

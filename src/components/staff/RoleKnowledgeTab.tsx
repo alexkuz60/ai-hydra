@@ -341,7 +341,7 @@ export default function RoleKnowledgeTab({ role }: RoleKnowledgeTabProps) {
               disabled={isSeeding}
             >
               {isSeeding ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
-              {language === 'ru' ? 'Из Гидропедии' : 'From Hydrapedia'}
+              {language === 'ru' ? 'Из Гидрапедии' : 'From Hydrapedia'}
             </Button>
           )}
           {stats.total > 0 && (
@@ -351,7 +351,7 @@ export default function RoleKnowledgeTab({ role }: RoleKnowledgeTabProps) {
               className="gap-1.5 h-7 text-xs text-muted-foreground"
               onClick={() => handleSeed(true)}
               disabled={isSeeding}
-              title={language === 'ru' ? 'Пересидить знания из Гидропедии (заменит существующие)' : 'Re-seed from Hydrapedia (replaces existing)'}
+              title={language === 'ru' ? 'Пересидить знания из Гидрапедии (заменит существующие)' : 'Re-seed from Hydrapedia (replaces existing)'}
             >
               {isSeeding ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
             </Button>
@@ -420,7 +420,7 @@ export default function RoleKnowledgeTab({ role }: RoleKnowledgeTabProps) {
               disabled={isSeeding}
             >
               {isSeeding ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-              {language === 'ru' ? 'Загрузить из Гидропедии' : 'Seed from Hydrapedia'}
+              {language === 'ru' ? 'Загрузить из Гидрапедии' : 'Seed from Hydrapedia'}
             </Button>
             <Button
               size="sm"
