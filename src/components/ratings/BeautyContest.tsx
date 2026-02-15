@@ -5,7 +5,6 @@ import { useContestSession } from '@/hooks/useContestSession';
 import { useContestExecution } from '@/hooks/useContestExecution';
 import { useContestActions } from '@/hooks/useContestActions';
 import { Crown, Play, Loader2, ChevronDown, ChevronUp, Send, BarChart3, Archive, MessageSquare, Scale, FileText, Users, ClipboardList } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -13,7 +12,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Textarea } from '@/components/ui/textarea';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import { getModelRegistryEntry } from '@/config/modelRegistry';
 import { PROVIDER_LOGOS, PROVIDER_COLORS } from '@/components/ui/ProviderLogos';
@@ -31,22 +30,27 @@ export function BeautyContest() {
   const { language } = useLanguage();
   const { user } = useAuth();
   const { toast } = useToast();
-  const navigate = useNavigate();
   const isRu = language === 'ru';
   const contest = useContestSession();
   const execution = useContestExecution();
-  const { handleMigrateToExpertPanel: migrateToExpertPanel, handleSaveToTask, savingToTask } = useContestActions({
+
+  const {
+    handleLaunch,
+    handleSendFollowUp: sendFollowUp,
+    handleMigrateToExpertPanel: migrateToExpertPanel,
+    handleSaveToTask,
+    savingToTask,
+    sendingFollowUp,
+  } = useContestActions({
     userId: user?.id,
-    session: contest.session,
-    results: contest.results,
-    rounds: contest.rounds,
+    contest,
+    execution,
     isRu,
   });
 
   const [followUpText, setFollowUpText] = useState('');
   const [initialLoad, setInitialLoad] = useState(true);
   const [activeModel, setActiveModel] = useState<string>('all');
-  const [sendingFollowUp, setSendingFollowUp] = useState(false);
   const [activeMainTab, setActiveMainTab] = useState<string>('responses');
   const [promptOpen, setPromptOpen] = useState(false);
   const [selectedWinners, setSelectedWinners] = useState<Set<string>>(new Set());
@@ -64,46 +68,20 @@ export function BeautyContest() {
     migrateToExpertPanel(selectedWinners);
   }, [migrateToExpertPanel, selectedWinners]);
 
+  const handleSendFollowUp = useCallback(async () => {
+    if (!followUpText.trim()) return;
+    await sendFollowUp(followUpText.trim(), activeModel);
+    setFollowUpText('');
+  }, [sendFollowUp, followUpText, activeModel]);
+
   useEffect(() => {
     if (user && initialLoad) {
       contest.loadLatestSession().finally(() => setInitialLoad(false));
     }
   }, [user]);
 
-  const handleLaunch = async () => {
-       const result = await contest.createFromWizard();
-     if (result) {
-       toast({ description: getRatingsText('contestLaunched', isRu) });
-       const firstRound = result.rounds.find(r => r.status === 'running') || result.rounds[0];
-      if (firstRound) {
-        await execution.executeRound(result.session, firstRound, result.results, contest.updateResult, result.rounds);
-      }
-    }
-  };
-
   const handleLoadFromHistory = async (sessionId: string) => {
     await contest.loadSession(sessionId);
-  };
-
-  const handleSendFollowUp = async () => {
-    if (!followUpText.trim() || !contest.session) return;
-    setSendingFollowUp(true);
-    try {
-       const targetModels = activeModel === 'all' ? undefined : [activeModel];
-       const followUp = await contest.createFollowUpRound(followUpText.trim(), targetModels);
-       if (followUp) {
-         setFollowUpText('');
-         const targetName = activeModel === 'all'
-           ? getRatingsText('all', isRu)
-           : (getModelRegistryEntry(activeModel)?.displayName || activeModel.split('/').pop());
-         toast({ description: `${getRatingsText('questionSentTo', isRu)} ${targetName}` });
-        await execution.executeRound(contest.session, followUp.round, [...contest.results, ...followUp.results], contest.updateResult, contest.rounds);
-      }
-    } catch (err: any) {
-      toast({ variant: 'destructive', description: err.message });
-    } finally {
-      setSendingFollowUp(false);
-    }
   };
 
   // No session — launch/restore UI
