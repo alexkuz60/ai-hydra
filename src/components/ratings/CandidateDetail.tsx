@@ -52,6 +52,8 @@ export function CandidateDetail({
   const Logo = PROVIDER_LOGOS[model.provider];
   const providerColor = PROVIDER_COLORS[model.provider] || 'text-muted-foreground';
 
+  const [pendingDuelType, setPendingDuelType] = useState<DuelType | null>(null);
+
   const [isOpen, setIsOpen] = useState(() => {
     try {
       const stored = localStorage.getItem(COLLAPSE_KEY);
@@ -175,24 +177,19 @@ export function CandidateDetail({
                           : (isRu ? 'Пригласить на подиум' : 'Invite to podium')}
                       </Button>
 
-                      <Button
-                        size="sm"
-                        variant={isSelectedForDuel ? 'default' : 'outline'}
-                        className="w-full h-8 text-xs"
-                        disabled={!isAvailable}
-                        onClick={() => onToggleDuel?.(model.id)}
-                      >
-                        <Swords className="h-3.5 w-3.5 mr-1.5 text-primary" />
-                        {isSelectedForDuel
-                          ? (isRu ? 'Отменить дуэль' : 'Cancel duel')
-                          : (isRu ? 'Вызвать на дуэль' : 'Challenge to duel')}
-                      </Button>
+                      <Separator className="my-1" />
 
                       <div className="flex items-center gap-3 text-xs">
                         <label className="flex items-center gap-1.5 cursor-pointer">
                           <Checkbox
-                            checked={duelType === 'critic'}
-                            onCheckedChange={() => onDuelTypeChange?.(model.id, 'critic')}
+                            checked={isSelectedForDuel ? duelType === 'critic' : pendingDuelType === 'critic'}
+                            onCheckedChange={() => {
+                              if (isSelectedForDuel) {
+                                onDuelTypeChange?.(model.id, 'critic');
+                              } else {
+                                setPendingDuelType(prev => prev === 'critic' ? null : 'critic');
+                              }
+                            }}
                             disabled={!isAvailable}
                             className="h-3.5 w-3.5"
                           />
@@ -200,14 +197,43 @@ export function CandidateDetail({
                         </label>
                         <label className="flex items-center gap-1.5 cursor-pointer">
                           <Checkbox
-                            checked={duelType === 'arbiter'}
-                            onCheckedChange={() => onDuelTypeChange?.(model.id, 'arbiter')}
+                            checked={isSelectedForDuel ? duelType === 'arbiter' : pendingDuelType === 'arbiter'}
+                            onCheckedChange={() => {
+                              if (isSelectedForDuel) {
+                                onDuelTypeChange?.(model.id, 'arbiter');
+                              } else {
+                                setPendingDuelType(prev => prev === 'arbiter' ? null : 'arbiter');
+                              }
+                            }}
                             disabled={!isAvailable}
                             className="h-3.5 w-3.5"
                           />
                           <span className="text-muted-foreground">{isRu ? 'Арбитр' : 'Arbiter'}</span>
                         </label>
                       </div>
+
+                      <Button
+                        size="sm"
+                        variant={isSelectedForDuel ? 'default' : 'outline'}
+                        className="w-full h-8 text-xs"
+                        disabled={!isAvailable || (!isSelectedForDuel && !pendingDuelType)}
+                        onClick={() => {
+                          if (isSelectedForDuel) {
+                            onToggleDuel?.(model.id);
+                            setPendingDuelType(null);
+                          } else if (pendingDuelType) {
+                            onToggleDuel?.(model.id);
+                            // Set the type after adding
+                            setTimeout(() => onDuelTypeChange?.(model.id, pendingDuelType), 0);
+                            setPendingDuelType(null);
+                          }
+                        }}
+                      >
+                        <Swords className="h-3.5 w-3.5 mr-1.5 text-primary" />
+                        {isSelectedForDuel
+                          ? (isRu ? 'Отменить дуэль' : 'Cancel duel')
+                          : (isRu ? 'Вызвать на дуэль' : 'Challenge to duel')}
+                      </Button>
                     </div>
                   </div>
                 </CollapsibleContent>
