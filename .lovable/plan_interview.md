@@ -1,7 +1,7 @@
 
 # Plan: Duel Mode ("K Baryeru") — IMPLEMENTED (Phase 1)
 
-Status: ✅ Core infrastructure complete
+Status: ✅ Core infrastructure complete (Phase 1 + Phase 2 backend)
 
 ## Completed Files
 
@@ -58,7 +58,7 @@ The edge function gathers 7 sections into a comprehensive Position Brief:
 - **Raw experience transfer** — no distillation yet; full predecessor memory passed to candidate
 - **Source tracking** — optional `source_contest_id` links interview to the contest that selected this candidate
 
-## Phase 2 — Testing (TODO)
+## Phase 2 — Testing (✅ IMPLEMENTED)
 
 ### Architecture: Universal Test Container ("Box Container")
 A modular container with standardized connection points:
