@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { useContestSession } from '@/hooks/useContestSession';
+import { useContestSession, type ContestResult } from '@/hooks/useContestSession';
 import { useContestExecution } from '@/hooks/useContestExecution';
 import { Crown, Play, Loader2, ChevronDown, ChevronUp, Send, BarChart3, Archive, MessageSquare, Scale, FileText, Users, ClipboardList } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -219,6 +219,67 @@ export function BeautyContest() {
       contest.loadLatestSession().finally(() => setInitialLoad(false));
     }
   }, [user]);
+
+  // Auto-advance to next pre-planned round after current one completes
+  useEffect(() => {
+    if (execution.executing || execution.arbiterRunning) return;
+    if (!contest.session || contest.session.status !== 'running') return;
+    if (contest.rounds.length === 0) return;
+
+    const completedRounds = contest.rounds.filter(r => r.status === 'completed');
+    if (completedRounds.length === 0) return;
+
+    const lastCompleted = completedRounds.sort((a, b) => b.round_index - a.round_index)[0];
+
+    // Check all results for the last completed round are judged or at least ready
+    const lastRoundResults = contest.results.filter(r => r.round_id === lastCompleted.id);
+    const allDone = lastRoundResults.length > 0 && lastRoundResults.every(
+      r => r.status === 'judged' || r.status === 'ready' || r.status === 'failed'
+    );
+    if (!allDone) return;
+
+    // Find the next pre-planned round (not follow-ups created later)
+    const nextRound = contest.rounds.find(
+      r => r.round_index === lastCompleted.round_index + 1 && r.status === 'pending'
+    );
+    if (!nextRound) return;
+
+    // Create results for the next round if they don't exist yet
+    const nextRoundResults = contest.results.filter(r => r.round_id === nextRound.id);
+    if (nextRoundResults.length > 0) {
+      // Results already exist, execute
+      execution.executeRound(
+        contest.session, nextRound, contest.results,
+        contest.updateResult, contest.rounds,
+      );
+    } else {
+      // Need to create results for the next round's models, then execute
+      const eliminated: string[] = (contest.session.config as any).eliminatedModels || [];
+      const modelIds = Object.keys(contest.session.config.models || {}).filter(id => !eliminated.includes(id));
+      if (modelIds.length === 0) return;
+
+      (async () => {
+        const { data: resultsData } = await supabase
+          .from('contest_results')
+          .insert(modelIds.map(modelId => ({
+            round_id: nextRound.id,
+            session_id: contest.session!.id,
+            model_id: modelId,
+            status: 'pending',
+          })))
+          .select();
+
+        if (resultsData) {
+          const newResults = resultsData as unknown as ContestResult[];
+          // Results will be picked up via realtime subscription, but also pass them directly
+          execution.executeRound(
+            contest.session!, nextRound, [...contest.results, ...newResults],
+            contest.updateResult, contest.rounds,
+          );
+        }
+      })();
+    }
+  }, [execution.executing, execution.arbiterRunning, contest.rounds, contest.results, contest.session]);
 
   const handleLaunch = async () => {
        const result = await contest.createFromWizard();
