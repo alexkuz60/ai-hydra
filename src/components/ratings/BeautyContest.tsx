@@ -415,17 +415,19 @@ export function BeautyContest() {
   }
 
   // Active session view
-  const currentRoundIndex = contest.rounds.findIndex(r => r.status === 'running') ?? 0;
-  const currentRound = contest.rounds[currentRoundIndex >= 0 ? currentRoundIndex : 0];
+  const runningIdx = contest.rounds.findIndex(r => r.status === 'running');
+  const completedCount = contest.rounds.filter(r => r.status === 'completed').length;
+  const currentRoundIndex = runningIdx >= 0 ? runningIdx : Math.max(0, completedCount - 1);
+  const currentRound = contest.rounds[currentRoundIndex] || contest.rounds[0];
 
 
   return (
     <div className="h-full flex flex-col">
        <ContestScoreboard
           results={contest.results}
-          currentRound={currentRoundIndex >= 0 ? currentRoundIndex : 0}
+          currentRound={currentRoundIndex}
           totalRounds={contest.rounds.length || 1}
-          completedRounds={contest.rounds.filter(r => r.status === 'completed').length}
+          completedRounds={completedCount}
           status={contest.session?.status || 'draft'}
           sessionName={contest.session?.name || getRatingsText('contest', isRu)}
           arbiterCount={contest.session?.config?.arbitration?.juryMode === 'ai' ? 1 : contest.session?.config?.arbitration?.juryMode === 'hybrid' ? 2 : 0}

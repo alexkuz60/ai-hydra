@@ -177,7 +177,7 @@ export function ContestScoresTable({ results, rounds, isRu, selectedWinners, onT
                       {isSelected && <Crown className="h-3 w-3 text-hydra-arbiter shrink-0" />}
                       {isEliminated && (
                         <Badge variant="destructive" className="text-[9px] px-1 py-0 h-4 shrink-0">
-                          {isRu ? 'отсеяна' : 'out'}
+                          {isRu ? 'снята' : 'out'}
                         </Badge>
                       )}
                       {isCandidateForElimination && (
@@ -199,14 +199,14 @@ export function ContestScoresTable({ results, rounds, isRu, selectedWinners, onT
                                   className="text-[9px] px-1.5 py-0 h-4 gap-0.5 animate-pulse border-destructive/50 text-destructive cursor-pointer hover:bg-destructive/10 transition-colors"
                                 >
                                   <AlertTriangle className="h-2.5 w-2.5" />
-                                  {isRu ? 'отсеять?' : 'drop?'}
+                                  {isRu ? 'снять?' : 'drop?'}
                                 </Badge>
                               </button>
                             </TooltipTrigger>
                             <TooltipContent side="top" className="text-[10px]">
                               {isRu
-                                ? `Средний балл ${avgScore.toFixed(1)} ниже порога ${eliminationThreshold}. Нажмите для отсева.`
-                                : `Avg score ${avgScore.toFixed(1)} below threshold ${eliminationThreshold}. Click to eliminate.`}
+                                 ? `Средний балл ${avgScore.toFixed(1)} ниже порога ${eliminationThreshold}. Нажмите, чтобы снять.`
+                                 : `Avg score ${avgScore.toFixed(1)} below threshold ${eliminationThreshold}. Click to eliminate.`}
                             </TooltipContent>
                           </Tooltip>
                         </TooltipProvider>
@@ -257,7 +257,7 @@ export function ContestScoresTable({ results, rounds, isRu, selectedWinners, onT
                                 size="sm"
                                 className="h-6 w-6 p-0"
                                 disabled={activeModelCount <= 2}
-                                onClick={() => onEliminateModel(row.modelId)}
+                                onClick={() => setConfirmEliminate(row.modelId)}
                               >
                                 <UserMinus className="h-3 w-3 text-destructive" />
                               </Button>
@@ -268,7 +268,7 @@ export function ContestScoresTable({ results, rounds, isRu, selectedWinners, onT
                               ? (isRu ? 'Вернуть в конкурс' : 'Restore to contest')
                               : activeModelCount <= 2
                                 ? (isRu ? 'Минимум 2 модели должны остаться' : 'At least 2 models must remain')
-                                : (isRu ? 'Отсеять из конкурса' : 'Eliminate from contest')
+                                : (isRu ? 'Снять с конкурса' : 'Eliminate from contest')
                             }
                           </TooltipContent>
                         </Tooltip>
@@ -318,7 +318,7 @@ export function ContestScoresTable({ results, rounds, isRu, selectedWinners, onT
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              {isRu ? 'Отсеять модель?' : 'Eliminate model?'}
+              {isRu ? 'Снять модель с конкурса?' : 'Eliminate model?'}
             </AlertDialogTitle>
             <AlertDialogDescription>
               {(() => {
@@ -341,7 +341,7 @@ export function ContestScoresTable({ results, rounds, isRu, selectedWinners, onT
                 setConfirmEliminate(null);
               }}
             >
-              {isRu ? 'Отсеять' : 'Eliminate'}
+              {isRu ? 'Снять' : 'Eliminate'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
