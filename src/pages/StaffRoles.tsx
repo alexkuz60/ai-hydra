@@ -2,17 +2,10 @@ import React, { useState, useMemo, useCallback } from 'react';
 import { Layout } from '@/components/layout/Layout';
 import { useLanguage } from '@/contexts/LanguageContext';
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
 import {
-  ResizablePanelGroup,
-  ResizablePanel,
-  ResizableHandle,
+  ResizablePanelGroup, ResizablePanel, ResizableHandle,
 } from '@/components/ui/resizable';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -32,8 +25,6 @@ import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/comp
 import { getTechRoleDefaultModel } from '@/hooks/useTechRoleDefaults';
 import { getModelShortName } from '@/components/warroom/permodel/types';
 
-const TECHNICAL_ROLES: AgentRole[] = ['archivist', 'analyst', 'promptengineer', 'flowregulator', 'toolsmith', 'webhunter', 'guide'];
-
 const StaffRoles = () => {
   const { t, language } = useLanguage();
   const cloudSynced = useCloudSyncStatus();
@@ -41,23 +32,33 @@ const StaffRoles = () => {
   const [expertsExpanded, setExpertsExpanded] = useState(true);
   const [technicalExpanded, setTechnicalExpanded] = useState(true);
   const [isBulkSeeding, setIsBulkSeeding] = useState(false);
-  
-  // Track unsaved changes from RoleDetailsPanel
+
   const unsavedChanges = useUnsavedChanges();
-  
-  // Navigator resize
   const nav = useNavigatorResize({ storageKey: 'staff-roles', defaultMaxSize: 35 });
-  
+
+  // Группируем роли на экспертов и технический персонал
+  const { expertRoles, technicalRoles } = useMemo(() => {
+    const experts: AgentRole[] = [];
+    const technical: AgentRole[] = [];
+    AGENT_ROLES.forEach((role) => {
+      if (ROLE_CONFIG[role].isTechnicalStaff) {
+        technical.push(role);
+      } else {
+        experts.push(role);
+      }
+    });
+    return { expertRoles: experts, technicalRoles: technical };
+  }, []);
+
   const handleRoleSelect = useCallback((role: AgentRole) => {
     if (role === selectedRole) return;
-    
     if (unsavedChanges.hasUnsavedChanges) {
       unsavedChanges.withConfirmation(() => setSelectedRole(role));
     } else {
       setSelectedRole(role);
     }
   }, [selectedRole, unsavedChanges]);
-  
+
   const handleHasUnsavedChanges = useCallback((hasChanges: boolean) => {
     unsavedChanges.setHasUnsavedChanges(hasChanges);
   }, [unsavedChanges]);
@@ -69,22 +70,13 @@ const StaffRoles = () => {
     let skipped = 0;
 
     try {
-      for (const role of TECHNICAL_ROLES) {
+      for (const role of technicalRoles) {
         const { data, error } = await supabase.functions.invoke('seed-role-knowledge', {
           body: { role, include_system_prompt: true, force: false },
         });
-
-        if (error) {
-          console.error(`[BulkSeed] Error for ${role}:`, error);
-          continue;
-        }
-
-        if (data?.skipped) {
-          skipped++;
-        } else if (data?.seeded > 0) {
-          totalSeeded += data.seeded;
-          rolesProcessed++;
-        }
+        if (error) { console.error(`[BulkSeed] Error for ${role}:`, error); continue; }
+        if (data?.skipped) { skipped++; }
+        else if (data?.seeded > 0) { totalSeeded += data.seeded; rolesProcessed++; }
       }
 
       if (totalSeeded > 0) {
@@ -93,7 +85,7 @@ const StaffRoles = () => {
             ? `Загружено ${totalSeeded} фрагментов для ${rolesProcessed} ролей${skipped > 0 ? ` (${skipped} пропущено)` : ''}`
             : `Loaded ${totalSeeded} chunks for ${rolesProcessed} roles${skipped > 0 ? ` (${skipped} skipped)` : ''}`
         );
-      } else if (skipped === TECHNICAL_ROLES.length) {
+      } else if (skipped === technicalRoles.length) {
         toast.info(
           language === 'ru'
             ? 'Все техроли уже имеют знания. Используйте пересидинг на вкладке роли.'
@@ -108,54 +100,32 @@ const StaffRoles = () => {
     } finally {
       setIsBulkSeeding(false);
     }
-  }, [language]);
+  }, [language, technicalRoles]);
 
-  // Группируем роли на экспертов и технический персонал
-  const { expertRoles, technicalRoles } = useMemo(() => {
-    const experts: AgentRole[] = [];
-    const technical: AgentRole[] = [];
-    
-    AGENT_ROLES.forEach((role) => {
-      if (ROLE_CONFIG[role].isTechnicalStaff) {
-        technical.push(role);
-      } else {
-        experts.push(role);
-      }
-    });
-    
-    return { expertRoles: experts, technicalRoles: technical };
-  }, []);
-
-  const renderRoleRow = (role: AgentRole) => {
+  const renderRoleRow = useCallback((role: AgentRole) => {
     const config = ROLE_CONFIG[role];
     const IconComponent = config.icon;
     const isSelected = selectedRole === role;
-    
+    const defaultModel = config.isTechnicalStaff ? getTechRoleDefaultModel(role) : null;
+
     return (
-      <TableRow 
-        key={role} 
+      <TableRow
+        key={role}
         className={cn(
           "cursor-pointer transition-colors",
-          isSelected 
-            ? "bg-primary/10 hover:bg-primary/15" 
-            : "hover:bg-muted/30"
+          isSelected ? "bg-primary/10 hover:bg-primary/15" : "hover:bg-muted/30"
         )}
         onClick={() => handleRoleSelect(role)}
       >
         <TableCell className="pl-8">
-          <div className={cn(
-            "w-10 h-10 rounded-lg flex items-center justify-center",
-            `bg-${config.color.replace('text-', '')}/10`
-          )}>
+          <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center", `bg-${config.color.replace('text-', '')}/10`)}>
             <IconComponent className={cn("h-5 w-5", config.color)} />
           </div>
         </TableCell>
         <TableCell>
           <div className="flex flex-col gap-1">
             <div className="flex items-center gap-2">
-              <span className={cn("font-medium", config.color)}>
-                {t(config.label)}
-              </span>
+              <span className={cn("font-medium", config.color)}>{t(config.label)}</span>
               {isSelected && unsavedChanges.hasUnsavedChanges && (
                 <span className="w-2 h-2 rounded-full bg-hydra-warning animate-pulse-glow shrink-0" title="Unsaved changes" />
               )}
@@ -164,24 +134,43 @@ const StaffRoles = () => {
                   <Wrench className="h-3 w-3" />
                 </Badge>
               )}
-              {config.isTechnicalStaff && (() => {
-                const defaultModel = getTechRoleDefaultModel(role);
-                return defaultModel ? (
-                  <Badge variant="outline" className="gap-1 text-[10px] py-0 font-mono text-muted-foreground">
-                    <Cpu className="h-2.5 w-2.5" />
-                    {getModelShortName(defaultModel)}
-                  </Badge>
-                ) : null;
-              })()}
+              {defaultModel && (
+                <Badge variant="outline" className="gap-1 text-[10px] py-0 font-mono text-muted-foreground">
+                  <Cpu className="h-2.5 w-2.5" />
+                  {getModelShortName(defaultModel)}
+                </Badge>
+              )}
             </div>
-            <span className="text-xs text-muted-foreground font-mono">
-              {role}
-            </span>
+            <span className="text-xs text-muted-foreground font-mono">{role}</span>
           </div>
         </TableCell>
       </TableRow>
     );
-  };
+  }, [selectedRole, unsavedChanges.hasUnsavedChanges, handleRoleSelect, t]);
+
+  const renderGroupHeader = useCallback((
+    expanded: boolean,
+    onToggle: () => void,
+    icon: React.ReactNode,
+    label: string,
+    count: number,
+    guideId: string,
+  ) => (
+    <TableRow
+      className="bg-muted/30 hover:bg-muted/40 cursor-pointer"
+      onClick={onToggle}
+      data-guide={guideId}
+    >
+      <TableCell colSpan={2} className="py-2">
+        <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+          {expanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+          {icon}
+          {label}
+          <Badge variant="outline" className="ml-auto text-xs">{count}</Badge>
+        </div>
+      </TableCell>
+    </TableRow>
+  ), []);
 
   return (
     <Layout>
@@ -208,10 +197,10 @@ const StaffRoles = () => {
         </div>
 
         <ResizablePanelGroup direction="horizontal" className="flex-1">
-          <ResizablePanel 
+          <ResizablePanel
             ref={nav.panelRef}
-            defaultSize={nav.panelSize} 
-            minSize={4} 
+            defaultSize={nav.panelSize}
+            minSize={4}
             maxSize={50}
             onResize={nav.onPanelResize}
             data-guide="staff-list"
@@ -223,103 +212,63 @@ const StaffRoles = () => {
                 onToggle={nav.toggle}
               />
               <div className="flex-1 overflow-auto">
-              {nav.isMinimized ? (
-                <TooltipProvider delayDuration={200}>
-                  <div className="p-1 space-y-1">
-                    {[...expertRoles, ...technicalRoles].map((role) => {
-                      const config = ROLE_CONFIG[role];
-                      const IconComponent = config.icon;
-                      const isSelected = selectedRole === role;
-                      return (
-                        <Tooltip key={role}>
-                          <TooltipTrigger asChild>
-                            <div
-                              className={cn(
-                                "relative flex items-center justify-center p-2 rounded-lg cursor-pointer transition-colors",
-                                isSelected ? "bg-primary/10" : "hover:bg-muted/30"
-                              )}
-                              onClick={() => handleRoleSelect(role)}
-                            >
-                              <IconComponent className={cn("h-5 w-5", config.color)} />
-                              {isSelected && unsavedChanges.hasUnsavedChanges && (
-                                <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-hydra-warning animate-pulse-glow" />
-                              )}
-                            </div>
-                          </TooltipTrigger>
-                          <TooltipContent side="right" className="max-w-[200px]">
-                            <div className="space-y-1">
-                              <div className="flex items-center gap-2">
-                                <IconComponent className={cn("h-4 w-4", config.color)} />
-                                <span className="font-medium text-sm">{t(config.label)}</span>
+                {nav.isMinimized ? (
+                  <TooltipProvider delayDuration={200}>
+                    <div className="p-1 space-y-1">
+                      {[...expertRoles, ...technicalRoles].map((role) => {
+                        const config = ROLE_CONFIG[role];
+                        const IconComponent = config.icon;
+                        const isSelected = selectedRole === role;
+                        return (
+                          <Tooltip key={role}>
+                            <TooltipTrigger asChild>
+                              <div
+                                className={cn(
+                                  "relative flex items-center justify-center p-2 rounded-lg cursor-pointer transition-colors",
+                                  isSelected ? "bg-primary/10" : "hover:bg-muted/30"
+                                )}
+                                onClick={() => handleRoleSelect(role)}
+                              >
+                                <IconComponent className={cn("h-5 w-5", config.color)} />
+                                {isSelected && unsavedChanges.hasUnsavedChanges && (
+                                  <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-hydra-warning animate-pulse-glow" />
+                                )}
                               </div>
-                              <ul className="text-xs text-muted-foreground space-y-0.5">
-                                <li>• {config.isTechnicalStaff ? t('staffRoles.technicalGroup') : t('staffRoles.expertsGroup')}</li>
-                                <li>• {role}</li>
-                              </ul>
-                            </div>
-                          </TooltipContent>
-                        </Tooltip>
-                      );
-                    })}
-                  </div>
-                </TooltipProvider>
-              ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow className="bg-muted/50">
-                    <TableHead className="w-16">{t('staffRoles.icon')}</TableHead>
-                    <TableHead>{t('staffRoles.role')}</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {/* Группа экспертов */}
-                   <TableRow 
-                    className="bg-muted/30 hover:bg-muted/40 cursor-pointer"
-                    onClick={() => setExpertsExpanded(!expertsExpanded)}
-                    data-guide="staff-experts-group"
-                  >
-                    <TableCell colSpan={2} className="py-2">
-                      <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-                        {expertsExpanded ? (
-                          <ChevronDown className="h-4 w-4" />
-                        ) : (
-                          <ChevronRight className="h-4 w-4" />
-                        )}
-                        <Users className="h-4 w-4" />
-                        {t('staffRoles.expertsGroup')}
-                        <Badge variant="outline" className="ml-auto text-xs">
-                          {expertRoles.length}
-                        </Badge>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                  {expertsExpanded && expertRoles.map(renderRoleRow)}
-                  
-                  {/* Группа технического персонала */}
-                  <TableRow 
-                    className="bg-muted/30 hover:bg-muted/40 cursor-pointer"
-                    onClick={() => setTechnicalExpanded(!technicalExpanded)}
-                    data-guide="staff-technical-group"
-                  >
-                    <TableCell colSpan={2} className="py-2">
-                      <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-                        {technicalExpanded ? (
-                          <ChevronDown className="h-4 w-4" />
-                        ) : (
-                          <ChevronRight className="h-4 w-4" />
-                        )}
-                        <Settings className="h-4 w-4" />
-                        {t('staffRoles.technicalGroup')}
-                        <Badge variant="outline" className="ml-auto text-xs">
-                          {technicalRoles.length}
-                        </Badge>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                  {technicalExpanded && technicalRoles.map(renderRoleRow)}
-                </TableBody>
-              </Table>
-              )}
+                            </TooltipTrigger>
+                            <TooltipContent side="right" className="max-w-[200px]">
+                              <div className="space-y-1">
+                                <div className="flex items-center gap-2">
+                                  <IconComponent className={cn("h-4 w-4", config.color)} />
+                                  <span className="font-medium text-sm">{t(config.label)}</span>
+                                </div>
+                                <ul className="text-xs text-muted-foreground space-y-0.5">
+                                  <li>• {config.isTechnicalStaff ? t('staffRoles.technicalGroup') : t('staffRoles.expertsGroup')}</li>
+                                  <li>• {role}</li>
+                                </ul>
+                              </div>
+                            </TooltipContent>
+                          </Tooltip>
+                        );
+                      })}
+                    </div>
+                  </TooltipProvider>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-muted/50">
+                        <TableHead className="w-16">{t('staffRoles.icon')}</TableHead>
+                        <TableHead>{t('staffRoles.role')}</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {renderGroupHeader(expertsExpanded, () => setExpertsExpanded(!expertsExpanded), <Users className="h-4 w-4" />, t('staffRoles.expertsGroup'), expertRoles.length, 'staff-experts-group')}
+                      {expertsExpanded && expertRoles.map(renderRoleRow)}
+
+                      {renderGroupHeader(technicalExpanded, () => setTechnicalExpanded(!technicalExpanded), <Settings className="h-4 w-4" />, t('staffRoles.technicalGroup'), technicalRoles.length, 'staff-technical-group')}
+                      {technicalExpanded && technicalRoles.map(renderRoleRow)}
+                    </TableBody>
+                  </Table>
+                )}
               </div>
             </div>
           </ResizablePanel>
@@ -328,15 +277,14 @@ const StaffRoles = () => {
 
           <ResizablePanel defaultSize={100 - nav.panelSize} minSize={50} maxSize={96}>
             <div className="h-full border-l border-border bg-card" data-guide="role-details">
-              <RoleDetailsPanel 
-                selectedRole={selectedRole} 
+              <RoleDetailsPanel
+                selectedRole={selectedRole}
                 onHasUnsavedChanges={handleHasUnsavedChanges}
               />
             </div>
           </ResizablePanel>
         </ResizablePanelGroup>
-        
-        {/* Unsaved changes confirmation dialog */}
+
         <UnsavedChangesDialog
           open={unsavedChanges.showConfirmDialog}
           onConfirm={unsavedChanges.confirmAndProceed}
