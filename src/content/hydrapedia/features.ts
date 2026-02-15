@@ -1115,4 +1115,283 @@ If "User evaluation" is enabled, the duel pauses after each round for the user t
 The winner is determined by the number of rounds won. Equal score means a draw.`,
     },
   },
+  {
+    id: 'contest-rules',
+    titleKey: 'hydrapedia.sections.contestRules',
+    icon: 'Settings2',
+    content: {
+      ru: `# Правила конкурса — детальный разбор
+
+Раздел **«Правила конкурса»** — это пошаговый мастер настройки перед запуском конкурса интеллект-красоты. Каждый шаг реализован отдельным компонентом-карточкой (\`HydraCard\`) с номером этапа и тематической иконкой.
+
+## Шаг 1 — Задача и промпт (TaskSelector)
+
+\`ContestTaskSelector\` — выбор **задания**, которое модели будут выполнять.
+
+### Элементы управления
+
+- **Идентификатор задачи** — уникальный ID для отслеживания результатов
+- **Заголовок** — человекочитаемое название задачи (обязательно)
+- **Промпт** — текст задания, который будет отправлен всем моделям-участникам. Поддерживает многострочный ввод
+
+> [!TIP] Валидация
+> Поля «ID задачи» и «Заголовок» обязательны — без них кнопка запуска неактивна. Ошибки подсвечиваются красной рамкой.
+
+### Связь с Библиотекой промптов
+
+Промпт можно импортировать из **Библиотеки промптов** через кнопку 📚 — это позволяет переиспользовать проверенные задания.
+
+---
+
+## Шаг 2 — Правила (RulesEditor)
+
+\`ContestRulesEditor\` — настройка параметров проведения конкурса.
+
+### Участники
+
+Инлайн-селектор моделей с горизонтальной прокруткой. Каждая модель отображается чипом с иконкой провайдера. Добавление через выпадающий список с поиском. Минимум **2 модели** для запуска.
+
+### Количество раундов
+
+Слайдер от 1 до 10. По умолчанию: 3 раунда. Количество раундов определяет, сколько раз каждая модель ответит на промпт.
+
+### Критерии оценки
+
+Мульти-селект из предустановленных критериев:
+- **factuality** — фактологическая точность
+- **relevance** — релевантность ответа
+- **clarity** — ясность изложения
+- **argument_strength** — сила аргументации
+- **creativity** — креативность решения
+- **bias_detection** — обнаружение предвзятости
+
+Критерии можно комбинировать. При назначении роли (Шаг 3) критерии роли автоматически мёрджатся с выбранными.
+
+### Веса критериев
+
+Каждому критерию можно назначить числовой вес (по умолчанию — равные веса). Веса используются при расчёте итогового балла по схеме Weighted Average.
+
+### Режим элиминации
+
+Выбор из трёх режимов:
+
+| Режим | Описание |
+|-------|----------|
+| **Ручной** | Пользователь вручную снимает модели кнопкой ❌ |
+| **По порогу** | Модели ниже заданного балла подсвечиваются предупреждением |
+| **Автоматический** | Система автоматически снимает аутсайдеров |
+
+---
+
+## Шаг 3 — Пайплайн (PipelineSelector)
+
+\`ContestPipelineSelector\` — выбор **шаблона автоматического потока выполнения**.
+
+### Доступные шаблоны
+
+Шаблоны определяют автоматическую цепочку действий:
+
+1. **Не нужен** — ручное управление каждым этапом
+2. **Базовый** — ответы кандидатов → оценки пользователя → подведение итогов
+3. **С арбитражем** — ответы → оценки пользователя → оценки арбитра → итоги
+4. **Полный** — ответы → пользователь → арбитр → элиминация → финальный рейтинг
+
+> [!TIP] Подсказка
+> Шаблон определяет автоматическую цепочку: ответы кандидатов → оценки пользователя → арбитраж → подведение итогов. Без шаблона конкурс выполняется вручную.
+
+---
+
+## Шаг 4 — Арбитраж (Arbitration)
+
+\`ContestArbitration\` — настройка автоматической оценки ответов моделей.
+
+### Модель-арбитр
+
+Выбор модели, которая будет выставлять оценки ответам участников. Рекомендуется выбирать модель, **не участвующую** в конкурсе, для беспристрастности.
+
+### Схема оценки
+
+Выбор из трёх схем расчёта итогового балла:
+
+| Схема | Результат | Когда использовать |
+|-------|-----------|-------------------|
+| **Weighted Average** | Балл 0–100 | Быстрая оценка, 1–3 раунда |
+| **Tournament** | Очки W/D/L | Чемпионат, 3–5 раундов |
+| **Elo Rating** | Рейтинг 1500+ | Долгосрочный рейтинг, 4+ раундов |
+
+Подробное описание каждой схемы — в разделе «Подиум ИИ-моделей» → «Схемы итоговой оценки конкурса».
+
+### Баланс весов (User / Arbiter)
+
+Слайдер распределения влияния между оценками пользователя и арбитра. По умолчанию: **40% пользователь / 60% арбитр**. Полностью автоматический арбитраж возможен при 0% / 100%.
+
+---
+
+## Шаг 5 — Итоговая конфигурация (Summary)
+
+\`ContestSummary\` — визуальная сводка всех настроек перед запуском.
+
+### Отображаемая информация
+
+- **Режим** — Конкурс / Собеседование
+- **Участники** — количество выбранных моделей
+- **Раунды** — количество раундов
+- **Задача** — заголовок выбранной задачи
+- **Пайплайн** — выбранный шаблон потока
+
+### Запуск
+
+Кнопка **«Запустить конкурс»** активна только при валидной конфигурации. При ошибках валидации соответствующие поля подсвечиваются на своих шагах.
+
+---
+
+## Единый контекст состояния
+
+Все компоненты планирования конкурса обёрнуты в \`ContestConfigProvider\` — общий React Context, который:
+
+- Синхронизирует состояние между шагами (1–5)
+- Сохраняет настройки в облако через \`useCloudSettings\`
+- Обеспечивает валидацию перед запуском
+- Исключает дублирующие запросы к базе данных
+
+> [!TIP] Облачная синхронизация
+> Все настройки конкурса автоматически сохраняются в облако. При перезагрузке страницы конфигурация восстанавливается.`,
+      en: `# Contest Rules — Detailed Breakdown
+
+The **"Contest Rules"** section is a step-by-step configuration wizard for setting up an Intelligence Beauty Contest. Each step is implemented as a separate card component (\`HydraCard\`) with a step number and themed icon.
+
+## Step 1 — Task & Prompt (TaskSelector)
+
+\`ContestTaskSelector\` — selecting the **task** that models will perform.
+
+### Controls
+
+- **Task ID** — unique identifier for tracking results
+- **Title** — human-readable task name (required)
+- **Prompt** — the assignment text sent to all participant models. Supports multiline input
+
+> [!TIP] Validation
+> "Task ID" and "Title" fields are required — without them the launch button is disabled. Errors are highlighted with a red border.
+
+### Prompt Library Integration
+
+The prompt can be imported from the **Prompt Library** via the 📚 button — allowing reuse of proven assignments.
+
+---
+
+## Step 2 — Rules (RulesEditor)
+
+\`ContestRulesEditor\` — configuring contest parameters.
+
+### Participants
+
+Inline model selector with horizontal scrolling. Each model is shown as a chip with provider icon. Add via searchable dropdown. Minimum **2 models** required to launch.
+
+### Round Count
+
+Slider from 1 to 10. Default: 3 rounds. The round count determines how many times each model will respond to the prompt.
+
+### Evaluation Criteria
+
+Multi-select from preset criteria:
+- **factuality** — factual accuracy
+- **relevance** — response relevance
+- **clarity** — clarity of expression
+- **argument_strength** — argument strength
+- **creativity** — solution creativity
+- **bias_detection** — bias detection
+
+Criteria can be combined. When a role is assigned (Step 3), role-specific criteria are automatically merged with selected ones.
+
+### Criteria Weights
+
+Each criterion can be assigned a numeric weight (equal weights by default). Weights are used when calculating the final score under the Weighted Average scheme.
+
+### Elimination Mode
+
+Choose from three modes:
+
+| Mode | Description |
+|------|-------------|
+| **Manual** | User manually eliminates models with the ❌ button |
+| **Threshold** | Models below a set score are highlighted with a warning |
+| **Automatic** | System automatically eliminates underperformers |
+
+---
+
+## Step 3 — Pipeline (PipelineSelector)
+
+\`ContestPipelineSelector\` — selecting an **automated execution flow template**.
+
+### Available Templates
+
+Templates define the automated action chain:
+
+1. **Not needed** — manual control of each stage
+2. **Basic** — candidate responses → user ratings → final results
+3. **With arbitration** — responses → user ratings → arbiter scores → results
+4. **Full** — responses → user → arbiter → elimination → final ranking
+
+> [!TIP] Hint
+> The template defines the automated chain: candidate responses → user ratings → arbitration → final results. Without a template, the contest runs manually.
+
+---
+
+## Step 4 — Arbitration
+
+\`ContestArbitration\` — configuring automatic evaluation of model responses.
+
+### Arbiter Model
+
+Select the model that will score participant responses. It's recommended to choose a model **not participating** in the contest for impartiality.
+
+### Scoring Scheme
+
+Choose from three final score calculation schemes:
+
+| Scheme | Result | When to Use |
+|--------|--------|-------------|
+| **Weighted Average** | Score 0–100 | Quick evaluation, 1–3 rounds |
+| **Tournament** | W/D/L points | Championship, 3–5 rounds |
+| **Elo Rating** | Rating 1500+ | Long-term rating, 4+ rounds |
+
+Detailed description of each scheme — in the "AI Model Podium" → "Final Scoring Schemes" section.
+
+### Weight Balance (User / Arbiter)
+
+Slider for distributing influence between user and arbiter scores. Default: **40% user / 60% arbiter**. Fully automatic arbitration is possible at 0% / 100%.
+
+---
+
+## Step 5 — Final Configuration (Summary)
+
+\`ContestSummary\` — visual overview of all settings before launch.
+
+### Displayed Information
+
+- **Mode** — Contest / Interview
+- **Participants** — number of selected models
+- **Rounds** — round count
+- **Task** — selected task title
+- **Pipeline** — selected flow template
+
+### Launch
+
+The **"Launch Contest"** button is only active with a valid configuration. On validation errors, corresponding fields are highlighted on their respective steps.
+
+---
+
+## Unified State Context
+
+All contest planning components are wrapped in \`ContestConfigProvider\` — a shared React Context that:
+
+- Synchronizes state across steps (1–5)
+- Saves settings to cloud via \`useCloudSettings\`
+- Provides pre-launch validation
+- Prevents duplicate database queries
+
+> [!TIP] Cloud Sync
+> All contest settings are automatically saved to the cloud. On page reload, configuration is restored.`,
+    },
+  },
 ];
