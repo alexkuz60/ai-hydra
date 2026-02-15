@@ -1,10 +1,11 @@
-import React from 'react';
-import { Crown, BarChart3, UserMinus, UserPlus } from 'lucide-react';
+import React, { useState } from 'react';
+import { Crown, BarChart3, UserMinus, UserPlus, AlertTriangle } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { cn } from '@/lib/utils';
 import { getModelRegistryEntry } from '@/config/modelRegistry';
 import { PROVIDER_LOGOS, PROVIDER_COLORS } from '@/components/ui/ProviderLogos';
@@ -22,6 +23,8 @@ interface ContestScoresTableProps {
   eliminatedModels?: string[];
   onEliminateModel?: (modelId: string) => void;
   onRestoreModel?: (modelId: string) => void;
+  eliminationRule?: string;
+  eliminationThreshold?: number;
 }
 
 const SCHEME_LABELS: Record<ScoringScheme, { ru: string; en: string }> = {
@@ -30,8 +33,9 @@ const SCHEME_LABELS: Record<ScoringScheme, { ru: string; en: string }> = {
   'elo': { ru: 'Эло', en: 'Elo' },
 };
 
-export function ContestScoresTable({ results, rounds, isRu, selectedWinners, onToggleWinner, arbitration, eliminatedModels = [], onEliminateModel, onRestoreModel }: ContestScoresTableProps) {
+export function ContestScoresTable({ results, rounds, isRu, selectedWinners, onToggleWinner, arbitration, eliminatedModels = [], onEliminateModel, onRestoreModel, eliminationRule, eliminationThreshold = 3 }: ContestScoresTableProps) {
   const eliminatedSet = React.useMemo(() => new Set(eliminatedModels), [eliminatedModels]);
+  const [confirmEliminate, setConfirmEliminate] = useState<string | null>(null);
   const scheme: ScoringScheme = arbitration?.scoringScheme || 'weighted-avg';
   const userWeight = arbitration?.userWeight ?? 50;
 
@@ -142,6 +146,10 @@ export function ContestScoresTable({ results, rounds, isRu, selectedWinners, onT
               const isSelected = selectedWinners.has(row.modelId);
               const isEliminated = eliminatedSet.has(row.modelId);
               const activeModelCount = scored.length - eliminatedModels.length;
+              // Check if model is a candidate for elimination (below threshold, not already eliminated)
+              const isManualMode = eliminationRule === 'manual' || eliminationRule === 'threshold';
+              const avgScore = row.finalScore;
+              const isCandidateForElimination = !isEliminated && isManualMode && eliminationThreshold > 0 && avgScore > 0 && avgScore <= eliminationThreshold;
 
               return (
                 <TableRow
@@ -171,6 +179,37 @@ export function ContestScoresTable({ results, rounds, isRu, selectedWinners, onT
                         <Badge variant="destructive" className="text-[9px] px-1 py-0 h-4 shrink-0">
                           {isRu ? 'отсеяна' : 'out'}
                         </Badge>
+                      )}
+                      {isCandidateForElimination && (
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <button
+                                className="inline-flex items-center shrink-0"
+                                onClick={e => {
+                                  e.stopPropagation();
+                                  if (onEliminateModel && activeModelCount > 2) {
+                                    setConfirmEliminate(row.modelId);
+                                  }
+                                }}
+                                disabled={!onEliminateModel || activeModelCount <= 2}
+                              >
+                                <Badge
+                                  variant="outline"
+                                  className="text-[9px] px-1.5 py-0 h-4 gap-0.5 animate-pulse border-destructive/50 text-destructive cursor-pointer hover:bg-destructive/10 transition-colors"
+                                >
+                                  <AlertTriangle className="h-2.5 w-2.5" />
+                                  {isRu ? 'отсеять?' : 'drop?'}
+                                </Badge>
+                              </button>
+                            </TooltipTrigger>
+                            <TooltipContent side="top" className="text-[10px]">
+                              {isRu
+                                ? `Средний балл ${avgScore.toFixed(1)} ниже порога ${eliminationThreshold}. Нажмите для отсева.`
+                                : `Avg score ${avgScore.toFixed(1)} below threshold ${eliminationThreshold}. Click to eliminate.`}
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
                       )}
                     </div>
                   </TableCell>
@@ -273,6 +312,40 @@ export function ContestScoresTable({ results, rounds, isRu, selectedWinners, onT
           )}
         </Table>
       </div>
+
+      {/* Confirm elimination dialog */}
+      <AlertDialog open={!!confirmEliminate} onOpenChange={open => { if (!open) setConfirmEliminate(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {isRu ? 'Отсеять модель?' : 'Eliminate model?'}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {(() => {
+                const entry = confirmEliminate ? getModelRegistryEntry(confirmEliminate) : null;
+                const name = entry?.displayName || confirmEliminate?.split('/').pop() || '';
+                return isRu
+                  ? `Модель "${name}" будет исключена из следующих раундов. Набранные баллы сохранятся.`
+                  : `Model "${name}" will be excluded from future rounds. Earned scores are preserved.`;
+              })()}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{isRu ? 'Отмена' : 'Cancel'}</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                if (confirmEliminate && onEliminateModel) {
+                  onEliminateModel(confirmEliminate);
+                }
+                setConfirmEliminate(null);
+              }}
+            >
+              {isRu ? 'Отсеять' : 'Eliminate'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
