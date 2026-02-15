@@ -127,7 +127,9 @@ export function InterviewPanel({ role, onClose }: InterviewPanelProps) {
   const [viewMode, setViewMode] = useState<ViewMode>('progress');
   const [expandedSteps, setExpandedSteps] = useState<Set<number>>(new Set());
   const [showNewForm, setShowNewForm] = useState(false);
-  const [newModel, setNewModel] = useState('');
+  const [newModel, setNewModel] = useState(() => {
+    try { return localStorage.getItem(`interview_model_${role}`) || ''; } catch { return ''; }
+  });
 
   // Load existing sessions for this role
   useEffect(() => {
@@ -203,11 +205,11 @@ export function InterviewPanel({ role, onClose }: InterviewPanelProps) {
 
   const handleCreateInterview = useCallback(async () => {
     if (!newModel) return;
+    try { localStorage.setItem(`interview_model_${role}`, newModel); } catch {}
     const sessionId = await interview.createInterview(role, newModel);
     if (sessionId) {
       setShowNewForm(false);
       setSelectedSessionId(sessionId);
-      // Refresh sessions list
       const all = await interview.listSessions();
       setSessions(all.filter(s => s.role === role));
     }
