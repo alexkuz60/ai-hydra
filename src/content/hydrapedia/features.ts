@@ -10,7 +10,7 @@ export const featuresSections: HydrapediaSection[] = [
 
 Подиум моделей — система рейтинга, портфолио и статистики использования ИИ-моделей. Интерфейс построен по принципу мастер-деталь с ResizablePanel и поддерживает режимы навигатора Min/Max.
 
-## Три раздела
+## Пять разделов
 
 ### Портфолио ИИ-моделей
 
@@ -19,9 +19,23 @@ export const featuresSections: HydrapediaSection[] = [
 > [!TIP] Индикатор доступности
 > Модели и провайдеры помечаются зелёной галочкой/точкой при наличии настроенного API-ключа (BYOK) или прав администратора. При отсутствии ключа элементы приглушаются (opacity-50).
 
+### Правила конкурса
+
+Централизованная настройка параметров конкурса перед запуском:
+
+- **Задача и промпт** — выбор промпта для тестирования моделей
+- **Правила** — количество раундов, режим элиминации, пороги оценки
+- **Пайплайн** — выбор моделей-участников с назначением ролей
+- **Арбитраж** — выбор модели-арбитра, схемы оценки, баланс весов
+- **Итоговая конфигурация** — сводка всех настроек перед запуском
+
 ### Конкурс интеллект-красоты
 
 Модуль для сравнительного тестирования моделей. Позволяет создать конкурс между несколькими моделями и оценить их на соответствие заданным критериям. Результаты рассчитываются по одной из трёх схем оценки (см. раздел ниже).
+
+### Дуэль «К барьеру»
+
+Специальный формат попарного 1v1 состязания для отбора кандидатов на роли Критика и Арбитра. Подробнее — в отдельном разделе Гидропедии.
 
 ### Рейтинги ИИ-моделей
 
@@ -72,6 +86,36 @@ export const featuresSections: HydrapediaSection[] = [
 
 - 👑 **Пригласить на подиум** — добавить модель в конкурс
 - ⚔️ **Выбрать для дуэли** — назначить модель дуэлянтом с выбором роли (Критик или Арбитр)
+
+## Механика конкурса
+
+### Ролевые конкурсы
+
+Каждому раунду конкурса можно назначить экспертную **роль** (Эксперт, Советник, Аналитик и др.). При назначении роли:
+- Системный промпт роли из Штата автоматически объединяется с промптом раунда
+- Критерии оценки роли (например, «bias_detection» для Критика) мёрджатся с критериями плана
+- Дедупликация критериев сохраняет оригинальный порядок
+
+> [!TIP] Доступные роли
+> Роли Критик и Арбитр исключены из селектора Конкурса — они используют специализированный режим «Дуэль» для 1v1 отбора.
+
+### Элиминация моделей
+
+В процессе конкурса можно снять модель с соревнования:
+
+| Режим | Описание |
+|-------|----------|
+| **Ручной** | Кнопка ❌ в таблице оценок; минимум 2 модели должны остаться |
+| **По порогу** | Модели с баллом ниже заданного порога подсвечиваются пульсирующим бейджем «снять?» |
+| **Автоматический** | Система автоматически снимает аутсайдеров по порогу |
+
+Снятая модель помечается бейджем «снята» и полупрозрачностью. Набранные баллы сохраняются. Модель можно **восстановить** кнопкой ➕.
+
+### Выбор победителей
+
+В таблице оценок чекбоксы позволяют выбрать победителей конкурса. Выбор **сохраняется** при переключении между разделами Подиума (Портфолио ↔ Конкурс ↔ Дуэль ↔ Рейтинги).
+
+После выбора появляется кнопка **«Отправить N победителей в Панель экспертов»** — перенос лучших моделей для реальной работы в мультиагентную сессию с контекстом конкурса.
 
 ## Метрики
 
@@ -220,7 +264,7 @@ export const featuresSections: HydrapediaSection[] = [
 
 The Model Podium — a rating, portfolio, and usage statistics system for AI models. The interface follows the master-detail pattern with ResizablePanel and supports Min/Max navigator modes.
 
-## Three Sections
+## Five Sections
 
 ### AI Model Portfolio
 
@@ -229,9 +273,23 @@ A list of all available models with provider indicators (OpenAI, Anthropic, Goog
 > [!TIP] Availability Indicator
 > Models and providers are marked with a green checkmark/dot when a configured API key (BYOK) or admin rights are present. Without a key, elements are dimmed (opacity-50).
 
+### Contest Rules
+
+Centralized contest configuration before launch:
+
+- **Task & Prompt** — select the prompt for model testing
+- **Rules** — round count, elimination mode, score thresholds
+- **Pipeline** — select participant models with role assignment
+- **Arbitration** — arbiter model, scoring scheme, weight balance
+- **Final Configuration** — summary of all settings before launch
+
 ### Intelligence Beauty Contest
 
 A module for comparative model testing. Allows you to create a contest between several models and evaluate them against specified criteria. Results are calculated using one of three scoring schemes (see section below).
+
+### Duel «En Garde»
+
+A specialized head-to-head 1v1 competition format for selecting Critic and Arbiter candidates. See the dedicated Hydrapedia section for details.
 
 ### AI Model Ratings
 
@@ -282,6 +340,36 @@ Each review includes text and a numeric arbiter score (if available). Text dedup
 
 - 👑 **Invite to podium** — add model to a contest
 - ⚔️ **Select for duel** — assign model as duelist with role choice (Critic or Arbiter)
+
+## Contest Mechanics
+
+### Role-Based Contests
+
+Each contest round can be assigned an expert **role** (Expert, Advisor, Analyst, etc.). When a role is assigned:
+- The role's system prompt from Staff is automatically merged with the round prompt
+- Role-specific evaluation criteria (e.g., "bias_detection" for Critic) are merged with plan criteria
+- Criteria deduplication preserves the original plan order
+
+> [!TIP] Available Roles
+> Critic and Arbiter roles are excluded from the Contest selector — they use the specialized "Duel" mode for 1v1 selection.
+
+### Model Elimination
+
+During a contest, you can eliminate a model from the competition:
+
+| Mode | Description |
+|------|-------------|
+| **Manual** | ❌ button in the scores table; at least 2 models must remain |
+| **Threshold** | Models scoring below a set threshold are highlighted with a pulsing "drop?" badge |
+| **Automatic** | System automatically eliminates underperformers based on threshold |
+
+Eliminated models are marked with an "out" badge and reduced opacity. Earned scores are preserved. A model can be **restored** with the ➕ button.
+
+### Winner Selection
+
+Checkboxes in the scores table let you select contest winners. Selection **persists** when switching between Podium sections (Portfolio ↔ Contest ↔ Duel ↔ Ratings).
+
+After selection, a button appears: **"Send N winners to Expert Panel"** — transferring the best models for real work in a multi-agent session with contest context.
 
 ## Metrics
 
