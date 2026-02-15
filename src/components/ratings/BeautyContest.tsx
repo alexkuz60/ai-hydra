@@ -45,6 +45,8 @@ export function BeautyContest() {
   const [selectedWinners, setSelectedWinners] = useState<Set<string>>(new Set());
   const [finishDialogOpen, setFinishDialogOpen] = useState(false);
   const [savingToTask, setSavingToTask] = useState(false);
+  const [roundTransition, setRoundTransition] = useState(false);
+  const prevRoundIndexRef = React.useRef<number>(-1);
 
   const handleToggleWinner = useCallback((modelId: string) => {
     setSelectedWinners(prev => {
@@ -284,6 +286,21 @@ export function BeautyContest() {
     }
   }, [execution.executing, execution.arbiterRunning, contest.rounds, contest.results, contest.session]);
 
+  // Detect round change and trigger fade transition
+  const effectiveRoundIndex = Math.max(0, contest.rounds.findIndex(r => r.status === 'running'));
+  useEffect(() => {
+    if (prevRoundIndexRef.current === -1) {
+      prevRoundIndexRef.current = effectiveRoundIndex;
+      return;
+    }
+    if (effectiveRoundIndex !== prevRoundIndexRef.current) {
+      setRoundTransition(true);
+      const timer = setTimeout(() => setRoundTransition(false), 500);
+      prevRoundIndexRef.current = effectiveRoundIndex;
+      return () => clearTimeout(timer);
+    }
+  }, [effectiveRoundIndex]);
+
   const handleLaunch = async () => {
        const result = await contest.createFromWizard();
      if (result) {
@@ -401,6 +418,7 @@ export function BeautyContest() {
   const currentRoundIndex = contest.rounds.findIndex(r => r.status === 'running') ?? 0;
   const currentRound = contest.rounds[currentRoundIndex >= 0 ? currentRoundIndex : 0];
 
+
   return (
     <div className="h-full flex flex-col">
        <ContestScoreboard
@@ -437,7 +455,10 @@ export function BeautyContest() {
       )}
 
       {/* Unified tabset */}
-      <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+      <div className={cn(
+        "flex-1 flex flex-col min-h-0 overflow-hidden transition-all duration-500 ease-out",
+        roundTransition ? "opacity-0 translate-y-2" : "opacity-100 translate-y-0"
+      )}>
          <Tabs value={activeMainTab} onValueChange={setActiveMainTab} className="flex flex-col flex-1 min-h-0">
            <div className="px-3 pt-2 flex-shrink-0">
              <TabsList className="h-8 p-1 bg-muted/30 w-full justify-start gap-1">
