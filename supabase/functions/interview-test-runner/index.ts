@@ -166,6 +166,99 @@ const ROLE_TEST_TASKS: Record<string, TestTask[]> = {
       baseline_source: 'role_knowledge',
     },
   ],
+  critic: [
+    {
+      task_type: 'weakness_detection',
+      prompt_ru: 'Вот ответ ИИ-ассистента на вопрос пользователя: "Объясни квантовые вычисления простым языком". Ответ: "Квантовые компьютеры используют кубиты вместо битов. Они могут решать любые задачи мгновенно благодаря суперпозиции и запутанности." Найди все фактические ошибки, логические пробелы и вводящие в заблуждение упрощения.',
+      prompt_en: 'Here is an AI assistant\'s response to: "Explain quantum computing in simple terms". Response: "Quantum computers use qubits instead of bits. They can solve any problem instantly thanks to superposition and entanglement." Find all factual errors, logical gaps, and misleading simplifications.',
+      competency: 'error_detection',
+      needs_baseline: false,
+    },
+    {
+      task_type: 'constructive_critique',
+      prompt_ru: 'Проанализируй следующий системный промпт и дай конструктивную критику: "Ты — помощник. Отвечай кратко и по делу. Будь вежлив." Оцени: полноту, ясность инструкций, потенциальные edge-cases, которые промпт не покрывает.',
+      prompt_en: 'Analyze the following system prompt and provide constructive criticism: "You are an assistant. Answer briefly and to the point. Be polite." Evaluate: completeness, clarity of instructions, potential edge-cases the prompt doesn\'t cover.',
+      competency: 'prompt_review',
+      needs_baseline: true,
+      baseline_source: 'prompt_library',
+    },
+    {
+      task_type: 'bias_detection',
+      prompt_ru: 'Проверь текст на наличие когнитивных искажений и предвзятостей: "GPT-5 — лучшая модель для всех задач. Все тесты показывают её превосходство. Другие модели даже не стоит рассматривать." Идентифицируй каждое искажение, объясни почему это проблема и предложи нейтральную переформулировку.',
+      prompt_en: 'Check the text for cognitive biases: "GPT-5 is the best model for all tasks. All tests show its superiority. Other models aren\'t even worth considering." Identify each bias, explain why it\'s a problem, and propose a neutral reformulation.',
+      competency: 'bias_analysis',
+      needs_baseline: false,
+    },
+  ],
+  moderator: [
+    {
+      task_type: 'conflict_resolution',
+      prompt_ru: 'Ситуация: Эксперт и Критик зашли в тупик — Эксперт настаивает на использовании RAG для задачи, Критик утверждает что это избыточно и предлагает few-shot. Оба привели аргументы. Как Модератор, предложи решение: резюмируй позиции, выяви точки согласия, сформулируй компромисс.',
+      prompt_en: 'Situation: Expert and Critic are deadlocked — Expert insists on RAG for the task, Critic says it\'s overkill and suggests few-shot. Both presented arguments. As Moderator, propose a resolution: summarize positions, find agreement points, formulate a compromise.',
+      competency: 'mediation',
+      needs_baseline: false,
+    },
+    {
+      task_type: 'discussion_steering',
+      prompt_ru: 'Дискуссия между 3 участниками ушла от темы "Оптимизация промпта для суммаризации" к обсуждению архитектуры нейросетей. Участник А говорит о transformer attention, Участник Б — о fine-tuning, Участник В молчит. Верни дискуссию в русло, активируй молчащего участника, сохрани ценные идеи.',
+      prompt_en: 'A discussion between 3 participants drifted from "Prompt optimization for summarization" to neural network architecture. Participant A talks about transformer attention, B about fine-tuning, C is silent. Steer the discussion back, activate the silent participant, preserve valuable ideas.',
+      competency: 'facilitation',
+      needs_baseline: false,
+    },
+    {
+      task_type: 'quality_gate',
+      prompt_ru: 'Оцени следующий ответ ассистента по критериям Quality Gate: релевантность (0-10), полнота (0-10), точность (0-10), структурированность (0-10). Ответ: "Python лучше Java потому что проще. Используй Python." Вопрос был: "Сравни Python и Java для enterprise-разработки с учётом масштабируемости и экосистемы."',
+      prompt_en: 'Evaluate the following assistant response by Quality Gate criteria: relevance (0-10), completeness (0-10), accuracy (0-10), structure (0-10). Response: "Python is better than Java because it\'s simpler. Use Python." Question was: "Compare Python and Java for enterprise development considering scalability and ecosystem."',
+      competency: 'quality_assessment',
+      needs_baseline: false,
+    },
+  ],
+  advisor: [
+    {
+      task_type: 'strategic_recommendation',
+      prompt_ru: 'Пользователь спрашивает: "Хочу автоматизировать код-ревью с помощью ИИ. С чего начать?" Дай стратегическую рекомендацию: этапы внедрения, выбор инструментов, риски, метрики успеха. Учти ограничения текущих LLM.',
+      prompt_en: 'User asks: "I want to automate code review with AI. Where to start?" Give strategic advice: implementation stages, tool selection, risks, success metrics. Consider current LLM limitations.',
+      competency: 'strategic_thinking',
+      needs_baseline: false,
+    },
+    {
+      task_type: 'risk_assessment',
+      prompt_ru: 'Команда хочет перевести всю документацию на генерацию через LLM. Проведи оценку рисков: что может пойти не так, какие safeguards нужны, как валидировать результат, план отката.',
+      prompt_en: 'Team wants to switch all documentation to LLM generation. Conduct risk assessment: what could go wrong, what safeguards are needed, how to validate results, rollback plan.',
+      competency: 'risk_analysis',
+      needs_baseline: false,
+    },
+    {
+      task_type: 'resource_optimization',
+      prompt_ru: 'Бюджет на API-ключи ограничен. Текущие расходы: GPT-5 — 60%, Gemini — 25%, Claude — 15%. Качество примерно одинаковое. Предложи стратегию оптимизации расходов без существенной потери качества. Какие задачи на какие модели перенаправить?',
+      prompt_en: 'API key budget is limited. Current spending: GPT-5 — 60%, Gemini — 25%, Claude — 15%. Quality is roughly equal. Propose a cost optimization strategy without significant quality loss. Which tasks to redirect to which models?',
+      competency: 'optimization',
+      needs_baseline: false,
+    },
+  ],
+  consultant: [
+    {
+      task_type: 'deep_expertise',
+      prompt_ru: 'Пользователь работает над задачей: "Создать систему автоматической классификации обращений в поддержку по 15 категориям". Проведи экспертную консультацию: предложи архитектуру решения, выбор модели, стратегию обучения, обработку пограничных случаев.',
+      prompt_en: 'User works on: "Create an automatic support ticket classification system across 15 categories". Provide expert consultation: solution architecture, model selection, training strategy, edge case handling.',
+      competency: 'domain_expertise',
+      needs_baseline: false,
+    },
+    {
+      task_type: 'solution_comparison',
+      prompt_ru: 'Пользователю нужно выбрать между тремя подходами к суммаризации длинных документов: (1) Map-Reduce, (2) Refine, (3) Stuff с большим контекстным окном. Для каждого подхода опиши плюсы, минусы, идеальный use-case и ограничения.',
+      prompt_en: 'User needs to choose between three approaches to long document summarization: (1) Map-Reduce, (2) Refine, (3) Stuff with large context window. For each approach describe pros, cons, ideal use-case, and limitations.',
+      competency: 'comparative_analysis',
+      needs_baseline: false,
+    },
+    {
+      task_type: 'implementation_guidance',
+      prompt_ru: 'Пользователь хочет добавить RAG (Retrieval-Augmented Generation) в свой проект. У него есть 500 PDF-документов. Дай пошаговое руководство: от парсинга документов до продакшн-деплоя. Укажи конкретные инструменты и библиотеки.',
+      prompt_en: 'User wants to add RAG (Retrieval-Augmented Generation) to their project. They have 500 PDF documents. Provide step-by-step guidance: from document parsing to production deployment. Specify concrete tools and libraries.',
+      competency: 'practical_guidance',
+      needs_baseline: false,
+    },
+  ],
 };
 
 // Fallback tasks for roles not explicitly covered
