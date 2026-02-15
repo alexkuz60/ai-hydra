@@ -348,11 +348,35 @@ export function useContestSession() {
               return [...prev, payload.new as ContestResult];
             });
           } else if (payload.eventType === 'UPDATE') {
-            // Merge to preserve fields (e.g. response_text) that may be omitted from realtime payload
             setResults(prev => prev.map(r => r.id === (payload.new as ContestResult).id ? { ...r, ...(payload.new as ContestResult) } : r));
           } else if (payload.eventType === 'DELETE') {
             setResults(prev => prev.filter(r => r.id !== (payload.old as any).id));
           }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [session?.id]);
+
+  // Realtime subscription for contest_rounds
+  useEffect(() => {
+    if (!session) return;
+    const channel = supabase
+      .channel(`contest-rounds-${session.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'contest_rounds',
+          filter: `session_id=eq.${session.id}`,
+        },
+        (payload) => {
+          const updated = payload.new as unknown as ContestRound;
+          setRounds(prev => prev.map(r => r.id === updated.id ? { ...r, ...updated } : r));
         }
       )
       .subscribe();
