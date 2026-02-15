@@ -42,4 +42,5 @@ export const allHydrapediaSections: HydrapediaSection[] = [
   pick(referenceSections, 'faq'),
   pick(guideSections, 'guide-tours'),
   pick(duelModeSections, 'duel-mode'),
+  pick(featuresSections, 'contest-rules'),
 ];
