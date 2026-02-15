@@ -12,11 +12,6 @@ import { PROVIDER_LOGOS, PROVIDER_COLORS } from '@/components/ui/ProviderLogos';
 import { getCriterionLabel } from './i18n';
 import { computeScores, collectCriteriaKeys, type ScoringScheme, type ScoredModel } from '@/lib/contestScoring';
 import type { ContestResult } from '@/hooks/useContestSession';
-import { formatAvg } from '@/lib/contestHelpers';
-
-function FooterAvg({ values, decimals = 1 }: { values: number[]; decimals?: number }) {
-  return <>{formatAvg(values, decimals)}</>;
-}
 
 interface ContestScoresTableProps {
   results: ContestResult[];
@@ -254,7 +249,7 @@ export function ContestScoresTable({ results, rounds, isRu, selectedWinners, onT
                                 className="h-6 w-6 p-0"
                                 onClick={() => onRestoreModel?.(row.modelId)}
                               >
-                                <UserPlus className="h-3 w-3 text-[hsl(var(--hydra-success))]" />
+                                <UserPlus className="h-3 w-3 text-green-500" />
                               </Button>
                             ) : (
                               <Button
@@ -289,10 +284,10 @@ export function ContestScoresTable({ results, rounds, isRu, selectedWinners, onT
               <TableRow className="text-[10px]">
                 <TableCell colSpan={3} className="text-right font-medium">{isRu ? 'Среднее' : 'Average'}</TableCell>
                 <TableCell className="text-center">
-                  <FooterAvg values={scored.filter(r => r.avgUser != null).map(r => r.avgUser!)} />
+                  {(() => { const s = scored.filter(r => r.avgUser != null).map(r => r.avgUser!); return s.length ? (s.reduce((a, b) => a + b, 0) / s.length).toFixed(1) : '—'; })()}
                 </TableCell>
                 <TableCell className="text-center">
-                  <FooterAvg values={scored.filter(r => r.avgArbiter != null).map(r => r.avgArbiter!)} />
+                  {(() => { const s = scored.filter(r => r.avgArbiter != null).map(r => r.avgArbiter!); return s.length ? (s.reduce((a, b) => a + b, 0) / s.length).toFixed(1) : '—'; })()}
                 </TableCell>
                 {isTournament && (
                   <>
@@ -303,11 +298,14 @@ export function ContestScoresTable({ results, rounds, isRu, selectedWinners, onT
                 )}
                 {hasCriteria && allCriteriaKeys.map(key => (
                   <TableCell key={key} className="text-center px-1.5">
-                    <FooterAvg values={scored.filter(r => r.criteriaAvg[key] != null).map(r => r.criteriaAvg[key]!)} />
+                    {(() => {
+                      const s = scored.filter(r => r.criteriaAvg[key] != null).map(r => r.criteriaAvg[key]!);
+                      return s.length ? (s.reduce((a, b) => a + b, 0) / s.length).toFixed(1) : '—';
+                    })()}
                   </TableCell>
                 ))}
                 <TableCell className="text-center font-semibold">
-                  <FooterAvg values={scored.map(r => r.finalScore)} decimals={isElo ? 0 : 1} />
+                  {(() => { const s = scored.map(r => r.finalScore); return s.length ? (s.reduce((a, b) => a + b, 0) / s.length).toFixed(isElo ? 0 : 1) : '—'; })()}
                 </TableCell>
               </TableRow>
             </TableFooter>

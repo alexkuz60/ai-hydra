@@ -12,7 +12,6 @@ import { UserScoreWidget } from './UserScoreWidget';
 import { UserLikertWidget } from './UserLikertWidget';
 import { LikertEvaluationDisplay } from './LikertEvaluationDisplay';
 import { getRatingsText } from './i18n';
-import { parseLikertClaims, filterNumericCriteria } from '@/lib/contestHelpers';
 import type { ContestResult } from '@/hooks/useContestSession';
 
 interface ContestResponsesPanelProps {
@@ -165,7 +164,7 @@ function RoundGroupedResults({
     </>
   );
 }
-function CollapsibleResponse({ content, isStreaming, isRu }: { content: string; isStreaming: boolean; isRu?: boolean }) {
+function CollapsibleResponse({ content, isStreaming }: { content: string; isStreaming: boolean }) {
   const [expanded, setExpanded] = useState(false);
   return (
     <div className="text-sm relative">
@@ -178,7 +177,7 @@ function CollapsibleResponse({ content, isStreaming, isRu }: { content: string; 
           onClick={() => setExpanded(v => !v)}
           className="text-[10px] text-primary hover:underline mt-0.5"
         >
-          {expanded ? (isRu ? '▲ Свернуть' : '▲ Collapse') : (isRu ? '▼ Развернуть' : '▼ Expand')}
+          {expanded ? '▲ Свернуть' : '▼ Развернуть'}
         </button>
       )}
     </div>
@@ -199,9 +198,24 @@ function ResponseCard({
   const ProviderLogo = entry?.provider ? PROVIDER_LOGOS[entry.provider] : undefined;
   const color = entry?.provider ? PROVIDER_COLORS[entry.provider] : '';
 
-  // Parse Likert claims and numeric criteria using shared helpers
-  const likertClaims = parseLikertClaims(result.criteria_scores as Record<string, unknown> | null);
-  const filteredCriteria = filterNumericCriteria(result.criteria_scores as Record<string, unknown> | null, likertClaims);
+  // Parse Likert claims from criteria_scores if available
+  const likertClaims = (() => {
+    if (!result.criteria_scores) return null;
+    const scores = result.criteria_scores as any;
+    const arr = scores.likert_claims ?? scores.claims;
+    if (arr && Array.isArray(arr)) return arr;
+    return null;
+  })();
+
+  // Filter out non-numeric values from criteria_scores for display
+  const filteredCriteria = (() => {
+    if (likertClaims || !result.criteria_scores) return null;
+    const filtered: Record<string, number> = {};
+    for (const [key, val] of Object.entries(result.criteria_scores)) {
+      if (typeof val === 'number') filtered[key] = val;
+    }
+    return Object.keys(filtered).length > 0 ? filtered : null;
+  })();
 
   return (
     <div className="rounded-lg border border-border/40 bg-card p-3 space-y-2">
@@ -218,7 +232,6 @@ function ResponseCard({
       <CollapsibleResponse
         content={result.response_text || streamingTexts[result.model_id] || ''}
         isStreaming={result.status === 'generating' && !result.response_text && !!streamingTexts[result.model_id]}
-        isRu={isRu}
       />
       {(result.status === 'ready' || result.status === 'judged') && (onScore || onLikertScore) && (
         <div className="flex items-center gap-4 flex-wrap pt-2 border-t border-border/40">
@@ -238,7 +251,7 @@ function ResponseCard({
       )}
       {likertClaims && (
         <div className="pt-2 border-t border-border/30">
-          <LikertEvaluationDisplay claims={likertClaims as any} isRu={isRu} />
+          <LikertEvaluationDisplay claims={likertClaims} isRu={isRu} />
         </div>
       )}
       {result.arbiter_score != null && !likertClaims && (

@@ -7,7 +7,6 @@ import { cn } from '@/lib/utils';
 import { getModelRegistryEntry } from '@/config/modelRegistry';
 import { LikertEvaluationDisplay } from './LikertEvaluationDisplay';
 import { getRatingsText, getCriterionLabel } from './i18n';
-import { parseLikertClaims, filterNumericCriteria } from '@/lib/contestHelpers';
 import type { ContestResult } from '@/hooks/useContestSession';
 
 interface ContestArbiterPanelProps {
@@ -95,9 +94,25 @@ function ArbiterRoundGroups({
               {roundResults.map(r => {
                 const entry = getModelRegistryEntry(r.model_id);
                 const shortName = entry?.displayName || r.model_id.split('/').pop() || r.model_id;
-                const criteriaScores = r.criteria_scores as Record<string, unknown> | null;
-                const likertClaims = parseLikertClaims(criteriaScores);
-                const filteredCriteria = filterNumericCriteria(criteriaScores, likertClaims);
+                const criteriaScores = (r as any).criteria_scores as Record<string, number> | null;
+                
+                // Parse Likert claims if available
+                const likertClaims = (() => {
+                  if (!criteriaScores) return null;
+                  const arr = (criteriaScores as any).likert_claims ?? (criteriaScores as any).claims;
+                  if (arr && Array.isArray(arr)) return arr;
+                  return null;
+                })();
+
+                // Filter out non-numeric values from criteria_scores for traditional display
+                const filteredCriteria = (() => {
+                  if (likertClaims || !criteriaScores) return null;
+                  const filtered: Record<string, number> = {};
+                  for (const [key, val] of Object.entries(criteriaScores)) {
+                    if (typeof val === 'number') filtered[key] = val;
+                  }
+                  return Object.keys(filtered).length > 0 ? filtered : null;
+                })();
 
                 return (
                   <div key={r.id} className="rounded-md border border-border/30 bg-muted/10 p-2 space-y-1.5">
@@ -109,7 +124,7 @@ function ArbiterRoundGroups({
                     </div>
                     {likertClaims ? (
                       <div className="pt-1">
-                        <LikertEvaluationDisplay claims={likertClaims as any} isRu={isRu} />
+                        <LikertEvaluationDisplay claims={likertClaims} isRu={isRu} />
                       </div>
                     ) : (
                       <>
