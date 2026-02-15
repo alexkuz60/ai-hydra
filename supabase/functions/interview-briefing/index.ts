@@ -230,7 +230,7 @@ serve(async (req) => {
         user_id: user.id,
         role,
         candidate_model,
-        status: 'briefing',
+        status: 'briefed',
         briefing_token_count: estimatedTokens,
         briefing_data: {
           brief_text: fullBrief,
