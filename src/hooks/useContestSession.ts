@@ -128,37 +128,21 @@ export function useContestSession() {
     if (!user) return null;
     setLoading(true);
     try {
-      // Read from cloud settings (primary) or fall back to legacy keys
+      // Read from cloud settings (single source of truth; legacy migration handled by useContestConfig)
       const cloudRaw = localStorage.getItem('hydra-cloud-contest-config');
-      let models: Record<string, string>;
-      let rules: { roundCount: number; rounds: { prompt: string; label?: string; roleForEvaluation?: string }[] };
-      let taskId: string | undefined;
-      let taskTitle: string | undefined;
-      let mode: string;
-      let pipeline: string;
-      let arbitration: ContestSessionConfig['arbitration'] | undefined;
-
-      if (cloudRaw) {
-        const cloud = JSON.parse(cloudRaw);
-        models = cloud.models || {};
-        rules = cloud.rules || { roundCount: 1, rounds: [{ prompt: '' }] };
-        taskId = cloud.taskId || undefined;
-        taskTitle = cloud.taskTitle || undefined;
-        mode = cloud.mode || 'contest';
-        pipeline = cloud.pipeline || 'none';
-        arbitration = cloud.arbitration || undefined;
-      } else {
-        // Legacy fallback
-        models = JSON.parse(localStorage.getItem('hydra-contest-models') || '{}');
-        const rulesStr = localStorage.getItem('hydra-contest-rules');
-        rules = rulesStr ? JSON.parse(rulesStr) : { roundCount: 1, rounds: [{ prompt: '' }] };
-        taskId = localStorage.getItem('hydra-contest-task-id') || undefined;
-        taskTitle = localStorage.getItem('hydra-contest-task-title') || undefined;
-        mode = localStorage.getItem('hydra-contest-mode') || 'contest';
-        pipeline = localStorage.getItem('hydra-contest-pipeline') || 'none';
-        const arbStr = localStorage.getItem('hydra-contest-arbitration');
-        arbitration = arbStr ? JSON.parse(arbStr) : undefined;
+      if (!cloudRaw) {
+        toast({ variant: 'destructive', description: 'No contest configuration found' });
+        return null;
       }
+      const cloud = JSON.parse(cloudRaw);
+      const models: Record<string, string> = cloud.models || {};
+      const rules: { roundCount: number; rounds: { prompt: string; label?: string; roleForEvaluation?: string }[] } =
+        cloud.rules || { roundCount: 1, rounds: [{ prompt: '' }] };
+      const taskId: string | undefined = cloud.taskId || undefined;
+      const taskTitle: string | undefined = cloud.taskTitle || undefined;
+      const mode: string = cloud.mode || 'contest';
+      const pipeline: string = cloud.pipeline || 'none';
+      const arbitration: ContestSessionConfig['arbitration'] | undefined = cloud.arbitration || undefined;
 
       const config: ContestSessionConfig = { models, rules, taskId, taskTitle, mode, pipeline, arbitration };
       const name = taskTitle || (mode === 'interview' ? 'Собеседование' : 'Конкурс');

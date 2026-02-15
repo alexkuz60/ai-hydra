@@ -5,6 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useContestSession } from '@/hooks/useContestSession';
 import { useContestExecution } from '@/hooks/useContestExecution';
 import { Crown, Play, Loader2, ChevronDown, ChevronUp, Send, BarChart3, Archive, MessageSquare, Scale, FileText, Users, ClipboardList } from 'lucide-react';
+// Note: All icons above are actively used in this component
 import { useNavigate } from 'react-router-dom';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Button } from '@/components/ui/button';
