@@ -6,18 +6,79 @@ import { getModelRegistryEntry } from '@/config/modelRegistry';
 import { getRatingsText } from '@/components/ratings/i18n';
 import type { ContestSession, ContestRound, ContestResult } from '@/hooks/useContestSession';
 
-interface UseContestActionsOptions {
-  userId: string | undefined;
+// ── Types shared with the execution hook ──
+
+interface ExecutionHandle {
+  executeRound: (
+    session: ContestSession,
+    round: ContestRound,
+    results: ContestResult[],
+    updateResult: (id: string, u: Partial<ContestResult>) => Promise<void>,
+    allRounds: ContestRound[],
+  ) => Promise<void>;
+  executing: boolean;
+}
+
+interface ContestHandle {
   session: ContestSession | null;
   results: ContestResult[];
   rounds: ContestRound[];
+  createFromWizard: () => Promise<{ session: ContestSession; rounds: ContestRound[]; results: ContestResult[] } | null>;
+  createFollowUpRound: (prompt: string, targetModelIds?: string[]) => Promise<{ round: ContestRound; results: ContestResult[] } | null>;
+  updateResult: (id: string, u: Partial<ContestResult>) => Promise<void>;
+}
+
+interface UseContestActionsOptions {
+  userId: string | undefined;
+  contest: ContestHandle;
+  execution: ExecutionHandle;
   isRu: boolean;
 }
 
-export function useContestActions({ userId, session, results, rounds, isRu }: UseContestActionsOptions) {
+export function useContestActions({ userId, contest, execution, isRu }: UseContestActionsOptions) {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [savingToTask, setSavingToTask] = useState(false);
+  const [sendingFollowUp, setSendingFollowUp] = useState(false);
+
+  const { session, results, rounds } = contest;
+
+  // ── Launch contest from wizard config ──
+
+  const handleLaunch = useCallback(async () => {
+    const result = await contest.createFromWizard();
+    if (result) {
+      toast({ description: getRatingsText('contestLaunched', isRu) });
+      const firstRound = result.rounds.find(r => r.status === 'running') || result.rounds[0];
+      if (firstRound) {
+        await execution.executeRound(result.session, firstRound, result.results, contest.updateResult, result.rounds);
+      }
+    }
+  }, [contest, execution, isRu, toast]);
+
+  // ── Send follow-up question ──
+
+  const handleSendFollowUp = useCallback(async (followUpText: string, activeModel: string) => {
+    if (!followUpText.trim() || !session) return;
+    setSendingFollowUp(true);
+    try {
+      const targetModels = activeModel === 'all' ? undefined : [activeModel];
+      const followUp = await contest.createFollowUpRound(followUpText.trim(), targetModels);
+      if (followUp) {
+        const targetName = activeModel === 'all'
+          ? getRatingsText('all', isRu)
+          : (getModelRegistryEntry(activeModel)?.displayName || activeModel.split('/').pop());
+        toast({ description: `${getRatingsText('questionSentTo', isRu)} ${targetName}` });
+        await execution.executeRound(session, followUp.round, [...results, ...followUp.results], contest.updateResult, rounds);
+      }
+    } catch (err: any) {
+      toast({ variant: 'destructive', description: err.message });
+    } finally {
+      setSendingFollowUp(false);
+    }
+  }, [session, results, rounds, contest, execution, isRu, toast]);
+
+  // ── Migrate winners to Expert Panel ──
 
   const handleMigrateToExpertPanel = useCallback((selectedWinners: Set<string>) => {
     if (selectedWinners.size === 0 || !session) return;
@@ -54,6 +115,8 @@ export function useContestActions({ userId, session, results, rounds, isRu }: Us
     toast({ description: `${selectedWinners.size} ${getRatingsText('winnersToExpertPanel', isRu)}` });
   }, [session, results, rounds, navigate, isRu, toast]);
 
+  // ── Save contest results to a task ──
+
   const handleSaveToTask = useCallback(async () => {
     if (!userId || !session) return;
     const taskId = session.config?.taskId;
@@ -73,7 +136,6 @@ export function useContestActions({ userId, session, results, rounds, isRu }: Us
         content: string; model_name: string | null; metadata: Record<string, unknown>;
       }> = [];
 
-      const roundOrder = rounds.map(r => r.id);
       const resultsByRound = new Map<string, typeof exportableResults>();
       for (const result of exportableResults) {
         const arr = resultsByRound.get(result.round_id) || [];
@@ -171,5 +233,12 @@ export function useContestActions({ userId, session, results, rounds, isRu }: Us
     }
   }, [userId, session, results, rounds, isRu, toast, navigate]);
 
-  return { handleMigrateToExpertPanel, handleSaveToTask, savingToTask };
+  return {
+    handleLaunch,
+    handleSendFollowUp,
+    handleMigrateToExpertPanel,
+    handleSaveToTask,
+    savingToTask,
+    sendingFollowUp,
+  };
 }
