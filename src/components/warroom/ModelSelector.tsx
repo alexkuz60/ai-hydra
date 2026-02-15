@@ -20,6 +20,8 @@ interface ModelSelectorProps {
   value: string;
   onChange: (value: string) => void;
   className?: string;
+  /** Hide Lovable AI models entirely (e.g. for interview where BYOK is required) */
+  excludeLovableAI?: boolean;
 }
 
 // Provider labels
@@ -41,18 +43,18 @@ interface GroupedModels {
   models: ModelOption[];
 }
 
-export function ModelSelector({ value, onChange, className }: ModelSelectorProps) {
+export function ModelSelector({ value, onChange, className, excludeLovableAI }: ModelSelectorProps) {
   const { t } = useLanguage();
   const { isAdmin, lovableModels, personalModels, hasAnyModels, loading } = useAvailableModels();
   const [open, setOpen] = useState(false);
-  const [expandedProviders, setExpandedProviders] = useState<Set<string>>(new Set(['lovable', 'openai']));
+  const [expandedProviders, setExpandedProviders] = useState<Set<string>>(new Set(['lovable', 'openai', 'proxyapi']));
 
   // Group models by provider
   const groupedModels = useMemo(() => {
     const groups: GroupedModels[] = [];
     
-    // Lovable AI models first (admin only)
-    if (lovableModels.length > 0) {
+    // Lovable AI models first (admin only), unless excluded
+    if (!excludeLovableAI && lovableModels.length > 0) {
       groups.push({ provider: 'lovable', models: lovableModels });
     }
     
@@ -73,7 +75,7 @@ export function ModelSelector({ value, onChange, className }: ModelSelectorProps
     });
     
     return groups;
-  }, [lovableModels, personalModels]);
+  }, [lovableModels, personalModels, excludeLovableAI]);
 
   // Find selected model info
   const selectedModel = useMemo(() => {
@@ -107,7 +109,9 @@ export function ModelSelector({ value, onChange, className }: ModelSelectorProps
     );
   }
 
-  if (!hasAnyModels) {
+  const effectiveHasModels = excludeLovableAI ? personalModels.length > 0 : hasAnyModels;
+
+  if (!effectiveHasModels) {
     return (
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
         <AlertCircle className="h-4 w-4 text-hydra-critical" />

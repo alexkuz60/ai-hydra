@@ -10,11 +10,12 @@ import {
   Collapsible, CollapsibleContent, CollapsibleTrigger,
 } from '@/components/ui/collapsible';
 import { MarkdownRenderer } from '@/components/warroom/MarkdownRenderer';
+import { ModelSelector } from '@/components/warroom/ModelSelector';
 import { cn } from '@/lib/utils';
 import {
   X, Play, Loader2, CheckCircle2, XCircle, Clock,
   ChevronDown, ChevronRight, FileText, Columns2,
-  SquareArrowOutUpRight, RefreshCw,
+  SquareArrowOutUpRight, RefreshCw, Plus,
 } from 'lucide-react';
 import {
   Tooltip, TooltipContent, TooltipProvider, TooltipTrigger,
@@ -98,6 +99,8 @@ export function InterviewPanel({ role, onClose }: InterviewPanelProps) {
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('progress');
   const [expandedSteps, setExpandedSteps] = useState<Set<number>>(new Set());
+  const [showNewForm, setShowNewForm] = useState(false);
+  const [newModel, setNewModel] = useState('');
 
   // Load existing sessions for this role
   useEffect(() => {
@@ -140,6 +143,18 @@ export function InterviewPanel({ role, onClose }: InterviewPanelProps) {
       await interview.loadSession(selectedSessionId);
     }
   }, [selectedSessionId, interview]);
+
+  const handleCreateInterview = useCallback(async () => {
+    if (!newModel) return;
+    const sessionId = await interview.createInterview(role, newModel);
+    if (sessionId) {
+      setShowNewForm(false);
+      setSelectedSessionId(sessionId);
+      // Refresh sessions list
+      const all = await interview.listSessions();
+      setSessions(all.filter(s => s.role === role));
+    }
+  }, [role, newModel, interview]);
 
   const config = ROLE_CONFIG[role];
   const IconComponent = config.icon;
@@ -209,6 +224,16 @@ export function InterviewPanel({ role, onClose }: InterviewPanelProps) {
             )}
             <Tooltip>
               <TooltipTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setShowNewForm(f => !f)}>
+                  <Plus className={cn("h-3.5 w-3.5", showNewForm && "text-primary")} />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">
+                {isRu ? 'Новое собеседование' : 'New Interview'}
+              </TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
                 <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleReload} disabled={interview.loading}>
                   <RefreshCw className={cn("h-3.5 w-3.5", interview.loading && "animate-spin")} />
                 </Button>
@@ -231,7 +256,37 @@ export function InterviewPanel({ role, onClose }: InterviewPanelProps) {
         </TooltipProvider>
       </div>
 
-      {/* Session status bar */}
+      {/* New Interview Form */}
+      {showNewForm && (
+        <div className="p-3 border-b border-border bg-muted/10 shrink-0 space-y-2">
+          <div className="text-xs font-medium">
+            {isRu ? 'Новое собеседование' : 'New Interview'}
+          </div>
+          <div className="text-[10px] text-muted-foreground">
+            {isRu ? 'Только модели с настроенными API-ключами (BYOK)' : 'Only models with configured API keys (BYOK)'}
+          </div>
+          <ModelSelector
+            value={newModel}
+            onChange={setNewModel}
+            className="w-full"
+            excludeLovableAI
+          />
+          <Button
+            size="sm"
+            className="w-full gap-2"
+            onClick={handleCreateInterview}
+            disabled={!newModel || interview.loading}
+          >
+            {interview.loading ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <Play className="h-3.5 w-3.5" />
+            )}
+            {isRu ? 'Собрать брифинг' : 'Assemble Briefing'}
+          </Button>
+        </div>
+      )}
+
       {session && (
         <div className="px-3 py-2 border-b border-border bg-muted/20 shrink-0">
           <div className="flex items-center gap-2 text-xs">
