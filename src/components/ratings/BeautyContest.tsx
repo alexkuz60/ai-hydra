@@ -350,7 +350,8 @@ export function BeautyContest() {
           isRu={isRu}
           onNewContest={() => { contest.setSession(null); }}
           onFinishContest={() => setFinishDialogOpen(true)}
-          arbitration={contest.session?.config?.arbitration}
+           arbitration={contest.session?.config?.arbitration}
+           eliminatedModels={contest.getEliminatedModels()}
         />
 
       {/* Collapsible prompt */}
