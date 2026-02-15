@@ -59,9 +59,57 @@ The edge function gathers 7 sections into a comprehensive Position Brief:
 - **Source tracking** — optional `source_contest_id` links interview to the contest that selected this candidate
 
 ## Phase 2 — Testing (TODO)
-- Situational tasks per role (archivist: knowledge retrieval, promptengineer: prompt optimization, etc.)
-- Automated pipeline: 3-5 tasks executed sequentially
-- Results stored in `interview_sessions.test_results`
+
+### Architecture: Universal Test Container ("Box Container")
+A modular container with standardized connection points:
+- **Input**: role config, candidate model, test filter, briefing context
+- **Output**: UI updates (progress, toasts, indicators), test results
+
+### Container internals (role-agnostic):
+1. **Test filter** — selects test set based on role from `ROLE_CONFIG.duties` + `role_knowledge`
+2. **Candidate model** — the model being interviewed (from `interview_sessions.candidate_model`)
+3. **Step counter** — tracks multi-step test progress
+4. **SSE streaming** — real-time progress to UI via `hydra-stream` transport pattern
+5. **Statistics collector** — gathers intermediate and final results per test step
+6. **Trigger system** — UI indicator updates, toast notifications, component refresh
+
+### Evaluation approach: Differential (was → will be)
+- **NOT arbiter-based** — user makes the final decision
+- Container collects `{ baseline: current_state, candidate_output: proposed_change }` pairs
+- For each test, shows comparison: what exists now vs what the candidate proposes
+- Some roles may require **testing the candidate's proposal** itself (meta-evaluation)
+- Arbiter algorithms deliberately NOT connected at this phase
+
+### Reusable code:
+| What | Source | How |
+|------|--------|-----|
+| SSE streaming | `streamWithTimeout` + `hydra-stream` | Direct reuse |
+| Execution pattern | `useContestExecution` | Adapt (linear pipeline, not parallel) |
+| Progress UI | `FlowExecutionPanel` | Adapt (step indicators, progress bar) |
+| Test generation | `ROLE_CONFIG.duties` + `role_knowledge` | New logic, existing data |
+| Result storage | `interview_sessions.test_results` | JSONB column already exists |
+
+### test_results JSONB format:
+```json
+{
+  "steps": [
+    {
+      "step_index": 0,
+      "task_type": "knowledge_retrieval",
+      "task_prompt": "...",
+      "baseline": { "current_value": "..." },
+      "candidate_output": { "proposed_value": "..." },
+      "status": "completed",
+      "elapsed_ms": 1234,
+      "token_count": 567
+    }
+  ],
+  "total_steps": 3,
+  "completed_steps": 2,
+  "started_at": "...",
+  "completed_at": "..."
+}
+```
 
 ## Phase 3 — Verdict & Inheritance (TODO)
 - Arbiter evaluates test performance
