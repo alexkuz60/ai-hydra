@@ -29,9 +29,10 @@ interface ModelDossierProps {
   onToggleDuel?: (modelId: string) => void;
   onDuelTypeChange?: (modelId: string, type: string) => void;
   onContestRoleChange?: (modelId: string, role: string) => void;
+  isDuelRunning?: boolean;
 }
 
-export function ModelDossier({ modelId, contestModels = {}, duelModels = {}, onToggleContest, onToggleDuel, onDuelTypeChange, onContestRoleChange }: ModelDossierProps) {
+export function ModelDossier({ modelId, contestModels = {}, duelModels = {}, onToggleContest, onToggleDuel, onDuelTypeChange, onContestRoleChange, isDuelRunning = false }: ModelDossierProps) {
   const { language } = useLanguage();
   const dossier = useModelDossier(modelId);
   const isRu = language === 'ru';
@@ -71,6 +72,7 @@ export function ModelDossier({ modelId, contestModels = {}, duelModels = {}, onT
           onToggleDuel={onToggleDuel}
           onDuelTypeChange={onDuelTypeChange}
           onContestRoleChange={onContestRoleChange}
+          isDuelRunning={isDuelRunning}
           inline
         />
 
