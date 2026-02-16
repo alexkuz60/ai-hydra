@@ -95,6 +95,9 @@ const translations: Translations = {
   'staffRoles.description.flowregulator': { ru: 'Логистик потоков. Проектирует и оптимизирует data-flow диаграммы и логические цепочки обработки. Анализирует архитектуру потоков данных.', en: 'Flow Logistician. Designs and optimizes data-flow diagrams and processing logic chains. Analyzes data flow architecture.' },
   'staffRoles.description.toolsmith': { ru: 'Инструменталист. Разрабатывает и настраивает пользовательские инструменты для ИИ-агентов. Помогает создавать эффективные промпт-шаблоны, проектирует параметры и HTTP-интеграции.', en: 'Toolsmith. Develops and configures custom tools for AI agents. Helps create effective prompt templates, designs parameters and HTTP integrations.' },
   'staffRoles.description.guide': { ru: 'Экскурсовод. Проводит интерактивные экскурсии по интерфейсу, объясняет функционал и помогает пользователям быстро освоить систему.', en: 'Guide. Conducts interactive tours of the interface, explains functionality, and helps users quickly master the system.' },
+  'staffRoles.description.technocritic': { ru: 'Технический судья качества. Оценивает ответы моделей в конкурсах, дуэлях и собеседованиях. Выявляет ошибки, галлюцинации и шаблонность.', en: 'Technical quality judge. Evaluates model responses in contests, duels, and interviews. Detects errors, hallucinations, and boilerplate.' },
+  'staffRoles.description.technoarbiter': { ru: 'Технический судья-интегратор. Выносит финальные вердикты в конкурсах, дуэлях и собеседованиях. Формирует взвешенные рейтинги и ранжирует участников.', en: 'Technical judge-integrator. Issues final verdicts in contests, duels, and interviews. Forms weighted ratings and ranks participants.' },
+  'staffRoles.description.technomoderator': { ru: 'Технический агрегатор. Собирает и структурирует результаты оценки, выявляет консенсус и аномалии. Готовит итоговые сводки по конкурсам и собеседованиям.', en: 'Technical aggregator. Collects and structures evaluation results, identifies consensus and anomalies. Prepares final summaries for contests and interviews.' },
   
   // Behavioral Patterns
   'patterns.description': { ru: 'Шаблоны логики решения задач и поведенческие модели AI-ролей', en: 'Task-solving logic templates and AI role behavioral models' },
@@ -679,6 +682,9 @@ const translations: Translations = {
   'role.flowregulator': { ru: 'Логистик', en: 'Flow Logistician' },
   'role.toolsmith': { ru: 'Инструменталист', en: 'Toolsmith' },
   'role.guide': { ru: 'Экскурсовод', en: 'Guide' },
+  'role.technocritic': { ru: 'ТехноКритик', en: 'TechnoCritic' },
+  'role.technoarbiter': { ru: 'ТехноАрбитр', en: 'TechnoArbiter' },
+  'role.technomoderator': { ru: 'ТехноМодератор', en: 'TechnoModerator' },
   
   // Consultant feature
   'consultant.select': { ru: 'Консультант', en: 'Consultant' },

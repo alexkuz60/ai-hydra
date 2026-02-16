@@ -1431,6 +1431,9 @@ export type Database = {
         | "flowregulator"
         | "toolsmith"
         | "guide"
+        | "technocritic"
+        | "technoarbiter"
+        | "technomoderator"
       pattern_category: "planning" | "creative" | "analysis" | "technical"
       verbosity_level: "concise" | "detailed" | "adaptive"
     }
@@ -1577,6 +1580,9 @@ export const Constants = {
         "flowregulator",
         "toolsmith",
         "guide",
+        "technocritic",
+        "technoarbiter",
+        "technomoderator",
       ],
       pattern_category: ["planning", "creative", "analysis", "technical"],
       verbosity_level: ["concise", "detailed", "adaptive"],

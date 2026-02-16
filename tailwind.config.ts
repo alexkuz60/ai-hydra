@@ -112,13 +112,16 @@ export default {
   				promptengineer: 'hsl(var(--hydra-promptengineer))',
   				flowregulator: 'hsl(var(--hydra-flowregulator))',
   				toolsmith: 'hsl(var(--hydra-toolsmith))',
-  				guide: 'hsl(var(--hydra-guide))',
-  				memory: 'hsl(var(--hydra-memory))',
-  				cyan: 'hsl(var(--hydra-cyan))',
-  				info: 'hsl(var(--hydra-info))',
-  				surface: 'hsl(var(--hydra-surface))',
-  				'surface-elevated': 'hsl(var(--hydra-surface-elevated))'
-  			}
+				guide: 'hsl(var(--hydra-guide))',
+				technocritic: 'hsl(var(--hydra-technocritic))',
+				technoarbiter: 'hsl(var(--hydra-technoarbiter))',
+				technomoderator: 'hsl(var(--hydra-technomoderator))',
+				memory: 'hsl(var(--hydra-memory))',
+				cyan: 'hsl(var(--hydra-cyan))',
+				info: 'hsl(var(--hydra-info))',
+				surface: 'hsl(var(--hydra-surface))',
+				'surface-elevated': 'hsl(var(--hydra-surface-elevated))'
+			}
   		},
   		borderRadius: {
   			lg: 'var(--radius)',
