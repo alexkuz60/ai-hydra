@@ -91,6 +91,7 @@ export async function renderMermaid(
         const { svg } = await mermaid.render(renderId, content);
         resolve(svg);
       } catch (err) {
+        console.error('[MermaidRenderer] Render failed:', err, '\nContent (first 200 chars):', content.substring(0, 200));
         cleanupOrphans(idPrefix);
         // Force re-init on next call in case internal state is corrupted
         currentTheme = null;
