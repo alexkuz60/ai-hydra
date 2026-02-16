@@ -40,7 +40,7 @@ Firecrawl поддерживает персональные API-ключи:
 
 ### Массовый сидинг
 
-Кнопка **«Обучить всех техников»** в Штате запускает последовательный сидинг всех 6 технических ролей. Роли с существующими знаниями пропускаются (\`force: false\`).
+Кнопка **«Обучить всех техников»** в Штате запускает последовательный сидинг всех 10 технических ролей (включая ОТК и Экскурсовода). Роли с существующими знаниями пропускаются (\`force: false\`).
 
 ### Индикатор знаний
 
@@ -49,6 +49,9 @@ Firecrawl поддерживает персональные API-ключи:
 ## Системные промпты
 
 Администраторы имеют прямой доступ к редактированию системных промптов всех ролей через модуль **Штат**. Промпты синхронизируются с библиотекой промптов.
+
+> [!WARNING] Промпты ОТК
+> Системные промпты ролей ОТК (\`@technocritic\`, \`@technoarbiter\`, \`@technomoderator\`) заблокированы для редактирования — они управляются платформой автоматически.
 
 ## Паттерны поведения
 
@@ -86,7 +89,7 @@ Firecrawl supports personal API keys:
 
 ### Bulk Seeding
 
-The **"Seed All Tech Roles"** button in Staff runs sequential seeding for all 6 technical roles. Roles with existing knowledge are skipped (\`force: false\`).
+The **"Seed All Tech Roles"** button in Staff runs sequential seeding for all 10 technical roles (including QC Dept. and Guide). Roles with existing knowledge are skipped (\`force: false\`).
 
 ### Knowledge Indicator
 
@@ -95,6 +98,9 @@ The header (MemoryControls) displays 📖 with total knowledge chunk count and a
 ## System Prompts
 
 Administrators have direct access to editing system prompts for all roles via the **Staff** module. Prompts are synchronized with the prompt library.
+
+> [!WARNING] QC Dept. Prompts
+> System prompts for QC Dept. roles (\`@technocritic\`, \`@technoarbiter\`, \`@technomoderator\`) are locked from editing — they are managed automatically by the platform.
 
 ## Behavioral Patterns
 
@@ -108,7 +114,7 @@ Administrators can create and edit **system** patterns (with ✏️ icon), which
     content: {
       ru: `# Технический персонал
 
-> ⚠️ Этот раздел доступен только администраторам.
+Штатное расписание AI-Hydra включает **16 ИИ-ролей**, из которых 10 относятся к техническому персоналу. Технические роли разделяются на две группы: **специалисты** (доступны в D-Chat и техподдержке) и **ОТК** (системные роли, работающие автоматически).
 
 ## Архитектура оркестратора
 
@@ -121,7 +127,7 @@ Administrators can create and edit **system** patterns (with ✏️ icon), which
 5. Распределяет запрос между ролями
 6. Возвращает ответы в стриминге
 
-## Технические роли
+## Технические специалисты
 
 ### Архивариус (\`@archivist\`)
 - Управление сессионной памятью
@@ -153,6 +159,34 @@ Administrators can create and edit **system** patterns (with ✏️ icon), which
 - Скрейпинг документации
 - Верификация данных
 
+### Экскурсовод (\`@guide\`)
+- Проведение обучающих туров по платформе
+- RAG-ответы на вопросы о функционале
+- База знаний синхронизирована с Гидрапедией
+
+## Отдел ТехКонтроля (ОТК)
+
+Три системных роли, работающих автоматически в фоновых процессах платформы. Они **не доступны** в D-Chat и техподдержке, а их системные промпты **заблокированы** от редактирования.
+
+### ТехноКритик (\`@technocritic\`)
+- Автоматический анализ слабых мест ответов
+- Используется в конкурсах и собеседованиях
+- Критерии: сила аргументов, логическая связность, качество доказательств, выявление предвзятости
+
+### ТехноАрбитр (\`@technoarbiter\`)
+- Автоматическая оценка и судейство
+- Используется в конкурсах, дуэлях и собеседованиях
+- Критерии: качество синтеза, справедливость, обоснованность решений, консистентность оценок
+- При найме модели на роль — она используется как арбитр конкурсов
+
+### ТехноМодератор (\`@technomoderator\`)
+- Формирование итоговых заключений
+- Используется в собеседованиях для финального вердикта
+- Критерии: точность резюме, баланс, качество структуры, выявление консенсуса
+
+> [!TIP] Назначение моделей ОТК
+> Каждой роли ОТК можно назначить конкретную модель через **Собеседование** или вручную. Нанятая модель автоматически используется в системных функциях (конкурсы, дуэли, собеседования) вместо дефолтной.
+
 ## Двойная система тулбаров
 
 Интерфейс ввода использует декомпозированные тулбары:
@@ -175,7 +209,7 @@ Supervisor Wishes — текстовые директивы для управл�
 - Доступны только пользователям с ролью \`supervisor\``,
       en: `# Technical Staff
 
-> ⚠️ This section is accessible to administrators only.
+The AI-Hydra staff roster includes **16 AI roles**, of which 10 are technical staff. Technical roles are divided into two groups: **specialists** (available in D-Chat and tech support) and **QC Dept.** (system roles that operate automatically).
 
 ## Orchestrator Architecture
 
@@ -188,7 +222,7 @@ The orchestrator (\`hydra-orchestrator\`) manages multi-agent interaction:
 5. Distributes query among roles
 6. Returns responses via streaming
 
-## Technical Roles
+## Technical Specialists
 
 ### Archivist (\`@archivist\`)
 - Session memory management
@@ -220,6 +254,34 @@ The orchestrator (\`hydra-orchestrator\`) manages multi-agent interaction:
 - Documentation scraping
 - Data verification
 
+### Guide (\`@guide\`)
+- Platform educational tours
+- RAG-powered answers about platform features
+- Knowledge base synced with Hydrapedia
+
+## Quality Control Department (QC Dept.)
+
+Three system roles that operate automatically in platform background processes. They are **not available** in D-Chat and tech support, and their system prompts are **locked** from editing.
+
+### TechnoCritic (\`@technocritic\`)
+- Automatic response weakness analysis
+- Used in contests and interviews
+- Criteria: argument strength, logic coherence, evidence quality, bias detection
+
+### TechnoArbiter (\`@technoarbiter\`)
+- Automatic evaluation and judging
+- Used in contests, duels, and interviews
+- Criteria: synthesis quality, fairness, decision justification, scoring consistency
+- When a model is hired for this role — it serves as the contest arbiter
+
+### TechnoModerator (\`@technomoderator\`)
+- Final conclusion formation
+- Used in interviews for the final verdict
+- Criteria: summary accuracy, balance, structure quality, consensus identification
+
+> [!TIP] QC Dept. Model Assignment
+> Each QC Dept. role can be assigned a specific model via **Interview** or manually. The hired model is automatically used in system functions (contests, duels, interviews) instead of the default.
+
 ## Dual Toolbar System
 
 The input interface uses decomposed toolbars:
@@ -249,8 +311,6 @@ Supervisor Wishes — text directives for controlling AI behavior:
     content: {
       ru: `# Собеседование
 
-> ⚠️ Этот раздел доступен только администраторам.
-
 Панель собеседования — инструмент для оценки ИИ-моделей на соответствие штатным ролям. Интегрирована в раздел **Штат специалистов** как третья панель в группе ресайз-панелей.
 
 ## Интерфейс
@@ -271,7 +331,7 @@ Supervisor Wishes — text directives for controlling AI behavior:
 |------|----------|
 | **Брифинг** | Генерация задания для кандидата на основе профиля роли |
 | **Тесты** | Выполнение тестовых заданий кандидатом |
-| **Вердикт** | Итоговая оценка Арбитром и Модератором |
+| **Вердикт** | Итоговая оценка ТехноАрбитром и ТехноМодератором |
 
 **Визуальные состояния фаз:**
 - ⏳ **Ожидание** — серый пунктир
@@ -298,9 +358,12 @@ Supervisor Wishes — text directives for controlling AI behavior:
 
 - **Side-by-Side сравнение** — Baseline vs. Candidate в Markdown
 - **Локализованные компетенции** — из словаря \`COMPETENCY_I18N\`
-- **Рекомендация Арбитра** — числовая оценка и комментарий
-- **Резюме Модератора** — финальное заключение
+- **Рекомендация ТехноАрбитра** — числовая оценка и комментарий
+- **Резюме ТехноМодератора** — финальное заключение
 - **Кнопки решения** — принять или отклонить кандидата
+
+> [!TIP] Интеграция с ОТК
+> Если на роль ТехноАрбитра или ТехноМодератора нанята конкретная модель, именно она будет использоваться для оценки кандидатов на собеседованиях.
 
 ## Перезапуск при ошибке
 
@@ -310,10 +373,16 @@ Supervisor Wishes — text directives for controlling AI behavior:
 
 - Панель автоматически синхронизируется с выбранным сотрудником в списке штата
 - Ширина панели сохраняется в \`localStorage\`
-- Панель остаётся смонтированной, но скрывается через \`maxSize={0}\` для предотвращения потери стейта`,
-      en: `# Interview Panel
+- Панель остаётся смонтированной, но скрывается через \`maxSize={0}\` для предотвращения потери стейта
 
-> ⚠️ This section is accessible to administrators only.
+## История назначений
+
+Каждое успешное назначение фиксируется в таблице \`role_assignment_history\`:
+- Модель, роль, дата назначения и снятия
+- Средний балл собеседования
+- Причина ротации (\`replaced\`, \`manual\`, \`retest_failed\`)
+- Синтетические записи для «холодного старта» (флаг \`is_synthetic\`)`,
+      en: `# Interview Panel
 
 The interview panel is a tool for evaluating AI models for staff role assignments. It is integrated into the **Staff Roles** section as a third panel in the resizable panel group.
 
@@ -335,7 +404,7 @@ Three interview phases are displayed as a horizontal timeline:
 |-------|-------------|
 | **Briefing** | Generate assignment for the candidate based on the role profile |
 | **Tests** | Candidate executes test assignments |
-| **Verdict** | Final evaluation by Arbiter and Moderator |
+| **Verdict** | Final evaluation by TechnoArbiter and TechnoModerator |
 
 **Phase visual states:**
 - ⏳ **Pending** — gray dashed line
@@ -362,9 +431,12 @@ Vertical step list with real-time metrics (SSE):
 
 - **Side-by-Side comparison** — Baseline vs. Candidate in Markdown
 - **Localized competencies** — from \`COMPETENCY_I18N\` dictionary
-- **Arbiter recommendation** — numeric score and comment
-- **Moderator summary** — final conclusion
+- **TechnoArbiter recommendation** — numeric score and comment
+- **TechnoModerator summary** — final conclusion
 - **Decision buttons** — accept or reject the candidate
+
+> [!TIP] QC Dept. Integration
+> If a specific model is hired for the TechnoArbiter or TechnoModerator role, that model will be used for evaluating candidates in interviews.
 
 ## Restart on Failure
 
@@ -374,7 +446,15 @@ When any phase has a \`failed\` status, a **"Retry"** button (↻) appears in th
 
 - Panel automatically syncs with the selected staff member in the staff list
 - Panel width is persisted in \`localStorage\`
-- Panel remains mounted but hidden via \`maxSize={0}\` to prevent state loss`,
+- Panel remains mounted but hidden via \`maxSize={0}\` to prevent state loss
+
+## Assignment History
+
+Each successful assignment is recorded in the \`role_assignment_history\` table:
+- Model, role, assignment and removal dates
+- Average interview score
+- Rotation reason (\`replaced\`, \`manual\`, \`retest_failed\`)
+- Synthetic records for "cold start" (\`is_synthetic\` flag)`,
     },
   },
 ];
