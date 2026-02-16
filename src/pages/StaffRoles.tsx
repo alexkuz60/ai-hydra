@@ -173,8 +173,8 @@ const StaffRoles = () => {
     const config = ROLE_CONFIG[role];
     const IconComponent = config.icon;
     const isSelected = selectedRole === role;
-    const defaultModel = getTechRoleDefaultModel(role);
     const assignment = activeAssignments?.[role];
+    const defaultModel = assignment?.model_id || getTechRoleDefaultModel(role);
 
     return (
       <TableRow
