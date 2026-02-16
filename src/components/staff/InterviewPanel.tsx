@@ -26,6 +26,18 @@ import type { AgentRole } from '@/config/roles';
 import { ROLE_CONFIG } from '@/config/roles';
 import { getModelRegistryEntry } from '@/config/modelRegistry';
 
+/** Models that use reasoning tokens (need higher limits) */
+const THINKING_MODELS = [
+  'google/gemini-2.5-pro', 'google/gemini-3-pro-preview',
+  'openai/gpt-5', 'openai/gpt-5.2', 'deepseek-reasoner',
+  'gemini-2.5-pro', 'o1', 'o1-mini', 'o3-mini',
+  'proxyapi/gpt-5', 'proxyapi/gpt-5.2',
+];
+
+function isThinkingModel(modelId: string): boolean {
+  return THINKING_MODELS.some(m => modelId.includes(m) || m.includes(modelId));
+}
+
 /** Localized competency names */
 const COMPETENCY_I18N: Record<string, { ru: string; en: string }> = {
   // archivist
@@ -133,6 +145,12 @@ export function InterviewPanel({ role, onClose }: InterviewPanelProps) {
   const [newModel, setNewModel] = useState(() => {
     try { return localStorage.getItem(`interview_model_${role}`) || ''; } catch { return ''; }
   });
+  const [budgetMultiplier, setBudgetMultiplier] = useState(1);
+  const [historicalForecast, setHistoricalForecast] = useState<{ median: number; count: number } | null>(null);
+
+  const session = interview.session;
+  const testResults = session?.test_results;
+  const steps = testResults?.steps ?? [];
 
   // Load existing sessions for this role
   useEffect(() => {
@@ -140,16 +158,27 @@ export function InterviewPanel({ role, onClose }: InterviewPanelProps) {
       const roleSessions = all.filter(s => s.role === role);
       setSessions(roleSessions);
       if (roleSessions.length > 0 && !selectedSessionId) {
-        // Auto-select the latest
         setSelectedSessionId(roleSessions[0].id);
         interview.loadSession(roleSessions[0].id);
       }
     });
   }, [role]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const session = interview.session;
-  const testResults = session?.test_results;
-  const steps = testResults?.steps ?? [];
+  // Auto-detect thinking model and set 2x multiplier
+  useEffect(() => {
+    const modelId = session?.candidate_model;
+    if (modelId && isThinkingModel(modelId) && session?.status === 'briefed') {
+      setBudgetMultiplier(2);
+    }
+  }, [session?.candidate_model, session?.status]);
+
+  // Fetch historical forecast when session is briefed
+  useEffect(() => {
+    if (session?.status === 'briefed' && session.candidate_model) {
+      interview.getHistoricalTokenUsage(session.candidate_model, role).then(setHistoricalForecast);
+    }
+  }, [session?.status, session?.candidate_model, role]); // eslint-disable-line react-hooks/exhaustive-deps
+
 
   // Use live SSE data when testing, fallback to saved test_results
   const liveTotal = interview.totalSteps;
@@ -185,6 +214,28 @@ export function InterviewPanel({ role, onClose }: InterviewPanelProps) {
     return estimateCost(modelId, totalTokens);
   }, [session?.candidate_model, totalTokens]);
 
+  // Pre-test budget estimate (for briefed sessions)
+  const preTestBudget = useMemo(() => {
+    const modelId = session?.candidate_model;
+    if (!modelId || session?.status !== 'briefed') return null;
+
+    const baseTokens = historicalForecast?.median || 5000; // 5k default per test (~3-5 steps)
+    const multiplier = budgetMultiplier;
+    const totalEstimatedTokens = baseTokens * multiplier;
+    const cost = estimateCost(modelId, totalEstimatedTokens);
+    const isThinking = isThinkingModel(modelId);
+
+    return {
+      estimatedTokens: totalEstimatedTokens,
+      baseTokens,
+      multiplier,
+      cost,
+      isThinking,
+      isHistorical: !!historicalForecast,
+      historicalCount: historicalForecast?.count || 0,
+    };
+  }, [session?.candidate_model, session?.status, budgetMultiplier, historicalForecast]);
+
   const toggleStep = useCallback((idx: number) => {
     setExpandedSteps(prev => {
       const next = new Set(prev);
@@ -197,8 +248,9 @@ export function InterviewPanel({ role, onClose }: InterviewPanelProps) {
   const handleRunTests = useCallback(async () => {
     if (!session) return;
     setViewMode('progress');
-    await interview.runTests(session.id);
-  }, [session, interview]);
+    const maxTokens = budgetMultiplier > 1 ? 2048 * budgetMultiplier : undefined;
+    await interview.runTests(session.id, maxTokens);
+  }, [session, interview, budgetMultiplier]);
 
   const handleRunVerdict = useCallback(async () => {
     if (!session) return;
@@ -432,6 +484,67 @@ export function InterviewPanel({ role, onClose }: InterviewPanelProps) {
         </div>
       )}
 
+      {/* Budget Estimate (pre-test) */}
+      {session && session.status === 'briefed' && preTestBudget && (
+        <div className="p-3 border-b border-border shrink-0 space-y-2">
+          <div className="text-xs font-medium flex items-center gap-1.5">
+            <DollarSign className="h-3.5 w-3.5 text-amber-500" />
+            {isRu ? 'Оценка бюджета' : 'Budget Estimate'}
+          </div>
+          <div className="bg-muted/50 rounded-md p-2 text-[10px] space-y-1.5">
+            {preTestBudget.isHistorical ? (
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">
+                  {isRu ? `Прогноз (${preTestBudget.historicalCount} интервью)` : `Forecast (${preTestBudget.historicalCount} interviews)`}:
+                </span>
+                <span className="font-mono">~{preTestBudget.baseTokens.toLocaleString()} tok</span>
+              </div>
+            ) : (
+              <div className="text-muted-foreground italic">
+                {isRu ? 'Нет истории — используется базовая оценка' : 'No history — using base estimate'}
+              </div>
+            )}
+            {preTestBudget.isThinking && (
+              <div className="flex items-center gap-1.5 text-amber-500 bg-amber-500/10 rounded px-1.5 py-1">
+                <AlertTriangle className="h-3 w-3 shrink-0" />
+                <span>
+                  {isRu
+                    ? 'Модель с рассуждениями — рекомендуется 2x бюджет'
+                    : 'Thinking model — 2x budget recommended'}
+                </span>
+              </div>
+            )}
+            <div className="flex items-center gap-2">
+              <span className="text-muted-foreground">{isRu ? 'Множитель' : 'Multiplier'}:</span>
+              <div className="flex gap-1">
+                {[1, 2, 3].map(m => (
+                  <button
+                    key={m}
+                    className={cn(
+                      "px-2 py-0.5 rounded text-[10px] font-mono transition-colors",
+                      budgetMultiplier === m
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted hover:bg-muted/80 text-muted-foreground"
+                    )}
+                    onClick={() => setBudgetMultiplier(m)}
+                  >
+                    {m}x
+                  </button>
+                ))}
+              </div>
+            </div>
+            {preTestBudget.cost && (
+              <div className="flex justify-between pt-1 border-t border-border font-medium">
+                <span>{isRu ? 'Оценка стоимости' : 'Est. cost'}:</span>
+                <span className="font-mono text-amber-500">
+                  ≤{formatCost(preTestBudget.cost.total)}
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Actions */}
       {session && (session.status === 'briefed' || session.status === 'briefing' || (session.status === 'testing' && !interview.testing)) && (
         <div className="p-3 border-b border-border shrink-0">
@@ -450,6 +563,11 @@ export function InterviewPanel({ role, onClose }: InterviewPanelProps) {
               <>
                 <Play className="h-3.5 w-3.5" />
                 {isRu ? 'Запустить тесты' : 'Run Tests'}
+                {budgetMultiplier > 1 && (
+                  <Badge variant="secondary" className="text-[10px] ml-1">
+                    {budgetMultiplier}x
+                  </Badge>
+                )}
               </>
             )}
           </Button>

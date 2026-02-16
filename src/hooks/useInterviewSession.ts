@@ -156,7 +156,7 @@ export function useInterviewSession() {
 
   // ── Run tests (Phase 2) with SSE ──
 
-  const runTests = useCallback(async (sessionId: string) => {
+  const runTests = useCallback(async (sessionId: string, maxTokensOverride?: number) => {
     if (!user) return;
 
     const abortController = new AbortController();
@@ -183,7 +183,7 @@ export function useInterviewSession() {
           'Authorization': `Bearer ${authToken || supabaseKey}`,
           'apikey': supabaseKey,
         },
-        body: JSON.stringify({ session_id: sessionId, language }),
+        body: JSON.stringify({ session_id: sessionId, language, max_tokens_override: maxTokensOverride }),
         signal: abortController.signal,
       });
 
@@ -325,6 +325,41 @@ export function useInterviewSession() {
     }));
   }, [user]);
 
+  // ── Fetch historical token usage for budget forecast ──
+
+  const getHistoricalTokenUsage = useCallback(async (
+    candidateModel: string,
+    role: string,
+  ): Promise<{ median: number; count: number } | null> => {
+    if (!user) return null;
+
+    const { data, error } = await supabase
+      .from('interview_sessions')
+      .select('config')
+      .eq('user_id', user.id)
+      .eq('candidate_model', candidateModel)
+      .eq('role', role)
+      .eq('status', 'tested')
+      .order('created_at', { ascending: false })
+      .limit(10);
+
+    if (error || !data || data.length === 0) return null;
+
+    const tokenCounts = data
+      .map((d: any) => (d.config as Record<string, unknown>)?.actual_tokens_used as number)
+      .filter((t): t is number => typeof t === 'number' && t > 0)
+      .sort((a, b) => a - b);
+
+    if (tokenCounts.length === 0) return null;
+
+    const mid = Math.floor(tokenCounts.length / 2);
+    const median = tokenCounts.length % 2 === 0
+      ? Math.round((tokenCounts[mid - 1] + tokenCounts[mid]) / 2)
+      : tokenCounts[mid];
+
+    return { median, count: tokenCounts.length };
+  }, [user]);
+
   return {
     session: state.session,
     loading: state.loading,
@@ -337,5 +372,6 @@ export function useInterviewSession() {
     runTests,
     cancelTests,
     listSessions,
+    getHistoricalTokenUsage,
   };
 }
