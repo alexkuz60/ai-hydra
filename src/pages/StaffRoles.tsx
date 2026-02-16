@@ -38,7 +38,12 @@ const StaffRoles = () => {
       return stored ? (stored as AgentRole) : null;
     } catch { return null; }
   });
-  const [selectedRole, setSelectedRole] = useState<AgentRole | null>(interviewRoleInit);
+  const [selectedRole, setSelectedRole] = useState<AgentRole | null>(() => {
+    try {
+      const stored = localStorage.getItem('hydra-staff-selected-role');
+      return stored ? (stored as AgentRole) : interviewRoleInit;
+    } catch { return interviewRoleInit; }
+  });
   const [expertsExpanded, setExpertsExpanded] = useState(true);
   const [technicalExpanded, setTechnicalExpanded] = useState(true);
   const [otkExpanded, setOtkExpanded] = useState(true);
@@ -51,6 +56,14 @@ const StaffRoles = () => {
       return stored ? parseFloat(stored) : 30;
     } catch { return 30; }
   });
+
+  // Persist selected role
+  React.useEffect(() => {
+    try {
+      if (selectedRole) localStorage.setItem('hydra-staff-selected-role', selectedRole);
+      else localStorage.removeItem('hydra-staff-selected-role');
+    } catch { /* ignore */ }
+  }, [selectedRole]);
 
   // Persist interview panel state
   React.useEffect(() => {
