@@ -25,6 +25,7 @@ import {
 import type { AgentRole } from '@/config/roles';
 import { ROLE_CONFIG } from '@/config/roles';
 import { getModelRegistryEntry } from '@/config/modelRegistry';
+import { InterviewTimeline } from './InterviewTimeline';
 
 /** Models that use reasoning tokens (need higher limits) */
 const THINKING_MODELS = [
@@ -438,7 +439,13 @@ export function InterviewPanel({ role, onClose }: InterviewPanelProps) {
 
       {session && (
         <div className="px-3 py-2 border-b border-border bg-muted/20 shrink-0">
-          <div className="flex items-center gap-2 text-xs">
+          {/* Phase Timeline */}
+          <InterviewTimeline
+            status={session.status}
+            isTesting={interview.testing}
+            isVerdicting={verdictHook.running}
+          />
+          <div className="flex items-center gap-2 text-xs mt-1">
             <Badge variant="outline" className="text-[10px]">
               {session.status}
             </Badge>
