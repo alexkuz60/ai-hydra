@@ -47,6 +47,8 @@ export interface RoleConfigItem {
   label: string;
   description: string;
   isTechnicalStaff: boolean;
+  /** System-only roles (OTK) — hidden from user-facing interfaces like D-Chat, TechSupport, task selectors */
+  isSystemOnly?: boolean;
   bgClass?: string;
   cardVariant?: 'default' | 'expert' | 'critic' | 'arbiter' | 'user' | 'supervisor' | 'glass' | 'advisor' | 'archivist' | 'analyst' | 'webhunter' | 'moderator' | 'guide' | 'technocritic' | 'technoarbiter' | 'technomoderator';
 }
@@ -171,6 +173,7 @@ export const ROLE_CONFIG: Record<MessageRole, RoleConfigItem> = {
     label: 'role.technocritic',
     description: 'staffRoles.description.technocritic',
     isTechnicalStaff: true,
+    isSystemOnly: true,
     cardVariant: 'technocritic',
   },
   technoarbiter: {
@@ -179,6 +182,7 @@ export const ROLE_CONFIG: Record<MessageRole, RoleConfigItem> = {
     label: 'role.technoarbiter',
     description: 'staffRoles.description.technoarbiter',
     isTechnicalStaff: true,
+    isSystemOnly: true,
     cardVariant: 'technoarbiter',
   },
   technomoderator: {
@@ -187,6 +191,7 @@ export const ROLE_CONFIG: Record<MessageRole, RoleConfigItem> = {
     label: 'role.technomoderator',
     description: 'staffRoles.description.technomoderator',
     isTechnicalStaff: true,
+    isSystemOnly: true,
     cardVariant: 'technomoderator',
   },
 };

@@ -1,4 +1,5 @@
 import React from 'react';
+import { ROLE_CONFIG, type AgentRole } from '@/config/roles';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -53,6 +54,7 @@ interface RolePromptSectionProps {
 
 export function RolePromptSection(props: RolePromptSectionProps) {
   const { t } = useLanguage();
+  const isSystemOnly = ROLE_CONFIG[props.selectedRole as AgentRole]?.isSystemOnly;
   const {
     selectedRole, systemPrompt, userId,
     isEditing, editedPrompt, setEditedPrompt, promptName, setPromptName,
@@ -68,7 +70,7 @@ export function RolePromptSection(props: RolePromptSectionProps) {
   } = props;
 
   // Library select (shown when not editing)
-  const librarySection = userId && libraryPrompts.length > 0 && !isEditing && (
+  const librarySection = userId && !isSystemOnly && libraryPrompts.length > 0 && !isEditing && (
     <div className="space-y-3">
       <div className="flex items-center gap-2">
         <Library className="h-4 w-4 text-muted-foreground" />
@@ -187,7 +189,7 @@ export function RolePromptSection(props: RolePromptSectionProps) {
                 <TooltipContent side="top">{t('staffRoles.fullPreview')}</TooltipContent>
               </Tooltip>
             </TooltipProvider>
-            {userId && (
+            {userId && !isSystemOnly && (
               <Button variant="ghost" size="sm" onClick={handleStartEdit} className="gap-1.5 h-7 text-xs">
                 <Pencil className="h-3 w-3" />{t('staffRoles.editAndSave')}
               </Button>

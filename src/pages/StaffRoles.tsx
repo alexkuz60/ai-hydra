@@ -9,7 +9,7 @@ import {
 } from '@/components/ui/resizable';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Wrench, Users, Settings, ChevronDown, ChevronRight, Sparkles, Loader2, Cpu, ShieldCheck } from 'lucide-react';
+import { Wrench, Users, Settings, ChevronDown, ChevronRight, Sparkles, Loader2, Cpu, ShieldCheck, ShieldAlert } from 'lucide-react';
 import { CloudSyncIndicator } from '@/components/ui/CloudSyncIndicator';
 import { useCloudSyncStatus } from '@/hooks/useCloudSettings';
 import { ROLE_CONFIG, AGENT_ROLES, type AgentRole } from '@/config/roles';
@@ -35,6 +35,7 @@ const StaffRoles = () => {
   const [selectedRole, setSelectedRole] = useState<AgentRole | null>(null);
   const [expertsExpanded, setExpertsExpanded] = useState(true);
   const [technicalExpanded, setTechnicalExpanded] = useState(true);
+  const [otkExpanded, setOtkExpanded] = useState(true);
   const [isBulkSeeding, setIsBulkSeeding] = useState(false);
   const [interviewRole, setInterviewRole] = useState<AgentRole | null>(() => {
     try {
@@ -99,17 +100,21 @@ const StaffRoles = () => {
   }, []);
 
   // Группируем роли на экспертов и технический персонал
-  const { expertRoles, technicalRoles } = useMemo(() => {
+  const { expertRoles, technicalRoles, otkRoles } = useMemo(() => {
     const experts: AgentRole[] = [];
     const technical: AgentRole[] = [];
+    const otk: AgentRole[] = [];
     AGENT_ROLES.forEach((role) => {
-      if (ROLE_CONFIG[role].isTechnicalStaff) {
+      const config = ROLE_CONFIG[role];
+      if (config.isSystemOnly) {
+        otk.push(role);
+      } else if (config.isTechnicalStaff) {
         technical.push(role);
       } else {
         experts.push(role);
       }
     });
-    return { expertRoles: experts, technicalRoles: technical };
+    return { expertRoles: experts, technicalRoles: technical, otkRoles: otk };
   }, []);
 
   const handleRoleSelect = useCallback((role: AgentRole) => {
@@ -284,7 +289,7 @@ const StaffRoles = () => {
                 {nav.isMinimized ? (
                   <TooltipProvider delayDuration={200}>
                     <div className="p-1 space-y-1">
-                      {[...expertRoles, ...technicalRoles].map((role) => {
+                      {[...expertRoles, ...technicalRoles, ...otkRoles].map((role) => {
                         const config = ROLE_CONFIG[role];
                         const IconComponent = config.icon;
                         const isSelected = selectedRole === role;
@@ -335,6 +340,9 @@ const StaffRoles = () => {
 
                       {renderGroupHeader(technicalExpanded, () => setTechnicalExpanded(!technicalExpanded), <Settings className="h-4 w-4" />, t('staffRoles.technicalGroup'), technicalRoles.length, 'staff-technical-group')}
                       {technicalExpanded && technicalRoles.map(renderRoleRow)}
+
+                      {renderGroupHeader(otkExpanded, () => setOtkExpanded(!otkExpanded), <ShieldAlert className="h-4 w-4" />, language === 'ru' ? 'Отдел ТехКонтроля (ОТК)' : 'Quality Control Dept.', otkRoles.length, 'staff-otk-group')}
+                      {otkExpanded && otkRoles.map(renderRoleRow)}
                     </TableBody>
                   </Table>
                 )}
