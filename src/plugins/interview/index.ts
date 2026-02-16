@@ -8,6 +8,7 @@
 
 import type { RoleTestPlugin } from '@/types/interview';
 import { promptEngineerPlugin, COMPETENCY_LABELS as PE_LABELS } from './promptEngineerPlugin';
+import { flowRegulatorPlugin, COMPETENCY_LABELS as FR_LABELS } from './flowRegulatorPlugin';
 
 // ── Registry ──
 
@@ -21,6 +22,7 @@ function register(plugin: RoleTestPlugin, labels?: Record<string, { ru: string; 
 
 // Register all available plugins
 register(promptEngineerPlugin, PE_LABELS);
+register(flowRegulatorPlugin, FR_LABELS);
 
 // ── Public API ──
 
