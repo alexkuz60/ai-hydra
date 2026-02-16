@@ -243,4 +243,140 @@ Supervisor Wishes — text directives for controlling AI behavior:
 - Available only to users with \`supervisor\` role`,
     },
   },
+  {
+    id: 'interview-panel',
+    titleKey: 'hydrapedia.sections.interviewPanel',
+    icon: 'Wrench',
+    adminOnly: true,
+    content: {
+      ru: `# Собеседование
+
+> ⚠️ Этот раздел доступен только администраторам.
+
+Панель собеседования — инструмент для оценки ИИ-моделей на соответствие штатным ролям. Интегрирована в раздел **Штат специалистов** как третья панель в группе ресайз-панелей.
+
+## Интерфейс
+
+### Заголовок панели
+
+Компактный заголовок содержит:
+- **Название роли** — роль, для которой проводится собеседование
+- **Кнопка «+»** — создание нового собеседования
+- **Кнопка обновления** — повторная загрузка данных сессии
+- **Кнопка закрытия** — визуально отделена вертикальным разделителем; при наведении окрашивается в красный
+
+### Горизонтальный таймлайн
+
+Три фазы собеседования отображаются горизонтальным таймлайном:
+
+| Фаза | Описание |
+|------|----------|
+| **Брифинг** | Генерация задания для кандидата на основе профиля роли |
+| **Тесты** | Выполнение тестовых заданий кандидатом |
+| **Вердикт** | Итоговая оценка Арбитром и Модератором |
+
+**Визуальные состояния фаз:**
+- ⏳ **Ожидание** — серый пунктир
+- 🔵 **Активная** — бегущий пунктир (2px), пульсирующая иконка
+- ✅ **Завершена** — сплошная линия, зелёная галочка
+- ❌ **Ошибка** — красная линия, иконка ↻ с кнопкой «Заново» для перезапуска
+
+### Создание собеседования
+
+Форма создания включает:
+- **Выбор модели-кандидата** — с фильтрацией BYOK-моделей
+- **Прогноз бюджета** — стоимость и токены (медиана последних 10 сессий)
+- **Множитель** — 1x/2x/3x для Reasoning-моделей
+- Запоминание выбранной модели для каждой роли
+
+### Прогресс выполнения
+
+Вертикальный список шагов с real-time метриками (SSE):
+- Название шага и статус
+- Количество токенов
+- Затраченное время
+
+### Режим вердикта
+
+- **Side-by-Side сравнение** — Baseline vs. Candidate в Markdown
+- **Локализованные компетенции** — из словаря \`COMPETENCY_I18N\`
+- **Рекомендация Арбитра** — числовая оценка и комментарий
+- **Резюме Модератора** — финальное заключение
+- **Кнопки решения** — принять или отклонить кандидата
+
+## Перезапуск при ошибке
+
+При статусе \`failed\` любой фазы в таймлайне появляется кнопка **«Заново»** (↻), которая создаёт новую сессию собеседования с теми же параметрами (модель + роль).
+
+## Синхронизация
+
+- Панель автоматически синхронизируется с выбранным сотрудником в списке штата
+- Ширина панели сохраняется в \`localStorage\`
+- Панель остаётся смонтированной, но скрывается через \`maxSize={0}\` для предотвращения потери стейта`,
+      en: `# Interview Panel
+
+> ⚠️ This section is accessible to administrators only.
+
+The interview panel is a tool for evaluating AI models for staff role assignments. It is integrated into the **Staff Roles** section as a third panel in the resizable panel group.
+
+## Interface
+
+### Panel Header
+
+The compact header contains:
+- **Role name** — the role being interviewed for
+- **"+" button** — create a new interview
+- **Refresh button** — reload session data
+- **Close button** — visually separated by a vertical divider; turns red on hover
+
+### Horizontal Timeline
+
+Three interview phases are displayed as a horizontal timeline:
+
+| Phase | Description |
+|-------|-------------|
+| **Briefing** | Generate assignment for the candidate based on the role profile |
+| **Tests** | Candidate executes test assignments |
+| **Verdict** | Final evaluation by Arbiter and Moderator |
+
+**Phase visual states:**
+- ⏳ **Pending** — gray dashed line
+- 🔵 **Active** — animated dashed line (2px), pulsing icon
+- ✅ **Completed** — solid line, green checkmark
+- ❌ **Failed** — red line, ↻ icon with "Retry" button for restart
+
+### Creating an Interview
+
+The creation form includes:
+- **Candidate model selection** — with BYOK model filtering
+- **Budget forecast** — cost and tokens (median of last 10 sessions)
+- **Multiplier** — 1x/2x/3x for Reasoning models
+- Remembers selected model per role
+
+### Execution Progress
+
+Vertical step list with real-time metrics (SSE):
+- Step name and status
+- Token count
+- Elapsed time
+
+### Verdict Mode
+
+- **Side-by-Side comparison** — Baseline vs. Candidate in Markdown
+- **Localized competencies** — from \`COMPETENCY_I18N\` dictionary
+- **Arbiter recommendation** — numeric score and comment
+- **Moderator summary** — final conclusion
+- **Decision buttons** — accept or reject the candidate
+
+## Restart on Failure
+
+When any phase has a \`failed\` status, a **"Retry"** button (↻) appears in the timeline, creating a new interview session with the same parameters (model + role).
+
+## Synchronization
+
+- Panel automatically syncs with the selected staff member in the staff list
+- Panel width is persisted in \`localStorage\`
+- Panel remains mounted but hidden via \`maxSize={0}\` to prevent state loss`,
+    },
+  },
 ];

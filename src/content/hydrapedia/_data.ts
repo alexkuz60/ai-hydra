@@ -12,35 +12,86 @@ import { guideSections } from './guide';
 const pick = (sections: HydrapediaSection[], id: string) =>
   sections.find(s => s.id === id)!;
 
-// Combined array preserving original sidebar order
-export const allHydrapediaSections: HydrapediaSection[] = [
-  pick(basicsSections, 'intro'),
-  pick(basicsSections, 'getting-started'),
-  pick(chatSections, 'expert-panel'),
-  pick(chatSections, 'chat-actions'),
-  pick(chatSections, 'streaming-mode'),
-  pick(contentSections, 'prompt-library'),
-  pick(contentSections, 'tools'),
-  pick(flowSections, 'flow-editor'),
-  pick(featuresSections, 'model-ratings'),
-  pick(referenceSections, 'best-practices'),
-  pick(featuresSections, 'tasks'),
-  pick(featuresSections, 'roles-catalog'),
-  pick(chatSections, 'd-chat-moderator'),
-  pick(featuresSections, 'session-memory'),
-  pick(featuresSections, 'web-search'),
-  pick(referenceSections, 'localization'),
-  pick(referenceSections, 'security'),
-  pick(contentSections, 'behavioral-patterns'),
-  pick(adminSections, 'hydra-training'),
-  pick(adminSections, 'technical-staff'),
-  pick(flowSections, 'flow-editor-guide'),
-  pick(referenceSections, 'proxyapi'),
-  pick(referenceSections, 'api-integrations'),
-  pick(referenceSections, 'advanced-patterns'),
-  pick(featuresSections, 'roleMemory'),
-  pick(referenceSections, 'faq'),
-  pick(guideSections, 'guide-tours'),
-  pick(duelModeSections, 'duel-mode'),
-  pick(duelModeSections, 'contest-rules'),
+// Navigation group definition
+export interface HydrapediaNavGroup {
+  titleKey: string;
+  sections: HydrapediaSection[];
+}
+
+// Grouped navigation structure matching main sidebar
+export const hydrapediaNavGroups: HydrapediaNavGroup[] = [
+  {
+    titleKey: 'hydrapedia.group.basics',
+    sections: [
+      pick(basicsSections, 'intro'),
+      pick(basicsSections, 'getting-started'),
+    ],
+  },
+  {
+    titleKey: 'hydrapedia.group.expertPanel',
+    sections: [
+      pick(chatSections, 'expert-panel'),
+      pick(chatSections, 'chat-actions'),
+      pick(chatSections, 'streaming-mode'),
+      pick(chatSections, 'd-chat-moderator'),
+    ],
+  },
+  {
+    titleKey: 'hydrapedia.group.content',
+    sections: [
+      pick(contentSections, 'prompt-library'),
+      pick(contentSections, 'tools'),
+      pick(contentSections, 'behavioral-patterns'),
+    ],
+  },
+  {
+    titleKey: 'hydrapedia.group.flow',
+    sections: [
+      pick(flowSections, 'flow-editor'),
+      pick(flowSections, 'flow-editor-guide'),
+    ],
+  },
+  {
+    titleKey: 'hydrapedia.group.ratings',
+    sections: [
+      pick(featuresSections, 'model-ratings'),
+      pick(duelModeSections, 'duel-mode'),
+      pick(duelModeSections, 'contest-rules'),
+    ],
+  },
+  {
+    titleKey: 'hydrapedia.group.staff',
+    sections: [
+      pick(featuresSections, 'tasks'),
+      pick(featuresSections, 'roles-catalog'),
+      pick(featuresSections, 'session-memory'),
+      pick(featuresSections, 'roleMemory'),
+      pick(featuresSections, 'web-search'),
+      pick(adminSections, 'hydra-training'),
+      pick(adminSections, 'technical-staff'),
+      pick(adminSections, 'interview-panel'),
+    ],
+  },
+  {
+    titleKey: 'hydrapedia.group.reference',
+    sections: [
+      pick(referenceSections, 'best-practices'),
+      pick(referenceSections, 'localization'),
+      pick(referenceSections, 'security'),
+      pick(referenceSections, 'proxyapi'),
+      pick(referenceSections, 'api-integrations'),
+      pick(referenceSections, 'advanced-patterns'),
+      pick(referenceSections, 'faq'),
+    ],
+  },
+  {
+    titleKey: 'hydrapedia.group.other',
+    sections: [
+      pick(guideSections, 'guide-tours'),
+    ],
+  },
 ];
+
+// Combined flat array preserving grouped order
+export const allHydrapediaSections: HydrapediaSection[] =
+  hydrapediaNavGroups.flatMap(g => g.sections);

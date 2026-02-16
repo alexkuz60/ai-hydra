@@ -231,6 +231,17 @@ const translations: Translations = {
   'hydrapedia.sections.proxyApi': { ru: 'ProxyAPI — Единый ключ', en: 'ProxyAPI — Single Key' },
   'hydrapedia.sections.faq': { ru: 'FAQ и решение проблем', en: 'FAQ & Troubleshooting' },
   'hydrapedia.sections.guideTours': { ru: 'Интерактивные экскурсии', en: 'Interactive Tours' },
+  'hydrapedia.sections.interviewPanel': { ru: 'Собеседование', en: 'Interview Panel' },
+  'hydrapedia.sections.duelMode': { ru: 'Режим дуэли', en: 'Duel Mode' },
+  'hydrapedia.sections.contestRules': { ru: 'Правила конкурса', en: 'Contest Rules' },
+  'hydrapedia.group.basics': { ru: 'Основы', en: 'Basics' },
+  'hydrapedia.group.expertPanel': { ru: 'Панель экспертов', en: 'Expert Panel' },
+  'hydrapedia.group.content': { ru: 'Контент и промпты', en: 'Content & Prompts' },
+  'hydrapedia.group.flow': { ru: 'Редактор потоков', en: 'Flow Editor' },
+  'hydrapedia.group.ratings': { ru: 'Подиум моделей', en: 'Model Podium' },
+  'hydrapedia.group.staff': { ru: 'Штат и роли', en: 'Staff & Roles' },
+  'hydrapedia.group.reference': { ru: 'Справочник', en: 'Reference' },
+  'hydrapedia.group.other': { ru: 'Дополнительно', en: 'Other' },
 
   // Patterns groups
   'patterns.expertGroup': { ru: 'Эксперты', en: 'Experts' },

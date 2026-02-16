@@ -9,9 +9,10 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
-import { hydrapediaSections } from '@/content/hydrapedia';
+import { hydrapediaSections, hydrapediaNavGroups } from '@/content/hydrapedia';
 import { useUserRoles } from '@/hooks/useUserRoles';
 import { toast } from 'sonner';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import {
   Lightbulb,
   Rocket,
@@ -27,6 +28,7 @@ import {
   X,
   List,
   ChevronRight,
+  ChevronDown,
   Search,
   FileText,
   Link2,
@@ -513,31 +515,50 @@ export default function Hydrapedia() {
           >
             <ScrollArea className="h-full">
               <nav className="p-3 space-y-1">
-                {visibleSections.map((section) => {
-                  const Icon = iconMap[section.icon] || Lightbulb;
-                  const isActive = activeSection === section.id;
+                {hydrapediaNavGroups.map((group) => {
+                  const groupSections = group.sections.filter(s => !s.adminOnly || isAdmin);
+                  if (groupSections.length === 0) return null;
+                  
+                  const groupHasActive = groupSections.some(s => s.id === activeSection);
                   
                   return (
-                    <button
-                      key={section.id}
-                      onClick={() => handleSectionClick(section.id)}
-                      className={cn(
-                        "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left text-sm transition-all duration-200",
-                        "hover:bg-muted/50",
-                        isActive && "bg-primary/10 text-primary border border-primary/20"
-                      )}
-                    >
-                      <Icon className={cn(
-                        "h-4 w-4 flex-shrink-0",
-                        isActive && "text-primary"
-                      )} />
-                      <span className={cn(
-                        "truncate",
-                        isActive && "font-medium"
-                      )}>
-                        {t(section.titleKey)}
-                      </span>
-                    </button>
+                    <Collapsible key={group.titleKey} defaultOpen={groupHasActive}>
+                      <CollapsibleTrigger className="w-full flex items-center gap-2 px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider hover:text-foreground transition-colors rounded-md hover:bg-muted/30 group">
+                        <ChevronRight className="h-3 w-3 transition-transform duration-200 group-data-[state=open]:rotate-90" />
+                        <span>{t(group.titleKey)}</span>
+                      </CollapsibleTrigger>
+                      <CollapsibleContent>
+                        <div className="ml-2 mt-0.5 space-y-0.5 border-l border-border/50 pl-2">
+                          {groupSections.map((section) => {
+                            const Icon = iconMap[section.icon] || Lightbulb;
+                            const isActive = activeSection === section.id;
+                            
+                            return (
+                              <button
+                                key={section.id}
+                                onClick={() => handleSectionClick(section.id)}
+                                className={cn(
+                                  "w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-left text-sm transition-all duration-200",
+                                  "hover:bg-muted/50",
+                                  isActive && "bg-primary/10 text-primary border border-primary/20"
+                                )}
+                              >
+                                <Icon className={cn(
+                                  "h-3.5 w-3.5 flex-shrink-0",
+                                  isActive && "text-primary"
+                                )} />
+                                <span className={cn(
+                                  "truncate text-[13px]",
+                                  isActive && "font-medium"
+                                )}>
+                                  {t(section.titleKey)}
+                                </span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </CollapsibleContent>
+                    </Collapsible>
                   );
                 })}
               </nav>
