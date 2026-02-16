@@ -1,39 +1,11 @@
 
-# Plan: Duel Mode ("K Baryeru") — IMPLEMENTED (Phase 1)
+# Plan: Interview Mode ("Собеседование") — Full Pipeline
 
-Status: ✅ Core infrastructure complete (Phase 1 + Phase 2 backend)
-
-## Completed Files
-
-| File | Status |
-|------|--------|
-| `src/pages/ModelRatings.tsx` | ✅ Added 'duel' section tab |
-| `src/hooks/useDuelConfig.ts` | ✅ Created |
-| `src/hooks/useDuelSession.ts` | ✅ Created |
-| `src/hooks/useDuelExecution.ts` | ✅ Created |
-| `src/components/ratings/DuelArena.tsx` | ✅ Created |
-| `src/components/ratings/DuelPlanEditor.tsx` | ✅ Created |
-| `src/components/ratings/DuelBattleView.tsx` | ✅ Created |
-| `src/components/ratings/DuelScoreboard.tsx` | ✅ Created |
-| `src/components/ratings/duelPhases.ts` | ✅ Created |
-| `src/lib/contestFlowTemplates.ts` | ✅ Added duel templates |
-| `src/components/ratings/i18n.ts` | ✅ Added duel i18n keys |
-| `src/content/hydrapedia/features.ts` | ✅ Added duel docs |
-
-## Next Steps (Phase 2)
-
-- Auto-advance rounds without user evaluation
-- Duel-specific flow template generator (dedicated DAG, not reusing contest generator)
-- Phase 2: Arbiter Duel (role swap — critics evaluate arbiter candidates)
-- Integration with model_statistics for duel win/loss tracking
+Status: ✅ Phase 1-3 complete
 
 ---
 
-# Plan: Interview Mode ("Собеседование") — Phase 1 (Briefing) IMPLEMENTED
-
-Status: ✅ Phase 1 backend complete
-
-## Phase 1 — Briefing (DONE)
+## Phase 1 — Briefing (✅ DONE)
 
 | Artifact | Status | Description |
 |----------|--------|-------------|
@@ -43,51 +15,42 @@ Status: ✅ Phase 1 backend complete
 | `updated_at` trigger | ✅ | Auto-updates on row change |
 
 ### Briefing Assembly Logic
-The edge function gathers 7 sections into a comprehensive Position Brief:
+Edge function gathers 7 sections into a comprehensive Position Brief:
 1. **Hydra Anatomy** — full organism description, all roles, hierarchy
-2. **Job Description** — role-specific duties (placeholder for system prompt injection)
-3. **Interaction Map** — which roles are direct collaborators
-4. **Role Knowledge** — all entries from `role_knowledge` table (RAG docs)
+2. **Job Description** — role-specific duties
+3. **Interaction Map** — direct collaborators
+4. **Role Knowledge** — all entries from `role_knowledge` (RAG docs)
 5. **Predecessor Experience** — all `role_memory` entries grouped by type
 6. **Behavior Config** — tone, verbosity, approval requirements
 7. **Hierarchy** — custom Табель о рангах settings
 
-### Key Design Decisions
-- **No token limits** on briefing — invest heavily once, save on every future operation
-- **System prompt injection** — brief goes as system prompt, not user message (token economy)
-- **Raw experience transfer** — no distillation yet; full predecessor memory passed to candidate
-- **Source tracking** — optional `source_contest_id` links interview to the contest that selected this candidate
+### Key Decisions
+- No token limits on briefing — invest heavily once, save on every future operation
+- System prompt injection — brief goes as system prompt (token economy)
+- Raw experience transfer — full predecessor memory passed to candidate
+- Source tracking — optional `source_contest_id` links interview to contest
 
-## Phase 2 — Testing (✅ IMPLEMENTED)
+---
+
+## Phase 2 — Testing (✅ DONE)
 
 ### Architecture: Universal Test Container ("Box Container")
-A modular container with standardized connection points:
+Modular container with standardized connection points:
 - **Input**: role config, candidate model, test filter, briefing context
 - **Output**: UI updates (progress, toasts, indicators), test results
 
 ### Container internals (role-agnostic):
-1. **Test filter** — selects test set based on role from `ROLE_CONFIG.duties` + `role_knowledge`
-2. **Candidate model** — the model being interviewed (from `interview_sessions.candidate_model`)
+1. **Test filter** — selects test set from `ROLE_CONFIG.duties` + `role_knowledge`
+2. **Candidate model** — from `interview_sessions.candidate_model`
 3. **Step counter** — tracks multi-step test progress
-4. **SSE streaming** — real-time progress to UI via `hydra-stream` transport pattern
-5. **Statistics collector** — gathers intermediate and final results per test step
-6. **Trigger system** — UI indicator updates, toast notifications, component refresh
+4. **SSE streaming** — real-time progress via `hydra-stream` transport pattern
+5. **Statistics collector** — gathers results per test step
+6. **Trigger system** — UI indicator updates, toast notifications
 
-### Evaluation approach: Differential (was → will be)
-- **NOT arbiter-based** — user makes the final decision
-- Container collects `{ baseline: current_state, candidate_output: proposed_change }` pairs
-- For each test, shows comparison: what exists now vs what the candidate proposes
-- Some roles may require **testing the candidate's proposal** itself (meta-evaluation)
-- Arbiter algorithms deliberately NOT connected at this phase
-
-### Reusable code:
-| What | Source | How |
-|------|--------|-----|
-| SSE streaming | `streamWithTimeout` + `hydra-stream` | Direct reuse |
-| Execution pattern | `useContestExecution` | Adapt (linear pipeline, not parallel) |
-| Progress UI | `FlowExecutionPanel` | Adapt (step indicators, progress bar) |
-| Test generation | `ROLE_CONFIG.duties` + `role_knowledge` | New logic, existing data |
-| Result storage | `interview_sessions.test_results` | JSONB column already exists |
+### Evaluation: Differential (was → will be)
+- NOT arbiter-based — user makes the final decision
+- Collects `{ baseline, candidate_output }` pairs
+- Shows comparison: what exists now vs what the candidate proposes
 
 ### test_results JSONB format:
 ```json
@@ -111,8 +74,55 @@ A modular container with standardized connection points:
 }
 ```
 
-## Phase 3 — Verdict & Inheritance (TODO)
-- Arbiter evaluates test performance
-- Save new experience to `role_memory` with `memory_type: 'experience'`
-- Optionally assign model to the role in Staff
-- One-time token warning dialog for new users
+### Reusable code:
+| What | Source | How |
+|------|--------|-----|
+| SSE streaming | `streamWithTimeout` + `hydra-stream` | Direct reuse |
+| Execution pattern | `useContestExecution` | Adapted (linear pipeline) |
+| Progress UI | `FlowExecutionPanel` | Adapted (step indicators) |
+| Test generation | `ROLE_CONFIG.duties` + `role_knowledge` | New logic, existing data |
+| Result storage | `interview_sessions.test_results` | JSONB column |
+
+---
+
+## Phase 3 — Verdict & Decision (✅ DONE)
+
+| Artifact | Status | Description |
+|----------|--------|-------------|
+| `role_assignment_history` table | ✅ | Tracks model assignments per role with scores, synthetic flag |
+| `supabase/functions/interview-verdict/index.ts` | ✅ | Arbiter → Moderator → Archivist pipeline with SSE |
+| `src/hooks/useInterviewVerdict.ts` | ✅ | Frontend hook for verdict SSE + apply decision |
+| `src/components/staff/InterviewPanel.tsx` | ✅ | VerdictSection with scores, flags, decision buttons |
+
+### Verdict Pipeline
+1. **Arbiter** (Lovable AI) → structured tool-call evaluation per role criteria → scores, red_flags, recommendation, confidence
+2. **Moderator** (hydra-stream) → 2-3 sentence HR summary
+3. **Archivist** → saves experience to `role_memory`
+4. **Auto-decision** via dynamic thresholds (see below)
+5. **User override** — always available via 3 buttons
+
+### Dynamic Thresholds
+| Decision | Condition |
+|----------|-----------|
+| **Hire** | candidate score > current holder score (same model = upskill, different = replace) |
+| **Reject** | candidate score < avg of 2 previous holders |
+| **Retest** | score ≤ current but ≥ previous |
+
+### Cold Start Strategy (Phantom Predecessor)
+On first hire, system creates a synthetic `role_assignment_history` entry:
+- `is_synthetic = true`
+- `interview_avg_score = candidate_score - 0.5`
+- `removal_reason = 'replaced'`
+
+This ensures verdict logic always has comparison data without special-casing.
+
+### Assignment Flow
+- **Hire**: close current holder (`removed_at`, `removal_reason`), insert new assignment
+- **Reject**: no DB changes
+- **Retest**: session goes back to 'briefed' status
+
+---
+
+## TODO
+
+1. **Эконом-заглушка для кандидатов из конкурса** — если кандидат прошёл ролевой конкурс (`source_contest_id` заполнен), при тестировании использовать его ответы из конкурса вместо повторной генерации. Возможно, с переоценкой (arbiter пересчитывает баллы в контексте роли, а не конкурсного задания). Цель: экономия токенов, ускорение процесса.
