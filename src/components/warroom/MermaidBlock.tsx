@@ -8,16 +8,17 @@ import { renderMermaidWithRetry } from '@/lib/mermaidRenderer';
 interface MermaidBlockProps {
   content: string;
   className?: string;
+  defaultZoom?: number;
 }
 
-export function MermaidBlock({ content, className }: MermaidBlockProps) {
+export function MermaidBlock({ content, className, defaultZoom = 1 }: MermaidBlockProps) {
   const { theme } = useTheme();
   const containerRef = useRef<HTMLDivElement>(null);
   const [svg, setSvg] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
-  const [zoom, setZoom] = useState(1);
+  const [zoom, setZoom] = useState(defaultZoom);
   const uniqueId = useId().replace(/:/g, '-');
 
   useEffect(() => {
