@@ -288,6 +288,17 @@ export function InterviewPanel({ role, onClose }: InterviewPanelProps) {
     }
   }, [role, newModel, interview]);
 
+  const handleRestart = useCallback(async () => {
+    if (!session) return;
+    const model = session.candidate_model;
+    const sessionId = await interview.createInterview(role, model);
+    if (sessionId) {
+      setSelectedSessionId(sessionId);
+      const all = await interview.listSessions();
+      setSessions(all.filter(s => s.role === role));
+    }
+  }, [session, role, interview]);
+
   const config = ROLE_CONFIG[role];
   const IconComponent = config.icon;
 
@@ -400,6 +411,7 @@ export function InterviewPanel({ role, onClose }: InterviewPanelProps) {
               else if (phase === 'testing') setViewMode('results');
               else if (phase === 'verdict') setViewMode('verdict');
             }}
+            onRestart={handleRestart}
           />
           <div className="flex items-center gap-2 text-xs mt-1">
             <Badge variant="outline" className="text-[10px]">

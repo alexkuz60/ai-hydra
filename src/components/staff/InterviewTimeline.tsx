@@ -1,6 +1,6 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
-import { FileText, Play, Gavel } from 'lucide-react';
+import { FileText, Play, Gavel, RotateCcw } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { motion } from 'framer-motion';
 
@@ -16,6 +16,8 @@ interface InterviewTimelineProps {
   onPhaseClick?: (phase: 'briefing' | 'testing' | 'verdict') => void;
   /** Currently active/selected phase for highlight */
   activePhase?: string;
+  /** Callback for restart when failed */
+  onRestart?: () => void;
 }
 
 /** Map session status to a numeric phase index: 0=briefing, 1=testing, 2=verdict */
@@ -46,7 +48,7 @@ const PHASES = [
   { key: 'verdict', icon: Gavel, labelRu: 'Вердикт', labelEn: 'Verdict' },
 ] as const;
 
-export function InterviewTimeline({ status, isTesting, isVerdicting, onPhaseClick, activePhase }: InterviewTimelineProps) {
+export function InterviewTimeline({ status, isTesting, isVerdicting, onPhaseClick, activePhase, onRestart }: InterviewTimelineProps) {
   const { language } = useLanguage();
   const isRu = language === 'ru';
   const phaseIdx = getPhaseIndex(status, isTesting, isVerdicting);
@@ -105,22 +107,37 @@ export function InterviewTimeline({ status, isTesting, isVerdicting, onPhaseClic
                     }}
                   />
                 )}
-                <phase.icon className="h-3.5 w-3.5" />
-              </button>
-              <span
-                className={cn(
-                  "text-[9px] font-medium leading-none",
-                  phaseFailed
-                    ? "text-destructive"
-                    : isCompleted
-                      ? "text-hydra-success"
-                      : isActive
-                        ? "text-primary"
-                        : "text-muted-foreground/50"
+                {phaseFailed ? (
+                  <RotateCcw className="h-3.5 w-3.5" />
+                ) : (
+                  <phase.icon className="h-3.5 w-3.5" />
                 )}
-              >
-                {isRu ? phase.labelRu : phase.labelEn}
-              </span>
+              </button>
+              {phaseFailed && onRestart && (
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); onRestart(); }}
+                  className="text-[8px] text-destructive hover:text-destructive/80 font-medium leading-none mt-0.5 transition-colors"
+                >
+                  {isRu ? 'Заново' : 'Retry'}
+                </button>
+              )}
+              {!phaseFailed && (
+                <span
+                  className={cn(
+                    "text-[9px] font-medium leading-none",
+                    phaseFailed
+                      ? "text-destructive"
+                      : isCompleted
+                        ? "text-hydra-success"
+                        : isActive
+                          ? "text-primary"
+                          : "text-muted-foreground/50"
+                  )}
+                >
+                  {isRu ? phase.labelRu : phase.labelEn}
+                </span>
+              )}
             </div>
           </React.Fragment>
         );
