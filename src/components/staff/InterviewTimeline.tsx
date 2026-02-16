@@ -25,6 +25,17 @@ function getPhaseIndex(status: string, isTesting?: boolean, isVerdicting?: boole
   return 0; // initial
 }
 
+/** Determine which phase failed based on status and phase index */
+function getFailedPhaseIndex(status: string, phaseIdx: number): number {
+  if (status !== 'failed') return -1;
+  // If failed during or after verdict phase
+  if (phaseIdx >= 2) return 2;
+  // If failed during or after testing phase
+  if (phaseIdx >= 1) return 1;
+  // Failed during briefing
+  return 0;
+}
+
 const PHASES = [
   { key: 'briefing', icon: FileText, labelRu: 'Брифинг', labelEn: 'Briefing' },
   { key: 'testing', icon: Play, labelRu: 'Тесты', labelEn: 'Tests' },
@@ -35,13 +46,16 @@ export function InterviewTimeline({ status, isTesting, isVerdicting }: Interview
   const { language } = useLanguage();
   const isRu = language === 'ru';
   const phaseIdx = getPhaseIndex(status, isTesting, isVerdicting);
+  const isFailed = status === 'failed';
+  const failedAt = getFailedPhaseIndex(status, phaseIdx);
 
   return (
     <div className="flex items-center w-full px-2 py-2">
       {PHASES.map((phase, i) => {
         const phaseStart = i; // 0, 1, 2
-        const isCompleted = phaseIdx > phaseStart;
-        const isActive = phaseIdx >= phaseStart && phaseIdx < phaseStart + 1;
+        const phaseFailed = isFailed && failedAt === i;
+        const isCompleted = !isFailed && phaseIdx > phaseStart;
+        const isActive = !isFailed && phaseIdx >= phaseStart && phaseIdx < phaseStart + 1;
         const isPulsing = isActive && (phaseIdx % 1 !== 0); // fractional = in progress
 
         return (
@@ -49,9 +63,9 @@ export function InterviewTimeline({ status, isTesting, isVerdicting }: Interview
             {/* Connector line before this phase (not for first) */}
             {i > 0 && (
               <TimelineConnector
-                completed={phaseIdx >= phaseStart}
-                animating={phaseIdx > (phaseStart - 1) && phaseIdx < phaseStart}
-                failed={false}
+                completed={!isFailed && phaseIdx >= phaseStart}
+                animating={!isFailed && phaseIdx > (phaseStart - 1) && phaseIdx < phaseStart}
+                failed={isFailed && failedAt >= i}
               />
             )}
 
@@ -60,11 +74,13 @@ export function InterviewTimeline({ status, isTesting, isVerdicting }: Interview
               <div
                 className={cn(
                   "relative flex items-center justify-center w-7 h-7 rounded-full border-2 transition-colors duration-300",
-                  isCompleted
-                    ? "border-hydra-success bg-hydra-success/15 text-hydra-success"
-                    : isActive
-                      ? "border-primary bg-primary/10 text-primary"
-                      : "border-muted-foreground/30 bg-muted/30 text-muted-foreground/50"
+                  phaseFailed
+                    ? "border-destructive bg-destructive/15 text-destructive"
+                    : isCompleted
+                      ? "border-hydra-success bg-hydra-success/15 text-hydra-success"
+                      : isActive
+                        ? "border-primary bg-primary/10 text-primary"
+                        : "border-muted-foreground/30 bg-muted/30 text-muted-foreground/50"
                 )}
               >
                 {isPulsing && (
@@ -86,11 +102,13 @@ export function InterviewTimeline({ status, isTesting, isVerdicting }: Interview
               <span
                 className={cn(
                   "text-[9px] font-medium leading-none",
-                  isCompleted
-                    ? "text-hydra-success"
-                    : isActive
-                      ? "text-primary"
-                      : "text-muted-foreground/50"
+                  phaseFailed
+                    ? "text-destructive"
+                    : isCompleted
+                      ? "text-hydra-success"
+                      : isActive
+                        ? "text-primary"
+                        : "text-muted-foreground/50"
                 )}
               >
                 {isRu ? phase.labelRu : phase.labelEn}
