@@ -35,6 +35,7 @@ export interface InterviewSession {
   briefing_data: Record<string, unknown> | null;
   briefing_token_count: number | null;
   test_results: InterviewTestResults | null;
+  verdict: Record<string, unknown> | null;
   config: Record<string, unknown> | null;
   created_at: string;
 }
@@ -141,6 +142,7 @@ export function useInterviewSession() {
           briefing_data: data.briefing_data as Record<string, unknown> | null,
           briefing_token_count: data.briefing_token_count,
           test_results: data.test_results as unknown as InterviewTestResults | null,
+          verdict: data.verdict as Record<string, unknown> | null,
           config: data.config as Record<string, unknown> | null,
           created_at: data.created_at || '',
         },
@@ -317,6 +319,7 @@ export function useInterviewSession() {
       briefing_data: null,
       briefing_token_count: d.briefing_token_count,
       test_results: null,
+      verdict: null,
       config: d.config,
       created_at: d.created_at || '',
     }));
