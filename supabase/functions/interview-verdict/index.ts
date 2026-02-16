@@ -272,7 +272,7 @@ serve(async (req) => {
               model_id: 'google/gemini-2.5-flash-lite',
               role: 'moderator',
               temperature: 0.3,
-              max_tokens: 512,
+              max_tokens: 2048,
             }),
           });
 
