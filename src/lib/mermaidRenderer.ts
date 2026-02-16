@@ -74,6 +74,25 @@ function cleanupOrphans(prefix: string) {
  * Render mermaid content with serialized queue to prevent concurrent corruption.
  * Returns SVG string on success.
  */
+/**
+ * Sanitize mermaid content to work around known parser bugs in v11+.
+ * - Removes `linkStyle default ...` lines that cause UNICODE_TEXT parse errors
+ *   when hex colors like #333 are present.
+ */
+function sanitizeContent(raw: string): string {
+  return raw
+    .split('\n')
+    .filter(line => {
+      const trimmed = line.trim().toLowerCase();
+      // Remove linkStyle lines with hex colors — mermaid v11 chokes on them
+      if (trimmed.startsWith('linkstyle') && trimmed.includes('#')) {
+        return false;
+      }
+      return true;
+    })
+    .join('\n');
+}
+
 export async function renderMermaid(
   content: string,
   theme: string,
@@ -88,7 +107,7 @@ export async function renderMermaid(
         // Re-initialize if theme changed
         ensureInitialized(theme);
 
-        const { svg } = await mermaid.render(renderId, content);
+        const { svg } = await mermaid.render(renderId, sanitizeContent(content));
         resolve(svg);
       } catch (err) {
         console.error('[MermaidRenderer] Render failed:', err, '\nContent (first 200 chars):', content.substring(0, 200));
