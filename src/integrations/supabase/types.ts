@@ -756,6 +756,59 @@ export type Database = {
         }
         Relationships: []
       }
+      role_assignment_history: {
+        Row: {
+          assigned_at: string
+          created_at: string
+          id: string
+          interview_avg_score: number | null
+          interview_session_id: string | null
+          is_synthetic: boolean
+          metadata: Json | null
+          model_id: string
+          removal_reason: string | null
+          removed_at: string | null
+          role: string
+          user_id: string
+        }
+        Insert: {
+          assigned_at?: string
+          created_at?: string
+          id?: string
+          interview_avg_score?: number | null
+          interview_session_id?: string | null
+          is_synthetic?: boolean
+          metadata?: Json | null
+          model_id: string
+          removal_reason?: string | null
+          removed_at?: string | null
+          role: string
+          user_id: string
+        }
+        Update: {
+          assigned_at?: string
+          created_at?: string
+          id?: string
+          interview_avg_score?: number | null
+          interview_session_id?: string | null
+          is_synthetic?: boolean
+          metadata?: Json | null
+          model_id?: string
+          removal_reason?: string | null
+          removed_at?: string | null
+          role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "role_assignment_history_interview_session_id_fkey"
+            columns: ["interview_session_id"]
+            isOneToOne: false
+            referencedRelation: "interview_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       role_behaviors: {
         Row: {
           communication: Json
