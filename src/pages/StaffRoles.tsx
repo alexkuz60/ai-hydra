@@ -203,10 +203,17 @@ const StaffRoles = () => {
                 </Badge>
               )}
               {defaultModel && (
-                <Badge variant="outline" className="gap-1 text-[10px] py-0 font-mono text-muted-foreground">
-                  <Cpu className="h-2.5 w-2.5" />
-                  {getModelShortName(defaultModel)}
-                </Badge>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Badge variant="outline" className="gap-1 text-[10px] py-0 font-mono text-muted-foreground cursor-default">
+                      <Cpu className="h-3.5 w-3.5" />
+                      {getModelShortName(defaultModel)}
+                    </Badge>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="text-xs font-mono">
+                    {defaultModel}
+                  </TooltipContent>
+                </Tooltip>
               )}
               {assignment && (
                 <Badge variant="outline" className="gap-1 text-[10px] py-0 text-hydra-success border-hydra-success/30">
@@ -328,6 +335,7 @@ const StaffRoles = () => {
                     </div>
                   </TooltipProvider>
                 ) : (
+                  <TooltipProvider delayDuration={300}>
                   <Table>
                     <TableHeader>
                       <TableRow className="bg-muted/50">
@@ -346,6 +354,7 @@ const StaffRoles = () => {
                       {technicalExpanded && otkExpanded && otkRoles.map(renderRoleRow)}
                     </TableBody>
                   </Table>
+                  </TooltipProvider>
                 )}
               </div>
             </div>
