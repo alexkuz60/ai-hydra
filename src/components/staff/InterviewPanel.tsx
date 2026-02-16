@@ -348,9 +348,10 @@ export function InterviewPanel({ role, onClose }: InterviewPanelProps) {
                 {isRu ? 'Обновить' : 'Refresh'}
               </TooltipContent>
             </Tooltip>
+            <div className="w-px h-5 bg-border ml-1.5" />
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onClose}>
+                <Button variant="ghost" size="icon" className="h-7 w-7 ml-1 text-muted-foreground hover:text-destructive" onClick={onClose}>
                   <X className="h-4 w-4" />
                 </Button>
               </TooltipTrigger>
