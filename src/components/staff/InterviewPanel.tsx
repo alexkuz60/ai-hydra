@@ -264,9 +264,11 @@ export function InterviewPanel({ role, onClose }: InterviewPanelProps) {
     if (!session) return;
     setViewMode('verdict');
     await verdictHook.runVerdict(session.id, effectiveArbiter);
-    // Reload session to get verdict data
+    // Reload session + refresh history table
     await interview.loadSession(session.id);
-  }, [session, verdictHook, interview, effectiveArbiter]);
+    const all = await interview.listSessions();
+    setSessions(all.filter(s => s.role === role));
+  }, [session, verdictHook, interview, effectiveArbiter, role]);
 
   const handleApplyDecision = useCallback(async (decision: 'hire' | 'reject' | 'retest') => {
     if (!session) return;
@@ -275,7 +277,10 @@ export function InterviewPanel({ role, onClose }: InterviewPanelProps) {
       : undefined;
     await verdictHook.applyDecision(session.id, decision, retestComps);
     await interview.loadSession(session.id);
-  }, [session, verdictHook, interview]);
+    // Refresh history table to reflect new decision/status
+    const all = await interview.listSessions();
+    setSessions(all.filter(s => s.role === role));
+  }, [session, verdictHook, interview, role]);
 
   const handleReload = useCallback(async () => {
     if (selectedSessionId) {
