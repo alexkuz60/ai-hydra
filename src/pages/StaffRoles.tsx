@@ -20,6 +20,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
 import RoleDetailsPanel from '@/components/staff/RoleDetailsPanel';
 import { InterviewPanel } from '@/components/staff/InterviewPanel';
+import { RecertificationPanel } from '@/components/staff/RecertificationPanel';
 import { useUnsavedChanges } from '@/hooks/useUnsavedChanges';
 import { UnsavedChangesDialog } from '@/components/ui/unsaved-changes-dialog';
 import { useNavigatorResize } from '@/hooks/useNavigatorResize';
@@ -30,19 +31,31 @@ import { getModelShortName } from '@/components/warroom/permodel/types';
 import { useKnowledgeVersioning } from '@/hooks/useKnowledgeVersioning';
 
 /** Small badge that shows if a role's knowledge changed since last certification */
-function KnowledgeChangedBadge({ role, isRu }: { role: string; isRu: boolean }) {
+function KnowledgeChangedBadge({ role, isRu, onRecertify }: { role: string; isRu: boolean; onRecertify?: () => void }) {
   const { hasChanged, changeSummary } = useKnowledgeVersioning(role);
   if (!hasChanged) return null;
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <Badge variant="outline" className="gap-1 text-[10px] py-0 text-hydra-warning border-hydra-warning/30 animate-pulse">
+        <Badge
+          variant="outline"
+          className={cn(
+            "gap-1 text-[10px] py-0 text-hydra-warning border-hydra-warning/30 animate-pulse",
+            onRecertify && "cursor-pointer hover:bg-hydra-warning/10"
+          )}
+          onClick={(e) => {
+            if (onRecertify) {
+              e.stopPropagation();
+              onRecertify();
+            }
+          }}
+        >
           <RefreshCw className="h-2.5 w-2.5" />
           {isRu ? 'Обновлено' : 'Updated'}
         </Badge>
       </TooltipTrigger>
       <TooltipContent side="top" className="text-xs max-w-[200px]">
-        {isRu ? 'Знания изменились с последней аттестации' : 'Knowledge changed since last certification'}
+        {isRu ? 'Знания изменились с последней аттестации. Нажмите для переаттестации.' : 'Knowledge changed since last certification. Click to re-certify.'}
         {changeSummary && <div className="font-mono text-[10px] mt-0.5">{changeSummary}</div>}
       </TooltipContent>
     </Tooltip>
@@ -70,6 +83,7 @@ const StaffRoles = () => {
   const [otkExpanded, setOtkExpanded] = useState(true);
   const [isBulkSeeding, setIsBulkSeeding] = useState(false);
   const [interviewRole, setInterviewRole] = useState<AgentRole | null>(interviewRoleInit);
+  const [recertRole, setRecertRole] = useState<AgentRole | null>(null);
 
   const [interviewPanelSize, setInterviewPanelSize] = useState<number>(() => {
     try {
@@ -120,7 +134,13 @@ const StaffRoles = () => {
   });
 
   const handleOpenInterview = useCallback((role: AgentRole) => {
+    setRecertRole(null); // Close recert if open
     setInterviewRole(role);
+  }, []);
+
+  const handleOpenRecert = useCallback((role: AgentRole) => {
+    setInterviewRole(null); // Close interview if open
+    setRecertRole(role);
   }, []);
 
   // Sync interview panel with selected role
@@ -132,6 +152,10 @@ const StaffRoles = () => {
 
   const handleCloseInterview = useCallback(() => {
     setInterviewRole(null);
+  }, []);
+
+  const handleCloseRecert = useCallback(() => {
+    setRecertRole(null);
   }, []);
 
   // Группируем роли на экспертов и технический персонал
@@ -256,7 +280,7 @@ const StaffRoles = () => {
                   {new Date(assignment.assigned_at).toLocaleDateString(language === 'ru' ? 'ru-RU' : 'en-US', { day: 'numeric', month: 'short' })}
                 </Badge>
               )}
-              {assignment && <KnowledgeChangedBadge role={role} isRu={language === 'ru'} />}
+              {assignment && <KnowledgeChangedBadge role={role} isRu={language === 'ru'} onRecertify={() => handleOpenRecert(role)} />}
             </div>
             <span className="text-xs text-muted-foreground font-mono">{role}</span>
           </div>
@@ -399,7 +423,7 @@ const StaffRoles = () => {
           <ResizableHandle withHandle />
 
           <ResizablePanel
-            defaultSize={Math.max(30, interviewRole ? (100 - nav.panelSize - Math.max(interviewPanelSize, 15)) : (100 - nav.panelSize))}
+            defaultSize={Math.max(30, (interviewRole || recertRole) ? (100 - nav.panelSize - Math.max(interviewPanelSize, 15)) : (100 - nav.panelSize))}
             minSize={30}
           >
             <div className="h-full border-l border-border bg-card" data-guide="role-details">
@@ -407,22 +431,26 @@ const StaffRoles = () => {
                 selectedRole={selectedRole}
                 onHasUnsavedChanges={handleHasUnsavedChanges}
                 onOpenInterview={handleOpenInterview}
+                onOpenRecert={handleOpenRecert}
               />
             </div>
           </ResizablePanel>
 
-          {/* Interview Panel — always mounted to prevent remounting details panel */}
-          <ResizableHandle withHandle className={cn(!interviewRole && "hidden")} />
+          {/* Interview / Recert Panel */}
+          <ResizableHandle withHandle className={cn(!interviewRole && !recertRole && "hidden")} />
           <ResizablePanel
-            defaultSize={interviewRole ? Math.max(interviewPanelSize, 15) : 0}
-            minSize={interviewRole ? 15 : 0}
-            maxSize={interviewRole ? 50 : 0}
+            defaultSize={(interviewRole || recertRole) ? Math.max(interviewPanelSize, 15) : 0}
+            minSize={(interviewRole || recertRole) ? 15 : 0}
+            maxSize={(interviewRole || recertRole) ? 50 : 0}
             onResize={(size) => { if (size > 0) setInterviewPanelSize(size); }}
-            className={cn(!interviewRole && "hidden")}
+            className={cn(!interviewRole && !recertRole && "hidden")}
           >
             <div className="h-full border-l border-border">
               {interviewRole && (
                 <InterviewPanel role={interviewRole} onClose={handleCloseInterview} />
+              )}
+              {recertRole && (
+                <RecertificationPanel role={recertRole} onClose={handleCloseRecert} />
               )}
             </div>
           </ResizablePanel>

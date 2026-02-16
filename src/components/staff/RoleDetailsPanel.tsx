@@ -1,5 +1,5 @@
 import React, { forwardRef } from 'react';
-import { ClipboardCheck } from 'lucide-react';
+import { ClipboardCheck, RefreshCw } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { Badge } from '@/components/ui/badge';
@@ -12,6 +12,7 @@ import { RoleAssignmentHistory } from './RoleAssignmentHistory';
 import { ROLE_CONFIG, DEFAULT_SYSTEM_PROMPTS, type AgentRole } from '@/config/roles';
 import { cn } from '@/lib/utils';
 import { useRoleBehavior } from '@/hooks/useRoleBehavior';
+import { useKnowledgeVersioning } from '@/hooks/useKnowledgeVersioning';
 import { useRolePromptEditor } from '@/hooks/useRolePromptEditor';
 import { useTechRoleDefaults } from '@/hooks/useTechRoleDefaults';
 import { RolePromptSection } from './RolePromptSection';
@@ -22,15 +23,17 @@ interface RoleDetailsPanelProps {
   selectedRole: AgentRole | null;
   onHasUnsavedChanges?: (hasChanges: boolean) => void;
   onOpenInterview?: (role: AgentRole) => void;
+  onOpenRecert?: (role: AgentRole) => void;
 }
 
 const RoleDetailsPanel = forwardRef<HTMLDivElement, RoleDetailsPanelProps>(
-  ({ selectedRole, onHasUnsavedChanges, onOpenInterview }, ref) => {
+  ({ selectedRole, onHasUnsavedChanges, onOpenInterview, onOpenRecert }, ref) => {
     const { t, language } = useLanguage();
     const { user } = useAuth();
     const { behavior, isLoading: isLoadingBehavior, isSaving, saveRequiresApproval } = useRoleBehavior(selectedRole);
     const promptEditor = useRolePromptEditor(selectedRole, user?.id);
     const { loaded: techRoleLoaded } = useTechRoleDefaults();
+    const { hasChanged } = useKnowledgeVersioning(selectedRole);
 
     if (!selectedRole) {
       return (
@@ -57,6 +60,23 @@ const RoleDetailsPanel = forwardRef<HTMLDivElement, RoleDetailsPanelProps>(
                 <h2 className={cn("text-xl font-semibold", config.color)}>{t(config.label)}</h2>
                 <code className="text-xs text-muted-foreground font-mono">{selectedRole}</code>
               </div>
+              {onOpenRecert && hasChanged && selectedRole && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        className="p-2 rounded-lg hover:bg-hydra-warning/10 transition-colors"
+                        onClick={() => onOpenRecert(selectedRole)}
+                      >
+                        <RefreshCw className="h-5 w-5 text-hydra-warning hover:text-hydra-warning transition-colors animate-pulse" />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>{language === 'ru' ? 'Переаттестация' : 'Re-certify'}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
               {onOpenInterview && (
                 <TooltipProvider>
                   <Tooltip>
