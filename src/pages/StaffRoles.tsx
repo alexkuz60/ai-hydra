@@ -9,12 +9,14 @@ import {
 } from '@/components/ui/resizable';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Wrench, Users, Settings, ChevronDown, ChevronRight, Sparkles, Loader2, Cpu, ClipboardCheck } from 'lucide-react';
+import { Wrench, Users, Settings, ChevronDown, ChevronRight, Sparkles, Loader2, Cpu, ShieldCheck } from 'lucide-react';
 import { CloudSyncIndicator } from '@/components/ui/CloudSyncIndicator';
 import { useCloudSyncStatus } from '@/hooks/useCloudSettings';
 import { ROLE_CONFIG, AGENT_ROLES, type AgentRole } from '@/config/roles';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useQuery } from '@tanstack/react-query';
+import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
 import RoleDetailsPanel from '@/components/staff/RoleDetailsPanel';
 import { InterviewPanel } from '@/components/staff/InterviewPanel';
@@ -28,6 +30,7 @@ import { getModelShortName } from '@/components/warroom/permodel/types';
 
 const StaffRoles = () => {
   const { t, language } = useLanguage();
+  const { user } = useAuth();
   const cloudSynced = useCloudSyncStatus();
   const [selectedRole, setSelectedRole] = useState<AgentRole | null>(null);
   const [expertsExpanded, setExpertsExpanded] = useState(true);
@@ -61,6 +64,24 @@ const StaffRoles = () => {
 
   const unsavedChanges = useUnsavedChanges();
   const nav = useNavigatorResize({ storageKey: 'staff-roles', defaultMaxSize: 35 });
+
+  // Fetch active role assignments (certified roles)
+  const { data: activeAssignments } = useQuery({
+    queryKey: ['role-assignments-active', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return {};
+      const { data } = await supabase
+        .from('role_assignment_history')
+        .select('role, model_id, assigned_at')
+        .eq('user_id', user.id)
+        .is('removed_at', null);
+      const map: Record<string, { model_id: string; assigned_at: string }> = {};
+      data?.forEach((r) => { map[r.role] = { model_id: r.model_id, assigned_at: r.assigned_at }; });
+      return map;
+    },
+    enabled: !!user?.id,
+    staleTime: 30_000,
+  });
 
   const handleOpenInterview = useCallback((role: AgentRole) => {
     setInterviewRole(role);
@@ -147,7 +168,8 @@ const StaffRoles = () => {
     const config = ROLE_CONFIG[role];
     const IconComponent = config.icon;
     const isSelected = selectedRole === role;
-    const defaultModel = config.isTechnicalStaff ? getTechRoleDefaultModel(role) : null;
+    const defaultModel = getTechRoleDefaultModel(role);
+    const assignment = activeAssignments?.[role];
 
     return (
       <TableRow
@@ -165,7 +187,7 @@ const StaffRoles = () => {
         </TableCell>
         <TableCell>
           <div className="flex flex-col gap-1">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <span className={cn("font-medium", config.color)}>{t(config.label)}</span>
               {isSelected && unsavedChanges.hasUnsavedChanges && (
                 <span className="w-2 h-2 rounded-full bg-hydra-warning animate-pulse-glow shrink-0" title="Unsaved changes" />
@@ -181,13 +203,19 @@ const StaffRoles = () => {
                   {getModelShortName(defaultModel)}
                 </Badge>
               )}
+              {assignment && (
+                <Badge variant="outline" className="gap-1 text-[10px] py-0 text-hydra-success border-hydra-success/30">
+                  <ShieldCheck className="h-2.5 w-2.5" />
+                  {new Date(assignment.assigned_at).toLocaleDateString(language === 'ru' ? 'ru-RU' : 'en-US', { day: 'numeric', month: 'short' })}
+                </Badge>
+              )}
             </div>
             <span className="text-xs text-muted-foreground font-mono">{role}</span>
           </div>
         </TableCell>
       </TableRow>
     );
-  }, [selectedRole, unsavedChanges.hasUnsavedChanges, handleRoleSelect, t]);
+  }, [selectedRole, unsavedChanges.hasUnsavedChanges, handleRoleSelect, t, activeAssignments, language]);
 
   const renderGroupHeader = useCallback((
     expanded: boolean,
