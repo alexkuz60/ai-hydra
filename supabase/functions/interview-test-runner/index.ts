@@ -436,7 +436,8 @@ serve(async (req) => {
       );
     }
 
-    const { session_id, language = 'ru' } = await req.json();
+    const { session_id, language = 'ru', max_tokens_override } = await req.json();
+    const testMaxTokens = Math.min(Math.max(max_tokens_override || 2048, 512), 16384);
 
     if (!session_id) {
       return new Response(
@@ -588,7 +589,7 @@ serve(async (req) => {
                 role: 'assistant',
                 system_prompt: briefText,
                 temperature: 0.7,
-                max_tokens: 2048,
+                max_tokens: testMaxTokens,
               }),
             });
 
@@ -687,6 +688,8 @@ serve(async (req) => {
 
         // Save all results to the session
         const completedSteps = testResults.filter((r: any) => r.status === 'completed').length;
+        const actualTotalTokens = testResults.reduce((sum: number, r: any) => sum + (r.token_count || 0), 0);
+        const actualTotalElapsedMs = testResults.reduce((sum: number, r: any) => sum + (r.elapsed_ms || 0), 0);
 
         await supabase
           .from('interview_sessions')
@@ -704,6 +707,9 @@ serve(async (req) => {
               phase: 'tested',
               total_steps: allTasks.length,
               completed_steps: completedSteps,
+              max_tokens_used: testMaxTokens,
+              actual_tokens_used: actualTotalTokens,
+              actual_elapsed_ms: actualTotalElapsedMs,
             },
           })
           .eq('id', session_id);
