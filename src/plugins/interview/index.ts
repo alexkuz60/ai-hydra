@@ -10,6 +10,7 @@ import type { RoleTestPlugin } from '@/types/interview';
 import { promptEngineerPlugin, COMPETENCY_LABELS as PE_LABELS } from './promptEngineerPlugin';
 import { flowRegulatorPlugin, COMPETENCY_LABELS as FR_LABELS } from './flowRegulatorPlugin';
 import { toolsmithPlugin, COMPETENCY_LABELS as TS_LABELS } from './toolsmithPlugin';
+import { guidePlugin, COMPETENCY_LABELS as GD_LABELS } from './guidePlugin';
 
 // ── Registry ──
 
@@ -25,6 +26,7 @@ function register(plugin: RoleTestPlugin, labels?: Record<string, { ru: string; 
 register(promptEngineerPlugin, PE_LABELS);
 register(flowRegulatorPlugin, FR_LABELS);
 register(toolsmithPlugin, TS_LABELS);
+register(guidePlugin, GD_LABELS);
 
 // ── Public API ──
 
