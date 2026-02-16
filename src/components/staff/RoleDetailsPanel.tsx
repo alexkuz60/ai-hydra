@@ -8,6 +8,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { Separator } from '@/components/ui/separator';
 import { Wrench } from 'lucide-react';
 import RoleKnowledgeTab from './RoleKnowledgeTab';
+import { RoleAssignmentHistory } from './RoleAssignmentHistory';
 import { ROLE_CONFIG, DEFAULT_SYSTEM_PROMPTS, type AgentRole } from '@/config/roles';
 import { cn } from '@/lib/utils';
 import { useRoleBehavior } from '@/hooks/useRoleBehavior';
@@ -123,6 +124,11 @@ const RoleDetailsPanel = forwardRef<HTMLDivElement, RoleDetailsPanelProps>(
                 </div>
               </>
             )}
+
+            <Separator />
+
+            {/* Assignment History */}
+            <RoleAssignmentHistory role={selectedRole} />
 
             <Separator />
 
