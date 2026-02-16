@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useQueryClient } from '@tanstack/react-query';
 
 // ── Verdict Types ──
 
@@ -56,6 +57,7 @@ interface VerdictState {
 export function useInterviewVerdict() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const { language } = useLanguage();
   const isRu = language === 'ru';
 
@@ -287,6 +289,9 @@ export function useInterviewVerdict() {
           ? `Решение: ${decision === 'hire' ? 'Нанять' : decision === 'reject' ? 'Отклонить' : 'Перетестировать'}`
           : `Decision: ${decision}`,
       });
+
+      // Refresh certification badges in staff list
+      queryClient.invalidateQueries({ queryKey: ['role-assignments-active'] });
     } catch (err: any) {
       toast({ variant: 'destructive', description: err.message });
     }
