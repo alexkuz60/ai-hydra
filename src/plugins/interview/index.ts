@@ -11,6 +11,9 @@ import { promptEngineerPlugin, COMPETENCY_LABELS as PE_LABELS } from './promptEn
 import { flowRegulatorPlugin, COMPETENCY_LABELS as FR_LABELS } from './flowRegulatorPlugin';
 import { toolsmithPlugin, COMPETENCY_LABELS as TS_LABELS } from './toolsmithPlugin';
 import { guidePlugin, COMPETENCY_LABELS as GD_LABELS } from './guidePlugin';
+import { technocriticPlugin, COMPETENCY_LABELS as TC_LABELS } from './technocriticPlugin';
+import { technoarbiterPlugin, COMPETENCY_LABELS as TA_LABELS } from './technoarbiterPlugin';
+import { technomoderatorPlugin, COMPETENCY_LABELS as TM_LABELS } from './technomoderatorPlugin';
 
 // ── Registry ──
 
@@ -27,6 +30,10 @@ register(promptEngineerPlugin, PE_LABELS);
 register(flowRegulatorPlugin, FR_LABELS);
 register(toolsmithPlugin, TS_LABELS);
 register(guidePlugin, GD_LABELS);
+// OTK (Quality Control) plugins
+register(technocriticPlugin, TC_LABELS);
+register(technoarbiterPlugin, TA_LABELS);
+register(technomoderatorPlugin, TM_LABELS);
 
 // ── Public API ──
 
