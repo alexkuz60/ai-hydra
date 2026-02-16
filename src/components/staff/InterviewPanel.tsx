@@ -640,7 +640,7 @@ export function InterviewPanel({ role, onClose }: InterviewPanelProps) {
             onDecision={handleApplyDecision}
           />}
 
-          {sessions.length > 1 && (
+          {sessions.length > 0 && (
             <SessionHistoryTable
               sessions={sessions}
               selectedSessionId={selectedSessionId}
@@ -1028,11 +1028,11 @@ function SessionHistoryTable({
   onSelect: (id: string) => void;
   isRu: boolean;
 }) {
-  const otherSessions = sessions.filter(s => s.id !== currentSessionId);
-  if (otherSessions.length === 0) return null;
+  // Show ALL sessions including current — no exclusions
+  if (sessions.length === 0) return null;
 
   // Find the latest "hire" session by verdict decided_at to mark older hires as "superseded"
-  const hiredSessions = otherSessions
+  const hiredSessions = sessions
     .map(s => {
       const v = s.verdict as Record<string, any> | null;
       const dec = v?.final_decision;
@@ -1076,7 +1076,7 @@ function SessionHistoryTable({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {otherSessions.map(s => {
+            {sessions.map(s => {
               const isSelected = selectedSessionId === s.id;
               const config = s.config as Record<string, any> | null;
               const tokens = config?.actual_tokens_used ?? 0;
@@ -1115,6 +1115,7 @@ function SessionHistoryTable({
                   className={cn(
                     "cursor-pointer transition-colors text-[11px]",
                     isSelected ? "bg-primary/10 hover:bg-primary/15" : "hover:bg-muted/20",
+                    s.id === currentSessionId && "border-l-2 border-l-primary",
                   )}
                   onClick={() => onSelect(s.id)}
                 >
