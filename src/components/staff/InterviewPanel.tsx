@@ -999,6 +999,11 @@ const DECISION_BADGE: Record<string, { label: { ru: string; en: string }; classN
   retest: { label: { ru: 'Ретест', en: 'Retest' }, className: 'bg-primary/15 text-primary border-primary/30' },
 };
 
+const SUPERSEDED_BADGE = {
+  label: { ru: 'Замещён', en: 'Superseded' },
+  className: 'bg-muted/30 text-muted-foreground border-border',
+};
+
 function SessionHistoryTable({
   sessions,
   selectedSessionId,
@@ -1012,6 +1017,19 @@ function SessionHistoryTable({
 }) {
   const otherSessions = sessions.slice(1);
   if (otherSessions.length === 0) return null;
+
+  // Find the latest "hire" session by verdict decided_at to mark older hires as "superseded"
+  const hiredSessions = otherSessions
+    .map(s => {
+      const v = s.verdict as Record<string, any> | null;
+      const dec = v?.final_decision;
+      const decidedAt = v?.decided_at ? new Date(v.decided_at).getTime() : 0;
+      return { id: s.id, decision: dec, decidedAt };
+    })
+    .filter(h => h.decision === 'hire')
+    .sort((a, b) => b.decidedAt - a.decidedAt);
+
+  const latestHireId = hiredSessions.length > 0 ? hiredSessions[0].id : null;
 
   return (
     <>
@@ -1041,13 +1059,26 @@ function SessionHistoryTable({
               // Extract verdict decision
               const verdict = s.verdict as Record<string, any> | null;
               const decision = verdict?.final_decision || verdict?.arbiter?.recommendation;
-              const decBadge = decision ? DECISION_BADGE[decision] : null;
+
+              // Determine badge: if hire but not the latest hire → superseded
+              let decBadge: { label: { ru: string; en: string }; className: string } | null = null;
+              if (decision === 'hire' && s.id !== latestHireId) {
+                decBadge = SUPERSEDED_BADGE;
+              } else if (decision) {
+                decBadge = DECISION_BADGE[decision] || null;
+              }
 
               // Extract score
               const scores = verdict?.arbiter?.scores as Record<string, number> | undefined;
               const avgScore = scores
                 ? (Object.values(scores).reduce((a, b) => a + b, 0) / Object.values(scores).length).toFixed(1)
                 : null;
+
+              // Date with verdict time
+              const decidedAt = verdict?.decided_at;
+              const dateStr = decidedAt
+                ? new Date(decidedAt).toLocaleDateString(isRu ? 'ru-RU' : 'en-US', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+                : new Date(s.created_at).toLocaleDateString(isRu ? 'ru-RU' : 'en-US', { day: 'numeric', month: 'short' });
 
               const modelShort = s.candidate_model.replace(/^proxyapi\//, '').replace(/^google\//, '').replace(/^openai\//, '');
 
@@ -1066,7 +1097,7 @@ function SessionHistoryTable({
                         {modelShort}
                       </span>
                       <span className={cn("text-[9px]", STATUS_COLORS[s.status] || 'text-muted-foreground')}>
-                        {s.status} • {new Date(s.created_at).toLocaleDateString(isRu ? 'ru-RU' : 'en-US', { day: 'numeric', month: 'short' })}
+                        {s.status} • {dateStr}
                       </span>
                     </div>
                   </TableCell>
