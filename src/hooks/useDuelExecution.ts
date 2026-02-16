@@ -7,6 +7,7 @@ import { useModelStatistics } from '@/hooks/useModelStatistics';
 import { streamWithTimeout } from '@/lib/streamWithTimeout';
 import type { ContestSession, ContestRound, ContestResult } from './useContestSession';
 import type { DuelConfigData } from './useDuelConfig';
+import { getHiredTechnoArbiterModel } from './useHiredTechnoArbiter';
 
 interface DuelExecutionState {
   executing: boolean;
@@ -273,6 +274,7 @@ export function useDuelExecution() {
             })),
             criteria: duelConfig.criteria,
             criteria_weights: duelConfig.criteriaWeights || {},
+            arbiter_model: duelConfig.arbiterModel || (user?.id ? await getHiredTechnoArbiterModel(user.id) : undefined),
             language,
             duel_mode: duelConfig.duelType === 'arbiter', // Enable Likert evaluation for arbiter duels
           }),

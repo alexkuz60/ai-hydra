@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useModelStatistics } from '@/hooks/useModelStatistics';
 import { streamWithTimeout } from '@/lib/streamWithTimeout';
 import type { ContestResult, ContestRound, ContestSession } from './useContestSession';
+import { getHiredTechnoArbiterModel } from './useHiredTechnoArbiter';
 
 interface ExecutionState {
   running: boolean;
@@ -77,7 +78,7 @@ export function useContestExecution() {
           })),
           criteria: effectiveCriteria,
           criteria_weights: arbitration.criteriaWeights || {},
-          arbiter_model: arbitration.arbiterModel || undefined,
+          arbiter_model: (arbitration as any).arbiterModel || (user?.id ? await getHiredTechnoArbiterModel(user.id) : undefined),
           language,
           role_context: roleForEvaluation || undefined,
         }),
