@@ -105,7 +105,6 @@ Administrators can create and edit **system** patterns (with ✏️ icon), which
     id: 'technical-staff',
     titleKey: 'hydrapedia.sections.technicalStaff',
     icon: 'Wrench',
-    adminOnly: true,
     content: {
       ru: `# Технический персонал
 
