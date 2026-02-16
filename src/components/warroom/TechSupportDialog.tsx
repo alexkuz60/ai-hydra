@@ -20,11 +20,11 @@ import {
   Trash2,
 } from 'lucide-react';
 
-// Technical staff roles only
+// Technical staff roles only (exclude system-only OTK roles)
 type TechRole = 'archivist' | 'analyst' | 'promptengineer' | 'flowregulator' | 'toolsmith';
 
 const TECH_ROLES: TechRole[] = AGENT_ROLES.filter(
-  role => ROLE_CONFIG[role].isTechnicalStaff
+  role => ROLE_CONFIG[role].isTechnicalStaff && !ROLE_CONFIG[role].isSystemOnly
 ) as TechRole[];
 
 interface TechSupportDialogProps {

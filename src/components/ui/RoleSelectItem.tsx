@@ -38,6 +38,7 @@ export function RoleSelectOptions({ excludeRoles = [], excludeTechnicalStaff = f
       {AGENT_ROLES
         .filter(role => !excludeRoles.includes(role))
         .filter(role => !excludeTechnicalStaff || !ROLE_CONFIG[role].isTechnicalStaff)
+        .filter(role => !ROLE_CONFIG[role].isSystemOnly)
         .map((role) => (
           <RoleSelectItem key={role} value={role} />
         ))}
