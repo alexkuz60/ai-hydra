@@ -133,7 +133,7 @@ function CodeBlock({
     if (streaming) {
       return <MermaidPlaceholder content={codeString} />;
     }
-    return <MermaidBlock content={codeString} />;
+    return <MermaidBlock content={codeString} defaultZoom={0.5} />;
   }
 
   // During streaming: use simplified code block without syntax highlighting for performance
