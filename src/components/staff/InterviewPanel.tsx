@@ -8,6 +8,9 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
 import {
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+} from '@/components/ui/table';
+import {
   Collapsible, CollapsibleContent, CollapsibleTrigger,
 } from '@/components/ui/collapsible';
 import { MarkdownRenderer } from '@/components/warroom/MarkdownRenderer';
@@ -524,7 +527,7 @@ export function InterviewPanel({ role, onClose }: InterviewPanelProps) {
       )}
 
       {/* Actions */}
-      {session && (session.status === 'briefed' || session.status === 'briefing' || (session.status === 'testing' && !interview.testing)) && (
+      {session && !interview.testing && (session.status === 'briefed' || session.status === 'briefing' || (session.status === 'testing')) && (
         <div className="p-3 border-b border-border shrink-0">
           <Button size="sm" className="w-full gap-2" onClick={handleRunTests}>
             {session.status === 'testing' ? (
@@ -628,33 +631,15 @@ export function InterviewPanel({ role, onClose }: InterviewPanelProps) {
           />}
 
           {sessions.length > 1 && (
-            <>
-              <Separator className="my-3" />
-              <div className="text-xs text-muted-foreground font-medium mb-1">
-                {isRu ? 'Предыдущие сессии' : 'Previous sessions'}
-              </div>
-              {sessions.slice(1).map(s => (
-                <button
-                  key={s.id}
-                  className={cn(
-                    "w-full text-left p-2 rounded-md text-xs transition-colors",
-                    selectedSessionId === s.id ? "bg-primary/10" : "hover:bg-muted/30"
-                  )}
-                  onClick={() => {
-                    setSelectedSessionId(s.id);
-                    interview.loadSession(s.id);
-                  }}
-                >
-                  <div className="flex items-center gap-2">
-                    <Badge variant="outline" className="text-[10px]">{s.status}</Badge>
-                    <span className="text-muted-foreground">{s.candidate_model}</span>
-                    <span className="ml-auto text-muted-foreground">
-                      {new Date(s.created_at).toLocaleDateString()}
-                    </span>
-                  </div>
-                </button>
-              ))}
-            </>
+            <SessionHistoryTable
+              sessions={sessions}
+              selectedSessionId={selectedSessionId}
+              onSelect={(id) => {
+                setSelectedSessionId(id);
+                interview.loadSession(id);
+              }}
+              isRu={isRu}
+            />
           )}
         </div>
       </ScrollArea>
@@ -994,5 +979,125 @@ function VerdictSection({
         </div>
       )}
     </div>
+  );
+}
+
+// ── Session History Table ──
+
+const STATUS_COLORS: Record<string, string> = {
+  completed: 'text-hydra-success',
+  tested: 'text-primary',
+  verdict: 'text-primary',
+  briefed: 'text-muted-foreground',
+  briefing: 'text-muted-foreground',
+  testing: 'text-primary',
+};
+
+const DECISION_BADGE: Record<string, { label: { ru: string; en: string }; className: string }> = {
+  hire: { label: { ru: 'Нанят', en: 'Hired' }, className: 'bg-hydra-success/15 text-hydra-success border-hydra-success/30' },
+  reject: { label: { ru: 'Отказ', en: 'Rejected' }, className: 'bg-hydra-critical/15 text-hydra-critical border-hydra-critical/30' },
+  retest: { label: { ru: 'Ретест', en: 'Retest' }, className: 'bg-primary/15 text-primary border-primary/30' },
+};
+
+function SessionHistoryTable({
+  sessions,
+  selectedSessionId,
+  onSelect,
+  isRu,
+}: {
+  sessions: InterviewSession[];
+  selectedSessionId: string | null;
+  onSelect: (id: string) => void;
+  isRu: boolean;
+}) {
+  const otherSessions = sessions.slice(1);
+  if (otherSessions.length === 0) return null;
+
+  return (
+    <>
+      <Separator className="my-3" />
+      <div className="text-xs text-muted-foreground font-medium mb-2">
+        {isRu ? 'История собеседований' : 'Interview History'}
+      </div>
+      <div className="rounded-md border border-border overflow-hidden">
+        <Table>
+          <TableHeader>
+            <TableRow className="bg-muted/30">
+              <TableHead className="text-[10px] py-1.5 px-2 h-auto">{isRu ? 'Модель' : 'Model'}</TableHead>
+              <TableHead className="text-[10px] py-1.5 px-2 h-auto text-right">{isRu ? 'Токены' : 'Tokens'}</TableHead>
+              <TableHead className="text-[10px] py-1.5 px-2 h-auto text-right">{isRu ? 'Время' : 'Time'}</TableHead>
+              <TableHead className="text-[10px] py-1.5 px-2 h-auto text-right">{isRu ? 'Цена' : 'Cost'}</TableHead>
+              <TableHead className="text-[10px] py-1.5 px-2 h-auto text-center">{isRu ? 'Решение' : 'Decision'}</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {otherSessions.map(s => {
+              const isSelected = selectedSessionId === s.id;
+              const config = s.config as Record<string, any> | null;
+              const tokens = config?.actual_tokens_used ?? 0;
+              const elapsed = config?.actual_elapsed_ms ?? 0;
+              const cost = tokens > 0 ? estimateCost(s.candidate_model, tokens) : null;
+
+              // Extract verdict decision
+              const verdict = s.verdict as Record<string, any> | null;
+              const decision = verdict?.final_decision || verdict?.arbiter?.recommendation;
+              const decBadge = decision ? DECISION_BADGE[decision] : null;
+
+              // Extract score
+              const scores = verdict?.arbiter?.scores as Record<string, number> | undefined;
+              const avgScore = scores
+                ? (Object.values(scores).reduce((a, b) => a + b, 0) / Object.values(scores).length).toFixed(1)
+                : null;
+
+              const modelShort = s.candidate_model.replace(/^proxyapi\//, '').replace(/^google\//, '').replace(/^openai\//, '');
+
+              return (
+                <TableRow
+                  key={s.id}
+                  className={cn(
+                    "cursor-pointer transition-colors text-[11px]",
+                    isSelected ? "bg-primary/10 hover:bg-primary/15" : "hover:bg-muted/20",
+                  )}
+                  onClick={() => onSelect(s.id)}
+                >
+                  <TableCell className="py-1.5 px-2">
+                    <div className="flex flex-col gap-0.5">
+                      <span className="font-mono text-[10px] truncate max-w-[120px]" title={s.candidate_model}>
+                        {modelShort}
+                      </span>
+                      <span className={cn("text-[9px]", STATUS_COLORS[s.status] || 'text-muted-foreground')}>
+                        {s.status} • {new Date(s.created_at).toLocaleDateString(isRu ? 'ru-RU' : 'en-US', { day: 'numeric', month: 'short' })}
+                      </span>
+                    </div>
+                  </TableCell>
+                  <TableCell className="py-1.5 px-2 text-right text-[10px] text-muted-foreground font-mono">
+                    {tokens > 0 ? tokens.toLocaleString() : '—'}
+                  </TableCell>
+                  <TableCell className="py-1.5 px-2 text-right text-[10px] text-muted-foreground font-mono">
+                    {elapsed > 0 ? `${(elapsed / 1000).toFixed(0)}s` : '—'}
+                  </TableCell>
+                  <TableCell className="py-1.5 px-2 text-right text-[10px] font-mono">
+                    {cost ? (
+                      <span className="text-amber-500">{formatCost(cost.total)}</span>
+                    ) : '—'}
+                  </TableCell>
+                  <TableCell className="py-1.5 px-2 text-center">
+                    {decBadge ? (
+                      <Badge variant="outline" className={cn("text-[9px] py-0 px-1.5", decBadge.className)}>
+                        {decBadge.label[isRu ? 'ru' : 'en']}
+                      </Badge>
+                    ) : avgScore ? (
+                      <span className="text-[10px] font-mono text-muted-foreground">{avgScore}</span>
+                    ) : (
+                      <span className="text-[10px] text-muted-foreground">—</span>
+                    )}
+                  </TableCell>
+                </TableRow>
+              );
+            })}
+          </TableBody>
+        </Table>
+      </div>
+    </>
   );
 }

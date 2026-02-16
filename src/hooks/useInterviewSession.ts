@@ -120,10 +120,10 @@ export function useInterviewSession() {
 
     const { data, error } = await supabase
       .from('interview_sessions')
-      .select('id, role, candidate_model, status, briefing_token_count, config, created_at')
+      .select('id, role, candidate_model, status, briefing_token_count, config, verdict, created_at')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false })
-      .limit(20);
+      .limit(50);
 
     if (error) {
       console.error('[useInterviewSession] List error:', error);
@@ -138,7 +138,7 @@ export function useInterviewSession() {
       briefing_data: null,
       briefing_token_count: d.briefing_token_count,
       test_results: null,
-      verdict: null,
+      verdict: d.verdict as Record<string, unknown> | null,
       config: d.config,
       created_at: d.created_at || '',
     }));
