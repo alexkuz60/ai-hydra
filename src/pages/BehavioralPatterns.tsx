@@ -431,12 +431,6 @@ const BehavioralPatterns = () => {
                 </TooltipProvider>
               ) : (
               <Table>
-                <TableHeader>
-                  <TableRow className="bg-muted/50">
-                    <TableHead className="w-16">{t('staffRoles.icon')}</TableHead>
-                    <TableHead>{t('patterns.pattern')}</TableHead>
-                  </TableRow>
-                </TableHeader>
                 <TableBody>
                   {/* Strategic Patterns Group */}
                    <TableRow
