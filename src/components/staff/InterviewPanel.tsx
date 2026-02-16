@@ -317,61 +317,6 @@ export function InterviewPanel({ role, onClose }: InterviewPanelProps) {
         </div>
         <TooltipProvider delayDuration={300}>
           <div className="flex items-center gap-1">
-            {/* View mode toggle */}
-            {steps.length > 0 && (
-              <div className="flex border border-border rounded-md overflow-hidden">
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <button
-                      className={cn(
-                        "px-2 py-1 text-xs transition-colors",
-                        viewMode === 'progress' ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted/50"
-                      )}
-                      onClick={() => setViewMode('progress')}
-                    >
-                      <FileText className="h-3.5 w-3.5" />
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom">
-                    {isRu ? 'Прогресс' : 'Progress'}
-                  </TooltipContent>
-                </Tooltip>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <button
-                      className={cn(
-                        "px-2 py-1 text-xs transition-colors",
-                        viewMode === 'results' ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted/50"
-                      )}
-                      onClick={() => setViewMode('results')}
-                    >
-                      <Columns2 className="h-3.5 w-3.5" />
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom">
-                    {isRu ? 'Сравнение' : 'Comparison'}
-                  </TooltipContent>
-                </Tooltip>
-                {(session?.status === 'verdict' || session?.status === 'completed' || session?.verdict) && (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <button
-                        className={cn(
-                          "px-2 py-1 text-xs transition-colors",
-                          viewMode === 'verdict' ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted/50"
-                        )}
-                        onClick={() => setViewMode('verdict')}
-                      >
-                        <Gavel className="h-3.5 w-3.5" />
-                      </button>
-                    </TooltipTrigger>
-                    <TooltipContent side="bottom">
-                      {isRu ? 'Вердикт' : 'Verdict'}
-                    </TooltipContent>
-                  </Tooltip>
-                )}
-              </div>
-            )}
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setShowNewForm(f => !f)}>
@@ -444,6 +389,17 @@ export function InterviewPanel({ role, onClose }: InterviewPanelProps) {
             status={session.status}
             isTesting={interview.testing}
             isVerdicting={verdictHook.running}
+            activePhase={
+              viewMode === 'progress' ? 'briefing'
+                : viewMode === 'results' ? 'testing'
+                : viewMode === 'verdict' ? 'verdict'
+                : undefined
+            }
+            onPhaseClick={(phase) => {
+              if (phase === 'briefing') setViewMode('progress');
+              else if (phase === 'testing') setViewMode('results');
+              else if (phase === 'verdict') setViewMode('verdict');
+            }}
           />
           <div className="flex items-center gap-2 text-xs mt-1">
             <Badge variant="outline" className="text-[10px]">
