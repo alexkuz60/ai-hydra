@@ -17,6 +17,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
+import { useUserRoles } from '@/hooks/useUserRoles';
 import { cn } from '@/lib/utils';
 import RoleDetailsPanel from '@/components/staff/RoleDetailsPanel';
 import { InterviewPanel } from '@/components/staff/InterviewPanel';
@@ -65,6 +66,7 @@ function KnowledgeChangedBadge({ role, isRu, onRecertify }: { role: string; isRu
 const StaffRoles = () => {
   const { t, language } = useLanguage();
   const { user } = useAuth();
+  const { isAdmin } = useUserRoles();
   const cloudSynced = useCloudSyncStatus();
   const [interviewRoleInit] = useState<AgentRole | null>(() => {
     try {
@@ -360,16 +362,18 @@ const StaffRoles = () => {
               {isBulkSeeding ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
               {language === 'ru' ? 'Обучить всех техников' : 'Seed All Tech Roles'}
             </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="gap-1.5 text-hydra-warning border-hydra-warning/30 hover:bg-hydra-warning/10"
-              onClick={handleForceSeed}
-              disabled={isBulkSeeding || isForceSyncing}
-            >
-              {isForceSyncing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-              {language === 'ru' ? 'Обновить брифинг' : 'Force Refresh'}
-            </Button>
+            {isAdmin && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1.5 text-hydra-warning border-hydra-warning/30 hover:bg-hydra-warning/10"
+                onClick={handleForceSeed}
+                disabled={isBulkSeeding || isForceSyncing}
+              >
+                {isForceSyncing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+                {language === 'ru' ? 'Обновить брифинг' : 'Force Refresh'}
+              </Button>
+            )}
           </div>
         </div>
 
