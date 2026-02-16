@@ -88,7 +88,7 @@ serve(async (req) => {
       );
     }
 
-    const { role, candidate_model, source_contest_id } = await req.json();
+    const { role, candidate_model, source_contest_id, session_type, delta } = await req.json();
 
     if (!role || !candidate_model) {
       return new Response(
@@ -97,15 +97,23 @@ serve(async (req) => {
       );
     }
 
-    console.log(`[interview-briefing] Assembling brief for role=${role}, model=${candidate_model}`);
+    const isRecert = session_type === 'recert';
+    console.log(`[interview-briefing] Assembling brief for role=${role}, model=${candidate_model}, type=${isRecert ? 'recert' : 'full'}`);
 
-    // ── 1. Fetch role knowledge (full, no limits) ──
-    const { data: knowledgeEntries } = await supabase
+    // ── 1. Fetch role knowledge ──
+    let knowledgeQuery = supabase
       .from('role_knowledge')
-      .select('content, source_title, category, tags')
+      .select('content, source_title, category, tags, updated_at')
       .eq('role', role)
       .eq('user_id', user.id)
       .order('chunk_index', { ascending: true });
+
+    // In recert mode, only fetch entries changed since snapshot
+    if (isRecert && delta?.snapshotted_at) {
+      knowledgeQuery = knowledgeQuery.gt('updated_at', delta.snapshotted_at);
+    }
+
+    const { data: knowledgeEntries } = await knowledgeQuery;
 
     // ── 2. Fetch predecessor experience from role_memory ──
     const { data: memoryEntries } = await supabase
@@ -133,97 +141,128 @@ serve(async (req) => {
       .limit(1)
       .maybeSingle();
 
-    // ── 5. Assemble the Position Brief ──
+    // ── 5. Fetch changed prompts for recert ──
+    let changedPrompts: any[] = [];
+    if (isRecert && delta?.snapshotted_at) {
+      const { data } = await supabase
+        .from('prompt_library')
+        .select('name, content, description, role')
+        .eq('role', role)
+        .eq('user_id', user.id)
+        .gt('updated_at', delta.snapshotted_at);
+      changedPrompts = data || [];
+    }
+
+    // ── 6. Assemble the Position Brief ──
 
     const sections: string[] = [];
 
-    // Section A: Hydra Anatomy
-    sections.push(HYDRA_ANATOMY);
+    if (isRecert) {
+      // Delta briefing: compact format
+      sections.push(`# Переаттестация: ${role}\n`);
+      sections.push(`Вы уже работаете на позиции **${role}** в AI-Hydra. Ниже — обновления, произошедшие с момента вашей последней аттестации.\n`);
 
-    // Section B: Role-specific job description
-    sections.push(`\n# Должностная инструкция: ${role}\n`);
-    sections.push(`Ниже приводится полная должностная инструкция для позиции, на которую вы проходите собеседование.\n`);
-
-    // Section C: Interaction map
-    const neighbors = ROLE_INTERACTIONS[role] || [];
-    if (neighbors.length > 0) {
-      sections.push(`\n## Карта взаимодействий`);
-      sections.push(`Ваши ближайшие коллеги по взаимодействию: **${neighbors.join(', ')}**`);
-      sections.push(`Эффективная координация с ними — часть вашей работы.\n`);
-    }
-
-    // Section D: Role knowledge base
-    if (knowledgeEntries && knowledgeEntries.length > 0) {
-      sections.push(`\n## Профильная база знаний`);
-      sections.push(`Ниже — специализированные знания, накопленные для этой роли:\n`);
-      for (const entry of knowledgeEntries) {
-        const title = entry.source_title ? `### ${entry.source_title}` : `### [${entry.category}]`;
-        sections.push(`${title}\n${entry.content}\n`);
-      }
-    }
-
-    // Section E: Predecessor experience (raw, unfiltered)
-    if (memoryEntries && memoryEntries.length > 0) {
-      sections.push(`\n## Опыт предшественников`);
-      sections.push(`Ниже — записи опыта предыдущих сотрудников на этой позиции. Изучите их внимательно.\n`);
-      
-      const byType: Record<string, typeof memoryEntries> = {};
-      for (const entry of memoryEntries) {
-        const t = entry.memory_type || 'experience';
-        if (!byType[t]) byType[t] = [];
-        byType[t].push(entry);
+      if (knowledgeEntries && knowledgeEntries.length > 0) {
+        sections.push(`\n## Обновлённые знания (${knowledgeEntries.length} записей)\n`);
+        for (const entry of knowledgeEntries) {
+          const title = entry.source_title ? `### ${entry.source_title}` : `### [${entry.category}]`;
+          sections.push(`${title}\n${entry.content}\n`);
+        }
+      } else {
+        sections.push(`\n## Знания: без изменений\n`);
       }
 
-      const typeLabels: Record<string, string> = {
-        experience: '📋 Опыт',
-        success: '✅ Успешные кейсы',
-        mistake: '⚠️ Ошибки и уроки',
-        skill: '🎯 Навыки',
-        preference: '⚙️ Предпочтения',
-        briefing: '📄 Предыдущие брифинги',
-      };
+      if (changedPrompts.length > 0) {
+        sections.push(`\n## Обновлённые промпты (${changedPrompts.length})\n`);
+        for (const p of changedPrompts) {
+          sections.push(`### ${p.name}\n${p.content}\n`);
+        }
+      }
+    } else {
+      // Full briefing (original)
+      sections.push(HYDRA_ANATOMY);
+      sections.push(`\n# Должностная инструкция: ${role}\n`);
+      sections.push(`Ниже приводится полная должностная инструкция для позиции, на которую вы проходите собеседование.\n`);
 
-      for (const [type, entries] of Object.entries(byType)) {
-        sections.push(`\n### ${typeLabels[type] || type}`);
-        for (const e of entries) {
-          const confidence = e.confidence_score ? ` (уверенность: ${(e.confidence_score * 100).toFixed(0)}%)` : '';
-          const tags = e.tags && e.tags.length > 0 ? ` [${e.tags.join(', ')}]` : '';
-          sections.push(`- ${e.content}${confidence}${tags}`);
+      const neighbors = ROLE_INTERACTIONS[role] || [];
+      if (neighbors.length > 0) {
+        sections.push(`\n## Карта взаимодействий`);
+        sections.push(`Ваши ближайшие коллеги по взаимодействию: **${neighbors.join(', ')}**`);
+        sections.push(`Эффективная координация с ними — часть вашей работы.\n`);
+      }
+
+      if (knowledgeEntries && knowledgeEntries.length > 0) {
+        sections.push(`\n## Профильная база знаний`);
+        sections.push(`Ниже — специализированные знания, накопленные для этой роли:\n`);
+        for (const entry of knowledgeEntries) {
+          const title = entry.source_title ? `### ${entry.source_title}` : `### [${entry.category}]`;
+          sections.push(`${title}\n${entry.content}\n`);
         }
       }
     }
 
-    // Section F: Behavior config
-    if (behaviorConfig) {
-      sections.push(`\n## Настройки поведения`);
-      if (behaviorConfig.requires_approval) {
-        sections.push(`⚠️ Ваши действия требуют одобрения Супервизора перед выполнением.`);
-      }
-      if (behaviorConfig.communication && typeof behaviorConfig.communication === 'object') {
-        const comm = behaviorConfig.communication as Record<string, unknown>;
-        if (comm.tone) sections.push(`- Тон коммуникации: **${comm.tone}**`);
-        if (comm.verbosity) sections.push(`- Детализация: **${comm.verbosity}**`);
-      }
-    }
+    // Section E-G: Only include in full briefing
+    if (!isRecert) {
+      if (memoryEntries && memoryEntries.length > 0) {
+        sections.push(`\n## Опыт предшественников`);
+        sections.push(`Ниже — записи опыта предыдущих сотрудников на этой позиции. Изучите их внимательно.\n`);
+        
+        const byType: Record<string, typeof memoryEntries> = {};
+        for (const entry of memoryEntries) {
+          const t = entry.memory_type || 'experience';
+          if (!byType[t]) byType[t] = [];
+          byType[t].push(entry);
+        }
 
-    // Section G: Hierarchy
-    if (hierarchySettings?.setting_value) {
-      sections.push(`\n## Иерархия (Табель о рангах)`);
-      const hierarchy = hierarchySettings.setting_value as Record<string, unknown>;
-      if (hierarchy.superiors && Array.isArray(hierarchy.superiors)) {
-        sections.push(`- Вышестоящие: ${(hierarchy.superiors as string[]).join(', ')}`);
+        const typeLabels: Record<string, string> = {
+          experience: '📋 Опыт',
+          success: '✅ Успешные кейсы',
+          mistake: '⚠️ Ошибки и уроки',
+          skill: '🎯 Навыки',
+          preference: '⚙️ Предпочтения',
+          briefing: '📄 Предыдущие брифинги',
+        };
+
+        for (const [type, entries] of Object.entries(byType)) {
+          sections.push(`\n### ${typeLabels[type] || type}`);
+          for (const e of entries) {
+            const confidence = e.confidence_score ? ` (уверенность: ${(e.confidence_score * 100).toFixed(0)}%)` : '';
+            const tags = e.tags && e.tags.length > 0 ? ` [${e.tags.join(', ')}]` : '';
+            sections.push(`- ${e.content}${confidence}${tags}`);
+          }
+        }
       }
-      if (hierarchy.subordinates && Array.isArray(hierarchy.subordinates)) {
-        sections.push(`- Подчинённые: ${(hierarchy.subordinates as string[]).join(', ')}`);
+
+      if (behaviorConfig) {
+        sections.push(`\n## Настройки поведения`);
+        if (behaviorConfig.requires_approval) {
+          sections.push(`⚠️ Ваши действия требуют одобрения Супервизора перед выполнением.`);
+        }
+        if (behaviorConfig.communication && typeof behaviorConfig.communication === 'object') {
+          const comm = behaviorConfig.communication as Record<string, unknown>;
+          if (comm.tone) sections.push(`- Тон коммуникации: **${comm.tone}**`);
+          if (comm.verbosity) sections.push(`- Детализация: **${comm.verbosity}**`);
+        }
+      }
+
+      if (hierarchySettings?.setting_value) {
+        sections.push(`\n## Иерархия (Табель о рангах)`);
+        const hierarchy = hierarchySettings.setting_value as Record<string, unknown>;
+        if (hierarchy.superiors && Array.isArray(hierarchy.superiors)) {
+          sections.push(`- Вышестоящие: ${(hierarchy.superiors as string[]).join(', ')}`);
+        }
+        if (hierarchy.subordinates && Array.isArray(hierarchy.subordinates)) {
+          sections.push(`- Подчинённые: ${(hierarchy.subordinates as string[]).join(', ')}`);
+        }
       }
     }
 
     const fullBrief = sections.join('\n');
-    const estimatedTokens = Math.ceil(fullBrief.length / 4); // rough estimate
+    const estimatedTokens = Math.ceil(fullBrief.length / 4);
 
-    console.log(`[interview-briefing] Brief assembled: ~${estimatedTokens} tokens, ${knowledgeEntries?.length || 0} knowledge entries, ${memoryEntries?.length || 0} memory entries`);
+    console.log(`[interview-briefing] Brief assembled: ~${estimatedTokens} tokens, ${knowledgeEntries?.length || 0} knowledge entries, type=${isRecert ? 'recert' : 'full'}`);
 
-    // ── 6. Create interview session ──
+    // ── 7. Create interview session ──
     const { data: session, error: insertError } = await supabase
       .from('interview_sessions')
       .insert({
@@ -235,15 +274,18 @@ serve(async (req) => {
         briefing_data: {
           brief_text: fullBrief,
           knowledge_count: knowledgeEntries?.length || 0,
-          memory_count: memoryEntries?.length || 0,
-          has_hierarchy: !!hierarchySettings?.setting_value,
-          has_behavior: !!behaviorConfig,
+          memory_count: isRecert ? 0 : (memoryEntries?.length || 0),
+          changed_prompts_count: changedPrompts.length,
+          has_hierarchy: !isRecert && !!hierarchySettings?.setting_value,
+          has_behavior: !isRecert && !!behaviorConfig,
           assembled_at: new Date().toISOString(),
         },
         source_contest_id: source_contest_id || null,
         config: {
           version: 1,
           phase: 'briefing',
+          session_type: isRecert ? 'recert' : 'full',
+          ...(isRecert && delta ? { delta } : {}),
         },
       })
       .select('id')
