@@ -363,7 +363,7 @@ const StaffRoles = () => {
           <ResizableHandle withHandle />
 
           <ResizablePanel
-            defaultSize={interviewRole ? (100 - nav.panelSize - interviewPanelSize) : (100 - nav.panelSize)}
+            defaultSize={Math.max(30, interviewRole ? (100 - nav.panelSize - Math.max(interviewPanelSize, 15)) : (100 - nav.panelSize))}
             minSize={30}
           >
             <div className="h-full border-l border-border bg-card" data-guide="role-details">
@@ -378,7 +378,7 @@ const StaffRoles = () => {
           {/* Interview Panel — always mounted to prevent remounting details panel */}
           <ResizableHandle withHandle className={cn(!interviewRole && "hidden")} />
           <ResizablePanel
-            defaultSize={interviewRole ? interviewPanelSize : 0}
+            defaultSize={interviewRole ? Math.max(interviewPanelSize, 15) : 0}
             minSize={interviewRole ? 15 : 0}
             maxSize={interviewRole ? 50 : 0}
             onResize={(size) => { if (size > 0) setInterviewPanelSize(size); }}
