@@ -82,6 +82,7 @@ const StaffRoles = () => {
   const [technicalExpanded, setTechnicalExpanded] = useState(true);
   const [otkExpanded, setOtkExpanded] = useState(true);
   const [isBulkSeeding, setIsBulkSeeding] = useState(false);
+  const [isForceSyncing, setIsForceSyncing] = useState(false);
   const [interviewRole, setInterviewRole] = useState<AgentRole | null>(interviewRoleInit);
   const [recertRole, setRecertRole] = useState<AgentRole | null>(null);
 
@@ -228,6 +229,30 @@ const StaffRoles = () => {
     }
   }, [language, technicalRoles]);
 
+  const handleForceSeed = useCallback(async () => {
+    setIsForceSyncing(true);
+    try {
+      let totalSeeded = 0;
+      for (const role of technicalRoles) {
+        const { data, error } = await supabase.functions.invoke('seed-role-knowledge', {
+          body: { role, include_system_prompt: true, force: true },
+        });
+        if (error) { console.error(`[ForceSeed] Error for ${role}:`, error); continue; }
+        if (data?.seeded > 0) totalSeeded += data.seeded;
+      }
+      toast.success(
+        language === 'ru'
+          ? `Принудительно обновлено ${totalSeeded} фрагментов знаний`
+          : `Force-refreshed ${totalSeeded} knowledge chunks`
+      );
+    } catch (error) {
+      console.error('[ForceSeed] Error:', error);
+      toast.error(language === 'ru' ? 'Ошибка обновления' : 'Force refresh failed');
+    } finally {
+      setIsForceSyncing(false);
+    }
+  }, [language, technicalRoles]);
+
   const renderRoleRow = useCallback((role: AgentRole) => {
     const config = ROLE_CONFIG[role];
     const IconComponent = config.icon;
@@ -329,11 +354,21 @@ const StaffRoles = () => {
               size="sm"
               className="gap-1.5"
               onClick={handleBulkSeed}
-              disabled={isBulkSeeding}
+              disabled={isBulkSeeding || isForceSyncing}
               data-guide="staff-seed-button"
             >
               {isBulkSeeding ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
               {language === 'ru' ? 'Обучить всех техников' : 'Seed All Tech Roles'}
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5 text-hydra-warning border-hydra-warning/30 hover:bg-hydra-warning/10"
+              onClick={handleForceSeed}
+              disabled={isBulkSeeding || isForceSyncing}
+            >
+              {isForceSyncing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+              {language === 'ru' ? 'Обновить брифинг' : 'Force Refresh'}
             </Button>
           </div>
         </div>
