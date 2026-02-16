@@ -21,6 +21,10 @@ const BUILTIN_DEFAULTS: Record<string, string> = {
   toolsmith: 'openai/gpt-5-mini',
   guide: 'google/gemini-2.5-flash-lite',
   webhunter: 'google/gemini-3-flash-preview',
+  // Technical staff judges
+  technocritic: 'openai/gpt-5',
+  technoarbiter: 'google/gemini-2.5-pro',
+  technomoderator: 'google/gemini-2.5-flash',
 };
 
 interface TechRoleDefaults {

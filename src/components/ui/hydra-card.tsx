@@ -15,7 +15,11 @@ type HydraCardVariant =
   | 'archivist'
   | 'analyst'
   | 'webhunter'
-  | 'guide';
+  | 'guide'
+  // Technical staff judges
+  | 'technocritic'
+  | 'technoarbiter'
+  | 'technomoderator';
 
 interface HydraCardProps extends React.HTMLAttributes<HTMLDivElement> {
   variant?: HydraCardVariant;
@@ -35,13 +39,13 @@ export function HydraCard({
         'rounded-lg border border-border bg-card p-4 transition-all duration-300',
         {
           'hydra-card-expert': variant === 'expert',
-          'hydra-card-critic': variant === 'critic',
-          'hydra-card-arbiter': variant === 'arbiter',
+          'hydra-card-critic': variant === 'critic' || variant === 'technocritic',
+          'hydra-card-arbiter': variant === 'arbiter' || variant === 'technoarbiter',
           'hydra-card-user': variant === 'user',
           'hydra-card-supervisor': variant === 'supervisor',
           'hydra-glass': variant === 'glass',
           // New AI role card styles
-          'hydra-card-moderator': variant === 'moderator',
+          'hydra-card-moderator': variant === 'moderator' || variant === 'technomoderator',
           'hydra-card-advisor': variant === 'advisor',
           'hydra-card-archivist': variant === 'archivist',
           'hydra-card-analyst': variant === 'analyst',

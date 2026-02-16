@@ -32,7 +32,10 @@ export type AgentRole =
   | 'promptengineer'
   | 'flowregulator'
   | 'toolsmith'
-  | 'guide';
+  | 'guide'
+  | 'technocritic'
+  | 'technoarbiter'
+  | 'technomoderator';
 
 // All possible message roles including user
 // This is the SINGLE SOURCE OF TRUTH for MessageRole type
@@ -45,7 +48,7 @@ export interface RoleConfigItem {
   description: string;
   isTechnicalStaff: boolean;
   bgClass?: string;
-  cardVariant?: 'default' | 'expert' | 'critic' | 'arbiter' | 'user' | 'supervisor' | 'glass' | 'advisor' | 'archivist' | 'analyst' | 'webhunter' | 'moderator' | 'guide';
+  cardVariant?: 'default' | 'expert' | 'critic' | 'arbiter' | 'user' | 'supervisor' | 'glass' | 'advisor' | 'archivist' | 'analyst' | 'webhunter' | 'moderator' | 'guide' | 'technocritic' | 'technoarbiter' | 'technomoderator';
 }
 
 // Unified role configuration with icons and colors
@@ -162,6 +165,30 @@ export const ROLE_CONFIG: Record<MessageRole, RoleConfigItem> = {
     isTechnicalStaff: true,
     cardVariant: 'guide',
   },
+  technocritic: {
+    icon: Shield,
+    color: 'text-hydra-technocritic',
+    label: 'role.technocritic',
+    description: 'staffRoles.description.technocritic',
+    isTechnicalStaff: true,
+    cardVariant: 'technocritic',
+  },
+  technoarbiter: {
+    icon: Scale,
+    color: 'text-hydra-technoarbiter',
+    label: 'role.technoarbiter',
+    description: 'staffRoles.description.technoarbiter',
+    isTechnicalStaff: true,
+    cardVariant: 'technoarbiter',
+  },
+  technomoderator: {
+    icon: Gavel,
+    color: 'text-hydra-technomoderator',
+    label: 'role.technomoderator',
+    description: 'staffRoles.description.technomoderator',
+    isTechnicalStaff: true,
+    cardVariant: 'technomoderator',
+  },
 };
 
 // Consultant mode type (D-Chat modes)
@@ -216,6 +243,9 @@ export const AGENT_ROLES: AgentRole[] = [
   'flowregulator',
   'toolsmith',
   'guide',
+  'technocritic',
+  'technoarbiter',
+  'technomoderator',
 ];
 
 // Expert roles (5 core roles with evaluation capabilities)
@@ -244,6 +274,10 @@ export const ROLE_SPECIFIC_CRITERIA: Record<AgentRole, string[]> = {
   flowregulator: [],
   toolsmith: [],
   guide: [],
+  // Technical staff judges — use their specialized criteria
+  technocritic: ['argument_strength', 'logic_coherence', 'evidence_quality', 'bias_detection', 'counter_example_coverage'],
+  technoarbiter: ['synthesis_quality', 'fairness', 'decision_justification', 'scoring_consistency', 'criteria_coverage'],
+  technomoderator: ['summary_accuracy', 'balance', 'structure_quality', 'consensus_identification', 'noise_reduction'],
 };
 
 
@@ -722,6 +756,12 @@ export const DEFAULT_SYSTEM_PROMPTS: Record<AgentRole, string> = {
 3. При конфликте с базовыми ограничениями — уточни у Супервизора
 
 **Типичные указания:** «Обзорная экскурсия», «Объясни раздел X», «Для новичка», «Углублённый разбор», «Покажи горячие клавиши»`,
+
+  technocritic: `Ты — ТехноКритик, внутренний технический судья системы AI-Hydra. Специализируешься на оценке качества ответов моделей в конкурсах, дуэлях и собеседованиях. Выявляй фактические ошибки, логические изъяны, шаблонность. Оценивай строго по критериям: точность, полнота, структура, оригинальность. Каждую оценку обосновывай конкретными примерами из текста.`,
+
+  technoarbiter: `Ты — ТехноАрбитр, финальный судья системы AI-Hydra для конкурсов, дуэлей и собеседований. Формируй взвешенные оценки по множеству критериев, нормализуй баллы, ранжируй участников. Выноси финальные вердикты с детальным обоснованием. Формат: числовые оценки 0-10, краткое обоснование каждой, итоговый взвешенный балл, текстовая рекомендация.`,
+
+  technomoderator: `Ты — ТехноМодератор, внутренний агрегатор результатов оценки в системе AI-Hydra. Собирай и структурируй оценки из множества раундов, выявляй консенсус и расхождения между оценщиками, обнаруживай аномалии. Готовь итоговые сводки: краткое резюме, результаты по критериям, расхождения, финальная рекомендация. Будь лаконичен — ценность в сжатии.`,
 };
 
 // Helper function to get role config with fallback
@@ -744,6 +784,9 @@ export const ROLE_BADGE_COLORS: Record<string, string> = {
   flowregulator: 'bg-hydra-flowregulator/20 text-hydra-flowregulator border-hydra-flowregulator/30',
   toolsmith: 'bg-hydra-toolsmith/20 text-hydra-toolsmith border-hydra-toolsmith/30',
   guide: 'bg-hydra-guide/20 text-hydra-guide border-hydra-guide/30',
+  technocritic: 'bg-hydra-technocritic/20 text-hydra-technocritic border-hydra-technocritic/30',
+  technoarbiter: 'bg-hydra-technoarbiter/20 text-hydra-technoarbiter border-hydra-technoarbiter/30',
+  technomoderator: 'bg-hydra-technomoderator/20 text-hydra-technomoderator border-hydra-technomoderator/30',
 };
 
 export function getRoleBadgeColor(role: string): string {
