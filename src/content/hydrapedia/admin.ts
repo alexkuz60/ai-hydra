@@ -246,7 +246,6 @@ Supervisor Wishes — text directives for controlling AI behavior:
     id: 'interview-panel',
     titleKey: 'hydrapedia.sections.interviewPanel',
     icon: 'Wrench',
-    adminOnly: true,
     content: {
       ru: `# Собеседование
 
