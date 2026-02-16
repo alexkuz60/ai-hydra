@@ -187,7 +187,7 @@ export function useInterviewVerdict() {
     if (!user) return;
 
     try {
-      // Load current verdict
+      // Load current verdict from DB
       const { data: session } = await supabase
         .from('interview_sessions')
         .select('verdict, role, candidate_model')
@@ -197,7 +197,8 @@ export function useInterviewVerdict() {
 
       if (!session) throw new Error('Session not found');
 
-      const verdict = session.verdict as unknown as InterviewVerdict;
+      // Use DB verdict, fallback to hook state (SSE may have delivered it before DB write)
+      const verdict = (session.verdict as unknown as InterviewVerdict) || state.verdict;
       if (!verdict) throw new Error('No verdict found');
 
       const updatedVerdict = {
@@ -295,7 +296,7 @@ export function useInterviewVerdict() {
     } catch (err: any) {
       toast({ variant: 'destructive', description: err.message });
     }
-  }, [user, toast, isRu]);
+  }, [user, toast, isRu, state.verdict]);
 
   return {
     ...state,
