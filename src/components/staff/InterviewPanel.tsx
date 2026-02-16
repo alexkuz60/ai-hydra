@@ -1072,6 +1072,7 @@ function SessionHistoryTable({
               <TableHead className="text-[10px] py-1.5 px-2 h-auto text-right">{isRu ? 'Токены' : 'Tokens'}</TableHead>
               <TableHead className="text-[10px] py-1.5 px-2 h-auto text-right">{isRu ? 'Время' : 'Time'}</TableHead>
               <TableHead className="text-[10px] py-1.5 px-2 h-auto text-right">{isRu ? 'Цена' : 'Cost'}</TableHead>
+              <TableHead className="text-[10px] py-1.5 px-2 h-auto text-center">{isRu ? 'Балл' : 'Score'}</TableHead>
               <TableHead className="text-[10px] py-1.5 px-2 h-auto text-center">{isRu ? 'Решение' : 'Decision'}</TableHead>
             </TableRow>
           </TableHeader>
@@ -1141,12 +1142,17 @@ function SessionHistoryTable({
                     ) : '—'}
                   </TableCell>
                   <TableCell className="py-1.5 px-2 text-center">
+                    {avgScore ? (
+                      <span className="text-[10px] font-mono font-medium">{avgScore}</span>
+                    ) : (
+                      <span className="text-[10px] text-muted-foreground">—</span>
+                    )}
+                  </TableCell>
+                  <TableCell className="py-1.5 px-2 text-center">
                     {decBadge ? (
                       <Badge variant="outline" className={cn("text-[9px] py-0 px-1.5", decBadge.className)}>
                         {decBadge.label[isRu ? 'ru' : 'en']}
                       </Badge>
-                    ) : avgScore ? (
-                      <span className="text-[10px] font-mono text-muted-foreground">{avgScore}</span>
                     ) : (
                       <span className="text-[10px] text-muted-foreground">—</span>
                     )}
