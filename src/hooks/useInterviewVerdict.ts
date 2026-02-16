@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useQueryClient } from '@tanstack/react-query';
+import { saveKnowledgeSnapshot } from './useKnowledgeVersioning';
 
 // ── Verdict Types ──
 
@@ -260,6 +261,14 @@ export function useInterviewVerdict() {
             interview_session_id: sessionId,
             interview_avg_score: verdict.thresholds?.candidate_score || 0,
           });
+
+        // Save knowledge snapshot for versioning / re-certification tracking
+        try {
+          await saveKnowledgeSnapshot(user.id, session.role);
+          queryClient.invalidateQueries({ queryKey: ['knowledge-snapshot'] });
+        } catch (e) {
+          console.warn('[useInterviewVerdict] Knowledge snapshot failed:', e);
+        }
 
         // Cold start: also create a synthetic "phantom" predecessor
         if (verdict.thresholds?.is_cold_start) {

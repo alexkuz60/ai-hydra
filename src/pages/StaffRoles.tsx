@@ -9,7 +9,7 @@ import {
 } from '@/components/ui/resizable';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Wrench, Users, Settings, ChevronDown, ChevronRight, Sparkles, Loader2, Cpu, ShieldCheck, ShieldAlert } from 'lucide-react';
+import { Wrench, Users, Settings, ChevronDown, ChevronRight, Sparkles, Loader2, Cpu, ShieldCheck, ShieldAlert, RefreshCw } from 'lucide-react';
 import { CloudSyncIndicator } from '@/components/ui/CloudSyncIndicator';
 import { useCloudSyncStatus } from '@/hooks/useCloudSettings';
 import { ROLE_CONFIG, AGENT_ROLES, type AgentRole } from '@/config/roles';
@@ -27,6 +27,27 @@ import { NavigatorHeader } from '@/components/layout/NavigatorHeader';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { getTechRoleDefaultModel } from '@/hooks/useTechRoleDefaults';
 import { getModelShortName } from '@/components/warroom/permodel/types';
+import { useKnowledgeVersioning } from '@/hooks/useKnowledgeVersioning';
+
+/** Small badge that shows if a role's knowledge changed since last certification */
+function KnowledgeChangedBadge({ role, isRu }: { role: string; isRu: boolean }) {
+  const { hasChanged, changeSummary } = useKnowledgeVersioning(role);
+  if (!hasChanged) return null;
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Badge variant="outline" className="gap-1 text-[10px] py-0 text-hydra-warning border-hydra-warning/30 animate-pulse">
+          <RefreshCw className="h-2.5 w-2.5" />
+          {isRu ? 'Обновлено' : 'Updated'}
+        </Badge>
+      </TooltipTrigger>
+      <TooltipContent side="top" className="text-xs max-w-[200px]">
+        {isRu ? 'Знания изменились с последней аттестации' : 'Knowledge changed since last certification'}
+        {changeSummary && <div className="font-mono text-[10px] mt-0.5">{changeSummary}</div>}
+      </TooltipContent>
+    </Tooltip>
+  );
+}
 
 const StaffRoles = () => {
   const { t, language } = useLanguage();
@@ -235,6 +256,7 @@ const StaffRoles = () => {
                   {new Date(assignment.assigned_at).toLocaleDateString(language === 'ru' ? 'ru-RU' : 'en-US', { day: 'numeric', month: 'short' })}
                 </Badge>
               )}
+              {assignment && <KnowledgeChangedBadge role={role} isRu={language === 'ru'} />}
             </div>
             <span className="text-xs text-muted-foreground font-mono">{role}</span>
           </div>
