@@ -229,14 +229,15 @@ const StaffRoles = () => {
     label: string,
     count: number,
     guideId: string,
+    nested?: boolean,
   ) => (
     <TableRow
-      className="bg-muted/30 hover:bg-muted/40 cursor-pointer"
+      className={cn("hover:bg-muted/40 cursor-pointer", nested ? "bg-muted/15" : "bg-muted/30")}
       onClick={onToggle}
       data-guide={guideId}
     >
       <TableCell colSpan={2} className="py-2">
-        <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+        <div className={cn("flex items-center gap-2 text-sm font-medium text-muted-foreground", nested && "pl-4")}>
           {expanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
           {icon}
           {label}
@@ -338,11 +339,11 @@ const StaffRoles = () => {
                       {renderGroupHeader(expertsExpanded, () => setExpertsExpanded(!expertsExpanded), <Users className="h-4 w-4" />, t('staffRoles.expertsGroup'), expertRoles.length, 'staff-experts-group')}
                       {expertsExpanded && expertRoles.map(renderRoleRow)}
 
-                      {renderGroupHeader(technicalExpanded, () => setTechnicalExpanded(!technicalExpanded), <Settings className="h-4 w-4" />, t('staffRoles.technicalGroup'), technicalRoles.length, 'staff-technical-group')}
+                      {renderGroupHeader(technicalExpanded, () => setTechnicalExpanded(!technicalExpanded), <Settings className="h-4 w-4" />, t('staffRoles.technicalGroup'), technicalRoles.length + otkRoles.length, 'staff-technical-group')}
                       {technicalExpanded && technicalRoles.map(renderRoleRow)}
 
-                      {renderGroupHeader(otkExpanded, () => setOtkExpanded(!otkExpanded), <ShieldAlert className="h-4 w-4" />, language === 'ru' ? 'Отдел ТехКонтроля (ОТК)' : 'Quality Control Dept.', otkRoles.length, 'staff-otk-group')}
-                      {otkExpanded && otkRoles.map(renderRoleRow)}
+                      {technicalExpanded && renderGroupHeader(otkExpanded, () => setOtkExpanded(!otkExpanded), <ShieldAlert className="h-4 w-4" />, language === 'ru' ? 'Отдел ТехКонтроля (ОТК)' : 'Quality Control Dept.', otkRoles.length, 'staff-otk-group', true)}
+                      {technicalExpanded && otkExpanded && otkRoles.map(renderRoleRow)}
                     </TableBody>
                   </Table>
                 )}
