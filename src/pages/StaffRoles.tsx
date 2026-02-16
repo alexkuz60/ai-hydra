@@ -319,7 +319,6 @@ const StaffRoles = () => {
           <ResizablePanel
             defaultSize={interviewRole ? (100 - nav.panelSize - interviewPanelSize) : (100 - nav.panelSize)}
             minSize={30}
-            maxSize={96}
           >
             <div className="h-full border-l border-border bg-card" data-guide="role-details">
               <RoleDetailsPanel
@@ -330,22 +329,21 @@ const StaffRoles = () => {
             </div>
           </ResizablePanel>
 
-          {/* Interview Panel (right slide-in) */}
-          {interviewRole && (
-            <>
-              <ResizableHandle withHandle />
-              <ResizablePanel
-                defaultSize={interviewPanelSize}
-                minSize={15}
-                maxSize={50}
-                onResize={setInterviewPanelSize}
-              >
-                <div className="h-full border-l border-border">
-                  <InterviewPanel role={interviewRole} onClose={handleCloseInterview} />
-                </div>
-              </ResizablePanel>
-            </>
-          )}
+          {/* Interview Panel — always mounted to prevent remounting details panel */}
+          <ResizableHandle withHandle className={cn(!interviewRole && "hidden")} />
+          <ResizablePanel
+            defaultSize={interviewRole ? interviewPanelSize : 0}
+            minSize={interviewRole ? 15 : 0}
+            maxSize={interviewRole ? 50 : 0}
+            onResize={(size) => { if (size > 0) setInterviewPanelSize(size); }}
+            className={cn(!interviewRole && "hidden")}
+          >
+            <div className="h-full border-l border-border">
+              {interviewRole && (
+                <InterviewPanel role={interviewRole} onClose={handleCloseInterview} />
+              )}
+            </div>
+          </ResizablePanel>
         </ResizablePanelGroup>
 
         <UnsavedChangesDialog
