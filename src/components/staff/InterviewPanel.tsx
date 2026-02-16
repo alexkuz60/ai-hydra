@@ -286,7 +286,10 @@ export function InterviewPanel({ role, onClose }: InterviewPanelProps) {
     if (selectedSessionId) {
       await interview.loadSession(selectedSessionId);
     }
-  }, [selectedSessionId, interview]);
+    // Also refresh history table
+    const all = await interview.listSessions();
+    setSessions(all.filter(s => s.role === role));
+  }, [selectedSessionId, interview, role]);
 
   const handleCreateInterview = useCallback(async () => {
     if (!newModel) return;
@@ -641,6 +644,7 @@ export function InterviewPanel({ role, onClose }: InterviewPanelProps) {
             <SessionHistoryTable
               sessions={sessions}
               selectedSessionId={selectedSessionId}
+              currentSessionId={sessions[0]?.id}
               onSelect={(id) => {
                 setSelectedSessionId(id);
                 interview.loadSession(id);
@@ -1014,15 +1018,17 @@ const SUPERSEDED_BADGE = {
 function SessionHistoryTable({
   sessions,
   selectedSessionId,
+  currentSessionId,
   onSelect,
   isRu,
 }: {
   sessions: InterviewSession[];
   selectedSessionId: string | null;
+  currentSessionId?: string;
   onSelect: (id: string) => void;
   isRu: boolean;
 }) {
-  const otherSessions = sessions.slice(1);
+  const otherSessions = sessions.filter(s => s.id !== currentSessionId);
   if (otherSessions.length === 0) return null;
 
   // Find the latest "hire" session by verdict decided_at to mark older hires as "superseded"
@@ -1038,11 +1044,25 @@ function SessionHistoryTable({
 
   const latestHireId = hiredSessions.length > 0 ? hiredSessions[0].id : null;
 
+  const isViewingOld = currentSessionId && selectedSessionId !== currentSessionId;
+
   return (
     <>
       <Separator className="my-3" />
-      <div className="text-xs text-muted-foreground font-medium mb-2">
-        {isRu ? 'История собеседований' : 'Interview History'}
+      <div className="flex items-center justify-between mb-2">
+        <div className="text-xs text-muted-foreground font-medium">
+          {isRu ? 'История собеседований' : 'Interview History'}
+        </div>
+        {isViewingOld && currentSessionId && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-5 text-[10px] px-2 text-primary"
+            onClick={() => onSelect(currentSessionId)}
+          >
+            ← {isRu ? 'К текущему' : 'Back to current'}
+          </Button>
+        )}
       </div>
       <div className="rounded-md border border-border overflow-hidden">
         <Table>
