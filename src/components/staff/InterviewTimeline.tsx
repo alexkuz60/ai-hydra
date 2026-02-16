@@ -12,6 +12,10 @@ interface InterviewTimelineProps {
   isTesting?: boolean;
   /** true while verdict is being generated */
   isVerdicting?: boolean;
+  /** Callback when a phase icon is clicked */
+  onPhaseClick?: (phase: 'briefing' | 'testing' | 'verdict') => void;
+  /** Currently active/selected phase for highlight */
+  activePhase?: string;
 }
 
 /** Map session status to a numeric phase index: 0=briefing, 1=testing, 2=verdict */
@@ -42,7 +46,7 @@ const PHASES = [
   { key: 'verdict', icon: Gavel, labelRu: 'Вердикт', labelEn: 'Verdict' },
 ] as const;
 
-export function InterviewTimeline({ status, isTesting, isVerdicting }: InterviewTimelineProps) {
+export function InterviewTimeline({ status, isTesting, isVerdicting, onPhaseClick, activePhase }: InterviewTimelineProps) {
   const { language } = useLanguage();
   const isRu = language === 'ru';
   const phaseIdx = getPhaseIndex(status, isTesting, isVerdicting);
@@ -71,9 +75,13 @@ export function InterviewTimeline({ status, isTesting, isVerdicting }: Interview
 
             {/* Phase icon */}
             <div className="flex flex-col items-center gap-0.5 shrink-0">
-              <div
+              <button
+                type="button"
+                onClick={() => onPhaseClick?.(phase.key)}
                 className={cn(
-                  "relative flex items-center justify-center w-7 h-7 rounded-full border-2 transition-colors duration-300",
+                  "relative flex items-center justify-center w-7 h-7 rounded-full border-2 transition-all duration-300 cursor-pointer",
+                  "hover:scale-110 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1",
+                  activePhase === phase.key && "ring-2 ring-primary/40 ring-offset-1 ring-offset-background",
                   phaseFailed
                     ? "border-destructive bg-destructive/15 text-destructive"
                     : isCompleted
@@ -98,7 +106,7 @@ export function InterviewTimeline({ status, isTesting, isVerdicting }: Interview
                   />
                 )}
                 <phase.icon className="h-3.5 w-3.5" />
-              </div>
+              </button>
               <span
                 className={cn(
                   "text-[9px] font-medium leading-none",
