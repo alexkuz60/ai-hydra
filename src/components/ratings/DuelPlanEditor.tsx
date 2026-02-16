@@ -26,6 +26,7 @@ import { MermaidPreview } from '@/components/warroom/MermaidPreview';
 import { MermaidBlock } from '@/components/warroom/MermaidBlock';
 import { DUEL_VALIDATION_MESSAGES } from '@/hooks/useDuelConfig';
 import type { useDuelConfig } from '@/hooks/useDuelConfig';
+import { useHiredTechnoArbiter } from '@/hooks/useHiredTechnoArbiter';
 
 const ALL_CRITERIA = [
   'factuality', 'relevance', 'clarity', 'argument_strength',
@@ -61,6 +62,7 @@ interface DuelSavedPlan {
 export function DuelPlanEditor({ config, isRu, onLaunch }: DuelPlanEditorProps) {
   const { lovableModels, personalModels } = useAvailableModels();
   const { saveDiagram, isSaving } = useFlowDiagrams();
+  const { effectiveArbiter } = useHiredTechnoArbiter();
   const { toast } = useToast();
   const navigate = useNavigate();
   const availableModelIds = [...lovableModels, ...personalModels].map(m => m.id);
@@ -135,7 +137,7 @@ export function DuelPlanEditor({ config, isRu, onLaunch }: DuelPlanEditorProps) 
     const { nodes, edges } = template.generate({
       modelA: config.config.modelA || undefined,
       modelB: config.config.modelB || undefined,
-      arbiterModel: config.config.arbiterModel || 'google/gemini-2.5-pro',
+      arbiterModel: config.config.arbiterModel || effectiveArbiter,
       criteria: config.config.criteria,
       roundCount: config.config.roundCount,
       duelPrompt: config.config.duelPrompt,

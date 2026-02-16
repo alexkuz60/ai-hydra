@@ -28,6 +28,7 @@ import {
   Tooltip, TooltipContent, TooltipProvider, TooltipTrigger,
 } from '@/components/ui/tooltip';
 import type { AgentRole } from '@/config/roles';
+import { useHiredTechnoArbiter } from '@/hooks/useHiredTechnoArbiter';
 import { ROLE_CONFIG } from '@/config/roles';
 import { getModelRegistryEntry } from '@/config/modelRegistry';
 import { InterviewTimeline } from './InterviewTimeline';
@@ -142,6 +143,7 @@ export function InterviewPanel({ role, onClose }: InterviewPanelProps) {
   const isRu = language === 'ru';
   const interview = useInterviewSession();
   const verdictHook = useInterviewVerdict();
+  const { effectiveArbiter } = useHiredTechnoArbiter();
 
   const [sessions, setSessions] = useState<InterviewSession[]>([]);
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
@@ -261,10 +263,10 @@ export function InterviewPanel({ role, onClose }: InterviewPanelProps) {
   const handleRunVerdict = useCallback(async () => {
     if (!session) return;
     setViewMode('verdict');
-    await verdictHook.runVerdict(session.id);
+    await verdictHook.runVerdict(session.id, effectiveArbiter);
     // Reload session to get verdict data
     await interview.loadSession(session.id);
-  }, [session, verdictHook, interview]);
+  }, [session, verdictHook, interview, effectiveArbiter]);
 
   const handleApplyDecision = useCallback(async (decision: 'hire' | 'reject' | 'retest') => {
     if (!session) return;

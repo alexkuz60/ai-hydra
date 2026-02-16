@@ -1,4 +1,5 @@
 import React, { useCallback } from 'react';
+import { useHiredTechnoArbiter } from '@/hooks/useHiredTechnoArbiter';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { HydraCard, HydraCardHeader, HydraCardTitle, HydraCardContent } from '@/components/ui/hydra-card';
 import { Button } from '@/components/ui/button';
@@ -24,6 +25,7 @@ export function ContestSummary() {
   const isRu = language === 'ru';
   const { toast } = useToast();
   const { saveDiagram, isSaving } = useFlowDiagrams();
+  const { effectiveArbiter } = useHiredTechnoArbiter();
   const {
     models,
     modelCount,
@@ -69,7 +71,7 @@ export function ContestSummary() {
 
     const { nodes, edges } = template.generate({
       candidates,
-      arbiterModel: 'google/gemini-2.5-pro',
+      arbiterModel: (arbitration as any)?.arbiterModel || effectiveArbiter,
       criteria: arbitration?.criteria,
       juryMode: (arbitration?.juryMode as 'user' | 'arbiter' | 'both') || 'both',
       taskTitle: taskNameForFlow || undefined,
