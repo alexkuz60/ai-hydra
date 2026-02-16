@@ -1,135 +1,29 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { useInterviewSession, type InterviewSession, type InterviewTestStep } from '@/hooks/useInterviewSession';
+import { useInterviewSession, type InterviewSession } from '@/hooks/useInterviewSession';
 import { useInterviewVerdict, type InterviewVerdict } from '@/hooks/useInterviewVerdict';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Separator } from '@/components/ui/separator';
-import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
-} from '@/components/ui/table';
-import {
-  Collapsible, CollapsibleContent, CollapsibleTrigger,
-} from '@/components/ui/collapsible';
-import { MarkdownRenderer } from '@/components/warroom/MarkdownRenderer';
 import { ModelSelector } from '@/components/warroom/ModelSelector';
 import { cn } from '@/lib/utils';
 import {
   X, Play, Loader2, CheckCircle2, XCircle, Clock,
-  ChevronDown, ChevronRight, FileText, Columns2,
-  SquareArrowOutUpRight, RefreshCw, Plus, DollarSign,
-  Gavel, UserCheck, UserX, RotateCcw, AlertTriangle, Shield,
-  Maximize2,
+  RefreshCw, Plus, DollarSign,
+  Gavel, AlertTriangle,
 } from 'lucide-react';
-import { InterviewExpandDialog } from './InterviewExpandDialog';
 import {
   Tooltip, TooltipContent, TooltipProvider, TooltipTrigger,
 } from '@/components/ui/tooltip';
 import type { AgentRole } from '@/config/roles';
 import { useHiredTechnoArbiter } from '@/hooks/useHiredTechnoArbiter';
 import { ROLE_CONFIG } from '@/config/roles';
-import { getModelRegistryEntry } from '@/config/modelRegistry';
 import { InterviewTimeline } from './InterviewTimeline';
-
-/** Models that use reasoning tokens (need higher limits) */
-const THINKING_MODELS = [
-  'google/gemini-2.5-pro', 'google/gemini-3-pro-preview',
-  'openai/gpt-5', 'openai/gpt-5.2', 'deepseek-reasoner',
-  'gemini-2.5-pro', 'o1', 'o1-mini', 'o3-mini',
-  'proxyapi/gpt-5', 'proxyapi/gpt-5.2',
-];
-
-function isThinkingModel(modelId: string): boolean {
-  return THINKING_MODELS.some(m => modelId.includes(m) || m.includes(modelId));
-}
-
-/** Localized competency names */
-const COMPETENCY_I18N: Record<string, { ru: string; en: string }> = {
-  // archivist
-  knowledge_management: { ru: 'Управление знаниями', en: 'Knowledge Management' },
-  experience_distillation: { ru: 'Дистилляция опыта', en: 'Experience Distillation' },
-  cataloging: { ru: 'Каталогизация', en: 'Cataloging' },
-  // analyst
-  pattern_recognition: { ru: 'Распознавание паттернов', en: 'Pattern Recognition' },
-  specification_writing: { ru: 'Написание ТЗ', en: 'Specification Writing' },
-  methodology: { ru: 'Методология', en: 'Methodology' },
-  // webhunter
-  query_formulation: { ru: 'Формулирование запросов', en: 'Query Formulation' },
-  source_assessment: { ru: 'Оценка источников', en: 'Source Assessment' },
-  // promptengineer
-  optimization: { ru: 'Оптимизация', en: 'Optimization' },
-  template_creation: { ru: 'Создание шаблонов', en: 'Template Creation' },
-  diagnosis: { ru: 'Диагностика', en: 'Diagnosis' },
-  // flowregulator
-  architecture: { ru: 'Архитектура', en: 'Architecture' },
-  // toolsmith
-  api_design: { ru: 'Проектирование API', en: 'API Design' },
-  planning: { ru: 'Планирование', en: 'Planning' },
-  // guide
-  onboarding: { ru: 'Онбординг', en: 'Onboarding' },
-  documentation: { ru: 'Документация', en: 'Documentation' },
-  // critic
-  error_detection: { ru: 'Обнаружение ошибок', en: 'Error Detection' },
-  prompt_review: { ru: 'Обзор промпта', en: 'Prompt Review' },
-  bias_analysis: { ru: 'Анализ предвзятостей', en: 'Bias Analysis' },
-  // moderator
-  mediation: { ru: 'Медиация', en: 'Mediation' },
-  facilitation: { ru: 'Фасилитация', en: 'Facilitation' },
-  quality_assessment: { ru: 'Оценка качества', en: 'Quality Assessment' },
-  // advisor
-  strategic_thinking: { ru: 'Стратегическое мышление', en: 'Strategic Thinking' },
-  risk_analysis: { ru: 'Анализ рисков', en: 'Risk Analysis' },
-  // consultant
-  domain_expertise: { ru: 'Предметная экспертиза', en: 'Domain Expertise' },
-  comparative_analysis: { ru: 'Сравнительный анализ', en: 'Comparative Analysis' },
-  practical_guidance: { ru: 'Практическое руководство', en: 'Practical Guidance' },
-  // assistant
-  deep_analysis: { ru: 'Глубокий анализ', en: 'Deep Analysis' },
-  creative_problem_solving: { ru: 'Креативное решение проблем', en: 'Creative Problem Solving' },
-  multi_perspective_analysis: { ru: 'Многоракурсный анализ', en: 'Multi-Perspective Analysis' },
-  // arbiter
-  decision_synthesis: { ru: 'Синтез решений', en: 'Decision Synthesis' },
-  objective_evaluation: { ru: 'Объективная оценка', en: 'Objective Evaluation' },
-  fairness_assessment: { ru: 'Оценка справедливости', en: 'Fairness Assessment' },
-  // generic
-  self_awareness: { ru: 'Самоанализ', en: 'Self-Awareness' },
-  teamwork: { ru: 'Командная работа', en: 'Teamwork' },
-};
-
-function getCompetencyLabel(key: string, isRu: boolean): string {
-  const entry = COMPETENCY_I18N[key];
-  if (entry) return isRu ? entry.ru : entry.en;
-  return key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-}
-
-/** Parse pricing string like '$0.15' or '≈$0.15' to number (per 1M tokens) */
-function parsePricePerMillion(priceStr: string): number {
-  const cleaned = priceStr.replace(/[≈$,]/g, '').trim();
-  const val = parseFloat(cleaned);
-  return isNaN(val) ? 0 : val;
-}
-
-/** Calculate estimated cost from token count and model pricing */
-function estimateCost(modelId: string, tokenCount: number): { input: number; output: number; total: number } | null {
-  const entry = getModelRegistryEntry(modelId);
-  if (!entry || typeof entry.pricing === 'string') return null;
-  const inputPrice = parsePricePerMillion(entry.pricing.input);
-  const outputPrice = parsePricePerMillion(entry.pricing.output);
-  // Interview tokens are mostly output (model generates), estimate 10% input / 90% output
-  const inputTokens = Math.round(tokenCount * 0.1);
-  const outputTokens = Math.round(tokenCount * 0.9);
-  const inputCost = (inputTokens / 1_000_000) * inputPrice;
-  const outputCost = (outputTokens / 1_000_000) * outputPrice;
-  return { input: inputCost, output: outputCost, total: inputCost + outputCost };
-}
-
-function formatCost(cost: number): string {
-  if (cost < 0.001) return '<$0.001';
-  if (cost < 0.01) return `$${cost.toFixed(4)}`;
-  return `$${cost.toFixed(3)}`;
-}
+import { isThinkingModel, estimateCost, formatCost } from './interviewUtils';
+import { StepCard, SideBySideCard } from './InterviewStepCards';
+import { VerdictSection } from './InterviewVerdictView';
+import { SessionHistoryTable } from './InterviewHistoryTable';
 
 interface InterviewPanelProps {
   role: AgentRole;
@@ -187,7 +81,6 @@ export function InterviewPanel({ role, onClose }: InterviewPanelProps) {
     }
   }, [session?.status, session?.candidate_model, role]); // eslint-disable-line react-hooks/exhaustive-deps
 
-
   // Use live SSE data when testing, fallback to saved test_results
   const liveTotal = interview.totalSteps;
   const liveCompleted = Array.from(interview.stepStatuses.values()).filter(
@@ -227,7 +120,7 @@ export function InterviewPanel({ role, onClose }: InterviewPanelProps) {
     const modelId = session?.candidate_model;
     if (!modelId || session?.status !== 'briefed') return null;
 
-    const baseTokens = historicalForecast?.median || 5000; // 5k default per test (~3-5 steps)
+    const baseTokens = historicalForecast?.median || 5000;
     const multiplier = budgetMultiplier;
     const totalEstimatedTokens = baseTokens * multiplier;
     const cost = estimateCost(modelId, totalEstimatedTokens);
@@ -264,7 +157,6 @@ export function InterviewPanel({ role, onClose }: InterviewPanelProps) {
     if (!session) return;
     setViewMode('verdict');
     await verdictHook.runVerdict(session.id, effectiveArbiter);
-    // Reload session + refresh history table
     await interview.loadSession(session.id);
     const all = await interview.listSessions();
     setSessions(all.filter(s => s.role === role));
@@ -277,7 +169,6 @@ export function InterviewPanel({ role, onClose }: InterviewPanelProps) {
       : undefined;
     await verdictHook.applyDecision(session.id, decision, retestComps);
     await interview.loadSession(session.id);
-    // Refresh history table to reflect new decision/status
     const all = await interview.listSessions();
     setSessions(all.filter(s => s.role === role));
   }, [session, verdictHook, interview, role]);
@@ -286,7 +177,6 @@ export function InterviewPanel({ role, onClose }: InterviewPanelProps) {
     if (selectedSessionId) {
       await interview.loadSession(selectedSessionId);
     }
-    // Also refresh history table
     const all = await interview.listSessions();
     setSessions(all.filter(s => s.role === role));
   }, [selectedSessionId, interview, role]);
@@ -411,7 +301,6 @@ export function InterviewPanel({ role, onClose }: InterviewPanelProps) {
 
       {session && (
         <div className="px-3 py-2 border-b border-border bg-muted/20 shrink-0">
-          {/* Phase Timeline */}
           <InterviewTimeline
             status={session.status}
             isTesting={interview.testing}
@@ -456,7 +345,6 @@ export function InterviewPanel({ role, onClose }: InterviewPanelProps) {
                 <span>{progressPct}%</span>
               </div>
               <Progress value={progressPct} className="h-1.5" />
-              {/* Metrics: tokens, time, cost */}
               {totalTokens > 0 && (
                 <div className="flex items-center gap-3 text-[10px] text-muted-foreground mt-1 flex-wrap">
                   <span>🪙 {totalTokens.toLocaleString()} tok</span>
@@ -655,514 +543,5 @@ export function InterviewPanel({ role, onClose }: InterviewPanelProps) {
         </div>
       </ScrollArea>
     </div>
-  );
-}
-
-// ── Step Card (progress view) ──
-
-function StepCard({
-  step, index, expanded, onToggle, statusIcon, isRu, modelId,
-}: {
-  step: InterviewTestStep;
-  index: number;
-  expanded: boolean;
-  onToggle: () => void;
-  statusIcon: React.ReactNode;
-  isRu: boolean;
-  modelId?: string;
-}) {
-  const [expandDialogOpen, setExpandDialogOpen] = useState(false);
-  const stepCost = modelId && step.token_count > 0 ? estimateCost(modelId, step.token_count) : null;
-  return (
-    <Collapsible open={expanded} onOpenChange={onToggle}>
-      <CollapsibleTrigger asChild>
-        <div className={cn(
-          "flex items-center gap-2 p-2 rounded-md cursor-pointer transition-colors text-xs",
-          expanded ? "bg-muted/40" : "hover:bg-muted/20",
-        )}>
-          {statusIcon}
-          <div className="flex-1 min-w-0">
-            <span className="font-medium">{getCompetencyLabel(step.competency, isRu)}</span>
-            <span className="text-muted-foreground ml-2">#{index + 1}</span>
-          </div>
-          {step.elapsed_ms > 0 && (
-            <span className="text-[10px] text-muted-foreground">
-              {(step.elapsed_ms / 1000).toFixed(1)}s
-            </span>
-          )}
-          {step.token_count > 0 && (
-            <span className="text-[10px] text-muted-foreground">
-              {step.token_count} tok
-            </span>
-          )}
-          {stepCost && (
-            <span className="text-[10px] text-amber-500 font-medium">
-              {formatCost(stepCost.total)}
-            </span>
-          )}
-          {expanded ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
-        </div>
-      </CollapsibleTrigger>
-      <CollapsibleContent>
-        <div className="pl-6 pr-2 pb-2 space-y-2">
-          {/* Task prompt */}
-          <div className="text-xs">
-            <span className="text-muted-foreground font-medium">{isRu ? 'Задание:' : 'Task:'}</span>
-            <p className="mt-0.5 text-foreground/80">{step.task_prompt}</p>
-          </div>
-
-          {/* Candidate output */}
-          {step.candidate_output?.proposed_value && (
-            <div className="text-xs">
-              <div className="flex items-center gap-1.5">
-                <span className="text-muted-foreground font-medium">{isRu ? 'Ответ кандидата:' : 'Candidate output:'}</span>
-                <button
-                  className="text-muted-foreground hover:text-foreground transition-colors p-0.5 rounded"
-                  onClick={(e) => { e.stopPropagation(); setExpandDialogOpen(true); }}
-                  title={isRu ? 'Развернуть' : 'Expand'}
-                >
-                  <Maximize2 className="h-3 w-3" />
-                </button>
-              </div>
-              <div className="mt-1 p-2 rounded-md bg-muted/30 border border-border max-h-48 overflow-y-auto">
-                <MarkdownRenderer content={step.candidate_output.proposed_value} className="text-xs" />
-              </div>
-              <InterviewExpandDialog
-                open={expandDialogOpen}
-                onOpenChange={setExpandDialogOpen}
-                title={`${getCompetencyLabel(step.competency, isRu)} #${index + 1}`}
-                content={step.candidate_output.proposed_value}
-                meta={{
-                  tokens: step.token_count,
-                  elapsed: step.elapsed_ms,
-                  cost: stepCost ? formatCost(stepCost.total) : undefined,
-                }}
-              />
-            </div>
-          )}
-
-          {/* Error */}
-          {step.error && (
-            <div className="text-xs text-hydra-critical bg-hydra-critical/5 p-2 rounded">
-              {step.error}
-            </div>
-          )}
-        </div>
-      </CollapsibleContent>
-    </Collapsible>
-  );
-}
-
-// ── Side-by-Side Card (results comparison view) ──
-
-function SideBySideCard({
-  step, index, isRu, modelId,
-}: {
-  step: InterviewTestStep;
-  index: number;
-  isRu: boolean;
-  modelId?: string;
-}) {
-  const [expanded, setExpanded] = useState(true);
-  const [expandDialogOpen, setExpandDialogOpen] = useState(false);
-  const hasBaseline = !!step.baseline?.current_value;
-  const hasCandidate = !!step.candidate_output?.proposed_value;
-  const stepCost = modelId && step.token_count > 0 ? estimateCost(modelId, step.token_count) : null;
-
-  return (
-    <Collapsible open={expanded} onOpenChange={setExpanded}>
-      <CollapsibleTrigger asChild>
-        <div className="flex items-center gap-2 p-2 rounded-md cursor-pointer hover:bg-muted/20 transition-colors text-xs">
-          <Columns2 className="h-3.5 w-3.5 text-primary" />
-          <span className="font-medium flex-1">{getCompetencyLabel(step.competency, isRu)}</span>
-          <Badge variant="outline" className="text-[10px]">#{index + 1}</Badge>
-          {expanded ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
-        </div>
-      </CollapsibleTrigger>
-      <CollapsibleContent>
-        <div className="px-2 pb-3 space-y-2">
-          {/* Task */}
-          <p className="text-[11px] text-muted-foreground italic">{step.task_prompt}</p>
-
-          {/* Side-by-side */}
-          <div className={cn("grid gap-2", hasBaseline ? "grid-cols-2" : "grid-cols-1")}>
-            {/* Baseline */}
-            {hasBaseline && (
-              <div className="space-y-1">
-                <div className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
-                  {isRu ? 'Текущее (Baseline)' : 'Current (Baseline)'}
-                </div>
-                <div className="p-2 rounded-md bg-muted/20 border border-border max-h-64 overflow-y-auto">
-                  <MarkdownRenderer content={step.baseline!.current_value} className="text-xs" />
-                </div>
-              </div>
-            )}
-
-            {/* Candidate */}
-            {hasCandidate && (
-              <div className="space-y-1">
-                <div className="text-[10px] font-medium text-primary uppercase tracking-wider flex items-center gap-1.5">
-                  {isRu ? 'Кандидат' : 'Candidate'}
-                  <button
-                    className="text-muted-foreground hover:text-foreground transition-colors p-0.5 rounded"
-                    onClick={(e) => { e.stopPropagation(); setExpandDialogOpen(true); }}
-                    title={isRu ? 'Развернуть' : 'Expand'}
-                  >
-                    <Maximize2 className="h-3 w-3" />
-                  </button>
-                </div>
-                <div className="p-2 rounded-md bg-primary/5 border border-primary/20 max-h-64 overflow-y-auto">
-                  <MarkdownRenderer content={step.candidate_output!.proposed_value} className="text-xs" />
-                </div>
-                <InterviewExpandDialog
-                  open={expandDialogOpen}
-                  onOpenChange={setExpandDialogOpen}
-                  title={`${getCompetencyLabel(step.competency, isRu)} #${index + 1}`}
-                  content={step.candidate_output!.proposed_value}
-                  meta={{
-                    tokens: step.token_count,
-                    elapsed: step.elapsed_ms,
-                    cost: stepCost ? formatCost(stepCost.total) : undefined,
-                  }}
-                />
-              </div>
-            )}
-          </div>
-
-          {/* Meta */}
-          <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
-            {step.elapsed_ms > 0 && <span>⏱ {(step.elapsed_ms / 1000).toFixed(1)}s</span>}
-            {step.token_count > 0 && <span>🪙 {step.token_count} tok</span>}
-            {stepCost && <span className="text-amber-500 font-medium">💰 {formatCost(stepCost.total)}</span>}
-          </div>
-        </div>
-      </CollapsibleContent>
-    </Collapsible>
-  );
-}
-
-// ── Verdict Section ──
-
-function VerdictSection({
-  session, verdict, phases, isRu, onDecision,
-}: {
-  session: InterviewSession | null;
-  verdict: InterviewVerdict | null;
-  phases: Array<{ phase: string; status: string }>;
-  isRu: boolean;
-  onDecision: (d: 'hire' | 'reject' | 'retest') => void;
-}) {
-  if (!verdict && phases.length === 0) {
-    return (
-      <p className="text-sm text-muted-foreground text-center py-8">
-        {isRu ? 'Вердикт ещё не вынесен' : 'No verdict yet'}
-      </p>
-    );
-  }
-
-  // Show phases progress while running
-  if (!verdict && phases.length > 0) {
-    return (
-      <div className="space-y-2">
-        {phases.map((p, i) => (
-          <div key={i} className="flex items-center gap-2 text-xs p-2 rounded-md bg-muted/20">
-            {p.status === 'running' ? <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" /> : <CheckCircle2 className="h-3.5 w-3.5 text-hydra-success" />}
-            <span className="capitalize">{p.phase}</span>
-          </div>
-        ))}
-      </div>
-    );
-  }
-
-  if (!verdict) return null;
-
-  const decisionColors: Record<string, string> = {
-    hire: 'text-hydra-success',
-    reject: 'text-hydra-critical',
-    retest: 'text-primary',
-  };
-  const decisionLabels: Record<string, { ru: string; en: string }> = {
-    hire: { ru: 'Нанять', en: 'Hire' },
-    reject: { ru: 'Отклонить', en: 'Reject' },
-    retest: { ru: 'Перетестировать', en: 'Retest' },
-  };
-
-  const scores = verdict.arbiter?.scores || {};
-  const avgScore = Object.values(scores).length > 0
-    ? (Object.values(scores).reduce((a, b) => a + b, 0) / Object.values(scores).length).toFixed(1)
-    : '0';
-
-  return (
-    <div className="space-y-3">
-      {/* Auto decision */}
-      <div className="p-3 rounded-md border border-border bg-muted/10">
-        <div className="flex items-center gap-2 mb-1">
-          <Shield className="h-4 w-4 text-primary" />
-          <span className="text-xs font-medium">{isRu ? 'Авто-решение' : 'Auto Decision'}</span>
-          <Badge className={cn("text-[10px] ml-auto", decisionColors[verdict.auto_decision])}>
-            {decisionLabels[verdict.auto_decision]?.[isRu ? 'ru' : 'en'] || verdict.auto_decision}
-          </Badge>
-        </div>
-        <p className="text-[11px] text-muted-foreground">{verdict.decision_reason}</p>
-        {verdict.thresholds && (
-          <div className="flex gap-3 mt-1 text-[10px] text-muted-foreground flex-wrap">
-            <span>📊 {isRu ? 'Балл' : 'Score'}: {avgScore}/10</span>
-            {verdict.thresholds.current_holder && (
-              <span>👤 {isRu ? 'Текущий' : 'Current'}: {verdict.thresholds.current_holder.score}</span>
-            )}
-            {verdict.thresholds.previous_avg !== null && (
-              <span>📈 {isRu ? 'Ср. пред.' : 'Prev avg'}: {verdict.thresholds.previous_avg.toFixed(1)}</span>
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* Arbiter scores */}
-      <div className="space-y-1">
-        <div className="text-xs font-medium">{isRu ? 'Оценки арбитра' : 'Arbiter Scores'}</div>
-        {Object.entries(scores).map(([key, val]) => (
-          <div key={key} className="flex items-center gap-2 text-xs">
-            <span className="flex-1 text-muted-foreground capitalize">{getCompetencyLabel(key, isRu)}</span>
-            <div className="w-16 h-1.5 bg-muted rounded-full overflow-hidden">
-              <div className="h-full bg-primary rounded-full" style={{ width: `${(val / 10) * 100}%` }} />
-            </div>
-            <span className="w-6 text-right font-mono text-[10px]">{val}</span>
-          </div>
-        ))}
-      </div>
-
-      {/* Red flags */}
-      {verdict.arbiter?.red_flags?.length > 0 && (
-        <div className="space-y-1">
-          <div className="flex items-center gap-1 text-xs font-medium text-hydra-critical">
-            <AlertTriangle className="h-3 w-3" />
-            {isRu ? 'Красные флаги' : 'Red Flags'}
-          </div>
-          {verdict.arbiter.red_flags.map((f, i) => (
-            <p key={i} className="text-[11px] text-muted-foreground pl-4">• {f}</p>
-          ))}
-        </div>
-      )}
-
-      {/* Moderator summary */}
-      {verdict.moderator_summary && (
-        <div className="p-2 rounded-md bg-muted/20 border border-border">
-          <div className="text-[10px] font-medium text-muted-foreground mb-1 uppercase tracking-wider">
-            {isRu ? 'Резюме модератора' : 'Moderator Summary'}
-          </div>
-          <MarkdownRenderer content={verdict.moderator_summary} className="text-xs" />
-        </div>
-      )}
-
-      {/* User decision buttons */}
-      {!verdict.final_decision && (
-        <div className="space-y-2 pt-1">
-          <div className="text-xs font-medium">{isRu ? 'Ваше решение' : 'Your Decision'}</div>
-          <div className="grid grid-cols-3 gap-2">
-            <Button size="sm" variant="outline" className="gap-1 text-hydra-success border-hydra-success/30 hover:bg-hydra-success/10" onClick={() => onDecision('hire')}>
-              <UserCheck className="h-3.5 w-3.5" />
-              {isRu ? 'Нанять' : 'Hire'}
-            </Button>
-            <Button size="sm" variant="outline" className="gap-1 text-hydra-critical border-hydra-critical/30 hover:bg-hydra-critical/10" onClick={() => onDecision('reject')}>
-              <UserX className="h-3.5 w-3.5" />
-              {isRu ? 'Отказ' : 'Reject'}
-            </Button>
-            <Button size="sm" variant="outline" className="gap-1 text-primary border-primary/30 hover:bg-primary/10" onClick={() => onDecision('retest')}>
-              <RotateCcw className="h-3.5 w-3.5" />
-              {isRu ? 'Ретест' : 'Retest'}
-            </Button>
-          </div>
-        </div>
-      )}
-
-      {/* Final decision badge */}
-      {verdict.final_decision && (
-        <div className="p-2 rounded-md border border-border bg-muted/10 flex items-center gap-2">
-          <CheckCircle2 className="h-4 w-4 text-hydra-success" />
-          <span className="text-xs font-medium">
-            {isRu ? 'Решение' : 'Decision'}: {decisionLabels[verdict.final_decision]?.[isRu ? 'ru' : 'en']}
-          </span>
-          {verdict.decided_at && (
-            <span className="text-[10px] text-muted-foreground ml-auto">
-              {new Date(verdict.decided_at).toLocaleDateString()}
-            </span>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ── Session History Table ──
-
-const STATUS_COLORS: Record<string, string> = {
-  completed: 'text-hydra-success',
-  tested: 'text-primary',
-  verdict: 'text-primary',
-  briefed: 'text-muted-foreground',
-  briefing: 'text-muted-foreground',
-  testing: 'text-primary',
-};
-
-const DECISION_BADGE: Record<string, { label: { ru: string; en: string }; className: string }> = {
-  hire: { label: { ru: 'Нанят', en: 'Hired' }, className: 'bg-hydra-success/15 text-hydra-success border-hydra-success/30' },
-  reject: { label: { ru: 'Отказ', en: 'Rejected' }, className: 'bg-hydra-critical/15 text-hydra-critical border-hydra-critical/30' },
-  retest: { label: { ru: 'Ретест', en: 'Retest' }, className: 'bg-primary/15 text-primary border-primary/30' },
-};
-
-const SUPERSEDED_BADGE = {
-  label: { ru: 'Замещён', en: 'Superseded' },
-  className: 'bg-muted/30 text-muted-foreground border-border',
-};
-
-function SessionHistoryTable({
-  sessions,
-  selectedSessionId,
-  currentSessionId,
-  onSelect,
-  isRu,
-}: {
-  sessions: InterviewSession[];
-  selectedSessionId: string | null;
-  currentSessionId?: string;
-  onSelect: (id: string) => void;
-  isRu: boolean;
-}) {
-  // Show ALL sessions including current — no exclusions
-  if (sessions.length === 0) return null;
-
-  // Find the latest "hire" session by verdict decided_at to mark older hires as "superseded"
-  const hiredSessions = sessions
-    .map(s => {
-      const v = s.verdict as Record<string, any> | null;
-      const dec = v?.final_decision;
-      const decidedAt = v?.decided_at ? new Date(v.decided_at).getTime() : 0;
-      return { id: s.id, decision: dec, decidedAt };
-    })
-    .filter(h => h.decision === 'hire')
-    .sort((a, b) => b.decidedAt - a.decidedAt);
-
-  const latestHireId = hiredSessions.length > 0 ? hiredSessions[0].id : null;
-
-  const isViewingOld = currentSessionId && selectedSessionId !== currentSessionId;
-
-  return (
-    <>
-      <Separator className="my-3" />
-      <div className="flex items-center justify-between mb-2">
-        <div className="text-xs text-muted-foreground font-medium">
-          {isRu ? 'История собеседований' : 'Interview History'}
-        </div>
-        {isViewingOld && currentSessionId && (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-5 text-[10px] px-2 text-primary"
-            onClick={() => onSelect(currentSessionId)}
-          >
-            ← {isRu ? 'К текущему' : 'Back to current'}
-          </Button>
-        )}
-      </div>
-      <div className="rounded-md border border-border overflow-hidden">
-        <Table>
-          <TableHeader>
-            <TableRow className="bg-muted/30">
-              <TableHead className="text-[10px] py-1.5 px-2 h-auto">{isRu ? 'Модель' : 'Model'}</TableHead>
-              <TableHead className="text-[10px] py-1.5 px-2 h-auto text-right">{isRu ? 'Токены' : 'Tokens'}</TableHead>
-              <TableHead className="text-[10px] py-1.5 px-2 h-auto text-right">{isRu ? 'Время' : 'Time'}</TableHead>
-              <TableHead className="text-[10px] py-1.5 px-2 h-auto text-right">{isRu ? 'Цена' : 'Cost'}</TableHead>
-              <TableHead className="text-[10px] py-1.5 px-2 h-auto text-center">{isRu ? 'Балл' : 'Score'}</TableHead>
-              <TableHead className="text-[10px] py-1.5 px-2 h-auto text-center">{isRu ? 'Решение' : 'Decision'}</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {sessions.map(s => {
-              const isSelected = selectedSessionId === s.id;
-              const config = s.config as Record<string, any> | null;
-              const tokens = config?.actual_tokens_used ?? 0;
-              const elapsed = config?.actual_elapsed_ms ?? 0;
-              const cost = tokens > 0 ? estimateCost(s.candidate_model, tokens) : null;
-
-              // Extract verdict decision
-              const verdict = s.verdict as Record<string, any> | null;
-              const decision = verdict?.final_decision || verdict?.arbiter?.recommendation;
-
-              // Determine badge: if hire but not the latest hire → superseded
-              let decBadge: { label: { ru: string; en: string }; className: string } | null = null;
-              if (decision === 'hire' && s.id !== latestHireId) {
-                decBadge = SUPERSEDED_BADGE;
-              } else if (decision) {
-                decBadge = DECISION_BADGE[decision] || null;
-              }
-
-              // Extract score
-              const scores = verdict?.arbiter?.scores as Record<string, number> | undefined;
-              const avgScore = scores
-                ? (Object.values(scores).reduce((a, b) => a + b, 0) / Object.values(scores).length).toFixed(1)
-                : null;
-
-              // Date with verdict time
-              const decidedAt = verdict?.decided_at;
-              const dateStr = decidedAt
-                ? new Date(decidedAt).toLocaleDateString(isRu ? 'ru-RU' : 'en-US', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
-                : new Date(s.created_at).toLocaleDateString(isRu ? 'ru-RU' : 'en-US', { day: 'numeric', month: 'short' });
-
-              const modelShort = s.candidate_model.replace(/^proxyapi\//, '').replace(/^google\//, '').replace(/^openai\//, '');
-
-              return (
-                <TableRow
-                  key={s.id}
-                  className={cn(
-                    "cursor-pointer transition-colors text-[11px]",
-                    isSelected ? "bg-primary/10 hover:bg-primary/15" : "hover:bg-muted/20",
-                    s.id === currentSessionId && "border-l-2 border-l-primary",
-                  )}
-                  onClick={() => onSelect(s.id)}
-                >
-                  <TableCell className="py-1.5 px-2">
-                    <div className="flex flex-col gap-0.5">
-                      <span className="font-mono text-[10px] truncate max-w-[120px]" title={s.candidate_model}>
-                        {modelShort}
-                      </span>
-                      <span className={cn("text-[9px]", STATUS_COLORS[s.status] || 'text-muted-foreground')}>
-                        {s.status} • {dateStr}
-                      </span>
-                    </div>
-                  </TableCell>
-                  <TableCell className="py-1.5 px-2 text-right text-[10px] text-muted-foreground font-mono">
-                    {tokens > 0 ? tokens.toLocaleString() : '—'}
-                  </TableCell>
-                  <TableCell className="py-1.5 px-2 text-right text-[10px] text-muted-foreground font-mono">
-                    {elapsed > 0 ? `${(elapsed / 1000).toFixed(0)}s` : '—'}
-                  </TableCell>
-                  <TableCell className="py-1.5 px-2 text-right text-[10px] font-mono">
-                    {cost ? (
-                      <span className="text-amber-500">{formatCost(cost.total)}</span>
-                    ) : '—'}
-                  </TableCell>
-                  <TableCell className="py-1.5 px-2 text-center">
-                    {avgScore ? (
-                      <span className="text-[10px] font-mono font-medium">{avgScore}</span>
-                    ) : (
-                      <span className="text-[10px] text-muted-foreground">—</span>
-                    )}
-                  </TableCell>
-                  <TableCell className="py-1.5 px-2 text-center">
-                    {decBadge ? (
-                      <Badge variant="outline" className={cn("text-[9px] py-0 px-1.5", decBadge.className)}>
-                        {decBadge.label[isRu ? 'ru' : 'en']}
-                      </Badge>
-                    ) : (
-                      <span className="text-[10px] text-muted-foreground">—</span>
-                    )}
-                  </TableCell>
-                </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
-      </div>
-    </>
   );
 }
