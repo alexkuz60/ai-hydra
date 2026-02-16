@@ -18,7 +18,9 @@ import {
   ChevronDown, ChevronRight, FileText, Columns2,
   SquareArrowOutUpRight, RefreshCw, Plus, DollarSign,
   Gavel, UserCheck, UserX, RotateCcw, AlertTriangle, Shield,
+  Maximize2,
 } from 'lucide-react';
+import { InterviewExpandDialog } from './InterviewExpandDialog';
 import {
   Tooltip, TooltipContent, TooltipProvider, TooltipTrigger,
 } from '@/components/ui/tooltip';
@@ -673,6 +675,7 @@ function StepCard({
   isRu: boolean;
   modelId?: string;
 }) {
+  const [expandDialogOpen, setExpandDialogOpen] = useState(false);
   const stepCost = modelId && step.token_count > 0 ? estimateCost(modelId, step.token_count) : null;
   return (
     <Collapsible open={expanded} onOpenChange={onToggle}>
@@ -715,10 +718,30 @@ function StepCard({
           {/* Candidate output */}
           {step.candidate_output?.proposed_value && (
             <div className="text-xs">
-              <span className="text-muted-foreground font-medium">{isRu ? 'Ответ кандидата:' : 'Candidate output:'}</span>
+              <div className="flex items-center gap-1.5">
+                <span className="text-muted-foreground font-medium">{isRu ? 'Ответ кандидата:' : 'Candidate output:'}</span>
+                <button
+                  className="text-muted-foreground hover:text-foreground transition-colors p-0.5 rounded"
+                  onClick={(e) => { e.stopPropagation(); setExpandDialogOpen(true); }}
+                  title={isRu ? 'Развернуть' : 'Expand'}
+                >
+                  <Maximize2 className="h-3 w-3" />
+                </button>
+              </div>
               <div className="mt-1 p-2 rounded-md bg-muted/30 border border-border max-h-48 overflow-y-auto">
                 <MarkdownRenderer content={step.candidate_output.proposed_value} className="text-xs" />
               </div>
+              <InterviewExpandDialog
+                open={expandDialogOpen}
+                onOpenChange={setExpandDialogOpen}
+                title={`${getCompetencyLabel(step.competency, isRu)} #${index + 1}`}
+                content={step.candidate_output.proposed_value}
+                meta={{
+                  tokens: step.token_count,
+                  elapsed: step.elapsed_ms,
+                  cost: stepCost ? formatCost(stepCost.total) : undefined,
+                }}
+              />
             </div>
           )}
 
@@ -745,6 +768,7 @@ function SideBySideCard({
   modelId?: string;
 }) {
   const [expanded, setExpanded] = useState(true);
+  const [expandDialogOpen, setExpandDialogOpen] = useState(false);
   const hasBaseline = !!step.baseline?.current_value;
   const hasCandidate = !!step.candidate_output?.proposed_value;
   const stepCost = modelId && step.token_count > 0 ? estimateCost(modelId, step.token_count) : null;
@@ -781,12 +805,30 @@ function SideBySideCard({
             {/* Candidate */}
             {hasCandidate && (
               <div className="space-y-1">
-                <div className="text-[10px] font-medium text-primary uppercase tracking-wider">
+                <div className="text-[10px] font-medium text-primary uppercase tracking-wider flex items-center gap-1.5">
                   {isRu ? 'Кандидат' : 'Candidate'}
+                  <button
+                    className="text-muted-foreground hover:text-foreground transition-colors p-0.5 rounded"
+                    onClick={(e) => { e.stopPropagation(); setExpandDialogOpen(true); }}
+                    title={isRu ? 'Развернуть' : 'Expand'}
+                  >
+                    <Maximize2 className="h-3 w-3" />
+                  </button>
                 </div>
                 <div className="p-2 rounded-md bg-primary/5 border border-primary/20 max-h-64 overflow-y-auto">
                   <MarkdownRenderer content={step.candidate_output!.proposed_value} className="text-xs" />
                 </div>
+                <InterviewExpandDialog
+                  open={expandDialogOpen}
+                  onOpenChange={setExpandDialogOpen}
+                  title={`${getCompetencyLabel(step.competency, isRu)} #${index + 1}`}
+                  content={step.candidate_output!.proposed_value}
+                  meta={{
+                    tokens: step.token_count,
+                    elapsed: step.elapsed_ms,
+                    cost: stepCost ? formatCost(stepCost.total) : undefined,
+                  }}
+                />
               </div>
             )}
           </div>
