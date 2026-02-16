@@ -86,7 +86,7 @@ export function InterviewExpandDialog({
 
         <ScrollArea className="flex-1 min-h-0 hydra-scrollbar">
           <div className="px-6 py-4 prose prose-sm dark:prose-invert max-w-none">
-            <MarkdownRenderer content={content} />
+            <MarkdownRenderer content={content} mermaidZoom={1} />
           </div>
         </ScrollArea>
 

@@ -23,6 +23,8 @@ interface MarkdownRendererProps {
   checklistState?: Record<number, boolean>;
   /** Called when a checkbox is toggled */
   onChecklistChange?: (index: number, checked: boolean) => void;
+  /** Default zoom for mermaid diagrams (default: 0.5) */
+  mermaidZoom?: number;
 }
 
 // Streaming placeholder for Mermaid diagrams
@@ -97,6 +99,7 @@ interface CodeBlockProps {
   className?: string;
   children?: React.ReactNode;
   streaming?: boolean;
+  mermaidZoom?: number;
 }
 
 function CodeBlock({ 
@@ -104,6 +107,7 @@ function CodeBlock({
   className, 
   children,
   streaming = false,
+  mermaidZoom = 0.5,
   ...props 
 }: CodeBlockProps) {
   const [copied, setCopied] = useState(false);
@@ -133,7 +137,7 @@ function CodeBlock({
     if (streaming) {
       return <MermaidPlaceholder content={codeString} />;
     }
-    return <MermaidBlock content={codeString} defaultZoom={0.5} />;
+    return <MermaidBlock content={codeString} defaultZoom={mermaidZoom} />;
   }
 
   // During streaming: use simplified code block without syntax highlighting for performance
@@ -180,7 +184,7 @@ function CodeBlock({
   );
 }
 
-export function MarkdownRenderer({ content, className, streaming = false, interactiveChecklists = false, checklistState, onChecklistChange }: MarkdownRendererProps) {
+export function MarkdownRenderer({ content, className, streaming = false, interactiveChecklists = false, checklistState, onChecklistChange, mermaidZoom = 0.5 }: MarkdownRendererProps) {
   // Track checkbox index across the entire render
   const checkboxIndexRef = React.useRef(0);
   
@@ -189,7 +193,7 @@ export function MarkdownRenderer({ content, className, streaming = false, intera
 
   // Memoize components to prevent unnecessary re-renders during streaming
   const components = useMemo(() => ({
-    code: (props: any) => <CodeBlock {...props} streaming={streaming} />,
+    code: (props: any) => <CodeBlock {...props} streaming={streaming} mermaidZoom={mermaidZoom} />,
     // Headings
     h1: ({ children }: { children: React.ReactNode }) => (
       <h1 className="text-xl font-bold mt-4 mb-2 text-foreground">{children}</h1>

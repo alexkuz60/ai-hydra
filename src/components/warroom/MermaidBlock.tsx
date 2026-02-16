@@ -18,7 +18,7 @@ export function MermaidBlock({ content, className, defaultZoom = 1 }: MermaidBlo
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
-  const [zoom, setZoom] = useState(defaultZoom);
+  const [zoom, setZoom] = useState(() => defaultZoom);
   const uniqueId = useId().replace(/:/g, '-');
 
   useEffect(() => {
