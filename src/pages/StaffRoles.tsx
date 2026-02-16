@@ -32,17 +32,18 @@ const StaffRoles = () => {
   const { t, language } = useLanguage();
   const { user } = useAuth();
   const cloudSynced = useCloudSyncStatus();
-  const [selectedRole, setSelectedRole] = useState<AgentRole | null>(null);
-  const [expertsExpanded, setExpertsExpanded] = useState(true);
-  const [technicalExpanded, setTechnicalExpanded] = useState(true);
-  const [otkExpanded, setOtkExpanded] = useState(true);
-  const [isBulkSeeding, setIsBulkSeeding] = useState(false);
-  const [interviewRole, setInterviewRole] = useState<AgentRole | null>(() => {
+  const [interviewRoleInit] = useState<AgentRole | null>(() => {
     try {
       const stored = localStorage.getItem('hydra-interview-panel-role');
       return stored ? (stored as AgentRole) : null;
     } catch { return null; }
   });
+  const [selectedRole, setSelectedRole] = useState<AgentRole | null>(interviewRoleInit);
+  const [expertsExpanded, setExpertsExpanded] = useState(true);
+  const [technicalExpanded, setTechnicalExpanded] = useState(true);
+  const [otkExpanded, setOtkExpanded] = useState(true);
+  const [isBulkSeeding, setIsBulkSeeding] = useState(false);
+  const [interviewRole, setInterviewRole] = useState<AgentRole | null>(interviewRoleInit);
 
   const [interviewPanelSize, setInterviewPanelSize] = useState<number>(() => {
     try {
