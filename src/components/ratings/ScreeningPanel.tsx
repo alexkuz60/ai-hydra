@@ -99,6 +99,13 @@ export function ScreeningPanel({ role, selectedWinners, sourceContestId }: Scree
   const testResults = session?.test_results;
   const steps = testResults?.steps ?? [];
 
+  // Auto-expand all steps when they load
+  useEffect(() => {
+    if (steps.length > 0) {
+      setExpandedSteps(new Set(steps.map((_, i) => i)));
+    }
+  }, [steps.length]);
+
   // Live SSE data
   const liveCompleted = Array.from(screening.stepStatuses.values()).filter(
     s => s.status === 'completed' || s.status === 'failed'
@@ -296,7 +303,7 @@ export function ScreeningPanel({ role, selectedWinners, sourceContestId }: Scree
           <TabsContent
             key={candidate.modelId}
             value={candidate.modelId}
-            className="flex-1 m-0 min-h-0 flex flex-col"
+            className="flex-1 m-0 min-h-0 flex flex-col data-[state=inactive]:hidden"
           >
             {/* Session-level info bar when loaded */}
             {isActiveSessionLoaded && (
