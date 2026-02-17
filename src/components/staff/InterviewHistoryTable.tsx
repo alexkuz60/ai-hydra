@@ -235,8 +235,11 @@ function SessionRow({
   const modelShort = s.candidate_model.replace(/^proxyapi\//, '').replace(/^google\//, '').replace(/^openai\//, '');
   const routerKey = getRouterFromModelId(s.candidate_model);
   const routerInfo = ROUTER_LABELS[routerKey];
-  const RouterLogo = PROVIDER_LOGOS[routerKey];
-  const routerColor = PROVIDER_COLORS[routerKey] || 'text-muted-foreground';
+  // For "direct" API models, show the brand icon instead of a router icon
+  const brandKey = getProviderFromModelId(s.candidate_model);
+  const iconKey = routerKey === 'direct' && brandKey ? brandKey : routerKey;
+  const CellLogo = PROVIDER_LOGOS[iconKey];
+  const cellColor = PROVIDER_COLORS[iconKey] || 'text-muted-foreground';
 
   return (
     <TableRow
@@ -259,7 +262,7 @@ function SessionRow({
       </TableCell>
       <TableCell className="py-1.5 px-2">
         <div className="flex items-center gap-1" title={routerInfo?.full}>
-          {RouterLogo && <RouterLogo className={cn("h-3 w-3 shrink-0", routerColor)} />}
+          {CellLogo && <CellLogo className={cn("h-3 w-3 shrink-0", cellColor)} />}
           <span className="text-[10px] text-muted-foreground">{routerInfo?.short || '—'}</span>
         </div>
       </TableCell>
