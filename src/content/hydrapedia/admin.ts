@@ -375,13 +375,38 @@ Supervisor Wishes — text directives for controlling AI behavior:
 - Ширина панели сохраняется в \`localStorage\`
 - Панель остаётся смонтированной, но скрывается через \`maxSize={0}\` для предотвращения потери стейта
 
+## История собеседований
+
+Таблица **InterviewHistoryTable** отображает все сессии собеседований по выбранной роли:
+
+| Столбец | Описание |
+|---------|----------|
+| **Модель** | Кандидат, сгруппированный по бренду (OpenAI, Anthropic, Google и др.) |
+| **Роутер** | Шлюз запроса: ProxyAPI, Lovable AI, OpenRouter или Direct (с иконкой провайдера) |
+| **Score** | Средний балл вердикта (числовой) |
+| **Статус** | Финальный статус сессии |
+| **Дата** | Дата создания сессии |
+| **Действие** | Кнопка удаления сессии |
+
+- **Группировка по бренду** — строки с одинаковым брендом объединяются в раскрывающийся список
+- **Удаление сессий** — безопасно: результаты записываются в долгосрочную память только после официального решения «Нанять»
+- **Столбец Score** — числовой бейдж; пустой при отсутствии вердикта
+
 ## История назначений
 
 Каждое успешное назначение фиксируется в таблице \`role_assignment_history\`:
 - Модель, роль, дата назначения и снятия
 - Средний балл собеседования
 - Причина ротации (\`replaced\`, \`manual\`, \`retest_failed\`)
-- Синтетические записи для «холодного старта» (флаг \`is_synthetic\`)`,
+- Синтетические записи для «холодного старта» (флаг \`is_synthetic\`)
+
+## Синхронизация с Подиумом
+
+Собеседование в Штате тесно связано с модулем **Подиум**:
+
+- **Скрининг после конкурса** — победители конкурса могут быть переданы в скрининг-интервью прямо из Подиума; результаты хранятся изолированно через \`source_contest_id\` и не влияют на статистику Штата
+- **Назначение ОТК-моделей** — нанятая через Собеседование модель для ТехноАрбитра автоматически становится арбитром конкурсов и дуэлей в Подиуме
+- **Значок сертификации** — роли, заполненные через Собеседование, отмечаются значком 🛡️ в списке Штата`,
       en: `# Interview Panel
 
 The interview panel is a tool for evaluating AI models for staff role assignments. It is integrated into the **Staff Roles** section as a third panel in the resizable panel group.
@@ -448,13 +473,38 @@ When any phase has a \`failed\` status, a **"Retry"** button (↻) appears in th
 - Panel width is persisted in \`localStorage\`
 - Panel remains mounted but hidden via \`maxSize={0}\` to prevent state loss
 
+## Interview History
+
+The **InterviewHistoryTable** displays all interview sessions for the selected role:
+
+| Column | Description |
+|--------|-------------|
+| **Model** | Candidate, grouped by brand (OpenAI, Anthropic, Google, etc.) |
+| **Router** | Request gateway: ProxyAPI, Lovable AI, OpenRouter, or Direct (with provider icon) |
+| **Score** | Average verdict score (numeric) |
+| **Status** | Final session status |
+| **Date** | Session creation date |
+| **Action** | Session delete button |
+
+- **Brand grouping** — rows sharing the same brand are grouped into an expandable list
+- **Session deletion** — safe: results are written to long-term memory only after an official "Hire" decision
+- **Score column** — numeric badge; empty if no verdict yet
+
 ## Assignment History
 
 Each successful assignment is recorded in the \`role_assignment_history\` table:
 - Model, role, assignment and removal dates
 - Average interview score
 - Rotation reason (\`replaced\`, \`manual\`, \`retest_failed\`)
-- Synthetic records for "cold start" (\`is_synthetic\` flag)`,
+- Synthetic records for "cold start" (\`is_synthetic\` flag)
+
+## Synchronization with Podium
+
+The Staff Interview is tightly connected to the **Podium** module:
+
+- **Post-contest screening** — contest winners can be forwarded directly to a screening interview from the Podium; results are stored in isolation via \`source_contest_id\` and do not affect Staff statistics
+- **QC Dept. model assignment** — a model hired via Interview for the TechnoArbiter role automatically becomes the arbiter for contests and duels in the Podium
+- **Certification badge** — roles filled through Interview are marked with a 🛡️ badge in the Staff list`,
     },
   },
 ];
