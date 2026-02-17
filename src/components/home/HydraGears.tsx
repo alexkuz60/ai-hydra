@@ -336,6 +336,7 @@ export function HydraGears({
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   color: defaultIconColor,
                   transition: 'color 0.4s ease',
+                  borderRadius: '50%',
                 }}
               >
                 <IconComponent
