@@ -336,3 +336,23 @@ export interface ToolExecutionContext {
   /** Current role being used (for role-specific tools) */
   currentRole?: string;
 }
+
+// ============================================
+// Reranking Types
+// ============================================
+
+/** A knowledge chunk candidate for reranking */
+export interface KnowledgeChunkCandidate {
+  id: string;
+  content: string;
+  source_title: string | null;
+  category: string;
+  similarity: number;
+  hybrid_score?: number;
+}
+
+/** A knowledge chunk with reranking score applied */
+export interface RankedKnowledgeChunk extends KnowledgeChunkCandidate {
+  rerank_score: number;
+  final_score: number;
+}

@@ -21,6 +21,8 @@ import {
   SaveRoleExperienceArgs,
   SearchRoleKnowledgeArgs,
   ToolExecutionContext,
+  KnowledgeChunkCandidate,
+  RankedKnowledgeChunk,
 } from "./types.ts";
 
 import {
@@ -1625,6 +1627,110 @@ async function executeSearchRoleKnowledge(args: SearchRoleKnowledgeArgs): Promis
 }
 
 // ============================================
+// Reranking: LLM-based cross-encoder scoring
+// ============================================
+
+/**
+ * Score a single knowledge chunk against the query using Lovable AI (gemini-3-flash-preview).
+ * Returns a relevance score from 0.0 to 1.0.
+ * Fast, parallel scoring — one request per chunk.
+ */
+async function scoreChunkRelevance(
+  chunk: KnowledgeChunkCandidate,
+  query: string,
+  lovableApiKey: string,
+): Promise<number> {
+  try {
+    const prompt = `Query: "${query}"
+
+Chunk to evaluate:
+"""
+${chunk.content.slice(0, 600)}
+"""
+
+Rate how relevant this chunk is to the query.
+Respond with ONLY a decimal number between 0.0 and 1.0.
+0.0 = completely irrelevant
+0.5 = somewhat relevant
+1.0 = highly relevant and directly answers the query
+
+Score:`;
+
+    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${lovableApiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "google/gemini-3-flash-preview",
+        messages: [{ role: "user", content: prompt }],
+        max_tokens: 10,
+        temperature: 0,
+      }),
+    });
+
+    if (!response.ok) return chunk.hybrid_score ?? chunk.similarity;
+
+    const data = await response.json();
+    const text = (data.choices?.[0]?.message?.content || "").trim();
+    const score = parseFloat(text);
+    return isNaN(score) ? (chunk.hybrid_score ?? chunk.similarity) : Math.max(0, Math.min(1, score));
+  } catch {
+    return chunk.hybrid_score ?? chunk.similarity;
+  }
+}
+
+/**
+ * Rerank a list of knowledge chunk candidates using parallel LLM scoring.
+ * Returns chunks sorted by final_score (rerank_score * 0.7 + hybrid_score * 0.3).
+ * Falls back to original order if API key is unavailable.
+ */
+async function rerankChunks(
+  candidates: KnowledgeChunkCandidate[],
+  query: string,
+  lovableApiKey: string | null,
+  topN: number = 5,
+): Promise<RankedKnowledgeChunk[]> {
+  if (!lovableApiKey || candidates.length === 0) {
+    // Fallback: return as-is with hybrid/similarity score
+    return candidates.slice(0, topN).map(c => ({
+      ...c,
+      rerank_score: c.hybrid_score ?? c.similarity,
+      final_score: c.hybrid_score ?? c.similarity,
+    }));
+  }
+
+  try {
+    // Parallel scoring — all chunks scored simultaneously
+    const scores = await Promise.all(
+      candidates.map(c => scoreChunkRelevance(c, query, lovableApiKey))
+    );
+
+    const ranked: RankedKnowledgeChunk[] = candidates.map((c, i) => {
+      const rerankScore = scores[i];
+      const baseScore = c.hybrid_score ?? c.similarity;
+      const finalScore = rerankScore * 0.7 + baseScore * 0.3;
+      return { ...c, rerank_score: rerankScore, final_score: finalScore };
+    });
+
+    ranked.sort((a, b) => b.final_score - a.final_score);
+
+    console.log(`[Reranking] Scored ${candidates.length} chunks, returning top ${topN}:`,
+      ranked.slice(0, topN).map(r => `${r.final_score.toFixed(2)} (rerank=${r.rerank_score.toFixed(2)})`).join(', '));
+
+    return ranked.slice(0, topN);
+  } catch (err) {
+    console.warn('[Reranking] Failed, falling back to original order:', err);
+    return candidates.slice(0, topN).map(c => ({
+      ...c,
+      rerank_score: c.hybrid_score ?? c.similarity,
+      final_score: c.hybrid_score ?? c.similarity,
+    }));
+  }
+}
+
+// ============================================
 // Auto-RAG: Fetch Role Knowledge Context
 // ============================================
 
@@ -1633,8 +1739,8 @@ const TECHNICAL_ROLES = ['analyst', 'promptengineer', 'flowregulator', 'archivis
 
 /**
  * Fetch relevant knowledge from role_knowledge for a technical role.
- * Used for automatic RAG injection into system prompt.
- * Returns formatted knowledge context string or null.
+ * Pipeline: hybrid search (top-15) → LLM reranking → top-5 injected into system prompt.
+ * Falls back gracefully at each stage if APIs are unavailable.
  */
 export async function fetchRoleKnowledgeContext(
   role: string,
@@ -1642,26 +1748,27 @@ export async function fetchRoleKnowledgeContext(
   supabaseUrl: string,
   supabaseKey: string,
   userId: string,
-  maxResults: number = 3,
+  maxResults: number = 5,
+  lovableApiKey?: string,
 ): Promise<string | null> {
   if (!TECHNICAL_ROLES.includes(role)) {
     return null;
   }
-  
+
   try {
     const supabase = createClient(supabaseUrl, supabaseKey);
-    
+
     // Check if user has any knowledge entries for this role
     const { count, error: countError } = await supabase
       .from('role_knowledge')
       .select('id', { count: 'exact', head: true })
       .eq('user_id', userId)
       .eq('role', role);
-    
+
     if (countError || !count || count === 0) {
       return null;
     }
-    
+
     // Generate embedding for the user message
     const embeddingResponse = await fetch(`${supabaseUrl}/functions/v1/generate-embeddings`, {
       method: 'POST',
@@ -1671,46 +1778,99 @@ export async function fetchRoleKnowledgeContext(
       },
       body: JSON.stringify({ texts: [userMessage] }),
     });
-    
+
     if (!embeddingResponse.ok) {
       console.warn('[RAG] Embedding generation failed for auto-RAG');
       return null;
     }
-    
+
     const embData = await embeddingResponse.json();
     if (embData.skipped || !embData.embeddings?.[0]) {
       return null;
     }
-    
+
     const queryEmbedding = embData.embeddings[0];
-    
-    // Search for relevant knowledge
-    const { data, error } = await supabase.rpc('search_role_knowledge', {
-      p_role: role,
-      p_query_embedding: `[${queryEmbedding.join(',')}]`,
-      p_limit: maxResults,
-    });
-    
-    if (error || !data || data.length === 0) {
+    // Fetch more candidates for reranking (top-15 instead of top-N)
+    const candidateLimit = Math.max(maxResults * 3, 15);
+
+    // Try hybrid search first, fall back to vector-only
+    let candidates: KnowledgeChunkCandidate[] = [];
+    try {
+      const { data: hybridData, error: hybridError } = await supabase.rpc('hybrid_search_role_knowledge', {
+        p_role: role,
+        p_query_text: userMessage,
+        p_query_embedding: `[${queryEmbedding.join(',')}]`,
+        p_limit: candidateLimit,
+      });
+
+      if (!hybridError && hybridData && hybridData.length > 0) {
+        candidates = hybridData.map((r: {
+          id: string; content: string; source_title: string | null;
+          category: string; similarity: number; hybrid_score: number;
+        }) => ({
+          id: r.id,
+          content: r.content,
+          source_title: r.source_title,
+          category: r.category,
+          similarity: r.similarity,
+          hybrid_score: r.hybrid_score,
+        }));
+        console.log(`[RAG] Hybrid search found ${candidates.length} candidates for role "${role}"`);
+      }
+    } catch {
+      console.warn('[RAG] Hybrid search unavailable, falling back to vector search');
+    }
+
+    // Fallback: pure vector search
+    if (candidates.length === 0) {
+      const { data, error } = await supabase.rpc('search_role_knowledge', {
+        p_role: role,
+        p_query_embedding: `[${queryEmbedding.join(',')}]`,
+        p_limit: candidateLimit,
+      });
+
+      if (error || !data || data.length === 0) {
+        return null;
+      }
+
+      candidates = data.map((r: {
+        id: string; content: string; source_title: string | null;
+        category: string; similarity: number;
+      }) => ({
+        id: r.id,
+        content: r.content,
+        source_title: r.source_title,
+        category: r.category,
+        similarity: r.similarity,
+      }));
+    }
+
+    // Filter by minimum similarity threshold before reranking
+    const preFiltered = candidates.filter(c => c.similarity > 0.2 || (c.hybrid_score ?? 0) > 0.005);
+    if (preFiltered.length === 0) {
       return null;
     }
-    
-    // Filter by minimum similarity threshold
-    const relevant = data.filter((r: { similarity: number }) => r.similarity > 0.3);
-    if (relevant.length === 0) {
+
+    // Rerank candidates using LLM scoring
+    const apiKey = lovableApiKey ?? Deno.env.get("LOVABLE_API_KEY") ?? null;
+    const reranked = await rerankChunks(preFiltered, userMessage, apiKey, maxResults);
+
+    if (reranked.length === 0) {
       return null;
     }
-    
-    // Format as context block
-    const knowledgeBlocks = relevant.map((r: { content: string; source_title: string | null; category: string; similarity: number }, i: number) => {
+
+    // Format as context block with rerank scores
+    const knowledgeBlocks = reranked.map((r, i) => {
       const source = r.source_title ? ` (Источник: ${r.source_title})` : '';
-      return `[${i + 1}] ${r.content}${source}`;
+      const scoreInfo = `relevance=${r.final_score.toFixed(2)}`;
+      return `[${i + 1}] ${r.content}${source} [${scoreInfo}]`;
     });
-    
-    const context = `\n\n---\n📚 **Профильные знания** (автоматический RAG-контекст):\n\n${knowledgeBlocks.join('\n\n')}\n\nИспользуйте эту информацию как справочный контекст при ответе.\n---`;
-    
-    console.log(`[RAG] Injected ${relevant.length} knowledge chunks for role "${role}" (similarity: ${relevant.map((r: { similarity: number }) => r.similarity.toFixed(2)).join(', ')})`);
-    
+
+    const searchType = candidates.some(c => c.hybrid_score !== undefined) ? 'hybrid+reranking' : 'vector+reranking';
+    const context = `\n\n---\n📚 **Профильные знания** (${searchType}, топ-${reranked.length}):\n\n${knowledgeBlocks.join('\n\n')}\n\nИспользуйте эту информацию как справочный контекст при ответе.\n---`;
+
+    console.log(`[RAG] Injected ${reranked.length} reranked knowledge chunks for role "${role}" (final scores: ${reranked.map(r => r.final_score.toFixed(2)).join(', ')})`);
+
     return context;
   } catch (error) {
     console.error('[RAG] Auto-RAG error:', error);

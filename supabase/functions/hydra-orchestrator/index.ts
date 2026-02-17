@@ -1027,14 +1027,14 @@ serve(async (req) => {
         console.log(`[${modelReq.model_id}] Supervisor approval mode enabled - adding proposals instruction`);
       }
       
-      // Auto-RAG: inject relevant role knowledge for technical roles
+      // Auto-RAG: inject relevant role knowledge for technical roles (hybrid search + reranking)
       try {
         const knowledgeContext = await fetchRoleKnowledgeContext(
-          role, enhancedMessage, supabaseUrl, supabaseServiceKey, user.id
+          role, enhancedMessage, supabaseUrl, supabaseServiceKey, user.id, 5, lovableKey ?? undefined
         );
         if (knowledgeContext) {
           systemPrompt += knowledgeContext;
-          console.log(`[${modelReq.model_id}] RAG knowledge context injected for role "${role}"`);
+          console.log(`[${modelReq.model_id}] RAG knowledge context injected for role "${role}" (hybrid+reranking)`);
         }
       } catch (ragError) {
         console.warn(`[${modelReq.model_id}] RAG knowledge fetch failed:`, ragError);
