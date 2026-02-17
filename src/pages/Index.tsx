@@ -2,9 +2,11 @@ import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Layout } from '@/components/layout/Layout';
 import { HydraGears } from '@/components/home/HydraGears';
+import { useLanguage } from '@/contexts/LanguageContext';
 import hydraLogo from '@/assets/hydra-logo.png';
 
 const Index = () => {
+  const { language } = useLanguage();
   return (
     <Layout>
       <div className="relative w-full h-[calc(100vh-2.5rem)] flex items-center justify-center overflow-hidden">
@@ -22,7 +24,7 @@ const Index = () => {
             className="text-muted-foreground/60 pl-[4.25rem]"
             style={{ fontFamily: '"Quicksand", sans-serif', fontSize: 13, fontWeight: 500, lineHeight: 1.2 }}
           >
-            Здесь даже догмы эволюционируют
+            {language === 'ru' ? 'Здесь даже догмы эволюционируют' : 'Where even dogmas evolve'}
           </span>
         </div>
         <HydraGears
