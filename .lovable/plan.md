@@ -1,109 +1,111 @@
 
-# Аватар пользователя: загрузка фото и кроппер
+# Память ИИ-Гидры — Новый раздел управления RAG
 
-## Что делаем
+## Цель
 
-1. Создаём приватный storage bucket `avatars` с RLS — доступ только к своим файлам.
-2. Новый компонент `AvatarCropDialog` — диалог загрузки + кроппер на чистом Canvas (без сторонних библиотек).
-3. Встраиваем в таб "Профиль" страницы `Profile.tsx`.
-4. Отображаем аватар в сайдбаре вместо иконки `User`.
+Создать централизованную страницу управления всеми слоями RAG-памяти Гидры: `session_memory`, `role_memory` и `role_knowledge`. Страница даёт пользователю инструменты инспекции, поиска, очистки и понимания накопленного интеллекта. Первая итерация — фундамент (пункт 1 задачи), без тяжёлого функционала управления.
 
----
+## Что будет сделано
+
+### 1. Маршрут и ленивая загрузка
+
+- Добавить `const HydraMemory = lazyWithRetry(...)` в `src/App.tsx`
+- Добавить `<Route path="/hydra-memory" element={<HydraMemory />} />` рядом с остальными роутами
+- Создать `src/pages/HydraMemory.tsx` — страница-заглушка с базовой структурой
+
+### 2. Пункт меню в AppSidebar
+
+- Добавить иконку `BrainCircuit` из lucide-react (или `MemoryStick`) в массив `navItems` в `src/components/layout/AppSidebar.tsx`
+- Добавить ключ перевода `nav.hydraMemory` в `src/contexts/LanguageContext.tsx`
+- Путь: `/hydra-memory`, доступен только авторизованным пользователям
+- Позиция в списке: после `flow-editor`, перед `model-ratings` (логично: память — между логикой потоков и рейтингами)
+- Цвет иконки при активном состоянии: `text-hydra-memory` (уже определён в CSS-переменных как violet)
+
+### 3. Страница HydraMemory.tsx — структура первой итерации
+
+Страница разделена на три вкладки (Tabs):
+
+**Вкладка 1: Память сессий** (`session_memory`)
+- Общая статистика: всего чанков, разбивка по типам (decision / context / instruction / evaluation / summary / message)
+- Список последних сессий с количеством чанков
+- Кнопка «Поиск по памяти» (открывает диалог с семантическим поиском — переиспользует логику из `SessionMemoryDialog`)
+- Заглушка с пояснением, что полный функционал — в следующих итерациях
+
+**Вкладка 2: Опыт ролей** (`role_memory`)
+- Статистика по ролям: сколько записей у каждой роли, средний confidence score
+- Список записей с типами (experience / preference / skill / mistake / success) и уверенностью
+- Кнопка удаления отдельных записей (использует `useRoleMemory`)
+- Цветовые бейджи типов памяти
+
+**Вкладка 3: База знаний** (`role_knowledge`)
+- Количество чанков по ролям
+- Категории знаний (из `category` колонки)
+- Информация о версиях и источниках
+- Кнопка «Обновить» ведёт к Штату специалистов (для управления — там уже есть инструменты)
+
+### 4. Хук useHydraMemoryStats.ts
+
+Новый хук для агрегации статистики по всем трём слоям памяти:
+
+```
+src/hooks/useHydraMemoryStats.ts
+```
+
+- Запрашивает агрегированные данные из `session_memory` (GROUP BY user_id — общее количество)
+- Запрашивает данные из `role_memory` (GROUP BY role)
+- Запрашивает данные из `role_knowledge` (GROUP BY role, category)
+- Возвращает единый объект статистики для страницы
+
+### 5. Локализация
+
+Добавить в `src/contexts/LanguageContext.tsx`:
+
+```
+'nav.hydraMemory': { ru: 'Память Гидры', en: 'Hydra Memory' }
+'memory.hub.title': { ru: 'Центр управления памятью', en: 'Memory Control Hub' }
+'memory.hub.session': { ru: 'Память сессий', en: 'Session Memory' }
+'memory.hub.roleMemory': { ru: 'Опыт ролей', en: 'Role Experience' }
+'memory.hub.knowledge': { ru: 'База знаний', en: 'Knowledge Base' }
+'memory.hub.totalChunks': { ru: 'Всего фрагментов', en: 'Total Chunks' }
+'memory.hub.roles': { ru: 'Ролей с опытом', en: 'Roles with experience' }
+'memory.hub.avgConfidence': { ru: 'Средняя уверенность', en: 'Average confidence' }
+'memory.hub.empty': { ru: 'Память пуста', en: 'Memory is empty' }
+```
 
 ## Технические детали
 
-### Storage bucket `avatars`
-
-Новая SQL-миграция:
-```sql
-INSERT INTO storage.buckets (id, name, public) VALUES ('avatars', 'avatars', false);
-
--- RLS: пользователь читает только свои файлы
-CREATE POLICY "Users can view own avatars"
-  ON storage.objects FOR SELECT USING (
-    bucket_id = 'avatars' AND auth.uid()::text = (storage.foldername(name))[1]
-  );
-
-CREATE POLICY "Users can upload own avatars"
-  ON storage.objects FOR INSERT WITH CHECK (
-    bucket_id = 'avatars' AND auth.uid()::text = (storage.foldername(name))[1]
-  );
-
-CREATE POLICY "Users can update own avatars"
-  ON storage.objects FOR UPDATE USING (
-    bucket_id = 'avatars' AND auth.uid()::text = (storage.foldername(name))[1]
-  );
-
-CREATE POLICY "Users can delete own avatars"
-  ON storage.objects FOR DELETE USING (
-    bucket_id = 'avatars' AND auth.uid()::text = (storage.foldername(name))[1]
-  );
+### Данные в базе (текущее состояние)
+```text
+session_memory:  160 записей
+role_memory:      27 записей (27 единиц опыта ролей)
+role_knowledge:   88 записей (база знаний штата)
 ```
 
-Путь файла в бакете: `{user_id}/avatar.jpg` — при перезаписи новый файл заменяет старый (upsert).
+### Цветовая схема страницы
+- Акцент: `text-hydra-memory` / `bg-hydra-memory/10` / `border-hydra-memory` (violet, уже в CSS-переменных)
+- Иконка раздела: `BrainCircuit` (lucide-react)
 
-### Компонент `AvatarCropDialog`
+### Что НЕ делается в этой итерации
+- Полноценное управление `role_knowledge` (оно уже в StaffRoles)
+- Reranking-интерфейс (стратегический задел на будущее)
+- Редактирование чанков памяти сессий
+- Экспорт памяти в файл
 
-Новый файл `src/components/profile/AvatarCropDialog.tsx`.
-
-**Логика кроппера (Canvas):**
-- Загрузка файла → `FileReader` → `Image` → рисуем на канвасе.
-- Пользователь перетаскивает и масштабирует изображение мышью (drag + колёсико).
-- Поверх — фиксированная круглая маска (clip path) 200×200px с затемнением.
-- Кнопка «Применить» — вырезаем нужный участок, `canvas.toBlob(jpeg, 0.85)` → загружаем в storage → записываем `avatar_url` (signed URL на 10 лет) в `profiles`.
-
-**Ограничение 2 МБ** — проверка до открытия диалога:
-```ts
-if (file.size > 2 * 1024 * 1024) {
-  toast.error('Максимальный размер — 2 МБ');
-  return;
-}
-```
-
-**Поддерживаемые форматы:** `image/jpeg`, `image/png`, `image/webp`.
-
-### Интеграция в `Profile.tsx`
-
-В таб "profile" добавляем секцию с аватаром над полями имени:
-
-```
-┌────────────────────────────────────┐
-│  [Аватар 80px]  [Загрузить фото]   │
-│                 [Удалить]          │
-├────────────────────────────────────┤
-│  Email ...                         │
-│  Display Name ...                  │
-│  Username ...                      │
-└────────────────────────────────────┘
-```
-
-### Аватар в сайдбаре (`AppSidebar.tsx`)
-
-В пользовательском меню (кнопка "User") заменяем иконку `<User />` на `<Avatar>` с `useUserProfile`:
-- Если `avatarUrl` есть → показываем `<AvatarImage>`.
-- Если нет → fallback на иконку `<User />` или инициалы.
-
-### Хук `useUserProfile`
-
-Уже есть и уже читает `avatar_url`. Остаётся добавить `refetch` после загрузки в `Profile.tsx`.
-
----
-
-## Файлы, которые создаём / изменяем
+## Затронутые файлы
 
 | Файл | Действие |
-|---|---|
-| SQL migration | Создаём bucket + RLS |
-| `src/components/profile/AvatarCropDialog.tsx` | Новый компонент |
-| `src/pages/Profile.tsx` | Добавляем секцию аватара в таб "profile" |
-| `src/components/layout/AppSidebar.tsx` | Заменяем иконку User на аватар |
+|------|----------|
+| `src/App.tsx` | Добавить роут `/hydra-memory` |
+| `src/components/layout/AppSidebar.tsx` | Добавить пункт меню |
+| `src/contexts/LanguageContext.tsx` | Добавить ключи перевода |
+| `src/pages/HydraMemory.tsx` | Создать (новый файл) |
+| `src/hooks/useHydraMemoryStats.ts` | Создать (новый файл) |
 
----
+## Стратегический контекст
 
-## UX-поведение кроппера
-
-- Drag мышью — двигаем фото внутри круга.
-- Scroll колёсика — масштабируем (зум 1×–5×).
-- Квадратный холст 320px с круглой маской по центру диаметром 280px.
-- После «Применить» — загрузка → спиннер → toast «Аватар обновлён».
-- Кнопка «Удалить аватар» — удаляет файл из storage и обнуляет `avatar_url` в профиле.
+Эта страница — первый кирпич в архитектуре «Reflection» из дорожной карты Гидры. Следующие итерации на этом фундаменте:
+- Интерфейс для Reranking и оценки качества чанков
+- Инструмент дедупликации `role_knowledge`
+- HyDE-поиск через Архивариуса
+- Hybrid Search (BM25 + vector) для технических запросов
+- Визуализация связей между слоями памяти (граф)
