@@ -4,7 +4,7 @@ import {
   BrainCircuit, Database, Layers, BookOpen, Trash2, RefreshCw,
   HardDrive, FolderOpen, FileImage, FileText, File, Search,
   Loader2, Filter, Copy, Sparkles, Text, MessageSquare, Lightbulb,
-  ListChecks, Star, Archive, AlertTriangle,
+  ListChecks, Star, Archive, AlertTriangle, Eye, X, Download,
 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -15,6 +15,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
@@ -624,6 +625,8 @@ type StorageFile = {
 
 const BUCKETS = ['message-files', 'task-files', 'avatars'] as const;
 
+type PreviewState = { file: StorageFile; url: string } | null;
+
 function StorageTab() {
   const { t } = useLanguage();
   const { user } = useAuth();
@@ -632,6 +635,8 @@ function StorageTab() {
   const [activeBucket, setActiveBucket] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [preview, setPreview] = useState<PreviewState>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
 
   const loadFiles = useCallback(async () => {
     if (!user) return;
@@ -668,6 +673,24 @@ function StorageTab() {
 
   useEffect(() => { loadFiles(); }, [loadFiles]);
 
+  const handlePreview = async (file: StorageFile) => {
+    if (!file.mime_type?.startsWith('image/')) return;
+    setPreviewLoading(true);
+    try {
+      const path = `${user!.id}/${file.name}`;
+      const { data, error } = await supabase.storage.from(file.bucket).createSignedUrl(path, 300);
+      if (error || !data?.signedUrl) {
+        toast.error('Не удалось загрузить изображение');
+        return;
+      }
+      setPreview({ file, url: data.signedUrl });
+    } catch {
+      toast.error('Ошибка предпросмотра');
+    } finally {
+      setPreviewLoading(false);
+    }
+  };
+
   const handleDelete = async (file: StorageFile) => {
     setDeletingId(file.id);
     try {
@@ -677,9 +700,10 @@ function StorageTab() {
       else {
         toast.success(`Файл «${file.name}» удалён`);
         setFiles(prev => prev.filter(f => f.id !== file.id));
+        if (preview?.file.id === file.id) setPreview(null);
       }
     } finally {
-      setDeletingId(null); 
+      setDeletingId(null);
     }
   };
 
@@ -759,12 +783,36 @@ function StorageTab() {
           ) : (
             <div className="divide-y divide-border">
               {displayed.map(file => {
+                const isImage = file.mime_type?.startsWith('image/') ?? false;
                 const Icon = fileIcon(file.mime_type);
                 return (
                   <div key={file.id} className="flex items-center gap-3 px-4 py-3 hover:bg-muted/40 transition-colors group">
-                    <Icon className="h-4 w-4 text-muted-foreground shrink-0" />
+                    {/* Thumbnail or icon */}
+                    <button
+                      className={cn(
+                        'shrink-0 flex items-center justify-center rounded overflow-hidden',
+                        isImage
+                          ? 'w-10 h-10 border border-border bg-muted hover:border-[hsl(var(--hydra-memory)/0.5)] transition-colors cursor-pointer'
+                          : 'w-7 h-7 cursor-default'
+                      )}
+                      onClick={() => isImage && handlePreview(file)}
+                      disabled={previewLoading || !isImage}
+                      title={isImage ? 'Предпросмотр' : undefined}
+                    >
+                      {previewLoading && preview === null && isImage ? (
+                        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                      ) : (
+                        <Icon className={cn('text-muted-foreground', isImage ? 'h-5 w-5' : 'h-4 w-4')} />
+                      )}
+                    </button>
+
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{file.name}</p>
+                      <p
+                        className={cn('text-sm font-medium truncate', isImage && 'cursor-pointer hover:text-[hsl(var(--hydra-memory))] transition-colors')}
+                        onClick={() => isImage && handlePreview(file)}
+                      >
+                        {file.name}
+                      </p>
                       <div className="flex items-center gap-2 mt-0.5">
                         <Badge variant="outline" className={cn('text-[10px] h-4 px-1.5', bucketColors[file.bucket])}>{file.bucket}</Badge>
                         <span className="text-[10px] text-muted-foreground">{formatBytes(file.size)}</span>
@@ -775,19 +823,37 @@ function StorageTab() {
                         )}
                       </div>
                     </div>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="ghost" size="icon"
-                          className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive hover:bg-destructive/10"
-                          onClick={() => handleDelete(file)}
-                          disabled={deletingId === file.id}
-                        >
-                          {deletingId === file.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>{t('common.delete')}</TooltipContent>
-                    </Tooltip>
+
+                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      {isImage && (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost" size="icon"
+                              className="h-7 w-7 text-muted-foreground hover:text-[hsl(var(--hydra-memory))]"
+                              onClick={() => handlePreview(file)}
+                              disabled={previewLoading}
+                            >
+                              {previewLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Eye className="h-3.5 w-3.5" />}
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>Предпросмотр</TooltipContent>
+                        </Tooltip>
+                      )}
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost" size="icon"
+                            className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10"
+                            onClick={() => handleDelete(file)}
+                            disabled={deletingId === file.id}
+                          >
+                            {deletingId === file.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>{t('common.delete')}</TooltipContent>
+                      </Tooltip>
+                    </div>
                   </div>
                 );
               })}
@@ -795,6 +861,55 @@ function StorageTab() {
           )}
         </ScrollArea>
       </div>
+
+      {/* Image Preview Dialog */}
+      <Dialog open={!!preview} onOpenChange={open => !open && setPreview(null)}>
+        <DialogContent className="max-w-3xl p-0 overflow-hidden bg-background/95 backdrop-blur">
+          <DialogHeader className="px-4 pt-4 pb-3 border-b border-border flex-row items-center justify-between space-y-0">
+            <DialogTitle className="text-sm font-medium truncate max-w-[calc(100%-5rem)] flex items-center gap-2">
+              <FileImage className="h-4 w-4 text-[hsl(var(--hydra-memory))] shrink-0" />
+              {preview?.file.name}
+            </DialogTitle>
+            <div className="flex items-center gap-1 shrink-0">
+              {preview && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <a
+                      href={preview.url}
+                      download={preview.file.name}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                    >
+                      <Download className="h-3.5 w-3.5" />
+                    </a>
+                  </TooltipTrigger>
+                  <TooltipContent>Скачать</TooltipContent>
+                </Tooltip>
+              )}
+              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setPreview(null)}>
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          </DialogHeader>
+          {preview && (
+            <div className="flex flex-col items-center justify-center p-4 min-h-[300px] max-h-[75vh] overflow-auto">
+              <img
+                src={preview.url}
+                alt={preview.file.name}
+                className="max-w-full max-h-[65vh] object-contain rounded-md shadow-lg"
+                onError={() => { toast.error('Не удалось загрузить изображение'); setPreview(null); }}
+              />
+              <div className="flex items-center gap-3 mt-3 text-xs text-muted-foreground">
+                <Badge variant="outline" className={cn('text-[10px]', bucketColors[preview.file.bucket])}>{preview.file.bucket}</Badge>
+                <span>{formatBytes(preview.file.size)}</span>
+                <span>{preview.file.mime_type}</span>
+                {preview.file.created_at && <span>{format(new Date(preview.file.created_at), 'dd.MM.yyyy HH:mm')}</span>}
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
