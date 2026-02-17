@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { HydraCard, HydraCardHeader, HydraCardTitle, HydraCardContent } from '@/components/ui/hydra-card';
 import { Badge } from '@/components/ui/badge';
@@ -6,15 +6,17 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Settings2, ListOrdered, Info } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
 import { useContestConfigContext } from '@/contexts/ContestConfigContext';
-import { EXPERT_ROLES, ROLE_CONFIG, ROLE_SPECIFIC_CRITERIA, type AgentRole } from '@/config/roles';
+import { AGENT_ROLES, ROLE_CONFIG, ROLE_SPECIFIC_CRITERIA, type AgentRole } from '@/config/roles';
 import { RoleSelectItem, RoleDisplay } from '@/components/ui/RoleSelectItem';
 import { mergeRoleCriteria, getCriteriaLabel, isRoleSpecificCriteria } from '@/lib/contestRoleCriteria';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
+import { useUserRoles } from '@/hooks/useUserRoles';
+import { hasInterviewPlugin } from '@/plugins/interview';
 
 interface RoundConfig {
   type: 'free' | 'role';
@@ -23,8 +25,31 @@ interface RoundConfig {
   roleForEvaluation?: string;
 }
 
-// Expert roles available for role-based contests (excluding critic — has its own specifics)
-const CONTEST_EXPERT_ROLES = EXPERT_ROLES.filter(r => r !== 'critic' && r !== 'arbiter');
+// Group roles like Staff: experts, technical, OTK (system-only)
+function useGroupedContestRoles() {
+  const { isAdmin } = useUserRoles();
+
+  return useMemo(() => {
+    const experts: AgentRole[] = [];
+    const technical: AgentRole[] = [];
+    const otk: AgentRole[] = [];
+
+    AGENT_ROLES.forEach(role => {
+      const cfg = ROLE_CONFIG[role];
+      // Non-admin: only show roles with interview plugins
+      if (!isAdmin && !hasInterviewPlugin(role)) return;
+      if (cfg.isSystemOnly) {
+        otk.push(role);
+      } else if (cfg.isTechnicalStaff) {
+        technical.push(role);
+      } else {
+        experts.push(role);
+      }
+    });
+
+    return { experts, technical, otk };
+  }, [isAdmin]);
+}
 
 const CRITERIA_OPTIONS = [
   { id: 'accuracy', ru: 'Точность', en: 'Accuracy' },
@@ -49,6 +74,7 @@ export function ContestRulesEditor() {
   const { language } = useLanguage();
   const isRu = language === 'ru';
   const { rules, updateRules } = useContestConfigContext();
+  const groupedRoles = useGroupedContestRoles();
   
   const defaultRules = { roundCount: 1, rounds: [defaultRound()], elimination: 'all-pass' };
   const [localRules, setLocalRules] = useState(rules || defaultRules);
@@ -165,9 +191,30 @@ export function ContestRulesEditor() {
                         </SelectValue>
                       </SelectTrigger>
                       <SelectContent>
-                        {CONTEST_EXPERT_ROLES.map(role => (
-                          <RoleSelectItem key={role} value={role} />
-                        ))}
+                        {groupedRoles.experts.length > 0 && (
+                          <SelectGroup>
+                            <SelectLabel className="text-[10px]">{isRu ? 'Эксперты' : 'Experts'}</SelectLabel>
+                            {groupedRoles.experts.map(role => (
+                              <RoleSelectItem key={role} value={role} />
+                            ))}
+                          </SelectGroup>
+                        )}
+                        {groupedRoles.technical.length > 0 && (
+                          <SelectGroup>
+                            <SelectLabel className="text-[10px]">{isRu ? 'Технический персонал' : 'Technical Staff'}</SelectLabel>
+                            {groupedRoles.technical.map(role => (
+                              <RoleSelectItem key={role} value={role} />
+                            ))}
+                          </SelectGroup>
+                        )}
+                        {groupedRoles.otk.length > 0 && (
+                          <SelectGroup>
+                            <SelectLabel className="text-[10px]">{isRu ? 'ОТК' : 'QC Dept'}</SelectLabel>
+                            {groupedRoles.otk.map(role => (
+                              <RoleSelectItem key={role} value={role} />
+                            ))}
+                          </SelectGroup>
+                        )}
                       </SelectContent>
                     </Select>
                     <TooltipProvider>
