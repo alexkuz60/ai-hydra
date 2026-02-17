@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useContestSession, type ContestResult } from '@/hooks/useContestSession';
 import { useContestExecution } from '@/hooks/useContestExecution';
-import { Crown, Play, Loader2, ChevronDown, ChevronUp, Send, BarChart3, Archive, MessageSquare, Scale, FileText, Users, ClipboardList } from 'lucide-react';
+import { Crown, Play, Loader2, ChevronDown, ChevronUp, Send, BarChart3, Archive, MessageSquare, Scale, FileText, Users, ClipboardList, UserCheck } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Button } from '@/components/ui/button';
@@ -526,6 +526,7 @@ export function BeautyContest({ selectedWinners, onToggleWinner: handleToggleWin
               userWeight={(contest.session?.config?.arbitration as any)?.userWeight}
             />
              {selectedWinners.size > 0 && (
+               <>
                 <Button onClick={handleMigrateToExpertPanel} className="w-full gap-2" variant="outline">
                   <Crown className="h-3.5 w-3.5 text-primary" />
                   <Users className="h-3.5 w-3.5" />
@@ -533,6 +534,17 @@ export function BeautyContest({ selectedWinners, onToggleWinner: handleToggleWin
                     ? `Отправить ${selectedWinners.size} победител${selectedWinners.size === 1 ? 'я' : 'ей'} в Панель экспертов`
                     : `Send ${selectedWinners.size} winner${selectedWinners.size > 1 ? 's' : ''} to Expert Panel`}
                 </Button>
+                <Button
+                  onClick={() => window.dispatchEvent(new CustomEvent('podium-navigate', { detail: { section: 'interview' } }))}
+                  className="w-full gap-2"
+                  variant="default"
+                >
+                  <UserCheck className="h-3.5 w-3.5" />
+                  {isRu
+                    ? `Скрининг ${selectedWinners.size} кандидат${selectedWinners.size === 1 ? 'а' : 'ов'}`
+                    : `Screen ${selectedWinners.size} candidate${selectedWinners.size > 1 ? 's' : ''}`}
+                </Button>
+               </>
              )}
              <Button
                onClick={handleSaveToTask}
