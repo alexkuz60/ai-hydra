@@ -135,14 +135,8 @@ export function AppSidebar() {
                       isActive('/expert-panel') && "hydra-menu-active bg-accent/30"
                     )}
                   >
-                    <Link to="/expert-panel" className="flex flex-col items-center justify-center gap-1 w-full aspect-square p-2">
-                      <MiniHydraGears className="w-12 h-12" />
-                      <span className={cn(
-                        "text-[10px] font-medium leading-tight text-center transition-colors duration-200",
-                        isActive('/expert-panel') ? "text-sidebar-primary" : "text-muted-foreground"
-                      )}>
-                        {t('nav.expertPanel')}
-                      </span>
+                    <Link to="/expert-panel" className="flex items-center justify-center w-full aspect-square p-1">
+                      <MiniHydraGears className="w-full h-full" />
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
