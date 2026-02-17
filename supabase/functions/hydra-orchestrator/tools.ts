@@ -1737,9 +1737,72 @@ async function rerankChunks(
 /** Technical roles that support domain knowledge */
 const TECHNICAL_ROLES = ['analyst', 'promptengineer', 'flowregulator', 'archivist', 'webhunter', 'toolsmith'];
 
+// ============================================
+// HyDE: Hypothetical Document Embeddings
+// ============================================
+
+/**
+ * Generate a hypothetical answer document for the given query using LLM.
+ * The embedding of this document is semantically closer to real knowledge chunks
+ * than the raw question embedding.
+ */
+async function generateHydeDocument(
+  query: string,
+  role: string,
+  lovableApiKey: string,
+): Promise<string | null> {
+  try {
+    const systemPrompt = `Ты — эксперт в области ${role}. Напиши краткий (2-4 предложения) гипотетический ответ на вопрос пользователя, как если бы ты отвечал из обширной базы знаний по теме. Ответ должен быть фактическим и содержательным, без вводных слов. Не упоминай, что это гипотетический ответ.`;
+
+    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${lovableApiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "google/gemini-3-flash-preview",
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: query },
+        ],
+        max_tokens: 200,
+        temperature: 0.3,
+      }),
+    });
+
+    if (!response.ok) return null;
+
+    const data = await response.json();
+    const hydeDoc = data.choices?.[0]?.message?.content?.trim();
+
+    if (!hydeDoc || hydeDoc.length < 10) return null;
+
+    console.log(`[HyDE] Generated hypothetical document (${hydeDoc.length} chars) for query: "${query.slice(0, 60)}..."`);
+    return hydeDoc;
+  } catch (err) {
+    console.warn('[HyDE] Hypothetical document generation failed:', err);
+    return null;
+  }
+}
+
+/**
+ * Blend two embeddings using weighted average, then L2-normalize the result.
+ * combined = emb_a * weightA + emb_b * weightB
+ */
+function blendEmbeddings(embA: number[], embB: number[], weightA: number, weightB: number): number[] {
+  const blended = embA.map((v, i) => v * weightA + embB[i] * weightB);
+
+  // L2 normalization
+  const norm = Math.sqrt(blended.reduce((sum, v) => sum + v * v, 0));
+  if (norm === 0) return blended;
+  return blended.map(v => v / norm);
+}
+
 /**
  * Fetch relevant knowledge from role_knowledge for a technical role.
- * Pipeline: hybrid search (top-15) → LLM reranking → top-5 injected into system prompt.
+ * Pipeline: HyDE (blend query + hypothetical doc embeddings) →
+ *           hybrid search (top-15) → LLM reranking → top-5 injected into system prompt.
  * Falls back gracefully at each stage if APIs are unavailable.
  */
 export async function fetchRoleKnowledgeContext(
@@ -1769,15 +1832,22 @@ export async function fetchRoleKnowledgeContext(
       return null;
     }
 
-    // Generate embedding for the user message
-    const embeddingResponse = await fetch(`${supabaseUrl}/functions/v1/generate-embeddings`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${supabaseKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ texts: [userMessage] }),
-    });
+    const apiKey = lovableApiKey ?? Deno.env.get("LOVABLE_API_KEY") ?? null;
+
+    // === HyDE: generate hypothetical answer & blend embeddings in parallel ===
+    const [embeddingResponse, hydeDoc] = await Promise.all([
+      fetch(`${supabaseUrl}/functions/v1/generate-embeddings`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${supabaseKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ texts: [userMessage] }),
+      }),
+      apiKey
+        ? generateHydeDocument(userMessage, role, apiKey)
+        : Promise.resolve(null),
+    ]);
 
     if (!embeddingResponse.ok) {
       console.warn('[RAG] Embedding generation failed for auto-RAG');
@@ -1789,7 +1859,41 @@ export async function fetchRoleKnowledgeContext(
       return null;
     }
 
-    const queryEmbedding = embData.embeddings[0];
+    let searchEmbedding: number[] = embData.embeddings[0];
+    let searchMode = 'query';
+
+    // If HyDE document was generated, blend query embedding with hypothetical doc embedding
+    if (hydeDoc && apiKey) {
+      try {
+        const hydeEmbResponse = await fetch(`${supabaseUrl}/functions/v1/generate-embeddings`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${supabaseKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ texts: [hydeDoc] }),
+        });
+
+        if (hydeEmbResponse.ok) {
+          const hydeEmbData = await hydeEmbResponse.json();
+          if (!hydeEmbData.skipped && hydeEmbData.embeddings?.[0]) {
+            // Blend: query × 0.4 + hyde × 0.6
+            searchEmbedding = blendEmbeddings(
+              embData.embeddings[0],
+              hydeEmbData.embeddings[0],
+              0.4,
+              0.6,
+            );
+            searchMode = 'hyde-blend';
+            console.log(`[HyDE] Using blended embedding (query×0.4 + hyde×0.6) for role "${role}"`);
+          }
+        }
+      } catch (hydeErr) {
+        console.warn('[HyDE] Embedding blend failed, using raw query embedding:', hydeErr);
+      }
+    }
+
+    const queryEmbedding = searchEmbedding;
     // Fetch more candidates for reranking (top-15 instead of top-N)
     const candidateLimit = Math.max(maxResults * 3, 15);
 
@@ -1866,10 +1970,11 @@ export async function fetchRoleKnowledgeContext(
       return `[${i + 1}] ${r.content}${source} [${scoreInfo}]`;
     });
 
-    const searchType = candidates.some(c => c.hybrid_score !== undefined) ? 'hybrid+reranking' : 'vector+reranking';
+    const hybridFlag = candidates.some(c => c.hybrid_score !== undefined) ? 'hybrid' : 'vector';
+    const searchType = `${hybridFlag}+${searchMode}+reranking`;
     const context = `\n\n---\n📚 **Профильные знания** (${searchType}, топ-${reranked.length}):\n\n${knowledgeBlocks.join('\n\n')}\n\nИспользуйте эту информацию как справочный контекст при ответе.\n---`;
 
-    console.log(`[RAG] Injected ${reranked.length} reranked knowledge chunks for role "${role}" (final scores: ${reranked.map(r => r.final_score.toFixed(2)).join(', ')})`);
+    console.log(`[RAG] Injected ${reranked.length} reranked knowledge chunks for role "${role}" (search=${searchType}, final scores: ${reranked.map(r => r.final_score.toFixed(2)).join(', ')})`);
 
     return context;
   } catch (error) {
