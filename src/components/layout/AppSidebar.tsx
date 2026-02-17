@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import {
   Sidebar,
   SidebarContent,
@@ -126,19 +127,20 @@ export function AppSidebar() {
               {/* Expert Panel – large square card */}
               {user && (
                 <SidebarMenuItem>
-                  <SidebarMenuButton
-                    asChild
-                    isActive={isActive('/expert-panel')}
-                    tooltip={t('nav.expertPanel')}
-                    className={cn(
-                      "transition-all duration-200 active:scale-95 active:opacity-80 border-2 border-muted rounded-lg hover:bg-muted/50 h-auto py-0 px-0",
-                      isActive('/expert-panel') && "hydra-menu-active bg-accent/30"
-                    )}
-                  >
-                    <Link to="/expert-panel" className="flex items-center justify-center w-full aspect-square p-1">
-                      <MiniHydraGears className="w-full h-full" />
-                    </Link>
-                  </SidebarMenuButton>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Link
+                        to="/expert-panel"
+                        className={cn(
+                          "flex items-center justify-center w-full aspect-square rounded-lg border-2 border-muted hover:bg-muted/50 transition-all duration-200 active:scale-95",
+                          isActive('/expert-panel') && "hydra-menu-active bg-accent/30"
+                        )}
+                      >
+                        <MiniHydraGears className="w-[85%] h-[85%]" />
+                      </Link>
+                    </TooltipTrigger>
+                    <TooltipContent side="right">{t('nav.expertPanel')}</TooltipContent>
+                  </Tooltip>
                 </SidebarMenuItem>
               )}
               {navItems.map((item) => (
