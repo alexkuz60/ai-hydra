@@ -2,9 +2,7 @@ import React, { useEffect, useRef, useCallback, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Layout } from '@/components/layout/Layout';
-import { MemoryControls } from '@/components/layout/MemoryControls';
 import { TaskIndicator } from '@/components/layout/TaskIndicator';
-import { supabase } from '@/integrations/supabase/client';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 import type { ImperativePanelHandle } from 'react-resizable-panels';
 import { ConsultantPanel } from '@/components/warroom/ConsultantPanel';
@@ -29,7 +27,6 @@ import { usePendingResponses } from '@/hooks/usePendingResponses';
 import { useExpertPanelActions } from '@/hooks/useExpertPanelActions';
 import { RequestStartInfo } from '@/types/pending';
 import { Loader2 } from 'lucide-react';
-import { SessionMemoryDialog } from '@/components/warroom/SessionMemoryDialog';
 import { toast } from 'sonner';
 import { useInputAreaSize } from '@/hooks/useInputAreaSize';
 import { useNavigatorResize } from '@/hooks/useNavigatorResize';
@@ -85,45 +82,12 @@ export default function ExpertPanel() {
 
   const { selectedWishes, setSelectedWishes } = useSupervisorWishes(currentTask?.id || null);
 
-  // Session memory
+  // Session memory — keep for streaming context (memoryChunks)
   const {
     deleteByMessageId, chunks: memoryChunks, refetch: refetchMemory,
-    isLoading: memoryLoading, deleteChunk, deleteChunksBatch,
-    clearSessionMemory, isDeleting: memoryDeleting,
-    isDeletingBatch: memoryDeletingBatch, isClearing: memoryClearing,
-    semanticSearch, isSearching: memorySearching,
+    isLoading: memoryLoading,
   } = useSessionMemory(currentTask?.id || null);
 
-  const [memoryRefreshed, setMemoryRefreshed] = useState(false);
-  const [memoryDialogOpen, setMemoryDialogOpen] = useState(false);
-  const [knowledgeByRole, setKnowledgeByRole] = useState<Record<string, number>>({});
-
-  // Fetch knowledge counts
-  useEffect(() => {
-    if (!user?.id) return;
-    const fetchKnowledgeCounts = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('role_knowledge')
-          .select('role')
-          .eq('user_id', user.id);
-        if (!error && data) {
-          const counts: Record<string, number> = {};
-          for (const row of data) {
-            counts[row.role] = (counts[row.role] || 0) + 1;
-          }
-          setKnowledgeByRole(counts);
-        }
-      } catch { /* ignore */ }
-    };
-    fetchKnowledgeCounts();
-  }, [user?.id]);
-
-  const handleRefreshMemory = useCallback(async () => {
-    await refetchMemory();
-    setMemoryRefreshed(true);
-    setTimeout(() => setMemoryRefreshed(false), 2000);
-  }, [refetchMemory]);
 
   // Messages
   const {
@@ -329,17 +293,7 @@ export default function ExpertPanel() {
   }
 
   const headerActions = (
-    <>
-      <TaskIndicator taskId={currentTask?.id || null} taskTitle={currentTask?.title || null} loading={loading} />
-      <MemoryControls
-        memoryStats={memoryStats}
-        knowledgeByRole={knowledgeByRole}
-        isLoading={memoryLoading}
-        isRefreshed={memoryRefreshed}
-        onRefresh={handleRefreshMemory}
-        onOpenDialog={() => setMemoryDialogOpen(true)}
-      />
-    </>
+    <TaskIndicator taskId={currentTask?.id || null} taskTitle={currentTask?.title || null} loading={loading} />
   );
 
   return (
@@ -487,21 +441,6 @@ export default function ExpertPanel() {
           </ResizablePanel>
         </ResizablePanelGroup>
       </div>
-
-      <SessionMemoryDialog
-        open={memoryDialogOpen}
-        onOpenChange={setMemoryDialogOpen}
-        chunks={memoryChunks}
-        isLoading={memoryLoading}
-        isDeleting={memoryDeleting}
-        onDeleteChunk={deleteChunk}
-        onDeleteDuplicates={deleteChunksBatch}
-        isDeletingDuplicates={memoryDeletingBatch}
-        onClearAll={clearSessionMemory}
-        isClearing={memoryClearing}
-        onSemanticSearch={semanticSearch}
-        isSearching={memorySearching}
-      />
     </Layout>
   );
 }
