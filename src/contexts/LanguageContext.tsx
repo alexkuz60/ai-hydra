@@ -39,8 +39,26 @@ const translations: Translations = {
   'nav.hydrapedia': { ru: 'Гидрапедия', en: 'Hydrapedia' },
   'nav.staffRoles': { ru: 'Штат специалистов', en: 'AI Staff' },
    'nav.behavioralPatterns': { ru: 'Паттерны поведения', en: 'Behavioral Patterns' },
-   'nav.expand': { ru: 'Развернуть', en: 'Expand' },
+  'nav.expand': { ru: 'Развернуть', en: 'Expand' },
    'nav.collapse': { ru: 'Свернуть', en: 'Collapse' },
+  'nav.hydraMemory': { ru: 'Память Гидры', en: 'Hydra Memory' },
+
+  // Hydra Memory Hub
+  'memory.hub.title': { ru: 'Центр управления памятью', en: 'Memory Control Hub' },
+  'memory.hub.subtitle': { ru: 'Инспекция, поиск и оптимизация RAG-слоёв Гидры', en: 'Inspect, search and optimize Hydra\'s RAG layers' },
+  'memory.hub.session': { ru: 'Память сессий', en: 'Session Memory' },
+  'memory.hub.roleMemory': { ru: 'Опыт ролей', en: 'Role Experience' },
+  'memory.hub.knowledge': { ru: 'База знаний', en: 'Knowledge Base' },
+  'memory.hub.totalChunks': { ru: 'Всего фрагментов', en: 'Total Chunks' },
+  'memory.hub.roles': { ru: 'Ролей с опытом', en: 'Roles with experience' },
+  'memory.hub.avgConfidence': { ru: 'Средняя уверенность', en: 'Average confidence' },
+  'memory.hub.empty': { ru: 'Память пуста', en: 'Memory is empty' },
+  'memory.hub.sessions': { ru: 'Сессий с памятью', en: 'Sessions with memory' },
+  'memory.hub.chunksByType': { ru: 'Фрагменты по типам', en: 'Chunks by type' },
+  'memory.hub.knowledgeChunks': { ru: 'Фрагментов знаний', en: 'Knowledge chunks' },
+  'memory.hub.goToStaff': { ru: 'Управление в Штате', en: 'Manage in AI Staff' },
+  'memory.hub.deleteEntry': { ru: 'Удалить запись', en: 'Delete entry' },
+  'memory.hub.confidence': { ru: 'Уверенность', en: 'Confidence' },
   
   // Staff Roles
   'staffRoles.description': { ru: 'Каталог доступных AI-ролей и их характеристики', en: 'Catalog of available AI roles and their characteristics' },
