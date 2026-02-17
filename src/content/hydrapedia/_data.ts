@@ -3,7 +3,7 @@ import { basicsSections } from './basics';
 import { chatSections } from './chat';
 import { contentSections } from './content';
 import { flowSections } from './flow';
-import { featuresSections, duelModeSections } from './features';
+import { featuresSections, duelModeSections, podiumInterviewSections } from './features';
 import { referenceSections } from './reference';
 import { adminSections } from './admin';
 import { guideSections } from './guide';
@@ -57,6 +57,7 @@ export const hydrapediaNavGroups: HydrapediaNavGroup[] = [
       pick(featuresSections, 'model-ratings'),
       pick(duelModeSections, 'duel-mode'),
       pick(duelModeSections, 'contest-rules'),
+      pick(podiumInterviewSections, 'podium-interview'),
     ],
   },
   {

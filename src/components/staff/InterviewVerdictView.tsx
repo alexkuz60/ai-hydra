@@ -20,6 +20,7 @@ interface VerdictSectionProps {
 }
 
 export function VerdictSection({ session, verdict, phases, isRu, onDecision }: VerdictSectionProps) {
+  const isPodium = !!session?.source_contest_id;
   if (!verdict && phases.length === 0) {
     return (
       <p className="text-sm text-muted-foreground text-center py-8">
@@ -125,20 +126,29 @@ export function VerdictSection({ session, verdict, phases, isRu, onDecision }: V
       {!verdict.final_decision && (
         <div className="space-y-2 pt-1">
           <div className="text-xs font-medium">{isRu ? 'Ваше решение' : 'Your Decision'}</div>
-          <div className="grid grid-cols-3 gap-2">
-            <Button size="sm" variant="outline" className="gap-1 text-hydra-success border-hydra-success/30 hover:bg-hydra-success/10" onClick={() => onDecision('hire')}>
-              <UserCheck className="h-3.5 w-3.5" />
-              {isRu ? 'Нанять' : 'Hire'}
-            </Button>
-            <Button size="sm" variant="outline" className="gap-1 text-hydra-critical border-hydra-critical/30 hover:bg-hydra-critical/10" onClick={() => onDecision('reject')}>
-              <UserX className="h-3.5 w-3.5" />
-              {isRu ? 'Отказ' : 'Reject'}
-            </Button>
-            <Button size="sm" variant="outline" className="gap-1 text-primary border-primary/30 hover:bg-primary/10" onClick={() => onDecision('retest')}>
-              <RotateCcw className="h-3.5 w-3.5" />
-              {isRu ? 'Ретест' : 'Retest'}
-            </Button>
-          </div>
+          {isPodium ? (
+            <div className="grid grid-cols-1 gap-2">
+              <Button size="sm" variant="outline" className="gap-1 text-hydra-critical border-hydra-critical/30 hover:bg-hydra-critical/10" onClick={() => onDecision('reject')}>
+                <UserX className="h-3.5 w-3.5" />
+                {isRu ? 'Отклонить результаты' : 'Reject Results'}
+              </Button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-3 gap-2">
+              <Button size="sm" variant="outline" className="gap-1 text-hydra-success border-hydra-success/30 hover:bg-hydra-success/10" onClick={() => onDecision('hire')}>
+                <UserCheck className="h-3.5 w-3.5" />
+                {isRu ? 'Нанять' : 'Hire'}
+              </Button>
+              <Button size="sm" variant="outline" className="gap-1 text-hydra-critical border-hydra-critical/30 hover:bg-hydra-critical/10" onClick={() => onDecision('reject')}>
+                <UserX className="h-3.5 w-3.5" />
+                {isRu ? 'Отказ' : 'Reject'}
+              </Button>
+              <Button size="sm" variant="outline" className="gap-1 text-primary border-primary/30 hover:bg-primary/10" onClick={() => onDecision('retest')}>
+                <RotateCcw className="h-3.5 w-3.5" />
+                {isRu ? 'Ретест' : 'Retest'}
+              </Button>
+            </div>
+          )}
         </div>
       )}
 

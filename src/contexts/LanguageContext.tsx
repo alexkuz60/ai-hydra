@@ -237,6 +237,7 @@ const translations: Translations = {
   'hydrapedia.sections.interviewPanel': { ru: 'Собеседование', en: 'Interview Panel' },
   'hydrapedia.sections.duelMode': { ru: 'Режим дуэли', en: 'Duel Mode' },
   'hydrapedia.sections.contestRules': { ru: 'Правила конкурса', en: 'Contest Rules' },
+  'hydrapedia.sections.podiumInterview': { ru: 'Собеседование на Подиуме', en: 'Podium Interview' },
   'hydrapedia.group.basics': { ru: 'Основы', en: 'Basics' },
   'hydrapedia.group.expertPanel': { ru: 'Панель экспертов', en: 'Expert Panel' },
   'hydrapedia.group.content': { ru: 'Контент и промпты', en: 'Content & Prompts' },
