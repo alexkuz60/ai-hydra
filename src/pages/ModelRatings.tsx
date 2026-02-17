@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -9,6 +9,7 @@ import { CloudSyncIndicator } from '@/components/ui/CloudSyncIndicator';
 import { useCloudSyncStatus } from '@/hooks/useCloudSettings';
 import { cn } from '@/lib/utils';
 import { useDuelConfig } from '@/hooks/useDuelConfig';
+import { useContestConfig } from '@/hooks/useContestConfig';
 
 import TournamentIcon from '@/assets/TournamentIcon';
 import {
@@ -42,6 +43,16 @@ export default function ModelRatings() {
   const navigate = useNavigate();
   const cloudSynced = useCloudSyncStatus();
   const duelConfig = useDuelConfig();
+  const contestConfig = useContestConfig();
+
+  // Derive screening role from contest plan: free prompt → assistant, role-based → roleForEvaluation
+  const screeningRole = useMemo(() => {
+    const firstRound = contestConfig.rules?.rounds?.[0];
+    if (firstRound?.type === 'role' && firstRound.roleForEvaluation) {
+      return firstRound.roleForEvaluation;
+    }
+    return 'assistant';
+  }, [contestConfig.rules]);
   const [activeSection, setActiveSection] = useState<Section>(() => {
     const saved = localStorage.getItem('podium-active-section');
     return (saved === 'portfolio' || saved === 'rules' || saved === 'contest' || saved === 'duel' || saved === 'interview' || saved === 'ratings') ? saved : 'ratings';
@@ -190,7 +201,7 @@ export default function ModelRatings() {
               {activeSection === 'duel' && <DuelArena duelConfig={duelConfig} />}
               {activeSection === 'interview' && (
                 <ScreeningPanel
-                  role="assistant"
+                  role={screeningRole}
                   selectedWinners={contestWinners}
                   sourceContestId={contestSessionId}
                 />
