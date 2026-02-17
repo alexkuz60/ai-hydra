@@ -180,22 +180,32 @@ SELECT * FROM rrf_merged ORDER BY hybrid_score DESC LIMIT p_limit;
 | `fetchRoleKnowledgeContext()` | ✅ | `tools.ts` — обновлён: hybrid(top-15) → rerank → top-5 |
 | `index.ts` | ✅ | Передаёт `lovableKey` в `fetchRoleKnowledgeContext` |
 
+### Затронутые файлы
+
+- `supabase/functions/hydra-orchestrator/types.ts` — типы `KnowledgeChunkCandidate`, `RankedKnowledgeChunk`
+- `supabase/functions/hydra-orchestrator/tools.ts` — функции `scoreChunkRelevance()`, `rerankChunks()`, обновлён `fetchRoleKnowledgeContext()`
+- `supabase/functions/hydra-orchestrator/index.ts` — передача `lovableKey` в `fetchRoleKnowledgeContext`
+
 ### Архитектура Reranking Pipeline
 
 ```
-Запрос → generate-embeddings
-       → hybrid_search_role_knowledge (top-15)
-       → rerankChunks() [gemini-3-flash, параллельно]
-         final_score = rerank_score * 0.7 + hybrid_score * 0.3
-       → top-5 → system prompt injection
+Запрос пользователя
+  → generate-embeddings (text-embedding-3-small)
+  → hybrid_search_role_knowledge (top-15 кандидатов, RRF)
+  → pre-filter: similarity > 0.2 || hybrid_score > 0.005
+  → rerankChunks() — scoreChunkRelevance() × N параллельно [gemini-3-flash-preview]
+      final_score = rerank_score × 0.7 + hybrid_score × 0.3
+  → top-5 по final_score
+  → инъекция в system prompt Архивариуса
 ```
 
 ### Ключевые решения
-- **Модель reranker:** `google/gemini-3-flash-preview` — быстрый, дешёвый
+- **Модель reranker:** `google/gemini-3-flash-preview` — быстрый, дешёвый, без отдельного API-ключа
 - **Параллельность:** все чанки ранжируются одновременно через `Promise.all`
-- **Fallback:** при ошибке reranking → возвращаем hybrid_score как есть
-- **Порог:** pre-filter `similarity > 0.2 || hybrid_score > 0.005` до reranking
-- **Формула:** `final_score = rerank * 0.7 + hybrid * 0.3`
+- **Fallback:** при ошибке reranking возвращается `hybrid_score` без изменений
+- **Порог pre-filter:** `similarity > 0.2 || hybrid_score > 0.005` — отсекает нерелевантный шум до reranking
+- **Формула финального скора:** `final_score = rerank × 0.7 + hybrid × 0.3`
+- **Обратная совместимость:** старый `search_role_knowledge` (чистый векторный) не тронут
 
 ---
 
