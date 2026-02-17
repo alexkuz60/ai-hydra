@@ -34,26 +34,20 @@ interface HydraGearsProps {
 
 // Generate gear tooth path (SVG)
 function gearPath(cx: number, cy: number, outerR: number, innerR: number, teeth: number): string {
-  const points: string[] = [];
-  const toothAngle = (Math.PI * 2) / teeth;
-  const halfTooth = toothAngle / 4;
+  const steps = teeth * 16; // smooth curve
+  const midR = (outerR + innerR) / 2;
+  const amp = (outerR - innerR) / 2;
+  const parts: string[] = [];
 
-  for (let i = 0; i < teeth; i++) {
-    const a = i * toothAngle - Math.PI / 2;
-    // outer tooth
-    points.push(
-      `${cx + outerR * Math.cos(a - halfTooth)},${cy + outerR * Math.sin(a - halfTooth)}`,
-      `${cx + outerR * Math.cos(a + halfTooth)},${cy + outerR * Math.sin(a + halfTooth)}`,
-    );
-    // inner valley
-    const va = a + toothAngle / 2;
-    points.push(
-      `${cx + innerR * Math.cos(va - halfTooth)},${cy + innerR * Math.sin(va - halfTooth)}`,
-      `${cx + innerR * Math.cos(va + halfTooth)},${cy + innerR * Math.sin(va + halfTooth)}`,
-    );
+  for (let i = 0; i <= steps; i++) {
+    const angle = (i / steps) * Math.PI * 2 - Math.PI / 2;
+    const r = midR + amp * Math.sin(teeth * angle);
+    const x = cx + r * Math.cos(angle);
+    const y = cy + r * Math.sin(angle);
+    parts.push(i === 0 ? `M${x},${y}` : `L${x},${y}`);
   }
 
-  return `M${points[0]} ${points.slice(1).map(p => `L${p}`).join(' ')} Z`;
+  return parts.join(' ') + ' Z';
 }
 
 // Get HSL color from CSS variable name
