@@ -34,15 +34,15 @@ const SUPERSEDED_BADGE = {
   className: 'bg-muted/30 text-muted-foreground border-border',
 };
 
-const PROVIDER_LABELS: Record<string, string> = {
-  gemini: 'Google Gemini',
-  openai: 'OpenAI',
-  anthropic: 'Anthropic',
-  xai: 'xAI',
-  deepseek: 'DeepSeek',
-  mistral: 'Mistral',
-  groq: 'Groq',
-  openrouter: 'OpenRouter',
+const PROVIDER_LABELS: Record<string, { short: string; full: string }> = {
+  gemini: { short: 'Gemini', full: 'Google Gemini' },
+  openai: { short: 'OpenAI', full: 'OpenAI' },
+  anthropic: { short: 'Anthropic', full: 'Anthropic' },
+  xai: { short: 'xAI', full: 'xAI' },
+  deepseek: { short: 'DeepSeek', full: 'DeepSeek' },
+  mistral: { short: 'Mistral', full: 'Mistral' },
+  groq: { short: 'Groq', full: 'Groq' },
+  openrouter: { short: 'OR', full: 'OpenRouter' },
 };
 
 // ── Helpers ──
@@ -127,6 +127,7 @@ export function SessionHistoryTable({
           <TableHeader>
             <TableRow className="bg-muted/30">
               <TableHead className="text-[10px] py-1.5 px-2 h-auto">{isRu ? 'Модель' : 'Model'}</TableHead>
+              <TableHead className="text-[10px] py-1.5 px-2 h-auto">{isRu ? 'Провайдер' : 'Provider'}</TableHead>
               <TableHead className="text-[10px] py-1.5 px-2 h-auto text-right">{isRu ? 'Токены' : 'Tokens'}</TableHead>
               <TableHead className="text-[10px] py-1.5 px-2 h-auto text-right">{isRu ? 'Время' : 'Time'}</TableHead>
               <TableHead className="text-[10px] py-1.5 px-2 h-auto text-right">{isRu ? 'Цена' : 'Cost'}</TableHead>
@@ -139,7 +140,7 @@ export function SessionHistoryTable({
               const isCollapsed = collapsed.has(providerKey);
               const Logo = PROVIDER_LOGOS[providerKey];
               const color = PROVIDER_COLORS[providerKey] || 'text-muted-foreground';
-              const label = PROVIDER_LABELS[providerKey] || providerKey;
+              const label = PROVIDER_LABELS[providerKey]?.full || providerKey;
 
               return (
                 <React.Fragment key={providerKey}>
@@ -148,7 +149,7 @@ export function SessionHistoryTable({
                     className="bg-muted/20 hover:bg-muted/30 cursor-pointer border-b-0"
                     onClick={() => toggleGroup(providerKey)}
                   >
-                    <TableCell colSpan={6} className="py-1.5 px-2">
+                    <TableCell colSpan={7} className="py-1.5 px-2">
                       <div className="flex items-center gap-1.5 text-[10px] font-medium text-muted-foreground">
                         {isCollapsed
                           ? <ChevronRight className="h-3 w-3 shrink-0" />
@@ -223,6 +224,10 @@ function SessionRow({
     : new Date(s.created_at).toLocaleDateString(isRu ? 'ru-RU' : 'en-US', { day: 'numeric', month: 'short' });
 
   const modelShort = s.candidate_model.replace(/^proxyapi\//, '').replace(/^google\//, '').replace(/^openai\//, '');
+  const providerKey = getProviderFromModelId(s.candidate_model);
+  const providerInfo = providerKey ? PROVIDER_LABELS[providerKey] : null;
+  const ProviderLogo = providerKey ? PROVIDER_LOGOS[providerKey] : null;
+  const providerColor = providerKey ? PROVIDER_COLORS[providerKey] || 'text-muted-foreground' : 'text-muted-foreground';
 
   return (
     <TableRow
@@ -241,6 +246,12 @@ function SessionRow({
           <span className={cn("text-[9px]", STATUS_COLORS[s.status] || 'text-muted-foreground')}>
             {s.status} • {dateStr}
           </span>
+        </div>
+      </TableCell>
+      <TableCell className="py-1.5 px-2">
+        <div className="flex items-center gap-1" title={providerInfo?.full}>
+          {ProviderLogo && <ProviderLogo className={cn("h-3 w-3 shrink-0", providerColor)} />}
+          <span className="text-[10px] text-muted-foreground">{providerInfo?.short || '—'}</span>
         </div>
       </TableCell>
       <TableCell className="py-1.5 px-2 text-right text-[10px] text-muted-foreground font-mono">
