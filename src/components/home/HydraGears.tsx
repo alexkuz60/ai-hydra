@@ -163,7 +163,7 @@ export function HydraGears({
           }
            @keyframes icon-glow-pulse {
             0%, 100% { filter: drop-shadow(0 0 1px currentColor); opacity: 0.85; }
-            50% { filter: drop-shadow(0 0 3px currentColor) drop-shadow(0 0 6px currentColor); opacity: 1; }
+            50% { filter: drop-shadow(0 0 2px currentColor) drop-shadow(0 0 4px currentColor); opacity: 1; }
           }
           .gear-icon-active {
             animation: icon-glow-pulse 2.5s ease-in-out infinite;
