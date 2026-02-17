@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Layout } from '@/components/layout/Layout';
-import { Loader2, Briefcase, Crown, BarChart3, ScrollText } from 'lucide-react';
+import { Loader2, Briefcase, Crown, BarChart3, ScrollText, UserCheck } from 'lucide-react';
 import { CloudSyncIndicator } from '@/components/ui/CloudSyncIndicator';
 import { useCloudSyncStatus } from '@/hooks/useCloudSettings';
 import { cn } from '@/lib/utils';
@@ -24,13 +24,14 @@ import { ContestPodium } from '@/components/ratings/ContestPodium';
 import { RatingsContent } from '@/components/ratings/RatingsContent';
 import { DuelArena } from '@/components/ratings/DuelArena';
 
-type Section = 'portfolio' | 'rules' | 'contest' | 'duel' | 'ratings';
+type Section = 'portfolio' | 'rules' | 'contest' | 'duel' | 'interview' | 'ratings';
 
 const SECTIONS: { id: Section; icon: React.ComponentType<{ className?: string }>; labelRu: string; labelEn: string; descRu: string; descEn: string }[] = [
   { id: 'portfolio', icon: Briefcase, labelRu: 'Портфолио ИИ-моделей', labelEn: 'AI Model Portfolio', descRu: 'Каталог всех доступных моделей', descEn: 'Catalog of all available models' },
   { id: 'rules', icon: ScrollText, labelRu: 'Правила конкурса', labelEn: 'Contest Rules', descRu: 'Настройка туров и критериев', descEn: 'Rounds and criteria setup' },
   { id: 'contest', icon: Crown, labelRu: 'Конкурс интеллект-красоты', labelEn: 'Intelligence Contest', descRu: 'Соревнования между моделями', descEn: 'AI model competitions' },
   { id: 'duel', icon: TournamentIcon, labelRu: 'Дуэль «К барьеру»', labelEn: 'Duel «En Garde»', descRu: 'Попарное состязание кандидатов', descEn: 'Head-to-head candidate battle' },
+  { id: 'interview', icon: UserCheck, labelRu: 'Предварительное собеседование', labelEn: 'Preliminary Interview', descRu: 'Конкурсное собеседование победителей', descEn: 'Contest winner interviews' },
   { id: 'ratings', icon: BarChart3, labelRu: 'Рейтинги ИИ-моделей', labelEn: 'AI Model Ratings', descRu: 'Статистика и оценки', descEn: 'Stats and evaluations' },
 ];
 
@@ -42,7 +43,7 @@ export default function ModelRatings() {
   const duelConfig = useDuelConfig();
   const [activeSection, setActiveSection] = useState<Section>(() => {
     const saved = localStorage.getItem('podium-active-section');
-    return (saved === 'portfolio' || saved === 'rules' || saved === 'contest' || saved === 'duel' || saved === 'ratings') ? saved : 'ratings';
+    return (saved === 'portfolio' || saved === 'rules' || saved === 'contest' || saved === 'duel' || saved === 'interview' || saved === 'ratings') ? saved : 'ratings';
   });
   const [contestWinners, setContestWinners] = useState<Set<string>>(new Set());
   const handleToggleContestWinner = useCallback((modelId: string) => {
@@ -185,6 +186,15 @@ export default function ModelRatings() {
               {activeSection === 'rules' && <ContestPodium duelConfig={duelConfig} />}
               {activeSection === 'contest' && <BeautyContest selectedWinners={contestWinners} onToggleWinner={handleToggleContestWinner} />}
               {activeSection === 'duel' && <DuelArena duelConfig={duelConfig} />}
+              {activeSection === 'interview' && (
+                <div className="h-full flex items-center justify-center">
+                  <div className="text-center space-y-3">
+                    <UserCheck className="h-10 w-10 text-muted-foreground/40 mx-auto" />
+                    <p className="text-lg font-medium">{language === 'ru' ? 'Предварительное собеседование' : 'Preliminary Interview'}</p>
+                    <p className="text-sm text-muted-foreground">{language === 'ru' ? 'Конкурсное собеседование победителей — в разработке' : 'Contest winner interviews — coming soon'}</p>
+                  </div>
+                </div>
+              )}
               {activeSection === 'ratings' && <RatingsContent />}
             </div>
           </ResizablePanel>
