@@ -59,6 +59,11 @@ const translations: Translations = {
   'memory.hub.goToStaff': { ru: 'Управление в Штате', en: 'Manage in AI Staff' },
   'memory.hub.deleteEntry': { ru: 'Удалить запись', en: 'Delete entry' },
   'memory.hub.confidence': { ru: 'Уверенность', en: 'Confidence' },
+  'memory.hub.storage': { ru: 'Файлохранилище', en: 'File Storage' },
+  'memory.hub.storageFiles': { ru: 'Всего файлов', en: 'Total files' },
+  'memory.hub.storageBuckets': { ru: 'Бакетов', en: 'Buckets' },
+  'memory.hub.storageSize': { ru: 'Занято места', en: 'Storage used' },
+  'memory.hub.storageEmpty': { ru: 'Файлы не найдены', en: 'No files found' },
   
   // Staff Roles
   'staffRoles.description': { ru: 'Каталог доступных AI-ролей и их характеристики', en: 'Catalog of available AI roles and their characteristics' },
