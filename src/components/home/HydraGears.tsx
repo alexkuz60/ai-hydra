@@ -219,7 +219,7 @@ export function HydraGears({
               cy={pos.y}
               r={gearOuterR + 4}
               fill="transparent"
-              style={{ cursor: 'default' }}
+              style={{ cursor: 'pointer' }}
               onMouseEnter={(e) => {
                 const g = e.currentTarget.parentElement;
                 g?.querySelectorAll('path, circle:not(:first-child)').forEach(el => {
