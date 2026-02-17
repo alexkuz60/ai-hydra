@@ -65,6 +65,7 @@ export const hydrapediaNavGroups: HydrapediaNavGroup[] = [
     sections: [
       pick(featuresSections, 'tasks'),
       pick(featuresSections, 'roles-catalog'),
+      pick(featuresSections, 'hydra-memory-hub'),
       pick(featuresSections, 'session-memory'),
       pick(featuresSections, 'roleMemory'),
       pick(featuresSections, 'web-search'),
