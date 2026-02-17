@@ -47,7 +47,8 @@ import {
   UserCog,
   Sparkles,
   Compass,
-  Map
+  Map,
+  BrainCircuit
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useGuideTourContext } from '@/contexts/GuideTourContext';
@@ -81,6 +82,7 @@ export function AppSidebar() {
     { path: '/role-library', icon: Library, label: t('nav.roleLibrary') },
     { path: '/tools-library', icon: Wrench, label: t('nav.toolsLibrary') },
     { path: '/flow-editor', icon: GitBranch, label: t('nav.flowEditor') },
+    { path: '/hydra-memory', icon: BrainCircuit, label: t('nav.hydraMemory') },
     { path: '/model-ratings', icon: BarChart3, label: t('nav.modelRatings') },
     { path: '/hydrapedia', icon: BookOpen, label: t('nav.hydrapedia') },
   ] : [

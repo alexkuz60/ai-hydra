@@ -44,6 +44,7 @@ const StaffRoles = lazyWithRetry(() => import("./pages/StaffRoles"));
 const BehavioralPatterns = lazyWithRetry(() => import("./pages/BehavioralPatterns"));
 const Admin = lazyWithRetry(() => import("./pages/Admin"));
 const GuideToursEditor = lazyWithRetry(() => import("./pages/GuideToursEditor"));
+const HydraMemory = lazyWithRetry(() => import("./pages/HydraMemory"));
 const NotFound = lazyWithRetry(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
@@ -83,6 +84,7 @@ const App = () => (
                       <Route path="/staff-roles" element={<StaffRoles />} />
                       <Route path="/behavioral-patterns" element={<BehavioralPatterns />} />
                       <Route path="/war-room" element={<Navigate to="/expert-panel" replace />} />
+                      <Route path="/hydra-memory" element={<HydraMemory />} />
                       <Route path="/admin" element={<Admin />} />
                       <Route path="/guide-editor" element={<GuideToursEditor />} />
                       <Route path="*" element={<NotFound />} />
