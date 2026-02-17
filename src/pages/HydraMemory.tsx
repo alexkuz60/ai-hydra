@@ -937,8 +937,8 @@ function MemoryGraphTab({ stats }: { stats: ReturnType<typeof useHydraMemoryStat
 
   // Build graph nodes & edges
   const { nodes, edges } = useMemo(() => {
-    const W = 740;
-    const H = 460;
+    const W = 520;
+    const H = 320;
     const cx = W / 2;
     const cy = H / 2;
 
@@ -953,7 +953,7 @@ function MemoryGraphTab({ stats }: { stats: ReturnType<typeof useHydraMemoryStat
     stats.roleMemory.forEach((rm, i) => {
       const angle = (2 * Math.PI * i) / stats.roleMemory.length - Math.PI / 2;
       const radius = Math.min(cx, cy) * 0.62;
-      const nodeSize = 18 + (rm.count / maxCount) * 18;
+      const nodeSize = 12 + (rm.count / maxCount) * 12;
       const roleNode: GraphNode = {
         id: `role_${rm.role}`,
         label: rm.role,
@@ -976,13 +976,13 @@ function MemoryGraphTab({ stats }: { stats: ReturnType<typeof useHydraMemoryStat
             sessionIds.add(sid);
             const sa = angle + ((si - 0.5) * 0.4);
             const sr = radius * 1.55;
-            const sessNode: GraphNode = {
+          const sessNode: GraphNode = {
               id: `sess_${sid}`,
               label: sid.slice(0, 8) + '…',
               type: 'session',
               x: cx + sr * Math.cos(sa),
               y: cy + sr * Math.sin(sa),
-              r: 10,
+              r: 7,
             };
             sessionNodes.push(sessNode);
             edges.push({ source: roleNode.id, target: sessNode.id });
@@ -999,7 +999,7 @@ function MemoryGraphTab({ stats }: { stats: ReturnType<typeof useHydraMemoryStat
       type: 'memory',
       x: cx,
       y: cy,
-      r: 28,
+      r: 20,
     };
     memoryNodes.push(centerNode);
 
@@ -1056,10 +1056,10 @@ function MemoryGraphTab({ stats }: { stats: ReturnType<typeof useHydraMemoryStat
 
       {/* SVG Graph */}
       <Card className="overflow-hidden border-border">
-        <div className="relative w-full" style={{ aspectRatio: '740/460' }}>
+        <div className="relative w-full" style={{ aspectRatio: '520/320' }}>
           <svg
             ref={svgRef}
-            viewBox="0 0 740 460"
+            viewBox="0 0 520 320"
             className="w-full h-full"
             style={{ background: 'transparent' }}
           >
@@ -1073,14 +1073,14 @@ function MemoryGraphTab({ stats }: { stats: ReturnType<typeof useHydraMemoryStat
                 <stop offset="100%" stopColor="hsl(var(--hydra-cyan))" stopOpacity="0" />
               </radialGradient>
               <filter id="nodeGlow">
-                <feGaussianBlur stdDeviation="3" result="blur" />
+                <feGaussianBlur stdDeviation="2" result="blur" />
                 <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
               </filter>
             </defs>
-            <rect width="740" height="460" fill="url(#grid)" />
+            <rect width="520" height="320" fill="url(#grid)" />
 
             {/* Center glow */}
-            <circle cx="370" cy="230" r="60" fill="url(#centerGlow)" />
+            <circle cx="260" cy="160" r="42" fill="url(#centerGlow)" />
 
             {/* Edges */}
             {edges.map((edge, i) => {
@@ -1143,10 +1143,10 @@ function MemoryGraphTab({ stats }: { stats: ReturnType<typeof useHydraMemoryStat
                   {/* Label */}
                   <text
                     x={node.x}
-                    y={node.type === 'role' ? node.y + node.r + 13 : node.y + 4}
+                    y={node.type === 'role' ? node.y + node.r + 10 : node.y + 3}
                     textAnchor="middle"
                     fill="hsl(var(--foreground))"
-                    fontSize={isCenter ? 11 : node.type === 'session' ? 8 : 10}
+                    fontSize={isCenter ? 9 : node.type === 'session' ? 6 : 8}
                     fontWeight={isCenter || isSelected ? 600 : 400}
                     opacity={isCenter ? 1 : 0.85}
                   >
@@ -1155,18 +1155,18 @@ function MemoryGraphTab({ stats }: { stats: ReturnType<typeof useHydraMemoryStat
                   {/* Count badge */}
                   {node.type === 'role' && node.count && node.count > 1 && (
                     <text
-                      x={node.x + node.r - 3}
-                      y={node.y - node.r + 7}
+                      x={node.x + node.r - 2}
+                      y={node.y - node.r + 5}
                       textAnchor="middle"
                       fill="hsl(var(--background))"
-                      fontSize="7"
+                      fontSize="6"
                       fontWeight={700}
                     >
                       {node.count}
                     </text>
                   )}
                   {isHot && (
-                    <text x={node.x + node.r + 3} y={node.y - node.r + 4} fontSize="8">⚡</text>
+                    <text x={node.x + node.r + 2} y={node.y - node.r + 3} fontSize="7">⚡</text>
                   )}
                 </g>
               );
