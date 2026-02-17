@@ -209,20 +209,56 @@ SELECT * FROM rrf_merged ORDER BY hybrid_score DESC LIMIT p_limit;
 
 ---
 
+## 📦 Итерация 4 — HyDE (ВЫПОЛНЕНО ✅)
+
+**Дата:** Февраль 2026  
+**Статус:** ✅ Завершено
+
+### Что сделано
+
+| Компонент | Статус | Описание |
+|-----------|--------|----------|
+| `HydeConfig` тип | ✅ | `types.ts` — конфигурация HyDE (hydeWeight, maxTokens) |
+| `generateHydeDocument()` | ✅ | `tools.ts` — генерация гипотетического ответа через gemini-3-flash-preview |
+| `blendEmbeddings()` | ✅ | `tools.ts` — взвешенное смешение + L2-нормализация двух эмбеддингов |
+| `fetchRoleKnowledgeContext()` | ✅ | `tools.ts` — обновлён: параллельный запуск embedding + HyDE генерации |
+
+### Затронутые файлы
+
+- `supabase/functions/hydra-orchestrator/types.ts` — тип `HydeConfig`
+- `supabase/functions/hydra-orchestrator/tools.ts` — `generateHydeDocument()`, `blendEmbeddings()`, обновлён `fetchRoleKnowledgeContext()`
+
+### Архитектура HyDE Pipeline
+
+```
+Запрос пользователя
+  ↓ (параллельно)
+  ├── generate-embeddings(запрос)         → query_emb
+  └── generateHydeDocument(запрос, роль) → гипотетический_ответ
+                                              ↓
+                                         generate-embeddings(гипотетический_ответ) → hyde_emb
+  ↓
+  blendEmbeddings(query_emb×0.4, hyde_emb×0.6) + L2-нормализация → combined_emb
+  ↓
+  hybrid_search_role_knowledge(combined_emb, query_text, top-15)
+  ↓
+  rerankChunks() [gemini-3-flash-preview]
+  ↓
+  top-5 → system prompt injection (метка: hybrid+hyde-blend+reranking)
+```
+
+### Ключевые решения
+- **Параллельность:** `generate-embeddings` и `generateHydeDocument()` запускаются одновременно через `Promise.all`
+- **Формула blend:** `combined = query×0.4 + hyde×0.6`, затем L2-нормализация
+- **Модель HyDE:** `google/gemini-3-flash-preview`, max_tokens=200, temperature=0.3
+- **Fallback:** при недоступности LLM или ошибке blend → используется чистый `query_emb`
+- **Диагностика:** `searchMode` передаётся в метку `searchType` в логах и контексте промпта
+
+---
+
 ## 🗺️ Дорожная карта — Следующие итерации
 
-### Итерация 4 — HyDE для углублённого поиска (приоритет: СРЕДНИЙ)
-
-
-**Цель:** Улучшить поиск по конкретным именам, терминам, идентификаторам.
-
-- Добавить `tsvector`-индекс на `session_memory.content` и `role_knowledge.content`
-- Реализовать RPC-функцию `hybrid_search_session_memory(query, embedding, alpha)` где `alpha` балансирует вес vector vs BM25
-- Обновить `useGlobalSessionMemory.semanticSearch` для использования гибридного поиска
-- UI-переключатель в `SessionMemoryDialog`: режим «Точный» (BM25+) / «Смысловой» (vector) / «Гибридный»
-
-**Затрагиваемые файлы:**
-- `supabase/migrations/` — новые функции и индексы
+### Итерация 5 — Дедупликация role_knowledge (задел)
 - `src/hooks/useGlobalSessionMemory.ts` — обновить `semanticSearch`
 - `src/components/warroom/SessionMemoryDialog.tsx` — добавить переключатель режима
 

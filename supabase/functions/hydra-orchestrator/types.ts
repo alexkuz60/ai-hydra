@@ -356,3 +356,15 @@ export interface RankedKnowledgeChunk extends KnowledgeChunkCandidate {
   rerank_score: number;
   final_score: number;
 }
+
+// ============================================
+// HyDE (Hypothetical Document Embeddings) Types
+// ============================================
+
+/** Configuration for HyDE search enhancement */
+export interface HydeConfig {
+  /** Weight of hypothetical document embedding (0.0–1.0). Query weight = 1 - hydeWeight */
+  hydeWeight: number;
+  /** Maximum tokens for hypothetical document generation */
+  maxTokens: number;
+}
