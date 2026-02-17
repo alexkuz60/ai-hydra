@@ -245,13 +245,19 @@ export function useScreeningSession() {
     // Passthrough from interview for viewing loaded session detail
     session: interview.session,
     loading: interview.loading,
+    testing: interview.testing,
     stepStatuses: interview.stepStatuses,
     totalSteps: interview.totalSteps,
+    currentStep: interview.currentStep,
     // Actions
     initCandidates,
     runBatch,
     cancelBatch,
     loadCandidateSession,
     listSessions: interview.listSessions,
+    runTests: interview.runTests,
+    cancelTests: interview.cancelTests,
+    getHistoricalTokenUsage: interview.getHistoricalTokenUsage,
+    loadSession: interview.loadSession,
   };
 }
