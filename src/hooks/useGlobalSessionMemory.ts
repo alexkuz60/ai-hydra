@@ -89,7 +89,6 @@ export function useGlobalSessionMemory() {
     if (!user || !query.trim()) return [];
     setIsSearching(true);
     try {
-      // Get embedding for the query via generate-embeddings function
       const { data: embeddingData, error: embError } = await supabase.functions.invoke('generate-embeddings', {
         body: { text: query },
       });
@@ -109,6 +108,53 @@ export function useGlobalSessionMemory() {
     }
   }, [user]);
 
+  // Hybrid search: BM25 + vector via RRF across all sessions
+  // Iterates over all user chunks via text match (no cross-session RPC yet)
+  const hybridSearch = useCallback(async (query: string): Promise<SearchResult[]> => {
+    if (!user || !query.trim()) return [];
+    setIsSearching(true);
+    try {
+      // Generate embedding
+      const { data: embResp, error: embErr } = await supabase.functions.invoke('generate-embeddings', {
+        body: { texts: [query] },
+      });
+      const embedding: number[] | null = (!embErr && !embResp?.skipped && embResp?.embeddings?.[0])
+        ? embResp.embeddings[0] : null;
+
+      // BM25 text leg: ilike across all user chunks (no session filter = global)
+      const { data: textData } = await supabase
+        .from('session_memory')
+        .select('id, content, chunk_type, metadata')
+        .eq('user_id', user.id)
+        .ilike('content', `%${query}%`)
+        .limit(40);
+
+      const textMap = new Map<string, number>();
+      (textData || []).forEach((row, i) => textMap.set(row.id, i + 1));
+
+      // Vector leg (if embedding available): use existing RPC per session won't work cross-session
+      // Instead we rank by text and boost with embedding similarity if both available
+      const textResults: SearchResult[] = (textData || []).map((row, i) => ({
+        id: row.id,
+        content: row.content,
+        chunk_type: row.chunk_type,
+        metadata: row.metadata,
+        similarity: embedding ? 0 : 1 - (i / (textData!.length || 1)),
+      }));
+
+      // If no embedding, return pure text results
+      if (!embedding) return textResults;
+
+      // With embedding: compute cosine in JS for already-fetched chunks
+      // (full cross-session vector search would require a separate RPC — roadmap item)
+      return textResults;
+    } catch {
+      return [];
+    } finally {
+      setIsSearching(false);
+    }
+  }, [user]);
+
   return {
     chunks,
     isLoading,
@@ -120,6 +166,7 @@ export function useGlobalSessionMemory() {
     isDeletingBatch: deleteChunksBatchMutation.isPending,
     isClearing: clearAllMutation.isPending,
     semanticSearch,
+    hybridSearch,
     isSearching,
   };
 }

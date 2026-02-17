@@ -1340,6 +1340,46 @@ export type Database = {
         }
         Returns: boolean
       }
+      hybrid_search_role_knowledge: {
+        Args: {
+          p_categories?: string[]
+          p_limit?: number
+          p_query_embedding: string
+          p_query_text: string
+          p_role: string
+        }
+        Returns: {
+          category: string
+          content: string
+          hybrid_score: number
+          id: string
+          metadata: Json
+          similarity: number
+          source_title: string
+          source_url: string
+          tags: string[]
+          text_rank: number
+          version: string
+        }[]
+      }
+      hybrid_search_session_memory: {
+        Args: {
+          p_chunk_types?: string[]
+          p_limit?: number
+          p_query_embedding: string
+          p_query_text: string
+          p_session_id: string
+        }
+        Returns: {
+          chunk_type: string
+          content: string
+          hybrid_score: number
+          id: string
+          metadata: Json
+          similarity: number
+          text_rank: number
+        }[]
+      }
       increment_role_memory_usage: {
         Args: { p_memory_id: string }
         Returns: undefined
