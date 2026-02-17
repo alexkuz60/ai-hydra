@@ -5,11 +5,13 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { ChevronDown, ChevronRight } from 'lucide-react';
+import { ChevronDown, ChevronRight, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { estimateCost, formatCost } from './interviewUtils';
 import { getProviderFromModelId } from '@/components/ui/ModelNameWithIcon';
 import { PROVIDER_LOGOS, PROVIDER_COLORS } from '@/components/ui/ProviderLogos';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 import type { InterviewSession } from '@/types/interview';
 
 // ── Constants ──
@@ -70,6 +72,7 @@ interface SessionHistoryTableProps {
   selectedSessionId: string | null;
   currentSessionId?: string;
   onSelect: (id: string) => void;
+  onDeleted?: () => void;
   isRu: boolean;
 }
 
@@ -78,9 +81,29 @@ export function SessionHistoryTable({
   selectedSessionId,
   currentSessionId,
   onSelect,
+  onDeleted,
   isRu,
 }: SessionHistoryTableProps) {
+  const { toast } = useToast();
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
+  const [deleting, setDeleting] = useState<string | null>(null);
+
+  const handleDelete = async (sessionId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (deleting) return;
+    if (!window.confirm(isRu ? 'Удалить эту сессию собеседования?' : 'Delete this interview session?')) return;
+    setDeleting(sessionId);
+    try {
+      const { error } = await supabase.from('interview_sessions').delete().eq('id', sessionId);
+      if (error) throw error;
+      toast({ description: isRu ? 'Сессия удалена' : 'Session deleted' });
+      onDeleted?.();
+    } catch (err: any) {
+      toast({ variant: 'destructive', description: err.message });
+    } finally {
+      setDeleting(null);
+    }
+  };
 
   if (sessions.length === 0) return null;
 
@@ -138,6 +161,7 @@ export function SessionHistoryTable({
               <TableHead className="text-[10px] py-1.5 px-2 h-auto text-right">{isRu ? 'Цена' : 'Cost'}</TableHead>
               <TableHead className="text-[10px] py-1.5 px-2 h-auto text-center">{isRu ? 'Балл' : 'Score'}</TableHead>
               <TableHead className="text-[10px] py-1.5 px-2 h-auto text-center">{isRu ? 'Решение' : 'Decision'}</TableHead>
+              <TableHead className="text-[10px] py-1.5 px-1 h-auto w-8" />
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -158,7 +182,7 @@ export function SessionHistoryTable({
                     className="bg-muted/20 hover:bg-muted/30 cursor-pointer border-b-0"
                     onClick={() => toggleGroup(providerKey)}
                   >
-                    <TableCell colSpan={7} className="py-1.5 px-2">
+                    <TableCell colSpan={8} className="py-1.5 px-2">
                       <div className="flex items-center gap-1.5 text-[10px] font-medium text-muted-foreground">
                         {isCollapsed
                           ? <ChevronRight className="h-3 w-3 shrink-0" />
@@ -183,6 +207,8 @@ export function SessionHistoryTable({
                       latestHireId={latestHireId}
                       isRu={isRu}
                       onSelect={onSelect}
+                      onDelete={handleDelete}
+                      deleting={deleting}
                     />
                   ))}
                 </React.Fragment>
@@ -198,7 +224,7 @@ export function SessionHistoryTable({
 // ── Session Row (extracted for clarity) ──
 
 function SessionRow({
-  s, isSelected, isCurrent, latestHireId, isRu, onSelect,
+  s, isSelected, isCurrent, latestHireId, isRu, onSelect, onDelete, deleting,
 }: {
   s: InterviewSession;
   isSelected: boolean;
@@ -206,6 +232,8 @@ function SessionRow({
   latestHireId: string | null;
   isRu: boolean;
   onSelect: (id: string) => void;
+  onDelete: (id: string, e: React.MouseEvent) => void;
+  deleting: string | null;
 }) {
   const config = s.config as Record<string, any> | null;
   const tokens = config?.actual_tokens_used ?? 0;
@@ -292,6 +320,18 @@ function SessionRow({
         ) : (
           <span className="text-[10px] text-muted-foreground">—</span>
         )}
+      </TableCell>
+      <TableCell className="py-1.5 px-1 text-center">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-5 w-5 text-muted-foreground hover:text-destructive"
+          onClick={(e) => onDelete(s.id, e)}
+          disabled={deleting === s.id}
+          title={isRu ? 'Удалить сессию' : 'Delete session'}
+        >
+          <Trash2 className="h-3 w-3" />
+        </Button>
       </TableCell>
     </TableRow>
   );
