@@ -1,12 +1,15 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
+import { ChevronDown, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { estimateCost, formatCost } from './interviewUtils';
+import { getProviderFromModelId } from '@/components/ui/ModelNameWithIcon';
+import { PROVIDER_LOGOS, PROVIDER_COLORS } from '@/components/ui/ProviderLogos';
 import type { InterviewSession } from '@/types/interview';
 
 // ── Constants ──
@@ -31,6 +34,29 @@ const SUPERSEDED_BADGE = {
   className: 'bg-muted/30 text-muted-foreground border-border',
 };
 
+const PROVIDER_LABELS: Record<string, string> = {
+  gemini: 'Google Gemini',
+  openai: 'OpenAI',
+  anthropic: 'Anthropic',
+  xai: 'xAI',
+  deepseek: 'DeepSeek',
+  groq: 'Groq',
+  openrouter: 'OpenRouter',
+};
+
+// ── Helpers ──
+
+function groupByProvider(sessions: InterviewSession[]) {
+  const groups: Record<string, InterviewSession[]> = {};
+  for (const s of sessions) {
+    const provider = getProviderFromModelId(s.candidate_model) || 'other';
+    if (!groups[provider]) groups[provider] = [];
+    groups[provider].push(s);
+  }
+  // Sort groups by count desc
+  return Object.entries(groups).sort((a, b) => b[1].length - a[1].length);
+}
+
 // ── Component ──
 
 interface SessionHistoryTableProps {
@@ -48,7 +74,20 @@ export function SessionHistoryTable({
   onSelect,
   isRu,
 }: SessionHistoryTableProps) {
+  const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
+
   if (sessions.length === 0) return null;
+
+  const groups = groupByProvider(sessions);
+
+  const toggleGroup = (key: string) => {
+    setCollapsed(prev => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
 
   // Find the latest "hire" session to mark older hires as "superseded"
   const hiredSessions = sessions
@@ -95,88 +134,141 @@ export function SessionHistoryTable({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {sessions.map(s => {
-              const isSelected = selectedSessionId === s.id;
-              const config = s.config as Record<string, any> | null;
-              const tokens = config?.actual_tokens_used ?? 0;
-              const elapsed = config?.actual_elapsed_ms ?? 0;
-              const cost = tokens > 0 ? estimateCost(s.candidate_model, tokens) : null;
-
-              const verdict = s.verdict as Record<string, any> | null;
-              const decision = verdict?.final_decision || verdict?.arbiter?.recommendation;
-
-              let decBadge: { label: { ru: string; en: string }; className: string } | null = null;
-              if (decision === 'hire' && s.id !== latestHireId) {
-                decBadge = SUPERSEDED_BADGE;
-              } else if (decision) {
-                decBadge = DECISION_BADGE[decision] || null;
-              }
-
-              const scores = verdict?.arbiter?.scores as Record<string, number> | undefined;
-              const avgScore = scores
-                ? (Object.values(scores).reduce((a, b) => a + b, 0) / Object.values(scores).length).toFixed(1)
-                : null;
-
-              const decidedAt = verdict?.decided_at;
-              const dateStr = decidedAt
-                ? new Date(decidedAt).toLocaleDateString(isRu ? 'ru-RU' : 'en-US', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
-                : new Date(s.created_at).toLocaleDateString(isRu ? 'ru-RU' : 'en-US', { day: 'numeric', month: 'short' });
-
-              const modelShort = s.candidate_model.replace(/^proxyapi\//, '').replace(/^google\//, '').replace(/^openai\//, '');
+            {groups.map(([providerKey, groupSessions]) => {
+              const isCollapsed = collapsed.has(providerKey);
+              const Logo = PROVIDER_LOGOS[providerKey];
+              const color = PROVIDER_COLORS[providerKey] || 'text-muted-foreground';
+              const label = PROVIDER_LABELS[providerKey] || providerKey;
 
               return (
-                <TableRow
-                  key={s.id}
-                  className={cn(
-                    "cursor-pointer transition-colors text-[11px]",
-                    isSelected ? "bg-primary/10 hover:bg-primary/15" : "hover:bg-muted/20",
-                    s.id === currentSessionId && "border-l-2 border-l-primary",
-                  )}
-                  onClick={() => onSelect(s.id)}
-                >
-                  <TableCell className="py-1.5 px-2">
-                    <div className="flex flex-col gap-0.5">
-                      <span className="font-mono text-[10px] truncate max-w-[120px]" title={s.candidate_model}>
-                        {modelShort}
-                      </span>
-                      <span className={cn("text-[9px]", STATUS_COLORS[s.status] || 'text-muted-foreground')}>
-                        {s.status} • {dateStr}
-                      </span>
-                    </div>
-                  </TableCell>
-                  <TableCell className="py-1.5 px-2 text-right text-[10px] text-muted-foreground font-mono">
-                    {tokens > 0 ? tokens.toLocaleString() : '—'}
-                  </TableCell>
-                  <TableCell className="py-1.5 px-2 text-right text-[10px] text-muted-foreground font-mono">
-                    {elapsed > 0 ? `${(elapsed / 1000).toFixed(0)}s` : '—'}
-                  </TableCell>
-                  <TableCell className="py-1.5 px-2 text-right text-[10px] font-mono">
-                    {cost ? (
-                      <span className="text-amber-500">{formatCost(cost.total)}</span>
-                    ) : '—'}
-                  </TableCell>
-                  <TableCell className="py-1.5 px-2 text-center">
-                    {avgScore ? (
-                      <span className="text-[10px] font-mono font-medium">{avgScore}</span>
-                    ) : (
-                      <span className="text-[10px] text-muted-foreground">—</span>
-                    )}
-                  </TableCell>
-                  <TableCell className="py-1.5 px-2 text-center">
-                    {decBadge ? (
-                      <Badge variant="outline" className={cn("text-[9px] py-0 px-1.5", decBadge.className)}>
-                        {decBadge.label[isRu ? 'ru' : 'en']}
-                      </Badge>
-                    ) : (
-                      <span className="text-[10px] text-muted-foreground">—</span>
-                    )}
-                  </TableCell>
-                </TableRow>
+                <React.Fragment key={providerKey}>
+                  {/* Group header row */}
+                  <TableRow
+                    className="bg-muted/20 hover:bg-muted/30 cursor-pointer border-b-0"
+                    onClick={() => toggleGroup(providerKey)}
+                  >
+                    <TableCell colSpan={6} className="py-1.5 px-2">
+                      <div className="flex items-center gap-1.5 text-[10px] font-medium text-muted-foreground">
+                        {isCollapsed
+                          ? <ChevronRight className="h-3 w-3 shrink-0" />
+                          : <ChevronDown className="h-3 w-3 shrink-0" />
+                        }
+                        {Logo && <Logo className={cn("h-3 w-3 shrink-0", color)} />}
+                        <span>{label}</span>
+                        <Badge variant="outline" className="text-[9px] py-0 px-1 ml-1 font-mono">
+                          {groupSessions.length}
+                        </Badge>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+
+                  {/* Session rows */}
+                  {!isCollapsed && groupSessions.map(s => (
+                    <SessionRow
+                      key={s.id}
+                      s={s}
+                      isSelected={selectedSessionId === s.id}
+                      isCurrent={s.id === currentSessionId}
+                      latestHireId={latestHireId}
+                      isRu={isRu}
+                      onSelect={onSelect}
+                    />
+                  ))}
+                </React.Fragment>
               );
             })}
           </TableBody>
         </Table>
       </div>
     </>
+  );
+}
+
+// ── Session Row (extracted for clarity) ──
+
+function SessionRow({
+  s, isSelected, isCurrent, latestHireId, isRu, onSelect,
+}: {
+  s: InterviewSession;
+  isSelected: boolean;
+  isCurrent: boolean;
+  latestHireId: string | null;
+  isRu: boolean;
+  onSelect: (id: string) => void;
+}) {
+  const config = s.config as Record<string, any> | null;
+  const tokens = config?.actual_tokens_used ?? 0;
+  const elapsed = config?.actual_elapsed_ms ?? 0;
+  const cost = tokens > 0 ? estimateCost(s.candidate_model, tokens) : null;
+
+  const verdict = s.verdict as Record<string, any> | null;
+  const decision = verdict?.final_decision || verdict?.arbiter?.recommendation;
+
+  let decBadge: { label: { ru: string; en: string }; className: string } | null = null;
+  if (decision === 'hire' && s.id !== latestHireId) {
+    decBadge = SUPERSEDED_BADGE;
+  } else if (decision) {
+    decBadge = DECISION_BADGE[decision] || null;
+  }
+
+  const scores = verdict?.arbiter?.scores as Record<string, number> | undefined;
+  const avgScore = scores
+    ? (Object.values(scores).reduce((a, b) => a + b, 0) / Object.values(scores).length).toFixed(1)
+    : null;
+
+  const decidedAt = verdict?.decided_at;
+  const dateStr = decidedAt
+    ? new Date(decidedAt).toLocaleDateString(isRu ? 'ru-RU' : 'en-US', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+    : new Date(s.created_at).toLocaleDateString(isRu ? 'ru-RU' : 'en-US', { day: 'numeric', month: 'short' });
+
+  const modelShort = s.candidate_model.replace(/^proxyapi\//, '').replace(/^google\//, '').replace(/^openai\//, '');
+
+  return (
+    <TableRow
+      className={cn(
+        "cursor-pointer transition-colors text-[11px]",
+        isSelected ? "bg-primary/10 hover:bg-primary/15" : "hover:bg-muted/20",
+        isCurrent && "border-l-2 border-l-primary",
+      )}
+      onClick={() => onSelect(s.id)}
+    >
+      <TableCell className="py-1.5 px-2 pl-5">
+        <div className="flex flex-col gap-0.5">
+          <span className="font-mono text-[10px] truncate max-w-[120px]" title={s.candidate_model}>
+            {modelShort}
+          </span>
+          <span className={cn("text-[9px]", STATUS_COLORS[s.status] || 'text-muted-foreground')}>
+            {s.status} • {dateStr}
+          </span>
+        </div>
+      </TableCell>
+      <TableCell className="py-1.5 px-2 text-right text-[10px] text-muted-foreground font-mono">
+        {tokens > 0 ? tokens.toLocaleString() : '—'}
+      </TableCell>
+      <TableCell className="py-1.5 px-2 text-right text-[10px] text-muted-foreground font-mono">
+        {elapsed > 0 ? `${(elapsed / 1000).toFixed(0)}s` : '—'}
+      </TableCell>
+      <TableCell className="py-1.5 px-2 text-right text-[10px] font-mono">
+        {cost ? (
+          <span className="text-amber-500">{formatCost(cost.total)}</span>
+        ) : '—'}
+      </TableCell>
+      <TableCell className="py-1.5 px-2 text-center">
+        {avgScore ? (
+          <span className="text-[10px] font-mono font-medium">{avgScore}</span>
+        ) : (
+          <span className="text-[10px] text-muted-foreground">—</span>
+        )}
+      </TableCell>
+      <TableCell className="py-1.5 px-2 text-center">
+        {decBadge ? (
+          <Badge variant="outline" className={cn("text-[9px] py-0 px-1.5", decBadge.className)}>
+            {decBadge.label[isRu ? 'ru' : 'en']}
+          </Badge>
+        ) : (
+          <span className="text-[10px] text-muted-foreground">—</span>
+        )}
+      </TableCell>
+    </TableRow>
   );
 }
