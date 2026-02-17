@@ -35,6 +35,7 @@ export interface InterviewSession {
   test_results: InterviewTestResults | null;
   verdict: Record<string, unknown> | null;
   config: Record<string, unknown> | null;
+  source_contest_id: string | null;
   created_at: string;
 }
 

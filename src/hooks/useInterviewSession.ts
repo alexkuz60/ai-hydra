@@ -56,6 +56,7 @@ export function useInterviewSession() {
           test_results: data.test_results as unknown as InterviewTestResults | null,
           verdict: data.verdict as Record<string, unknown> | null,
           config: data.config as Record<string, unknown> | null,
+          source_contest_id: data.source_contest_id || null,
           created_at: data.created_at || '',
         },
         loading: false,
@@ -140,6 +141,7 @@ export function useInterviewSession() {
       test_results: null,
       verdict: d.verdict as Record<string, unknown> | null,
       config: d.config,
+      source_contest_id: d.source_contest_id || null,
       created_at: d.created_at || '',
     }));
   }, [user]);

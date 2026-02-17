@@ -1395,3 +1395,144 @@ All contest planning components are wrapped in \`ContestConfigProvider\` — a s
     },
   },
 ];
+
+// ──── Podium Interview Section ────
+export const podiumInterviewSections: HydrapediaSection[] = [
+  {
+    id: 'podium-interview',
+    titleKey: 'hydrapedia.sections.podiumInterview',
+    icon: 'UserCheck',
+    content: {
+      ru: `# Собеседование на Подиуме
+
+Подиумное собеседование — облегчённый формат интервью, предназначенный для пакетной оценки победителей Конкурса интеллект-красоты. В отличие от полноценного Собеседования в Штате, подиумное собеседование **не предполагает решения о найме** — его цель обновить профили компетенций моделей.
+
+## Алгоритм
+
+\`\`\`mermaid
+graph TD
+    A([Конкурс завершён]) --> B{Выбраны победители?}
+    B -- Нет --> C([Выбрать в таблице оценок])
+    C --> B
+    B -- Да --> D[Запуск пакетного собеседования]
+    D --> E[Для каждой модели: 2-4 теста по роли]
+    E --> F[Логистик: 2 теста]
+    E --> G[Аналитик: 4 теста]
+    E --> H[Другие роли: 2-3 теста]
+    F --> I[Арбитр выносит вердикт]
+    G --> I
+    H --> I
+    I --> J[Оценки → model_statistics]
+    J --> K[Сессии → interview_sessions]
+    K --> L([Результаты в Штатном расписании])
+\`\`\`
+
+## Ключевые отличия от Штатного собеседования
+
+| Аспект | Штатное | Подиумное |
+|--------|---------|-----------|
+| **Цель** | Нанять на позицию | Обновить профиль компетенций |
+| **Кандидаты** | Один, выбранный вручную | Пакет победителей конкурса |
+| **Количество тестов** | 4-6 | 2-4 (фиксировано по роли) |
+| **Тип тестов** | Контекстно-зависимые | Независимые, универсальные |
+| **Решение** | Нанять / Отклонить / Ретест | Только «Отклонить результаты» |
+| **Результат** | Назначение на роль | Обновление model_statistics |
+| **Бриферинг** | Полный | Облегчённый |
+
+## Точки входа
+
+1. **Вкладка «Собеседование»** на Подиуме — запуск собеседования для выбранных моделей
+2. **Кнопка в итогах конкурса** — «Собеседовать победителей» после завершения конкурса
+
+## Количество тестов по ролям
+
+Количество тестов фиксировано и определяется сложностью роли:
+
+| Роль | Тестов | Обоснование |
+|------|--------|-------------|
+| Логистик потоков | 2 | Практические задачи проектирования |
+| Инструменталист | 2 | Интеграции и диагностика |
+| Экскурсовод | 2 | UI-туры и документация |
+| Промпт-инженер | 3 | Оптимизация и парсинг |
+| ТехноКритик | 3 | Ошибки и аргументация |
+| ТехноАрбитр | 3 | Справедливость и синтез |
+| ТехноМодератор | 3 | Консенсус и отчётность |
+| Аналитик | 4 | Широкий спектр аналитических тем |
+
+## Поток данных
+
+1. Результаты сохраняются в \`interview_sessions\` с привязкой к \`source_contest_id\`
+2. Оценки арбитра обновляют \`model_statistics\` (средние баллы, критерии)
+3. Сессии отображаются в таблице истории собеседований Штатного расписания
+4. Кнопки «Нанять» и «Ретест» скрыты — доступна только «Отклонить результаты»
+
+> [!TIP] Экономия токенов
+> Подиумные тесты короче и не зависят от контекста конкурса, что снижает расход токенов на 40-60% по сравнению с полным собеседованием.`,
+      en: `# Podium Interview
+
+The Podium Interview is a lightweight interview format designed for batch evaluation of Beauty Contest winners. Unlike the full Staff Interview, a podium interview **does not result in a hiring decision** — its purpose is to update model competency profiles.
+
+## Algorithm
+
+\`\`\`mermaid
+graph TD
+    A([Contest completed]) --> B{Winners selected?}
+    B -- No --> C([Select in scores table])
+    C --> B
+    B -- Yes --> D[Launch batch interview]
+    D --> E[For each model: 2-4 tests by role]
+    E --> F[Flow Regulator: 2 tests]
+    E --> G[Analyst: 4 tests]
+    E --> H[Other roles: 2-3 tests]
+    F --> I[Arbiter renders verdict]
+    G --> I
+    H --> I
+    I --> J[Scores → model_statistics]
+    J --> K[Sessions → interview_sessions]
+    K --> L([Results in Staff Roles])
+\`\`\`
+
+## Key Differences from Staff Interview
+
+| Aspect | Staff | Podium |
+|--------|-------|--------|
+| **Goal** | Hire for position | Update competency profile |
+| **Candidates** | One, manually selected | Batch of contest winners |
+| **Test count** | 4-6 | 2-4 (fixed per role) |
+| **Test type** | Context-dependent | Independent, universal |
+| **Decision** | Hire / Reject / Retest | Only "Reject Results" |
+| **Outcome** | Role assignment | model_statistics update |
+| **Briefing** | Full | Lightweight |
+
+## Entry Points
+
+1. **"Interview" tab** on the Podium — launch interviews for selected models
+2. **Button in contest results** — "Interview Winners" after contest completion
+
+## Test Count by Role
+
+Test counts are fixed based on role complexity:
+
+| Role | Tests | Rationale |
+|------|-------|-----------|
+| Flow Regulator | 2 | Practical design tasks |
+| Toolsmith | 2 | Integrations and diagnostics |
+| Guide | 2 | UI tours and documentation |
+| Prompt Engineer | 3 | Optimization and parsing |
+| TechnoCritic | 3 | Errors and argumentation |
+| TechnoArbiter | 3 | Fairness and synthesis |
+| TechnoModerator | 3 | Consensus and reporting |
+| Analyst | 4 | Broad spectrum of analytical topics |
+
+## Data Flow
+
+1. Results are stored in \`interview_sessions\` linked via \`source_contest_id\`
+2. Arbiter scores update \`model_statistics\` (averages, criteria)
+3. Sessions appear in the Staff Roles interview history table
+4. "Hire" and "Retest" buttons are hidden — only "Reject Results" is available
+
+> [!TIP] Token Savings
+> Podium tests are shorter and context-independent, reducing token usage by 40-60% compared to a full interview.`,
+    },
+  },
+];
