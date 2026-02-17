@@ -3,7 +3,7 @@ import React from 'react';
 const ROLES = [
   { token: '--hydra-arbiter' },
   { token: '--hydra-toolsmith' },
-  { token: '--hydra-critic' },
+  { token: '--hydra-critical' },
   { token: '--hydra-expert' },
   { token: '--hydra-analyst' },
   { token: '--hydra-webhunter' },
