@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Layout } from '@/components/layout/Layout';
 import { Loader2, Briefcase, Crown, BarChart3, ScrollText, UserCheck } from 'lucide-react';
+import { ScreeningPanel } from '@/components/ratings/ScreeningPanel';
 import { CloudSyncIndicator } from '@/components/ui/CloudSyncIndicator';
 import { useCloudSyncStatus } from '@/hooks/useCloudSettings';
 import { cn } from '@/lib/utils';
@@ -46,6 +47,7 @@ export default function ModelRatings() {
     return (saved === 'portfolio' || saved === 'rules' || saved === 'contest' || saved === 'duel' || saved === 'interview' || saved === 'ratings') ? saved : 'ratings';
   });
   const [contestWinners, setContestWinners] = useState<Set<string>>(new Set());
+  const [contestSessionId, setContestSessionId] = useState<string | undefined>();
   const handleToggleContestWinner = useCallback((modelId: string) => {
     setContestWinners(prev => {
       const next = new Set(prev);
@@ -184,16 +186,14 @@ export default function ModelRatings() {
             <div className="h-full" data-guide="podium-content">
               {activeSection === 'portfolio' && <ModelPortfolio />}
               {activeSection === 'rules' && <ContestPodium duelConfig={duelConfig} />}
-              {activeSection === 'contest' && <BeautyContest selectedWinners={contestWinners} onToggleWinner={handleToggleContestWinner} />}
+              {activeSection === 'contest' && <BeautyContest selectedWinners={contestWinners} onToggleWinner={handleToggleContestWinner} onContestSessionChange={setContestSessionId} />}
               {activeSection === 'duel' && <DuelArena duelConfig={duelConfig} />}
               {activeSection === 'interview' && (
-                <div className="h-full flex items-center justify-center">
-                  <div className="text-center space-y-3">
-                    <UserCheck className="h-10 w-10 text-muted-foreground/40 mx-auto" />
-                    <p className="text-lg font-medium">{language === 'ru' ? 'Скрининг-интервью' : 'Screening Interview'}</p>
-                    <p className="text-sm text-muted-foreground">{language === 'ru' ? 'Пакетное тестирование победителей — в разработке' : 'Batch winner screening — coming soon'}</p>
-                  </div>
-                </div>
+                <ScreeningPanel
+                  role="assistant"
+                  selectedWinners={contestWinners}
+                  sourceContestId={contestSessionId}
+                />
               )}
               {activeSection === 'ratings' && <RatingsContent />}
             </div>

@@ -30,9 +30,10 @@ import { ScoringSchemeComparison } from './ScoringSchemeComparison';
 interface BeautyContestProps {
   selectedWinners: Set<string>;
   onToggleWinner: (modelId: string) => void;
+  onContestSessionChange?: (sessionId: string | undefined) => void;
 }
 
-export function BeautyContest({ selectedWinners, onToggleWinner: handleToggleWinner }: BeautyContestProps) {
+export function BeautyContest({ selectedWinners, onToggleWinner: handleToggleWinner, onContestSessionChange }: BeautyContestProps) {
   const { language } = useLanguage();
   const { user } = useAuth();
   const { toast } = useToast();
@@ -217,6 +218,11 @@ export function BeautyContest({ selectedWinners, onToggleWinner: handleToggleWin
       contest.loadLatestSession().finally(() => setInitialLoad(false));
     }
   }, [user]);
+
+  // Notify parent about contest session changes
+  useEffect(() => {
+    onContestSessionChange?.(contest.session?.id);
+  }, [contest.session?.id, onContestSessionChange]);
 
   // Auto-advance to next pre-planned round after current one completes
   useEffect(() => {
