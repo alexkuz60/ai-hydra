@@ -257,6 +257,11 @@ export function HydraGears({
         const isSpinning = spinning.includes(idx);
         const color = roleHsl(gear.role);
         const IconComponent = ROLE_CONFIG[gear.role].icon;
+        const isActiveGear = activeConnections.some(c => c.from === idx || c.to === idx);
+
+        const defaultStroke = isActiveGear ? color : 'white';
+        const defaultStrokeOpacity = isActiveGear ? '0.9' : '0.5';
+        const defaultIconColor = isActiveGear ? color : 'rgba(255,255,255,0.5)';
 
         return (
           <g key={`gear-${idx}`} className="gear-group">
@@ -279,11 +284,11 @@ export function HydraGears({
               onMouseLeave={(e) => {
                 const g = e.currentTarget.parentElement;
                 g?.querySelectorAll('path, circle:not(:first-child)').forEach(el => {
-                  (el as SVGElement).style.stroke = 'white';
-                  (el as SVGElement).style.strokeOpacity = '0.5';
+                  (el as SVGElement).style.stroke = defaultStroke;
+                  (el as SVGElement).style.strokeOpacity = defaultStrokeOpacity;
                 });
                 const icon = g?.querySelector('.gear-icon') as HTMLElement;
-                if (icon) icon.style.color = 'rgba(255,255,255,0.5)';
+                if (icon) icon.style.color = defaultIconColor;
               }}
             />
             {/* Gear body (rotates) */}
@@ -294,9 +299,9 @@ export function HydraGears({
               <path
                 d={gearPath(pos.x, pos.y, gearOuterR, gearInnerR, gearTeeth)}
                 fill="none"
-                stroke="white"
+                stroke={defaultStroke}
                 strokeWidth={2}
-                strokeOpacity={0.5}
+                strokeOpacity={Number(defaultStrokeOpacity)}
               />
               <circle
                 cx={pos.x}
@@ -304,9 +309,9 @@ export function HydraGears({
                 r={gearInnerR - 4}
                 fill="hsl(var(--background))"
                 fillOpacity={0.6}
-                stroke="white"
+                stroke={defaultStroke}
                 strokeWidth={1.5}
-                strokeOpacity={0.5}
+                strokeOpacity={Number(defaultStrokeOpacity)}
               />
             </g>
 
@@ -322,7 +327,7 @@ export function HydraGears({
                 style={{
                   width: iconSize, height: iconSize,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  color: 'rgba(255,255,255,0.5)',
+                  color: defaultIconColor,
                   transition: 'color 0.4s ease',
                 }}
               >
