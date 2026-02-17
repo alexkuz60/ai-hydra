@@ -319,6 +319,42 @@ export function useSessionMemory(sessionId: string | null) {
     [sessionId, user]
   );
 
+  // Hybrid search: vector cosine + BM25 fulltext merged via RRF
+  // Degrades to text-only if embedding unavailable (no OpenAI key)
+  const hybridSearch = useCallback(
+    async (
+      query: string,
+      options?: { limit?: number; chunkTypes?: ChunkType[] }
+    ): Promise<SearchResult[]> => {
+      if (!query.trim() || !sessionId || !user) return [];
+      setIsSearching(true);
+      try {
+        const embedding = await generateEmbedding(query);
+        if (!embedding) {
+          // Graceful degradation: return text-search results shaped as SearchResult
+          const textResults = await searchByText(query, options);
+          return textResults.map(c => ({ id: c.id, content: c.content, chunk_type: c.chunk_type, metadata: c.metadata, similarity: 0 }));
+        }
+        const embeddingStr = `[${embedding.join(',')}]`;
+        const { data, error } = await supabase.rpc('hybrid_search_session_memory' as any, {
+          p_session_id: sessionId,
+          p_query_text: query,
+          p_query_embedding: embeddingStr,
+          p_limit: options?.limit || 10,
+          p_chunk_types: options?.chunkTypes || null,
+        });
+        if (error) throw error;
+        return (data as SearchResult[]) || [];
+      } catch (err) {
+        console.error('Hybrid search failed:', err);
+        return [];
+      } finally {
+        setIsSearching(false);
+      }
+    },
+    [sessionId, user, generateEmbedding, searchByText]
+  );
+
   // Get chunks by type
   const getChunksByType = useCallback(
     (type: ChunkType): SessionMemoryChunk[] => {
@@ -447,6 +483,7 @@ export function useSessionMemory(sessionId: string | null) {
     searchMemory,
     searchByText,
     semanticSearch,
+    hybridSearch,
     generateEmbedding,
 
     // Helpers

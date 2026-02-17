@@ -214,6 +214,46 @@ export function useRoleKnowledge(role: AgentRole) {
     }
   }, [user?.id, role]);
 
+  // Hybrid search: BM25 + vector via RRF (uses new SQL function)
+  const hybridSearchKnowledge = useCallback(async (
+    query: string,
+    categories?: string[],
+    limit = 5
+  ): Promise<SearchResult[]> => {
+    if (!user?.id) return [];
+    try {
+      const embResp = await supabase.functions.invoke('generate-embeddings', {
+        body: { texts: [query] },
+      });
+      const hasEmbedding = !embResp.error && !embResp.data?.skipped && embResp.data?.embeddings?.[0];
+
+      if (!hasEmbedding) {
+        // Fallback: plain text ilike when no OpenAI key
+        const { data } = await supabase
+          .from('role_knowledge' as any)
+          .select('id, content, source_title, source_url, category, version, tags, metadata')
+          .eq('user_id', user.id)
+          .eq('role', role)
+          .ilike('content', `%${query}%`)
+          .limit(limit);
+        return (data || []).map((r: any) => ({ ...r, similarity: 0 })) as SearchResult[];
+      }
+
+      const { data, error } = await supabase.rpc('hybrid_search_role_knowledge' as any, {
+        p_role: role,
+        p_query_text: query,
+        p_query_embedding: embResp.data.embeddings[0],
+        p_limit: limit,
+        p_categories: categories ?? null,
+      });
+      if (error) throw error;
+      return (data || []) as SearchResult[];
+    } catch (err) {
+      console.error('[useRoleKnowledge] Hybrid search error:', err);
+      return [];
+    }
+  }, [user?.id, role]);
+
   const getStats = useCallback((): KnowledgeStats => {
     const byCategory: Record<string, number> = {};
     const sources = new Set<string>();
@@ -239,6 +279,8 @@ export function useRoleKnowledge(role: AgentRole) {
     deleteEntry,
     deleteBySource,
     searchKnowledge,
+    hybridSearchKnowledge,
     getStats,
   };
 }
+

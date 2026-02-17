@@ -4,7 +4,7 @@ import {
   BrainCircuit, Database, Layers, BookOpen, Trash2, RefreshCw,
   HardDrive, FolderOpen, FileImage, FileText, File, Search,
   Loader2, Filter, Copy, Sparkles, Text, MessageSquare, Lightbulb,
-  ListChecks, Star, Archive, AlertTriangle, Eye, X, Download,
+  ListChecks, Star, Archive, AlertTriangle, Eye, X, Download, GitMerge,
 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -115,29 +115,32 @@ function SessionMemoryTab({ stats, loading }: { stats: ReturnType<typeof useHydr
   const [confirmClearAll, setConfirmClearAll] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [confirmDeleteDuplicates, setConfirmDeleteDuplicates] = useState(false);
-  const [useSemanticSearch, setUseSemanticSearch] = useState(false);
-  const [semanticResults, setSemanticResults] = useState<SearchResult[]>([]);
+  type SearchMode = 'text' | 'semantic' | 'hybrid';
+  const [searchMode, setSearchMode] = useState<SearchMode>('text');
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [isSearchingInternal, setIsSearchingInternal] = useState(false);
 
   const isSearchingActive = globalMemory.isSearching || isSearchingInternal;
+  const isAdvancedSearch = searchMode !== 'text';
 
   const handleSearchChange = useCallback(async (value: string) => {
     setSearchQuery(value);
-    if (useSemanticSearch && globalMemory.semanticSearch && value.trim().length >= 3) {
+    if (searchMode !== 'text' && value.trim().length >= 3) {
       setIsSearchingInternal(true);
       try {
-        const results = await globalMemory.semanticSearch(value.trim());
-        setSemanticResults(results);
-      } catch { setSemanticResults([]); }
+        const fn = searchMode === 'hybrid' ? globalMemory.hybridSearch : globalMemory.semanticSearch;
+        const results = fn ? await fn(value.trim()) : [];
+        setSearchResults(results);
+      } catch { setSearchResults([]); }
       finally { setIsSearchingInternal(false); }
     } else if (!value.trim()) {
-      setSemanticResults([]);
+      setSearchResults([]);
     }
-  }, [useSemanticSearch, globalMemory.semanticSearch]);
+  }, [searchMode, globalMemory.hybridSearch, globalMemory.semanticSearch]);
 
-  const toggleSearchMode = useCallback(() => {
-    setUseSemanticSearch(prev => !prev);
-    setSemanticResults([]);
+  const cycleSearchMode = useCallback(() => {
+    setSearchMode(prev => prev === 'text' ? 'semantic' : prev === 'semantic' ? 'hybrid' : 'text');
+    setSearchResults([]);
     setSearchQuery('');
   }, []);
 
@@ -171,17 +174,17 @@ function SessionMemoryTab({ stats, loading }: { stats: ReturnType<typeof useHydr
   }, [duplicateMap, globalMemory.chunks]);
 
   const displayItems = useMemo(() => {
-    if (useSemanticSearch && semanticResults.length > 0)
-      return semanticResults.map(r => ({ ...r, isSemanticResult: true }));
+    if (isAdvancedSearch && searchResults.length > 0)
+      return searchResults.map(r => ({ ...r, isSemanticResult: true }));
     let result = globalMemory.chunks;
     if (activeFilter === 'duplicates') result = result.filter(c => duplicateIds.has(c.id));
     else if (activeFilter !== 'all') result = result.filter(c => c.chunk_type === activeFilter);
-    if (!useSemanticSearch && searchQuery.trim()) {
+    if (!isAdvancedSearch && searchQuery.trim()) {
       const q = searchQuery.toLowerCase().trim();
       result = result.filter(c => c.content.toLowerCase().includes(q));
     }
     return result.map(c => ({ ...c, isSemanticResult: false, similarity: undefined }));
-  }, [globalMemory.chunks, activeFilter, searchQuery, duplicateIds, useSemanticSearch, semanticResults]);
+  }, [globalMemory.chunks, activeFilter, searchQuery, duplicateIds, isAdvancedSearch, searchResults]);
 
   const chunkCounts = useMemo(() => {
     const counts: Record<string, number> = { all: globalMemory.chunks.length };
@@ -254,30 +257,42 @@ function SessionMemoryTab({ stats, loading }: { stats: ReturnType<typeof useHydr
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             )}
             <Input
-              placeholder={useSemanticSearch ? t('memory.semanticSearchPlaceholder') : t('memory.searchPlaceholder')}
+              placeholder={searchMode === 'semantic' ? t('memory.semanticSearchPlaceholder') : searchMode === 'hybrid' ? 'Гибридный поиск (BM25 + вектор)...' : t('memory.searchPlaceholder')}
               value={searchQuery}
               onChange={e => handleSearchChange(e.target.value)}
-              className={cn('pl-9 h-9 pr-10', useSemanticSearch && 'border-hydra-cyan/50 focus-visible:ring-hydra-cyan/30')}
+              className={cn(
+                'pl-9 h-9 pr-10',
+                searchMode === 'semantic' && 'border-hydra-cyan/50 focus-visible:ring-hydra-cyan/30',
+                searchMode === 'hybrid' && 'border-purple-500/50 focus-visible:ring-purple-500/30',
+              )}
             />
           </div>
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
-                variant={useSemanticSearch ? 'secondary' : 'ghost'}
+                variant={isAdvancedSearch ? 'secondary' : 'ghost'}
                 size="icon"
-                className={cn('h-9 w-9 shrink-0', useSemanticSearch && 'bg-hydra-cyan/20 text-hydra-cyan hover:bg-hydra-cyan/30')}
-                onClick={toggleSearchMode}
+                className={cn(
+                  'h-9 w-9 shrink-0',
+                  searchMode === 'semantic' && 'bg-hydra-cyan/20 text-hydra-cyan hover:bg-hydra-cyan/30',
+                  searchMode === 'hybrid' && 'bg-purple-500/20 text-purple-400 hover:bg-purple-500/30',
+                )}
+                onClick={cycleSearchMode}
               >
                 <AnimatePresence mode="wait">
-                  {useSemanticSearch
+                  {searchMode === 'semantic'
                     ? <motion.div key="sem" initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.8, opacity: 0 }} transition={{ duration: 0.15 }}><Sparkles className="h-4 w-4" /></motion.div>
+                    : searchMode === 'hybrid'
+                    ? <motion.div key="hyb" initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.8, opacity: 0 }} transition={{ duration: 0.15 }}><GitMerge className="h-4 w-4" /></motion.div>
                     : <motion.div key="txt" initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.8, opacity: 0 }} transition={{ duration: 0.15 }}><Text className="h-4 w-4" /></motion.div>
                   }
                 </AnimatePresence>
               </Button>
             </TooltipTrigger>
             <TooltipContent side="bottom">
-              <p className="text-xs">{useSemanticSearch ? t('memory.switchToTextSearch') : t('memory.switchToSemanticSearch')}</p>
+              <p className="text-xs">
+                {searchMode === 'text' ? 'Текстовый поиск → нажми для семантического' : searchMode === 'semantic' ? 'Семантический поиск → нажми для гибридного' : 'Гибридный поиск (BM25+вектор) → нажми для текстового'}
+              </p>
             </TooltipContent>
           </Tooltip>
           <Button variant="ghost" size="icon" onClick={() => globalMemory.refetch()} className="h-9 w-9 shrink-0">
@@ -285,10 +300,16 @@ function SessionMemoryTab({ stats, loading }: { stats: ReturnType<typeof useHydr
           </Button>
         </div>
 
-        {useSemanticSearch && (
+        {searchMode === 'semantic' && (
           <div className="flex items-center gap-2 text-xs text-hydra-cyan/80">
             <Sparkles className="h-3 w-3" />
             <span>{t('memory.semanticSearchHint')}</span>
+          </div>
+        )}
+        {searchMode === 'hybrid' && (
+          <div className="flex items-center gap-2 text-xs text-purple-400/80">
+            <GitMerge className="h-3 w-3" />
+            <span>Гибридный поиск: BM25 + косинусное сходство, объединение через RRF</span>
           </div>
         )}
 
