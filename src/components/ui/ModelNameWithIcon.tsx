@@ -19,6 +19,7 @@ export function getProviderFromModelId(modelId: string): string | null {
   if (lower.startsWith('gemini')) return 'gemini';
   if (lower.startsWith('grok')) return 'xai';
   if (lower.startsWith('deepseek')) return 'deepseek';
+  if (lower.startsWith('mistral') || lower.startsWith('pixtral') || lower.startsWith('codestral')) return 'mistral';
 
   // OpenRouter free models
   if (lower.includes(':free')) return 'openrouter';

@@ -40,6 +40,7 @@ const PROVIDER_LABELS: Record<string, string> = {
   anthropic: 'Anthropic',
   xai: 'xAI',
   deepseek: 'DeepSeek',
+  mistral: 'Mistral',
   groq: 'Groq',
   openrouter: 'OpenRouter',
 };
