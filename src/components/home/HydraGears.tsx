@@ -135,6 +135,19 @@ export function HydraGears({
           </feMerge>
         </filter>
 
+        {/* Directional arrow marker */}
+        <marker
+          id="flow-arrow"
+          viewBox="0 0 10 10"
+          refX="8"
+          refY="5"
+          markerWidth="6"
+          markerHeight="6"
+          orient="auto-start-reverse"
+        >
+          <path d="M 0 1 L 8 5 L 0 9 z" fill="hsl(var(--primary))" fillOpacity={0.9} />
+        </marker>
+
         {/* Animated dash for active connections */}
         <style>{`
           @keyframes gear-spin {
@@ -171,8 +184,45 @@ export function HydraGears({
       {/* Connection lines */}
       {allConnections.map(({ from, to }, idx) => {
         const active = isActive(from, to);
+        // Find the directional connection to determine arrow direction
+        const dirConn = active
+          ? activeConnections.find(
+              c => (c.from === from && c.to === to) || (c.from === to && c.to === from),
+            )
+          : null;
         const p1 = gearPositions[from];
         const p2 = gearPositions[to];
+
+        // For active directional lines, shorten the line to not overlap with gear body
+        if (active && dirConn) {
+          const srcIdx = dirConn.from;
+          const dstIdx = dirConn.to;
+          const src = gearPositions[srcIdx];
+          const dst = gearPositions[dstIdx];
+          const dx = dst.x - src.x;
+          const dy = dst.y - src.y;
+          const len = Math.sqrt(dx * dx + dy * dy);
+          const ux = dx / len;
+          const uy = dy / len;
+          const margin = gearOuterR + 4;
+          return (
+            <line
+              key={`conn-${idx}`}
+              x1={src.x + ux * margin}
+              y1={src.y + uy * margin}
+              x2={dst.x - ux * margin}
+              y2={dst.y - uy * margin}
+              stroke="hsl(var(--primary))"
+              strokeWidth={2.5}
+              strokeOpacity={0.8}
+              strokeDasharray="8 4"
+              className="connection-active"
+              filter="url(#glow)"
+              markerEnd="url(#flow-arrow)"
+            />
+          );
+        }
+
         return (
           <line
             key={`conn-${idx}`}
@@ -181,11 +231,8 @@ export function HydraGears({
             x2={p2.x}
             y2={p2.y}
             stroke="hsl(var(--primary))"
-            strokeWidth={active ? 2.5 : 0.8}
-            strokeOpacity={active ? 0.8 : 0.15}
-            strokeDasharray={active ? '8 4' : 'none'}
-            className={active ? 'connection-active' : ''}
-            filter={active ? 'url(#glow)' : undefined}
+            strokeWidth={0.8}
+            strokeOpacity={0.15}
           />
         );
       })}
