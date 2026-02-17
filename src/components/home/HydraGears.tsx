@@ -34,26 +34,42 @@ interface HydraGearsProps {
 
 // Generate gear tooth path (SVG)
 function gearPath(cx: number, cy: number, outerR: number, innerR: number, teeth: number): string {
-  const points: string[] = [];
+  const segments: string[] = [];
   const toothAngle = (Math.PI * 2) / teeth;
   const halfTooth = toothAngle / 4;
+  const midR = (outerR + innerR) / 2;
 
   for (let i = 0; i < teeth; i++) {
     const a = i * toothAngle - Math.PI / 2;
-    // outer tooth
-    points.push(
-      `${cx + outerR * Math.cos(a - halfTooth)},${cy + outerR * Math.sin(a - halfTooth)}`,
-      `${cx + outerR * Math.cos(a + halfTooth)},${cy + outerR * Math.sin(a + halfTooth)}`,
-    );
-    // inner valley
+    const oLeft  = { x: cx + outerR * Math.cos(a - halfTooth), y: cy + outerR * Math.sin(a - halfTooth) };
+    const oRight = { x: cx + outerR * Math.cos(a + halfTooth), y: cy + outerR * Math.sin(a + halfTooth) };
     const va = a + toothAngle / 2;
-    points.push(
-      `${cx + innerR * Math.cos(va - halfTooth)},${cy + innerR * Math.sin(va - halfTooth)}`,
-      `${cx + innerR * Math.cos(va + halfTooth)},${cy + innerR * Math.sin(va + halfTooth)}`,
-    );
-  }
+    const iLeft  = { x: cx + innerR * Math.cos(va - halfTooth), y: cy + innerR * Math.sin(va - halfTooth) };
+    const iRight = { x: cx + innerR * Math.cos(va + halfTooth), y: cy + innerR * Math.sin(va + halfTooth) };
 
-  return `M${points[0]} ${points.slice(1).map(p => `L${p}`).join(' ')} Z`;
+    // control points at midR for smooth transitions
+    const cRise = { x: cx + midR * Math.cos(a - halfTooth), y: cy + midR * Math.sin(a - halfTooth) };
+    const cFall = { x: cx + midR * Math.cos(a + halfTooth), y: cy + midR * Math.sin(a + halfTooth) };
+    const cDropL = { x: cx + midR * Math.cos(va - halfTooth), y: cy + midR * Math.sin(va - halfTooth) };
+    const cDropR = { x: cx + midR * Math.cos(va + halfTooth), y: cy + midR * Math.sin(va + halfTooth) };
+
+    if (i === 0) {
+      segments.push(`M${oLeft.x},${oLeft.y}`);
+    } else {
+      segments.push(`Q${cRise.x},${cRise.y} ${oLeft.x},${oLeft.y}`);
+    }
+    segments.push(`L${oRight.x},${oRight.y}`);
+    segments.push(`Q${cFall.x},${cFall.y} ${iLeft.x},${iLeft.y}`);
+    segments.push(`L${iRight.x},${iRight.y}`);
+  }
+  // close with a smooth curve back to start
+  const a0 = -Math.PI / 2;
+  const cClose = { x: cx + midR * Math.cos(a0 - halfTooth), y: cy + midR * Math.sin(a0 - halfTooth) };
+  const oStart = { x: cx + outerR * Math.cos(a0 - halfTooth), y: cy + outerR * Math.sin(a0 - halfTooth) };
+  segments.push(`Q${cClose.x},${cClose.y} ${oStart.x},${oStart.y}`);
+  segments.push('Z');
+
+  return segments.join(' ');
 }
 
 // Get HSL color from CSS variable name
