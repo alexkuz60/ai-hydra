@@ -8,13 +8,21 @@ const Index = () => {
   return (
     <Layout>
       <div className="relative w-full h-[calc(100vh-2.5rem)] flex items-center justify-center overflow-hidden">
-        <div className="absolute top-4 left-4 z-10 flex items-center gap-3 select-none">
-          <img src={hydraLogo} alt="Hydra logo" className="w-14 h-14 rounded-full" />
+        <div className="absolute top-4 left-4 z-10 flex flex-col gap-1 select-none">
+          <div className="flex items-center gap-3">
+            <img src={hydraLogo} alt="Hydra logo" className="w-14 h-14 rounded-full" />
+            <span
+              className="text-foreground/80"
+              style={{ fontFamily: '"Keania One", sans-serif', fontSize: 64, fontWeight: 400, lineHeight: 1 }}
+            >
+              ai*hYdra
+            </span>
+          </div>
           <span
-            className="text-foreground/80"
-            style={{ fontFamily: '"Keania One", sans-serif', fontSize: 64, fontWeight: 400, lineHeight: 1 }}
+            className="text-muted-foreground/60 pl-[4.25rem]"
+            style={{ fontFamily: '"Quicksand", sans-serif', fontSize: 13, fontWeight: 500, lineHeight: 1.2 }}
           >
-            ai*hYdra
+            Здесь даже догмы эволюционируют
           </span>
         </div>
         <HydraGears
