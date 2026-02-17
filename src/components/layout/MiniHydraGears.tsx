@@ -44,7 +44,7 @@ export function MiniHydraGears({ className = '' }: { className?: string }) {
 
   return (
     <svg
-      viewBox="0 0 100 100"
+      viewBox="6 6 88 88"
       className={className}
       aria-hidden="true"
     >
