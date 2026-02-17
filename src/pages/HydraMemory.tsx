@@ -1,10 +1,11 @@
-import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import {
   BrainCircuit, Database, Layers, BookOpen, Trash2, RefreshCw,
   HardDrive, FolderOpen, FileImage, FileText, File, Search,
   Loader2, Filter, Copy, Sparkles, Text, MessageSquare, Lightbulb,
   ListChecks, Star, Archive, AlertTriangle, Eye, X, Download, GitMerge,
+  GitBranch, Wrench, BarChart2, Zap, ScanSearch, Clock, CheckCircle2, XCircle,
 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -585,18 +586,123 @@ function RoleMemoryTab({ stats, loading, onRefresh }: { stats: ReturnType<typeof
   );
 }
 
-// ─── Knowledge Tab ────────────────────────────────────────────────────────────
+// ─── Knowledge Tab with Deduplication Tools (Iteration 5) ────────────────────
+
+interface KnowledgeEntryRaw {
+  id: string;
+  content: string;
+  source_title: string | null;
+  source_url: string | null;
+  category: string;
+  version: string | null;
+  chunk_index: number;
+  embedding: unknown;
+}
 
 function KnowledgeTab({ stats, loading }: { stats: ReturnType<typeof useHydraMemoryStats>; loading: boolean }) {
   const { t } = useLanguage();
+  const { user } = useAuth();
+  const [toolsOpen, setToolsOpen] = useState(false);
+  const [scanning, setScanning] = useState(false);
+  const [similarGroups, setSimilarGroups] = useState<KnowledgeEntryRaw[][]>([]);
+  const [outdatedGroups, setOutdatedGroups] = useState<KnowledgeEntryRaw[][]>([]);
+  const [qualityStats, setQualityStats] = useState<{ avgWords: number; noEmbedding: number; total: number } | null>(null);
+  const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set());
+  const [scanDone, setScanDone] = useState(false);
+
   const roleGroups = stats.knowledge.reduce<Record<string, { category: string; count: number }[]>>((acc, k) => {
     if (!acc[k.role]) acc[k.role] = [];
     acc[k.role].push({ category: k.category, count: k.count });
     return acc;
   }, {});
 
+  const runScan = useCallback(async () => {
+    if (!user?.id) return;
+    setScanning(true);
+    setScanDone(false);
+    try {
+      const { data, error } = await (supabase as any)
+        .from('role_knowledge')
+        .select('id, content, source_title, source_url, category, version, chunk_index, embedding')
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+      const rows = (data || []) as unknown as KnowledgeEntryRaw[];
+
+      // Quality stats
+      const wordCounts = rows.map(r => r.content.trim().split(/\s+/).length);
+      const avgWords = rows.length ? wordCounts.reduce((a, b) => a + b, 0) / rows.length : 0;
+      const noEmbedding = rows.filter(r => !r.embedding).length;
+      setQualityStats({ avgWords: Math.round(avgWords), noEmbedding, total: rows.length });
+
+      // Find similar (exact content duplicates or very similar)
+      const contentMap = new Map<string, KnowledgeEntryRaw[]>();
+      rows.forEach(r => {
+        const key = r.content.toLowerCase().trim().replace(/\s+/g, ' ').slice(0, 200);
+        const arr = contentMap.get(key) || [];
+        arr.push(r);
+        contentMap.set(key, arr);
+      });
+      setSimilarGroups(Array.from(contentMap.values()).filter(g => g.length > 1));
+
+      // Find outdated: same source_url + role, keep highest version
+      const sourceMap = new Map<string, KnowledgeEntryRaw[]>();
+      rows.forEach(r => {
+        if (r.source_url) {
+          const key = r.source_url;
+          const arr = sourceMap.get(key) || [];
+          arr.push(r);
+          sourceMap.set(key, arr);
+        }
+      });
+      const outdated: KnowledgeEntryRaw[][] = [];
+      sourceMap.forEach(group => {
+        const withVersion = group.filter(r => r.version);
+        if (withVersion.length < 2) return;
+        const sorted = [...withVersion].sort((a, b) => (b.version || '').localeCompare(a.version || ''));
+        const latestVersion = sorted[0].version;
+        const old = group.filter(r => r.version && r.version !== latestVersion);
+        if (old.length > 0) outdated.push(old);
+      });
+      setOutdatedGroups(outdated);
+      setScanDone(true);
+    } catch (e) {
+      console.error('[KnowledgeTab] scan error', e);
+      toast.error('Ошибка сканирования базы знаний');
+    } finally {
+      setScanning(false);
+    }
+  }, [user?.id]);
+
+  const deleteEntries = useCallback(async (ids: string[]) => {
+    if (!user?.id || ids.length === 0) return;
+    setDeletingIds(prev => { const s = new Set(prev); ids.forEach(id => s.add(id)); return s; });
+    try {
+      const { error } = await supabase
+        .from('role_knowledge' as any)
+        .delete()
+        .in('id', ids)
+        .eq('user_id', user.id);
+      if (error) throw error;
+      toast.success(`Удалено ${ids.length} записей`);
+      // Re-scan after deletion
+      await runScan();
+      stats.refresh();
+    } catch {
+      toast.error('Ошибка удаления');
+    } finally {
+      setDeletingIds(new Set());
+    }
+  }, [user?.id, runScan, stats]);
+
+  const allSimilarToDelete = useMemo(() =>
+    similarGroups.flatMap(g => g.slice(1).map(r => r.id)), [similarGroups]);
+  const allOutdatedToDelete = useMemo(() =>
+    outdatedGroups.flatMap(g => g.map(r => r.id)), [outdatedGroups]);
+
   return (
     <div className="space-y-4">
+      {/* Stats row */}
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
         {loading ? Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-20" />) : (
           <>
@@ -606,6 +712,155 @@ function KnowledgeTab({ stats, loading }: { stats: ReturnType<typeof useHydraMem
           </>
         )}
       </div>
+
+      {/* Deduplication Tools Panel */}
+      <Card className="border-[hsl(var(--hydra-memory)/0.25)] bg-[hsl(var(--hydra-memory)/0.03)]">
+        <button
+          onClick={() => { setToolsOpen(o => !o); if (!toolsOpen && !scanDone) runScan(); }}
+          className="w-full flex items-center justify-between px-4 py-3 hover:bg-muted/30 transition-colors"
+        >
+          <div className="flex items-center gap-2">
+            <Wrench className="h-4 w-4 text-[hsl(var(--hydra-memory))]" />
+            <span className="text-sm font-medium">Инструменты очистки</span>
+            {scanDone && (similarGroups.length > 0 || outdatedGroups.length > 0) && (
+              <Badge variant="outline" className="text-xs text-amber-400 border-amber-500/40">
+                {similarGroups.length + outdatedGroups.length} проблем
+              </Badge>
+            )}
+          </div>
+          <span className={`text-muted-foreground transition-transform text-xs ${toolsOpen ? 'rotate-90' : ''}`}>›</span>
+        </button>
+
+        <AnimatePresence>
+          {toolsOpen && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="overflow-hidden border-t border-border"
+            >
+              <div className="p-4 space-y-4">
+                {/* Scan button */}
+                <div className="flex items-center justify-between">
+                  <p className="text-xs text-muted-foreground">Анализ базы знаний на дубликаты и устаревшие версии</p>
+                  <Button size="sm" variant="outline" onClick={runScan} disabled={scanning} className="h-7 gap-1.5">
+                    {scanning ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ScanSearch className="h-3.5 w-3.5" />}
+                    {scanning ? 'Сканирование...' : 'Сканировать'}
+                  </Button>
+                </div>
+
+                {scanDone && qualityStats && (
+                  <div className="grid grid-cols-3 gap-3">
+                    {/* Quality stats */}
+                    <div className="rounded-lg border border-border bg-muted/30 p-3 text-center">
+                      <BarChart2 className="h-4 w-4 mx-auto mb-1 text-[hsl(var(--hydra-memory))]" />
+                      <p className="text-lg font-bold">{qualityStats.avgWords}</p>
+                      <p className="text-[10px] text-muted-foreground">ср. слов/чанк</p>
+                    </div>
+                    <div className="rounded-lg border border-border bg-muted/30 p-3 text-center">
+                      <Copy className="h-4 w-4 mx-auto mb-1 text-amber-400" />
+                      <p className="text-lg font-bold text-amber-400">{similarGroups.length}</p>
+                      <p className="text-[10px] text-muted-foreground">групп похожих</p>
+                    </div>
+                    <div className="rounded-lg border border-border bg-muted/30 p-3 text-center">
+                      <Clock className="h-4 w-4 mx-auto mb-1 text-orange-400" />
+                      <p className="text-lg font-bold text-orange-400">{allOutdatedToDelete.length}</p>
+                      <p className="text-[10px] text-muted-foreground">устаревших</p>
+                    </div>
+                  </div>
+                )}
+
+                {scanDone && qualityStats && qualityStats.noEmbedding > 0 && (
+                  <div className="flex items-center gap-2 text-xs text-amber-500 bg-amber-500/10 rounded-lg px-3 py-2 border border-amber-500/20">
+                    <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+                    <span>{qualityStats.noEmbedding} чанков без эмбеддинга — семантический поиск будет неточным</span>
+                  </div>
+                )}
+
+                {scanDone && similarGroups.length === 0 && outdatedGroups.length === 0 && (
+                  <div className="flex items-center gap-2 text-xs text-green-400 bg-green-500/10 rounded-lg px-3 py-2 border border-green-500/20">
+                    <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
+                    <span>База знаний чистая — дубликатов и устаревших записей не найдено</span>
+                  </div>
+                )}
+
+                {/* Similar groups */}
+                {scanDone && similarGroups.length > 0 && (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs font-medium text-amber-400 flex items-center gap-1.5">
+                        <Copy className="h-3.5 w-3.5" />
+                        Похожие чанки ({similarGroups.length} групп, {allSimilarToDelete.length} дубликатов)
+                      </p>
+                      <Button
+                        size="sm" variant="outline"
+                        className="h-6 text-[10px] border-amber-500/40 text-amber-400 hover:bg-amber-500/10"
+                        disabled={deletingIds.size > 0}
+                        onClick={() => deleteEntries(allSimilarToDelete)}
+                      >
+                        {deletingIds.size > 0 ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Trash2 className="h-3 w-3 mr-1" />}
+                        Удалить все дубликаты
+                      </Button>
+                    </div>
+                    <div className="space-y-1.5 max-h-40 overflow-y-auto pr-1">
+                      {similarGroups.map((group, gi) => (
+                        <div key={gi} className="rounded border border-amber-500/20 bg-amber-500/5 px-3 py-2 text-xs">
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-amber-400 font-medium">{group.length} копий</span>
+                            <Button
+                              size="sm" variant="ghost"
+                              className="h-5 px-2 text-[10px] text-destructive hover:text-destructive"
+                              disabled={deletingIds.size > 0}
+                              onClick={() => deleteEntries(group.slice(1).map(r => r.id))}
+                            >
+                              <Trash2 className="h-3 w-3 mr-1" />
+                              Удалить {group.length - 1}
+                            </Button>
+                          </div>
+                          <p className="text-muted-foreground line-clamp-1">{group[0].content.slice(0, 120)}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Outdated groups */}
+                {scanDone && outdatedGroups.length > 0 && (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs font-medium text-orange-400 flex items-center gap-1.5">
+                        <Clock className="h-3.5 w-3.5" />
+                        Устаревшие версии ({allOutdatedToDelete.length} чанков)
+                      </p>
+                      <Button
+                        size="sm" variant="outline"
+                        className="h-6 text-[10px] border-orange-500/40 text-orange-400 hover:bg-orange-500/10"
+                        disabled={deletingIds.size > 0}
+                        onClick={() => deleteEntries(allOutdatedToDelete)}
+                      >
+                        {deletingIds.size > 0 ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Trash2 className="h-3 w-3 mr-1" />}
+                        Удалить устаревшие
+                      </Button>
+                    </div>
+                    <div className="space-y-1.5 max-h-40 overflow-y-auto pr-1">
+                      {outdatedGroups.map((group, gi) => (
+                        <div key={gi} className="rounded border border-orange-500/20 bg-orange-500/5 px-3 py-2 text-xs">
+                          <div className="flex items-center justify-between">
+                            <span className="text-muted-foreground truncate">{group[0].source_url}</span>
+                            <span className="text-orange-400 ml-2 shrink-0">{group.map(r => r.version).join(', ')}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </Card>
+
       {!loading && stats.totalKnowledge === 0 && (
         <div className="text-center py-12 text-muted-foreground text-sm">{t('memory.hub.empty')}</div>
       )}
@@ -628,6 +883,377 @@ function KnowledgeTab({ stats, loading }: { stats: ReturnType<typeof useHydraMem
           <Link to="/staff-roles">{t('memory.hub.goToStaff')}</Link>
         </Button>
       </div>
+    </div>
+  );
+}
+
+// ─── Memory Graph Tab (Iteration 6) ──────────────────────────────────────────
+
+interface GraphNode {
+  id: string;
+  label: string;
+  type: 'role' | 'memory' | 'session';
+  count?: number;
+  usageCount?: number;
+  confidence?: number;
+  x: number;
+  y: number;
+  r: number;
+}
+
+interface GraphEdge {
+  source: string;
+  target: string;
+}
+
+function MemoryGraphTab({ stats }: { stats: ReturnType<typeof useHydraMemoryStats> }) {
+  const { user } = useAuth();
+  const svgRef = useRef<SVGSVGElement>(null);
+  const [roleMemoryDetails, setRoleMemoryDetails] = useState<Record<string, { sessions: string[]; usageCount: number }>>({});
+  const [loadingDetails, setLoadingDetails] = useState(false);
+  const [selected, setSelected] = useState<GraphNode | null>(null);
+  const [hoveredId, setHoveredId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!user?.id || stats.roleMemory.length === 0) return;
+    setLoadingDetails(true);
+    supabase
+      .from('role_memory')
+      .select('role, source_session_id, usage_count')
+      .eq('user_id', user.id)
+      .then(({ data }) => {
+        const details: Record<string, { sessions: string[]; usageCount: number }> = {};
+        (data || []).forEach(row => {
+          if (!details[row.role]) details[row.role] = { sessions: [], usageCount: 0 };
+          details[row.role].usageCount += row.usage_count || 0;
+          if (row.source_session_id && !details[row.role].sessions.includes(row.source_session_id)) {
+            details[row.role].sessions.push(row.source_session_id);
+          }
+        });
+        setRoleMemoryDetails(details);
+        setLoadingDetails(false);
+      });
+  }, [user?.id, stats.roleMemory]);
+
+  // Build graph nodes & edges
+  const { nodes, edges } = useMemo(() => {
+    const W = 740;
+    const H = 460;
+    const cx = W / 2;
+    const cy = H / 2;
+
+    const roleNodes: GraphNode[] = [];
+    const memoryNodes: GraphNode[] = [];
+    const sessionNodes: GraphNode[] = [];
+    const edges: GraphEdge[] = [];
+    const sessionIds = new Set<string>();
+
+    const maxCount = Math.max(...stats.roleMemory.map(r => r.count), 1);
+
+    stats.roleMemory.forEach((rm, i) => {
+      const angle = (2 * Math.PI * i) / stats.roleMemory.length - Math.PI / 2;
+      const radius = Math.min(cx, cy) * 0.62;
+      const nodeSize = 18 + (rm.count / maxCount) * 18;
+      const roleNode: GraphNode = {
+        id: `role_${rm.role}`,
+        label: rm.role,
+        type: 'role',
+        count: rm.count,
+        confidence: rm.avg_confidence,
+        usageCount: roleMemoryDetails[rm.role]?.usageCount || 0,
+        x: cx + radius * Math.cos(angle),
+        y: cy + radius * Math.sin(angle),
+        r: nodeSize,
+      };
+      roleNodes.push(roleNode);
+      edges.push({ source: 'center', target: roleNode.id });
+
+      // Add session nodes for hot roles (usageCount > 2)
+      const detail = roleMemoryDetails[rm.role];
+      if (detail && detail.usageCount > 2) {
+        detail.sessions.slice(0, 2).forEach((sid, si) => {
+          if (!sessionIds.has(sid)) {
+            sessionIds.add(sid);
+            const sa = angle + ((si - 0.5) * 0.4);
+            const sr = radius * 1.55;
+            const sessNode: GraphNode = {
+              id: `sess_${sid}`,
+              label: sid.slice(0, 8) + '…',
+              type: 'session',
+              x: cx + sr * Math.cos(sa),
+              y: cy + sr * Math.sin(sa),
+              r: 10,
+            };
+            sessionNodes.push(sessNode);
+            edges.push({ source: roleNode.id, target: sessNode.id });
+          } else {
+            edges.push({ source: roleNode.id, target: `sess_${sid}` });
+          }
+        });
+      }
+    });
+
+    const centerNode: GraphNode = {
+      id: 'center',
+      label: 'Гидра',
+      type: 'memory',
+      x: cx,
+      y: cy,
+      r: 28,
+    };
+    memoryNodes.push(centerNode);
+
+    return { nodes: [...memoryNodes, ...roleNodes, ...sessionNodes], edges };
+  }, [stats.roleMemory, roleMemoryDetails]);
+
+  const nodeMap = useMemo(() => {
+    const m: Record<string, GraphNode> = {};
+    nodes.forEach(n => { m[n.id] = n; });
+    return m;
+  }, [nodes]);
+
+  if (stats.loading || loadingDetails) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="h-8 w-8 animate-spin text-[hsl(var(--hydra-memory))]" />
+      </div>
+    );
+  }
+
+  if (stats.roleMemory.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
+        <GitBranch className="h-12 w-12 mb-3 opacity-30" />
+        <p className="text-sm">Нет данных для графа памяти</p>
+        <p className="text-xs mt-1 opacity-60">Добавьте записи опыта через чат с ролями</p>
+      </div>
+    );
+  }
+
+  const maxUsage = Math.max(...stats.roleMemory.map(r => roleMemoryDetails[r.role]?.usageCount || 0), 1);
+
+  return (
+    <div className="space-y-4">
+      {/* Legend */}
+      <div className="flex items-center gap-6 flex-wrap">
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <div className="h-3 w-3 rounded-full bg-[hsl(var(--hydra-memory))] opacity-80" />
+          <span>Роль</span>
+        </div>
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <div className="h-3 w-3 rounded-full bg-[hsl(var(--hydra-cyan))]" />
+          <span>Центр (Гидра)</span>
+        </div>
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <div className="h-3 w-3 rounded-full bg-[hsl(var(--hydra-expert))]" opacity-70 />
+          <span>Связанная сессия</span>
+        </div>
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <Zap className="h-3 w-3 text-amber-400" />
+          <span>Горячая роль (высокий usage)</span>
+        </div>
+      </div>
+
+      {/* SVG Graph */}
+      <Card className="overflow-hidden border-border">
+        <div className="relative w-full" style={{ aspectRatio: '740/460' }}>
+          <svg
+            ref={svgRef}
+            viewBox="0 0 740 460"
+            className="w-full h-full"
+            style={{ background: 'transparent' }}
+          >
+            {/* Grid background pattern */}
+            <defs>
+              <pattern id="grid" width="30" height="30" patternUnits="userSpaceOnUse">
+                <path d="M 30 0 L 0 0 0 30" fill="none" stroke="hsl(var(--border))" strokeWidth="0.3" opacity="0.5" />
+              </pattern>
+              <radialGradient id="centerGlow" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stopColor="hsl(var(--hydra-cyan))" stopOpacity="0.3" />
+                <stop offset="100%" stopColor="hsl(var(--hydra-cyan))" stopOpacity="0" />
+              </radialGradient>
+              <filter id="nodeGlow">
+                <feGaussianBlur stdDeviation="3" result="blur" />
+                <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+              </filter>
+            </defs>
+            <rect width="740" height="460" fill="url(#grid)" />
+
+            {/* Center glow */}
+            <circle cx="370" cy="230" r="60" fill="url(#centerGlow)" />
+
+            {/* Edges */}
+            {edges.map((edge, i) => {
+              const src = nodeMap[edge.source];
+              const tgt = nodeMap[edge.target];
+              if (!src || !tgt) return null;
+              const isHovered = hoveredId === edge.source || hoveredId === edge.target;
+              return (
+                <line
+                  key={i}
+                  x1={src.x} y1={src.y}
+                  x2={tgt.x} y2={tgt.y}
+                  stroke={isHovered ? 'hsl(var(--hydra-memory))' : 'hsl(var(--border))'}
+                  strokeWidth={isHovered ? 1.5 : 0.8}
+                  strokeDasharray={edge.source === 'center' ? undefined : '4 3'}
+                  opacity={isHovered ? 0.8 : 0.4}
+                />
+              );
+            })}
+
+            {/* Nodes */}
+            {nodes.map(node => {
+              const isCenter = node.id === 'center';
+              const isHot = node.type === 'role' && (roleMemoryDetails[node.label]?.usageCount || 0) > (maxUsage * 0.5);
+              const isSelected = selected?.id === node.id;
+              const isHovered = hoveredId === node.id;
+              const fill = isCenter
+                ? 'hsl(var(--hydra-cyan))'
+                : node.type === 'session'
+                ? 'hsl(var(--hydra-expert))'
+                : 'hsl(var(--hydra-memory))';
+
+              return (
+                <g
+                  key={node.id}
+                  style={{ cursor: 'pointer' }}
+                  onMouseEnter={() => setHoveredId(node.id)}
+                  onMouseLeave={() => setHoveredId(null)}
+                  onClick={() => setSelected(isSelected ? null : node)}
+                  filter={isSelected || isHovered ? 'url(#nodeGlow)' : undefined}
+                >
+                  {/* Hot badge ring */}
+                  {isHot && (
+                    <circle
+                      cx={node.x} cy={node.y} r={node.r + 5}
+                      fill="none"
+                      stroke="hsl(38, 92%, 50%)"
+                      strokeWidth="1.5"
+                      strokeDasharray="3 2"
+                      opacity="0.7"
+                    />
+                  )}
+                  <circle
+                    cx={node.x} cy={node.y} r={node.r}
+                    fill={fill}
+                    opacity={isSelected || isHovered ? 1 : 0.75}
+                    stroke={isSelected ? 'hsl(var(--foreground))' : 'transparent'}
+                    strokeWidth="2"
+                  />
+                  {/* Label */}
+                  <text
+                    x={node.x}
+                    y={node.type === 'role' ? node.y + node.r + 13 : node.y + 4}
+                    textAnchor="middle"
+                    fill="hsl(var(--foreground))"
+                    fontSize={isCenter ? 11 : node.type === 'session' ? 8 : 10}
+                    fontWeight={isCenter || isSelected ? 600 : 400}
+                    opacity={isCenter ? 1 : 0.85}
+                  >
+                    {isCenter ? node.label : node.label.slice(0, 14)}
+                  </text>
+                  {/* Count badge */}
+                  {node.type === 'role' && node.count && node.count > 1 && (
+                    <text
+                      x={node.x + node.r - 3}
+                      y={node.y - node.r + 7}
+                      textAnchor="middle"
+                      fill="hsl(var(--background))"
+                      fontSize="7"
+                      fontWeight={700}
+                    >
+                      {node.count}
+                    </text>
+                  )}
+                  {isHot && (
+                    <text x={node.x + node.r + 3} y={node.y - node.r + 4} fontSize="8">⚡</text>
+                  )}
+                </g>
+              );
+            })}
+          </svg>
+
+          {/* Selected node details */}
+          <AnimatePresence>
+            {selected && (
+              <motion.div
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 8 }}
+                className="absolute bottom-3 left-3 right-3 bg-card/95 backdrop-blur border border-border rounded-lg p-3 text-xs shadow-lg"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div className="space-y-1">
+                    <p className="font-semibold text-sm">{selected.label}</p>
+                    {selected.type === 'role' && (
+                      <>
+                        <div className="flex items-center gap-3 text-muted-foreground">
+                          <span>Записей опыта: <strong className="text-foreground">{selected.count}</strong></span>
+                          {selected.confidence !== undefined && (
+                            <span>Ср. уверенность: <strong className="text-foreground">{(selected.confidence * 100).toFixed(0)}%</strong></span>
+                          )}
+                          {(selected.usageCount ?? 0) > 0 && (
+                            <span className="flex items-center gap-1 text-amber-400">
+                              <Zap className="h-3 w-3" />
+                              Использований: {selected.usageCount}
+                            </span>
+                          )}
+                        </div>
+                        {roleMemoryDetails[selected.label]?.sessions.length > 0 && (
+                          <p className="text-muted-foreground">
+                            Связанных сессий: {roleMemoryDetails[selected.label].sessions.length}
+                          </p>
+                        )}
+                      </>
+                    )}
+                    {selected.type === 'session' && (
+                      <p className="text-muted-foreground">Сессия: {selected.label}</p>
+                    )}
+                    {selected.type === 'memory' && (
+                      <p className="text-muted-foreground">Центральный узел — память всей Гидры</p>
+                    )}
+                  </div>
+                  <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={() => setSelected(null)}>
+                    <X className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      </Card>
+
+      {/* Hot roles list */}
+      {stats.roleMemory.filter(r => (roleMemoryDetails[r.role]?.usageCount || 0) > 0).length > 0 && (
+        <div className="space-y-2">
+          <p className="text-xs text-muted-foreground font-medium flex items-center gap-1.5">
+            <Zap className="h-3.5 w-3.5 text-amber-400" />
+            Активность ролей
+          </p>
+          <div className="space-y-1">
+            {stats.roleMemory
+              .filter(r => (roleMemoryDetails[r.role]?.usageCount || 0) > 0)
+              .sort((a, b) => (roleMemoryDetails[b.role]?.usageCount || 0) - (roleMemoryDetails[a.role]?.usageCount || 0))
+              .slice(0, 8)
+              .map(r => {
+                const usage = roleMemoryDetails[r.role]?.usageCount || 0;
+                const pct = Math.round((usage / maxUsage) * 100);
+                return (
+                  <div key={r.role} className="flex items-center gap-3">
+                    <span className="text-xs text-muted-foreground w-28 truncate shrink-0">{r.role}</span>
+                    <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-[hsl(var(--hydra-memory))] transition-all"
+                        style={{ width: `${pct}%` }}
+                      />
+                    </div>
+                    <span className="text-xs text-muted-foreground w-6 text-right shrink-0">{usage}</span>
+                  </div>
+                );
+              })}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -988,7 +1614,7 @@ export default function HydraMemory() {
 
         {/* Tabs */}
         <Tabs defaultValue="session">
-          <TabsList className="w-full justify-start">
+          <TabsList className="w-full justify-start flex-wrap gap-1 h-auto">
             <TabsTrigger value="session" className="gap-2">
               <Database className="h-3.5 w-3.5" />
               {t('memory.hub.session')}
@@ -1004,6 +1630,10 @@ export default function HydraMemory() {
               {t('memory.hub.knowledge')}
               <Badge variant="secondary" className="ml-1 text-xs">{stats.totalKnowledge}</Badge>
             </TabsTrigger>
+            <TabsTrigger value="graph" className="gap-2">
+              <GitBranch className="h-3.5 w-3.5" />
+              Граф памяти
+            </TabsTrigger>
             <TabsTrigger value="storage" className="gap-2">
               <HardDrive className="h-3.5 w-3.5" />
               {t('memory.hub.storage')}
@@ -1018,6 +1648,9 @@ export default function HydraMemory() {
           </TabsContent>
           <TabsContent value="knowledge" className="mt-6">
             <KnowledgeTab stats={stats} loading={stats.loading} />
+          </TabsContent>
+          <TabsContent value="graph" className="mt-6">
+            <MemoryGraphTab stats={stats} />
           </TabsContent>
           <TabsContent value="storage" className="mt-6">
             <StorageTab />
