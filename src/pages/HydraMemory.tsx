@@ -1595,7 +1595,7 @@ export default function HydraMemory() {
 
   return (
     <Layout>
-      <div className="flex flex-col gap-6 p-6 max-w-4xl mx-auto w-full">
+      <div className="flex flex-col gap-6 p-6 lg:p-8 w-full">
         {/* Header */}
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-center gap-3">
