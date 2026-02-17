@@ -46,9 +46,20 @@ export function ScreeningPanel({ role, selectedWinners, sourceContestId }: Scree
   useEffect(() => {
     if (winnersArray.length > 0) {
       screening.initCandidates(winnersArray);
-      setActiveTab(winnersArray[0]);
+      if (!activeTab || !winnersArray.includes(activeTab)) {
+        setActiveTab(winnersArray[0]);
+      }
     }
   }, [winnersArray]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Auto-load session for active tab on mount/tab restore (e.g. after navigation)
+  useEffect(() => {
+    if (!activeTab) return;
+    const candidate = screening.candidates.find(c => c.modelId === activeTab);
+    if (candidate?.sessionId && !screening.session) {
+      screening.loadCandidateSession(candidate.sessionId);
+    }
+  }, [activeTab, screening.candidates]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const completedCount = screening.candidates.filter(c => c.status === 'tested' || c.status === 'completed').length;
   const failedCount = screening.candidates.filter(c => c.status === 'failed').length;

@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useInterviewSession } from './useInterviewSession';
@@ -21,6 +21,31 @@ interface ScreeningState {
 }
 
 const MAX_CONCURRENCY = 2;
+const STORAGE_KEY = 'podium-screening-candidates';
+
+/** Persist candidate states to localStorage */
+function saveCandidatesToStorage(candidates: ScreeningCandidate[]) {
+  try {
+    const data = candidates.map(c => ({
+      modelId: c.modelId,
+      sessionId: c.sessionId,
+      status: c.status,
+      error: c.error,
+      completedSteps: c.completedSteps,
+      totalSteps: c.totalSteps,
+    }));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  } catch { /* quota */ }
+}
+
+/** Load persisted candidate states */
+function loadCandidatesFromStorage(): ScreeningCandidate[] | null {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw) as ScreeningCandidate[];
+  } catch { return null; }
+}
 
 /**
  * Batch wrapper for screening multiple contest winners.
@@ -41,8 +66,26 @@ export function useScreeningSession() {
   const candidatesRef = useRef<ScreeningCandidate[]>([]);
   candidatesRef.current = state.candidates;
 
-  /** Initialize candidates from selectedWinners */
+  // Persist candidates whenever they change
+  useEffect(() => {
+    if (state.candidates.length > 0) {
+      saveCandidatesToStorage(state.candidates);
+    }
+  }, [state.candidates]);
+
+  /** Initialize candidates from selectedWinners, restoring persisted state if available */
   const initCandidates = useCallback((modelIds: string[]) => {
+    const saved = loadCandidatesFromStorage();
+    // If saved candidates match the requested set exactly, restore them
+    if (saved && saved.length === modelIds.length) {
+      const savedIds = new Set(saved.map(c => c.modelId));
+      const allMatch = modelIds.every(id => savedIds.has(id));
+      if (allMatch) {
+        setState({ candidates: saved, running: false });
+        return;
+      }
+    }
+    // Otherwise fresh init
     const candidates = modelIds.map(modelId => ({
       modelId,
       sessionId: null,
