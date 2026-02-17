@@ -1,4 +1,38 @@
-# 🐙 Hydra AI Platform
+<div align="center">
+  <img src="public/favicon.png" alt="ai*hYdra" width="80" style="border-radius:50%"/>
+  <h1 style="font-family:'Keania One',sans-serif;font-size:3rem;font-weight:400;letter-spacing:2px">ai*hYdra</h1>
+  <p><em>Where even dogmas evolve</em></p>
+
+  ![Version](https://img.shields.io/badge/version-2.17.0-0ff?style=flat-square&logo=semver&logoColor=white)
+  ![Build](https://img.shields.io/badge/build-passing-brightgreen?style=flat-square&logo=github-actions&logoColor=white)
+  ![License](https://img.shields.io/badge/license-MIT-blue?style=flat-square)
+  ![Stack](https://img.shields.io/badge/stack-React%2018%20%2B%20TypeScript%20%2B%20Supabase-8b5cf6?style=flat-square)
+  ![Models](https://img.shields.io/badge/providers-10+-cyan?style=flat-square)
+  ![Roles](https://img.shields.io/badge/agent--roles-16-orange?style=flat-square)
+</div>
+
+---
+
+## 🌌 Strategic Vision
+
+> **To bring Hydra to a state of self-sufficiency where extending the system no longer requires writing code.**
+
+Hydra is built on the principle of a **living architecture**: each new layer of functionality is not merely added by humans — it creates the conditions for the system to evolve on its own. This is not a metaphor. It is an engineering strategy.
+
+### The Self-Improvement Evolution Mechanism
+
+**Phase 1 — Foundation (complete)**
+Core infrastructure: role system, RAG context, interview pipeline, Flow Editor, Contest/Duel. Tools for evaluating, selecting, and assigning models to roles.
+
+**Phase 2 — Activation (in progress)**
+Models gain the ability to influence their own context: operational experience accumulates through `role_memory` and `role_knowledge`. The recertification system automatically replaces underperforming models with stronger ones — without human intervention in the decision.
+
+**Phase 3 — Reflection (horizon)**
+Automatic experience consolidation: patterns from `role_memory` are distilled into long-term knowledge (`role_knowledge`). The system analyzes its own failures (via Technocritic and Technoarbiter), formulates improvements, and initiates updates to prompts, behavioral patterns, and the knowledge base — without developer involvement.
+
+**End goal:** Hydra as a **reflective organism** — a multi-headed system where each head (role) specializes, competes, learns, and evolves. The platform architecture provides the environment for this evolution, but does not dictate its outcome.
+
+---
 
 ## 📋 Overview
 
