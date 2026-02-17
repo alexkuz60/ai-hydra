@@ -57,12 +57,18 @@ export default function ModelRatings() {
     const saved = localStorage.getItem('podium-active-section');
     return (saved === 'portfolio' || saved === 'rules' || saved === 'contest' || saved === 'duel' || saved === 'interview' || saved === 'ratings') ? saved : 'ratings';
   });
-  const [contestWinners, setContestWinners] = useState<Set<string>>(new Set());
+  const [contestWinners, setContestWinners] = useState<Set<string>>(() => {
+    try {
+      const saved = localStorage.getItem('podium-contest-winners');
+      return saved ? new Set(JSON.parse(saved)) : new Set();
+    } catch { return new Set(); }
+  });
   const [contestSessionId, setContestSessionId] = useState<string | undefined>();
   const handleToggleContestWinner = useCallback((modelId: string) => {
     setContestWinners(prev => {
       const next = new Set(prev);
       if (next.has(modelId)) next.delete(modelId); else next.add(modelId);
+      localStorage.setItem('podium-contest-winners', JSON.stringify([...next]));
       return next;
     });
   }, []);
