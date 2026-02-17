@@ -34,42 +34,57 @@ interface HydraGearsProps {
 
 // Generate gear tooth path (SVG)
 function gearPath(cx: number, cy: number, outerR: number, innerR: number, teeth: number): string {
-  const segments: string[] = [];
+  // Generate smooth gear using cubic bezier for all transitions
+  const pts: { x: number; y: number }[] = [];
   const toothAngle = (Math.PI * 2) / teeth;
-  const halfTooth = toothAngle / 4;
-  const midR = (outerR + innerR) / 2;
+  const tipHalf = toothAngle * 0.18; // narrower tips
+  const valleyHalf = toothAngle * 0.18;
 
   for (let i = 0; i < teeth; i++) {
-    const a = i * toothAngle - Math.PI / 2;
-    const oLeft  = { x: cx + outerR * Math.cos(a - halfTooth), y: cy + outerR * Math.sin(a - halfTooth) };
-    const oRight = { x: cx + outerR * Math.cos(a + halfTooth), y: cy + outerR * Math.sin(a + halfTooth) };
-    const va = a + toothAngle / 2;
-    const iLeft  = { x: cx + innerR * Math.cos(va - halfTooth), y: cy + innerR * Math.sin(va - halfTooth) };
-    const iRight = { x: cx + innerR * Math.cos(va + halfTooth), y: cy + innerR * Math.sin(va + halfTooth) };
-
-    // control points at midR for smooth transitions
-    const cRise = { x: cx + midR * Math.cos(a - halfTooth), y: cy + midR * Math.sin(a - halfTooth) };
-    const cFall = { x: cx + midR * Math.cos(a + halfTooth), y: cy + midR * Math.sin(a + halfTooth) };
-    const cDropL = { x: cx + midR * Math.cos(va - halfTooth), y: cy + midR * Math.sin(va - halfTooth) };
-    const cDropR = { x: cx + midR * Math.cos(va + halfTooth), y: cy + midR * Math.sin(va + halfTooth) };
-
-    if (i === 0) {
-      segments.push(`M${oLeft.x},${oLeft.y}`);
-    } else {
-      segments.push(`Q${cRise.x},${cRise.y} ${oLeft.x},${oLeft.y}`);
-    }
-    segments.push(`L${oRight.x},${oRight.y}`);
-    segments.push(`Q${cFall.x},${cFall.y} ${iLeft.x},${iLeft.y}`);
-    segments.push(`L${iRight.x},${iRight.y}`);
+    const tipCenter = i * toothAngle - Math.PI / 2;
+    const valleyCenter = tipCenter + toothAngle / 2;
+    // tip arc (outer)
+    pts.push({ x: cx + outerR * Math.cos(tipCenter - tipHalf), y: cy + outerR * Math.sin(tipCenter - tipHalf) });
+    pts.push({ x: cx + outerR * Math.cos(tipCenter + tipHalf), y: cy + outerR * Math.sin(tipCenter + tipHalf) });
+    // valley arc (inner)
+    pts.push({ x: cx + innerR * Math.cos(valleyCenter - valleyHalf), y: cy + innerR * Math.sin(valleyCenter - valleyHalf) });
+    pts.push({ x: cx + innerR * Math.cos(valleyCenter + valleyHalf), y: cy + innerR * Math.sin(valleyCenter + valleyHalf) });
   }
-  // close with a smooth curve back to start
-  const a0 = -Math.PI / 2;
-  const cClose = { x: cx + midR * Math.cos(a0 - halfTooth), y: cy + midR * Math.sin(a0 - halfTooth) };
-  const oStart = { x: cx + outerR * Math.cos(a0 - halfTooth), y: cy + outerR * Math.sin(a0 - halfTooth) };
-  segments.push(`Q${cClose.x},${cClose.y} ${oStart.x},${oStart.y}`);
-  segments.push('Z');
 
-  return segments.join(' ');
+  const n = pts.length;
+  const d: string[] = [`M${pts[0].x},${pts[0].y}`];
+
+  for (let i = 0; i < n; i += 4) {
+    const tipL = pts[i];
+    const tipR = pts[(i + 1) % n];
+    const valL = pts[(i + 2) % n];
+    const valR = pts[(i + 3) % n];
+    const nextTipL = pts[(i + 4) % n];
+
+    // straight along tip (outer arc)
+    d.push(`L${tipR.x},${tipR.y}`);
+
+    // cubic bezier from tip-right down to valley-left (smooth descent)
+    const midFall = (outerR + innerR) / 2;
+    const aFall1 = Math.atan2(tipR.y - cy, tipR.x - cx);
+    const aFall2 = Math.atan2(valL.y - cy, valL.x - cx);
+    const cp1 = { x: cx + midFall * Math.cos(aFall1), y: cy + midFall * Math.sin(aFall1) };
+    const cp2 = { x: cx + midFall * Math.cos(aFall2), y: cy + midFall * Math.sin(aFall2) };
+    d.push(`C${cp1.x},${cp1.y} ${cp2.x},${cp2.y} ${valL.x},${valL.y}`);
+
+    // straight along valley (inner arc)
+    d.push(`L${valR.x},${valR.y}`);
+
+    // cubic bezier from valley-right up to next tip-left (smooth ascent)
+    const aRise1 = Math.atan2(valR.y - cy, valR.x - cx);
+    const aRise2 = Math.atan2(nextTipL.y - cy, nextTipL.x - cx);
+    const cp3 = { x: cx + midFall * Math.cos(aRise1), y: cy + midFall * Math.sin(aRise1) };
+    const cp4 = { x: cx + midFall * Math.cos(aRise2), y: cy + midFall * Math.sin(aRise2) };
+    d.push(`C${cp3.x},${cp3.y} ${cp4.x},${cp4.y} ${nextTipL.x},${nextTipL.y}`);
+  }
+
+  d.push('Z');
+  return d.join(' ');
 }
 
 // Get HSL color from CSS variable name
