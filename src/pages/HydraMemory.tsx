@@ -223,7 +223,7 @@ function SessionMemoryTab({ stats, loading }: { stats: ReturnType<typeof useHydr
           <>
             <StatCard label={t('memory.hub.totalChunks')} value={stats.sessionMemory.total} icon={Layers} accent />
             <StatCard label={t('memory.hub.sessions')} value={stats.sessionMemory.session_count} icon={Database} />
-            <StatCard label="Типов данных" value={Object.keys(stats.sessionMemory.by_type).length} icon={BookOpen} />
+            <StatCard label={t('memory.hub.dataTypes')} value={Object.keys(stats.sessionMemory.by_type).length} icon={BookOpen} />
           </>
         )}
       </div>
@@ -259,7 +259,13 @@ function SessionMemoryTab({ stats, loading }: { stats: ReturnType<typeof useHydr
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             )}
             <Input
-              placeholder={searchMode === 'semantic' ? t('memory.semanticSearchPlaceholder') : searchMode === 'hybrid' ? 'Гибридный поиск (BM25 + вектор)...' : t('memory.searchPlaceholder')}
+              placeholder={
+                searchMode === 'semantic'
+                  ? t('memory.semanticSearchPlaceholder')
+                  : searchMode === 'hybrid'
+                  ? t('memory.hub.hybridSearchPlaceholder')
+                  : t('memory.searchPlaceholder')
+              }
               value={searchQuery}
               onChange={e => handleSearchChange(e.target.value)}
               className={cn(
@@ -293,7 +299,11 @@ function SessionMemoryTab({ stats, loading }: { stats: ReturnType<typeof useHydr
             </TooltipTrigger>
             <TooltipContent side="bottom">
               <p className="text-xs">
-                {searchMode === 'text' ? 'Текстовый поиск → нажми для семантического' : searchMode === 'semantic' ? 'Семантический поиск → нажми для гибридного' : 'Гибридный поиск (BM25+вектор) → нажми для текстового'}
+                {searchMode === 'text'
+                  ? t('memory.hub.searchModeText')
+                  : searchMode === 'semantic'
+                  ? t('memory.hub.searchModeSemantic')
+                  : t('memory.hub.searchModeHybrid')}
               </p>
             </TooltipContent>
           </Tooltip>
@@ -311,7 +321,7 @@ function SessionMemoryTab({ stats, loading }: { stats: ReturnType<typeof useHydr
         {searchMode === 'hybrid' && (
           <div className="flex items-center gap-2 text-xs text-purple-400/80">
             <GitMerge className="h-3 w-3" />
-            <span>Гибридный поиск: BM25 + косинусное сходство, объединение через RRF</span>
+            <span>{t('memory.hub.hybridSearchHint')}</span>
           </div>
         )}
 
@@ -513,9 +523,9 @@ function RoleMemoryTab({ stats, loading, onRefresh }: { stats: ReturnType<typeof
   const deleteEntry = async (id: string, role: string) => {
     setDeletingRole(id);
     const { error } = await supabase.from('role_memory').delete().eq('id', id).eq('user_id', user!.id);
-    if (error) toast.error('Ошибка удаления');
+    if (error) toast.error(t('memory.hub.deleteEntryError'));
     else {
-      toast.success('Запись удалена');
+      toast.success(t('memory.hub.deleteEntrySuccess'));
       setRoleEntries(prev => ({ ...prev, [role]: (prev[role] || []).filter(e => e.id !== id) }));
       onRefresh();
     }
@@ -545,7 +555,7 @@ function RoleMemoryTab({ stats, loading, onRefresh }: { stats: ReturnType<typeof
             >
               <div className="flex items-center gap-3">
                 <span className="font-medium text-sm">{role}</span>
-                <Badge variant="outline" className="text-xs">{count} записей</Badge>
+                <Badge variant="outline" className="text-xs">{count} {t('memory.hub.entriesCount')}</Badge>
               </div>
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 <span>{t('memory.hub.confidence')}: {(avg_confidence * 100).toFixed(0)}%</span>
@@ -622,13 +632,13 @@ function KnowledgeTab({ stats, loading }: { stats: ReturnType<typeof useHydraMem
     setScanning(true);
     setScanDone(false);
     try {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from('role_knowledge')
         .select('id, content, source_title, source_url, category, version, chunk_index, embedding')
         .eq('user_id', user.id);
 
       if (error) throw error;
-      const rows = (data || []) as unknown as KnowledgeEntryRaw[];
+      const rows = (data || []) as KnowledgeEntryRaw[];
 
       // Quality stats
       const wordCounts = rows.map(r => r.content.trim().split(/\s+/).length);
@@ -669,32 +679,32 @@ function KnowledgeTab({ stats, loading }: { stats: ReturnType<typeof useHydraMem
       setScanDone(true);
     } catch (e) {
       console.error('[KnowledgeTab] scan error', e);
-      toast.error('Ошибка сканирования базы знаний');
+      toast.error(t('memory.hub.scanError'));
     } finally {
       setScanning(false);
     }
-  }, [user?.id]);
+  }, [user?.id, t]);
 
   const deleteEntries = useCallback(async (ids: string[]) => {
     if (!user?.id || ids.length === 0) return;
     setDeletingIds(prev => { const s = new Set(prev); ids.forEach(id => s.add(id)); return s; });
     try {
       const { error } = await supabase
-        .from('role_knowledge' as any)
+        .from('role_knowledge')
         .delete()
         .in('id', ids)
         .eq('user_id', user.id);
       if (error) throw error;
-      toast.success(`Удалено ${ids.length} записей`);
+      toast.success(`${t('memory.hub.deleteSuccess')} ${ids.length} ${t('memory.hub.deleteRecords')}`);
       // Re-scan after deletion
       await runScan();
       stats.refresh();
     } catch {
-      toast.error('Ошибка удаления');
+      toast.error(t('memory.hub.deleteError'));
     } finally {
       setDeletingIds(new Set());
     }
-  }, [user?.id, runScan, stats]);
+  }, [user?.id, runScan, stats, t]);
 
   const allSimilarToDelete = useMemo(() =>
     similarGroups.flatMap(g => g.slice(1).map(r => r.id)), [similarGroups]);
@@ -708,8 +718,8 @@ function KnowledgeTab({ stats, loading }: { stats: ReturnType<typeof useHydraMem
         {loading ? Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-20" />) : (
           <>
             <StatCard label={t('memory.hub.knowledgeChunks')} value={stats.totalKnowledge} icon={BookOpen} accent />
-            <StatCard label="Ролей с базой" value={Object.keys(roleGroups).length} icon={Database} />
-            <StatCard label="Категорий" value={new Set(stats.knowledge.map(k => k.category)).size} icon={Layers} />
+            <StatCard label={t('memory.hub.rolesWithKnowledge')} value={Object.keys(roleGroups).length} icon={Database} />
+            <StatCard label={t('memory.hub.categories')} value={new Set(stats.knowledge.map(k => k.category)).size} icon={Layers} />
           </>
         )}
       </div>
@@ -722,10 +732,10 @@ function KnowledgeTab({ stats, loading }: { stats: ReturnType<typeof useHydraMem
         >
           <div className="flex items-center gap-2">
             <Wrench className="h-4 w-4 text-[hsl(var(--hydra-memory))]" />
-            <span className="text-sm font-medium">Инструменты очистки</span>
+            <span className="text-sm font-medium">{t('memory.hub.cleanupTools')}</span>
             {scanDone && (similarGroups.length > 0 || outdatedGroups.length > 0) && (
               <Badge variant="outline" className="text-xs text-amber-400 border-amber-500/40">
-                {similarGroups.length + outdatedGroups.length} проблем
+                {similarGroups.length + outdatedGroups.length} {t('memory.hub.problems')}
               </Badge>
             )}
           </div>
@@ -744,30 +754,29 @@ function KnowledgeTab({ stats, loading }: { stats: ReturnType<typeof useHydraMem
               <div className="p-4 space-y-4">
                 {/* Scan button */}
                 <div className="flex items-center justify-between">
-                  <p className="text-xs text-muted-foreground">Анализ базы знаний на дубликаты и устаревшие версии</p>
+                  <p className="text-xs text-muted-foreground">{t('memory.hub.cleanupToolsDesc')}</p>
                   <Button size="sm" variant="outline" onClick={runScan} disabled={scanning} className="h-7 gap-1.5">
                     {scanning ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ScanSearch className="h-3.5 w-3.5" />}
-                    {scanning ? 'Сканирование...' : 'Сканировать'}
+                    {scanning ? t('memory.hub.scanning') : t('memory.hub.scan')}
                   </Button>
                 </div>
 
                 {scanDone && qualityStats && (
                   <div className="grid grid-cols-3 gap-3">
-                    {/* Quality stats */}
                     <div className="rounded-lg border border-border bg-muted/30 p-3 text-center">
                       <BarChart2 className="h-4 w-4 mx-auto mb-1 text-[hsl(var(--hydra-memory))]" />
                       <p className="text-lg font-bold">{qualityStats.avgWords}</p>
-                      <p className="text-[10px] text-muted-foreground">ср. слов/чанк</p>
+                      <p className="text-[10px] text-muted-foreground">{t('memory.hub.avgWordsChunk')}</p>
                     </div>
                     <div className="rounded-lg border border-border bg-muted/30 p-3 text-center">
                       <Copy className="h-4 w-4 mx-auto mb-1 text-amber-400" />
                       <p className="text-lg font-bold text-amber-400">{similarGroups.length}</p>
-                      <p className="text-[10px] text-muted-foreground">групп похожих</p>
+                      <p className="text-[10px] text-muted-foreground">{t('memory.hub.similarGroups')}</p>
                     </div>
                     <div className="rounded-lg border border-border bg-muted/30 p-3 text-center">
                       <Clock className="h-4 w-4 mx-auto mb-1 text-orange-400" />
                       <p className="text-lg font-bold text-orange-400">{allOutdatedToDelete.length}</p>
-                      <p className="text-[10px] text-muted-foreground">устаревших</p>
+                      <p className="text-[10px] text-muted-foreground">{t('memory.hub.outdated')}</p>
                     </div>
                   </div>
                 )}
@@ -775,14 +784,14 @@ function KnowledgeTab({ stats, loading }: { stats: ReturnType<typeof useHydraMem
                 {scanDone && qualityStats && qualityStats.noEmbedding > 0 && (
                   <div className="flex items-center gap-2 text-xs text-amber-500 bg-amber-500/10 rounded-lg px-3 py-2 border border-amber-500/20">
                     <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
-                    <span>{qualityStats.noEmbedding} чанков без эмбеддинга — семантический поиск будет неточным</span>
+                    <span>{qualityStats.noEmbedding} {t('memory.hub.noEmbeddingWarning')}</span>
                   </div>
                 )}
 
                 {scanDone && similarGroups.length === 0 && outdatedGroups.length === 0 && (
                   <div className="flex items-center gap-2 text-xs text-green-400 bg-green-500/10 rounded-lg px-3 py-2 border border-green-500/20">
                     <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
-                    <span>База знаний чистая — дубликатов и устаревших записей не найдено</span>
+                    <span>{t('memory.hub.cleanResult')}</span>
                   </div>
                 )}
 
@@ -792,7 +801,7 @@ function KnowledgeTab({ stats, loading }: { stats: ReturnType<typeof useHydraMem
                     <div className="flex items-center justify-between">
                       <p className="text-xs font-medium text-amber-400 flex items-center gap-1.5">
                         <Copy className="h-3.5 w-3.5" />
-                        Похожие чанки ({similarGroups.length} групп, {allSimilarToDelete.length} дубликатов)
+                        {t('memory.hub.similarChunks')} ({similarGroups.length} {t('memory.hub.groups')}, {allSimilarToDelete.length} {t('memory.hub.duplicates')})
                       </p>
                       <Button
                         size="sm" variant="outline"
@@ -801,14 +810,14 @@ function KnowledgeTab({ stats, loading }: { stats: ReturnType<typeof useHydraMem
                         onClick={() => deleteEntries(allSimilarToDelete)}
                       >
                         {deletingIds.size > 0 ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Trash2 className="h-3 w-3 mr-1" />}
-                        Удалить все дубликаты
+                        {t('memory.hub.deleteAllDuplicates')}
                       </Button>
                     </div>
                     <div className="space-y-1.5 max-h-40 overflow-y-auto pr-1">
                       {similarGroups.map((group, gi) => (
                         <div key={gi} className="rounded border border-amber-500/20 bg-amber-500/5 px-3 py-2 text-xs">
                           <div className="flex items-center justify-between mb-1">
-                            <span className="text-amber-400 font-medium">{group.length} копий</span>
+                            <span className="text-amber-400 font-medium">{group.length} {t('memory.hub.copies')}</span>
                             <Button
                               size="sm" variant="ghost"
                               className="h-5 px-2 text-[10px] text-destructive hover:text-destructive"
@@ -816,7 +825,7 @@ function KnowledgeTab({ stats, loading }: { stats: ReturnType<typeof useHydraMem
                               onClick={() => deleteEntries(group.slice(1).map(r => r.id))}
                             >
                               <Trash2 className="h-3 w-3 mr-1" />
-                              Удалить {group.length - 1}
+                              {t('memory.hub.delete')} {group.length - 1}
                             </Button>
                           </div>
                           <p className="text-muted-foreground line-clamp-1">{group[0].content.slice(0, 120)}</p>
@@ -832,7 +841,7 @@ function KnowledgeTab({ stats, loading }: { stats: ReturnType<typeof useHydraMem
                     <div className="flex items-center justify-between">
                       <p className="text-xs font-medium text-orange-400 flex items-center gap-1.5">
                         <Clock className="h-3.5 w-3.5" />
-                        Устаревшие версии ({allOutdatedToDelete.length} чанков)
+                        {t('memory.hub.outdatedVersions')} ({allOutdatedToDelete.length} {t('memory.hub.chunks')})
                       </p>
                       <Button
                         size="sm" variant="outline"
@@ -841,7 +850,7 @@ function KnowledgeTab({ stats, loading }: { stats: ReturnType<typeof useHydraMem
                         onClick={() => deleteEntries(allOutdatedToDelete)}
                       >
                         {deletingIds.size > 0 ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Trash2 className="h-3 w-3 mr-1" />}
-                        Удалить устаревшие
+                        {t('memory.hub.deleteOutdated')}
                       </Button>
                     </div>
                     <div className="space-y-1.5 max-h-40 overflow-y-auto pr-1">
@@ -893,6 +902,7 @@ function KnowledgeTab({ stats, loading }: { stats: ReturnType<typeof useHydraMem
 interface GraphNode {
   id: string;
   label: string;
+  roleId?: string; // internal role key for lookups (e.g. 'critic')
   type: 'role' | 'memory' | 'session';
   count?: number;
   usageCount?: number;
@@ -961,6 +971,7 @@ function MemoryGraphTab({ stats }: { stats: ReturnType<typeof useHydraMemoryStat
       const roleNode: GraphNode = {
         id: `role_${rm.role}`,
         label: roleLabel,
+        roleId: rm.role, // store internal key for isHot lookup
         type: 'role',
         count: rm.count,
         confidence: rm.avg_confidence,
@@ -1028,8 +1039,8 @@ function MemoryGraphTab({ stats }: { stats: ReturnType<typeof useHydraMemoryStat
     return (
       <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
         <GitBranch className="h-12 w-12 mb-3 opacity-30" />
-        <p className="text-sm">Нет данных для графа памяти</p>
-        <p className="text-xs mt-1 opacity-60">Добавьте записи опыта через чат с ролями</p>
+        <p className="text-sm">{t('memory.hub.graphEmpty')}</p>
+        <p className="text-xs mt-1 opacity-60">{t('memory.hub.graphEmptyHint')}</p>
       </div>
     );
   }
@@ -1042,19 +1053,19 @@ function MemoryGraphTab({ stats }: { stats: ReturnType<typeof useHydraMemoryStat
       <div className="flex items-center gap-6 flex-wrap">
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <div className="h-3 w-3 rounded-full bg-[hsl(var(--hydra-memory))] opacity-80" />
-          <span>Роль</span>
+          <span>{t('memory.hub.legendRole')}</span>
         </div>
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <div className="h-3 w-3 rounded-full bg-[hsl(var(--hydra-cyan))]" />
-          <span>Центр (Гидра)</span>
+          <span>{t('memory.hub.legendCenter')}</span>
         </div>
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <div className="h-3 w-3 rounded-full bg-[hsl(var(--hydra-expert))]" opacity-70 />
-          <span>Связанная сессия</span>
+          <div className="h-3 w-3 rounded-full bg-[hsl(var(--hydra-expert))]" />
+          <span>{t('memory.hub.legendSession')}</span>
         </div>
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <Zap className="h-3 w-3 text-amber-400" />
-          <span>Горячая роль (высокий usage)</span>
+          <span>{t('memory.hub.legendHot')}</span>
         </div>
       </div>
 
@@ -1108,7 +1119,8 @@ function MemoryGraphTab({ stats }: { stats: ReturnType<typeof useHydraMemoryStat
             {/* Nodes */}
             {nodes.map(node => {
               const isCenter = node.id === 'center';
-              const isHot = node.type === 'role' && (roleMemoryDetails[node.label]?.usageCount || 0) > (maxUsage * 0.5);
+              // Use roleId (internal key) for lookup — not the localised label
+              const isHot = node.type === 'role' && (roleMemoryDetails[node.roleId ?? node.id]?.usageCount || 0) > (maxUsage * 0.5);
               const isSelected = selected?.id === node.id;
               const isHovered = hoveredId === node.id;
               const fill = isCenter
@@ -1192,29 +1204,29 @@ function MemoryGraphTab({ stats }: { stats: ReturnType<typeof useHydraMemoryStat
                     {selected.type === 'role' && (
                       <>
                         <div className="flex items-center gap-3 text-muted-foreground">
-                          <span>Записей опыта: <strong className="text-foreground">{selected.count}</strong></span>
+                          <span>{t('memory.hub.nodeExperienceRecords')}: <strong className="text-foreground">{selected.count}</strong></span>
                           {selected.confidence !== undefined && (
-                            <span>Ср. уверенность: <strong className="text-foreground">{(selected.confidence * 100).toFixed(0)}%</strong></span>
+                            <span>{t('memory.hub.nodeAvgConfidence')}: <strong className="text-foreground">{(selected.confidence * 100).toFixed(0)}%</strong></span>
                           )}
                           {(selected.usageCount ?? 0) > 0 && (
                             <span className="flex items-center gap-1 text-amber-400">
                               <Zap className="h-3 w-3" />
-                              Использований: {selected.usageCount}
+                              {t('memory.hub.nodeUsages')}: {selected.usageCount}
                             </span>
                           )}
                         </div>
-                        {roleMemoryDetails[selected.label]?.sessions.length > 0 && (
+                        {roleMemoryDetails[selected.roleId ?? '']?.sessions.length > 0 && (
                           <p className="text-muted-foreground">
-                            Связанных сессий: {roleMemoryDetails[selected.label].sessions.length}
+                            {t('memory.hub.nodeLinkedSessions')}: {roleMemoryDetails[selected.roleId ?? ''].sessions.length}
                           </p>
                         )}
                       </>
                     )}
                     {selected.type === 'session' && (
-                      <p className="text-muted-foreground">Сессия: {selected.label}</p>
+                      <p className="text-muted-foreground">{t('memory.hub.nodeSession')}: {selected.label}</p>
                     )}
                     {selected.type === 'memory' && (
-                      <p className="text-muted-foreground">Центральный узел — память всей Гидры</p>
+                      <p className="text-muted-foreground">{t('memory.hub.nodeCenterDesc')}</p>
                     )}
                   </div>
                   <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={() => setSelected(null)}>
@@ -1232,7 +1244,7 @@ function MemoryGraphTab({ stats }: { stats: ReturnType<typeof useHydraMemoryStat
         <div className="space-y-2">
           <p className="text-xs text-muted-foreground font-medium flex items-center gap-1.5">
             <Zap className="h-3.5 w-3.5 text-amber-400" />
-            Активность ролей
+            {t('memory.hub.roleActivity')}
           </p>
           <div className="space-y-1">
             {stats.roleMemory
@@ -1240,11 +1252,13 @@ function MemoryGraphTab({ stats }: { stats: ReturnType<typeof useHydraMemoryStat
               .sort((a, b) => (roleMemoryDetails[b.role]?.usageCount || 0) - (roleMemoryDetails[a.role]?.usageCount || 0))
               .slice(0, 8)
               .map(r => {
+                const roleConfig = ROLE_CONFIG[r.role as keyof typeof ROLE_CONFIG];
+                const roleLabel = roleConfig ? t(roleConfig.label) : r.role;
                 const usage = roleMemoryDetails[r.role]?.usageCount || 0;
                 const pct = Math.round((usage / maxUsage) * 100);
                 return (
                   <div key={r.role} className="flex items-center gap-3">
-                    <span className="text-xs text-muted-foreground w-28 truncate shrink-0">{r.role}</span>
+                    <span className="text-xs text-muted-foreground w-28 truncate shrink-0">{roleLabel}</span>
                     <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
                       <div
                         className="h-full rounded-full bg-[hsl(var(--hydra-memory))] transition-all"
@@ -1350,13 +1364,13 @@ function StorageTab() {
       const path = `${user!.id}/${file.name}`;
       const { data, error } = await supabase.storage.from(file.bucket).createSignedUrl(path, 3600);
       if (error || !data?.signedUrl) {
-        toast.error('Не удалось загрузить изображение');
+        toast.error(t('memory.hub.imageLoadError'));
         return;
       }
       setThumbnails(prev => ({ ...prev, [file.id]: data.signedUrl }));
       setPreview({ file, url: data.signedUrl });
     } catch {
-      toast.error('Ошибка предпросмотра');
+      toast.error(t('memory.hub.imageLoadError'));
     } finally {
       setPreviewLoading(false);
     }
@@ -1367,9 +1381,9 @@ function StorageTab() {
     try {
       const path = `${user!.id}/${file.name}`;
       const { error } = await supabase.storage.from(file.bucket).remove([path]);
-      if (error) toast.error('Ошибка удаления файла');
+      if (error) toast.error(t('memory.hub.deleteFileError'));
       else {
-        toast.success(`Файл «${file.name}» удалён`);
+        toast.success(`«${file.name}» ${t('memory.hub.deleteFileSuccess')}`);
         setFiles(prev => prev.filter(f => f.id !== file.id));
         if (preview?.file.id === file.id) setPreview(null);
       }
@@ -1434,7 +1448,7 @@ function StorageTab() {
         </div>
         <div className="relative w-full sm:w-48">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-          <Input placeholder="Поиск по имени..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="pl-8 h-7 text-xs" />
+          <Input placeholder={t('memory.hub.searchByName')} value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="pl-8 h-7 text-xs" />
         </div>
         <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={loadFiles}>
           <RefreshCw className={cn('h-3.5 w-3.5', loading && 'animate-spin')} />
@@ -1468,7 +1482,7 @@ function StorageTab() {
                       )}
                       onClick={() => isImage && handlePreview(file)}
                       disabled={previewLoading || !isImage}
-                      title={isImage ? 'Предпросмотр' : undefined}
+                      title={isImage ? t('memory.hub.preview') : undefined}
                     >
                       {isImage && thumbnails[file.id] ? (
                         <img
@@ -1514,7 +1528,7 @@ function StorageTab() {
                               {previewLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Eye className="h-3.5 w-3.5" />}
                             </Button>
                           </TooltipTrigger>
-                          <TooltipContent>Предпросмотр</TooltipContent>
+                          <TooltipContent>{t('memory.hub.preview')}</TooltipContent>
                         </Tooltip>
                       )}
                       <Tooltip>
@@ -1561,7 +1575,7 @@ function StorageTab() {
                       <Download className="h-3.5 w-3.5" />
                     </a>
                   </TooltipTrigger>
-                  <TooltipContent>Скачать</TooltipContent>
+                  <TooltipContent>{t('memory.hub.download')}</TooltipContent>
                 </Tooltip>
               )}
               <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setPreview(null)}>
@@ -1575,7 +1589,7 @@ function StorageTab() {
                 src={preview.url}
                 alt={preview.file.name}
                 className="max-w-full max-h-[65vh] object-contain rounded-md shadow-lg"
-                onError={() => { toast.error('Не удалось загрузить изображение'); setPreview(null); }}
+                onError={() => { toast.error(t('memory.hub.imageLoadError')); setPreview(null); }}
               />
               <div className="flex items-center gap-3 mt-3 text-xs text-muted-foreground">
                 <Badge variant="outline" className={cn('text-[10px]', bucketColors[preview.file.bucket])}>{preview.file.bucket}</Badge>
@@ -1611,7 +1625,7 @@ export default function HydraMemory() {
               <p className="text-sm text-muted-foreground">{t('memory.hub.subtitle')}</p>
             </div>
           </div>
-          <Button variant="ghost" size="icon" onClick={stats.refresh} className="shrink-0" title="Обновить">
+          <Button variant="ghost" size="icon" onClick={stats.refresh} className="shrink-0" title={t('memory.hub.refreshLabel')}>
             <RefreshCw className={`h-4 w-4 ${stats.loading ? 'animate-spin' : ''}`} />
           </Button>
         </div>
@@ -1636,7 +1650,7 @@ export default function HydraMemory() {
             </TabsTrigger>
             <TabsTrigger value="graph" className="gap-2">
               <GitBranch className="h-3.5 w-3.5" />
-              Граф памяти
+              {t('memory.hub.graphMemoryTab')}
             </TabsTrigger>
             <TabsTrigger value="storage" className="gap-2">
               <HardDrive className="h-3.5 w-3.5" />
