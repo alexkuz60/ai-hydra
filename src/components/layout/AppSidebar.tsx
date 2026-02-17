@@ -102,20 +102,15 @@ export function AppSidebar() {
                   alt=""
                   className="h-7 w-7 rounded-full transition-transform duration-500 group-hover:animate-[spin-slow_0.6s_ease-in-out]"
                 />
-                <div className={cn("flex flex-col", isCollapsed && "hidden")}>
-                  <span
-                    className="text-foreground/80"
-                    style={{ fontFamily: '"Keania One", sans-serif', fontSize: 22, fontWeight: 400, lineHeight: 1 }}
-                  >
-                    ai*hYdra
-                  </span>
-                  <span
-                    className="text-[9px] text-muted-foreground/60 italic leading-tight mt-0.5"
-                    style={{ fontFamily: '"Quicksand", sans-serif' }}
-                  >
-                    Здесь даже догмы эволюционируют
-                  </span>
-                </div>
+                <span
+                  className={cn(
+                    "text-foreground/80",
+                    isCollapsed && "hidden"
+                  )}
+                  style={{ fontFamily: '"Keania One", sans-serif', fontSize: 22, fontWeight: 400, lineHeight: 1 }}
+                >
+                  ai*hYdra
+                </span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
