@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { BrainCircuit, Database, Layers, BookOpen, Trash2, RefreshCw, Search } from 'lucide-react';
+import { BrainCircuit, Database, Layers, BookOpen, Trash2, RefreshCw, Settings2 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
@@ -9,6 +9,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useHydraMemoryStats } from '@/hooks/useHydraMemoryStats';
+import { useGlobalSessionMemory } from '@/hooks/useGlobalSessionMemory';
+import { SessionMemoryDialog } from '@/components/warroom/SessionMemoryDialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
@@ -49,6 +51,9 @@ function StatCard({ label, value, icon: Icon, accent }: { label: string; value: 
 // ─── Session Memory Tab ─────────────────────────────────────────────────────
 function SessionMemoryTab({ stats, loading }: { stats: ReturnType<typeof useHydraMemoryStats>; loading: boolean }) {
   const { t } = useLanguage();
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const globalMemory = useGlobalSessionMemory();
+
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
@@ -82,9 +87,39 @@ function SessionMemoryTab({ stats, loading }: { stats: ReturnType<typeof useHydr
         <div className="text-center py-12 text-muted-foreground text-sm">{t('memory.hub.empty')}</div>
       )}
 
-      <div className="rounded-lg border border-dashed border-[hsl(var(--hydra-memory)/0.3)] bg-[hsl(var(--hydra-memory)/0.03)] p-4 text-sm text-muted-foreground">
-        💡 Полноценный интерфейс семантического поиска по памяти сессий — в следующих итерациях. Сейчас поиск доступен через кнопку «Память» в заголовке Экспертной панели.
+      {/* Manager button */}
+      <div className="flex items-center gap-3">
+        <Button
+          variant="outline"
+          className="gap-2 border-[hsl(var(--hydra-memory)/0.4)] text-[hsl(var(--hydra-memory))] hover:bg-[hsl(var(--hydra-memory)/0.08)]"
+          onClick={() => setDialogOpen(true)}
+          disabled={globalMemory.isLoading}
+        >
+          <Settings2 className="h-4 w-4" />
+          {t('memory.manageMemory')}
+          {!globalMemory.isLoading && globalMemory.chunks.length > 0 && (
+            <Badge variant="secondary" className="ml-1 text-xs">{globalMemory.chunks.length}</Badge>
+          )}
+        </Button>
+        <Button variant="ghost" size="icon" onClick={() => globalMemory.refetch()} className="h-8 w-8">
+          <RefreshCw className={`h-3.5 w-3.5 ${globalMemory.isLoading ? 'animate-spin' : ''}`} />
+        </Button>
       </div>
+
+      <SessionMemoryDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        chunks={globalMemory.chunks}
+        isLoading={globalMemory.isLoading}
+        isDeleting={globalMemory.isDeleting}
+        onDeleteChunk={globalMemory.deleteChunk}
+        onDeleteDuplicates={globalMemory.deleteChunksBatch}
+        isDeletingDuplicates={globalMemory.isDeletingBatch}
+        onClearAll={globalMemory.clearAll}
+        isClearing={globalMemory.isClearing}
+        onSemanticSearch={globalMemory.semanticSearch}
+        isSearching={globalMemory.isSearching}
+      />
     </div>
   );
 }
