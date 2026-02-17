@@ -123,7 +123,7 @@ export function AppSidebar() {
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu className="gap-2">
-              {/* Expert Panel with mini HydraGears icon */}
+              {/* Expert Panel – large square card */}
               {user && (
                 <SidebarMenuItem>
                   <SidebarMenuButton
@@ -131,18 +131,15 @@ export function AppSidebar() {
                     isActive={isActive('/expert-panel')}
                     tooltip={t('nav.expertPanel')}
                     className={cn(
-                      "transition-all duration-200 active:scale-95 active:opacity-80 border-2 border-muted rounded-md hover:bg-muted/50 py-3",
+                      "transition-all duration-200 active:scale-95 active:opacity-80 border-2 border-muted rounded-lg hover:bg-muted/50 h-auto py-0 px-0",
                       isActive('/expert-panel') && "hydra-menu-active bg-accent/30"
                     )}
                   >
-                    <Link to="/expert-panel" className="flex items-center gap-2">
-                      <MiniHydraGears className={cn(
-                        "h-4 w-4 transition-all duration-200",
-                        isActive('/expert-panel') && "text-hydra-glow hydra-text-glow"
-                      )} />
+                    <Link to="/expert-panel" className="flex flex-col items-center justify-center gap-1 w-full aspect-square p-2">
+                      <MiniHydraGears className="w-12 h-12" />
                       <span className={cn(
-                        "transition-colors duration-200",
-                        isActive('/expert-panel') && "text-sidebar-primary font-medium"
+                        "text-[10px] font-medium leading-tight text-center transition-colors duration-200",
+                        isActive('/expert-panel') ? "text-sidebar-primary" : "text-muted-foreground"
                       )}>
                         {t('nav.expertPanel')}
                       </span>

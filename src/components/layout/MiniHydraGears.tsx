@@ -29,7 +29,6 @@ function miniGearPath(cx: number, cy: number, outerR: number, innerR: number, te
 }
 
 export function MiniHydraGears({ className = '' }: { className?: string }) {
-  const size = 20;
   const center = 50;
   const orbitR = 30;
   const gearOuterR = 11;
@@ -46,8 +45,6 @@ export function MiniHydraGears({ className = '' }: { className?: string }) {
   return (
     <svg
       viewBox="0 0 100 100"
-      width={size}
-      height={size}
       className={className}
       aria-hidden="true"
     >
