@@ -27,6 +27,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import type { SessionMemoryChunk, ChunkType, SearchResult } from '@/hooks/useSessionMemory';
+import { ROLE_CONFIG } from '@/config/roles';
 
 // ─── Design tokens ───────────────────────────────────────────────────────────
 
@@ -908,6 +909,7 @@ interface GraphEdge {
 
 function MemoryGraphTab({ stats }: { stats: ReturnType<typeof useHydraMemoryStats> }) {
   const { user } = useAuth();
+  const { t, language } = useLanguage();
   const svgRef = useRef<SVGSVGElement>(null);
   const [roleMemoryDetails, setRoleMemoryDetails] = useState<Record<string, { sessions: string[]; usageCount: number }>>({});
   const [loadingDetails, setLoadingDetails] = useState(false);
@@ -954,9 +956,11 @@ function MemoryGraphTab({ stats }: { stats: ReturnType<typeof useHydraMemoryStat
       const angle = (2 * Math.PI * i) / stats.roleMemory.length - Math.PI / 2;
       const radius = Math.min(cx, cy) * 0.62;
       const nodeSize = 12 + (rm.count / maxCount) * 12;
+      const roleConfig = ROLE_CONFIG[rm.role as keyof typeof ROLE_CONFIG];
+      const roleLabel = roleConfig ? t(roleConfig.label) : rm.role;
       const roleNode: GraphNode = {
         id: `role_${rm.role}`,
-        label: rm.role,
+        label: roleLabel,
         type: 'role',
         count: rm.count,
         confidence: rm.avg_confidence,
@@ -976,7 +980,7 @@ function MemoryGraphTab({ stats }: { stats: ReturnType<typeof useHydraMemoryStat
             sessionIds.add(sid);
             const sa = angle + ((si - 0.5) * 0.4);
             const sr = radius * 1.55;
-          const sessNode: GraphNode = {
+            const sessNode: GraphNode = {
               id: `sess_${sid}`,
               label: sid.slice(0, 8) + '…',
               type: 'session',
@@ -995,7 +999,7 @@ function MemoryGraphTab({ stats }: { stats: ReturnType<typeof useHydraMemoryStat
 
     const centerNode: GraphNode = {
       id: 'center',
-      label: 'Гидра',
+      label: language === 'ru' ? 'Гидра' : 'Hydra',
       type: 'memory',
       x: cx,
       y: cy,
@@ -1004,7 +1008,7 @@ function MemoryGraphTab({ stats }: { stats: ReturnType<typeof useHydraMemoryStat
     memoryNodes.push(centerNode);
 
     return { nodes: [...memoryNodes, ...roleNodes, ...sessionNodes], edges };
-  }, [stats.roleMemory, roleMemoryDetails]);
+  }, [stats.roleMemory, roleMemoryDetails, t, language]);
 
   const nodeMap = useMemo(() => {
     const m: Record<string, GraphNode> = {};
@@ -1056,7 +1060,7 @@ function MemoryGraphTab({ stats }: { stats: ReturnType<typeof useHydraMemoryStat
 
       {/* SVG Graph */}
       <Card className="overflow-hidden border-border">
-        <div className="relative w-full" style={{ aspectRatio: '520/320' }}>
+        <div className="relative w-full max-w-[520px]" style={{ aspectRatio: '520/320' }}>
           <svg
             ref={svgRef}
             viewBox="0 0 520 320"
