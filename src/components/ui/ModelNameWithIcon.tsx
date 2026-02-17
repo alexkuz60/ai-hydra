@@ -12,6 +12,15 @@ export function getProviderFromModelId(modelId: string): string | null {
   // Lovable AI format: "google/gemini-*" or "openai/gpt-*"
   if (lower.startsWith('google/')) return 'gemini';
   if (lower.startsWith('openai/')) return 'openai';
+  if (lower.startsWith('proxyapi/')) {
+    const after = lower.slice('proxyapi/'.length);
+    if (after.startsWith('gemini')) return 'gemini';
+    if (after.startsWith('gpt-') || after.startsWith('o1') || after.startsWith('o3') || after.startsWith('o4')) return 'openai';
+    if (after.startsWith('claude')) return 'anthropic';
+    if (after.startsWith('grok')) return 'xai';
+    if (after.startsWith('deepseek')) return 'deepseek';
+    if (after.startsWith('mistral') || after.startsWith('pixtral') || after.startsWith('codestral')) return 'mistral';
+  }
 
   // Direct provider model IDs
   if (lower.startsWith('gpt-') || lower.startsWith('o1') || lower.startsWith('o3')) return 'openai';
