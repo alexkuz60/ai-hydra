@@ -157,6 +157,9 @@ export function HydraGears({
           .connection-active {
             animation: dash-flow 1s linear infinite;
           }
+          .gear-group path, .gear-group circle {
+            transition: stroke 0.4s ease, stroke-opacity 0.4s ease, fill-opacity 0.4s ease;
+          }
         `}</style>
 
         {/* Clip for center avatar */}
@@ -209,7 +212,32 @@ export function HydraGears({
         const IconComponent = ROLE_CONFIG[gear.role].icon;
 
         return (
-          <g key={`gear-${idx}`}>
+          <g key={`gear-${idx}`} className="gear-group">
+            {/* Invisible hover target */}
+            <circle
+              cx={pos.x}
+              cy={pos.y}
+              r={gearOuterR + 4}
+              fill="transparent"
+              onMouseEnter={(e) => {
+                const g = e.currentTarget.parentElement;
+                g?.querySelectorAll('path, circle:not(:first-child)').forEach(el => {
+                  (el as SVGElement).style.stroke = color;
+                  (el as SVGElement).style.strokeOpacity = '0.9';
+                });
+                const icon = g?.querySelector('.gear-icon') as HTMLElement;
+                if (icon) icon.style.color = color;
+              }}
+              onMouseLeave={(e) => {
+                const g = e.currentTarget.parentElement;
+                g?.querySelectorAll('path, circle:not(:first-child)').forEach(el => {
+                  (el as SVGElement).style.stroke = 'white';
+                  (el as SVGElement).style.strokeOpacity = '0.5';
+                });
+                const icon = g?.querySelector('.gear-icon') as HTMLElement;
+                if (icon) icon.style.color = 'rgba(255,255,255,0.5)';
+              }}
+            />
             {/* Gear body (rotates) */}
             <g
               className={isSpinning ? (idx % 2 === 0 ? 'gear-spinning' : 'gear-spinning-reverse') : ''}
@@ -218,20 +246,19 @@ export function HydraGears({
               <path
                 d={gearPath(pos.x, pos.y, gearOuterR, gearInnerR, gearTeeth)}
                 fill="none"
-                stroke={color}
+                stroke="white"
                 strokeWidth={2}
-                strokeOpacity={0.7}
+                strokeOpacity={0.5}
               />
-              {/* Inner circle */}
               <circle
                 cx={pos.x}
                 cy={pos.y}
                 r={gearInnerR - 4}
                 fill="hsl(var(--background))"
                 fillOpacity={0.6}
-                stroke={color}
+                stroke="white"
                 strokeWidth={1.5}
-                strokeOpacity={0.4}
+                strokeOpacity={0.5}
               />
             </g>
 
@@ -243,11 +270,17 @@ export function HydraGears({
               height={iconSize}
             >
               <div
-                style={{ width: iconSize, height: iconSize, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                className="gear-icon"
+                style={{
+                  width: iconSize, height: iconSize,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  color: 'rgba(255,255,255,0.5)',
+                  transition: 'color 0.4s ease',
+                }}
               >
                 <IconComponent
                   size={iconSize - 4}
-                  style={{ color }}
+                  style={{ color: 'inherit' }}
                   strokeWidth={1.8}
                 />
               </div>
