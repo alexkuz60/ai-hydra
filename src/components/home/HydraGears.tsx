@@ -82,7 +82,7 @@ export function HydraGears({
   const centerGearInnerR = 46;
   const centerGearTeeth = 14;
   const iconSize = 28;
-  const centerIconSize = 36;
+  const centerIconSize = 72;
 
   const gears: GearConfig[] = useMemo(
     () => roles.slice(0, 6).map((role, i) => ({
@@ -350,7 +350,7 @@ export function HydraGears({
             >
               <Brain
                 size={centerIconSize - 4}
-                style={{ color: 'hsl(var(--primary))' }}
+                style={{ color: 'hsl(270, 50%, 75%)' }}
                 strokeWidth={1.5}
               />
             </div>
