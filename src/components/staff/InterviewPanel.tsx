@@ -537,6 +537,17 @@ export function InterviewPanel({ role, onClose }: InterviewPanelProps) {
                 setSelectedSessionId(id);
                 interview.loadSession(id);
               }}
+              onDeleted={async () => {
+                const all = await interview.listSessions();
+                const roleSessions = all.filter(s => s.role === role);
+                setSessions(roleSessions);
+                if (roleSessions.length > 0) {
+                  setSelectedSessionId(roleSessions[0].id);
+                  interview.loadSession(roleSessions[0].id);
+                } else {
+                  setSelectedSessionId(null);
+                }
+              }}
               isRu={isRu}
             />
           )}
