@@ -637,6 +637,7 @@ function StorageTab() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [preview, setPreview] = useState<PreviewState>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
+  const [thumbnails, setThumbnails] = useState<Record<string, string>>({});
 
   const loadFiles = useCallback(async () => {
     if (!user) return;
@@ -666,6 +667,19 @@ function StorageTab() {
         } catch { /* skip bucket on error */ }
       }
       setFiles(allFiles);
+      // Generate thumbnails for image files
+      const thumbMap: Record<string, string> = {};
+      const imageFiles = allFiles.filter(f => f.mime_type?.startsWith('image/'));
+      await Promise.all(
+        imageFiles.map(async f => {
+          try {
+            const path = `${user.id}/${f.name}`;
+            const { data } = await supabase.storage.from(f.bucket).createSignedUrl(path, 3600);
+            if (data?.signedUrl) thumbMap[f.id] = data.signedUrl;
+          } catch { /* skip */ }
+        })
+      );
+      setThumbnails(thumbMap);
     } finally {
       setLoading(false);
     }
@@ -675,14 +689,20 @@ function StorageTab() {
 
   const handlePreview = async (file: StorageFile) => {
     if (!file.mime_type?.startsWith('image/')) return;
+    // Reuse thumbnail URL if already loaded
+    if (thumbnails[file.id]) {
+      setPreview({ file, url: thumbnails[file.id] });
+      return;
+    }
     setPreviewLoading(true);
     try {
       const path = `${user!.id}/${file.name}`;
-      const { data, error } = await supabase.storage.from(file.bucket).createSignedUrl(path, 300);
+      const { data, error } = await supabase.storage.from(file.bucket).createSignedUrl(path, 3600);
       if (error || !data?.signedUrl) {
         toast.error('Не удалось загрузить изображение');
         return;
       }
+      setThumbnails(prev => ({ ...prev, [file.id]: data.signedUrl }));
       setPreview({ file, url: data.signedUrl });
     } catch {
       toast.error('Ошибка предпросмотра');
@@ -793,13 +813,19 @@ function StorageTab() {
                         'shrink-0 flex items-center justify-center rounded overflow-hidden',
                         isImage
                           ? 'w-10 h-10 border border-border bg-muted hover:border-[hsl(var(--hydra-memory)/0.5)] transition-colors cursor-pointer'
-                          : 'w-7 h-7 cursor-default'
+                          : 'w-7 h-7 cursor-default pointer-events-none'
                       )}
                       onClick={() => isImage && handlePreview(file)}
                       disabled={previewLoading || !isImage}
                       title={isImage ? 'Предпросмотр' : undefined}
                     >
-                      {previewLoading && preview === null && isImage ? (
+                      {isImage && thumbnails[file.id] ? (
+                        <img
+                          src={thumbnails[file.id]}
+                          alt={file.name}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : previewLoading && preview === null && isImage ? (
                         <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
                       ) : (
                         <Icon className={cn('text-muted-foreground', isImage ? 'h-5 w-5' : 'h-4 w-4')} />
