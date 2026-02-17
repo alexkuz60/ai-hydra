@@ -31,7 +31,7 @@ const SECTIONS: { id: Section; icon: React.ComponentType<{ className?: string }>
   { id: 'rules', icon: ScrollText, labelRu: 'Правила конкурса', labelEn: 'Contest Rules', descRu: 'Настройка туров и критериев', descEn: 'Rounds and criteria setup' },
   { id: 'contest', icon: Crown, labelRu: 'Конкурс интеллект-красоты', labelEn: 'Intelligence Contest', descRu: 'Соревнования между моделями', descEn: 'AI model competitions' },
   { id: 'duel', icon: TournamentIcon, labelRu: 'Дуэль «К барьеру»', labelEn: 'Duel «En Garde»', descRu: 'Попарное состязание кандидатов', descEn: 'Head-to-head candidate battle' },
-  { id: 'interview', icon: UserCheck, labelRu: 'Предварительное собеседование', labelEn: 'Preliminary Interview', descRu: 'Конкурсное собеседование победителей', descEn: 'Contest winner interviews' },
+  { id: 'interview', icon: UserCheck, labelRu: 'Скрининг-интервью', labelEn: 'Screening Interview', descRu: 'Пакетное тестирование победителей', descEn: 'Batch testing of contest winners' },
   { id: 'ratings', icon: BarChart3, labelRu: 'Рейтинги ИИ-моделей', labelEn: 'AI Model Ratings', descRu: 'Статистика и оценки', descEn: 'Stats and evaluations' },
 ];
 
@@ -190,8 +190,8 @@ export default function ModelRatings() {
                 <div className="h-full flex items-center justify-center">
                   <div className="text-center space-y-3">
                     <UserCheck className="h-10 w-10 text-muted-foreground/40 mx-auto" />
-                    <p className="text-lg font-medium">{language === 'ru' ? 'Предварительное собеседование' : 'Preliminary Interview'}</p>
-                    <p className="text-sm text-muted-foreground">{language === 'ru' ? 'Конкурсное собеседование победителей — в разработке' : 'Contest winner interviews — coming soon'}</p>
+                    <p className="text-lg font-medium">{language === 'ru' ? 'Скрининг-интервью' : 'Screening Interview'}</p>
+                    <p className="text-sm text-muted-foreground">{language === 'ru' ? 'Пакетное тестирование победителей — в разработке' : 'Batch winner screening — coming soon'}</p>
                   </div>
                 </div>
               )}
