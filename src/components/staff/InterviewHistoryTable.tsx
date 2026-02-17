@@ -34,16 +34,21 @@ const SUPERSEDED_BADGE = {
   className: 'bg-muted/30 text-muted-foreground border-border',
 };
 
-const PROVIDER_LABELS: Record<string, { short: string; full: string }> = {
-  gemini: { short: 'Gemini', full: 'Google Gemini' },
-  openai: { short: 'OpenAI', full: 'OpenAI' },
-  anthropic: { short: 'Anthropic', full: 'Anthropic' },
-  xai: { short: 'xAI', full: 'xAI' },
-  deepseek: { short: 'DeepSeek', full: 'DeepSeek' },
-  mistral: { short: 'Mistral', full: 'Mistral' },
-  groq: { short: 'Groq', full: 'Groq' },
+const ROUTER_LABELS: Record<string, { short: string; full: string }> = {
+  proxyapi: { short: 'Proxy', full: 'ProxyAPI' },
+  lovable: { short: 'Lovable', full: 'Lovable AI' },
   openrouter: { short: 'OR', full: 'OpenRouter' },
+  direct: { short: 'Direct', full: 'Direct API' },
 };
+
+/** Detect which router/gateway a model goes through based on its ID prefix */
+function getRouterFromModelId(modelId: string): string {
+  const lower = modelId.toLowerCase();
+  if (lower.startsWith('proxyapi/')) return 'proxyapi';
+  if (lower.startsWith('google/') || lower.startsWith('openai/')) return 'lovable';
+  if (lower.includes(':free')) return 'openrouter';
+  return 'direct';
+}
 
 // ── Helpers ──
 
@@ -127,7 +132,7 @@ export function SessionHistoryTable({
           <TableHeader>
             <TableRow className="bg-muted/30">
               <TableHead className="text-[10px] py-1.5 px-2 h-auto">{isRu ? 'Модель' : 'Model'}</TableHead>
-              <TableHead className="text-[10px] py-1.5 px-2 h-auto">{isRu ? 'Провайдер' : 'Provider'}</TableHead>
+              <TableHead className="text-[10px] py-1.5 px-2 h-auto">{isRu ? 'Роутер' : 'Router'}</TableHead>
               <TableHead className="text-[10px] py-1.5 px-2 h-auto text-right">{isRu ? 'Токены' : 'Tokens'}</TableHead>
               <TableHead className="text-[10px] py-1.5 px-2 h-auto text-right">{isRu ? 'Время' : 'Time'}</TableHead>
               <TableHead className="text-[10px] py-1.5 px-2 h-auto text-right">{isRu ? 'Цена' : 'Cost'}</TableHead>
@@ -140,7 +145,11 @@ export function SessionHistoryTable({
               const isCollapsed = collapsed.has(providerKey);
               const Logo = PROVIDER_LOGOS[providerKey];
               const color = PROVIDER_COLORS[providerKey] || 'text-muted-foreground';
-              const label = PROVIDER_LABELS[providerKey]?.full || providerKey;
+              const BRAND_LABELS: Record<string, string> = {
+                gemini: 'Google Gemini', openai: 'OpenAI', anthropic: 'Anthropic',
+                xai: 'xAI', deepseek: 'DeepSeek', mistral: 'Mistral', groq: 'Groq', openrouter: 'OpenRouter',
+              };
+              const label = BRAND_LABELS[providerKey] || providerKey;
 
               return (
                 <React.Fragment key={providerKey}>
@@ -224,10 +233,10 @@ function SessionRow({
     : new Date(s.created_at).toLocaleDateString(isRu ? 'ru-RU' : 'en-US', { day: 'numeric', month: 'short' });
 
   const modelShort = s.candidate_model.replace(/^proxyapi\//, '').replace(/^google\//, '').replace(/^openai\//, '');
-  const providerKey = getProviderFromModelId(s.candidate_model);
-  const providerInfo = providerKey ? PROVIDER_LABELS[providerKey] : null;
-  const ProviderLogo = providerKey ? PROVIDER_LOGOS[providerKey] : null;
-  const providerColor = providerKey ? PROVIDER_COLORS[providerKey] || 'text-muted-foreground' : 'text-muted-foreground';
+  const routerKey = getRouterFromModelId(s.candidate_model);
+  const routerInfo = ROUTER_LABELS[routerKey];
+  const RouterLogo = PROVIDER_LOGOS[routerKey];
+  const routerColor = PROVIDER_COLORS[routerKey] || 'text-muted-foreground';
 
   return (
     <TableRow
@@ -249,9 +258,9 @@ function SessionRow({
         </div>
       </TableCell>
       <TableCell className="py-1.5 px-2">
-        <div className="flex items-center gap-1" title={providerInfo?.full}>
-          {ProviderLogo && <ProviderLogo className={cn("h-3 w-3 shrink-0", providerColor)} />}
-          <span className="text-[10px] text-muted-foreground">{providerInfo?.short || '—'}</span>
+        <div className="flex items-center gap-1" title={routerInfo?.full}>
+          {RouterLogo && <RouterLogo className={cn("h-3 w-3 shrink-0", routerColor)} />}
+          <span className="text-[10px] text-muted-foreground">{routerInfo?.short || '—'}</span>
         </div>
       </TableCell>
       <TableCell className="py-1.5 px-2 text-right text-[10px] text-muted-foreground font-mono">
