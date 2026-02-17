@@ -64,16 +64,16 @@ export function MiniHydraGears({ className = '' }: { className?: string }) {
       {/* Center gear */}
       <path
         d={miniGearPath(center, center, centerR, centerInnerR, 10)}
-        fill="hsl(270, 50%, 75%)"
+        fill="hsl(270, 25%, 80%)"
         opacity={0.8}
       />
-      <circle cx={center} cy={center} r={6} fill="hsl(270, 50%, 85%)" />
+      <circle cx={center} cy={center} r={6} fill="hsl(270, 25%, 90%)" />
       {/* Outer gears */}
       {positions.map((pos, i) => (
         <path
           key={i}
           d={miniGearPath(pos.x, pos.y, gearOuterR, gearInnerR, teeth)}
-          fill={`hsl(var(${ROLES[i].token}))`}
+          fill={`hsl(var(${ROLES[i].token}) / 0.5)`}
           opacity={0.85}
         />
       ))}
