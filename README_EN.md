@@ -134,7 +134,17 @@ Automatic experience consolidation: patterns from `role_memory` are distilled in
 - Request logs, analytics, model catalog
 - Prioritization settings
 
-### 14. User Profile
+### 14. Hydra Memory
+- **RAG memory management hub** — three layers in one interface: sessions, role experience, knowledge base
+- **Session Memory** — chunk statistics by type, "Manage Memory" button → `SessionMemoryDialog`
+- **Role Experience** — `role_memory` records with confidence scores, inline deletion, role grouping
+- **Knowledge Base** — `role_knowledge` with cleanup tools: duplicate detection, outdated version deletion by `source_url`
+- **Memory Graph** — SVG visualization of connections: central Hydra node → roles → sessions, hover-glow, click → details panel, role activity progress bars, localized role labels
+- **Hybrid Search** — three modes: Text / Semantic / Hybrid (BM25 + pgvector + RRF k=60)
+- **Reranking** — re-scoring via `gemini-3-flash-preview`, formula `final_score = rerank×0.7 + hybrid×0.3`
+- **HyDE** — hypothetical document generation before search, embedding blend `query×0.4 + hyde×0.6`
+
+### 15. User Profile
 - **Avatar** — photo upload with Canvas cropper (drag, scroll-zoom, 260×260 JPEG, 2MB limit)
 - Signed URL generated dynamically for 2 hours — avatars never "expire"
 - Tabs: Profile (avatar/name), Preferences (theme/language), API Keys, ProxyAPI, Stats

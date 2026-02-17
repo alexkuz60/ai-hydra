@@ -917,6 +917,157 @@ In each model's settings you can choose:
     },
   },
   {
+    id: 'hydra-memory-hub',
+    titleKey: 'hydrapedia.sections.hydraMemoryHub',
+    icon: 'BrainCircuit',
+    content: {
+      ru: `# Память Гидры
+
+Центр управления памятью ИИ-Гидры — RAG-хаб, объединяющий три уровня хранилища в едином интерфейсе. Доступен через иконку 🧠 в боковом меню (\`/hydra-memory\`).
+
+## Три уровня памяти
+
+| Уровень | Таблица | Назначение |
+|---------|---------|------------|
+| **Память сессий** | \`session_memory\` | Тактические чанки текущих диалогов |
+| **Опыт ролей** | \`role_memory\` | Долгосрочный опыт, накопленный ролями между сессиями |
+| **База знаний** | \`role_knowledge\` | Документальная база RAG-контекста для ролей |
+
+## Вкладка «Память сессий»
+
+- Статистика: всего чанков, количество сессий, типов данных
+- Breakdown по типам: \`decision / context / instruction / evaluation / summary / message\`
+- Кнопка **«Управление памятью»** → открывает \`SessionMemoryDialog\`:
+  - Семантический, текстовый и **гибридный** поиск (BM25 + pgvector + RRF)
+  - Фильтрация по типам чанков
+  - Обнаружение и массовое удаление дубликатов
+  - Полная очистка памяти
+
+## Вкладка «Опыт ролей»
+
+- Статистика: всего записей, количество ролей, средний confidence
+- Список ролей с раскрывающимися записями опыта
+- Inline-удаление отдельных записей
+- Типы памяти с цветовыми бейджами: \`experience / preference / skill / mistake / success\`
+
+## Вкладка «База знаний»
+
+- Статистика: чанков знаний, ролей с базой, категорий
+- Группировка: роли → категории
+- **Инструменты очистки** (аккордеон):
+  - Сканирование дубликатов по первым 200 символам контента
+  - Удаление устаревших версий (чанки с одинаковым \`source_url\` и не-последней \`version\`)
+  - Предупреждение при наличии чанков без эмбеддинга
+
+## Граф памяти
+
+SVG-визуализация связей всех трёх уровней:
+
+- **Центральный узел** — Гидра (локализован: «Гидра» / «Hydra»)
+- **Узлы ролей** — по кругу, размер пропорционален количеству записей опыта
+- **Узлы сессий** — на орбите роли, содержат первые 8 символов session_id
+- **Горячие роли** — пунктирный ореол + ⚡ при высоком \`usage_count\`
+- Клик на узел → детали: количество записей, средний confidence, связанные сессии
+- Прогресс-бары активности ролей под графом
+
+> [!TIP] Локализация
+> Метки ролей в графе отображаются на языке интерфейса (RU/EN) через \`ROLE_CONFIG\` + \`t(roleConfig.label)\`.
+
+## Поисковые режимы
+
+| Режим | Иконка | Алгоритм |
+|-------|--------|----------|
+| Текстовый | 🔍 | \`ILIKE\` по содержимому |
+| Семантический | 🧠 | Cosine similarity (pgvector) |
+| Гибридный | ⚡ | BM25 + pgvector + RRF (k=60) |
+
+## RAG Pipeline (Архивариус)
+
+При работе роли Архивариуса знания извлекаются через многоэтапный пайплайн:
+
+\`\`\`
+Запрос → generate-embeddings + HyDE-генерация [параллельно]
+  → blend(query×0.4 + hyde×0.6) + L2-нормализация
+  → hybrid_search_role_knowledge (top-15)
+  → pre-filter (similarity > 0.2 || hybrid_score > 0.005)
+  → rerank [gemini-3-flash-preview] — final_score = rerank×0.7 + hybrid×0.3
+  → top-5 → system prompt injection
+\`\`\``,
+      en: `# Hydra Memory
+
+Hydra's memory management hub — a RAG center combining three storage layers in a single interface. Accessible via the 🧠 icon in the sidebar (\`/hydra-memory\`).
+
+## Three Memory Layers
+
+| Layer | Table | Purpose |
+|-------|-------|---------|
+| **Session Memory** | \`session_memory\` | Tactical chunks from active dialogues |
+| **Role Experience** | \`role_memory\` | Long-term experience accumulated by roles across sessions |
+| **Knowledge Base** | \`role_knowledge\` | Documentary RAG context base for roles |
+
+## Session Memory Tab
+
+- Stats: total chunks, session count, data types
+- Breakdown by type: \`decision / context / instruction / evaluation / summary / message\`
+- **"Manage Memory"** button → opens \`SessionMemoryDialog\`:
+  - Semantic, text, and **hybrid** search (BM25 + pgvector + RRF)
+  - Filter by chunk types
+  - Duplicate detection and bulk deletion
+  - Full memory clear
+
+## Role Experience Tab
+
+- Stats: total records, role count, average confidence
+- Expandable role list with experience records
+- Inline deletion of individual records
+- Memory type badges: \`experience / preference / skill / mistake / success\`
+
+## Knowledge Base Tab
+
+- Stats: knowledge chunks, roles with base, categories
+- Grouping: roles → categories
+- **Cleanup Tools** (accordion):
+  - Duplicate scan by first 200 chars of content
+  - Stale version deletion (chunks with same \`source_url\` but non-latest \`version\`)
+  - Warning for chunks without embeddings
+
+## Memory Graph
+
+SVG visualization of connections across all three layers:
+
+- **Central node** — Hydra (localized: «Гидра» / «Hydra»)
+- **Role nodes** — arranged in a circle, size proportional to experience record count
+- **Session nodes** — in orbit around their role, showing first 8 chars of session_id
+- **Hot roles** — dashed glow + ⚡ for high \`usage_count\`
+- Click on a node → details panel: record count, average confidence, linked sessions
+- Role activity progress bars below the graph
+
+> [!TIP] Localization
+> Role labels in the graph are displayed in the current interface language (RU/EN) via \`ROLE_CONFIG\` + \`t(roleConfig.label)\`.
+
+## Search Modes
+
+| Mode | Icon | Algorithm |
+|------|------|-----------|
+| Text | 🔍 | \`ILIKE\` on content |
+| Semantic | 🧠 | Cosine similarity (pgvector) |
+| Hybrid | ⚡ | BM25 + pgvector + RRF (k=60) |
+
+## RAG Pipeline (Archivist role)
+
+When the Archivist role retrieves knowledge, it uses a multi-stage pipeline:
+
+\`\`\`
+Query → generate-embeddings + HyDE generation [parallel]
+  → blend(query×0.4 + hyde×0.6) + L2-normalization
+  → hybrid_search_role_knowledge (top-15)
+  → pre-filter (similarity > 0.2 || hybrid_score > 0.005)
+  → rerank [gemini-3-flash-preview] — final_score = rerank×0.7 + hybrid×0.3
+  → top-5 → system prompt injection
+\`\`\``,
+    },
+  },
+  {
     id: 'roleMemory',
     titleKey: 'hydrapedia.sections.roleMemory',
     icon: 'BrainCircuit',
