@@ -50,7 +50,6 @@ import {
 import { cn } from '@/lib/utils';
 import { useGuideTourContext } from '@/contexts/GuideTourContext';
 import { MiniHydraGears } from './MiniHydraGears';
-import hydraLogo from '@/assets/hydra-logo.png';
 
 export function AppSidebar() {
   const { user, signOut } = useAuth();
@@ -96,20 +95,23 @@ export function AppSidebar() {
               size="lg"
               tooltip="AI-Hydra"
             >
-              <Link to="/" className="flex items-center gap-1.5 group">
-                <img
-                  src={hydraLogo}
-                  alt=""
-                  className="h-7 w-7 rounded-full transition-transform duration-500 group-hover:animate-[spin-slow_0.6s_ease-in-out]"
+              <Link to="/" className="flex items-center gap-1 group font-rounded">
+                <span className={cn(
+                  "text-xl font-bold bg-gradient-to-r from-sidebar-primary to-hydra-expert bg-clip-text text-transparent",
+                  isCollapsed && "hidden"
+                )}>
+                  ai
+                </span>
+                <img 
+                  src="/logo.svg" 
+                  alt="" 
+                  className="h-7 w-7 transition-transform duration-500 group-hover:animate-[spin-slow_0.6s_ease-in-out]" 
                 />
-                <span
-                  className={cn(
-                    "text-foreground/80",
-                    isCollapsed && "hidden"
-                  )}
-                  style={{ fontFamily: '"Keania One", sans-serif', fontSize: 22, fontWeight: 400, lineHeight: 1 }}
-                >
-                  ai*hYdra
+                <span className={cn(
+                  "text-xl font-bold bg-gradient-to-r from-hydra-expert to-hydra-arbiter bg-clip-text text-transparent",
+                  isCollapsed && "hidden"
+                )}>
+                  hydra
                 </span>
               </Link>
             </SidebarMenuButton>
