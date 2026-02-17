@@ -161,6 +161,13 @@ export function HydraGears({
           @keyframes dash-flow {
             to { stroke-dashoffset: -24; }
           }
+          @keyframes icon-glow-pulse {
+            0%, 100% { filter: drop-shadow(0 0 2px currentColor); opacity: 0.85; }
+            50% { filter: drop-shadow(0 0 8px currentColor) drop-shadow(0 0 16px currentColor); opacity: 1; }
+          }
+          .gear-icon-active {
+            animation: icon-glow-pulse 2.5s ease-in-out infinite;
+          }
           .gear-spinning {
             animation: gear-spin 8s linear infinite;
           }
@@ -323,7 +330,7 @@ export function HydraGears({
               height={iconSize}
             >
               <div
-                className="gear-icon"
+                className={`gear-icon${isActiveGear ? ' gear-icon-active' : ''}`}
                 style={{
                   width: iconSize, height: iconSize,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
