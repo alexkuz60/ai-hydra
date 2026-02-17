@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -10,9 +10,10 @@ import { Label } from '@/components/ui/label';
 import { HydraCard, HydraCardHeader, HydraCardTitle, HydraCardContent } from '@/components/ui/hydra-card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { User, Key, Settings, Loader2, Check, Moon, Sun, Globe, Shield, BarChart3, Search, AlertTriangle, Type, Gauge } from 'lucide-react';
+import { User, Key, Settings, Loader2, Check, Moon, Sun, Globe, Shield, BarChart3, Search, AlertTriangle, Type, Gauge, Camera, Trash2 } from 'lucide-react';
 import { CloudSyncIndicator } from '@/components/ui/CloudSyncIndicator';
 import { useCloudSyncStatus } from '@/hooks/useCloudSettings';
 import { Separator } from '@/components/ui/separator';
@@ -25,6 +26,8 @@ import { GeminiLimitsDialog } from '@/components/profile/GeminiLimitsDialog';
 import { OpenRouterLimitsDialog } from '@/components/profile/OpenRouterLimitsDialog';
 import { MistralLimitsDialog } from '@/components/profile/MistralLimitsDialog';
 import { FirecrawlLimitsDialog } from '@/components/profile/FirecrawlLimitsDialog';
+import { AvatarCropDialog } from '@/components/profile/AvatarCropDialog';
+import { useUserProfile } from '@/hooks/useUserProfile';
 
 interface Profile {
   id: string;
@@ -78,6 +81,8 @@ export default function Profile() {
   const { theme, setTheme, fontSize, setFontSize } = useTheme();
   const navigate = useNavigate();
   const cloudSynced = useCloudSyncStatus();
+  const { refetch: refetchSidebarProfile } = useUserProfile();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -88,6 +93,12 @@ export default function Profile() {
   const [displayName, setDisplayName] = useState('');
   const [username, setUsername] = useState('');
   
+  // Avatar state
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [cropFile, setCropFile] = useState<File | null>(null);
+  const [cropOpen, setCropOpen] = useState(false);
+  const [avatarSaving, setAvatarSaving] = useState(false);
+
   // API keys as a single record
   const [apiKeys, setApiKeys] = useState<Record<string, string>>({});
   const [keyMetadata, setKeyMetadata] = useState<Record<string, KeyMetadata>>({});
@@ -123,6 +134,11 @@ export default function Profile() {
         setUsername(profileData.username || '');
         setIsAdmin(profileData.username === 'AlexKuz');
         setProxyapiPriority((profileData as any).proxyapi_priority ?? false);
+
+        // Load signed avatar URL if exists
+        if (profileData.avatar_url) {
+          setAvatarUrl(profileData.avatar_url);
+        }
       }
 
       // Fetch decrypted API keys from Vault + metadata in parallel
@@ -231,6 +247,80 @@ export default function Profile() {
     setApiKeys(prev => ({ ...prev, [provider]: value }));
   }, []);
 
+  const handleAvatarFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error(language === 'ru' ? 'Максимальный размер файла — 2 МБ' : 'Max file size is 2 MB');
+      return;
+    }
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+      toast.error(language === 'ru' ? 'Поддерживаются форматы: JPEG, PNG, WebP' : 'Supported formats: JPEG, PNG, WebP');
+      return;
+    }
+    setCropFile(file);
+    setCropOpen(true);
+    // Reset input so same file can be re-selected
+    e.target.value = '';
+  };
+
+  const handleCropComplete = async (blob: Blob) => {
+    if (!user) return;
+    setAvatarSaving(true);
+    try {
+      const filePath = `${user.id}/avatar.jpg`;
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, blob, { upsert: true, contentType: 'image/jpeg' });
+      if (uploadError) throw uploadError;
+
+      // Get signed URL valid for 10 years
+      const { data: signedData, error: signedError } = await supabase.storage
+        .from('avatars')
+        .createSignedUrl(filePath, 60 * 60 * 24 * 365 * 10);
+      if (signedError) throw signedError;
+
+      const newUrl = signedData.signedUrl;
+
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({ avatar_url: newUrl })
+        .eq('user_id', user.id);
+      if (profileError) throw profileError;
+
+      setAvatarUrl(newUrl);
+      refetchSidebarProfile();
+      setCropOpen(false);
+      toast.success(language === 'ru' ? 'Аватар обновлён' : 'Avatar updated');
+    } catch (err: any) {
+      toast.error(err.message);
+    } finally {
+      setAvatarSaving(false);
+    }
+  };
+
+  const handleDeleteAvatar = async () => {
+    if (!user) return;
+    setAvatarSaving(true);
+    try {
+      await supabase.storage.from('avatars').remove([`${user.id}/avatar.jpg`]);
+      const { error } = await supabase
+        .from('profiles')
+        .update({ avatar_url: null })
+        .eq('user_id', user.id);
+      if (error) throw error;
+      setAvatarUrl(null);
+      refetchSidebarProfile();
+      toast.success(language === 'ru' ? 'Аватар удалён' : 'Avatar deleted');
+    } catch (err: any) {
+      toast.error(err.message);
+    } finally {
+      setAvatarSaving(false);
+    }
+  };
+
+
+
   if (authLoading || loading) {
     return (
       <Layout>
@@ -317,6 +407,60 @@ export default function Profile() {
                 <HydraCardTitle>{t('nav.profile')}</HydraCardTitle>
               </HydraCardHeader>
               <HydraCardContent className="space-y-4">
+
+                {/* Avatar section */}
+                <div className="flex items-center gap-4 pb-2">
+                  <div className="relative">
+                    <Avatar className="h-20 w-20 border-2 border-border">
+                      <AvatarImage src={avatarUrl || undefined} />
+                      <AvatarFallback className="bg-muted">
+                        <User className="h-8 w-8 text-muted-foreground" />
+                      </AvatarFallback>
+                    </Avatar>
+                    {avatarSaving && (
+                      <div className="absolute inset-0 flex items-center justify-center rounded-full bg-background/60">
+                        <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      className="hidden"
+                      onChange={handleAvatarFileSelect}
+                    />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={avatarSaving}
+                      className="gap-2"
+                    >
+                      <Camera className="h-4 w-4" />
+                      {language === 'ru' ? 'Загрузить фото' : 'Upload photo'}
+                    </Button>
+                    {avatarUrl && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleDeleteAvatar}
+                        disabled={avatarSaving}
+                        className="gap-2 text-destructive hover:text-destructive"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        {language === 'ru' ? 'Удалить' : 'Delete'}
+                      </Button>
+                    )}
+                    <p className="text-xs text-muted-foreground">
+                      {language === 'ru' ? 'JPEG, PNG, WebP · до 2 МБ' : 'JPEG, PNG, WebP · up to 2 MB'}
+                    </p>
+                  </div>
+                </div>
+
+                <Separator />
+
                 <div className="space-y-2">
                   <Label htmlFor="email">Email</Label>
                   <Input
@@ -569,6 +713,16 @@ export default function Profile() {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Avatar crop dialog */}
+      <AvatarCropDialog
+        open={cropOpen}
+        imageFile={cropFile}
+        onClose={() => setCropOpen(false)}
+        onCropComplete={handleCropComplete}
+        language={language}
+      />
     </Layout>
   );
 }
+
