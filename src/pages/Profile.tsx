@@ -268,27 +268,26 @@ export default function Profile() {
     if (!user) return;
     setAvatarSaving(true);
     try {
+      // Store path only — signed URL is generated fresh in useUserProfile
       const filePath = `${user.id}/avatar.jpg`;
       const { error: uploadError } = await supabase.storage
         .from('avatars')
         .upload(filePath, blob, { upsert: true, contentType: 'image/jpeg' });
       if (uploadError) throw uploadError;
 
-      // Get signed URL valid for 10 years
-      const { data: signedData, error: signedError } = await supabase.storage
-        .from('avatars')
-        .createSignedUrl(filePath, 60 * 60 * 24 * 365 * 10);
-      if (signedError) throw signedError;
-
-      const newUrl = signedData.signedUrl;
-
+      // Save the file path (not a signed URL) — avoids expiry issues
       const { error: profileError } = await supabase
         .from('profiles')
-        .update({ avatar_url: newUrl })
+        .update({ avatar_url: filePath })
         .eq('user_id', user.id);
       if (profileError) throw profileError;
 
-      setAvatarUrl(newUrl);
+      // Generate a short-lived signed URL for immediate display in this session
+      const { data: signedData } = await supabase.storage
+        .from('avatars')
+        .createSignedUrl(filePath, 60 * 60 * 2);
+      setAvatarUrl(signedData?.signedUrl || null);
+
       refetchSidebarProfile();
       setCropOpen(false);
       toast.success(language === 'ru' ? 'Аватар обновлён' : 'Avatar updated');

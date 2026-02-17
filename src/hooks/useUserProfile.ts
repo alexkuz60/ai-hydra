@@ -8,6 +8,20 @@ export interface UserProfile {
   avatarUrl: string | null;
 }
 
+/** Returns a fresh signed URL for avatar path stored in profiles.avatar_url */
+async function resolveAvatarUrl(rawUrl: string | null, userId: string): Promise<string | null> {
+  if (!rawUrl) return null;
+  // If it's already a full signed URL (legacy 10-year URLs), return as-is
+  // New format: store just the path "userId/avatar.jpg"
+  if (!rawUrl.startsWith('http')) {
+    const { data } = await supabase.storage
+      .from('avatars')
+      .createSignedUrl(rawUrl, 60 * 60 * 2); // 2-hour signed URL, refreshed on each load
+    return data?.signedUrl || null;
+  }
+  return rawUrl;
+}
+
 export function useUserProfile() {
   const { user } = useAuth();
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -35,10 +49,12 @@ export function useUserProfile() {
 
       if (error) throw error;
 
+      const avatarUrl = await resolveAvatarUrl(data?.avatar_url || null, user.id);
+
       setProfile({
         displayName: data?.display_name || null,
         username: data?.username || null,
-        avatarUrl: data?.avatar_url || null,
+        avatarUrl,
       });
     } catch (error) {
       console.error('Error fetching profile:', error);
@@ -53,3 +69,4 @@ export function useUserProfile() {
     refetch: fetchProfile,
   };
 }
+
