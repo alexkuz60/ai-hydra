@@ -48,6 +48,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useGuideTourContext } from '@/contexts/GuideTourContext';
+import { MiniHydraGears } from './MiniHydraGears';
 
 export function AppSidebar() {
   const { user, signOut } = useAuth();
@@ -72,7 +73,6 @@ export function AppSidebar() {
     { path: '/tasks', icon: CheckSquare, label: t('nav.tasks') },
     { path: '/staff-roles', icon: UserCog, label: t('nav.staffRoles') },
     { path: '/behavioral-patterns', icon: Sparkles, label: t('nav.behavioralPatterns') },
-    { path: '/expert-panel', icon: Users, label: t('nav.expertPanel') },
     { path: '/role-library', icon: Library, label: t('nav.roleLibrary') },
     { path: '/tools-library', icon: Wrench, label: t('nav.toolsLibrary') },
     { path: '/flow-editor', icon: GitBranch, label: t('nav.flowEditor') },
@@ -123,6 +123,33 @@ export function AppSidebar() {
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu className="gap-2">
+              {/* Expert Panel with mini HydraGears icon */}
+              {user && (
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={isActive('/expert-panel')}
+                    tooltip={t('nav.expertPanel')}
+                    className={cn(
+                      "transition-all duration-200 active:scale-95 active:opacity-80 border-2 border-muted rounded-md hover:bg-muted/50 py-3",
+                      isActive('/expert-panel') && "hydra-menu-active bg-accent/30"
+                    )}
+                  >
+                    <Link to="/expert-panel" className="flex items-center gap-2">
+                      <MiniHydraGears className={cn(
+                        "h-4 w-4 transition-all duration-200",
+                        isActive('/expert-panel') && "text-hydra-glow hydra-text-glow"
+                      )} />
+                      <span className={cn(
+                        "transition-colors duration-200",
+                        isActive('/expert-panel') && "text-sidebar-primary font-medium"
+                      )}>
+                        {t('nav.expertPanel')}
+                      </span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
               {navItems.map((item) => (
                 <SidebarMenuItem key={item.path}>
                   <SidebarMenuButton
