@@ -111,12 +111,56 @@
 
 | Компонент | Статус | Описание |
 |-----------|--------|----------|
-| SQL функция `hybrid_search_session_memory` | ✅ | BM25 (ru/en) + vector + RRF (k=60) |
-| SQL функция `hybrid_search_role_knowledge` | ✅ | BM25 (ru/en) + vector + RRF (k=60) |
-| `useSessionMemory.ts` | ✅ | Метод `hybridSearch()` |
-| `useGlobalSessionMemory.ts` | ✅ | Метод `hybridSearch()` |
+| SQL функция `hybrid_search_session_memory` | ✅ | BM25 (ru/en) + pgvector cosine + RRF (k=60) |
+| SQL функция `hybrid_search_role_knowledge` | ✅ | BM25 (ru/en) + pgvector cosine + RRF (k=60) |
+| `useSessionMemory.ts` | ✅ | Метод `hybridSearch()` с fallback на текстовый поиск |
+| `useGlobalSessionMemory.ts` | ✅ | Метод `hybridSearch()` (кросс-сессионный, глобальный) |
 | `useRoleKnowledge.ts` | ✅ | Метод `hybridSearchKnowledge()` |
-| `HydraMemory.tsx` | ✅ | Переключатель режима: Текст / Семантический / **Гибридный** |
+| `HydraMemory.tsx` | ✅ | Переключатель режима: Текст / Семантический / **Гибридный** (иконка `GitMerge`, фиолетовый акцент) |
+
+### Затронутые файлы
+
+- `supabase/migrations/20260217214126_*.sql` — SQL-функции гибридного поиска
+- `src/hooks/useSessionMemory.ts` — метод `hybridSearch()`
+- `src/hooks/useGlobalSessionMemory.ts` — метод `hybridSearch()`
+- `src/hooks/useRoleKnowledge.ts` — метод `hybridSearchKnowledge()`
+- `src/pages/HydraMemory.tsx` — UI-переключатель трёх режимов поиска
+
+### Архитектура RRF (Reciprocal Rank Fusion)
+
+```sql
+-- Структура SQL-функций
+WITH vector_results AS (
+  -- cosine similarity через pgvector (<=> оператор)
+  SELECT id, content, ..., 1 - (embedding <=> p_query_embedding) AS similarity
+  FROM session_memory / role_knowledge
+  WHERE user_id = auth.uid()
+  ORDER BY embedding <=> p_query_embedding
+  LIMIT 60
+),
+text_results AS (
+  -- BM25 full-text search (russian + english dictionaries)
+  SELECT id, content, ..., ts_rank(search_vector, query) AS text_rank
+  FROM session_memory / role_knowledge
+  WHERE search_vector @@ query
+  ORDER BY text_rank DESC
+  LIMIT 60
+),
+rrf_merged AS (
+  -- Reciprocal Rank Fusion: score = 1/(k+rank_v) + 1/(k+rank_t), k=60
+  SELECT id,
+    COALESCE(1.0/(60 + ROW_NUMBER() OVER (ORDER BY v.similarity DESC)), 0) +
+    COALESCE(1.0/(60 + ROW_NUMBER() OVER (ORDER BY t.text_rank DESC)), 0) AS hybrid_score
+  FROM vector_results v FULL OUTER JOIN text_results t USING (id)
+)
+SELECT * FROM rrf_merged ORDER BY hybrid_score DESC LIMIT p_limit;
+```
+
+### Ключевые решения
+- **Словари:** `russian` + `english` конфигурации `tsvector` для поддержки обоих языков
+- **Fallback:** при отсутствии эмбеддинга `hybridSearch()` деградирует до `ilike` текстового поиска
+- **k=60:** стандартное значение RRF, балансирует влияние обоих ранжирований
+- **Глобальный поиск:** `useGlobalSessionMemory.hybridSearch()` не фильтрует по `session_id` — охватывает всю память пользователя
 
 ---
 
