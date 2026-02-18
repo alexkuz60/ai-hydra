@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useNavigate } from 'react-router-dom';
+import { Github } from 'lucide-react';
 
 // Gear tooth path (sinusoidal profile)
 function gearPath(cx: number, cy: number, outerR: number, innerR: number, teeth: number): string {
@@ -108,8 +109,8 @@ export function HelpMeWidget() {
       {popupOpen && (
         <div
           ref={popupRef}
-          className="mb-1 bg-background/95 backdrop-blur border border-border rounded-xl shadow-xl p-4 w-64 animate-fade-in"
-          style={{ boxShadow: '0 8px 32px hsl(var(--primary)/0.18)' }}
+          className="mb-1 bg-background/95 backdrop-blur border border-border rounded-xl shadow-xl p-4 w-64 animate-slide-in-right"
+          style={{ boxShadow: '0 8px 32px hsl(var(--primary)/0.18)', transformOrigin: 'right bottom' }}
         >
           <p className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
             <span>🤝</span>
@@ -119,6 +120,7 @@ export function HelpMeWidget() {
             {HELP_OPTIONS.map(opt => {
               const isLink = opt.type === 'link' || opt.type === 'register';
               const isSocial = opt.type === 'social';
+              const isGithub = opt.type === 'link' && opt.href?.includes('github');
               const isChecked = checked[opt.id];
 
               return (
@@ -127,16 +129,17 @@ export function HelpMeWidget() {
                   className="flex items-center gap-2.5 cursor-pointer group"
                   onClick={() => handleOptionClick(opt)}
                 >
-                  {/* Checkbox or icon indicator */}
+                  {/* Indicator */}
                   {isLink || isSocial ? (
-                    <div className="w-4 h-4 flex-shrink-0 flex items-center justify-center text-primary/70">
-                      {isLink ? (
+                    <div className="w-4 h-4 flex-shrink-0 flex items-center justify-center text-muted-foreground group-hover:text-primary transition-colors">
+                      {isGithub ? (
+                        <Github size={14} />
+                      ) : isLink ? (
                         <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                           <path d="M5 2H2a1 1 0 00-1 1v7a1 1 0 001 1h7a1 1 0 001-1V7"/>
                           <path d="M8 1h3v3M11 1L5.5 6.5"/>
                         </svg>
                       ) : (
-                        // Social icons (Telegram + Discord placeholders)
                         <span className="flex gap-0.5">
                           {/* Telegram */}
                           <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" opacity="0.7">
@@ -162,11 +165,11 @@ export function HelpMeWidget() {
                   )}
                   <span className={`text-xs transition-colors ${
                     isLink || isSocial
-                      ? 'text-primary/80 group-hover:text-primary underline-offset-2 group-hover:underline'
+                      ? 'text-muted-foreground group-hover:text-foreground underline-offset-2 group-hover:underline'
                       : 'text-muted-foreground group-hover:text-foreground'
                   }`}>
                     {language === 'ru' ? opt.labelRu : opt.labelEn}
-                    {isSocial && <span className="ml-1 text-[9px] text-muted-foreground/60">(скоро)</span>}
+                    {isSocial && <span className="ml-1 text-[9px] text-muted-foreground/50">(скоро)</span>}
                   </span>
                 </div>
               );
