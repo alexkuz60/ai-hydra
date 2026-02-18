@@ -107,11 +107,22 @@ export function HelpMeWidget() {
 
       {/* ── Popup ── */}
       {popupOpen && (
-        <div
-          ref={popupRef}
-          className="mb-1 bg-background/95 backdrop-blur border border-border rounded-xl shadow-xl p-4 w-64 animate-slide-in-right"
-          style={{ boxShadow: '0 8px 32px hsl(var(--primary)/0.18)', transformOrigin: 'right bottom' }}
-        >
+        <>
+          <style>{`
+            @keyframes popup-slide-in {
+              0%   { opacity: 0; transform: translateX(28px) scale(0.96); }
+              60%  { opacity: 1; transform: translateX(-3px) scale(1.01); }
+              100% { opacity: 1; transform: translateX(0)   scale(1); }
+            }
+            .popup-enter {
+              animation: popup-slide-in 0.38s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+            }
+          `}</style>
+          <div
+            ref={popupRef}
+            className="popup-enter mb-1 bg-background/95 backdrop-blur border border-border rounded-xl shadow-xl p-4 w-64"
+            style={{ boxShadow: '0 8px 32px hsl(var(--primary)/0.18)', transformOrigin: 'right bottom' }}
+          >
           <p className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
             <span>🤝</span>
             {language === 'ru' ? 'Как вы можете помочь?' : 'How can you help?'}
@@ -183,7 +194,8 @@ export function HelpMeWidget() {
               {language === 'ru' ? 'Спасибо! 💙' : 'Thank you! 💙'}
             </button>
           )}
-        </div>
+          </div>
+        </>
       )}
 
       {/* ── SVG Widget ── */}
