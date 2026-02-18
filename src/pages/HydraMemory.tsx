@@ -933,16 +933,40 @@ function MemoryGraphTab({ stats }: { stats: ReturnType<typeof useHydraMemoryStat
   const containerRef = useRef<HTMLDivElement>(null);
   const [svgSize, setSvgSize] = useState({ w: 900, h: 560 });
 
-  // Resize observer — граф занимает всю рабочую область
+  // ResizeObserver — подключается при монтировании, использует MutationObserver
+  // для повторного запуска после того как Radix TabsContent показывает контент
   useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-    const obs = new ResizeObserver(entries => {
-      const e = entries[0];
-      if (e) setSvgSize({ w: Math.round(e.contentRect.width), h: Math.round(e.contentRect.height) });
-    });
-    obs.observe(el);
-    return () => obs.disconnect();
+    let obs: ResizeObserver | null = null;
+
+    const attach = () => {
+      const el = containerRef.current;
+      if (!el) return false;
+      const { width, height } = el.getBoundingClientRect();
+      if (width === 0 || height === 0) return false;
+      setSvgSize({ w: Math.round(width), h: Math.round(height) });
+      obs = new ResizeObserver(entries => {
+        const e = entries[0];
+        if (e && e.contentRect.width > 0 && e.contentRect.height > 0) {
+          setSvgSize({ w: Math.round(e.contentRect.width), h: Math.round(e.contentRect.height) });
+        }
+      });
+      obs.observe(el);
+      return true;
+    };
+
+    // Пробуем сразу
+    if (!attach()) {
+      // Если не получилось (таб скрыт) — следим за появлением через polling
+      const interval = setInterval(() => {
+        if (attach()) clearInterval(interval);
+      }, 100);
+      return () => {
+        clearInterval(interval);
+        obs?.disconnect();
+      };
+    }
+
+    return () => obs?.disconnect();
   }, []);
 
   // Layer toggle state
