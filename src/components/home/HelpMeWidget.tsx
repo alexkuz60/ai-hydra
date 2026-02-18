@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useNavigate } from 'react-router-dom';
 
 // Gear tooth path (sinusoidal profile)
 function gearPath(cx: number, cy: number, outerR: number, innerR: number, teeth: number): string {
@@ -17,12 +18,24 @@ function gearPath(cx: number, cy: number, outerR: number, innerR: number, teeth:
   return parts.join(' ') + ' Z';
 }
 
-const HELP_OPTIONS = [
-  { id: 'star',       labelRu: '⭐ Поставить звезду на GitHub', labelEn: '⭐ Star on GitHub',        href: 'https://github.com' },
-  { id: 'share',      labelRu: '📣 Рассказать друзьям',         labelEn: '📣 Tell friends',           href: null },
-  { id: 'feedback',   labelRu: '💬 Оставить отзыв',             labelEn: '💬 Leave feedback',         href: null },
-  { id: 'contribute', labelRu: '🛠 Стать контрибьютором',       labelEn: '🛠 Become a contributor',   href: null },
-  { id: 'donate',     labelRu: '💸 Поддержать донатом',         labelEn: '💸 Support with donation',  href: null },
+const GITHUB_URL = 'https://github.com/alexkuz60/ai-hydra';
+const GITHUB_STAR_URL = 'https://github.com/alexkuz60/ai-hydra/stargazers';
+
+type HelpOption = {
+  id: string;
+  labelRu: string;
+  labelEn: string;
+  href: string | null;
+  type?: 'link' | 'social' | 'checkbox' | 'register';
+};
+
+const HELP_OPTIONS: HelpOption[] = [
+  { id: 'star',       labelRu: '⭐ Поставить звезду на GitHub', labelEn: '⭐ Star on GitHub',        href: GITHUB_STAR_URL, type: 'link' },
+  { id: 'contribute', labelRu: '🛠 Стать контрибьютором',       labelEn: '🛠 Become a contributor',   href: GITHUB_URL,      type: 'link' },
+  { id: 'feedback',   labelRu: '💬 Оставить отзыв',             labelEn: '💬 Leave feedback',         href: null,            type: 'social' },
+  { id: 'share',      labelRu: '📣 Рассказать друзьям',         labelEn: '📣 Tell friends',           href: null,            type: 'checkbox' },
+  { id: 'donate',     labelRu: '💸 Поддержать донатом',         labelEn: '💸 Support with donation',  href: null,            type: 'checkbox' },
+  { id: 'register',   labelRu: '📝 Зарегистрироваться',         labelEn: '📝 Register',               href: '/signup',       type: 'register' },
 ];
 
 // ─── Layout constants ─────────────────────────────────────────────────────────
@@ -44,6 +57,7 @@ const DROP_Y_START = 133; // between gear tops
 
 export function HelpMeWidget() {
   const { language } = useLanguage();
+  const navigate = useNavigate();
   const [hovered, setHovered] = useState(false);
   const [oiling,  setOiling]  = useState(false);
   const [popupOpen, setPopupOpen] = useState(false);
@@ -72,7 +86,19 @@ export function HelpMeWidget() {
     return () => document.removeEventListener('mousedown', handler);
   }, [popupOpen]);
 
-  const toggleCheck = (id: string) => setChecked(prev => ({ ...prev, [id]: !prev[id] }));
+  const handleOptionClick = (opt: HelpOption) => {
+    if (opt.type === 'link' && opt.href) {
+      window.open(opt.href, '_blank', 'noopener,noreferrer');
+    } else if (opt.type === 'register' && opt.href) {
+      setPopupOpen(false);
+      navigate(opt.href);
+    } else if (opt.type === 'social') {
+      // placeholder — social links will be added later
+    } else {
+      setChecked(prev => ({ ...prev, [opt.id]: !prev[opt.id] }));
+    }
+  };
+
   const label = language === 'ru' ? 'Помочь проекту' : 'Support project';
 
   return (
@@ -90,28 +116,61 @@ export function HelpMeWidget() {
             {language === 'ru' ? 'Как вы можете помочь?' : 'How can you help?'}
           </p>
           <div className="flex flex-col gap-2">
-            {HELP_OPTIONS.map(opt => (
-              <label key={opt.id} className="flex items-center gap-2.5 cursor-pointer group">
+            {HELP_OPTIONS.map(opt => {
+              const isLink = opt.type === 'link' || opt.type === 'register';
+              const isSocial = opt.type === 'social';
+              const isChecked = checked[opt.id];
+
+              return (
                 <div
-                  onClick={() => toggleCheck(opt.id)}
-                  className={`w-4 h-4 rounded border transition-all flex-shrink-0 flex items-center justify-center ${
-                    checked[opt.id] ? 'bg-primary border-primary' : 'border-border group-hover:border-primary/60'
-                  }`}
+                  key={opt.id}
+                  className="flex items-center gap-2.5 cursor-pointer group"
+                  onClick={() => handleOptionClick(opt)}
                 >
-                  {checked[opt.id] && (
-                    <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
-                      <path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
+                  {/* Checkbox or icon indicator */}
+                  {isLink || isSocial ? (
+                    <div className="w-4 h-4 flex-shrink-0 flex items-center justify-center text-primary/70">
+                      {isLink ? (
+                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M5 2H2a1 1 0 00-1 1v7a1 1 0 001 1h7a1 1 0 001-1V7"/>
+                          <path d="M8 1h3v3M11 1L5.5 6.5"/>
+                        </svg>
+                      ) : (
+                        // Social icons (Telegram + Discord placeholders)
+                        <span className="flex gap-0.5">
+                          {/* Telegram */}
+                          <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" opacity="0.7">
+                            <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.248l-2.016 9.504c-.148.658-.537.818-1.088.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12L7.48 14.39 4.53 13.5c-.656-.204-.67-.656.136-.97l10.853-4.184c.547-.2 1.025.12.843.902z"/>
+                          </svg>
+                          {/* Discord */}
+                          <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" opacity="0.7">
+                            <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057c.002.022.015.043.032.054a19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/>
+                          </svg>
+                        </span>
+                      )}
+                    </div>
+                  ) : (
+                    <div className={`w-4 h-4 rounded border transition-all flex-shrink-0 flex items-center justify-center ${
+                      isChecked ? 'bg-primary border-primary' : 'border-border group-hover:border-primary/60'
+                    }`}>
+                      {isChecked && (
+                        <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+                          <path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      )}
+                    </div>
                   )}
+                  <span className={`text-xs transition-colors ${
+                    isLink || isSocial
+                      ? 'text-primary/80 group-hover:text-primary underline-offset-2 group-hover:underline'
+                      : 'text-muted-foreground group-hover:text-foreground'
+                  }`}>
+                    {language === 'ru' ? opt.labelRu : opt.labelEn}
+                    {isSocial && <span className="ml-1 text-[9px] text-muted-foreground/60">(скоро)</span>}
+                  </span>
                 </div>
-                <span
-                  onClick={() => toggleCheck(opt.id)}
-                  className="text-xs text-muted-foreground group-hover:text-foreground transition-colors"
-                >
-                  {language === 'ru' ? opt.labelRu : opt.labelEn}
-                </span>
-              </label>
-            ))}
+              );
+            })}
           </div>
           {Object.values(checked).some(Boolean) && (
             <button
