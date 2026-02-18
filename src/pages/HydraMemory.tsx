@@ -2296,7 +2296,7 @@ function ArsenalConnectionsGraph({
   const containerRef = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ w: 700, h: 440 });
   const [hovered, setHovered] = useState<string | null>(null);
-  const { language } = useLanguage();
+  const { language, t } = useLanguage();
   const isRu = language === 'ru';
 
   useEffect(() => {
@@ -2360,9 +2360,11 @@ function ArsenalConnectionsGraph({
       const angle = (2 * Math.PI * i) / topRoles.length - Math.PI / 2;
       const total = r.memCount + r.knowledgeCount + r.promptCount;
       const nodeR = 10 + (total / maxRoleVal) * 10;
+      const roleConfig = ROLE_CONFIG[r.role as keyof typeof ROLE_CONFIG];
+      const roleLabel = roleConfig ? t(roleConfig.label) : r.role;
       return {
         id: `role_${r.role}`,
-        label: r.role,
+        label: roleLabel,
         sublabel: `${total}`,
         x: cx + roleR * Math.cos(angle),
         y: cy + roleR * Math.sin(angle),
