@@ -28,13 +28,12 @@ const HELP_OPTIONS = [
 export function HelpMeWidget() {
   const { language } = useLanguage();
   const [hovered, setHovered] = useState(false);
-  const [oiling, setOiling] = useState(false); // tilted can + drop + spinning
+  const [oiling, setOiling] = useState(false);
   const [popupOpen, setPopupOpen] = useState(false);
   const [checked, setChecked] = useState<Record<string, boolean>>({});
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const popupRef = useRef<HTMLDivElement>(null);
 
-  // When hover starts, show can; after 1s tilt + drop + spin
   useEffect(() => {
     if (hovered) {
       timerRef.current = setTimeout(() => setOiling(true), 1000);
@@ -45,7 +44,6 @@ export function HelpMeWidget() {
     return () => { if (timerRef.current) clearTimeout(timerRef.current); };
   }, [hovered]);
 
-  // Close popup on outside click
   useEffect(() => {
     if (!popupOpen) return;
     const handler = (e: MouseEvent) => {
@@ -59,17 +57,16 @@ export function HelpMeWidget() {
 
   const toggleCheck = (id: string) => setChecked(prev => ({ ...prev, [id]: !prev[id] }));
 
-  // SVG geometry
-  const W = 210, H = 180;
-  // Big gear — half size, repositioned lower
-  const bigCx = 105, bigCy = 148, bigOuter = 20, bigInner = 14, bigTeeth = 10;
-  // Small gear — half size
-  const smCx = 55, smCy = 138, smOuter = 13, smInner = 9, smTeeth = 7;
-  // Oil can: scale 4x of original icon (24px → ~86px), positioned upper-right
-  // Icon translate origin: (100, 18), scale 3.6 → icon center at (100+43, 18+43) = (143, 61)
-  const canTx = 100, canTy = 18, canScale = 3.6;
-  const canCx = canTx + 12 * canScale; // 143
-  const canCy = canTy + 12 * canScale; // 61
+  // SVG geometry — по референсу: масленка крупная сверху-справа, большая шестерня справа, малая слева
+  const W = 220, H = 210;
+
+  // Big gear (right, dominant)
+  const bigCx = 150, bigCy = 158, bigOuter = 52, bigInner = 35, bigTeeth = 12;
+  // Small gear (left, meshing with big)
+  const smCx = 60, smCy = 162, smOuter = 33, smInner = 22, smTeeth = 8;
+
+  // Oil can: 5x scale, positioned upper-right (nozzle pointing toward drop zone)
+  const canTx = 80, canTy = 5, canScale = 5;
 
   const label = language === 'ru' ? 'Помочь проекту' : 'Support project';
 
@@ -152,18 +149,18 @@ export function HelpMeWidget() {
                 to { transform: rotate(-360deg); }
               }
               @keyframes drop-fall {
-                0%   { opacity: 0; transform: translateY(0px) scale(0.6); }
+                0%   { opacity: 0; transform: translateY(0px) scale(0.5); }
                 20%  { opacity: 1; }
-                80%  { opacity: 1; transform: translateY(18px) scale(1); }
-                100% { opacity: 0; transform: translateY(22px) scale(0.4); }
+                75%  { opacity: 1; transform: translateY(22px) scale(1); }
+                100% { opacity: 0; transform: translateY(28px) scale(0.3); }
               }
               @keyframes can-appear {
-                from { opacity: 0; transform: translateX(20px); }
+                from { opacity: 0; transform: translateX(18px); }
                 to   { opacity: 1; transform: translateX(0); }
               }
               @keyframes can-tilt {
                 from { transform: rotate(0deg); }
-                to   { transform: rotate(-45deg); }
+                to   { transform: rotate(-42deg); }
               }
               .gear-big-spinning {
                 animation: spin-cw 3s linear infinite;
@@ -178,71 +175,62 @@ export function HelpMeWidget() {
               }
               .can-tilt-anim {
                 animation: can-tilt 0.5s ease-in-out forwards;
-                transform-origin: ${canCx}px ${canCy}px;
+                transform-box: fill-box;
+                transform-origin: center;
               }
               .drop-anim {
-                animation: drop-fall 0.9s ease-in infinite;
+                animation: drop-fall 1s ease-in infinite;
               }
             `}</style>
           </defs>
 
-          {/* Big gear */}
+          {/* Big gear (right) */}
           <g className={oiling ? 'gear-big-spinning' : ''}>
             <path
               d={gearPath(bigCx, bigCy, bigOuter, bigInner, bigTeeth)}
-              fill="none"
-              stroke="hsl(var(--foreground))"
-              strokeWidth={2}
-              strokeOpacity={0.6}
+              fill="hsl(var(--foreground))"
+              fillOpacity={0.55}
             />
             <circle
-              cx={bigCx} cy={bigCy} r={bigInner - 5}
+              cx={bigCx} cy={bigCy} r={bigInner - 8}
               fill="hsl(var(--background))"
-              stroke="hsl(var(--foreground))"
-              strokeWidth={1.5}
-              strokeOpacity={0.5}
             />
-            <circle cx={bigCx} cy={bigCy} r={5} fill="hsl(var(--foreground))" fillOpacity={0.25} />
+            <circle cx={bigCx} cy={bigCy} r={7} fill="hsl(var(--foreground))" fillOpacity={0.3} />
           </g>
 
-          {/* Small gear */}
+          {/* Small gear (left) */}
           <g className={oiling ? 'gear-sm-spinning' : ''}>
             <path
               d={gearPath(smCx, smCy, smOuter, smInner, smTeeth)}
-              fill="none"
-              stroke="hsl(var(--foreground))"
-              strokeWidth={2}
-              strokeOpacity={0.5}
+              fill="hsl(var(--foreground))"
+              fillOpacity={0.5}
             />
             <circle
-              cx={smCx} cy={smCy} r={smInner - 4}
+              cx={smCx} cy={smCy} r={smInner - 6}
               fill="hsl(var(--background))"
-              stroke="hsl(var(--foreground))"
-              strokeWidth={1.5}
-              strokeOpacity={0.4}
             />
-            <circle cx={smCx} cy={smCy} r={4} fill="hsl(var(--foreground))" fillOpacity={0.2} />
+            <circle cx={smCx} cy={smCy} r={5} fill="hsl(var(--foreground))" fillOpacity={0.25} />
           </g>
 
-          {/* Oil drop (visible only when oiling) */}
+          {/* Oil drop (visible only when oiling) — falls from nozzle toward gears */}
           {oiling && (
-            <g className="drop-anim">
+            <g className="drop-anim" style={{ transformOrigin: '118px 95px' }}>
               <ellipse
-                cx={78} cy={118}
-                rx={5} ry={7}
-                fill="hsl(var(--primary))"
-                fillOpacity={0.85}
+                cx={118} cy={95}
+                rx={6} ry={8}
+                fill="hsl(var(--foreground))"
+                fillOpacity={0.7}
               />
             </g>
           )}
 
-          {/* Oil can (visible on hover) — ready-made icon, 4x larger, rotates around own center */}
+          {/* Oil can — large, upper-right, tilts around its own center */}
           {hovered && (
             <g
               className={oiling ? 'can-tilt-anim' : 'can-appear-anim'}
               transform={`translate(${canTx}, ${canTy}) scale(${canScale})`}
-              fill="hsl(var(--muted-foreground))"
-              fillOpacity={0.85}
+              fill="hsl(var(--foreground))"
+              fillOpacity={0.6}
             >
               <path d="M22 12.5s2 2.17 2 3.5a2 2 0 0 1-2 2a2 2 0 0 1-2-2c0-1.33 2-3.5 2-3.5M6 6h4a1 1 0 0 1 1 1a1 1 0 0 1-1 1H9v2h2c.74 0 1.39.4 1.73 1l6.51-3.76l3.26 1.89c.5.27.64.87.37 1.37c-.28.47-.87.64-1.37.36l-2.1-1.21l-3.65 6.32c-.34.61-1 1.03-1.75 1.03H5a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h2V8H6a1 1 0 0 1-1-1a1 1 0 0 1 1-1m-1 6v3h9l2.06-3.57l-3.46 2l-.91-1.43zM.38 9.21L2.09 7.5c.41-.39 1.02-.39 1.41 0s.39 1 0 1.41l-1.71 1.71c-.39.38-1.02.38-1.41 0C0 10.23 0 9.6.38 9.21" />
             </g>
