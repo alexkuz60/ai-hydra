@@ -133,7 +133,7 @@ export function HelpMeWidget() {
         title={label}
       >
         <svg
-          width={W} height={H}
+          width={W / 2} height={H / 2}
           viewBox={`0 0 ${W} ${H}`}
           xmlns="http://www.w3.org/2000/svg"
           style={{ overflow: 'visible' }}
