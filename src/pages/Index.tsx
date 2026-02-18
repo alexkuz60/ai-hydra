@@ -8,7 +8,7 @@ import hydraLogo from '@/assets/hydra-logo.png';
 const Index = () => {
   const { language } = useLanguage();
   return (
-    <Layout>
+    <Layout defaultSidebarOpen={false}>
       <div className="relative w-full h-[calc(100vh-2.5rem)] flex items-center justify-center overflow-hidden">
         <div className="absolute top-4 left-4 z-10 flex flex-col gap-1 select-none">
           <div className="flex items-center gap-3">

@@ -5,11 +5,12 @@ import { AppSidebar } from './AppSidebar';
 interface LayoutProps {
   children: ReactNode;
   headerActions?: ReactNode;
+  defaultSidebarOpen?: boolean;
 }
 
-export function Layout({ children, headerActions }: LayoutProps) {
+export function Layout({ children, headerActions, defaultSidebarOpen = true }: LayoutProps) {
   return (
-    <SidebarProvider defaultOpen={true}>
+    <SidebarProvider defaultOpen={defaultSidebarOpen}>
       <div className="min-h-screen flex w-full bg-background hydra-neural-bg">
         <AppSidebar />
         <div className="flex-1 flex flex-col min-h-screen">
