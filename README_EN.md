@@ -1,6 +1,5 @@
 <div align="center">
-  <img src="public/favicon.png" alt="ai*hYdra" width="80" style="border-radius:50%"/>
-  <h1 style="font-family:'Keania One',sans-serif;font-size:3rem;font-weight:400;letter-spacing:2px">ai*hYdra</h1>
+  <img src="public/banner.png" alt="ai*hYdra" width="640"/>
   <p><em>Where even dogmas evolve</em></p>
 
   ![Version](https://img.shields.io/badge/version-2.17.0-0ff?style=flat-square&logo=semver&logoColor=white)
