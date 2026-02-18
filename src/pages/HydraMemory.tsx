@@ -1843,6 +1843,14 @@ function StorageTab() {
 
 // ─── Cognitive Arsenal Tab ────────────────────────────────────────────────────
 
+interface ArsenalAction {
+  label: string;
+  icon: React.ElementType;
+  href?: string;
+  onClick?: () => void;
+  variant?: 'default' | 'destructive' | 'outline';
+}
+
 interface ArsenalLayer {
   id: string;
   label: string;
@@ -1852,6 +1860,7 @@ interface ArsenalLayer {
   href: string;
   total: number;
   items: { label: string; value: number }[];
+  actions: ArsenalAction[];
 }
 
 function CognitiveArsenalTab({ stats }: { stats: ReturnType<typeof useHydraMemoryStats> }) {
@@ -1968,6 +1977,24 @@ function CognitiveArsenalTab({ stats }: { stats: ReturnType<typeof useHydraMemor
     },
   };
 
+
+  const [confirmClearMemory, setConfirmClearMemory] = useState(false);
+
+  const handleClearSessionMemory = useCallback(async () => {
+    if (!confirmClearMemory) { setConfirmClearMemory(true); return; }
+    try {
+      if (!user?.id) return;
+      const { error } = await supabase.from('session_memory').delete().eq('user_id', user.id);
+      if (error) throw error;
+      toast.success(isRu ? 'Память сессий очищена' : 'Session memory cleared');
+      stats.refresh();
+    } catch {
+      toast.error(isRu ? 'Ошибка очистки памяти' : 'Failed to clear memory');
+    } finally {
+      setConfirmClearMemory(false);
+    }
+  }, [confirmClearMemory, user?.id, isRu, stats]);
+
   const layers: ArsenalLayer[] = [
     {
       id: 'instincts',
@@ -1980,6 +2007,9 @@ function CognitiveArsenalTab({ stats }: { stats: ReturnType<typeof useHydraMemor
       items: [
         { label: isRu ? 'Системных' : 'System', value: counts.prompts.system },
         { label: isRu ? 'Пользовательских' : 'Custom', value: counts.prompts.custom },
+      ],
+      actions: [
+        { label: isRu ? 'Создать промпт' : 'Create prompt', icon: Sparkles, href: '/role-library' },
       ],
     },
     {
@@ -1994,6 +2024,9 @@ function CognitiveArsenalTab({ stats }: { stats: ReturnType<typeof useHydraMemor
         { label: isRu ? 'Шаблонов задач' : 'Blueprints', value: counts.blueprints.total },
         { label: isRu ? 'Профилей поведения' : 'Behaviors', value: counts.behaviors.total },
       ],
+      actions: [
+        { label: isRu ? 'Создать шаблон' : 'Create blueprint', icon: GitMerge, href: '/behavioral-patterns' },
+      ],
     },
     {
       id: 'tools',
@@ -2006,6 +2039,10 @@ function CognitiveArsenalTab({ stats }: { stats: ReturnType<typeof useHydraMemor
       items: [
         { label: isRu ? 'Инструментов' : 'Tools', value: counts.tools.total },
         { label: isRu ? 'Схем потоков' : 'Flow diagrams', value: counts.flows.total },
+      ],
+      actions: [
+        { label: isRu ? 'Создать инструмент' : 'Create tool', icon: Wrench, href: '/tools-library' },
+        { label: isRu ? 'Новая схема' : 'New flow', icon: Network, href: '/flow-editor' },
       ],
     },
     {
@@ -2020,6 +2057,10 @@ function CognitiveArsenalTab({ stats }: { stats: ReturnType<typeof useHydraMemor
         { label: isRu ? 'Собеседований' : 'Interviews', value: counts.interviews.total },
         { label: isRu ? 'Конкурсов' : 'Contests', value: counts.contests.total },
       ],
+      actions: [
+        { label: isRu ? 'Собеседование' : 'Interview', icon: Users, href: '/staff-roles' },
+        { label: isRu ? 'Конкурс' : 'Contest', icon: Trophy, href: '/model-ratings' },
+      ],
     },
     {
       id: 'memory',
@@ -2033,6 +2074,16 @@ function CognitiveArsenalTab({ stats }: { stats: ReturnType<typeof useHydraMemor
         { label: isRu ? 'Опыт ролей' : 'Role memory', value: stats.totalRoleMemory },
         { label: isRu ? 'База знаний' : 'Knowledge', value: stats.totalKnowledge },
         { label: isRu ? 'Сессии' : 'Session memory', value: stats.sessionMemory.total },
+      ],
+      actions: [
+        {
+          label: confirmClearMemory
+            ? (isRu ? 'Подтвердить' : 'Confirm')
+            : (isRu ? 'Очистить сессии' : 'Clear sessions'),
+          icon: confirmClearMemory ? AlertTriangle : Trash2,
+          onClick: handleClearSessionMemory,
+          variant: confirmClearMemory ? 'destructive' : 'outline',
+        },
       ],
     },
   ];
@@ -2076,59 +2127,97 @@ function CognitiveArsenalTab({ stats }: { stats: ReturnType<typeof useHydraMemor
           const Icon = layer.icon;
           const s = LAYER_STYLES[layer.color];
           return (
-            <Link key={layer.id} to={layer.href} className="block group">
-              <motion.div whileHover={{ scale: 1.015, y: -2 }} transition={{ duration: 0.15 }}>
-                <Card className={cn(
-                  `border ${s.bg} ${s.border} hover:shadow-lg ${s.glow} transition-all cursor-pointer h-full`
-                )}>
-                  <CardContent className="p-4 space-y-3">
-                    {/* Header */}
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex items-center gap-2.5">
-                        <div className={`rounded-lg p-2 ${s.bg} border ${s.border} shrink-0`}>
-                          <Icon className={`h-4 w-4 ${s.text}`} />
-                        </div>
-                        <div>
-                          <p className={`text-sm font-semibold ${s.text}`}>{layer.label}</p>
-                          <p className="text-[10px] text-muted-foreground leading-tight">{layer.description}</p>
-                        </div>
+            <motion.div key={layer.id} whileHover={{ scale: 1.012, y: -2 }} transition={{ duration: 0.15 }}>
+              <Card className={cn(
+                `border ${s.bg} ${s.border} hover:shadow-lg ${s.glow} transition-all h-full flex flex-col`
+              )}>
+                <CardContent className="p-4 space-y-3 flex flex-col flex-1">
+                  {/* Header — click goes to section */}
+                  <Link to={layer.href} className="flex items-start justify-between gap-2 group/link">
+                    <div className="flex items-center gap-2.5">
+                      <div className={`rounded-lg p-2 ${s.bg} border ${s.border} shrink-0`}>
+                        <Icon className={`h-4 w-4 ${s.text}`} />
                       </div>
-                      <ExternalLink className="h-3.5 w-3.5 text-muted-foreground/30 group-hover:text-muted-foreground/60 transition-colors shrink-0 mt-0.5" />
+                      <div>
+                        <p className={`text-sm font-semibold ${s.text}`}>{layer.label}</p>
+                        <p className="text-[10px] text-muted-foreground leading-tight">{layer.description}</p>
+                      </div>
                     </div>
+                    <ExternalLink className="h-3.5 w-3.5 text-muted-foreground/30 group-hover/link:text-muted-foreground/60 transition-colors shrink-0 mt-0.5" />
+                  </Link>
 
-                    {/* Big number */}
-                    {isDataLoading ? (
-                      <Skeleton className="h-9 w-20" />
-                    ) : (
-                      <div className="flex items-baseline gap-1.5">
-                        <span className={`text-3xl font-bold tabular-nums ${s.text}`}>{layer.total}</span>
-                        <span className="text-xs text-muted-foreground">{isRu ? 'объектов' : 'objects'}</span>
+                  {/* Big number */}
+                  {isDataLoading ? (
+                    <Skeleton className="h-9 w-20" />
+                  ) : (
+                    <div className="flex items-baseline gap-1.5">
+                      <span className={`text-3xl font-bold tabular-nums ${s.text}`}>{layer.total}</span>
+                      <span className="text-xs text-muted-foreground">{isRu ? 'объектов' : 'objects'}</span>
+                    </div>
+                  )}
+
+                  {/* Sub-items */}
+                  <div className="space-y-1 pt-0.5 border-t border-border/50">
+                    {layer.items.map((item) => (
+                      <div key={item.label} className="flex items-center justify-between text-xs py-0.5">
+                        <span className="text-muted-foreground">{item.label}</span>
+                        {isDataLoading ? (
+                          <Skeleton className="h-4 w-8" />
+                        ) : (
+                          <span className="font-medium tabular-nums">{item.value}</span>
+                        )}
                       </div>
+                    ))}
+                  </div>
+
+                  {/* Quick actions */}
+                  <div className="flex flex-wrap gap-1.5 pt-2 mt-auto border-t border-border/30">
+                    {layer.actions.map((action) => {
+                      const ActionIcon = action.icon;
+                      if (action.href) {
+                        return (
+                          <Link key={action.label} to={action.href}>
+                            <Button variant="outline" size="sm" className="h-7 text-[11px] gap-1.5">
+                              <ActionIcon className="h-3 w-3" />
+                              {action.label}
+                            </Button>
+                          </Link>
+                        );
+                      }
+                      return (
+                        <Button
+                          key={action.label}
+                          variant={action.variant || 'outline'}
+                          size="sm"
+                          className={cn('h-7 text-[11px] gap-1.5', action.variant === 'destructive' && 'animate-pulse')}
+                          onClick={(e) => { e.stopPropagation(); action.onClick?.(); }}
+                        >
+                          <ActionIcon className="h-3 w-3" />
+                          {action.label}
+                        </Button>
+                      );
+                    })}
+                    {confirmClearMemory && layer.id === 'memory' && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 text-[11px]"
+                        onClick={() => setConfirmClearMemory(false)}
+                      >
+                        {isRu ? 'Отмена' : 'Cancel'}
+                      </Button>
                     )}
-
-                    {/* Sub-items */}
-                    <div className="space-y-1 pt-0.5 border-t border-border/50">
-                      {layer.items.map((item) => (
-                        <div key={item.label} className="flex items-center justify-between text-xs py-0.5">
-                          <span className="text-muted-foreground">{item.label}</span>
-                          {isDataLoading ? (
-                            <Skeleton className="h-4 w-8" />
-                          ) : (
-                            <span className="font-medium tabular-nums">{item.value}</span>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            </Link>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
           );
         })}
       </div>
     </div>
   );
 }
+
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
