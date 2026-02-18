@@ -160,7 +160,7 @@ export function HelpMeWidget() {
               }
               @keyframes can-tilt {
                 from { transform: rotate(0deg); }
-                to   { transform: rotate(52deg); }
+                to   { transform: rotate(-52deg); }
               }
 
               .gear-big-spinning {
