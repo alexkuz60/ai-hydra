@@ -1182,7 +1182,7 @@ function MemoryGraphTab({ stats }: { stats: ReturnType<typeof useHydraMemoryStat
   ];
 
   return (
-    <div className="flex flex-col gap-4 flex-1 min-h-0">
+    <div className="flex flex-col gap-4">
       {/* Layer toggles */}
       <div className="flex items-center gap-3 flex-wrap">
         {layerButtons.map(({ key, label, color }) => (
@@ -1213,8 +1213,8 @@ function MemoryGraphTab({ stats }: { stats: ReturnType<typeof useHydraMemoryStat
       </div>
 
       {/* SVG Graph */}
-      <Card className="overflow-hidden border-border flex-1 min-h-0">
-        <div ref={containerRef} className="relative w-full h-full min-h-[400px]">
+      <Card className="overflow-hidden border-border">
+        <div ref={containerRef} className="relative w-full" style={{ height: 'calc(100vh - 220px)', minHeight: 380 }}>
           <svg
             ref={svgRef}
             viewBox={`0 0 ${svgSize.w} ${svgSize.h}`}
@@ -1842,7 +1842,7 @@ export default function HydraMemory() {
         </div>
 
         {/* Tabs */}
-        <Tabs defaultValue="session" className="flex-1 flex flex-col min-h-0">
+        <Tabs defaultValue="session">
           <TabsList className="w-full justify-start flex-wrap gap-1 h-auto">
             <TabsTrigger value="session" className="gap-2">
               <Database className="h-3.5 w-3.5" />
@@ -1878,7 +1878,7 @@ export default function HydraMemory() {
           <TabsContent value="knowledge" className="mt-6">
             <KnowledgeTab stats={stats} loading={stats.loading} />
           </TabsContent>
-          <TabsContent value="graph" className="mt-4 flex-1 min-h-0 flex flex-col">
+          <TabsContent value="graph" className="mt-4">
             <MemoryGraphTab stats={stats} />
           </TabsContent>
           <TabsContent value="storage" className="mt-6">
