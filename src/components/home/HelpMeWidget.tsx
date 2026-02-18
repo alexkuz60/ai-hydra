@@ -18,17 +18,34 @@ function gearPath(cx: number, cy: number, outerR: number, innerR: number, teeth:
 }
 
 const HELP_OPTIONS = [
-  { id: 'star', labelRu: '⭐ Поставить звезду на GitHub', labelEn: '⭐ Star on GitHub', href: 'https://github.com' },
-  { id: 'share', labelRu: '📣 Рассказать друзьям', labelEn: '📣 Tell friends', href: null },
-  { id: 'feedback', labelRu: '💬 Оставить отзыв', labelEn: '💬 Leave feedback', href: null },
-  { id: 'contribute', labelRu: '🛠 Стать контрибьютором', labelEn: '🛠 Become a contributor', href: null },
-  { id: 'donate', labelRu: '💸 Поддержать донатом', labelEn: '💸 Support with donation', href: null },
+  { id: 'star',       labelRu: '⭐ Поставить звезду на GitHub', labelEn: '⭐ Star on GitHub',        href: 'https://github.com' },
+  { id: 'share',      labelRu: '📣 Рассказать друзьям',         labelEn: '📣 Tell friends',           href: null },
+  { id: 'feedback',   labelRu: '💬 Оставить отзыв',             labelEn: '💬 Leave feedback',         href: null },
+  { id: 'contribute', labelRu: '🛠 Стать контрибьютором',       labelEn: '🛠 Become a contributor',   href: null },
+  { id: 'donate',     labelRu: '💸 Поддержать донатом',         labelEn: '💸 Support with donation',  href: null },
 ];
+
+// ─── Layout constants ─────────────────────────────────────────────────────────
+// Canvas
+const W = 260, H = 250;
+
+// Big gear (right, dominant)
+const BIG_CX = 155, BIG_CY = 172, BIG_OUTER = 72, BIG_INNER = 50, BIG_TEETH = 12;
+
+// Small gear (left, meshing)
+const SM_CX  =  58, SM_CY  = 182, SM_OUTER  = 46, SM_INNER  = 32, SM_TEETH  = 8;
+
+// Oil can: scale 5.5 → ~132px, upper-right of canvas, nozzle toward gears
+const CAN_TX = 100, CAN_TY = 4, CAN_S = 5.5;
+
+// Drop: from nozzle toward gear mesh area
+const DROP_CX = 120, DROP_CY = 105;
+// ─────────────────────────────────────────────────────────────────────────────
 
 export function HelpMeWidget() {
   const { language } = useLanguage();
   const [hovered, setHovered] = useState(false);
-  const [oiling, setOiling] = useState(false);
+  const [oiling,  setOiling]  = useState(false);
   const [popupOpen, setPopupOpen] = useState(false);
   const [checked, setChecked] = useState<Record<string, boolean>>({});
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -56,23 +73,12 @@ export function HelpMeWidget() {
   }, [popupOpen]);
 
   const toggleCheck = (id: string) => setChecked(prev => ({ ...prev, [id]: !prev[id] }));
-
-  // SVG geometry — по референсу: масленка крупная сверху-справа, большая шестерня справа, малая слева
-  const W = 220, H = 210;
-
-  // Big gear (right, dominant)
-  const bigCx = 150, bigCy = 158, bigOuter = 52, bigInner = 35, bigTeeth = 12;
-  // Small gear (left, meshing with big)
-  const smCx = 60, smCy = 162, smOuter = 33, smInner = 22, smTeeth = 8;
-
-  // Oil can: 5x scale, positioned upper-right (nozzle pointing toward drop zone)
-  const canTx = 80, canTy = 5, canScale = 5;
-
   const label = language === 'ru' ? 'Помочь проекту' : 'Support project';
 
   return (
     <div className="fixed bottom-6 right-6 z-30 flex flex-col items-end gap-2 select-none">
-      {/* Popup */}
+
+      {/* ── Popup ── */}
       {popupOpen && (
         <div
           ref={popupRef}
@@ -85,16 +91,11 @@ export function HelpMeWidget() {
           </p>
           <div className="flex flex-col gap-2">
             {HELP_OPTIONS.map(opt => (
-              <label
-                key={opt.id}
-                className="flex items-center gap-2.5 cursor-pointer group"
-              >
+              <label key={opt.id} className="flex items-center gap-2.5 cursor-pointer group">
                 <div
                   onClick={() => toggleCheck(opt.id)}
                   className={`w-4 h-4 rounded border transition-all flex-shrink-0 flex items-center justify-center ${
-                    checked[opt.id]
-                      ? 'bg-primary border-primary'
-                      : 'border-border group-hover:border-primary/60'
+                    checked[opt.id] ? 'bg-primary border-primary' : 'border-border group-hover:border-primary/60'
                   }`}
                 >
                   {checked[opt.id] && (
@@ -123,7 +124,7 @@ export function HelpMeWidget() {
         </div>
       )}
 
-      {/* SVG Widget */}
+      {/* ── SVG Widget ── */}
       <div
         className="cursor-pointer"
         onMouseEnter={() => setHovered(true)}
@@ -132,8 +133,7 @@ export function HelpMeWidget() {
         title={label}
       >
         <svg
-          width={W}
-          height={H}
+          width={W} height={H}
           viewBox={`0 0 ${W} ${H}`}
           xmlns="http://www.w3.org/2000/svg"
           style={{ overflow: 'visible' }}
@@ -142,93 +142,92 @@ export function HelpMeWidget() {
             <style>{`
               @keyframes spin-cw {
                 from { transform: rotate(0deg); }
-                to { transform: rotate(360deg); }
+                to   { transform: rotate(360deg); }
               }
               @keyframes spin-ccw {
                 from { transform: rotate(0deg); }
-                to { transform: rotate(-360deg); }
+                to   { transform: rotate(-360deg); }
               }
               @keyframes drop-fall {
-                0%   { opacity: 0; transform: translateY(0px) scale(0.5); }
-                20%  { opacity: 1; }
-                75%  { opacity: 1; transform: translateY(22px) scale(1); }
-                100% { opacity: 0; transform: translateY(28px) scale(0.3); }
+                0%   { opacity: 0;   transform: translateY(-4px)  scale(0.5); }
+                15%  { opacity: 1; }
+                80%  { opacity: 1;   transform: translateY(20px)  scale(1.1); }
+                100% { opacity: 0;   transform: translateY(26px)  scale(0.3); }
               }
               @keyframes can-appear {
-                from { opacity: 0; transform: translateX(18px); }
+                from { opacity: 0; transform: translateX(16px); }
                 to   { opacity: 1; transform: translateX(0); }
               }
               @keyframes can-tilt {
                 from { transform: rotate(0deg); }
-                to   { transform: rotate(-42deg); }
+                to   { transform: rotate(-44deg); }
               }
+
               .gear-big-spinning {
-                animation: spin-cw 3s linear infinite;
-                transform-origin: ${bigCx}px ${bigCy}px;
+                animation: spin-cw 3.2s linear infinite;
+                transform-origin: ${BIG_CX}px ${BIG_CY}px;
               }
               .gear-sm-spinning {
-                animation: spin-ccw 3s linear infinite;
-                transform-origin: ${smCx}px ${smCy}px;
+                animation: spin-ccw 3.2s linear infinite;
+                transform-origin: ${SM_CX}px ${SM_CY}px;
               }
               .can-appear-anim {
                 animation: can-appear 0.35s ease-out forwards;
               }
               .can-tilt-anim {
-                animation: can-tilt 0.5s ease-in-out forwards;
+                animation: can-tilt 0.55s ease-in-out forwards;
                 transform-box: fill-box;
                 transform-origin: center;
               }
               .drop-anim {
                 animation: drop-fall 1s ease-in infinite;
+                transform-origin: ${DROP_CX}px ${DROP_CY}px;
               }
             `}</style>
           </defs>
 
-          {/* Big gear (right) */}
+          {/* ── Big gear (right) ── */}
           <g className={oiling ? 'gear-big-spinning' : ''}>
             <path
-              d={gearPath(bigCx, bigCy, bigOuter, bigInner, bigTeeth)}
+              d={gearPath(BIG_CX, BIG_CY, BIG_OUTER, BIG_INNER, BIG_TEETH)}
               fill="hsl(var(--foreground))"
               fillOpacity={0.55}
             />
-            <circle
-              cx={bigCx} cy={bigCy} r={bigInner - 8}
-              fill="hsl(var(--background))"
-            />
-            <circle cx={bigCx} cy={bigCy} r={7} fill="hsl(var(--foreground))" fillOpacity={0.3} />
+            <circle cx={BIG_CX} cy={BIG_CY} r={BIG_INNER - 10}
+              fill="hsl(var(--background))" />
+            <circle cx={BIG_CX} cy={BIG_CY} r={9}
+              fill="hsl(var(--foreground))" fillOpacity={0.3} />
           </g>
 
-          {/* Small gear (left) */}
+          {/* ── Small gear (left) ── */}
           <g className={oiling ? 'gear-sm-spinning' : ''}>
             <path
-              d={gearPath(smCx, smCy, smOuter, smInner, smTeeth)}
+              d={gearPath(SM_CX, SM_CY, SM_OUTER, SM_INNER, SM_TEETH)}
               fill="hsl(var(--foreground))"
               fillOpacity={0.5}
             />
-            <circle
-              cx={smCx} cy={smCy} r={smInner - 6}
-              fill="hsl(var(--background))"
-            />
-            <circle cx={smCx} cy={smCy} r={5} fill="hsl(var(--foreground))" fillOpacity={0.25} />
+            <circle cx={SM_CX} cy={SM_CY} r={SM_INNER - 7}
+              fill="hsl(var(--background))" />
+            <circle cx={SM_CX} cy={SM_CY} r={6}
+              fill="hsl(var(--foreground))" fillOpacity={0.25} />
           </g>
 
-          {/* Oil drop (visible only when oiling) — falls from nozzle toward gears */}
+          {/* ── Oil drop (only while oiling) ── */}
           {oiling && (
-            <g className="drop-anim" style={{ transformOrigin: '118px 95px' }}>
-              <ellipse
-                cx={118} cy={95}
-                rx={6} ry={8}
-                fill="hsl(var(--foreground))"
-                fillOpacity={0.7}
-              />
-            </g>
+            <ellipse
+              className="drop-anim"
+              cx={DROP_CX} cy={DROP_CY}
+              rx={7} ry={9}
+              fill="hsl(var(--foreground))"
+              fillOpacity={0.75}
+            />
           )}
 
-          {/* Oil can — large, upper-right, tilts around its own center */}
+          {/* ── Oil can (on hover) ── */}
           {hovered && (
             <g
               className={oiling ? 'can-tilt-anim' : 'can-appear-anim'}
-              transform={`translate(${canTx}, ${canTy}) scale(${canScale})`}
+              transform={`translate(${CAN_TX}, ${CAN_TY}) scale(${CAN_S})`}
               fill="hsl(var(--foreground))"
               fillOpacity={0.6}
             >
