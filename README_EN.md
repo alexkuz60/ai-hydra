@@ -143,6 +143,8 @@ Automatic experience consolidation: patterns from `role_memory` are distilled in
 - **Hybrid Search** — three modes: Text / Semantic / Hybrid (BM25 + pgvector + RRF k=60)
 - **Reranking** — re-scoring via `gemini-3-flash-preview`, formula `final_score = rerank×0.7 + hybrid×0.3`
 - **HyDE** — hypothetical document generation before search, embedding blend `query×0.4 + hyde×0.6`
+- **Cognitive Arsenal** — dashboard overview of Hydra's entire "subconscious": counters for prompts, blueprints, tools, flows, tests, and memory; cards with quick actions (create, navigate, clear)
+- **Connections Graph** — SVG visualization of roles as bridges between cognitive layers (Instincts / Patterns / Tools / Achievements / Memory); nodes scale by data volume; edges are weighted; hover-highlight with tooltip; role labels localized via `ROLE_CONFIG`
 
 ### 15. User Profile
 - **Avatar** — photo upload with Canvas cropper (drag, scroll-zoom, 260×260 JPEG, 2MB limit)

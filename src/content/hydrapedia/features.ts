@@ -959,6 +959,20 @@ In each model's settings you can choose:
   - Удаление устаревших версий (чанки с одинаковым \`source_url\` и не-последней \`version\`)
   - Предупреждение при наличии чанков без эмбеддинга
 
+## Когнитивный арсенал
+
+Вкладка **«Когнитивный арсенал»** — стратегический дашборд «подсознания» Гидры. Отображает всё накопленное интеллектуальное имущество в виде карточек с живыми счётчиками и быстрыми действиями.
+
+| Слой | Что считается | Быстрые действия |
+|------|---------------|-----------------|
+| **Инстинкты** | Системные промпты | Создать промпт → Библиотека |
+| **Паттерны мышления** | Шаблоны + паттерны поведения | Создать шаблон → Паттерны |
+| **Арсенал инструментов** | Кастомные инструменты + потоки | Создать инструмент / Новый поток |
+| **Достижения** | Собеседования + конкурсы | Собеседование / Конкурс |
+| **Живая память** | Опыт ролей + знания + сессии | Очистить сессии (с подтверждением) |
+
+Карточки анимированы через Framer Motion; счётчики обновляются в реальном времени из \`useHydraMemoryStats\`.
+
 ## Граф памяти
 
 SVG-визуализация связей всех трёх уровней:
@@ -970,8 +984,18 @@ SVG-визуализация связей всех трёх уровней:
 - Клик на узел → детали: количество записей, средний confidence, связанные сессии
 - Прогресс-бары активности ролей под графом
 
+## Граф связей
+
+SVG-граф показывает роли как **мосты** между когнитивными слоями. Адаптируется к ширине контейнера через ResizeObserver.
+
+- **Пять слоёв** (Инстинкты, Паттерны, Инструменты, Достижения, Память) — внешний пятиугольник
+- **До 7 активных ролей** — внутренняя орбита; узел масштабируется по объёму данных (промпты + опыт + знания)
+- **Рёбра** весовые; цвет кодирует тип связи: 💜 промпты, 🔵 опыт, 🟢 знания
+- **Hover** — подсвечивает узел и рёбра; тултип с локализованным именем роли и счётчиками
+- Граф занимает полную ширину (55% высоты, макс. 600px); радиусы пересчитываются динамически
+
 > [!TIP] Локализация
-> Метки ролей в графе отображаются на языке интерфейса (RU/EN) через \`ROLE_CONFIG\` + \`t(roleConfig.label)\`.
+> Метки ролей в обоих графах отображаются на языке интерфейса (RU/EN) через \`ROLE_CONFIG\` + \`t(roleConfig.label)\`.
 
 ## Поисковые режимы
 
@@ -1031,6 +1055,20 @@ Hydra's memory management hub — a RAG center combining three storage layers in
   - Stale version deletion (chunks with same \`source_url\` but non-latest \`version\`)
   - Warning for chunks without embeddings
 
+## Cognitive Arsenal
+
+The **"Cognitive Arsenal"** tab — a strategic dashboard of Hydra's "subconscious". Displays all accumulated intellectual assets as cards with live counters and quick actions.
+
+| Layer | What is counted | Quick actions |
+|-------|-----------------|---------------|
+| **Instincts** | System prompts | Create prompt → Library |
+| **Thinking Patterns** | Blueprints + behavioral patterns | Create blueprint → Patterns |
+| **Tool Arsenal** | Custom tools + flows | Create tool / New flow |
+| **Achievements** | Interviews + contests | Interview / Contest |
+| **Living Memory** | Role experience + knowledge + sessions | Clear sessions (with confirmation) |
+
+Cards are animated via Framer Motion; counters update in real time from \`useHydraMemoryStats\`.
+
 ## Memory Graph
 
 SVG visualization of connections across all three layers:
@@ -1042,8 +1080,18 @@ SVG visualization of connections across all three layers:
 - Click on a node → details panel: record count, average confidence, linked sessions
 - Role activity progress bars below the graph
 
+## Connections Graph
+
+SVG graph showing roles as **bridges** between cognitive layers. Adapts to container width via ResizeObserver.
+
+- **Five layers** (Instincts, Patterns, Tools, Achievements, Memory) — outer pentagon
+- **Up to 7 active roles** — inner orbit; node scales by total data volume (prompts + experience + knowledge)
+- **Weighted edges**; color encodes connection type: 💜 prompts, 🔵 experience, 🟢 knowledge
+- **Hover** — highlights node and edges; tooltip with localized role name and counters
+- Graph spans full width (55% height ratio, max 600px); radii recalculated dynamically
+
 > [!TIP] Localization
-> Role labels in the graph are displayed in the current interface language (RU/EN) via \`ROLE_CONFIG\` + \`t(roleConfig.label)\`.
+> Role labels in both graphs are displayed in the current interface language (RU/EN) via \`ROLE_CONFIG\` + \`t(roleConfig.label)\`.
 
 ## Search Modes
 
