@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Message, MessageMetadata } from '@/types/messages';
+import type { Json } from '@/integrations/supabase/types';
 import type { Proposal } from '@/types/patterns';
 import { useLanguage } from '@/contexts/LanguageContext';
 
@@ -58,7 +59,7 @@ export function useMessages({ sessionId, onBeforeDeleteMessage }: UseMessagesPro
     fetchMessages(sessionId);
 
     const channel = supabase
-      .channel('messages-changes')
+      .channel(`messages-${sessionId}`)
       .on(
         'postgres_changes',
         {
@@ -173,7 +174,7 @@ export function useMessages({ sessionId, onBeforeDeleteMessage }: UseMessagesPro
       const { error } = await supabase
         .from('messages')
         .update({
-          metadata: { ...currentMetadata, rating } as unknown as Record<string, never>
+          metadata: { ...currentMetadata, rating } as unknown as Json
         })
         .eq('id', messageId);
 
@@ -198,7 +199,7 @@ export function useMessages({ sessionId, onBeforeDeleteMessage }: UseMessagesPro
       const { error } = await supabase
         .from('messages')
         .update({
-          metadata: { ...currentMetadata, user_likert: value } as unknown as Record<string, never>
+          metadata: { ...currentMetadata, user_likert: value } as unknown as Json
         })
         .eq('id', messageId);
 
@@ -224,7 +225,7 @@ export function useMessages({ sessionId, onBeforeDeleteMessage }: UseMessagesPro
 
       const { error } = await supabase
         .from('messages')
-        .update({ metadata: updatedMetadata as unknown as Record<string, never> })
+        .update({ metadata: updatedMetadata as unknown as Json })
         .eq('id', messageId);
 
       if (error) throw error;
@@ -262,7 +263,7 @@ export function useMessages({ sessionId, onBeforeDeleteMessage }: UseMessagesPro
 
       const { error } = await supabase
         .from('messages')
-        .update({ metadata: updatedMetadata as unknown as Record<string, never> })
+        .update({ metadata: updatedMetadata as unknown as Json })
         .eq('id', messageId);
 
       if (error) throw error;
