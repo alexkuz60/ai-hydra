@@ -2305,12 +2305,12 @@ function ArsenalConnectionsGraph({
     const obs = new ResizeObserver(entries => {
       const e = entries[0];
       if (e && e.contentRect.width > 0) {
-        setSize({ w: Math.round(e.contentRect.width), h: Math.round(Math.min(e.contentRect.width * 0.62, 480)) });
+        setSize({ w: Math.round(e.contentRect.width), h: Math.round(Math.min(e.contentRect.width * 0.55, 600)) });
       }
     });
     obs.observe(el);
     const { width } = el.getBoundingClientRect();
-    if (width > 0) setSize({ w: Math.round(width), h: Math.round(Math.min(width * 0.62, 480)) });
+    if (width > 0) setSize({ w: Math.round(width), h: Math.round(Math.min(width * 0.55, 600)) });
     return () => obs.disconnect();
   }, []);
 
@@ -2334,7 +2334,7 @@ function ArsenalConnectionsGraph({
 
     const layerNodes: ArsenalGraphNode[] = layerDefs.map((def, i) => {
       const angle = (2 * Math.PI * i) / layerDefs.length - Math.PI / 2;
-      const nodeR = 22 + (def.value / maxLayerVal) * 18;
+      const nodeR = 30 + (def.value / maxLayerVal) * 22;
       return {
         id: def.id,
         label: def.label,
@@ -2359,7 +2359,7 @@ function ArsenalConnectionsGraph({
     const roleNodes: ArsenalGraphNode[] = topRoles.map((r, i) => {
       const angle = (2 * Math.PI * i) / topRoles.length - Math.PI / 2;
       const total = r.memCount + r.knowledgeCount + r.promptCount;
-      const nodeR = 10 + (total / maxRoleVal) * 10;
+      const nodeR = 20 + (total / maxRoleVal) * 16;
       const roleConfig = ROLE_CONFIG[r.role as keyof typeof ROLE_CONFIG];
       const roleLabel = roleConfig ? t(roleConfig.label) : r.role;
       return {
@@ -2500,12 +2500,12 @@ function ArsenalConnectionsGraph({
                     textAnchor="middle"
                     dominantBaseline="middle"
                     fill="white"
-                    fontSize={node.type === 'layer' ? Math.max(9, node.r * 0.52) : 8}
-                    fontWeight={node.type === 'layer' ? 600 : 400}
-                    dy={node.sublabel ? -4 : 0}
+                     fontSize={node.type === 'layer' ? Math.max(11, node.r * 0.46) : Math.max(10, node.r * 0.44)}
+                    fontWeight={node.type === 'layer' ? 600 : 500}
+                    dy={node.sublabel ? -5 : 0}
                     style={{ userSelect: 'none', pointerEvents: 'none' }}
                   >
-                    {node.label.length > 10 ? node.label.slice(0, 9) + '…' : node.label}
+                    {node.label.length > 12 ? node.label.slice(0, 11) + '…' : node.label}
                   </text>
                   {node.sublabel && (
                     <text
