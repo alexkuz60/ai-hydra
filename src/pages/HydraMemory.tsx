@@ -897,16 +897,21 @@ function KnowledgeTab({ stats, loading }: { stats: ReturnType<typeof useHydraMem
   );
 }
 
-// ─── Memory Graph Tab (Iteration 6) ──────────────────────────────────────────
+// ─── Memory Graph Tab (Iteration 7) — Multi-layer ────────────────────────────
+
+type GraphNodeType = 'center' | 'role' | 'session' | 'knowledge';
 
 interface GraphNode {
   id: string;
   label: string;
-  roleId?: string; // internal role key for lookups (e.g. 'critic')
-  type: 'role' | 'memory' | 'session';
+  roleId?: string;
+  type: GraphNodeType;
   count?: number;
   usageCount?: number;
   confidence?: number;
+  category?: string;       // for knowledge nodes
+  knowledgeCount?: number; // total knowledge entries for role
+  sessionChunks?: number;  // session memory chunks
   x: number;
   y: number;
   r: number;
@@ -915,111 +920,198 @@ interface GraphNode {
 interface GraphEdge {
   source: string;
   target: string;
+  kind?: 'role' | 'session' | 'knowledge' | 'cross'; // cross = shared session between roles
 }
+
+// Graph filter options
+type GraphLayer = 'role' | 'session' | 'knowledge' | 'cross';
 
 function MemoryGraphTab({ stats }: { stats: ReturnType<typeof useHydraMemoryStats> }) {
   const { user } = useAuth();
   const { t, language } = useLanguage();
   const svgRef = useRef<SVGSVGElement>(null);
+
+  // Layer toggle state
+  const [activeLayers, setActiveLayers] = useState<Set<GraphLayer>>(
+    new Set(['role', 'session', 'knowledge', 'cross'])
+  );
+
+  // Role memory details: usage + sessions
   const [roleMemoryDetails, setRoleMemoryDetails] = useState<Record<string, { sessions: string[]; usageCount: number }>>({});
+  // Session memory: chunks per session_id
+  const [sessionChunks, setSessionChunks] = useState<Record<string, number>>({});
   const [loadingDetails, setLoadingDetails] = useState(false);
   const [selected, setSelected] = useState<GraphNode | null>(null);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
 
+  const toggleLayer = (layer: GraphLayer) => {
+    setActiveLayers(prev => {
+      const next = new Set(prev);
+      if (next.has(layer)) next.delete(layer); else next.add(layer);
+      return next;
+    });
+  };
+
+  // Fetch role memory + session memory details
   useEffect(() => {
     if (!user?.id || stats.roleMemory.length === 0) return;
     setLoadingDetails(true);
-    supabase
-      .from('role_memory')
-      .select('role, source_session_id, usage_count')
-      .eq('user_id', user.id)
-      .then(({ data }) => {
-        const details: Record<string, { sessions: string[]; usageCount: number }> = {};
-        (data || []).forEach(row => {
-          if (!details[row.role]) details[row.role] = { sessions: [], usageCount: 0 };
-          details[row.role].usageCount += row.usage_count || 0;
-          if (row.source_session_id && !details[row.role].sessions.includes(row.source_session_id)) {
-            details[row.role].sessions.push(row.source_session_id);
-          }
-        });
-        setRoleMemoryDetails(details);
-        setLoadingDetails(false);
+
+    Promise.all([
+      supabase
+        .from('role_memory')
+        .select('role, source_session_id, usage_count')
+        .eq('user_id', user.id),
+      supabase
+        .from('session_memory')
+        .select('session_id')
+        .eq('user_id', user.id),
+    ]).then(([rmRes, smRes]) => {
+      // Role memory details
+      const details: Record<string, { sessions: string[]; usageCount: number }> = {};
+      (rmRes.data || []).forEach(row => {
+        if (!details[row.role]) details[row.role] = { sessions: [], usageCount: 0 };
+        details[row.role].usageCount += row.usage_count || 0;
+        if (row.source_session_id && !details[row.role].sessions.includes(row.source_session_id)) {
+          details[row.role].sessions.push(row.source_session_id);
+        }
       });
+      setRoleMemoryDetails(details);
+
+      // Session chunks count
+      const chunks: Record<string, number> = {};
+      (smRes.data || []).forEach(row => {
+        if (row.session_id) chunks[row.session_id] = (chunks[row.session_id] || 0) + 1;
+      });
+      setSessionChunks(chunks);
+
+      setLoadingDetails(false);
+    });
   }, [user?.id, stats.roleMemory]);
+
+  // Knowledge per role (collapsed from stats.knowledge)
+  const knowledgePerRole = useMemo(() => {
+    const map: Record<string, number> = {};
+    stats.knowledge.forEach(k => { map[k.role] = (map[k.role] || 0) + k.count; });
+    return map;
+  }, [stats.knowledge]);
 
   // Build graph nodes & edges
   const { nodes, edges } = useMemo(() => {
-    const W = 520;
-    const H = 320;
+    const W = 560;
+    const H = 360;
     const cx = W / 2;
     const cy = H / 2;
 
-    const roleNodes: GraphNode[] = [];
-    const memoryNodes: GraphNode[] = [];
-    const sessionNodes: GraphNode[] = [];
-    const edges: GraphEdge[] = [];
+    const allNodes: GraphNode[] = [];
+    const allEdges: GraphEdge[] = [];
     const sessionIds = new Set<string>();
 
     const maxCount = Math.max(...stats.roleMemory.map(r => r.count), 1);
+    const maxKnowledge = Math.max(...Object.values(knowledgePerRole), 1);
+
+    // Center node
+    const centerNode: GraphNode = {
+      id: 'center',
+      label: language === 'ru' ? 'Гидра' : 'Hydra',
+      type: 'center',
+      x: cx,
+      y: cy,
+      r: 20,
+    };
+    allNodes.push(centerNode);
+
+    const roleRadius = Math.min(cx, cy) * 0.58;
+    const knowledgeRadius = roleRadius * 0.48;
+    const sessionRadius = roleRadius * 1.58;
 
     stats.roleMemory.forEach((rm, i) => {
       const angle = (2 * Math.PI * i) / stats.roleMemory.length - Math.PI / 2;
-      const radius = Math.min(cx, cy) * 0.62;
-      const nodeSize = 12 + (rm.count / maxCount) * 12;
+      const nodeSize = 11 + (rm.count / maxCount) * 13;
       const roleConfig = ROLE_CONFIG[rm.role as keyof typeof ROLE_CONFIG];
       const roleLabel = roleConfig ? t(roleConfig.label) : rm.role;
+
       const roleNode: GraphNode = {
         id: `role_${rm.role}`,
         label: roleLabel,
-        roleId: rm.role, // store internal key for isHot lookup
+        roleId: rm.role,
         type: 'role',
         count: rm.count,
         confidence: rm.avg_confidence,
         usageCount: roleMemoryDetails[rm.role]?.usageCount || 0,
-        x: cx + radius * Math.cos(angle),
-        y: cy + radius * Math.sin(angle),
+        knowledgeCount: knowledgePerRole[rm.role] || 0,
+        x: cx + roleRadius * Math.cos(angle),
+        y: cy + roleRadius * Math.sin(angle),
         r: nodeSize,
       };
-      roleNodes.push(roleNode);
-      edges.push({ source: 'center', target: roleNode.id });
+      allNodes.push(roleNode);
+      allEdges.push({ source: 'center', target: roleNode.id, kind: 'role' });
 
-      // Add session nodes for hot roles (usageCount > 2)
+      // ── Knowledge node (inner orbit) ──
+      const hasKnowledge = (knowledgePerRole[rm.role] || 0) > 0;
+      if (hasKnowledge && activeLayers.has('knowledge')) {
+        const kAngle = angle + 0.35;
+        const kNode: GraphNode = {
+          id: `know_${rm.role}`,
+          label: `${knowledgePerRole[rm.role]}`,
+          roleId: rm.role,
+          type: 'knowledge',
+          knowledgeCount: knowledgePerRole[rm.role],
+          x: cx + knowledgeRadius * Math.cos(kAngle) + roleRadius * Math.cos(angle) * 0.1,
+          y: cy + knowledgeRadius * Math.sin(kAngle) + roleRadius * Math.sin(angle) * 0.1,
+          r: 7,
+        };
+        // Place near role node
+        kNode.x = roleNode.x + Math.cos(angle - Math.PI * 0.35) * (nodeSize + 14);
+        kNode.y = roleNode.y + Math.sin(angle - Math.PI * 0.35) * (nodeSize + 14);
+        allNodes.push(kNode);
+        allEdges.push({ source: roleNode.id, target: kNode.id, kind: 'knowledge' });
+      }
+
+      // ── Session nodes (outer orbit) ──
       const detail = roleMemoryDetails[rm.role];
-      if (detail && detail.usageCount > 2) {
+      if (activeLayers.has('session') && detail && detail.usageCount > 0) {
         detail.sessions.slice(0, 2).forEach((sid, si) => {
+          const sa = angle + ((si - 0.5) * 0.45);
           if (!sessionIds.has(sid)) {
             sessionIds.add(sid);
-            const sa = angle + ((si - 0.5) * 0.4);
-            const sr = radius * 1.55;
             const sessNode: GraphNode = {
               id: `sess_${sid}`,
               label: sid.slice(0, 8) + '…',
               type: 'session',
-              x: cx + sr * Math.cos(sa),
-              y: cy + sr * Math.sin(sa),
-              r: 7,
+              sessionChunks: sessionChunks[sid] || 0,
+              x: cx + sessionRadius * Math.cos(sa),
+              y: cy + sessionRadius * Math.sin(sa),
+              r: 6 + Math.min((sessionChunks[sid] || 0) / 10, 4),
             };
-            sessionNodes.push(sessNode);
-            edges.push({ source: roleNode.id, target: sessNode.id });
+            allNodes.push(sessNode);
+            allEdges.push({ source: roleNode.id, target: `sess_${sid}`, kind: 'session' });
           } else {
-            edges.push({ source: roleNode.id, target: `sess_${sid}` });
+            allEdges.push({ source: roleNode.id, target: `sess_${sid}`, kind: 'session' });
           }
         });
       }
     });
 
-    const centerNode: GraphNode = {
-      id: 'center',
-      label: language === 'ru' ? 'Гидра' : 'Hydra',
-      type: 'memory',
-      x: cx,
-      y: cy,
-      r: 20,
-    };
-    memoryNodes.push(centerNode);
+    // ── Cross-connections between roles sharing sessions ──
+    if (activeLayers.has('cross')) {
+      const roleSessionMap: Record<string, string[]> = {};
+      stats.roleMemory.forEach(rm => {
+        roleSessionMap[rm.role] = roleMemoryDetails[rm.role]?.sessions || [];
+      });
+      const roles = stats.roleMemory.map(r => r.role);
+      for (let a = 0; a < roles.length; a++) {
+        for (let b = a + 1; b < roles.length; b++) {
+          const shared = roleSessionMap[roles[a]]?.filter(s => roleSessionMap[roles[b]]?.includes(s));
+          if (shared && shared.length > 0) {
+            allEdges.push({ source: `role_${roles[a]}`, target: `role_${roles[b]}`, kind: 'cross' });
+          }
+        }
+      }
+    }
 
-    return { nodes: [...memoryNodes, ...roleNodes, ...sessionNodes], edges };
-  }, [stats.roleMemory, roleMemoryDetails, t, language]);
+    return { nodes: allNodes, edges: allEdges };
+  }, [stats.roleMemory, roleMemoryDetails, sessionChunks, knowledgePerRole, activeLayers, t, language]);
 
   const nodeMap = useMemo(() => {
     const m: Record<string, GraphNode> = {};
@@ -1047,23 +1139,60 @@ function MemoryGraphTab({ stats }: { stats: ReturnType<typeof useHydraMemoryStat
 
   const maxUsage = Math.max(...stats.roleMemory.map(r => roleMemoryDetails[r.role]?.usageCount || 0), 1);
 
+  // Edge colors by kind
+  const edgeColor = (kind?: string, hovered?: boolean) => {
+    if (hovered) return 'hsl(var(--hydra-memory))';
+    switch (kind) {
+      case 'knowledge': return 'hsl(var(--hydra-glow))';
+      case 'session':   return 'hsl(var(--hydra-expert))';
+      case 'cross':     return 'hsl(var(--hydra-cyan))';
+      default:          return 'hsl(var(--border))';
+    }
+  };
+
+  // Node fill by type
+  const nodeFill = (node: GraphNode) => {
+    switch (node.type) {
+      case 'center':    return 'hsl(var(--hydra-cyan))';
+      case 'session':   return 'hsl(var(--hydra-expert))';
+      case 'knowledge': return 'hsl(var(--hydra-glow))';
+      default:          return 'hsl(var(--hydra-memory))';
+    }
+  };
+
+  const layerButtons: { key: GraphLayer; label: string; color: string }[] = [
+    { key: 'role',      label: t('memory.hub.legendRole'),      color: 'hsl(var(--hydra-memory))' },
+    { key: 'session',   label: t('memory.hub.legendSession'),   color: 'hsl(var(--hydra-expert))' },
+    { key: 'knowledge', label: t('memory.hub.legendKnowledge'), color: 'hsl(var(--hydra-glow))' },
+    { key: 'cross',     label: t('memory.hub.legendCross'),     color: 'hsl(var(--hydra-cyan))' },
+  ];
+
   return (
     <div className="space-y-4">
-      {/* Legend */}
-      <div className="flex items-center gap-6 flex-wrap">
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <div className="h-3 w-3 rounded-full bg-[hsl(var(--hydra-memory))] opacity-80" />
-          <span>{t('memory.hub.legendRole')}</span>
-        </div>
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <div className="h-3 w-3 rounded-full bg-[hsl(var(--hydra-cyan))]" />
-          <span>{t('memory.hub.legendCenter')}</span>
-        </div>
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <div className="h-3 w-3 rounded-full bg-[hsl(var(--hydra-expert))]" />
-          <span>{t('memory.hub.legendSession')}</span>
-        </div>
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+      {/* Layer toggles */}
+      <div className="flex items-center gap-3 flex-wrap">
+        {layerButtons.map(({ key, label, color }) => (
+          <button
+            key={key}
+            onClick={() => toggleLayer(key)}
+            className={cn(
+              'flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs border transition-all',
+              activeLayers.has(key)
+                ? 'border-border bg-muted/60 text-foreground'
+                : 'border-transparent bg-transparent text-muted-foreground opacity-50'
+            )}
+          >
+            <span
+              className="h-2.5 w-2.5 rounded-full shrink-0"
+              style={{ background: color }}
+            />
+            {label}
+            {key === 'cross' && (
+              <span className="ml-0.5 text-[10px] opacity-70">({t('memory.hub.legendCrossHint')})</span>
+            )}
+          </button>
+        ))}
+        <div className="flex items-center gap-1.5 ml-auto text-xs text-muted-foreground">
           <Zap className="h-3 w-3 text-amber-400" />
           <span>{t('memory.hub.legendHot')}</span>
         </div>
@@ -1071,31 +1200,32 @@ function MemoryGraphTab({ stats }: { stats: ReturnType<typeof useHydraMemoryStat
 
       {/* SVG Graph */}
       <Card className="overflow-hidden border-border">
-        <div className="relative w-full max-w-[520px]" style={{ aspectRatio: '520/320' }}>
+        <div className="relative w-full max-w-[560px]" style={{ aspectRatio: '560/360' }}>
           <svg
             ref={svgRef}
-            viewBox="0 0 520 320"
+            viewBox="0 0 560 360"
             className="w-full h-full"
             style={{ background: 'transparent' }}
           >
-            {/* Grid background pattern */}
             <defs>
               <pattern id="grid" width="30" height="30" patternUnits="userSpaceOnUse">
-                <path d="M 30 0 L 0 0 0 30" fill="none" stroke="hsl(var(--border))" strokeWidth="0.3" opacity="0.5" />
+                <path d="M 30 0 L 0 0 0 30" fill="none" stroke="hsl(var(--border))" strokeWidth="0.3" opacity="0.4" />
               </pattern>
               <radialGradient id="centerGlow" cx="50%" cy="50%" r="50%">
-                <stop offset="0%" stopColor="hsl(var(--hydra-cyan))" stopOpacity="0.3" />
+                <stop offset="0%" stopColor="hsl(var(--hydra-cyan))" stopOpacity="0.25" />
                 <stop offset="100%" stopColor="hsl(var(--hydra-cyan))" stopOpacity="0" />
               </radialGradient>
               <filter id="nodeGlow">
-                <feGaussianBlur stdDeviation="2" result="blur" />
+                <feGaussianBlur stdDeviation="2.5" result="blur" />
                 <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
               </filter>
+              {/* Arrow marker for cross edges */}
+              <marker id="arrow-cross" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+                <path d="M0,0 L0,6 L6,3 z" fill="hsl(var(--hydra-cyan))" opacity="0.6" />
+              </marker>
             </defs>
-            <rect width="520" height="320" fill="url(#grid)" />
-
-            {/* Center glow */}
-            <circle cx="260" cy="160" r="42" fill="url(#centerGlow)" />
+            <rect width="560" height="360" fill="url(#grid)" />
+            <circle cx="280" cy="180" r="50" fill="url(#centerGlow)" />
 
             {/* Edges */}
             {edges.map((edge, i) => {
@@ -1103,31 +1233,35 @@ function MemoryGraphTab({ stats }: { stats: ReturnType<typeof useHydraMemoryStat
               const tgt = nodeMap[edge.target];
               if (!src || !tgt) return null;
               const isHovered = hoveredId === edge.source || hoveredId === edge.target;
+              const isCross = edge.kind === 'cross';
+              const isKnowledge = edge.kind === 'knowledge';
+              const isSession = edge.kind === 'session';
+              const color = edgeColor(edge.kind, isHovered);
               return (
                 <line
                   key={i}
                   x1={src.x} y1={src.y}
                   x2={tgt.x} y2={tgt.y}
-                  stroke={isHovered ? 'hsl(var(--hydra-memory))' : 'hsl(var(--border))'}
-                  strokeWidth={isHovered ? 1.5 : 0.8}
-                  strokeDasharray={edge.source === 'center' ? undefined : '4 3'}
-                  opacity={isHovered ? 0.8 : 0.4}
+                  stroke={color}
+                  strokeWidth={isCross ? (isHovered ? 2 : 1.2) : (isHovered ? 1.8 : 0.7)}
+                  strokeDasharray={
+                    isCross ? '6 3' :
+                    isKnowledge ? '2 2' :
+                    isSession ? '4 3' : undefined
+                  }
+                  opacity={isHovered ? 0.9 : isCross ? 0.5 : isKnowledge ? 0.45 : 0.35}
+                  markerEnd={isCross && isHovered ? 'url(#arrow-cross)' : undefined}
                 />
               );
             })}
 
             {/* Nodes */}
             {nodes.map(node => {
-              const isCenter = node.id === 'center';
-              // Use roleId (internal key) for lookup — not the localised label
-              const isHot = node.type === 'role' && (roleMemoryDetails[node.roleId ?? node.id]?.usageCount || 0) > (maxUsage * 0.5);
+              const isCenter = node.type === 'center';
+              const isHot = node.type === 'role' && (roleMemoryDetails[node.roleId ?? '']?.usageCount || 0) > (maxUsage * 0.5);
               const isSelected = selected?.id === node.id;
               const isHovered = hoveredId === node.id;
-              const fill = isCenter
-                ? 'hsl(var(--hydra-cyan))'
-                : node.type === 'session'
-                ? 'hsl(var(--hydra-expert))'
-                : 'hsl(var(--hydra-memory))';
+              const fill = nodeFill(node);
 
               return (
                 <g
@@ -1138,7 +1272,7 @@ function MemoryGraphTab({ stats }: { stats: ReturnType<typeof useHydraMemoryStat
                   onClick={() => setSelected(isSelected ? null : node)}
                   filter={isSelected || isHovered ? 'url(#nodeGlow)' : undefined}
                 >
-                  {/* Hot badge ring */}
+                  {/* Hot ring */}
                   {isHot && (
                     <circle
                       cx={node.x} cy={node.y} r={node.r + 5}
@@ -1146,29 +1280,44 @@ function MemoryGraphTab({ stats }: { stats: ReturnType<typeof useHydraMemoryStat
                       stroke="hsl(38, 92%, 50%)"
                       strokeWidth="1.5"
                       strokeDasharray="3 2"
-                      opacity="0.7"
+                      opacity="0.65"
                     />
                   )}
+                  {/* Main circle */}
                   <circle
                     cx={node.x} cy={node.y} r={node.r}
                     fill={fill}
-                    opacity={isSelected || isHovered ? 1 : 0.75}
+                    opacity={isSelected || isHovered ? 1 : node.type === 'knowledge' ? 0.7 : 0.75}
                     stroke={isSelected ? 'hsl(var(--foreground))' : 'transparent'}
                     strokeWidth="2"
                   />
+                  {/* Inner ring for knowledge node */}
+                  {node.type === 'knowledge' && (
+                    <circle
+                      cx={node.x} cy={node.y} r={node.r - 2}
+                      fill="none"
+                      stroke="hsl(var(--background))"
+                      strokeWidth="1"
+                      opacity="0.4"
+                    />
+                  )}
                   {/* Label */}
                   <text
                     x={node.x}
-                    y={node.type === 'role' ? node.y + node.r + 10 : node.y + 3}
+                    y={
+                      node.type === 'role' ? node.y + node.r + 10 :
+                      node.type === 'knowledge' ? node.y + node.r + 8 :
+                      node.y + 3
+                    }
                     textAnchor="middle"
                     fill="hsl(var(--foreground))"
-                    fontSize={isCenter ? 9 : node.type === 'session' ? 6 : 8}
+                    fontSize={isCenter ? 9 : node.type === 'knowledge' ? 7 : node.type === 'session' ? 6 : 8}
                     fontWeight={isCenter || isSelected ? 600 : 400}
                     opacity={isCenter ? 1 : 0.85}
                   >
-                    {isCenter ? node.label : node.label.slice(0, 14)}
+                    {isCenter ? node.label : node.label.slice(0, 12)}
                   </text>
-                  {/* Count badge */}
+                  {/* Count badge on role nodes */}
                   {node.type === 'role' && node.count && node.count > 1 && (
                     <text
                       x={node.x + node.r - 2}
@@ -1181,6 +1330,31 @@ function MemoryGraphTab({ stats }: { stats: ReturnType<typeof useHydraMemoryStat
                       {node.count}
                     </text>
                   )}
+                  {/* Knowledge count inside node */}
+                  {node.type === 'knowledge' && (
+                    <text
+                      x={node.x} y={node.y + 2.5}
+                      textAnchor="middle"
+                      fill="hsl(var(--background))"
+                      fontSize="6"
+                      fontWeight={700}
+                    >
+                      {node.knowledgeCount}
+                    </text>
+                  )}
+                  {/* Session chunks badge */}
+                  {node.type === 'session' && node.sessionChunks && node.sessionChunks > 0 && (
+                    <text
+                      x={node.x} y={node.y + 2.5}
+                      textAnchor="middle"
+                      fill="hsl(var(--background))"
+                      fontSize="5.5"
+                      fontWeight={700}
+                    >
+                      {node.sessionChunks}
+                    </text>
+                  )}
+                  {/* Hot badge */}
                   {isHot && (
                     <text x={node.x + node.r + 2} y={node.y - node.r + 3} fontSize="7">⚡</text>
                   )}
@@ -1189,7 +1363,7 @@ function MemoryGraphTab({ stats }: { stats: ReturnType<typeof useHydraMemoryStat
             })}
           </svg>
 
-          {/* Selected node details */}
+          {/* Selected node tooltip overlay */}
           <AnimatePresence>
             {selected && (
               <motion.div
@@ -1199,33 +1373,50 @@ function MemoryGraphTab({ stats }: { stats: ReturnType<typeof useHydraMemoryStat
                 className="absolute bottom-3 left-3 right-3 bg-card/95 backdrop-blur border border-border rounded-lg p-3 text-xs shadow-lg"
               >
                 <div className="flex items-start justify-between gap-2">
-                  <div className="space-y-1">
-                    <p className="font-semibold text-sm">{selected.label}</p>
+                  <div className="space-y-1.5">
+                    <div className="flex items-center gap-2">
+                      <span
+                        className="h-2 w-2 rounded-full shrink-0"
+                        style={{ background: nodeFill(selected) }}
+                      />
+                      <p className="font-semibold text-sm">{selected.label}</p>
+                    </div>
                     {selected.type === 'role' && (
-                      <>
-                        <div className="flex items-center gap-3 text-muted-foreground">
-                          <span>{t('memory.hub.nodeExperienceRecords')}: <strong className="text-foreground">{selected.count}</strong></span>
-                          {selected.confidence !== undefined && (
-                            <span>{t('memory.hub.nodeAvgConfidence')}: <strong className="text-foreground">{(selected.confidence * 100).toFixed(0)}%</strong></span>
-                          )}
-                          {(selected.usageCount ?? 0) > 0 && (
-                            <span className="flex items-center gap-1 text-amber-400">
-                              <Zap className="h-3 w-3" />
-                              {t('memory.hub.nodeUsages')}: {selected.usageCount}
-                            </span>
-                          )}
-                        </div>
-                        {roleMemoryDetails[selected.roleId ?? '']?.sessions.length > 0 && (
-                          <p className="text-muted-foreground">
-                            {t('memory.hub.nodeLinkedSessions')}: {roleMemoryDetails[selected.roleId ?? ''].sessions.length}
-                          </p>
+                      <div className="flex items-center gap-3 flex-wrap text-muted-foreground">
+                        <span>{t('memory.hub.nodeExperienceRecords')}: <strong className="text-foreground">{selected.count}</strong></span>
+                        {selected.confidence !== undefined && (
+                          <span>{t('memory.hub.nodeAvgConfidence')}: <strong className="text-foreground">{(selected.confidence * 100).toFixed(0)}%</strong></span>
                         )}
-                      </>
+                        {(selected.usageCount ?? 0) > 0 && (
+                          <span className="flex items-center gap-1 text-amber-400">
+                            <Zap className="h-3 w-3" />
+                            {t('memory.hub.nodeUsages')}: {selected.usageCount}
+                          </span>
+                        )}
+                        {(selected.knowledgeCount ?? 0) > 0 && (
+                          <span className="text-[hsl(var(--hydra-glow))]">
+                            {t('memory.hub.legendKnowledge')}: {selected.knowledgeCount}
+                          </span>
+                        )}
+                        {roleMemoryDetails[selected.roleId ?? '']?.sessions.length > 0 && (
+                          <span>{t('memory.hub.nodeLinkedSessions')}: {roleMemoryDetails[selected.roleId ?? ''].sessions.length}</span>
+                        )}
+                      </div>
+                    )}
+                    {selected.type === 'knowledge' && (
+                      <p className="text-muted-foreground">
+                        {t('memory.hub.legendKnowledge')}: <strong className="text-foreground">{selected.knowledgeCount}</strong> {t('memory.hub.knowledgeNodeDesc')}
+                      </p>
                     )}
                     {selected.type === 'session' && (
-                      <p className="text-muted-foreground">{t('memory.hub.nodeSession')}: {selected.label}</p>
+                      <p className="text-muted-foreground">
+                        {t('memory.hub.nodeSession')}: {selected.label}
+                        {(selected.sessionChunks ?? 0) > 0 && (
+                          <span className="ml-2">&middot; {selected.sessionChunks} {t('memory.hub.sessionChunks')}</span>
+                        )}
+                      </p>
                     )}
-                    {selected.type === 'memory' && (
+                    {selected.type === 'center' && (
                       <p className="text-muted-foreground">{t('memory.hub.nodeCenterDesc')}</p>
                     )}
                   </div>
@@ -1239,7 +1430,7 @@ function MemoryGraphTab({ stats }: { stats: ReturnType<typeof useHydraMemoryStat
         </div>
       </Card>
 
-      {/* Hot roles list */}
+      {/* Hot roles activity bar */}
       {stats.roleMemory.filter(r => (roleMemoryDetails[r.role]?.usageCount || 0) > 0).length > 0 && (
         <div className="space-y-2">
           <p className="text-xs text-muted-foreground font-medium flex items-center gap-1.5">
@@ -1256,6 +1447,7 @@ function MemoryGraphTab({ stats }: { stats: ReturnType<typeof useHydraMemoryStat
                 const roleLabel = roleConfig ? t(roleConfig.label) : r.role;
                 const usage = roleMemoryDetails[r.role]?.usageCount || 0;
                 const pct = Math.round((usage / maxUsage) * 100);
+                const kCount = knowledgePerRole[r.role] || 0;
                 return (
                   <div key={r.role} className="flex items-center gap-3">
                     <span className="text-xs text-muted-foreground w-28 truncate shrink-0">{roleLabel}</span>
@@ -1266,6 +1458,11 @@ function MemoryGraphTab({ stats }: { stats: ReturnType<typeof useHydraMemoryStat
                       />
                     </div>
                     <span className="text-xs text-muted-foreground w-6 text-right shrink-0">{usage}</span>
+                    {kCount > 0 && (
+                      <span className="text-[10px] text-[hsl(var(--hydra-glow))] w-12 shrink-0">
+                        +{kCount} {language === 'ru' ? 'знаний' : 'docs'}
+                      </span>
+                    )}
                   </div>
                 );
               })}
