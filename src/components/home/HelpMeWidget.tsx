@@ -60,11 +60,16 @@ export function HelpMeWidget() {
   const toggleCheck = (id: string) => setChecked(prev => ({ ...prev, [id]: !prev[id] }));
 
   // SVG geometry
-  const W = 160, H = 140;
-  // Big gear (right)
-  const bigCx = 100, bigCy = 90, bigOuter = 40, bigInner = 30, bigTeeth = 10;
-  // Small gear (left)
-  const smCx = 48, smCy = 78, smOuter = 26, smInner = 19, smTeeth = 7;
+  const W = 210, H = 180;
+  // Big gear — half size, repositioned lower
+  const bigCx = 105, bigCy = 148, bigOuter = 20, bigInner = 14, bigTeeth = 10;
+  // Small gear — half size
+  const smCx = 55, smCy = 138, smOuter = 13, smInner = 9, smTeeth = 7;
+  // Oil can: scale 4x of original icon (24px → ~86px), positioned upper-right
+  // Icon translate origin: (100, 18), scale 3.6 → icon center at (100+43, 18+43) = (143, 61)
+  const canTx = 100, canTy = 18, canScale = 3.6;
+  const canCx = canTx + 12 * canScale; // 143
+  const canCy = canTy + 12 * canScale; // 61
 
   const label = language === 'ru' ? 'Помочь проекту' : 'Support project';
 
@@ -173,7 +178,7 @@ export function HelpMeWidget() {
               }
               .can-tilt-anim {
                 animation: can-tilt 0.5s ease-in-out forwards;
-                transform-origin: 118px 28px;
+                transform-origin: ${canCx}px ${canCy}px;
               }
               .drop-anim {
                 animation: drop-fall 0.9s ease-in infinite;
@@ -222,9 +227,8 @@ export function HelpMeWidget() {
           {/* Oil drop (visible only when oiling) */}
           {oiling && (
             <g className="drop-anim">
-              {/* Drop between gears */}
               <ellipse
-                cx={76} cy={52}
+                cx={78} cy={118}
                 rx={5} ry={7}
                 fill="hsl(var(--primary))"
                 fillOpacity={0.85}
@@ -232,12 +236,11 @@ export function HelpMeWidget() {
             </g>
           )}
 
-          {/* Oil can (visible on hover) — ready-made icon */}
+          {/* Oil can (visible on hover) — ready-made icon, 4x larger, rotates around own center */}
           {hovered && (
             <g
               className={oiling ? 'can-tilt-anim' : 'can-appear-anim'}
-              style={{ transformOrigin: '118px 28px' }}
-              transform="translate(96, 4) scale(1.8)"
+              transform={`translate(${canTx}, ${canTy}) scale(${canScale})`}
               fill="hsl(var(--muted-foreground))"
               fillOpacity={0.85}
             >
