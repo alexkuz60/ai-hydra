@@ -6,12 +6,14 @@ import { PerModelSettingsData } from '@/components/warroom/PerModelSettings';
 import { useAvailableModels } from '@/hooks/useAvailableModels';
 import type { Json } from '@/integrations/supabase/types';
 
+/** Minimal session/task identifier used inside the Expert Panel */
 export interface Task {
   id: string;
   title: string;
 }
 
-interface SessionConfig {
+/** Subset of SessionConfig persisted to the sessions table */
+interface StoredSessionConfig {
   selectedModels?: string[];
   perModelSettings?: PerModelSettingsData;
   useHybridStreaming?: boolean;
@@ -93,7 +95,6 @@ export function useSession({ userId, authLoading }: UseSessionProps): UseSession
         console.error('Failed to save session config:', error);
       } else {
         lastSavedConfig.current = configJson;
-        console.log('Session config saved successfully');
       }
     } catch (error) {
       console.error('Failed to save session config:', error);
@@ -101,7 +102,7 @@ export function useSession({ userId, authLoading }: UseSessionProps): UseSession
   }, []);
 
   // Apply config from session data
-  const applySessionConfig = useCallback((config: SessionConfig | null) => {
+  const applySessionConfig = useCallback((config: StoredSessionConfig | null) => {
     if (!config) return;
     if (config.selectedModels) {
       setSelectedModels(config.selectedModels);
@@ -134,7 +135,7 @@ export function useSession({ userId, authLoading }: UseSessionProps): UseSession
 
       // Apply saved model configuration if not passed via navigation state
       if (!initialState?.selectedModels && data.session_config) {
-        applySessionConfig(data.session_config as SessionConfig);
+        applySessionConfig(data.session_config as StoredSessionConfig);
       }
     } catch (error: any) {
       toast.error(error.message);
@@ -173,7 +174,7 @@ export function useSession({ userId, authLoading }: UseSessionProps): UseSession
         }
 
         setCurrentTask(session);
-        applySessionConfig(session.session_config as SessionConfig);
+        applySessionConfig(session.session_config as StoredSessionConfig);
         setLoading(false);
         isInitialLoadComplete.current = true;
         return;
@@ -194,7 +195,7 @@ export function useSession({ userId, authLoading }: UseSessionProps): UseSession
       }
 
       setCurrentTask(fallbackSession);
-      applySessionConfig(fallbackSession.session_config as SessionConfig);
+      applySessionConfig(fallbackSession.session_config as StoredSessionConfig);
     } catch (error) {
       navigate('/tasks');
     } finally {

@@ -36,7 +36,6 @@ import {
   Sun, 
   Globe, 
   Zap, 
-  Users, 
   CheckSquare, 
   ChevronUp,
   BarChart3,

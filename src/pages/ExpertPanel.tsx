@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useCallback, useState } from 'react';
+import React, { useEffect, useRef, useCallback, useState, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Layout } from '@/components/layout/Layout';
@@ -204,8 +204,11 @@ export default function ExpertPanel() {
     } catch { /* ignore */ }
   }, []);
 
-  // All available models
-  const allAvailableModels: ModelOption[] = [...lovableModels, ...personalModels];
+  // All available models — memoised to prevent unnecessary re-renders of children
+  const allAvailableModels: ModelOption[] = useMemo(
+    () => [...lovableModels, ...personalModels],
+    [lovableModels, personalModels]
+  );
 
   // Send handlers
   const handleSendMessage = useCallback(async () => {

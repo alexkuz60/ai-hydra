@@ -173,8 +173,6 @@ export function useStreamingResponses({
       return;
     }
 
-    console.log(`[Streaming] Fallback to orchestrator for ${model.modelId} (reason: ${fallbackReason || 'unknown'})`);
-
     // Notify parent about fallback (optional callback)
     onFallbackToOrchestrator?.(model.modelId, messageContent);
 
@@ -270,7 +268,6 @@ export function useStreamingResponses({
 
     // Immediately fallback non-streaming models to orchestrator
     nonStreamableModels.forEach(model => {
-      console.log(`[Streaming] Model ${model.modelId} doesn't support streaming, using orchestrator`);
       fallbackToOrchestrator(model, message, perModelSettings, 'unsupported');
     });
 
@@ -348,7 +345,6 @@ export function useStreamingResponses({
       providerInfo?: ProviderInfo
     ) {
       if (!sessionId || !userId || !content.trim()) {
-        console.log('[Streaming] Cannot save: missing sessionId, userId, or content');
         return;
       }
 
@@ -435,7 +431,6 @@ export function useStreamingResponses({
         if (!response.ok) {
           // Rate limit (429) - fallback to orchestrator with delay
           if (response.status === 429) {
-            console.log(`[Streaming] Rate limit for ${model.modelId}, falling back to orchestrator with delay`);
             toast.warning(`Превышен лимит. ${model.modelName} отправлен в очередь.`);
             // Add a small delay before orchestrator fallback to avoid overwhelming it too
             await new Promise(resolve => setTimeout(resolve, 500 + Math.random() * 1000));
@@ -444,7 +439,6 @@ export function useStreamingResponses({
           }
           
           if (response.status === 500 || response.status === 400 || response.status === 401) {
-            console.log(`[Streaming] Error ${response.status} for ${model.modelId}, falling back to orchestrator`);
             await fallbackToOrchestrator(model, messageContent, modelSettings, 'error');
             return;
           }
@@ -533,7 +527,6 @@ export function useStreamingResponses({
               // Handle custom provider event
               if (currentEventType === 'provider') {
                 providerInfo = parsed as ProviderInfo;
-                console.log(`[Streaming] Provider info for ${model.modelId}:`, providerInfo);
                 // Update streaming response with provider info
                 setStreamingResponses(prev => {
                   const updated = new Map(prev);
@@ -607,18 +600,16 @@ export function useStreamingResponses({
         }
         
         console.error(`[Streaming] Error for ${model.modelId}:`, error);
-        
         // FALLBACK TO ORCHESTRATOR on any error
-        console.log(`[Streaming] Error for ${model.modelId}, falling back to orchestrator`);
         await fallbackToOrchestrator(model, messageContent, modelSettings);
       }
     }
 
     function handleStreamError(modelId: string, status: number) {
       if (status === 429) {
-        toast.error('Превышен лимит запросов. Попробуйте позже.');  // TODO: localize when hook gets language context
+        toast.error('Превышен лимит запросов. Попробуйте позже.');
       } else if (status === 402) {
-        toast.error('Требуется пополнение баланса Lovable AI.');  // TODO: localize when hook gets language context
+        toast.error('Требуется пополнение баланса Lovable AI.');
       } else {
         toast.error(`Ошибка модели ${modelId}: ${status}`);
       }

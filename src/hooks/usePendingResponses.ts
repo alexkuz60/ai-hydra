@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { PendingResponseState, RequestStartInfo } from '@/types/pending';
 import { useStreamingResponses } from '@/hooks/useStreamingResponses';
 
@@ -158,23 +158,29 @@ export function usePendingResponses({
     });
   }, []);
 
-  // Combine pending from both sources
-  const combinedPendingResponses = new Map([
-    ...pendingResponses,
-    ...streamingPendingResponses,
-  ]);
-
-  // Filter to only show models in current task
-  const filteredPendingResponses = new Map(
-    [...combinedPendingResponses].filter(([modelId]) => 
-      selectedModels.includes(modelId) || modelId.includes('consultant')
-    )
+  // Combine pending from both sources — memoised to avoid unnecessary re-renders
+  const combinedPendingResponses = useMemo(
+    () => new Map([...pendingResponses, ...streamingPendingResponses]),
+    [pendingResponses, streamingPendingResponses]
   );
 
-  const filteredStreamingResponses = new Map(
-    [...streamingResponses].filter(([modelId]) => 
-      selectedModels.includes(modelId)
-    )
+  // Filter to only show models in current task
+  const filteredPendingResponses = useMemo(
+    () =>
+      new Map(
+        [...combinedPendingResponses].filter(
+          ([modelId]) => selectedModels.includes(modelId) || modelId.includes('consultant')
+        )
+      ),
+    [combinedPendingResponses, selectedModels]
+  );
+
+  const filteredStreamingResponses = useMemo(
+    () =>
+      new Map(
+        [...streamingResponses].filter(([modelId]) => selectedModels.includes(modelId))
+      ),
+    [streamingResponses, selectedModels]
   );
 
   return {
