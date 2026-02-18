@@ -22,7 +22,7 @@ export function Layout({ children, headerActions }: LayoutProps) {
               </div>
             )}
           </header>
-          <main className="flex-1">
+          <main className="flex-1 flex flex-col min-h-0 overflow-hidden">
             {children}
           </main>
         </div>
