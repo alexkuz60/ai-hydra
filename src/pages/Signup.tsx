@@ -134,6 +134,16 @@ export default function Signup() {
                   ) : null}
                   {t('auth.signupButton')}
                 </Button>
+
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="w-full text-muted-foreground"
+                  onClick={() => navigate('/')}
+                  disabled={loading}
+                >
+                  Позже
+                </Button>
               </form>
 
               <div className="mt-6 text-center text-sm text-muted-foreground">
