@@ -1,0 +1,277 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { useLanguage } from '@/contexts/LanguageContext';
+
+// Gear tooth path (sinusoidal profile)
+function gearPath(cx: number, cy: number, outerR: number, innerR: number, teeth: number): string {
+  const steps = teeth * 16;
+  const midR = (outerR + innerR) / 2;
+  const amp = (outerR - innerR) / 2;
+  const parts: string[] = [];
+  for (let i = 0; i <= steps; i++) {
+    const angle = (i / steps) * Math.PI * 2 - Math.PI / 2;
+    const r = midR + amp * Math.sin(teeth * angle);
+    const x = cx + r * Math.cos(angle);
+    const y = cy + r * Math.sin(angle);
+    parts.push(i === 0 ? `M${x},${y}` : `L${x},${y}`);
+  }
+  return parts.join(' ') + ' Z';
+}
+
+const HELP_OPTIONS = [
+  { id: 'star', labelRu: '⭐ Поставить звезду на GitHub', labelEn: '⭐ Star on GitHub', href: 'https://github.com' },
+  { id: 'share', labelRu: '📣 Рассказать друзьям', labelEn: '📣 Tell friends', href: null },
+  { id: 'feedback', labelRu: '💬 Оставить отзыв', labelEn: '💬 Leave feedback', href: null },
+  { id: 'contribute', labelRu: '🛠 Стать контрибьютором', labelEn: '🛠 Become a contributor', href: null },
+  { id: 'donate', labelRu: '💸 Поддержать донатом', labelEn: '💸 Support with donation', href: null },
+];
+
+export function HelpMeWidget() {
+  const { language } = useLanguage();
+  const [hovered, setHovered] = useState(false);
+  const [oiling, setOiling] = useState(false); // tilted can + drop + spinning
+  const [popupOpen, setPopupOpen] = useState(false);
+  const [checked, setChecked] = useState<Record<string, boolean>>({});
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const popupRef = useRef<HTMLDivElement>(null);
+
+  // When hover starts, show can; after 1s tilt + drop + spin
+  useEffect(() => {
+    if (hovered) {
+      timerRef.current = setTimeout(() => setOiling(true), 1000);
+    } else {
+      if (timerRef.current) clearTimeout(timerRef.current);
+      setOiling(false);
+    }
+    return () => { if (timerRef.current) clearTimeout(timerRef.current); };
+  }, [hovered]);
+
+  // Close popup on outside click
+  useEffect(() => {
+    if (!popupOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (popupRef.current && !popupRef.current.contains(e.target as Node)) {
+        setPopupOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [popupOpen]);
+
+  const toggleCheck = (id: string) => setChecked(prev => ({ ...prev, [id]: !prev[id] }));
+
+  // SVG geometry
+  const W = 160, H = 140;
+  // Big gear (right)
+  const bigCx = 100, bigCy = 90, bigOuter = 40, bigInner = 30, bigTeeth = 10;
+  // Small gear (left)
+  const smCx = 48, smCy = 78, smOuter = 26, smInner = 19, smTeeth = 7;
+
+  const label = language === 'ru' ? 'Помочь проекту' : 'Support project';
+
+  return (
+    <div className="fixed bottom-6 right-6 z-30 flex flex-col items-end gap-2 select-none">
+      {/* Popup */}
+      {popupOpen && (
+        <div
+          ref={popupRef}
+          className="mb-1 bg-background/95 backdrop-blur border border-border rounded-xl shadow-xl p-4 w-64 animate-fade-in"
+          style={{ boxShadow: '0 8px 32px hsl(var(--primary)/0.18)' }}
+        >
+          <p className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+            <span>🤝</span>
+            {language === 'ru' ? 'Как вы можете помочь?' : 'How can you help?'}
+          </p>
+          <div className="flex flex-col gap-2">
+            {HELP_OPTIONS.map(opt => (
+              <label
+                key={opt.id}
+                className="flex items-center gap-2.5 cursor-pointer group"
+              >
+                <div
+                  onClick={() => toggleCheck(opt.id)}
+                  className={`w-4 h-4 rounded border transition-all flex-shrink-0 flex items-center justify-center ${
+                    checked[opt.id]
+                      ? 'bg-primary border-primary'
+                      : 'border-border group-hover:border-primary/60'
+                  }`}
+                >
+                  {checked[opt.id] && (
+                    <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+                      <path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  )}
+                </div>
+                <span
+                  onClick={() => toggleCheck(opt.id)}
+                  className="text-xs text-muted-foreground group-hover:text-foreground transition-colors"
+                >
+                  {language === 'ru' ? opt.labelRu : opt.labelEn}
+                </span>
+              </label>
+            ))}
+          </div>
+          {Object.values(checked).some(Boolean) && (
+            <button
+              className="mt-3 w-full text-xs py-1.5 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary font-medium transition-colors"
+              onClick={() => setPopupOpen(false)}
+            >
+              {language === 'ru' ? 'Спасибо! 💙' : 'Thank you! 💙'}
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* SVG Widget */}
+      <div
+        className="cursor-pointer"
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
+        onClick={() => setPopupOpen(p => !p)}
+        title={label}
+      >
+        <svg
+          width={W}
+          height={H}
+          viewBox={`0 0 ${W} ${H}`}
+          xmlns="http://www.w3.org/2000/svg"
+          style={{ overflow: 'visible' }}
+        >
+          <defs>
+            <style>{`
+              @keyframes spin-cw {
+                from { transform: rotate(0deg); }
+                to { transform: rotate(360deg); }
+              }
+              @keyframes spin-ccw {
+                from { transform: rotate(0deg); }
+                to { transform: rotate(-360deg); }
+              }
+              @keyframes drop-fall {
+                0%   { opacity: 0; transform: translateY(0px) scale(0.6); }
+                20%  { opacity: 1; }
+                80%  { opacity: 1; transform: translateY(18px) scale(1); }
+                100% { opacity: 0; transform: translateY(22px) scale(0.4); }
+              }
+              @keyframes can-appear {
+                from { opacity: 0; transform: translateX(20px); }
+                to   { opacity: 1; transform: translateX(0); }
+              }
+              @keyframes can-tilt {
+                from { transform: rotate(0deg); }
+                to   { transform: rotate(-45deg); }
+              }
+              .gear-big-spinning {
+                animation: spin-cw 3s linear infinite;
+                transform-origin: ${bigCx}px ${bigCy}px;
+              }
+              .gear-sm-spinning {
+                animation: spin-ccw 3s linear infinite;
+                transform-origin: ${smCx}px ${smCy}px;
+              }
+              .can-appear-anim {
+                animation: can-appear 0.35s ease-out forwards;
+              }
+              .can-tilt-anim {
+                animation: can-tilt 0.5s ease-in-out forwards;
+                transform-origin: 118px 28px;
+              }
+              .drop-anim {
+                animation: drop-fall 0.9s ease-in infinite;
+              }
+            `}</style>
+          </defs>
+
+          {/* Big gear */}
+          <g className={oiling ? 'gear-big-spinning' : ''}>
+            <path
+              d={gearPath(bigCx, bigCy, bigOuter, bigInner, bigTeeth)}
+              fill="none"
+              stroke="hsl(var(--foreground))"
+              strokeWidth={2}
+              strokeOpacity={0.6}
+            />
+            <circle
+              cx={bigCx} cy={bigCy} r={bigInner - 5}
+              fill="hsl(var(--background))"
+              stroke="hsl(var(--foreground))"
+              strokeWidth={1.5}
+              strokeOpacity={0.5}
+            />
+            <circle cx={bigCx} cy={bigCy} r={5} fill="hsl(var(--foreground))" fillOpacity={0.25} />
+          </g>
+
+          {/* Small gear */}
+          <g className={oiling ? 'gear-sm-spinning' : ''}>
+            <path
+              d={gearPath(smCx, smCy, smOuter, smInner, smTeeth)}
+              fill="none"
+              stroke="hsl(var(--foreground))"
+              strokeWidth={2}
+              strokeOpacity={0.5}
+            />
+            <circle
+              cx={smCx} cy={smCy} r={smInner - 4}
+              fill="hsl(var(--background))"
+              stroke="hsl(var(--foreground))"
+              strokeWidth={1.5}
+              strokeOpacity={0.4}
+            />
+            <circle cx={smCx} cy={smCy} r={4} fill="hsl(var(--foreground))" fillOpacity={0.2} />
+          </g>
+
+          {/* Oil drop (visible only when oiling) */}
+          {oiling && (
+            <g className="drop-anim">
+              {/* Drop between gears */}
+              <ellipse
+                cx={76} cy={52}
+                rx={5} ry={7}
+                fill="hsl(var(--primary))"
+                fillOpacity={0.85}
+              />
+            </g>
+          )}
+
+          {/* Oil can (visible on hover) */}
+          {hovered && (
+            <g
+              className={oiling ? 'can-tilt-anim' : 'can-appear-anim'}
+              style={{ transformOrigin: '118px 28px' }}
+            >
+              {/* Can body */}
+              <rect x={100} y={10} width={36} height={22} rx={4}
+                fill="hsl(var(--muted-foreground))" fillOpacity={0.75} />
+              {/* Handle bump on top */}
+              <rect x={110} y={5} width={16} height={8} rx={3}
+                fill="hsl(var(--muted-foreground))" fillOpacity={0.6} />
+              {/* Nozzle */}
+              <path
+                d="M100,24 L86,30 L83,28 L97,22 Z"
+                fill="hsl(var(--muted-foreground))"
+                fillOpacity={0.7}
+              />
+              {/* Nozzle tip */}
+              <circle cx={83} cy={28} r={2.5}
+                fill="hsl(var(--primary))" fillOpacity={0.8} />
+            </g>
+          )}
+        </svg>
+
+        {/* Label */}
+        <div
+          className="text-center mt-0.5"
+          style={{
+            fontFamily: '"Quicksand", sans-serif',
+            fontSize: 11,
+            color: 'hsl(var(--muted-foreground))',
+            letterSpacing: '0.03em',
+            opacity: hovered ? 1 : 0.65,
+            transition: 'opacity 0.3s',
+          }}
+        >
+          {label}
+        </div>
+      </div>
+    </div>
+  );
+}

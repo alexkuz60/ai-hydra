@@ -2,6 +2,7 @@ import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Layout } from '@/components/layout/Layout';
 import { HydraGears } from '@/components/home/HydraGears';
+import { HelpMeWidget } from '@/components/home/HelpMeWidget';
 import { useLanguage } from '@/contexts/LanguageContext';
 import hydraLogo from '@/assets/hydra-logo.png';
 
@@ -33,6 +34,7 @@ const Index = () => {
           spinning={[0, 1, 4]}
         />
       </div>
+      <HelpMeWidget />
     </Layout>
   );
 };
