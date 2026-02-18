@@ -329,6 +329,7 @@ const translations: Translations = {
   'hydrapedia.group.flow': { ru: 'Редактор потоков', en: 'Flow Editor' },
   'hydrapedia.group.ratings': { ru: 'Подиум моделей', en: 'Model Podium' },
   'hydrapedia.group.staff': { ru: 'Штат и роли', en: 'Staff & Roles' },
+  'hydrapedia.group.memory': { ru: 'Память Гидры', en: 'Hydra Memory' },
   'hydrapedia.group.reference': { ru: 'Справочник', en: 'Reference' },
   'hydrapedia.group.other': { ru: 'Дополнительно', en: 'Other' },
 
