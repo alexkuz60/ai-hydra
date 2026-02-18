@@ -6,6 +6,7 @@ import {
   Loader2, Filter, Copy, Sparkles, Text, MessageSquare, Lightbulb,
   ListChecks, Star, Archive, AlertTriangle, Eye, X, Download, GitMerge,
   GitBranch, Wrench, BarChart2, Zap, ScanSearch, Clock, CheckCircle2, XCircle,
+  ExternalLink, Trophy, Users, Cpu, Network,
 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -1840,10 +1841,299 @@ function StorageTab() {
   );
 }
 
+// ─── Cognitive Arsenal Tab ────────────────────────────────────────────────────
+
+interface ArsenalLayer {
+  id: string;
+  label: string;
+  description: string;
+  icon: React.ElementType;
+  color: 'violet' | 'amber' | 'blue' | 'emerald' | 'teal';
+  href: string;
+  total: number;
+  items: { label: string; value: number }[];
+}
+
+function CognitiveArsenalTab({ stats }: { stats: ReturnType<typeof useHydraMemoryStats> }) {
+  const { user } = useAuth();
+  const { language } = useLanguage();
+  const isRu = language === 'ru';
+
+  const [counts, setCounts] = useState({
+    prompts: { total: 0, system: 0, custom: 0 },
+    blueprints: { total: 0, system: 0, custom: 0 },
+    behaviors: { total: 0, system: 0, custom: 0 },
+    tools: { total: 0 },
+    flows: { total: 0 },
+    interviews: { total: 0, completed: 0 },
+    contests: { total: 0, completed: 0 },
+  });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    const fetch = async () => {
+      setLoading(true);
+      try {
+        const [promptsRes, blueprintsRes, behaviorsRes, toolsRes, flowsRes, interviewsRes, contestsRes] = await Promise.all([
+          supabase.from('prompt_library').select('is_default').eq('user_id', user.id),
+          supabase.from('task_blueprints').select('is_system'),
+          supabase.from('role_behaviors').select('is_system'),
+          supabase.rpc('get_custom_tools_safe'),
+          supabase.from('flow_diagrams').select('id', { count: 'exact', head: true }).eq('user_id', user.id),
+          supabase.from('interview_sessions').select('status').eq('user_id', user.id),
+          supabase.from('contest_sessions').select('status').eq('user_id', user.id),
+        ]);
+
+        const prompts = (promptsRes.data || []) as { is_default: boolean }[];
+        const blueprints = (blueprintsRes.data || []) as { is_system: boolean }[];
+        const behaviors = (behaviorsRes.data || []) as { is_system: boolean }[];
+        const tools = (toolsRes.data || []) as unknown[];
+        const interviews = (interviewsRes.data || []) as { status: string }[];
+        const contests = (contestsRes.data || []) as { status: string }[];
+
+        setCounts({
+          prompts: {
+            total: prompts.length,
+            system: prompts.filter(p => p.is_default).length,
+            custom: prompts.filter(p => !p.is_default).length,
+          },
+          blueprints: {
+            total: blueprints.length,
+            system: blueprints.filter(b => b.is_system).length,
+            custom: blueprints.filter(b => !b.is_system).length,
+          },
+          behaviors: {
+            total: behaviors.length,
+            system: behaviors.filter(b => b.is_system).length,
+            custom: behaviors.filter(b => !b.is_system).length,
+          },
+          tools: { total: tools.length },
+          flows: { total: flowsRes.count || 0 },
+          interviews: {
+            total: interviews.length,
+            completed: interviews.filter(i => i.status === 'completed').length,
+          },
+          contests: {
+            total: contests.length,
+            completed: contests.filter(c => c.status === 'completed').length,
+          },
+        });
+      } catch (e) {
+        console.error('[CognitiveArsenalTab]', e);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetch();
+  }, [user?.id]);
+
+  const grandTotal =
+    counts.prompts.total + counts.blueprints.total + counts.behaviors.total +
+    counts.tools.total + counts.flows.total + counts.interviews.total + counts.contests.total +
+    stats.totalRoleMemory + stats.totalKnowledge + stats.sessionMemory.total;
+
+  type LayerColor = 'violet' | 'amber' | 'blue' | 'emerald' | 'teal';
+
+  const LAYER_STYLES: Record<LayerColor, { text: string; bg: string; border: string; glow: string }> = {
+    violet: {
+      text: 'text-violet-400',
+      bg: 'bg-violet-500/10',
+      border: 'border-violet-500/25',
+      glow: 'shadow-violet-500/10',
+    },
+    amber: {
+      text: 'text-amber-400',
+      bg: 'bg-amber-500/10',
+      border: 'border-amber-500/25',
+      glow: 'shadow-amber-500/10',
+    },
+    blue: {
+      text: 'text-blue-400',
+      bg: 'bg-blue-500/10',
+      border: 'border-blue-500/25',
+      glow: 'shadow-blue-500/10',
+    },
+    emerald: {
+      text: 'text-emerald-400',
+      bg: 'bg-emerald-500/10',
+      border: 'border-emerald-500/25',
+      glow: 'shadow-emerald-500/10',
+    },
+    teal: {
+      text: 'text-[hsl(var(--hydra-memory))]',
+      bg: 'bg-[hsl(var(--hydra-memory)/0.1)]',
+      border: 'border-[hsl(var(--hydra-memory)/0.25)]',
+      glow: 'shadow-[hsl(var(--hydra-memory)/0.1)]',
+    },
+  };
+
+  const layers: ArsenalLayer[] = [
+    {
+      id: 'instincts',
+      label: isRu ? 'Инстинкты' : 'Instincts',
+      description: isRu ? 'Системные промпты и правила' : 'System prompts and rules',
+      icon: Sparkles,
+      color: 'violet',
+      href: '/role-library',
+      total: counts.prompts.total,
+      items: [
+        { label: isRu ? 'Системных' : 'System', value: counts.prompts.system },
+        { label: isRu ? 'Пользовательских' : 'Custom', value: counts.prompts.custom },
+      ],
+    },
+    {
+      id: 'patterns',
+      label: isRu ? 'Паттерны мышления' : 'Thinking Patterns',
+      description: isRu ? 'Шаблоны задач и поведение' : 'Task blueprints and behaviors',
+      icon: GitMerge,
+      color: 'amber',
+      href: '/behavioral-patterns',
+      total: counts.blueprints.total + counts.behaviors.total,
+      items: [
+        { label: isRu ? 'Шаблонов задач' : 'Blueprints', value: counts.blueprints.total },
+        { label: isRu ? 'Профилей поведения' : 'Behaviors', value: counts.behaviors.total },
+      ],
+    },
+    {
+      id: 'tools',
+      label: isRu ? 'Арсенал инструментов' : 'Tool Arsenal',
+      description: isRu ? 'Инструменты и схемы потоков' : 'Tools and flow diagrams',
+      icon: Wrench,
+      color: 'blue',
+      href: '/tools-library',
+      total: counts.tools.total + counts.flows.total,
+      items: [
+        { label: isRu ? 'Инструментов' : 'Tools', value: counts.tools.total },
+        { label: isRu ? 'Схем потоков' : 'Flow diagrams', value: counts.flows.total },
+      ],
+    },
+    {
+      id: 'achievements',
+      label: isRu ? 'Достижения' : 'Achievements',
+      description: isRu ? 'Собеседования и конкурсы' : 'Interviews and contests',
+      icon: Trophy,
+      color: 'emerald',
+      href: '/staff-roles',
+      total: counts.interviews.total + counts.contests.total,
+      items: [
+        { label: isRu ? 'Собеседований' : 'Interviews', value: counts.interviews.total },
+        { label: isRu ? 'Конкурсов' : 'Contests', value: counts.contests.total },
+      ],
+    },
+    {
+      id: 'memory',
+      label: isRu ? 'Живая память' : 'Living Memory',
+      description: isRu ? 'Опыт, знания, сессии' : 'Experience, knowledge, sessions',
+      icon: BrainCircuit,
+      color: 'teal',
+      href: '/hydra-memory',
+      total: stats.totalRoleMemory + stats.totalKnowledge + stats.sessionMemory.total,
+      items: [
+        { label: isRu ? 'Опыт ролей' : 'Role memory', value: stats.totalRoleMemory },
+        { label: isRu ? 'База знаний' : 'Knowledge', value: stats.totalKnowledge },
+        { label: isRu ? 'Сессии' : 'Session memory', value: stats.sessionMemory.total },
+      ],
+    },
+  ];
+
+  const isDataLoading = loading || stats.loading;
+
+  return (
+    <div className="space-y-6">
+      {/* Grand total banner */}
+      <Card className="border-[hsl(var(--hydra-memory)/0.4)] bg-gradient-to-r from-[hsl(var(--hydra-memory)/0.08)] via-[hsl(var(--hydra-memory)/0.04)] to-transparent overflow-hidden">
+        <CardContent className="p-5 flex items-center gap-5">
+          <div className="rounded-xl p-3.5 bg-[hsl(var(--hydra-memory)/0.15)] border border-[hsl(var(--hydra-memory)/0.35)] shrink-0">
+            <BrainCircuit className="h-8 w-8 text-[hsl(var(--hydra-memory))]" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-xs text-muted-foreground mb-0.5">
+              {isRu ? 'Когнитивный арсенал Гидры' : "Hydra's Cognitive Arsenal"}
+            </p>
+            {isDataLoading ? (
+              <Skeleton className="h-9 w-32" />
+            ) : (
+              <p className="text-4xl font-bold leading-none">
+                {grandTotal}
+                <span className="text-sm font-normal text-muted-foreground ml-2">
+                  {isRu ? 'объектов' : 'objects'}
+                </span>
+              </p>
+            )}
+            <p className="text-[11px] text-muted-foreground mt-1.5 hidden sm:block">
+              {isRu
+                ? 'Инстинкты · Паттерны · Инструменты · Достижения · Память'
+                : 'Instincts · Patterns · Tools · Achievements · Memory'}
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Layer cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {layers.map((layer) => {
+          const Icon = layer.icon;
+          const s = LAYER_STYLES[layer.color];
+          return (
+            <Link key={layer.id} to={layer.href} className="block group">
+              <motion.div whileHover={{ scale: 1.015, y: -2 }} transition={{ duration: 0.15 }}>
+                <Card className={cn(
+                  `border ${s.bg} ${s.border} hover:shadow-lg ${s.glow} transition-all cursor-pointer h-full`
+                )}>
+                  <CardContent className="p-4 space-y-3">
+                    {/* Header */}
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-center gap-2.5">
+                        <div className={`rounded-lg p-2 ${s.bg} border ${s.border} shrink-0`}>
+                          <Icon className={`h-4 w-4 ${s.text}`} />
+                        </div>
+                        <div>
+                          <p className={`text-sm font-semibold ${s.text}`}>{layer.label}</p>
+                          <p className="text-[10px] text-muted-foreground leading-tight">{layer.description}</p>
+                        </div>
+                      </div>
+                      <ExternalLink className="h-3.5 w-3.5 text-muted-foreground/30 group-hover:text-muted-foreground/60 transition-colors shrink-0 mt-0.5" />
+                    </div>
+
+                    {/* Big number */}
+                    {isDataLoading ? (
+                      <Skeleton className="h-9 w-20" />
+                    ) : (
+                      <div className="flex items-baseline gap-1.5">
+                        <span className={`text-3xl font-bold tabular-nums ${s.text}`}>{layer.total}</span>
+                        <span className="text-xs text-muted-foreground">{isRu ? 'объектов' : 'objects'}</span>
+                      </div>
+                    )}
+
+                    {/* Sub-items */}
+                    <div className="space-y-1 pt-0.5 border-t border-border/50">
+                      {layer.items.map((item) => (
+                        <div key={item.label} className="flex items-center justify-between text-xs py-0.5">
+                          <span className="text-muted-foreground">{item.label}</span>
+                          {isDataLoading ? (
+                            <Skeleton className="h-4 w-8" />
+                          ) : (
+                            <span className="font-medium tabular-nums">{item.value}</span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            </Link>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function HydraMemory() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const stats = useHydraMemoryStats();
 
   return (
@@ -1866,8 +2156,12 @@ export default function HydraMemory() {
         </div>
 
         {/* Tabs */}
-        <Tabs defaultValue="session">
+        <Tabs defaultValue="arsenal">
           <TabsList className="w-full justify-start flex-wrap gap-1 h-auto">
+            <TabsTrigger value="arsenal" className="gap-2">
+              <BrainCircuit className="h-3.5 w-3.5" />
+              {language === 'ru' ? 'Арсенал' : 'Arsenal'}
+            </TabsTrigger>
             <TabsTrigger value="session" className="gap-2">
               <Database className="h-3.5 w-3.5" />
               {t('memory.hub.session')}
@@ -1893,6 +2187,9 @@ export default function HydraMemory() {
             </TabsTrigger>
           </TabsList>
 
+          <TabsContent value="arsenal" className="mt-6">
+            <CognitiveArsenalTab stats={stats} />
+          </TabsContent>
           <TabsContent value="session" className="mt-6">
             <SessionMemoryTab stats={stats} loading={stats.loading} />
           </TabsContent>
