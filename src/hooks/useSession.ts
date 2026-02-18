@@ -137,8 +137,8 @@ export function useSession({ userId, authLoading }: UseSessionProps): UseSession
       if (!initialState?.selectedModels && data.session_config) {
         applySessionConfig(data.session_config as StoredSessionConfig);
       }
-    } catch (error: any) {
-      toast.error(error.message);
+    } catch (error) {
+      if (error instanceof Error) toast.error(error.message);
       navigate('/tasks');
     } finally {
       setLoading(false);
