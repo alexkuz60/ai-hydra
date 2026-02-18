@@ -27,19 +27,19 @@ const HELP_OPTIONS = [
 
 // ─── Layout constants ─────────────────────────────────────────────────────────
 // Canvas
-const W = 260, H = 250;
+const W = 260, H = 260;
 
-// Big gear (right, dominant)
-const BIG_CX = 155, BIG_CY = 172, BIG_OUTER = 72, BIG_INNER = 50, BIG_TEETH = 12;
+// Big gear (right)
+const BIG_CX = 168, BIG_CY = 192, BIG_OUTER = 66, BIG_INNER = 46, BIG_TEETH = 12;
 
-// Small gear (left, meshing)
-const SM_CX  =  58, SM_CY  = 182, SM_OUTER  = 46, SM_INNER  = 32, SM_TEETH  = 8;
+// Small gear (left) — meshing tightly with big
+const SM_CX = 76, SM_CY = 204, SM_OUTER = 42, SM_INNER = 29, SM_TEETH = 8;
 
-// Oil can: scale 5.5 → ~132px, upper-right of canvas, nozzle toward gears
-const CAN_TX = 100, CAN_TY = 4, CAN_S = 5.5;
-
-// Drop: from nozzle toward gear mesh area
-const DROP_CX = 120, DROP_CY = 105;
+// Mesh point X between the two gears
+const MESH_X = (SM_CX + SM_OUTER + BIG_CX - BIG_OUTER) / 2 + (SM_OUTER + BIG_OUTER) / 2 * 0.5;
+// Drop position — from nozzle tip after tilt, falls between gears
+const DROP_X = 122;
+const DROP_Y_START = 133; // between gear tops
 // ─────────────────────────────────────────────────────────────────────────────
 
 export function HelpMeWidget() {
@@ -149,18 +149,18 @@ export function HelpMeWidget() {
                 to   { transform: rotate(-360deg); }
               }
               @keyframes drop-fall {
-                0%   { opacity: 0;   transform: translateY(-4px)  scale(0.5); }
+                0%   { opacity: 0;   transform: translateY(0px)   scale(0.6); }
                 15%  { opacity: 1; }
-                80%  { opacity: 1;   transform: translateY(20px)  scale(1.1); }
-                100% { opacity: 0;   transform: translateY(26px)  scale(0.3); }
+                75%  { opacity: 1;   transform: translateY(28px)  scale(1); }
+                100% { opacity: 0;   transform: translateY(36px)  scale(0.3); }
               }
               @keyframes can-appear {
-                from { opacity: 0; transform: translateX(16px); }
+                from { opacity: 0; transform: translateX(20px); }
                 to   { opacity: 1; transform: translateX(0); }
               }
               @keyframes can-tilt {
                 from { transform: rotate(0deg); }
-                to   { transform: rotate(-44deg); }
+                to   { transform: rotate(52deg); }
               }
 
               .gear-big-spinning {
@@ -168,20 +168,20 @@ export function HelpMeWidget() {
                 transform-origin: ${BIG_CX}px ${BIG_CY}px;
               }
               .gear-sm-spinning {
-                animation: spin-ccw 3.2s linear infinite;
+                animation: spin-ccw 2.02s linear infinite;
                 transform-origin: ${SM_CX}px ${SM_CY}px;
               }
               .can-appear-anim {
                 animation: can-appear 0.35s ease-out forwards;
               }
               .can-tilt-anim {
-                animation: can-tilt 0.55s ease-in-out forwards;
+                animation: can-tilt 0.6s ease-in-out forwards;
                 transform-box: fill-box;
-                transform-origin: center;
+                transform-origin: 50% 50%;
               }
               .drop-anim {
-                animation: drop-fall 1s ease-in infinite;
-                transform-origin: ${DROP_CX}px ${DROP_CY}px;
+                animation: drop-fall 0.9s ease-in infinite;
+                transform-origin: ${DROP_X}px ${DROP_Y_START}px;
               }
             `}</style>
           </defs>
@@ -193,9 +193,9 @@ export function HelpMeWidget() {
               fill="hsl(var(--foreground))"
               fillOpacity={0.55}
             />
-            <circle cx={BIG_CX} cy={BIG_CY} r={BIG_INNER - 10}
+            <circle cx={BIG_CX} cy={BIG_CY} r={BIG_INNER - 12}
               fill="hsl(var(--background))" />
-            <circle cx={BIG_CX} cy={BIG_CY} r={9}
+            <circle cx={BIG_CX} cy={BIG_CY} r={8}
               fill="hsl(var(--foreground))" fillOpacity={0.3} />
           </g>
 
@@ -206,32 +206,51 @@ export function HelpMeWidget() {
               fill="hsl(var(--foreground))"
               fillOpacity={0.5}
             />
-            <circle cx={SM_CX} cy={SM_CY} r={SM_INNER - 7}
+            <circle cx={SM_CX} cy={SM_CY} r={SM_INNER - 8}
               fill="hsl(var(--background))" />
             <circle cx={SM_CX} cy={SM_CY} r={6}
               fill="hsl(var(--foreground))" fillOpacity={0.25} />
           </g>
 
-          {/* ── Oil drop (only while oiling) ── */}
+          {/* ── Oil drop — only when oiling (can is tilted, nozzle down) ── */}
           {oiling && (
-            <ellipse
+            <path
               className="drop-anim"
-              cx={DROP_CX} cy={DROP_CY}
-              rx={7} ry={9}
-              fill="hsl(var(--foreground))"
-              fillOpacity={0.75}
+              d={`M${DROP_X},${DROP_Y_START - 10} C${DROP_X - 7},${DROP_Y_START - 2} ${DROP_X - 9},${DROP_Y_START + 8} ${DROP_X},${DROP_Y_START + 12} C${DROP_X + 9},${DROP_Y_START + 8} ${DROP_X + 7},${DROP_Y_START - 2} ${DROP_X},${DROP_Y_START - 10} Z`}
+              fill="#d4a017"
+              fillOpacity={0.9}
             />
           )}
 
-          {/* ── Oil can (on hover) ── */}
+          {/* ── Oil can — large custom SVG silhouette, upper-right ── */}
+          {/* In rest state: horizontal, nozzle pointing LEFT.
+              On oiling: rotates +50° clockwise → nozzle points DOWN-LEFT toward gear mesh. */}
           {hovered && (
             <g
               className={oiling ? 'can-tilt-anim' : 'can-appear-anim'}
-              transform={`translate(${CAN_TX}, ${CAN_TY}) scale(${CAN_S})`}
               fill="hsl(var(--foreground))"
-              fillOpacity={0.6}
+              fillOpacity={0.65}
             >
-              <path d="M22 12.5s2 2.17 2 3.5a2 2 0 0 1-2 2a2 2 0 0 1-2-2c0-1.33 2-3.5 2-3.5M6 6h4a1 1 0 0 1 1 1a1 1 0 0 1-1 1H9v2h2c.74 0 1.39.4 1.73 1l6.51-3.76l3.26 1.89c.5.27.64.87.37 1.37c-.28.47-.87.64-1.37.36l-2.1-1.21l-3.65 6.32c-.34.61-1 1.03-1.75 1.03H5a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h2V8H6a1 1 0 0 1-1-1a1 1 0 0 1 1-1m-1 6v3h9l2.06-3.57l-3.46 2l-.91-1.43zM.38 9.21L2.09 7.5c.41-.39 1.02-.39 1.41 0s.39 1 0 1.41l-1.71 1.71c-.39.38-1.02.38-1.41 0C0 10.23 0 9.6.38 9.21" />
+              {/* Body of the oil can — horizontal rectangle, rightmost area of canvas */}
+              <rect x="152" y="22" width="90" height="55" rx="7" ry="7" />
+
+              {/* Handle — arch on top-right */}
+              <rect x="228" y="8"  width="16" height="30" rx="5" ry="5" />
+              <rect x="222" y="4"  width="26" height="12" rx="5" ry="5" />
+
+              {/* Filler cap on top center */}
+              <rect x="172" y="10" width="22" height="14" rx="4" ry="4" />
+
+              {/* Nozzle — horizontal pipe pointing left from body */}
+              {/* Nozzle base (wide, attached to left wall of body) */}
+              <polygon points="152,38 152,58 116,52 116,44" />
+              {/* Nozzle taper to tip */}
+              <polygon points="116,44 116,52 100,50 100,46" />
+              {/* Nozzle rounded tip */}
+              <ellipse cx="100" cy="48" rx="4" ry="5" />
+
+              {/* Decorative body stripe */}
+              <rect x="160" y="30" width="74" height="7" rx="3" ry="3" fill="hsl(var(--background))" fillOpacity={0.18} />
             </g>
           )}
         </svg>
