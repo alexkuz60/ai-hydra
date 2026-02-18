@@ -165,7 +165,7 @@ export function useSendMessage({
   const callOrchestrator = useCallback(async (
     messageContent: string,
     attachmentUrls: AttachmentUrl[],
-    models: any[]
+    models: ReturnType<typeof buildModelConfig>[]
   ) => {
     const session = await supabase.auth.getSession();
     const response = await fetch(
@@ -182,14 +182,14 @@ export function useSendMessage({
           attachments: attachmentUrls,
           models,
           history: (messagesRef.current || [])
-            .filter((m: any) => !m.isStreaming && (m.role === 'user' || m.role === 'assistant'))
+            .filter(m => !m.isStreaming && (m.role === 'user' || m.role === 'assistant'))
             .slice(-10)
-            .map((m: any) => ({ role: m.role, content: m.content })),
+            .map(m => ({ role: m.role, content: m.content })),
         }),
       }
     );
 
-    const data = await response.json();
+    const data = await response.json() as { error?: string; errors?: Array<{ model: string; error: string }> };
 
     if (!response.ok) {
       if (response.status === 429) {
@@ -204,21 +204,15 @@ export function useSendMessage({
 
     if (data.errors && data.errors.length > 0) {
       const failedModelIds: string[] = [];
-      // Get current selected models to filter out dismissed ones
       const currentSelectedModels = selectedModelsRef?.current || selectedModels;
-      
+
       data.errors.forEach((err: { model: string; error: string }) => {
         failedModelIds.push(err.model);
-        
-        // Skip showing errors for models that have been dismissed/removed from task
-        const isModelStillSelected = currentSelectedModels.includes(err.model) || 
+
+        const isModelStillSelected = currentSelectedModels.includes(err.model) ||
                                      err.model.includes('consultant');
-        if (!isModelStillSelected) {
-          console.log(`Skipping error toast for dismissed model: ${err.model}`);
-          return;
-        }
-        
-        // Check if this error indicates the model is unavailable
+        if (!isModelStillSelected) return;
+
         const { isUnavailable, errorCode } = parseModelError(err.model, err.error);
         if (isUnavailable) {
           markModelUnavailable(err.model, errorCode, err.error);
@@ -227,7 +221,7 @@ export function useSendMessage({
           toast.error(`${err.model}: ${err.error}`);
         }
       });
-      // Notify about failed models to clear their skeletons
+
       if (onRequestError && failedModelIds.length > 0) {
         onRequestError(failedModelIds);
       }
@@ -288,8 +282,8 @@ export function useSendMessage({
       }
 
       await callOrchestrator(messageContent, attachmentUrls, modelsToCall);
-    } catch (error: any) {
-      toast.error(error.message);
+    } catch (error) {
+      if (error instanceof Error) toast.error(error.message);
     } finally {
       setSending(false);
     }
@@ -328,8 +322,8 @@ export function useSendMessage({
         }]);
 
       if (error) throw error;
-    } catch (error: any) {
-      toast.error(error.message);
+    } catch (error) {
+      if (error instanceof Error) toast.error(error.message);
     } finally {
       setSending(false);
     }
@@ -383,10 +377,10 @@ export function useSendMessage({
       }
 
       await callOrchestrator(messageContent, attachmentUrls, [consultantModel]);
-    } catch (error: any) {
-      toast.error(error.message);
+    } catch (error) {
+      if (error instanceof Error) toast.error(error.message);
     } finally {
-    setSending(false);
+      setSending(false);
     }
   }, [userId, sessionId, perModelSettings, attachedFiles, uploadFiles, callOrchestrator]);
 
@@ -415,15 +409,15 @@ export function useSendMessage({
       const { error } = await supabase.from('messages').insert([{
         session_id: currentSessionId,
         user_id: currentUserId,
-        role: messageRole as any,
+        role: messageRole as 'assistant' | 'critic' | 'arbiter' | 'consultant' | 'moderator' | 'advisor' | 'archivist' | 'analyst' | 'webhunter' | 'promptengineer' | 'flowregulator' | 'toolsmith',
         content,
         model_name: modelName || null,
         metadata,
       }]);
 
       if (error) throw error;
-    } catch (error: any) {
-      toast.error(error.message);
+    } catch (error) {
+      if (error instanceof Error) toast.error(error.message);
     }
   }, [userId, sessionId]);
 
@@ -450,9 +444,8 @@ export function useSendMessage({
       }
 
       await callOrchestrator(messageContent, [], [singleModel]);
-    } catch (error: any) {
-      toast.error(error.message);
-      // Notify about error to remove skeleton
+    } catch (error) {
+      if (error instanceof Error) toast.error(error.message);
       if (onRequestError) {
         onRequestError([modelId]);
       }

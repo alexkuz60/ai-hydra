@@ -46,8 +46,8 @@ export function useMessages({ sessionId, onBeforeDeleteMessage }: UseMessagesPro
 
       if (error) throw error;
       setMessages(data || []);
-    } catch (error: any) {
-      toast.error(error.message);
+    } catch (error) {
+      if (error instanceof Error) toast.error(error.message);
     }
   }, []);
 
@@ -103,16 +103,14 @@ export function useMessages({ sessionId, onBeforeDeleteMessage }: UseMessagesPro
   // Delete a single message
   const handleDeleteMessage = useCallback(async (messageId: string) => {
     try {
-      // Clean up related memory chunks before deleting the message
       if (onBeforeDeleteMessage) {
         try {
           await onBeforeDeleteMessage(messageId);
         } catch (memoryError) {
-          // Log but don't block message deletion
           console.warn('[Messages] Failed to clean up memory for message:', messageId, memoryError);
         }
       }
-      
+
       const { error } = await supabase
         .from('messages')
         .delete()
@@ -122,8 +120,8 @@ export function useMessages({ sessionId, onBeforeDeleteMessage }: UseMessagesPro
 
       setMessages(msgs => msgs.filter(m => m.id !== messageId));
       toast.success(t('messages.deleted'));
-    } catch (error: any) {
-      toast.error(error.message);
+    } catch (error) {
+      if (error instanceof Error) toast.error(error.message);
     }
   }, [t, onBeforeDeleteMessage]);
 
@@ -160,8 +158,8 @@ export function useMessages({ sessionId, onBeforeDeleteMessage }: UseMessagesPro
 
       setMessages(msgs => msgs.filter(m => !idsToDelete.includes(m.id)));
       toast.success(t('messages.groupDeleted'));
-    } catch (error: any) {
-      toast.error(error.message);
+    } catch (error) {
+      if (error instanceof Error) toast.error(error.message);
     }
   }, [messages, t, onBeforeDeleteMessage]);
 
@@ -185,8 +183,8 @@ export function useMessages({ sessionId, onBeforeDeleteMessage }: UseMessagesPro
           ? { ...m, metadata: { ...currentMetadata, rating } }
           : m
       ));
-    } catch (error: any) {
-      toast.error(error.message);
+    } catch (error) {
+      if (error instanceof Error) toast.error(error.message);
     }
   }, [messages]);
 
@@ -210,8 +208,8 @@ export function useMessages({ sessionId, onBeforeDeleteMessage }: UseMessagesPro
           ? { ...m, metadata: { ...currentMetadata, user_likert: value } }
           : m
       ));
-    } catch (error: any) {
-      toast.error(error.message);
+    } catch (error) {
+      if (error instanceof Error) toast.error(error.message);
     }
   }, [messages]);
 
@@ -247,7 +245,7 @@ export function useMessages({ sessionId, onBeforeDeleteMessage }: UseMessagesPro
         if (rejected > 0) parts.push(`${rejected} откл.`);
         toast.success(`Предложения обновлены: ${parts.join(', ')}`);
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error('[Messages] Failed to update proposals:', error);
       toast.error('Ошибка сохранения предложений');
     }
@@ -274,7 +272,7 @@ export function useMessages({ sessionId, onBeforeDeleteMessage }: UseMessagesPro
           ? { ...m, metadata: updatedMetadata }
           : m
       ));
-    } catch (error: any) {
+    } catch (error) {
       console.error('[Messages] Failed to update checklist state:', error);
     }
   }, [messages]);
