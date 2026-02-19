@@ -2943,6 +2943,18 @@ const STATUS_DISPLAY: Record<string, { label: { ru: string; en: string }; color:
   revised: { label: { ru: 'Пересмотрено ИИ', en: 'AI Revised' }, color: 'text-purple-400', bg: 'bg-purple-500/5 border-purple-500/30', Icon: FlaskConical },
 };
 
+const EMPTY_FORM = {
+  title: '',
+  entry_code: '',
+  role_object: '',
+  initiator: 'Supervisor',
+  status: 'pending',
+  hypothesis: '',
+  summary: '',
+  metrics_before: '',
+  metrics_after: '',
+};
+
 function ChroniclesTab({ language, isSupervisor }: { language: string; isSupervisor: boolean }) {
   const isRu = language === 'ru';
   const [entries, setEntries] = useState<ChronicleDBEntry[]>([]);
@@ -2950,6 +2962,9 @@ function ChroniclesTab({ language, isSupervisor }: { language: string; isSupervi
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [autorunning, setAutorunning] = useState(false);
   const [expandedRevision, setExpandedRevision] = useState<string | null>(null);
+  const [showForm, setShowForm] = useState(false);
+  const [formData, setFormData] = useState(EMPTY_FORM);
+  const [saving, setSaving] = useState(false);
 
   const loadEntries = useCallback(async () => {
     setLoading(true);
@@ -3015,6 +3030,60 @@ function ChroniclesTab({ language, isSupervisor }: { language: string; isSupervi
       toast.error(isRu ? 'Ошибка запуска Эволюциониста' : 'Evolution trigger failed');
     } finally {
       if (mode === 'autorun') setAutorunning(false);
+    }
+  };
+
+  const generateNextCode = useCallback((existing: ChronicleDBEntry[]) => {
+    const nums = existing
+      .map(e => parseInt(e.entry_code?.replace(/\D/g, '') || '0', 10))
+      .filter(n => !isNaN(n));
+    const next = nums.length > 0 ? Math.max(...nums) + 1 : 1;
+    return `EVO-${String(next).padStart(3, '0')}`;
+  }, []);
+
+  const openForm = () => {
+    setFormData({ ...EMPTY_FORM, entry_code: generateNextCode(entries) });
+    setShowForm(true);
+  };
+
+  const handleSave = async () => {
+    if (!formData.title.trim() || !formData.entry_code.trim()) {
+      toast.error(isRu ? 'Заполните код и заголовок' : 'Entry code and title are required');
+      return;
+    }
+    setSaving(true);
+    try {
+      let metricsBefore: Record<string, unknown> | null = null;
+      let metricsAfter: Record<string, unknown> | null = null;
+      if (formData.metrics_before.trim()) {
+        try { metricsBefore = JSON.parse(formData.metrics_before); } catch { toast.error(isRu ? 'Метрики "До" — невалидный JSON' : '"Before" metrics: invalid JSON'); setSaving(false); return; }
+      }
+      if (formData.metrics_after.trim()) {
+        try { metricsAfter = JSON.parse(formData.metrics_after); } catch { toast.error(isRu ? 'Метрики "После" — невалидный JSON' : '"After" metrics: invalid JSON'); setSaving(false); return; }
+      }
+      const { error } = await supabase.from('chronicles').insert([{
+        entry_code: formData.entry_code.trim(),
+        title: formData.title.trim(),
+        role_object: formData.role_object.trim(),
+        initiator: formData.initiator.trim() || 'Supervisor',
+        status: formData.status,
+        hypothesis: formData.hypothesis.trim() || null,
+        summary: formData.summary.trim() || null,
+        metrics_before: metricsBefore as import('@/integrations/supabase/types').Json,
+        metrics_after: metricsAfter as import('@/integrations/supabase/types').Json,
+        supervisor_resolution: 'pending',
+        is_visible: true,
+      }]);
+      if (error) throw error;
+      toast.success(isRu ? 'Запись создана' : 'Entry created');
+      setShowForm(false);
+      setFormData(EMPTY_FORM);
+      await loadEntries();
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      toast.error(isRu ? `Ошибка: ${msg}` : `Error: ${msg}`);
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -3091,6 +3160,146 @@ function ChroniclesTab({ language, isSupervisor }: { language: string; isSupervi
           <div><p className="text-xs text-muted-foreground">{isRu ? 'Ожидает' : 'Pending'}</p><p className="text-2xl font-bold">{pendingCount}</p></div>
         </CardContent></Card>
       </div>
+
+      {/* New Entry button & form — Supervisor only */}
+      {isSupervisor && (
+        <div>
+          {!showForm ? (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={openForm}
+              className="gap-2 border-amber-500/40 text-amber-400 hover:bg-amber-500/10"
+            >
+              <ScrollText className="h-4 w-4" />
+              {isRu ? 'Добавить запись Летописца' : 'Add Chronicle Entry'}
+            </Button>
+          ) : (
+            <Card className="border-amber-500/30 bg-amber-500/5">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-sm font-semibold text-amber-400 flex items-center gap-2">
+                    <ScrollText className="h-4 w-4" />
+                    {isRu ? 'Новая запись Летописца' : 'New Chronicle Entry'}
+                  </CardTitle>
+                  <Button variant="ghost" size="icon" onClick={() => setShowForm(false)} className="h-7 w-7">
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs text-muted-foreground mb-1 block">{isRu ? 'Код записи *' : 'Entry Code *'}</label>
+                    <Input
+                      value={formData.entry_code}
+                      onChange={e => setFormData(p => ({ ...p, entry_code: e.target.value }))}
+                      placeholder="EVO-001"
+                      className="h-8 font-mono text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs text-muted-foreground mb-1 block">{isRu ? 'Статус' : 'Status'}</label>
+                    <select
+                      value={formData.status}
+                      onChange={e => setFormData(p => ({ ...p, status: e.target.value }))}
+                      className="h-8 w-full rounded-md border border-input bg-background px-3 text-sm"
+                    >
+                      <option value="pending">{isRu ? 'Ожидает тестирования' : 'Awaiting Testing'}</option>
+                      <option value="completed">{isRu ? 'Выполнено' : 'Completed'}</option>
+                    </select>
+                  </div>
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground mb-1 block">{isRu ? 'Заголовок *' : 'Title *'}</label>
+                  <Input
+                    value={formData.title}
+                    onChange={e => setFormData(p => ({ ...p, title: e.target.value }))}
+                    placeholder={isRu ? 'Оптимизация промпта Критика...' : 'Critic prompt optimization...'}
+                    className="h-8 text-sm"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs text-muted-foreground mb-1 block">{isRu ? 'Объект (роль)' : 'Target Role'}</label>
+                    <Input
+                      value={formData.role_object}
+                      onChange={e => setFormData(p => ({ ...p, role_object: e.target.value }))}
+                      placeholder="Critic, Evolutioner..."
+                      className="h-8 text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs text-muted-foreground mb-1 block">{isRu ? 'Инициатор' : 'Initiator'}</label>
+                    <Input
+                      value={formData.initiator}
+                      onChange={e => setFormData(p => ({ ...p, initiator: e.target.value }))}
+                      placeholder="Supervisor"
+                      className="h-8 text-sm"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground mb-1 block">{isRu ? 'Гипотеза' : 'Hypothesis'}</label>
+                  <textarea
+                    value={formData.hypothesis}
+                    onChange={e => setFormData(p => ({ ...p, hypothesis: e.target.value }))}
+                    placeholder={isRu ? 'Что предполагается улучшить...' : 'What is expected to improve...'}
+                    rows={2}
+                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm resize-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground mb-1 block">{isRu ? 'Описание / Результат' : 'Summary / Result'}</label>
+                  <textarea
+                    value={formData.summary}
+                    onChange={e => setFormData(p => ({ ...p, summary: e.target.value }))}
+                    placeholder={isRu ? 'Что было сделано и что получилось...' : 'What was done and the outcome...'}
+                    rows={3}
+                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm resize-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs text-muted-foreground mb-1 block">{isRu ? 'Метрики "До" (JSON)' : '"Before" Metrics (JSON)'}</label>
+                    <textarea
+                      value={formData.metrics_before}
+                      onChange={e => setFormData(p => ({ ...p, metrics_before: e.target.value }))}
+                      placeholder={'{"tokens": 450, "score": 6.2}'}
+                      rows={3}
+                      className="w-full rounded-md border border-input bg-background px-3 py-2 text-xs font-mono resize-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs text-muted-foreground mb-1 block">{isRu ? 'Метрики "После" (JSON)' : '"After" Metrics (JSON)'}</label>
+                    <textarea
+                      value={formData.metrics_after}
+                      onChange={e => setFormData(p => ({ ...p, metrics_after: e.target.value }))}
+                      placeholder={'{"tokens": 310, "score": 7.8}'}
+                      rows={3}
+                      className="w-full rounded-md border border-input bg-background px-3 py-2 text-xs font-mono resize-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    />
+                  </div>
+                </div>
+                <div className="flex justify-end gap-2 pt-2 border-t border-border">
+                  <Button variant="ghost" size="sm" onClick={() => setShowForm(false)} disabled={saving}>
+                    {isRu ? 'Отмена' : 'Cancel'}
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={handleSave}
+                    disabled={saving}
+                    className="bg-amber-500/20 text-amber-400 border border-amber-500/40 hover:bg-amber-500/30"
+                  >
+                    {saving ? <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> : <ScrollText className="h-3.5 w-3.5 mr-1.5" />}
+                    {isRu ? 'Зафиксировать запись' : 'Save Entry'}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      )}
 
       {/* Entries */}
       {loading ? (
