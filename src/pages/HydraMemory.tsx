@@ -92,16 +92,17 @@ function fileIcon(mime: string | null) {
 
 // ─── StatCard ────────────────────────────────────────────────────────────────
 
-function StatCard({ label, value, icon: Icon, accent }: { label: string; value: string | number; icon: React.ElementType; accent?: boolean }) {
+function StatCard({ label, value, icon: Icon, accent, description }: { label: string; value: string | number; icon: React.ElementType; accent?: boolean; description?: string }) {
   return (
     <Card className={`border ${accent ? 'border-[hsl(var(--hydra-memory)/0.4)] bg-[hsl(var(--hydra-memory)/0.05)]' : 'border-border bg-card'}`}>
-      <CardContent className="flex items-center gap-3 p-4">
-        <div className={`rounded-lg p-2 ${accent ? 'bg-[hsl(var(--hydra-memory)/0.15)]' : 'bg-muted'}`}>
+      <CardContent className="flex items-start gap-3 p-4">
+        <div className={`rounded-lg p-2 mt-0.5 shrink-0 ${accent ? 'bg-[hsl(var(--hydra-memory)/0.15)]' : 'bg-muted'}`}>
           <Icon className={`h-5 w-5 ${accent ? 'text-[hsl(var(--hydra-memory))]' : 'text-muted-foreground'}`} />
         </div>
-        <div>
-          <p className="text-xs text-muted-foreground">{label}</p>
-          <p className="text-xl font-bold">{value}</p>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-bold leading-tight">{label}</p>
+          <p className="text-2xl font-extrabold mt-0.5">{value}</p>
+          {description && <p className="text-[11px] text-muted-foreground mt-1 leading-snug">{description}</p>}
         </div>
       </CardContent>
     </Card>
@@ -993,14 +994,23 @@ function RagDashboardTab() {
     evaluation: 'text-amber-400', summary: 'text-green-400', message: 'text-muted-foreground',
   };
 
+  const chunkTypeLabel: Record<string, string> = {
+    message: t('memory.hub.chunkTypeMessage'),
+    summary: t('memory.hub.chunkTypeSummary'),
+    decision: t('memory.hub.chunkTypeDecision'),
+    context: t('memory.hub.chunkTypeContext'),
+    instruction: t('memory.hub.chunkTypeInstruction'),
+    evaluation: t('memory.hub.chunkTypeEvaluation'),
+  };
+
   return (
     <div className="space-y-5">
       {/* Stats row */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <StatCard label={t('memory.hub.ragAvgScore')} value={avgScore + (avgScore !== '—' ? '%' : '')} icon={Target} accent />
-        <StatCard label={t('memory.hub.ragRetrievals')} value={totalRetrievals} icon={Activity} />
-        <StatCard label={t('memory.hub.ragPositiveFeedback')} value={positive} icon={ThumbsUp} />
-        <StatCard label={t('memory.hub.ragNegativeFeedback')} value={negative} icon={ThumbsDown} />
+        <StatCard label={t('memory.hub.ragAvgScore')} value={avgScore + (avgScore !== '—' ? '%' : '')} icon={Target} accent description={t('memory.hub.ragAvgScoreDesc')} />
+        <StatCard label={t('memory.hub.ragRetrievals')} value={totalRetrievals} icon={Activity} description={t('memory.hub.ragRetrievalsDesc')} />
+        <StatCard label={t('memory.hub.ragPositiveFeedback')} value={positive} icon={ThumbsUp} description={t('memory.hub.ragPositiveFeedbackDesc')} />
+        <StatCard label={t('memory.hub.ragNegativeFeedback')} value={negative} icon={ThumbsDown} description={t('memory.hub.ragNegativeFeedbackDesc')} />
       </div>
 
       <div className="flex items-center justify-between">
@@ -1030,14 +1040,14 @@ function RagDashboardTab() {
                   <div className="flex flex-col items-center shrink-0 min-w-[2.5rem]">
                     <span className="text-lg font-bold text-foreground">{row.retrieved_count}</span>
                     <span className="text-[9px] text-muted-foreground leading-tight text-center">
-                      {t('memory.hub.ragRetrievals')}
+                      {t('memory.hub.ragRetrievalsShort')}
                     </span>
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1 flex-wrap">
-                      <span className={cn('text-[10px] font-medium', chunkTypeColor[row.chunk_type] || 'text-muted-foreground')}>
-                        {row.chunk_type}
-                      </span>
+                       <span className={cn('text-[10px] font-medium', chunkTypeColor[row.chunk_type] || 'text-muted-foreground')}>
+                         {chunkTypeLabel[row.chunk_type] || row.chunk_type}
+                       </span>
                       {row.relevance_score !== null && (
                         <Badge variant="outline" className="text-[10px] h-4 text-hydra-cyan border-hydra-cyan/40">
                           {(row.relevance_score * 100).toFixed(0)}%
