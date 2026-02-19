@@ -138,12 +138,13 @@ Automatic experience consolidation: patterns from `role_memory` are distilled in
 - **Session Memory** — chunk statistics by type, "Manage Memory" button → `SessionMemoryDialog`
 - **Role Experience** — `role_memory` records with confidence scores, inline deletion, role grouping
 - **Knowledge Base** — `role_knowledge` with cleanup tools: duplicate detection, outdated version deletion by `source_url`
-- **Memory Graph** — SVG visualization of connections: central Hydra node → roles → sessions, hover-glow, click → details panel, role activity progress bars, localized role labels
+- **File Storage** — file browser with localized bucket labels (Chat Archive / Task Files / Avatars) and tooltips explaining technical bucket IDs
+- **Memory Graph** — SVG visualization of connections: central Hydra node → roles → sessions, hover-glow, click → details panel, role activity progress bars; hot roles marked with ⚡ "high usage %"
 - **Hybrid Search** — three modes: Text / Semantic / Hybrid (BM25 + pgvector + RRF k=60)
 - **Reranking** — re-scoring via `gemini-3-flash-preview`, formula `final_score = rerank×0.7 + hybrid×0.3`
 - **HyDE** — hypothetical document generation before search, embedding blend `query×0.4 + hyde×0.6`
 - **Cognitive Arsenal** — dashboard overview of Hydra's entire "subconscious": counters for prompts, blueprints, tools, flows, tests, and memory; cards with quick actions (create, navigate, clear)
-- **Connections Graph** — SVG visualization of roles as bridges between cognitive layers (Instincts / Patterns / Tools / Achievements / Memory); nodes scale by data volume; edges are weighted; hover-highlight with tooltip; role labels localized via `ROLE_CONFIG`
+- **Connections Graph** — SVG visualization of roles as bridges between cognitive layers (Instincts / Patterns / Tools / Achievements / Memory); both SVG graphs are height-synchronized (560px) in a two-column desktop layout
 
 ### 15. User Profile
 - **Avatar** — photo upload with Canvas cropper (drag, scroll-zoom, 260×260 JPEG, 2MB limit)
@@ -252,6 +253,19 @@ Lovable Cloud (Supabase)
 
 ---
 
+## ⚡ Architecture Optimization
+
+A technical audit addressed key bottlenecks:
+
+- **Type unification** — `StoredSessionConfig` as single source of truth for session configs
+- **Memoization** — heavy computations (model lists, pending responses) cached via `useMemo`
+- **Collision-free Realtime** — unique channels (`messages-${sessionId}`) prevent event duplication
+- **Race condition protection** — `sessionId` verification before saving async responses
+- **Stale closure fix** — streaming logic migrated to `refs` + stable `useCallback` outside closures
+- **Log cleanup** — 120+ debug `console.log` calls removed from critical execution paths
+
+---
+
 ## 🔐 Security
 
 - **RLS policies** on all user tables
@@ -314,4 +328,4 @@ supabase/functions/     # 14 Edge Functions
 
 ---
 
-*Last updated: February 17, 2026*
+*Last updated: February 19, 2026*
