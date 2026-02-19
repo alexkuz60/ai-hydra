@@ -772,7 +772,9 @@ export default function Profile() {
                         className="gap-1.5 text-xs"
                       >
                         <CheckCheck className="h-3.5 w-3.5" />
-                        {language === 'ru' ? 'Прочитать все' : 'Mark all read'}
+                        {unreadCount === 0
+                          ? (language === 'ru' ? 'Прочитаны все' : 'All read')
+                          : (language === 'ru' ? 'Прочитать все' : 'Mark all read')}
                       </Button>
                     )}
                   </div>
