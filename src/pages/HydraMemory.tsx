@@ -17,7 +17,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -2343,7 +2343,36 @@ function CognitiveArsenalTab({ stats }: { stats: ReturnType<typeof useHydraMemor
                         <Icon className={`h-4 w-4 ${s.text}`} />
                       </div>
                       <div>
-                        <p className={`text-sm font-semibold ${s.text}`}>{layer.label}</p>
+                        {layer.id === 'memory' ? (
+                          <TooltipProvider delayDuration={300}>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <p className={`text-sm font-semibold ${s.text} cursor-help`}>{layer.label}</p>
+                              </TooltipTrigger>
+                              <TooltipContent side="bottom" className="max-w-xs p-3 space-y-2">
+                                <p className="text-xs font-semibold text-foreground mb-1">
+                                  {isRu ? 'Три слоя долгосрочной памяти:' : 'Three layers of long-term memory:'}
+                                </p>
+                                <div className="space-y-1.5 text-xs">
+                                  <div>
+                                    <span className="font-medium text-foreground">{isRu ? '🧠 Опыт ролей' : '🧠 Role Experience'}</span>
+                                    <p className="text-muted-foreground">{isRu ? 'Поведенческие паттерны, стиль общения и предпочтения каждой роли, накопленные в ходе сессий' : 'Behavioral patterns, communication style and preferences for each role, accumulated through sessions'}</p>
+                                  </div>
+                                  <div>
+                                    <span className="font-medium text-foreground">{isRu ? '📚 База знаний RAG' : '📚 RAG Knowledge Base'}</span>
+                                    <p className="text-muted-foreground">{isRu ? 'Семантически индексированные документы и факты, используемые для контекстного поиска при генерации ответов' : 'Semantically indexed documents and facts used for contextual retrieval during response generation'}</p>
+                                  </div>
+                                  <div>
+                                    <span className="font-medium text-foreground">{isRu ? '💬 Контекст сессий' : '💬 Session Context'}</span>
+                                    <p className="text-muted-foreground">{isRu ? 'Чанки диалогов, решения и инсайты из прошлых сессий, доступные для повторного использования' : 'Conversation chunks, decisions and insights from past sessions, available for reuse'}</p>
+                                  </div>
+                                </div>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        ) : (
+                          <p className={`text-sm font-semibold ${s.text}`}>{layer.label}</p>
+                        )}
                         <p className="text-[10px] text-muted-foreground leading-tight">{layer.description}</p>
                       </div>
                     </div>
