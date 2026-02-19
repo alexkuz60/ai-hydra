@@ -218,6 +218,8 @@ export function useStreamingResponses({
     modelSettings?: PerModelSettings,
     streamCtx?: StreamContext
   ) => {
+    // Capture session at stream start — used to detect race condition at save time
+    const capturedSessionId = sessionIdRef.current;
     const settings = modelSettings?.[model.modelId] || {};
 
     let proxyapi_settings: Record<string, unknown> | undefined;
@@ -302,63 +304,76 @@ export function useStreamingResponses({
       let accumulatedContent = '';
       let providerInfo: ProviderInfo | undefined;
       let currentEventType = '';
+      let doneSignalReceived = false;
+      let consecutiveParseErrors = 0;
 
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
+      try {
+        while (!doneSignalReceived) {
+          const { done, value } = await reader.read();
+          if (done) break;
 
-        buffer += decoder.decode(value, { stream: true });
+          buffer += decoder.decode(value, { stream: true });
 
-        let newlineIndex: number;
-        while ((newlineIndex = buffer.indexOf('\n')) !== -1) {
-          let line = buffer.slice(0, newlineIndex);
-          buffer = buffer.slice(newlineIndex + 1);
+          let newlineIndex: number;
+          while ((newlineIndex = buffer.indexOf('\n')) !== -1) {
+            let line = buffer.slice(0, newlineIndex);
+            buffer = buffer.slice(newlineIndex + 1);
 
-          if (line.endsWith('\r')) line = line.slice(0, -1);
-          if (line.startsWith(':')) continue;
-          if (line.trim() === '') { currentEventType = ''; continue; }
+            if (line.endsWith('\r')) line = line.slice(0, -1);
+            if (line.startsWith(':')) continue;
+            if (line.trim() === '') { currentEventType = ''; continue; }
 
-          if (line.startsWith('event: ')) {
-            currentEventType = line.slice(7).trim();
-            continue;
-          }
-
-          if (!line.startsWith('data: ')) continue;
-
-          const jsonStr = line.slice(6).trim();
-          if (jsonStr === '[DONE]') break;
-
-          try {
-            const parsed = JSON.parse(jsonStr) as Record<string, unknown>;
-
-            if (currentEventType === 'provider') {
-              providerInfo = parsed as unknown as ProviderInfo;
-              setStreamingResponses(prev => {
-                const updated = new Map(prev);
-                const existing = updated.get(model.modelId);
-                if (existing) updated.set(model.modelId, { ...existing, providerInfo });
-                return updated;
-              });
-              currentEventType = '';
+            if (line.startsWith('event: ')) {
+              currentEventType = line.slice(7).trim();
               continue;
             }
 
-            const choices = parsed.choices as Array<{ delta?: { content?: string } }> | undefined;
-            const delta = choices?.[0]?.delta?.content;
+            if (!line.startsWith('data: ')) continue;
 
-            if (delta) {
-              accumulatedContent += delta;
-              setStreamingResponses(prev => {
-                const updated = new Map(prev);
-                const existing = updated.get(model.modelId);
-                if (existing) updated.set(model.modelId, { ...existing, content: accumulatedContent });
-                return updated;
-              });
+            const jsonStr = line.slice(6).trim();
+            if (jsonStr === '[DONE]') { doneSignalReceived = true; break; }
+
+            try {
+              const parsed = JSON.parse(jsonStr) as Record<string, unknown>;
+              consecutiveParseErrors = 0; // reset on success
+
+              if (currentEventType === 'provider') {
+                providerInfo = parsed as unknown as ProviderInfo;
+                setStreamingResponses(prev => {
+                  const updated = new Map(prev);
+                  const existing = updated.get(model.modelId);
+                  if (existing) updated.set(model.modelId, { ...existing, providerInfo });
+                  return updated;
+                });
+                currentEventType = '';
+                continue;
+              }
+
+              const choices = parsed.choices as Array<{ delta?: { content?: string } }> | undefined;
+              const delta = choices?.[0]?.delta?.content;
+
+              if (delta) {
+                accumulatedContent += delta;
+                setStreamingResponses(prev => {
+                  const updated = new Map(prev);
+                  const existing = updated.get(model.modelId);
+                  if (existing) updated.set(model.modelId, { ...existing, content: accumulatedContent });
+                  return updated;
+                });
+              }
+            } catch {
+              // Incomplete JSON chunk — tolerate up to 50 consecutive errors, then bail
+              consecutiveParseErrors++;
+              if (consecutiveParseErrors > 50) {
+                reader.cancel();
+                break;
+              }
             }
-          } catch {
-            // Incomplete JSON chunk — continue
           }
         }
+      } finally {
+        // Always release the reader lock, even on abort
+        try { reader.cancel(); } catch { /* already released */ }
       }
 
       // Stream complete — clean up
@@ -381,15 +396,19 @@ export function useStreamingResponses({
       });
 
       if (accumulatedContent.trim()) {
-        await saveAIResponseToDb(model.modelId, model.modelName, model.role, accumulatedContent, providerInfo);
+        // Race condition guard: only save if session hasn't changed since stream started
+        if (sessionIdRef.current === capturedSessionId) {
+          await saveAIResponseToDb(model.modelId, model.modelName, model.role, accumulatedContent, providerInfo);
+        }
+        // Always fire completion callback regardless of session (caller decides)
+        onStreamCompleteRef.current?.(model.modelId, accumulatedContent);
       }
-
-      onStreamCompleteRef.current?.(model.modelId, accumulatedContent);
 
     } catch (error: unknown) {
       if (error instanceof Error && error.name === 'AbortError') return;
       await fallbackToOrchestrator(model, messageContent, modelSettings);
     }
+
   }, [fallbackToOrchestrator, saveAIResponseToDb]);
 
   // Stop streaming for a specific model
