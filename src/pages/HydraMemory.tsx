@@ -608,14 +608,17 @@ function RoleMemoryTab({ stats, loading, onRefresh }: { stats: ReturnType<typeof
         <div className="text-center py-12 text-muted-foreground text-sm">{t('memory.hub.empty')}</div>
       )}
       <div className="space-y-2">
-        {stats.roleMemory.map(({ role, count, avg_confidence }) => (
+        {stats.roleMemory.map(({ role, count, avg_confidence }) => {
+          const rc = ROLE_CONFIG[role as keyof typeof ROLE_CONFIG];
+          const roleLabel = rc ? t(rc.label) : role;
+          return (
           <Card key={role} className="overflow-hidden">
             <button
               onClick={() => loadRoleEntries(role)}
               className="w-full flex items-center justify-between gap-3 px-4 py-3 hover:bg-muted/40 transition-colors text-left"
             >
               <div className="flex items-center gap-3">
-                <span className="font-medium text-sm">{role}</span>
+                <span className="font-medium text-sm">{roleLabel}</span>
                 <Badge variant="outline" className="text-xs">{count} {t('memory.hub.entriesCount')}</Badge>
               </div>
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
@@ -652,7 +655,8 @@ function RoleMemoryTab({ stats, loading, onRefresh }: { stats: ReturnType<typeof
               </div>
             )}
           </Card>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
