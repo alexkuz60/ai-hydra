@@ -664,6 +664,16 @@ function RoleMemoryTab({ stats, loading, onRefresh }: { stats: ReturnType<typeof
 
 // ─── Knowledge Tab with Deduplication Tools (Iteration 5) ────────────────────
 
+const KNOWLEDGE_CATEGORY_LABELS: Record<string, { ru: string; en: string }> = {
+  general: { ru: 'Общие', en: 'General' },
+  documentation: { ru: 'Документация', en: 'Documentation' },
+  guide: { ru: 'Руководство', en: 'Guide' },
+  reference: { ru: 'Справочник', en: 'Reference' },
+  tutorial: { ru: 'Обучение', en: 'Tutorial' },
+  faq: { ru: 'ЧаВО', en: 'FAQ' },
+  api: { ru: 'API', en: 'API' },
+};
+
 interface KnowledgeEntryRaw {
   id: string;
   content: string;
@@ -676,7 +686,7 @@ interface KnowledgeEntryRaw {
 }
 
 function KnowledgeTab({ stats, loading }: { stats: ReturnType<typeof useHydraMemoryStats>; loading: boolean }) {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const { user } = useAuth();
   const [toolsOpen, setToolsOpen] = useState(false);
   const [scanning, setScanning] = useState(false);
@@ -940,18 +950,26 @@ function KnowledgeTab({ stats, loading }: { stats: ReturnType<typeof useHydraMem
         <div className="text-center py-12 text-muted-foreground text-sm">{t('memory.hub.empty')}</div>
       )}
       <div className="space-y-3">
-        {Object.entries(roleGroups).map(([role, categories]) => (
+        {Object.entries(roleGroups).map(([role, categories]) => {
+          const rc = ROLE_CONFIG[role as keyof typeof ROLE_CONFIG];
+          const roleLabel = rc ? t(rc.label) : role;
+          const isRu = language === 'ru';
+          return (
           <Card key={role}>
-            <CardHeader className="pb-2 pt-3 px-4"><CardTitle className="text-sm">{role}</CardTitle></CardHeader>
+            <CardHeader className="pb-2 pt-3 px-4"><CardTitle className="text-sm">{roleLabel}</CardTitle></CardHeader>
             <CardContent className="pb-3 px-4 flex flex-wrap gap-2">
-              {categories.map(({ category, count }) => (
-                 <Badge key={category} variant="outline" className="text-xs gap-1.5">
-                   {category} <span className="font-bold text-hydra-memory">{count}</span>
-                </Badge>
-              ))}
+              {categories.map(({ category, count }) => {
+                const catLabel = KNOWLEDGE_CATEGORY_LABELS[category]?.[isRu ? 'ru' : 'en'] ?? category;
+                return (
+                  <Badge key={category} variant="outline" className="text-xs gap-1.5">
+                    {catLabel} <span className="font-bold text-hydra-memory">{count}</span>
+                  </Badge>
+                );
+              })}
             </CardContent>
           </Card>
-        ))}
+          );
+        })}
       </div>
       <div className="flex justify-end">
         <Button variant="outline" size="sm" asChild>
