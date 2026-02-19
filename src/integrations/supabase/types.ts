@@ -14,6 +14,66 @@ export type Database = {
   }
   public: {
     Tables: {
+      chronicles: {
+        Row: {
+          ai_revision: string | null
+          created_at: string
+          entry_code: string
+          entry_date: string
+          hypothesis: string | null
+          id: string
+          initiator: string
+          is_visible: boolean
+          metrics_after: Json | null
+          metrics_before: Json | null
+          role_object: string
+          status: string
+          summary: string | null
+          supervisor_comment: string | null
+          supervisor_resolution: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          ai_revision?: string | null
+          created_at?: string
+          entry_code: string
+          entry_date?: string
+          hypothesis?: string | null
+          id?: string
+          initiator?: string
+          is_visible?: boolean
+          metrics_after?: Json | null
+          metrics_before?: Json | null
+          role_object?: string
+          status?: string
+          summary?: string | null
+          supervisor_comment?: string | null
+          supervisor_resolution?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          ai_revision?: string | null
+          created_at?: string
+          entry_code?: string
+          entry_date?: string
+          hypothesis?: string | null
+          id?: string
+          initiator?: string
+          is_visible?: boolean
+          metrics_after?: Json | null
+          metrics_before?: Json | null
+          role_object?: string
+          status?: string
+          summary?: string | null
+          supervisor_comment?: string | null
+          supervisor_resolution?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       contest_results: {
         Row: {
           arbiter_comment: string | null
