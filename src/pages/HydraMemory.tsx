@@ -2093,7 +2093,7 @@ function CognitiveArsenalTab({ stats }: { stats: ReturnType<typeof useHydraMemor
           tools: {
             total: tools.length,
             prompt: tools.filter(t => t.tool_type === 'prompt' || !t.tool_type).length,
-            http: tools.filter(t => t.tool_type === 'http').length,
+            http: tools.filter(t => t.tool_type === 'http_api').length,
           },
           flows: { total: flowsRes.count || 0 },
           interviews: {
@@ -2513,7 +2513,7 @@ function ArsenalConnectionsGraph({
     prompts: { total: number; system: number; custom: number };
     blueprints: { total: number; system: number; custom: number };
     behaviors: { total: number; system: number; custom: number };
-    tools: { total: number };
+    tools: { total: number; prompt: number; http: number };
     flows: { total: number };
   };
   stats: ReturnType<typeof useHydraMemoryStats>;
@@ -2547,11 +2547,12 @@ function ArsenalConnectionsGraph({
     const layerR = Math.min(cx, cy) * 0.72;
     const roleR = Math.min(cx, cy) * 0.30;
 
-    // 5 layer nodes arranged in a pentagon
+    // 6 layer nodes arranged in a hexagon
     const layerDefs = [
       { id: 'instincts', label: isRu ? 'Инстинкты' : 'Instincts', value: counts.prompts.total, color: '#a78bfa', glow: 'rgba(167,139,250,0.4)' },
       { id: 'patterns',  label: isRu ? 'Паттерны' : 'Patterns',   value: counts.blueprints.total + counts.behaviors.total, color: '#fbbf24', glow: 'rgba(251,191,36,0.4)' },
-      { id: 'tools',     label: isRu ? 'Инструменты' : 'Tools',    value: counts.tools.total + counts.flows.total, color: '#60a5fa', glow: 'rgba(96,165,250,0.4)' },
+      { id: 'tools',     label: isRu ? 'Инструменты' : 'Tools',    value: counts.tools.total, color: '#60a5fa', glow: 'rgba(96,165,250,0.4)' },
+      { id: 'flows',     label: isRu ? 'Потоки' : 'Flows',          value: counts.flows.total, color: '#22d3ee', glow: 'rgba(34,211,238,0.4)' },
       { id: 'achieve',   label: isRu ? 'Достижения' : 'Achieve',   value: 0, color: '#34d399', glow: 'rgba(52,211,153,0.4)' },
       { id: 'memory',    label: isRu ? 'Память' : 'Memory',         value: stats.totalRoleMemory + stats.totalKnowledge + stats.sessionMemory.total, color: 'hsl(var(--hydra-memory))', glow: 'rgba(99,219,214,0.4)' },
     ];
@@ -2621,9 +2622,10 @@ function ArsenalConnectionsGraph({
       }
     });
 
-    // Layer-to-layer edges (patterns ↔ tools, instincts ↔ patterns)
+    // Layer-to-layer edges
     allEdges.push({ source: 'instincts', target: 'patterns', weight: 0.4, color: '#c4b5fd' });
     allEdges.push({ source: 'patterns', target: 'tools', weight: 0.35, color: '#93c5fd' });
+    allEdges.push({ source: 'tools', target: 'flows', weight: 0.35, color: '#67e8f9' });
     allEdges.push({ source: 'memory', target: 'achieve', weight: 0.3, color: '#6ee7b7' });
 
     return { nodes: allNodes, edges: allEdges };
