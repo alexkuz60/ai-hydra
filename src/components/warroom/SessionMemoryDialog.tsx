@@ -32,6 +32,8 @@ import {
   Sparkles,
   Text,
   Star,
+  ThumbsUp,
+  ThumbsDown,
 } from 'lucide-react';
 
 interface SessionMemoryDialogProps {
@@ -48,6 +50,8 @@ interface SessionMemoryDialogProps {
   // Optional: for semantic search
   onSemanticSearch?: (query: string) => Promise<SearchResult[]>;
   isSearching?: boolean;
+  // Optional: feedback on chunks
+  onFeedback?: (chunkId: string, feedback: 1 | -1) => Promise<void>;
 }
 
 const CHUNK_TYPE_CONFIG: Record<ChunkType, { icon: React.ElementType; color: string; labelKey: string }> = {
@@ -97,6 +101,7 @@ export function SessionMemoryDialog({
   isClearing,
   onSemanticSearch,
   isSearching: externalIsSearching = false,
+  onFeedback,
 }: SessionMemoryDialogProps) {
   const { t } = useLanguage();
   const [activeFilter, setActiveFilter] = useState<ChunkType | 'all' | 'duplicates'>('all');
@@ -495,24 +500,67 @@ export function SessionMemoryDialog({
                           {item.content}
                         </p>
                       </div>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive hover:bg-destructive/10"
-                            onClick={() => handleDelete(item.id)}
-                            disabled={isDeleting || deletingId === item.id}
-                          >
-                            {deletingId === item.id ? (
-                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                            ) : (
-                              <Trash2 className="h-3.5 w-3.5" />
-                            )}
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>{t('common.delete')}</TooltipContent>
-                      </Tooltip>
+                      {/* Feedback + Delete actions */}
+                      <div className="flex flex-col gap-1 items-end opacity-0 group-hover:opacity-100 transition-opacity">
+                        {onFeedback && (
+                          <div className="flex gap-1">
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className={cn(
+                                    'h-6 w-6',
+                                    ('feedback' in item && item.feedback === 1)
+                                      ? 'text-hydra-success bg-hydra-success/10'
+                                      : 'text-muted-foreground hover:text-hydra-success hover:bg-hydra-success/10'
+                                  )}
+                                  onClick={() => onFeedback(item.id, 1)}
+                                >
+                                  <ThumbsUp className="h-3 w-3" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>{t('memory.feedbackHelpful')}</TooltipContent>
+                            </Tooltip>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className={cn(
+                                    'h-6 w-6',
+                                    ('feedback' in item && item.feedback === -1)
+                                      ? 'text-destructive bg-destructive/10'
+                                      : 'text-muted-foreground hover:text-destructive hover:bg-destructive/10'
+                                  )}
+                                  onClick={() => onFeedback(item.id, -1)}
+                                >
+                                  <ThumbsDown className="h-3 w-3" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>{t('memory.feedbackNotHelpful')}</TooltipContent>
+                            </Tooltip>
+                          </div>
+                        )}
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10"
+                              onClick={() => handleDelete(item.id)}
+                              disabled={isDeleting || deletingId === item.id}
+                            >
+                              {deletingId === item.id ? (
+                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                              ) : (
+                                <Trash2 className="h-3.5 w-3.5" />
+                              )}
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>{t('common.delete')}</TooltipContent>
+                        </Tooltip>
+                      </div>
                     </div>
                   </div>
                 );

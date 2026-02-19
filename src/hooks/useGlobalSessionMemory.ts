@@ -155,6 +155,23 @@ export function useGlobalSessionMemory() {
     }
   }, [user]);
 
+  // Submit feedback for a chunk (👍/👎)
+  const submitFeedback = useCallback(async (chunkId: string, feedback: 1 | -1): Promise<void> => {
+    if (!user) return;
+    try {
+      await supabase.rpc('submit_chunk_feedback' as any, {
+        p_chunk_id: chunkId,
+        p_feedback: feedback,
+      });
+      queryClient.setQueryData(queryKey, (old: SessionMemoryChunk[] | undefined) => {
+        if (!old) return old;
+        return old.map(c => c.id === chunkId ? { ...c, feedback } : c);
+      });
+    } catch (err) {
+      console.error('[Memory] Failed to submit feedback:', err);
+    }
+  }, [user, queryClient, queryKey]);
+
   return {
     chunks,
     isLoading,
@@ -167,6 +184,7 @@ export function useGlobalSessionMemory() {
     isClearing: clearAllMutation.isPending,
     semanticSearch,
     hybridSearch,
+    submitFeedback,
     isSearching,
   };
 }
