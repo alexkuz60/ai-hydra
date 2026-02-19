@@ -2,7 +2,7 @@
   <img src="public/banner.png" alt="ai*hYdra" width="640"/>
   <p><em>Where even dogmas evolve</em></p>
 
-  ![Version](https://img.shields.io/badge/version-2.17.0-0ff?style=flat-square&logo=semver&logoColor=white)
+  ![Version](https://img.shields.io/badge/version-0.2.17--alpha-0ff?style=flat-square&logo=semver&logoColor=white)
   ![Build](https://img.shields.io/badge/build-passing-brightgreen?style=flat-square&logo=github-actions&logoColor=white)
   ![License](https://img.shields.io/badge/license-MIT-blue?style=flat-square)
   ![Stack](https://img.shields.io/badge/stack-React%2018%20%2B%20TypeScript%20%2B%20Supabase-8b5cf6?style=flat-square)
