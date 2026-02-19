@@ -763,8 +763,14 @@ export default function Profile() {
                         ? 'Новые ИИ-ревизии Эволюциониста, требующие вашей оценки'
                         : 'New AI revisions from the Evolutioner awaiting your review'}
                     </p>
-                    {unreadCount > 0 && (
-                      <Button variant="ghost" size="sm" onClick={markAllRead} className="gap-1.5 text-xs">
+                    {notifications.length > 0 && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={markAllRead}
+                        disabled={unreadCount === 0}
+                        className="gap-1.5 text-xs"
+                      >
                         <CheckCheck className="h-3.5 w-3.5" />
                         {language === 'ru' ? 'Прочитать все' : 'Mark all read'}
                       </Button>
