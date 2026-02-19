@@ -13,7 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { User, Key, Settings, Loader2, Check, Moon, Sun, Globe, Shield, BarChart3, Search, AlertTriangle, Type, Gauge, Camera, Trash2 } from 'lucide-react';
+import { User, Key, Settings, Loader2, Check, Moon, Sun, Globe, Shield, BarChart3, Search, AlertTriangle, Type, Gauge, Camera, Trash2, Bell, BellOff, CheckCheck, ScrollText, ExternalLink } from 'lucide-react';
 import { CloudSyncIndicator } from '@/components/ui/CloudSyncIndicator';
 import { useCloudSyncStatus } from '@/hooks/useCloudSettings';
 import { Separator } from '@/components/ui/separator';
@@ -28,6 +28,11 @@ import { MistralLimitsDialog } from '@/components/profile/MistralLimitsDialog';
 import { FirecrawlLimitsDialog } from '@/components/profile/FirecrawlLimitsDialog';
 import { AvatarCropDialog } from '@/components/profile/AvatarCropDialog';
 import { useUserProfile } from '@/hooks/useUserProfile';
+import { useUserRoles } from '@/hooks/useUserRoles';
+import { useSupNotifications } from '@/hooks/useSupNotifications';
+import { Badge } from '@/components/ui/badge';
+import { format } from 'date-fns';
+
 
 interface Profile {
   id: string;
@@ -82,12 +87,15 @@ export default function Profile() {
   const navigate = useNavigate();
   const cloudSynced = useCloudSyncStatus();
   const { refetch: refetchSidebarProfile } = useUserProfile();
+  const { isSupervisor } = useUserRoles();
+  const { notifications, loading: notifLoading, unreadCount, markRead, markAllRead, deleteNotification } = useSupNotifications();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+
 
   // Form states
   const [displayName, setDisplayName] = useState('');
@@ -374,7 +382,7 @@ export default function Profile() {
         </div>
 
         <Tabs defaultValue="profile" className="space-y-6">
-          <TabsList className={cn("grid w-full max-w-lg", language === 'ru' ? "grid-cols-5" : "grid-cols-4")}>
+          <TabsList className={cn("grid w-full max-w-2xl", isSupervisor ? (language === 'ru' ? "grid-cols-6" : "grid-cols-5") : (language === 'ru' ? "grid-cols-5" : "grid-cols-4"))}>
             <TabsTrigger value="profile" className="flex items-center gap-2">
               <User className="h-4 w-4" />
               <span className="hidden sm:inline">{t('nav.profile')}</span>
@@ -397,7 +405,19 @@ export default function Profile() {
               <BarChart3 className="h-4 w-4" />
               <span className="hidden sm:inline">{t('profile.stats')}</span>
             </TabsTrigger>
+            {isSupervisor && (
+              <TabsTrigger value="notifications" className="flex items-center gap-2 relative">
+                <Bell className="h-4 w-4" />
+                <span className="hidden sm:inline">{language === 'ru' ? 'Уведомления' : 'Notifications'}</span>
+                {unreadCount > 0 && (
+                  <Badge className="ml-1 h-5 min-w-5 px-1 text-[10px] bg-destructive text-destructive-foreground">
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </Badge>
+                )}
+              </TabsTrigger>
+            )}
           </TabsList>
+
 
           <TabsContent value="profile">
             <HydraCard variant="glass" className="p-6">
@@ -710,6 +730,94 @@ export default function Profile() {
           <TabsContent value="stats">
             <UsageStats />
           </TabsContent>
+
+          {isSupervisor && (
+            <TabsContent value="notifications">
+              <HydraCard variant="glass" className="p-6">
+                <HydraCardHeader>
+                  <Bell className="h-5 w-5 text-amber-400" />
+                  <HydraCardTitle>
+                    {language === 'ru' ? 'Уведомления Супервизора' : 'Supervisor Notifications'}
+                  </HydraCardTitle>
+                </HydraCardHeader>
+                <HydraCardContent className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm text-muted-foreground">
+                      {language === 'ru'
+                        ? 'Новые ИИ-ревизии Эволюциониста, требующие вашей оценки'
+                        : 'New AI revisions from the Evolutioner awaiting your review'}
+                    </p>
+                    {unreadCount > 0 && (
+                      <Button variant="ghost" size="sm" onClick={markAllRead} className="gap-1.5 text-xs">
+                        <CheckCheck className="h-3.5 w-3.5" />
+                        {language === 'ru' ? 'Прочитать все' : 'Mark all read'}
+                      </Button>
+                    )}
+                  </div>
+
+                  {notifLoading ? (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground py-4">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      {language === 'ru' ? 'Загрузка...' : 'Loading...'}
+                    </div>
+                  ) : notifications.length === 0 ? (
+                    <div className="flex flex-col items-center gap-2 py-10 text-muted-foreground">
+                      <BellOff className="h-8 w-8 opacity-30" />
+                      <p className="text-sm">{language === 'ru' ? 'Нет уведомлений' : 'No notifications'}</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {notifications.map(n => (
+                        <div
+                          key={n.id}
+                          className={cn(
+                            'flex items-start gap-3 rounded-lg border p-4 transition-colors',
+                            n.is_read
+                              ? 'border-border bg-muted/30 opacity-70'
+                              : 'border-amber-500/30 bg-amber-500/5'
+                          )}
+                        >
+                          <ScrollText className={cn('h-4 w-4 mt-0.5 shrink-0', n.is_read ? 'text-muted-foreground' : 'text-amber-400')} />
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <Badge variant="outline" className="font-mono text-xs shrink-0">{n.entry_code}</Badge>
+                              {!n.is_read && (
+                                <span className="text-[10px] font-medium text-amber-400 uppercase tracking-wide">
+                                  {language === 'ru' ? 'Новое' : 'New'}
+                                </span>
+                              )}
+                              <span className="text-[10px] text-muted-foreground ml-auto">
+                                {format(new Date(n.created_at), 'dd.MM.yyyy HH:mm')}
+                              </span>
+                            </div>
+                            <p className="text-sm text-foreground leading-snug">{n.message}</p>
+                          </div>
+                          <div className="flex items-center gap-1 shrink-0">
+                            {!n.is_read && (
+                              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => markRead(n.id)} title={language === 'ru' ? 'Прочитано' : 'Mark read'}>
+                                <Check className="h-3.5 w-3.5 text-emerald-400" />
+                              </Button>
+                            )}
+                            {n.chronicle_id && (
+                              <Button variant="ghost" size="icon" className="h-7 w-7" asChild>
+                                <Link to="/hydra-memory" title={language === 'ru' ? 'Перейти к Хроникам' : 'Go to Chronicles'}>
+                                  <ExternalLink className="h-3.5 w-3.5 text-muted-foreground" />
+                                </Link>
+                              </Button>
+                            )}
+                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => deleteNotification(n.id)} title={language === 'ru' ? 'Удалить' : 'Delete'}>
+                              <Trash2 className="h-3.5 w-3.5 text-muted-foreground hover:text-destructive" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </HydraCardContent>
+              </HydraCard>
+            </TabsContent>
+          )}
+
         </Tabs>
       </div>
 

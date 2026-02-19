@@ -141,6 +141,24 @@ serve(async (req) => {
           results.push({ entry_code: entry.entry_code, status: "update_error" });
         } else {
           results.push({ entry_code: entry.entry_code, status: "revised", revision });
+
+          // Notify all supervisors about the new AI revision
+          const { data: supervisors } = await supabase
+            .from("user_roles")
+            .select("user_id")
+            .eq("role", "supervisor");
+
+          if (supervisors && supervisors.length > 0) {
+            const notifRows = supervisors.map((s: { user_id: string }) => ({
+              user_id: s.user_id,
+              chronicle_id: entry.id,
+              entry_code: entry.entry_code,
+              message: `ИИ-ревизия Эволюциониста готова для записи ${entry.entry_code}: «${entry.title}». Требует вашей оценки.`,
+              is_read: false,
+            }));
+            const { error: notifError } = await supabase.from("supervisor_notifications").insert(notifRows);
+            if (notifError) console.error("Notification insert error:", notifError);
+          }
         }
       }
     }

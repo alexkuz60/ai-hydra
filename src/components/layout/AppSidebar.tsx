@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useUserRoles } from '@/hooks/useUserRoles';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUserProfile } from '@/hooks/useUserProfile';
+import { useSupNotifications } from '@/hooks/useSupNotifications';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -54,6 +55,7 @@ import { useGuideTourContext } from '@/contexts/GuideTourContext';
 import { MiniHydraGears } from './MiniHydraGears';
 import hydraLogo from '@/assets/hydra-logo.png';
 
+
 export function AppSidebar() {
   const { user, signOut } = useAuth();
   const { t, language, setLanguage, availableLanguages } = useLanguage();
@@ -63,8 +65,9 @@ export function AppSidebar() {
   const { state } = useSidebar();
   const isCollapsed = state === 'collapsed';
   const { openPicker: openGuideTour } = useGuideTourContext();
-  const { isAdmin } = useUserRoles();
+  const { isAdmin, isSupervisor } = useUserRoles();
   const { profile } = useUserProfile();
+  const { unreadCount } = useSupNotifications();
 
   const handleSignOut = async () => {
     await signOut();
@@ -273,16 +276,23 @@ export function AppSidebar() {
             <SidebarMenuItem>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                   <SidebarMenuButton tooltip={t('nav.profile')}>
-                     <Avatar className="h-5 w-5 shrink-0">
+                 <SidebarMenuButton tooltip={t('nav.profile')}>
+                   <div className="relative shrink-0">
+                     <Avatar className="h-5 w-5">
                        <AvatarImage src={profile?.avatarUrl || undefined} className="object-cover" />
                        <AvatarFallback className="bg-muted p-0.5">
                          <User className="h-3.5 w-3.5 text-muted-foreground" />
                        </AvatarFallback>
                      </Avatar>
-                     <span className="truncate">{user.email}</span>
-                     <ChevronUp className="ml-auto h-4 w-4" />
-                   </SidebarMenuButton>
+                     {isSupervisor && unreadCount > 0 && (
+                       <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-destructive text-[8px] font-bold text-destructive-foreground">
+                         {unreadCount > 9 ? '9+' : unreadCount}
+                       </span>
+                     )}
+                   </div>
+                   <span className="truncate">{user.email}</span>
+                   <ChevronUp className="ml-auto h-4 w-4" />
+                 </SidebarMenuButton>
                  </DropdownMenuTrigger>
                 <DropdownMenuContent 
                   side="right" 
