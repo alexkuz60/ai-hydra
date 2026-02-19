@@ -80,6 +80,9 @@ const RPC_KEY_MAP: Record<string, string> = {
   proxyapi_api_key: 'proxyapi',
 };
 
+const PROFILE_TAB_KEY = 'profile-active-tab';
+const VALID_PROFILE_TABS = ['profile', 'preferences', 'api-keys', 'proxyapi', 'stats', 'notifications'];
+
 export default function Profile() {
   const { user, loading: authLoading } = useAuth();
   const { t, language, setLanguage, availableLanguages } = useLanguage();
@@ -90,6 +93,19 @@ export default function Profile() {
   const { isSupervisor } = useUserRoles();
   const { notifications, loading: notifLoading, unreadCount, markRead, markAllRead, deleteNotification } = useSupNotifications();
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [activeTab, setActiveTab] = useState<string>(() => {
+    try {
+      const saved = localStorage.getItem(PROFILE_TAB_KEY);
+      if (saved && VALID_PROFILE_TABS.includes(saved)) return saved;
+    } catch {}
+    return 'profile';
+  });
+
+  const handleTabChange = useCallback((tab: string) => {
+    setActiveTab(tab);
+    try { localStorage.setItem(PROFILE_TAB_KEY, tab); } catch {}
+  }, []);
 
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -381,33 +397,33 @@ export default function Profile() {
           )}
         </div>
 
-        <Tabs defaultValue="profile" className="space-y-6">
-          <TabsList className={cn("grid w-full max-w-2xl", isSupervisor ? (language === 'ru' ? "grid-cols-6" : "grid-cols-5") : (language === 'ru' ? "grid-cols-5" : "grid-cols-4"))}>
-            <TabsTrigger value="profile" className="flex items-center gap-2">
-              <User className="h-4 w-4" />
-              <span className="hidden sm:inline">{t('nav.profile')}</span>
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
+          <TabsList className="flex w-full max-w-2xl h-auto flex-wrap gap-0.5">
+            <TabsTrigger value="profile" className="flex items-center gap-2 flex-1 min-w-0">
+              <User className="h-4 w-4 shrink-0" />
+              <span className="hidden sm:inline truncate">{t('nav.profile')}</span>
             </TabsTrigger>
-            <TabsTrigger value="preferences" className="flex items-center gap-2">
-              <Settings className="h-4 w-4" />
-              <span className="hidden sm:inline">{t('profile.preferences')}</span>
+            <TabsTrigger value="preferences" className="flex items-center gap-2 flex-1 min-w-0">
+              <Settings className="h-4 w-4 shrink-0" />
+              <span className="hidden sm:inline truncate">{t('profile.preferences')}</span>
             </TabsTrigger>
-            <TabsTrigger value="api-keys" className="flex items-center gap-2">
-              <Key className="h-4 w-4" />
-              <span className="hidden sm:inline">{t('profile.apiKeys')}</span>
+            <TabsTrigger value="api-keys" className="flex items-center gap-2 flex-1 min-w-0">
+              <Key className="h-4 w-4 shrink-0" />
+              <span className="hidden sm:inline truncate">{t('profile.apiKeys')}</span>
             </TabsTrigger>
             {language === 'ru' && (
-              <TabsTrigger value="proxyapi" className="flex items-center gap-2">
-                <Gauge className="h-4 w-4" />
-                <span className="hidden sm:inline">ProxyAPI</span>
+              <TabsTrigger value="proxyapi" className="flex items-center gap-2 flex-1 min-w-0">
+                <Gauge className="h-4 w-4 shrink-0" />
+                <span className="hidden sm:inline truncate">ProxyAPI</span>
               </TabsTrigger>
             )}
-            <TabsTrigger value="stats" className="flex items-center gap-2">
-              <BarChart3 className="h-4 w-4" />
-              <span className="hidden sm:inline">{t('profile.stats')}</span>
+            <TabsTrigger value="stats" className="flex items-center gap-2 flex-1 min-w-0">
+              <BarChart3 className="h-4 w-4 shrink-0" />
+              <span className="hidden sm:inline truncate">{t('profile.stats')}</span>
             </TabsTrigger>
             {isSupervisor && (
-              <TabsTrigger value="notifications" className="flex items-center gap-2 relative">
-                <Bell className="h-4 w-4" />
+              <TabsTrigger value="notifications" className="flex items-center gap-2 shrink-0 whitespace-nowrap">
+                <Bell className="h-4 w-4 shrink-0" />
                 <span className="hidden sm:inline">{language === 'ru' ? 'Уведомления' : 'Notifications'}</span>
                 {unreadCount > 0 && (
                   <Badge className="ml-1 h-5 min-w-5 px-1 text-[10px] bg-destructive text-destructive-foreground">
