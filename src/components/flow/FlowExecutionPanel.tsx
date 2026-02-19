@@ -38,10 +38,10 @@ const stateIcons: Record<NodeStatus['state'], React.ComponentType<{ className?: 
 
 const stateColors: Record<NodeStatus['state'], string> = {
   pending: 'text-muted-foreground',
-  ready: 'text-blue-500',
+  ready: 'text-hydra-info',
   running: 'text-primary',
-  waiting_user: 'text-amber-500',
-  completed: 'text-green-500',
+  waiting_user: 'text-hydra-warning',
+  completed: 'text-hydra-success',
   failed: 'text-destructive',
   skipped: 'text-muted-foreground',
 };
