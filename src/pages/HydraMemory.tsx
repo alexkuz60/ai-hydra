@@ -2792,6 +2792,10 @@ export default function HydraMemory() {
               <HardDrive className="h-3.5 w-3.5" />
               {t('memory.hub.storage')}
             </TabsTrigger>
+            <TabsTrigger value="rag" className="gap-2">
+              <TrendingUp className="h-3.5 w-3.5" />
+              {t('memory.hub.ragDashboard')}
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="arsenal" className="mt-6">
@@ -2811,6 +2815,9 @@ export default function HydraMemory() {
           </TabsContent>
           <TabsContent value="storage" className="mt-6">
             <StorageTab />
+          </TabsContent>
+          <TabsContent value="rag" className="mt-6">
+            <RagDashboardTab />
           </TabsContent>
         </Tabs>
       </div>
