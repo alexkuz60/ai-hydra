@@ -2029,7 +2029,7 @@ interface ArsenalLayer {
   label: string;
   description: string;
   icon: React.ElementType;
-  color: 'violet' | 'amber' | 'blue' | 'emerald' | 'teal';
+  color: 'violet' | 'amber' | 'blue' | 'cyan' | 'emerald' | 'teal';
   href: string;
   total: number;
   items: { label: string; value: number }[];
@@ -2045,7 +2045,7 @@ function CognitiveArsenalTab({ stats }: { stats: ReturnType<typeof useHydraMemor
     prompts: { total: 0, system: 0, custom: 0 },
     blueprints: { total: 0, system: 0, custom: 0 },
     behaviors: { total: 0, system: 0, custom: 0 },
-    tools: { total: 0 },
+    tools: { total: 0, prompt: 0, http: 0 },
     flows: { total: 0 },
     interviews: { total: 0, completed: 0 },
     contests: { total: 0, completed: 0 },
@@ -2070,7 +2070,7 @@ function CognitiveArsenalTab({ stats }: { stats: ReturnType<typeof useHydraMemor
         const prompts = (promptsRes.data || []) as { is_default: boolean }[];
         const blueprints = (blueprintsRes.data || []) as { is_system: boolean }[];
         const behaviors = (behaviorsRes.data || []) as { is_system: boolean }[];
-        const tools = (toolsRes.data || []) as unknown[];
+        const tools = (toolsRes.data || []) as { tool_type?: string }[];
         const interviews = (interviewsRes.data || []) as { status: string }[];
         const contests = (contestsRes.data || []) as { status: string }[];
 
@@ -2090,7 +2090,11 @@ function CognitiveArsenalTab({ stats }: { stats: ReturnType<typeof useHydraMemor
             system: behaviors.filter(b => b.is_system).length,
             custom: behaviors.filter(b => !b.is_system).length,
           },
-          tools: { total: tools.length },
+          tools: {
+            total: tools.length,
+            prompt: tools.filter(t => t.tool_type === 'prompt' || !t.tool_type).length,
+            http: tools.filter(t => t.tool_type === 'http').length,
+          },
           flows: { total: flowsRes.count || 0 },
           interviews: {
             total: interviews.length,
@@ -2146,7 +2150,7 @@ function CognitiveArsenalTab({ stats }: { stats: ReturnType<typeof useHydraMemor
     }));
   }, [stats.roleMemory, knowledgePerRole, rolePromptCounts]);
 
-  type LayerColor = 'violet' | 'amber' | 'blue' | 'emerald' | 'teal';
+  type LayerColor = 'violet' | 'amber' | 'blue' | 'cyan' | 'emerald' | 'teal';
 
   const LAYER_STYLES: Record<LayerColor, { text: string; bg: string; border: string; glow: string }> = {
     violet: {
@@ -2178,6 +2182,12 @@ function CognitiveArsenalTab({ stats }: { stats: ReturnType<typeof useHydraMemor
       bg: 'bg-[hsl(var(--hydra-memory)/0.1)]',
       border: 'border-[hsl(var(--hydra-memory)/0.25)]',
       glow: 'shadow-[hsl(var(--hydra-memory)/0.1)]',
+    },
+    cyan: {
+      text: 'text-cyan-400',
+      bg: 'bg-cyan-500/10',
+      border: 'border-cyan-500/25',
+      glow: 'shadow-cyan-500/10',
     },
   };
 
@@ -2235,17 +2245,31 @@ function CognitiveArsenalTab({ stats }: { stats: ReturnType<typeof useHydraMemor
     {
       id: 'tools',
       label: isRu ? 'Арсенал инструментов' : 'Tool Arsenal',
-      description: isRu ? 'Инструменты и схемы потоков' : 'Tools and flow diagrams',
+      description: isRu ? 'Промпт-штампы и HTTP API' : 'Prompt stamps and HTTP API',
       icon: Wrench,
       color: 'blue',
       href: '/tools-library',
-      total: counts.tools.total + counts.flows.total,
+      total: counts.tools.total,
       items: [
-        { label: isRu ? 'Инструментов' : 'Tools', value: counts.tools.total },
-        { label: isRu ? 'Схем потоков' : 'Flow diagrams', value: counts.flows.total },
+        { label: isRu ? 'Промпт-штампы' : 'Prompt stamps', value: counts.tools.prompt },
+        { label: isRu ? 'HTTP API' : 'HTTP API', value: counts.tools.http },
       ],
       actions: [
         { label: isRu ? 'Создать инструмент' : 'Create tool', icon: Wrench, href: '/tools-library' },
+      ],
+    },
+    {
+      id: 'flows',
+      label: isRu ? 'Потоки мыслей' : 'Thought Flows',
+      description: isRu ? 'Схемы логики и оркестрации ИИ' : 'AI logic and orchestration diagrams',
+      icon: GitBranch,
+      color: 'cyan',
+      href: '/flow-editor',
+      total: counts.flows.total,
+      items: [
+        { label: isRu ? 'Схем потоков' : 'Flow diagrams', value: counts.flows.total },
+      ],
+      actions: [
         { label: isRu ? 'Новая схема' : 'New flow', icon: Network, href: '/flow-editor' },
       ],
     },
