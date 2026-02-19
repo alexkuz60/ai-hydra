@@ -2966,6 +2966,37 @@ function ChroniclesTab({ language, isSupervisor }: { language: string; isSupervi
   const [formData, setFormData] = useState(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
 
+  // ── Filters ──────────────────────────────────────────────────────────────
+  const [searchText, setSearchText] = useState('');
+  const [filterResolution, setFilterResolution] = useState<string>('all');
+  const [filterRole, setFilterRole] = useState<string>('all');
+  const [filterDateFrom, setFilterDateFrom] = useState('');
+  const [filterDateTo, setFilterDateTo] = useState('');
+
+  const uniqueRoles = useMemo(() => {
+    const roles = Array.from(new Set(entries.map(e => e.role_object).filter(Boolean)));
+    return roles.sort();
+  }, [entries]);
+
+  const filteredEntries = useMemo(() => {
+    return entries.filter(e => {
+      if (filterResolution !== 'all' && e.supervisor_resolution !== filterResolution) return false;
+      if (filterRole !== 'all' && e.role_object !== filterRole) return false;
+      if (filterDateFrom && e.entry_date < filterDateFrom) return false;
+      if (filterDateTo && e.entry_date > filterDateTo) return false;
+      if (searchText.trim()) {
+        const q = searchText.toLowerCase();
+        const haystack = [e.title, e.entry_code, e.role_object, e.initiator, e.hypothesis, e.summary, e.ai_revision]
+          .filter(Boolean).join(' ').toLowerCase();
+        if (!haystack.includes(q)) return false;
+      }
+      return true;
+    });
+  }, [entries, filterResolution, filterRole, filterDateFrom, filterDateTo, searchText]);
+
+  const hasActiveFilters = filterResolution !== 'all' || filterRole !== 'all' || filterDateFrom || filterDateTo || searchText.trim();
+  const clearFilters = () => { setSearchText(''); setFilterResolution('all'); setFilterRole('all'); setFilterDateFrom(''); setFilterDateTo(''); };
+
   const loadEntries = useCallback(async () => {
     setLoading(true);
     try {
@@ -3326,12 +3357,95 @@ function ChroniclesTab({ language, isSupervisor }: { language: string; isSupervi
         </div>
       )}
 
+      {/* Filter & Search panel */}
+      {!loading && entries.length > 0 && (
+        <Card className="border-border bg-card/60">
+          <CardContent className="p-4 space-y-3">
+            {/* Search row */}
+            <div className="flex items-center gap-2">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  value={searchText}
+                  onChange={e => setSearchText(e.target.value)}
+                  placeholder={isRu ? 'Поиск по тексту (заголовок, гипотеза, резолюция...)' : 'Search text (title, hypothesis, revision...)'}
+                  className="pl-9 h-9 text-sm"
+                />
+              </div>
+              {hasActiveFilters && (
+                <Button variant="ghost" size="sm" onClick={clearFilters} className="h-9 gap-1.5 text-muted-foreground hover:text-foreground shrink-0">
+                  <X className="h-3.5 w-3.5" />
+                  {isRu ? 'Сбросить' : 'Reset'}
+                </Button>
+              )}
+            </div>
+            {/* Filter row */}
+            <div className="flex flex-wrap gap-2 items-center">
+              <Filter className="h-4 w-4 text-muted-foreground shrink-0" />
+              {/* Resolution filter */}
+              <select
+                value={filterResolution}
+                onChange={e => setFilterResolution(e.target.value)}
+                className="h-8 rounded-md border border-input bg-background px-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+              >
+                <option value="all">{isRu ? 'Все резолюции' : 'All resolutions'}</option>
+                <option value="pending">{isRu ? '⏳ Ожидает' : '⏳ Pending'}</option>
+                <option value="approved">{isRu ? '✅ Согласовано' : '✅ Approved'}</option>
+                <option value="rejected">{isRu ? '❌ Отклонено' : '❌ Rejected'}</option>
+                <option value="wish">{isRu ? '💬 Пожелание' : '💬 Wish'}</option>
+                <option value="revised">{isRu ? '🔄 Пересмотрено ИИ' : '🔄 AI Revised'}</option>
+              </select>
+              {/* Role filter */}
+              {uniqueRoles.length > 0 && (
+                <select
+                  value={filterRole}
+                  onChange={e => setFilterRole(e.target.value)}
+                  className="h-8 rounded-md border border-input bg-background px-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                >
+                  <option value="all">{isRu ? 'Все роли' : 'All roles'}</option>
+                  {uniqueRoles.map(r => <option key={r} value={r}>{r}</option>)}
+                </select>
+              )}
+              {/* Date range */}
+              <div className="flex items-center gap-1.5 ml-auto">
+                <span className="text-xs text-muted-foreground shrink-0">{isRu ? 'С' : 'From'}</span>
+                <input
+                  type="date"
+                  value={filterDateFrom}
+                  onChange={e => setFilterDateFrom(e.target.value)}
+                  className="h-8 rounded-md border border-input bg-background px-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                />
+                <span className="text-xs text-muted-foreground shrink-0">{isRu ? 'по' : 'to'}</span>
+                <input
+                  type="date"
+                  value={filterDateTo}
+                  onChange={e => setFilterDateTo(e.target.value)}
+                  className="h-8 rounded-md border border-input bg-background px-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                />
+              </div>
+            </div>
+            {/* Result count */}
+            {hasActiveFilters && (
+              <p className="text-xs text-muted-foreground">
+                {isRu
+                  ? `Показано ${filteredEntries.length} из ${entries.length} записей`
+                  : `Showing ${filteredEntries.length} of ${entries.length} entries`}
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
       {/* Entries */}
       {loading ? (
         <div className="space-y-4">{[1,2,3].map(i => <Skeleton key={i} className="h-40 w-full" />)}</div>
+      ) : filteredEntries.length === 0 && entries.length > 0 ? (
+        <div className="text-center py-12 text-muted-foreground text-sm">
+          {isRu ? 'Нет записей по выбранным фильтрам' : 'No entries match the selected filters'}
+        </div>
       ) : (
         <div className="space-y-4">
-          {entries.map((entry) => {
+          {filteredEntries.map((entry) => {
             const statusCfg = STATUS_DISPLAY[entry.status] || STATUS_DISPLAY['pending'];
             const StatusIcon = statusCfg.Icon;
             const resolutionCfg = RESOLUTION_CONFIG[entry.supervisor_resolution] || RESOLUTION_CONFIG['pending'];
