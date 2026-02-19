@@ -1,4 +1,7 @@
 import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
+// @ts-ignore — TermLabel + glossary for human-readable technical terms
+import { TermLabel } from '@/components/ui/TermLabel';
+import { getTermLabel } from '@/config/memoryGlossary';
 import { Link } from 'react-router-dom';
 import {
   BrainCircuit, Database, Layers, BookOpen, Trash2, RefreshCw,
@@ -445,14 +448,14 @@ function SessionMemoryTab({ stats, loading }: { stats: ReturnType<typeof useHydr
                           {/* retrieved_count badge */}
                           {'retrieved_count' in item && (item as SessionMemoryChunk).retrieved_count! > 0 && (
                             <div className="flex items-center gap-1.5 mt-1">
-                              <span className="text-[10px] text-muted-foreground flex items-center gap-0.5">
+                              <TermLabel term="retrieved_count" className="text-[10px] text-muted-foreground flex items-center gap-0.5">
                                 <Activity className="h-2.5 w-2.5" />
                                 {(item as SessionMemoryChunk).retrieved_count}×
-                              </span>
+                              </TermLabel>
                               {(item as SessionMemoryChunk).relevance_score !== null && (item as SessionMemoryChunk).relevance_score !== undefined && (
-                                <span className="text-[10px] text-muted-foreground">
-                                  sim: {((item as SessionMemoryChunk).relevance_score! * 100).toFixed(0)}%
-                                </span>
+                                <TermLabel term="relevance_score" className="text-[10px] text-muted-foreground">
+                                  {((item as SessionMemoryChunk).relevance_score! * 100).toFixed(0)}%
+                                </TermLabel>
                               )}
                             </div>
                           )}
@@ -624,11 +627,11 @@ function RoleMemoryTab({ stats, loading, onRefresh }: { stats: ReturnType<typeof
                   <div key={entry.id} className="flex items-start gap-3 px-4 py-3">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
-                        <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium border ${MEMORY_TYPE_COLORS[entry.memory_type] || 'bg-muted'}`}>
+                        <TermLabel term="memory_type" className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium border ${MEMORY_TYPE_COLORS[entry.memory_type] || 'bg-muted'}`}>
                           {entry.memory_type}
-                        </span>
-                        <span className="text-xs text-muted-foreground">{(entry.confidence_score * 100).toFixed(0)}%</span>
-                        {entry.usage_count > 0 && <span className="text-xs text-muted-foreground">× {entry.usage_count}</span>}
+                        </TermLabel>
+                        <TermLabel term="confidence_score" className="text-xs text-muted-foreground">{(entry.confidence_score * 100).toFixed(0)}%</TermLabel>
+                        {entry.usage_count > 0 && <TermLabel term="usage_count" className="text-xs text-muted-foreground">× {entry.usage_count}</TermLabel>}
                       </div>
                       <p className="text-sm text-foreground/80 line-clamp-2">{entry.content}</p>
                     </div>
@@ -3024,7 +3027,8 @@ function generateChroniclesMD(entries: ChronicleDBEntry[], isRu: boolean): strin
       lines.push(`| ${isRu ? 'Показатель' : 'Metric'} | ${isRu ? 'До' : 'Before'} | ${isRu ? 'После' : 'After'} |`);
       lines.push(`|---|---|---|`);
       metricKeys.forEach(k => {
-        lines.push(`| ${k} | ${mb[k] !== undefined ? String(mb[k]) : '—'} | ${ma[k] !== undefined ? String(ma[k]) : '—'} |`);
+        const label = getTermLabel(k, isRu);
+        lines.push(`| ${label} | ${mb[k] !== undefined ? String(mb[k]) : '—'} | ${ma[k] !== undefined ? String(ma[k]) : '—'} |`);
       });
       lines.push('');
     }
@@ -3606,7 +3610,7 @@ function ChroniclesTab({ language, isSupervisor }: { language: string; isSupervi
                           <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{isRu ? 'До' : 'Before'}</p>
                           {Object.entries(mb).map(([k, v]) => (
                             <div key={k} className="flex justify-between text-xs">
-                              <span className="text-muted-foreground">{k}</span>
+                              <TermLabel term={k} className="text-muted-foreground">{getTermLabel(k, isRu)}</TermLabel>
                               <span className="font-mono font-medium">{String(v)}</span>
                             </div>
                           ))}
@@ -3615,7 +3619,7 @@ function ChroniclesTab({ language, isSupervisor }: { language: string; isSupervi
                            <p className="text-xs font-medium text-hydra-success uppercase tracking-wide">{isRu ? 'Цель →' : 'Target →'}</p>
                            {Object.entries(mat).map(([k, v]) => (
                              <div key={k} className="flex justify-between text-xs">
-                               <span className="text-muted-foreground">{k}</span>
+                               <TermLabel term={k} className="text-muted-foreground">{getTermLabel(k, isRu)}</TermLabel>
                                <span className="font-mono font-medium text-hydra-success">{String(v)}</span>
                             </div>
                           ))}
