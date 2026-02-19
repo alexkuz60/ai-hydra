@@ -1132,6 +1132,36 @@ export type Database = {
         }
         Relationships: []
       }
+      supervisor_notifications: {
+        Row: {
+          chronicle_id: string | null
+          created_at: string
+          entry_code: string
+          id: string
+          is_read: boolean
+          message: string
+          user_id: string
+        }
+        Insert: {
+          chronicle_id?: string | null
+          created_at?: string
+          entry_code?: string
+          id?: string
+          is_read?: boolean
+          message?: string
+          user_id: string
+        }
+        Update: {
+          chronicle_id?: string | null
+          created_at?: string
+          entry_code?: string
+          id?: string
+          is_read?: boolean
+          message?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       task_blueprints: {
         Row: {
           category: Database["public"]["Enums"]["pattern_category"]
