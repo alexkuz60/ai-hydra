@@ -454,7 +454,7 @@ export default function ToolsLibrary() {
                   </div>
                 </TooltipProvider>
               ) : (
-              <div className="flex-1 flex flex-col">
+              <div className="flex-1 flex flex-col min-h-0">
               {/* Filters */}
               <div className="p-4 border-b space-y-3" data-guide="tools-filters">
                 <div className="relative">
