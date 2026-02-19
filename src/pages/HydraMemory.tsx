@@ -2494,8 +2494,6 @@ function CognitiveArsenalTab({ stats }: { stats: ReturnType<typeof useHydraMemor
 
 function DualGraphsTab({ stats }: { stats: ReturnType<typeof useHydraMemoryStats> }) {
   const { user } = useAuth();
-  const { language } = useLanguage();
-  const isRu = language === 'ru';
 
   const [counts, setCounts] = useState({
     prompts: { total: 0, system: 0, custom: 0 },
@@ -2569,20 +2567,8 @@ function DualGraphsTab({ stats }: { stats: ReturnType<typeof useHydraMemoryStats
 
   return (
     <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 items-start">
-      <div>
-        <p className="text-sm font-semibold text-muted-foreground mb-3 flex items-center gap-2">
-          <GitBranch className="h-4 w-4" />
-          {isRu ? 'Граф памяти' : 'Memory Graph'}
-        </p>
-        <MemoryGraphTab stats={stats} />
-      </div>
-      <div>
-        <p className="text-sm font-semibold text-muted-foreground mb-3 flex items-center gap-2">
-          <Network className="h-4 w-4" />
-          {isRu ? 'Граф связей арсенала' : 'Arsenal Connections Graph'}
-        </p>
-        <ArsenalConnectionsGraph counts={counts} stats={stats} roleData={roleData} />
-      </div>
+      <MemoryGraphTab stats={stats} />
+      <ArsenalConnectionsGraph counts={counts} stats={stats} roleData={roleData} />
     </div>
   );
 }
