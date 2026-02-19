@@ -556,8 +556,16 @@ function SessionMemoryTab({ stats, loading }: { stats: ReturnType<typeof useHydr
 
 // ─── Role Memory Tab ──────────────────────────────────────────────────────────
 
+const MEMORY_TYPE_LABELS: Record<string, { ru: string; en: string }> = {
+  experience: { ru: 'Опыт', en: 'Experience' },
+  preference: { ru: 'Предпочтение', en: 'Preference' },
+  skill: { ru: 'Навык', en: 'Skill' },
+  mistake: { ru: 'Ошибка', en: 'Mistake' },
+  success: { ru: 'Успех', en: 'Success' },
+};
+
 function RoleMemoryTab({ stats, loading, onRefresh }: { stats: ReturnType<typeof useHydraMemoryStats>; loading: boolean; onRefresh: () => void }) {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const { user } = useAuth();
   const [deletingRole, setDeletingRole] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<string | null>(null);
@@ -622,7 +630,7 @@ function RoleMemoryTab({ stats, loading, onRefresh }: { stats: ReturnType<typeof
                 <Badge variant="outline" className="text-xs">{count} {t('memory.hub.entriesCount')}</Badge>
               </div>
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <span>{t('memory.hub.confidence')}: {(avg_confidence * 100).toFixed(0)}%</span>
+                <TermLabel term="avg_confidence">{t('memory.hub.confidence')}: {(avg_confidence * 100).toFixed(0)}%</TermLabel>
                 <span className={`transition-transform ${expanded === role ? 'rotate-90' : ''}`}>›</span>
               </div>
             </button>
@@ -635,7 +643,7 @@ function RoleMemoryTab({ stats, loading, onRefresh }: { stats: ReturnType<typeof
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
                         <TermLabel term="memory_type" className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium border ${MEMORY_TYPE_COLORS[entry.memory_type] || 'bg-muted'}`}>
-                          {entry.memory_type}
+                          {MEMORY_TYPE_LABELS[entry.memory_type]?.[language === 'ru' ? 'ru' : 'en'] ?? entry.memory_type}
                         </TermLabel>
                         <TermLabel term="confidence_score" className="text-xs text-muted-foreground">{(entry.confidence_score * 100).toFixed(0)}%</TermLabel>
                         {entry.usage_count > 0 && <TermLabel term="usage_count" className="text-xs text-muted-foreground">× {entry.usage_count}</TermLabel>}
