@@ -1825,6 +1825,21 @@ function StorageTab() {
     'avatars': 'text-green-400 border-green-500/30',
   };
 
+  const bucketLabels: Record<string, { label: string; hint: string }> = {
+    'message-files': {
+      label: t('memory.storage.bucketMessageFiles'),
+      hint: t('memory.storage.bucketMessageFilesHint'),
+    },
+    'task-files': {
+      label: t('memory.storage.bucketTaskFiles'),
+      hint: t('memory.storage.bucketTaskFilesHint'),
+    },
+    'avatars': {
+      label: t('memory.storage.bucketAvatars'),
+      hint: t('memory.storage.bucketAvatarsHint'),
+    },
+  };
+
   return (
     <div className="space-y-6">
       {/* Stats */}
@@ -1846,16 +1861,25 @@ function StorageTab() {
             <Badge variant="outline" className="ml-1 h-5 px-1.5 text-[10px]">{bucketCounts.all || 0}</Badge>
           </Button>
           {BUCKETS.map(b => (
-            <Button
-              key={b}
-              variant={activeBucket === b ? 'secondary' : 'ghost'}
-              size="sm"
-              onClick={() => setActiveBucket(b)}
-              className={cn('h-7', activeBucket === b && bucketColors[b])}
-            >
-              {b}
-              <Badge variant="outline" className="ml-1 h-5 px-1.5 text-[10px]">{bucketCounts[b] || 0}</Badge>
-            </Button>
+            <TooltipProvider key={b}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant={activeBucket === b ? 'secondary' : 'ghost'}
+                    size="sm"
+                    onClick={() => setActiveBucket(b)}
+                    className={cn('h-7', activeBucket === b && bucketColors[b])}
+                  >
+                    {bucketLabels[b]?.label ?? b}
+                    <Badge variant="outline" className="ml-1 h-5 px-1.5 text-[10px]">{bucketCounts[b] || 0}</Badge>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="text-xs">
+                  <p className="font-mono text-muted-foreground">{b}</p>
+                  <p>{bucketLabels[b]?.hint}</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           ))}
         </div>
         <div className="relative w-full sm:w-48">
