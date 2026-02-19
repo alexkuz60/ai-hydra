@@ -456,8 +456,7 @@ function SessionMemoryTab({ stats, loading }: { stats: ReturnType<typeof useHydr
                           )}
                         </div>
                         {/* Feedback + Delete actions */}
-                        <div className="flex flex-col gap-1 items-end opacity-0 group-hover:opacity-100 transition-opacity">
-                          <div className="flex gap-1">
+                        <div className="flex flex-col items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <Button
@@ -490,7 +489,7 @@ function SessionMemoryTab({ stats, loading }: { stats: ReturnType<typeof useHydr
                               </TooltipTrigger>
                               <TooltipContent>{t('memory.feedbackNotHelpful')}</TooltipContent>
                             </Tooltip>
-                          </div>
+                          <div className="w-4 border-t border-border/60 my-0.5" />
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <Button
