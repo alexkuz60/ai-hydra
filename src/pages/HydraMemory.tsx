@@ -626,7 +626,10 @@ function RoleMemoryTab({ stats, loading, onRefresh }: { stats: ReturnType<typeof
               className="w-full flex items-center justify-between gap-3 px-4 py-3 hover:bg-muted/40 transition-colors text-left"
             >
               <div className="flex items-center gap-3">
-                <span className="font-medium text-sm">{roleLabel}</span>
+                <Badge className={cn("text-xs font-medium", rc?.color, rc ? 'border' : '')} variant="outline">
+                  {rc && (() => { const Icon = rc.icon; return <Icon className="h-3 w-3 mr-1" />; })()}
+                  {roleLabel}
+                </Badge>
                 <Badge variant="outline" className="text-xs">{count} {t('memory.hub.entriesCount')}</Badge>
               </div>
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
