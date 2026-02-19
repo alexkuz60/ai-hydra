@@ -3452,7 +3452,175 @@ function ChroniclesTab({ language, isSupervisor }: { language: string; isSupervi
           })}
         </div>
       )}
+
+      {/* Evolutioner Prompts Manager — Supervisor only */}
+      {isSupervisor && <EvolutionerPromptsPanel isRu={isRu} />}
     </div>
+  );
+}
+
+// ─── Evolutioner Prompts Panel ────────────────────────────────────────────────
+
+interface EvolutionerPrompt {
+  id: string;
+  name: string;
+  description: string | null;
+  content: string;
+  tags: string[] | null;
+  updated_at: string;
+}
+
+const PROMPT_LABELS: Record<string, { ru: string; en: string; color: string }> = {
+  contest_discrepancy: { ru: 'Расхождение оценок (Конкурс)', en: 'Score Discrepancy (Contest)', color: 'text-blue-400 border-blue-500/30 bg-blue-500/10' },
+  rejected_default:   { ru: 'Отклонение (универсальный)', en: 'Rejected (default)', color: 'text-amber-400 border-amber-500/30 bg-amber-500/10' },
+  rejected_technoarbiter: { ru: 'Отклонение → ТехноАрбитр', en: 'Rejected → TechnoArbiter', color: 'text-purple-400 border-purple-500/30 bg-purple-500/10' },
+  rejected_technocritic:  { ru: 'Отклонение → ТехноКритик', en: 'Rejected → TechnoCritic', color: 'text-red-400 border-red-500/30 bg-red-500/10' },
+  rejected_guide:         { ru: 'Отклонение → Гид', en: 'Rejected → Guide', color: 'text-green-400 border-green-500/30 bg-green-500/10' },
+};
+
+function EvolutionerPromptsPanel({ isRu }: { isRu: boolean }) {
+  const { user } = useAuth();
+  const [prompts, setPrompts] = useState<EvolutionerPrompt[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editContent, setEditContent] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [open, setOpen] = useState(false);
+
+  const loadPrompts = useCallback(async () => {
+    setLoading(true);
+    const { data } = await supabase
+      .from('prompt_library')
+      .select('id, name, description, content, tags, updated_at')
+      .eq('role', 'evolutioner')
+      .eq('is_default', true)
+      .order('name');
+    setPrompts((data || []) as EvolutionerPrompt[]);
+    setLoading(false);
+  }, []);
+
+  useEffect(() => { if (open) loadPrompts(); }, [open, loadPrompts]);
+
+  const startEdit = (p: EvolutionerPrompt) => {
+    setEditingId(p.id);
+    setEditContent(p.content);
+  };
+
+  const cancelEdit = () => { setEditingId(null); setEditContent(''); };
+
+  const savePrompt = async (id: string) => {
+    setSaving(true);
+    const { error } = await supabase
+      .from('prompt_library')
+      .update({ content: editContent, updated_at: new Date().toISOString() })
+      .eq('id', id);
+    if (error) {
+      toast.error(isRu ? 'Ошибка сохранения' : 'Save failed');
+    } else {
+      toast.success(isRu ? 'Промпт обновлён' : 'Prompt updated');
+      setPrompts(prev => prev.map(p => p.id === id ? { ...p, content: editContent } : p));
+      setEditingId(null);
+    }
+    setSaving(false);
+  };
+
+  return (
+    <Card className="border-emerald-500/20 bg-emerald-500/5 mt-4">
+      <CardHeader className="pb-3 cursor-pointer" onClick={() => setOpen(o => !o)}>
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <FlaskConical className="h-4 w-4 text-emerald-400" />
+            <CardTitle className="text-sm font-semibold text-emerald-400">
+              {isRu ? 'Промпты Эволюционера' : "Evolutioner's Prompts"}
+            </CardTitle>
+            <Badge variant="secondary" className="text-xs bg-emerald-500/15 text-emerald-400">
+              {isRu ? 'только Супервизор' : 'Supervisor only'}
+            </Badge>
+          </div>
+          <span className="text-xs text-muted-foreground">{open ? '▲' : '▼'}</span>
+        </div>
+        {!open && (
+          <p className="text-xs text-muted-foreground mt-1">
+            {isRu
+              ? 'Роль-специфичные шаблоны для авторевизии. Нажмите, чтобы раскрыть и отредактировать.'
+              : 'Role-specific templates for auto-revision. Click to expand and edit.'}
+          </p>
+        )}
+      </CardHeader>
+      {open && (
+        <CardContent className="pt-0 space-y-3">
+          <p className="text-xs text-muted-foreground">
+            {isRu
+              ? 'Шаблоны используют плейсхолдеры: {{entry_code}}, {{title}}, {{role_object}}, {{hypothesis}}, {{metrics_before}}, {{metrics_after}}, {{supervisor_comment}}, {{summary}} — для записей Хроник; и {{model_id}}, {{user_score}}, {{arbiter_score}}, {{delta}}, {{threshold}}, {{round_prompt}}, {{direction}} — для расхождений конкурса.'
+              : 'Templates use placeholders: {{entry_code}}, {{title}}, {{role_object}}, {{hypothesis}}, etc. for chronicle entries; {{model_id}}, {{user_score}}, {{arbiter_score}}, {{delta}}, etc. for contest discrepancies.'}
+          </p>
+          {loading ? (
+            <div className="space-y-2">{[1,2,3].map(i => <Skeleton key={i} className="h-12 w-full" />)}</div>
+          ) : (
+            <div className="space-y-3">
+              {prompts.map(p => {
+                const label = PROMPT_LABELS[p.name];
+                const isEditing = editingId === p.id;
+                return (
+                  <div key={p.id} className="rounded-lg border border-border bg-background/50 p-3 space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {label ? (
+                          <Badge className={cn('text-xs border font-mono', label.color)}>
+                            {isRu ? label.ru : label.en}
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="text-xs font-mono">{p.name}</Badge>
+                        )}
+                        <span className="text-xs text-muted-foreground">
+                          {isRu ? 'обн.' : 'upd.'} {format(new Date(p.updated_at), 'dd.MM.yy')}
+                        </span>
+                      </div>
+                      {!isEditing ? (
+                        <Button size="sm" variant="ghost" className="h-6 text-xs gap-1" onClick={() => startEdit(p)}>
+                          <Wrench className="h-3 w-3" />
+                          {isRu ? 'Изменить' : 'Edit'}
+                        </Button>
+                      ) : (
+                        <div className="flex gap-1">
+                          <Button size="sm" variant="ghost" className="h-6 text-xs" onClick={cancelEdit} disabled={saving}>
+                            {isRu ? 'Отмена' : 'Cancel'}
+                          </Button>
+                          <Button
+                            size="sm"
+                            className="h-6 text-xs bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 hover:bg-emerald-500/30"
+                            onClick={() => savePrompt(p.id)}
+                            disabled={saving}
+                          >
+                            {saving ? <Loader2 className="h-3 w-3 animate-spin" /> : <CheckCircle2 className="h-3 w-3" />}
+                            {isRu ? 'Сохранить' : 'Save'}
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                    {p.description && !isEditing && (
+                      <p className="text-xs text-muted-foreground">{p.description}</p>
+                    )}
+                    {isEditing ? (
+                      <textarea
+                        value={editContent}
+                        onChange={e => setEditContent(e.target.value)}
+                        rows={12}
+                        className="w-full rounded-md border border-input bg-background/80 px-3 py-2 text-xs font-mono resize-y focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      />
+                    ) : (
+                      <p className="text-xs text-muted-foreground line-clamp-2 font-mono">
+                        {p.content.slice(0, 180)}…
+                      </p>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </CardContent>
+      )}
+    </Card>
   );
 }
 

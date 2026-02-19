@@ -32,6 +32,18 @@ serve(async (req) => {
     // mode: 'single' (triggered by rejection) or 'autorun' (all rejected)
     let targetEntries = [];
 
+    // Helper: load role-specific prompt from prompt_library
+    const loadEvolutionerPrompt = async (promptKey: string): Promise<string | null> => {
+      const { data } = await supabase
+        .from("prompt_library")
+        .select("content")
+        .eq("role", "evolutioner")
+        .eq("name", promptKey)
+        .eq("is_default", true)
+        .maybeSingle();
+      return data?.content || null;
+    };
+
     if (mode === "single" && chronicle_id) {
       const { data, error } = await supabase
         .from("chronicles")
@@ -74,27 +86,32 @@ serve(async (req) => {
     const results = [];
 
     for (const entry of targetEntries) {
-      const evolutionerPrompt = `Ты — Evolutioner (Эволюционер), системная роль Hydra. Тебе поступила запись из Хроник Эволюции, которую Супервизор отклонил (резолюция: ❌ Не согласен).
+      // Determine which prompt key to use based on role_object
+      const roleObj = (entry.role_object || "").toLowerCase();
+      let promptKey = "rejected_default";
+      if (roleObj.includes("technoarbiter") || roleObj.includes("арбитр") || roleObj.includes("contest-arbiter")) {
+        promptKey = "rejected_technoarbiter";
+      } else if (roleObj.includes("technocritic") || roleObj.includes("критик")) {
+        promptKey = "rejected_technocritic";
+      } else if (roleObj.includes("guide") || roleObj.includes("гид")) {
+        promptKey = "rejected_guide";
+      }
 
-Твоя задача: пересмотреть гипотезу и предложить улучшенную версию с конкретными метриками.
+      // Load prompt template from DB, fall back to hardcoded
+      const promptTemplate = await loadEvolutionerPrompt(promptKey)
+        || await loadEvolutionerPrompt("rejected_default");
 
-ЗАПИСЬ ХРОНИК:
-Код: ${entry.entry_code}
-Заголовок: ${entry.title}
-Объект: ${entry.role_object}
-Исходная гипотеза: ${entry.hypothesis || "Не указана"}
-Метрики до: ${JSON.stringify(entry.metrics_before || {}, null, 2)}
-Целевые метрики: ${JSON.stringify(entry.metrics_after || {}, null, 2)}
-Комментарий Супервизора: ${entry.supervisor_comment || "Не указан"}
-Итог изменения: ${entry.summary || "Не указан"}
-
-Предложи ПЕРЕСМОТРЕННУЮ ГИПОТЕЗУ (не более 200 слов) с:
-1. Учётом причин отклонения Супервизором
-2. Конкретными измеримыми показателями (токены, стоимость, latency)
-3. Механизмом верификации результата
-4. Следующим шагом для тестового прогона
-
-Отвечай на русском языке, чётко и без лишних оборотов.`;
+      const evolutionerPrompt = promptTemplate
+        ? promptTemplate
+            .replace("{{entry_code}}", entry.entry_code)
+            .replace("{{title}}", entry.title)
+            .replace("{{role_object}}", entry.role_object || "")
+            .replace("{{hypothesis}}", entry.hypothesis || "Не указана")
+            .replace("{{metrics_before}}", JSON.stringify(entry.metrics_before || {}, null, 2))
+            .replace("{{metrics_after}}", JSON.stringify(entry.metrics_after || {}, null, 2))
+            .replace("{{supervisor_comment}}", entry.supervisor_comment || "Не указан")
+            .replace("{{summary}}", entry.summary || "Не указан")
+        : `Ты — Эволюционер, системная роль Hydra. Запись: ${entry.entry_code} — ${entry.title}. Объект: ${entry.role_object}. Гипотеза: ${entry.hypothesis}. Комментарий Супервизора: ${entry.supervisor_comment}. Предложи пересмотренную гипотезу с конкретными метриками (не более 200 слов).`;
 
       const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
         method: "POST",
