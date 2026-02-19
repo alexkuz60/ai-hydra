@@ -100,7 +100,7 @@ const translations: Translations = {
   'memory.hub.legendRole': { ru: 'Роль', en: 'Role' },
   'memory.hub.legendCenter': { ru: 'Центр (Гидра)', en: 'Center (Hydra)' },
   'memory.hub.legendSession': { ru: 'Связанная сессия', en: 'Linked session' },
-  'memory.hub.legendHot': { ru: 'Горячая роль (высокий usage)', en: 'Hot role (high usage)' },
+  'memory.hub.legendHot': { ru: 'Горячая роль (высокий % использований)', en: 'Hot role (high usage %)' },
   'memory.hub.legendKnowledge': { ru: 'База знаний', en: 'Knowledge' },
   'memory.hub.legendCross': { ru: 'Пересечения', en: 'Cross-links' },
   'memory.hub.legendCrossHint': { ru: 'общие сессии', en: 'shared sessions' },
