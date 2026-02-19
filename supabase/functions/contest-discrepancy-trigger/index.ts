@@ -31,6 +31,18 @@ serve(async (req) => {
     const body = await req.json();
     const { result_id, model_id, user_score, arbiter_score, session_id, round_prompt } = body;
 
+    // Helper: load prompt from prompt_library
+    const loadEvolutionerPrompt = async (promptKey: string): Promise<string | null> => {
+      const { data } = await supabase
+        .from("prompt_library")
+        .select("content")
+        .eq("role", "evolutioner")
+        .eq("name", promptKey)
+        .eq("is_default", true)
+        .maybeSingle();
+      return data?.content || null;
+    };
+
     if (user_score == null || arbiter_score == null) {
       return new Response(JSON.stringify({ error: "Both user_score and arbiter_score are required" }), {
         status: 400,
@@ -57,25 +69,19 @@ serve(async (req) => {
       ? `Пользователь оценил ВЫШЕ Арбитра (+${delta.toFixed(1)} балла). Возможно, Арбитр занижает оценки или критерии слишком строгие.`
       : `Пользователь оценил НИЖЕ Арбитра (-${delta.toFixed(1)} балла). Возможно, Арбитр завышает оценки или не улавливает субъективные ожидания пользователя.`;
 
-    const evolutionerPrompt = `Ты — Evolutioner (Эволюционер), системный аналитик качества AI-ролей платформы Hydra.
+    // Load prompt template from DB, fall back to hardcoded
+    const promptTemplate = await loadEvolutionerPrompt("contest_discrepancy");
 
-Зафиксировано критическое расхождение оценок на конкурсе моделей:
-
-ДАННЫЕ РАСХОЖДЕНИЯ:
-- Модель: ${model_id}
-- Оценка пользователя (👤): ${user_score}/10
-- Оценка арбитра (⚖️): ${arbiter_score}/10
-- Дельта: ${delta.toFixed(1)} балла (порог срабатывания: ${DISCREPANCY_THRESHOLD})
-- Промпт раунда: ${round_prompt ? round_prompt.slice(0, 300) : "не указан"}
-
-АНАЛИЗ: ${direction}
-
-Твоя задача: сформулировать ГИПОТЕЗУ об улучшении (не более 150 слов) с:
-1. Предполагаемой причиной расхождения (промпт арбитра? критерии? веса?)
-2. Конкретным предложением по калибровке (что именно изменить в системном промпте арбитра или критериях)
-3. Ожидаемым эффектом — как изменится дельта после исправления
-
-Отвечай кратко, без вводных оборотов, на русском языке.`;
+    const evolutionerPrompt = promptTemplate
+      ? promptTemplate
+          .replace("{{model_id}}", model_id)
+          .replace("{{user_score}}", String(user_score))
+          .replace("{{arbiter_score}}", String(arbiter_score))
+          .replace("{{delta}}", delta.toFixed(1))
+          .replace("{{threshold}}", String(DISCREPANCY_THRESHOLD))
+          .replace("{{round_prompt}}", round_prompt ? round_prompt.slice(0, 300) : "не указан")
+          .replace("{{direction}}", direction)
+      : `Ты — Эволюционер (Evolutioner), аналитик Hydra. Расхождение оценок: пользователь — ${user_score}/10, арбитр — ${arbiter_score}/10 (дельта: ${delta.toFixed(1)}). Модель: ${model_id}. ${direction} Промпт раунда: ${round_prompt ? round_prompt.slice(0, 300) : "не указан"}. Сформулируй гипотезу о причине расхождения и предложи конкретную калибровку (не более 150 слов).`;
 
     const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
