@@ -1412,7 +1412,19 @@ function MemoryGraphTab({ stats }: { stats: ReturnType<typeof useHydraMemoryStat
 
       {/* SVG Graph */}
       <Card className="overflow-hidden border-border">
-        <div ref={containerRef} className="relative w-full" style={{ height: 'calc(100vh - 220px)', minHeight: 380 }}>
+        <CardHeader className="pb-2 pt-3 px-4">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-sm font-semibold flex items-center gap-2">
+              <BrainCircuit className="h-4 w-4 text-[hsl(var(--hydra-memory))]" />
+              {language === 'ru' ? 'Граф памяти' : 'Memory Graph'}
+            </CardTitle>
+            <p className="text-[11px] text-muted-foreground flex items-center gap-1">
+              <Zap className="h-3 w-3 text-amber-400" />
+              {language === 'ru' ? 'Горячая роль (высокий % использования)' : 'Hot role (high usage %)'}
+            </p>
+          </div>
+        </CardHeader>
+        <div ref={containerRef} className="relative w-full" style={{ height: 'calc(100vh - 260px)', minHeight: 360 }}>
           <svg
             ref={svgRef}
             viewBox={`0 0 ${svgSize.w} ${svgSize.h}`}
@@ -2556,7 +2568,7 @@ function DualGraphsTab({ stats }: { stats: ReturnType<typeof useHydraMemoryStats
   }, [stats.roleMemory, knowledgePerRole, rolePromptCounts]);
 
   return (
-    <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+    <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 items-start">
       <div>
         <p className="text-sm font-semibold text-muted-foreground mb-3 flex items-center gap-2">
           <GitBranch className="h-4 w-4" />
