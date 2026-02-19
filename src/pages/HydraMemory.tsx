@@ -2268,7 +2268,7 @@ function CognitiveArsenalTab({ stats }: { stats: ReturnType<typeof useHydraMemor
     },
     {
       id: 'memory',
-      label: isRu ? 'Живая память' : 'Living Memory',
+      label: isRu ? 'Долгосрочная память' : 'Long-term Memory',
       description: isRu ? 'Опыт, знания, сессии' : 'Experience, knowledge, sessions',
       icon: BrainCircuit,
       color: 'teal',
