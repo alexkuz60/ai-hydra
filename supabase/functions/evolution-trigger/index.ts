@@ -74,7 +74,7 @@ serve(async (req) => {
     const results = [];
 
     for (const entry of targetEntries) {
-      const evolutionerPrompt = `Ты — Evolutioner (Эволюционист), системная роль Hydra. Тебе поступила запись из Хроник Эволюции, которую Супервизор отклонил (резолюция: ❌ Не согласен).
+      const evolutionerPrompt = `Ты — Evolutioner (Эволюционер), системная роль Hydra. Тебе поступила запись из Хроник Эволюции, которую Супервизор отклонил (резолюция: ❌ Не согласен).
 
 Твоя задача: пересмотреть гипотезу и предложить улучшенную версию с конкретными метриками.
 
@@ -153,7 +153,7 @@ serve(async (req) => {
               user_id: s.user_id,
               chronicle_id: entry.id,
               entry_code: entry.entry_code,
-              message: `ИИ-ревизия Эволюциониста готова для записи ${entry.entry_code}: «${entry.title}». Требует вашей оценки.`,
+              message: `ИИ-ревизия Эволюционера готова для записи ${entry.entry_code}: «${entry.title}». Требует вашей оценки.`,
               is_read: false,
             }));
             const { error: notifError } = await supabase.from("supervisor_notifications").insert(notifRows);

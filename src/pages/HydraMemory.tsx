@@ -3027,7 +3027,7 @@ function ChroniclesTab({ language, isSupervisor }: { language: string; isSupervi
       await loadEntries();
     } catch (err) {
       console.error('Evolution trigger error:', err);
-      toast.error(isRu ? 'Ошибка запуска Эволюциониста' : 'Evolution trigger failed');
+      toast.error(isRu ? 'Ошибка запуска Эволюционера' : 'Evolution trigger failed');
     } finally {
       if (mode === 'autorun') setAutorunning(false);
     }
@@ -3112,7 +3112,7 @@ function ChroniclesTab({ language, isSupervisor }: { language: string; isSupervi
               <div className="flex flex-wrap items-center gap-4 mt-3">
                 <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                   <FlaskConical className="h-3.5 w-3.5 text-emerald-400" />
-                  <span className="text-emerald-400 font-medium">{isRu ? 'Эволюционист' : 'Evolutioner'}</span>
+                  <span className="text-emerald-400 font-medium">{isRu ? 'Эволюционер' : 'Evolutioner'}</span>
                   <span>{isRu ? '→ тестирует и измеряет' : '→ tests & measures'}</span>
                 </div>
                 <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
@@ -3374,7 +3374,7 @@ function ChroniclesTab({ language, isSupervisor }: { language: string; isSupervi
                         <div className="flex items-center justify-between mb-2">
                           <div className="flex items-center gap-1.5 text-xs text-purple-400 font-medium">
                             <FlaskConical className="h-3.5 w-3.5" />
-                            {isRu ? 'ИИ-ревизия Эволюциониста' : 'AI Evolutioner Revision'}
+                            {isRu ? 'ИИ-ревизия Эволюционера' : 'AI Evolutioner Revision'}
                           </div>
                           <Button variant="ghost" size="sm"
                             onClick={() => setExpandedRevision(expandedRevision === entry.id ? null : entry.id)}
