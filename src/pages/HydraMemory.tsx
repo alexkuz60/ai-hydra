@@ -242,11 +242,15 @@ function SessionMemoryTab({ stats, loading }: { stats: ReturnType<typeof useHydr
             <CardTitle className="text-sm font-medium text-muted-foreground">{t('memory.hub.chunksByType')}</CardTitle>
           </CardHeader>
           <CardContent className="flex flex-wrap gap-2">
-            {Object.entries(stats.sessionMemory.by_type).map(([type, count]) => (
-              <span key={type} className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${CHUNK_TYPE_COLORS[type] || 'bg-muted text-muted-foreground'}`}>
-                {type} <span className="font-bold">{count}</span>
-              </span>
-            ))}
+            {Object.entries(stats.sessionMemory.by_type).map(([type, count]) => {
+              const cfg = CHUNK_TYPE_CONFIG[type as ChunkType];
+              const label = cfg ? t(cfg.labelKey) : type;
+              return (
+                <span key={type} className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${CHUNK_TYPE_COLORS[type] || 'bg-muted text-muted-foreground'}`}>
+                  {label} <span className="font-bold">{count}</span>
+                </span>
+              );
+            })}
           </CardContent>
         </Card>
       )}
