@@ -11,6 +11,8 @@ import { ChatTreeNav } from '@/components/warroom/ChatTreeNav';
 import { ChatInputArea } from '@/components/warroom/ChatInputArea';
 import { ChatMessagesList } from '@/components/warroom/ChatMessagesList';
 import { TaskHeader } from '@/components/warroom/TaskHeader';
+import { SessionMemoryDialog } from '@/components/warroom/SessionMemoryDialog';
+import { MemoryControls } from '@/components/layout/MemoryControls';
 import { useAvailableModels, ModelOption, getModelInfo } from '@/hooks/useAvailableModels';
 import { usePasteHandler } from '@/hooks/usePasteHandler';
 import { useUserProfile } from '@/hooks/useUserProfile';
@@ -84,9 +86,13 @@ export default function ExpertPanel() {
 
   // Session memory — keep for streaming context (memoryChunks)
   const {
-    deleteByMessageId, chunks: memoryChunks, refetch: refetchMemory,
-    isLoading: memoryLoading,
+    deleteByMessageId, chunks: memoryChunks, isLoading: memoryLoading,
+    isDeleting: isMemoryDeleting, isClearing: isMemoryClearing,
+    deleteChunk, deleteChunksBatch, clearSessionMemory, savedMessageIds: memorySavedIds,
+    semanticSearch: memorySemanticSearch, isSearching: isMemorySearching,
+    submitFeedback: submitMemoryFeedback,
   } = useSessionMemory(currentTask?.id || null);
+  const [memoryDialogOpen, setMemoryDialogOpen] = useState(false);
 
 
   // Messages
@@ -296,11 +302,33 @@ export default function ExpertPanel() {
   }
 
   const headerActions = (
-    <TaskIndicator taskId={currentTask?.id || null} taskTitle={currentTask?.title || null} loading={loading} />
+    <div className="flex items-center gap-2">
+      <MemoryControls
+        memoryStats={memoryStats}
+        isLoading={memoryLoading}
+        onRefresh={() => {}}
+        onOpenDialog={() => setMemoryDialogOpen(true)}
+      />
+      <TaskIndicator taskId={currentTask?.id || null} taskTitle={currentTask?.title || null} loading={loading} />
+    </div>
   );
 
   return (
     <Layout headerActions={headerActions}>
+      <SessionMemoryDialog
+        open={memoryDialogOpen}
+        onOpenChange={setMemoryDialogOpen}
+        chunks={memoryChunks}
+        isLoading={memoryLoading}
+        isDeleting={isMemoryDeleting}
+        onDeleteChunk={deleteChunk}
+        onDeleteDuplicates={deleteChunksBatch}
+        onClearAll={clearSessionMemory}
+        isClearing={isMemoryClearing}
+        onSemanticSearch={memorySemanticSearch}
+        isSearching={isMemorySearching}
+        onFeedback={submitMemoryFeedback}
+      />
       <div className="h-[calc(100vh-4rem)] flex overflow-hidden">
         <ResizablePanelGroup direction="horizontal">
           {/* Navigation Panel */}
