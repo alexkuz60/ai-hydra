@@ -2472,12 +2472,105 @@ function CognitiveArsenalTab({ stats }: { stats: ReturnType<typeof useHydraMemor
         })}
       </div>
 
-      {/* Connections graph */}
-      <ArsenalConnectionsGraph
-        counts={counts}
-        stats={stats}
-        roleData={roleData}
-      />
+
+
+    </div>
+  );
+}
+
+// ─── Dual Graphs Tab ──────────────────────────────────────────────────────────
+
+function DualGraphsTab({ stats }: { stats: ReturnType<typeof useHydraMemoryStats> }) {
+  const { user } = useAuth();
+  const { language } = useLanguage();
+  const isRu = language === 'ru';
+
+  const [counts, setCounts] = useState({
+    prompts: { total: 0, system: 0, custom: 0 },
+    blueprints: { total: 0, system: 0, custom: 0 },
+    behaviors: { total: 0, system: 0, custom: 0 },
+    tools: { total: 0, prompt: 0, http: 0 },
+    flows: { total: 0 },
+    interviews: { total: 0, completed: 0 },
+    contests: { total: 0, completed: 0 },
+  });
+
+  useEffect(() => {
+    if (!user?.id) return;
+    const fetch = async () => {
+      try {
+        const [promptsRes, blueprintsRes, behaviorsRes, toolsRes, flowsRes] = await Promise.all([
+          supabase.from('prompt_library').select('is_default').eq('user_id', user.id),
+          supabase.from('task_blueprints').select('is_system'),
+          supabase.from('role_behaviors').select('is_system'),
+          supabase.rpc('get_custom_tools_safe'),
+          supabase.from('flow_diagrams').select('id', { count: 'exact', head: true }).eq('user_id', user.id),
+        ]);
+        const prompts = (promptsRes.data || []) as { is_default: boolean }[];
+        const blueprints = (blueprintsRes.data || []) as { is_system: boolean }[];
+        const behaviors = (behaviorsRes.data || []) as { is_system: boolean }[];
+        const tools = (toolsRes.data || []) as { tool_type?: string }[];
+        setCounts(prev => ({
+          ...prev,
+          prompts: { total: prompts.length, system: prompts.filter(p => p.is_default).length, custom: prompts.filter(p => !p.is_default).length },
+          blueprints: { total: blueprints.length, system: blueprints.filter(b => b.is_system).length, custom: blueprints.filter(b => !b.is_system).length },
+          behaviors: { total: behaviors.length, system: behaviors.filter(b => b.is_system).length, custom: behaviors.filter(b => !b.is_system).length },
+          tools: { total: tools.length, prompt: tools.filter(t => t.tool_type === 'prompt' || !t.tool_type).length, http: tools.filter(t => t.tool_type === 'http_api').length },
+          flows: { total: flowsRes.count || 0 },
+        }));
+      } catch (e) {
+        console.error('[DualGraphsTab]', e);
+      }
+    };
+    fetch();
+  }, [user?.id]);
+
+  const [rolePromptCounts, setRolePromptCounts] = useState<Record<string, number>>({});
+  useEffect(() => {
+    if (!user?.id) return;
+    supabase.from('prompt_library').select('role').eq('user_id', user.id).then(({ data }) => {
+      const map: Record<string, number> = {};
+      (data || []).forEach((r: { role: string }) => { map[r.role] = (map[r.role] || 0) + 1; });
+      setRolePromptCounts(map);
+    });
+  }, [user?.id]);
+
+  const knowledgePerRole = useMemo(() => {
+    const map: Record<string, number> = {};
+    stats.knowledge.forEach(k => { map[k.role] = (map[k.role] || 0) + k.count; });
+    return map;
+  }, [stats.knowledge]);
+
+  const roleData = useMemo(() => {
+    const allRoles = new Set([
+      ...stats.roleMemory.map(r => r.role),
+      ...Object.keys(knowledgePerRole),
+      ...Object.keys(rolePromptCounts),
+    ]);
+    return Array.from(allRoles).map(role => ({
+      role,
+      memCount: stats.roleMemory.find(r => r.role === role)?.count || 0,
+      knowledgeCount: knowledgePerRole[role] || 0,
+      promptCount: rolePromptCounts[role] || 0,
+    }));
+  }, [stats.roleMemory, knowledgePerRole, rolePromptCounts]);
+
+  return (
+    <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+      <div>
+        <p className="text-sm font-semibold text-muted-foreground mb-3 flex items-center gap-2">
+          <GitBranch className="h-4 w-4" />
+          {isRu ? 'Граф памяти' : 'Memory Graph'}
+        </p>
+        <MemoryGraphTab stats={stats} />
+      </div>
+      <div>
+        <p className="text-sm font-semibold text-muted-foreground mb-3 flex items-center gap-2">
+          <Network className="h-4 w-4" />
+          {isRu ? 'Граф связей арсенала' : 'Arsenal Connections Graph'}
+        </p>
+        <ArsenalConnectionsGraph counts={counts} stats={stats} roleData={roleData} />
+      </div>
     </div>
   );
 }
@@ -2848,9 +2941,9 @@ export default function HydraMemory() {
               {t('memory.hub.knowledge')}
               <Badge variant="secondary" className="ml-1 text-xs">{stats.totalKnowledge}</Badge>
             </TabsTrigger>
-            <TabsTrigger value="graph" className="gap-2">
+            <TabsTrigger value="graphs" className="gap-2">
               <GitBranch className="h-3.5 w-3.5" />
-              {t('memory.hub.graphMemoryTab')}
+              {language === 'ru' ? 'Графы памяти и связей' : 'Memory & Connections Graphs'}
             </TabsTrigger>
             <TabsTrigger value="storage" className="gap-2">
               <HardDrive className="h-3.5 w-3.5" />
@@ -2874,8 +2967,8 @@ export default function HydraMemory() {
           <TabsContent value="knowledge" className="mt-6">
             <KnowledgeTab stats={stats} loading={stats.loading} />
           </TabsContent>
-          <TabsContent value="graph" className="mt-4">
-            <MemoryGraphTab stats={stats} />
+          <TabsContent value="graphs" className="mt-4">
+            <DualGraphsTab stats={stats} />
           </TabsContent>
           <TabsContent value="storage" className="mt-6">
             <StorageTab />
