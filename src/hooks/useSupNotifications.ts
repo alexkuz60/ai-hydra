@@ -53,6 +53,25 @@ export function useSupNotifications() {
           setNotifications(prev => [payload.new as SupervisorNotification, ...prev]);
         }
       )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'supervisor_notifications', filter: `user_id=eq.${user.id}` },
+        (payload) => {
+          setNotifications(prev =>
+            prev.map(n => n.id === (payload.new as SupervisorNotification).id
+              ? { ...n, ...(payload.new as SupervisorNotification) }
+              : n
+            )
+          );
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'DELETE', schema: 'public', table: 'supervisor_notifications', filter: `user_id=eq.${user.id}` },
+        (payload) => {
+          setNotifications(prev => prev.filter(n => n.id !== (payload.old as { id: string }).id));
+        }
+      )
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [user, isSupervisor]);
