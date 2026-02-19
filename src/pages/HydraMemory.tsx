@@ -2955,6 +2955,96 @@ const EMPTY_FORM = {
   metrics_after: '',
 };
 
+// ─── Chronicles MD Export ─────────────────────────────────────────────────────
+
+function generateChroniclesMD(entries: ChronicleDBEntry[], isRu: boolean): string {
+  const now = new Date().toLocaleDateString(isRu ? 'ru-RU' : 'en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+  const resLabel: Record<string, string> = {
+    approved: isRu ? '✅ Согласован' : '✅ Approved',
+    rejected: isRu ? '❌ Отклонён' : '❌ Rejected',
+    wish:     isRu ? '💬 Пожелание' : '💬 Wish',
+    pending:  isRu ? '⏳ Ожидает' : '⏳ Pending',
+    revised:  isRu ? '🔄 Пересмотрено ИИ' : '🔄 AI Revised',
+  };
+  const statusLabel: Record<string, string> = {
+    completed: isRu ? '✅ Выполнено' : '✅ Completed',
+    pending:   isRu ? '🟡 Ожидает тестирования' : '🟡 Awaiting Testing',
+    revised:   isRu ? '🔄 Пересмотрено' : '🔄 Revised',
+    sample:    isRu ? '🟡 Образцовая запись' : '🟡 Sample Entry',
+  };
+
+  const header = isRu
+    ? `# 📜 Хроники Гидры\n\n> *Публичный артефакт Отдела Эволюционирования. Экспорт от ${now}.*\n\n`
+    : `# 📜 Chronicles of Hydra\n\n> *Public artifact of the Evolution Department. Exported on ${now}.*\n\n`;
+
+  const stats = [
+    `| ${isRu ? 'Всего записей' : 'Total'} | ${isRu ? 'Одобрено' : 'Approved'} | ${isRu ? 'Отклонено' : 'Rejected'} | ${isRu ? 'Ожидает' : 'Pending'} |`,
+    `|---|---|---|---|`,
+    `| ${entries.length} | ${entries.filter(e => e.supervisor_resolution === 'approved').length} | ${entries.filter(e => e.supervisor_resolution === 'rejected').length} | ${entries.filter(e => e.supervisor_resolution === 'pending').length} |`,
+  ].join('\n');
+
+  const entriesMD = entries.map(e => {
+    const lines: string[] = [
+      `---`,
+      ``,
+      `### [${e.entry_code}] ${e.title}`,
+      ``,
+      `| ${isRu ? 'Поле' : 'Field'} | ${isRu ? 'Значение' : 'Value'} |`,
+      `|---|---|`,
+      `| **${isRu ? 'Дата' : 'Date'}** | ${e.entry_date} |`,
+      `| **${isRu ? 'Объект' : 'Target'}** | \`${e.role_object || '—'}\` |`,
+      `| **${isRu ? 'Инициатор' : 'Initiator'}** | ${e.initiator} |`,
+      `| **${isRu ? 'Статус' : 'Status'}** | ${statusLabel[e.status] ?? e.status} |`,
+      `| **${isRu ? 'Резолюция' : 'Resolution'}** | ${resLabel[e.supervisor_resolution] ?? e.supervisor_resolution} |`,
+    ];
+
+    if (e.supervisor_comment) {
+      lines.push(`| **${isRu ? 'Комментарий' : 'Comment'}** | ${e.supervisor_comment} |`);
+    }
+    lines.push('');
+
+    if (e.hypothesis) {
+      lines.push(`**${isRu ? 'Гипотеза' : 'Hypothesis'}:**`);
+      lines.push(`> ${e.hypothesis.replace(/\n/g, '\n> ')}`);
+      lines.push('');
+    }
+
+    if (e.summary) {
+      lines.push(`**${isRu ? 'Результат' : 'Summary'}:**`);
+      lines.push(e.summary);
+      lines.push('');
+    }
+
+    const mb = e.metrics_before;
+    const ma = e.metrics_after;
+    if (mb && ma && Object.keys(mb).length > 0 && Object.keys(ma).length > 0) {
+      lines.push(`**${isRu ? 'Метрики' : 'Metrics'}:**`);
+      lines.push('');
+      const metricKeys = Array.from(new Set([...Object.keys(mb), ...Object.keys(ma)]));
+      lines.push(`| ${isRu ? 'Показатель' : 'Metric'} | ${isRu ? 'До' : 'Before'} | ${isRu ? 'После' : 'After'} |`);
+      lines.push(`|---|---|---|`);
+      metricKeys.forEach(k => {
+        lines.push(`| ${k} | ${mb[k] !== undefined ? String(mb[k]) : '—'} | ${ma[k] !== undefined ? String(ma[k]) : '—'} |`);
+      });
+      lines.push('');
+    }
+
+    if (e.ai_revision) {
+      lines.push(`<details>`);
+      lines.push(`<summary>🔬 ${isRu ? 'ИИ-ревизия Эволюционера' : 'AI Evolutioner Revision'}</summary>`);
+      lines.push('');
+      lines.push(e.ai_revision);
+      lines.push('');
+      lines.push(`</details>`);
+      lines.push('');
+    }
+
+    return lines.join('\n');
+  }).join('\n');
+
+  return `${header}## ${isRu ? 'Статистика' : 'Statistics'}\n\n${stats}\n\n## ${isRu ? 'Записи' : 'Entries'}\n\n${entriesMD}\n`;
+}
+
 function ChroniclesTab({ language, isSupervisor }: { language: string; isSupervisor: boolean }) {
   const isRu = language === 'ru';
   const [entries, setEntries] = useState<ChronicleDBEntry[]>([]);
@@ -3122,6 +3212,18 @@ function ChroniclesTab({ language, isSupervisor }: { language: string; isSupervi
   const approvedCount = entries.filter(e => e.supervisor_resolution === 'approved').length;
   const pendingCount = entries.filter(e => e.supervisor_resolution === 'pending').length;
 
+  const exportToMarkdown = useCallback(() => {
+    const md = generateChroniclesMD(entries, isRu);
+    const blob = new Blob([md], { type: 'text/markdown;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'CHRONICLES.md';
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success(isRu ? 'CHRONICLES.md скачан' : 'CHRONICLES.md downloaded');
+  }, [entries, isRu]);
+
   return (
     <div className="space-y-6">
       {/* Header banner */}
@@ -3166,12 +3268,25 @@ function ChroniclesTab({ language, isSupervisor }: { language: string; isSupervi
                 )}
               </div>
             </div>
-            <a href="https://github.com/alexkuz60/ai-hydra/blob/main/CHRONICLES.md" target="_blank" rel="noopener noreferrer" className="shrink-0">
+          <div className="flex items-center gap-2 shrink-0">
+            {isSupervisor && entries.length > 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={exportToMarkdown}
+                className="gap-1.5 border-amber-500/40 text-amber-300 hover:bg-amber-500/10"
+              >
+                <Download className="h-3.5 w-3.5" />
+                {isRu ? 'Экспорт в MD' : 'Export MD'}
+              </Button>
+            )}
+            <a href="https://github.com/alexkuz60/ai-hydra/blob/main/CHRONICLES.md" target="_blank" rel="noopener noreferrer">
               <Button variant="outline" size="sm" className="gap-1.5 border-amber-500/30 text-amber-400 hover:bg-amber-500/10">
                 <ExternalLink className="h-3.5 w-3.5" />
                 GitHub
               </Button>
             </a>
+          </div>
           </div>
         </CardContent>
       </Card>
