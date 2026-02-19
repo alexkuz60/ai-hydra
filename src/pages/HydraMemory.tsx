@@ -1417,7 +1417,7 @@ function MemoryGraphTab({ stats }: { stats: ReturnType<typeof useHydraMemoryStat
           ))}
         </div>
       </CardHeader>
-        <div ref={containerRef} className="relative w-full" style={{ height: 'calc(100vh - 260px)', minHeight: 360 }}>
+        <div ref={containerRef} className="relative w-full" style={{ height: 560 }}>
           <svg
             ref={svgRef}
             viewBox={`0 0 ${svgSize.w} ${svgSize.h}`}
@@ -2613,12 +2613,12 @@ function ArsenalConnectionsGraph({
     const obs = new ResizeObserver(entries => {
       const e = entries[0];
       if (e && e.contentRect.width > 0) {
-        setSize({ w: Math.round(e.contentRect.width), h: Math.round(Math.min(e.contentRect.width * 0.55, 600)) });
+        setSize({ w: Math.round(e.contentRect.width), h: 560 });
       }
     });
     obs.observe(el);
     const { width } = el.getBoundingClientRect();
-    if (width > 0) setSize({ w: Math.round(width), h: Math.round(Math.min(width * 0.55, 600)) });
+    if (width > 0) setSize({ w: Math.round(width), h: 560 });
     return () => obs.disconnect();
   }, []);
 
@@ -2729,7 +2729,7 @@ function ArsenalConnectionsGraph({
         </div>
       </CardHeader>
       <CardContent className="p-0">
-        <div ref={containerRef} className="w-full relative" style={{ height: size.h }}>
+        <div ref={containerRef} className="w-full relative" style={{ height: 560 }}>
           <svg
             width={size.w}
             height={size.h}
