@@ -3856,10 +3856,26 @@ function EvolutionerPromptsPanel({ isRu }: { isRu: boolean }) {
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 
+const HYDRA_MEMORY_TAB_KEY = 'hydra-memory-active-tab';
+const VALID_TABS = ['arsenal', 'session', 'role', 'knowledge', 'graphs', 'storage', 'rag', 'chronicles'];
+
 export default function HydraMemory() {
   const { t, language } = useLanguage();
   const stats = useHydraMemoryStats();
   const { isSupervisor } = useUserRoles();
+
+  const [activeTab, setActiveTab] = useState<string>(() => {
+    try {
+      const saved = localStorage.getItem(HYDRA_MEMORY_TAB_KEY);
+      if (saved && VALID_TABS.includes(saved)) return saved;
+    } catch {}
+    return 'arsenal';
+  });
+
+  const handleTabChange = useCallback((tab: string) => {
+    setActiveTab(tab);
+    try { localStorage.setItem(HYDRA_MEMORY_TAB_KEY, tab); } catch {}
+  }, []);
 
   return (
     <Layout>
@@ -3881,7 +3897,7 @@ export default function HydraMemory() {
         </div>
 
         {/* Tabs */}
-        <Tabs defaultValue="arsenal">
+        <Tabs value={activeTab} onValueChange={handleTabChange}>
           <TabsList className="w-full justify-start flex-wrap gap-1 h-auto">
             <TabsTrigger value="arsenal" className="gap-2">
               <BrainCircuit className="h-3.5 w-3.5" />
