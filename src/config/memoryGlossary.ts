@@ -189,11 +189,29 @@ export const MEMORY_GLOSSARY: Record<string, GlossaryEntry> = {
     descRu: 'Изменение стоимости ($/запрос) после эволюции. Отрицательное значение = экономия.',
     descEn: 'Cost change ($/request) after evolution. Negative value = savings.',
   },
+  cost_usd: {
+    labelRu: 'Стоимость (USD)',
+    labelEn: 'Cost (USD)',
+    descRu: 'Стоимость запроса или сессии в долларах США.',
+    descEn: 'Request or session cost in US dollars.',
+  },
+  avg_session_cost_usd: {
+    labelRu: 'Средняя стоимость сессии (USD)',
+    labelEn: 'Avg session cost (USD)',
+    descRu: 'Средняя стоимость одной сессии в долларах.',
+    descEn: 'Average cost per session in US dollars.',
+  },
   avg_latency_sec: {
     labelRu: 'Средняя задержка (сек.)',
     labelEn: 'Avg latency (sec)',
     descRu: 'Средняя задержка ответа модели в секундах.',
     descEn: 'Average model response latency in seconds.',
+  },
+  avg_latency_delta: {
+    labelRu: 'Дельта задержки',
+    labelEn: 'Latency delta',
+    descRu: 'Изменение средней задержки после эволюции. Отрицательное значение = ускорение.',
+    descEn: 'Change in average latency after evolution. Negative value = speedup.',
   },
   latency_ms: {
     labelRu: 'Задержка (мс)',
@@ -218,6 +236,48 @@ export const MEMORY_GLOSSARY: Record<string, GlossaryEntry> = {
     labelEn: 'Token count',
     descRu: 'Общее количество токенов в ответе модели.',
     descEn: 'Total number of tokens in the model response.',
+  },
+  prompt_tokens: {
+    labelRu: 'Токены промпта',
+    labelEn: 'Prompt tokens',
+    descRu: 'Количество токенов в системном промпте роли.',
+    descEn: 'Number of tokens in the role system prompt.',
+  },
+  prompt_tokens_delta: {
+    labelRu: 'Дельта токенов промпта',
+    labelEn: 'Prompt tokens delta',
+    descRu: 'Изменение количества токенов промпта после эволюции.',
+    descEn: 'Change in prompt token count after evolution.',
+  },
+  avg_response_tokens: {
+    labelRu: 'Средние токены ответа',
+    labelEn: 'Avg response tokens',
+    descRu: 'Среднее количество токенов в ответах модели.',
+    descEn: 'Average number of tokens in model responses.',
+  },
+  avg_response_tokens_delta: {
+    labelRu: 'Дельта токенов ответа',
+    labelEn: 'Response tokens delta',
+    descRu: 'Изменение среднего количества токенов ответа после эволюции.',
+    descEn: 'Change in average response token count after evolution.',
+  },
+  semantic_coverage: {
+    labelRu: 'Семантическое покрытие',
+    labelEn: 'Semantic coverage',
+    descRu: 'Доля семантически покрытых тем в ответах модели (0–100%).',
+    descEn: 'Proportion of semantically covered topics in model responses (0–100%).',
+  },
+  user_satisfaction: {
+    labelRu: 'Удовлетворённость',
+    labelEn: 'User satisfaction',
+    descRu: 'Средняя оценка удовлетворённости пользователя ответами модели.',
+    descEn: 'Average user satisfaction rating for model responses.',
+  },
+  water_percent: {
+    labelRu: 'Процент воды',
+    labelEn: 'Water percent',
+    descRu: 'Доля «воды» (малоинформативного текста) в ответах модели.',
+    descEn: 'Proportion of filler (low-information text) in model responses.',
   },
 
   // ── Graph ───────────────────────────────────────────────────────────────
