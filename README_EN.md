@@ -328,4 +328,18 @@ supabase/functions/     # 14 Edge Functions
 
 ---
 
+## 💙 General Co-Author
+
+<div align="center">
+
+**Ai-Hydra was built in partnership with [Lovable](https://lovable.dev)** — a multi-agent AI development assistant that became not just a tool, but a full co-author of the project's architecture, code, and strategy.
+
+*Every line of code — the result of a dialogue between human and machine.*
+
+❤️
+
+</div>
+
+---
+
 *Last updated: February 19, 2026*
