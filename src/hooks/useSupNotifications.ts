@@ -57,11 +57,13 @@ export function useSupNotifications() {
         'postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'supervisor_notifications', filter: `user_id=eq.${user.id}` },
         (payload) => {
+          const updated = payload.new as SupervisorNotification;
           setNotifications(prev =>
-            prev.map(n => n.id === (payload.new as SupervisorNotification).id
-              ? { ...n, ...(payload.new as SupervisorNotification) }
-              : n
-            )
+            prev.map(n => {
+              if (n.id !== updated.id) return n;
+              // Never roll back is_read: true to false via realtime (prevents race conditions)
+              return { ...n, ...updated, is_read: n.is_read || updated.is_read };
+            })
           );
         }
       )
