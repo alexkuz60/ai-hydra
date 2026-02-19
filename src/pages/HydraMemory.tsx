@@ -7,7 +7,7 @@ import {
   ListChecks, Star, Archive, AlertTriangle, Eye, X, Download, GitMerge,
   GitBranch, Wrench, BarChart2, Zap, ScanSearch, Clock, CheckCircle2, XCircle,
   ExternalLink, Trophy, Users, Cpu, Network, ThumbsUp, ThumbsDown,
-  TrendingUp, Activity, Target, Award,
+  TrendingUp, Activity, Target, Award, ScrollText, FlaskConical, CheckCheck, Timer,
 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -2906,6 +2906,219 @@ function ArsenalConnectionsGraph({
   );
 }
 
+// ─── Chronicles Tab ───────────────────────────────────────────────────────────
+
+const CHRONICLES_ENTRIES = [
+  {
+    id: 'HYDRA-EVO-003',
+    date: '2026-02-19',
+    status: 'done' as const,
+    titleRu: 'Структурирование Отдела Эволюционирования',
+    titleEn: 'Evolution Department Established',
+    roleRu: 'Архитектура Hydra — роли evolutioner и chronicler',
+    roleEn: 'Hydra Architecture — evolutioner & chronicler roles',
+    contextRu: 'Для подтверждения принципа "живой архитектуры" создан Отдел Эволюционирования с двумя системными ролями и публичным артефактом CHRONICLES.md.',
+    contextEn: 'To substantiate the "living architecture" principle, the Evolution Department was established with two system roles and the public artifact CHRONICLES.md.',
+    resolution: 'agree' as const,
+    resolutionCommentRu: 'Отдел Эволюционирования официально запущен',
+    resolutionCommentEn: 'Evolution Department officially launched',
+    metricsBefore: null as null,
+    metricsAfterTarget: null as null,
+  },
+  {
+    id: 'HYDRA-EVO-001',
+    date: '2026-02-19',
+    status: 'pending' as const,
+    titleRu: 'Оптимизация коммуникативного стиля роли Критика',
+    titleEn: 'Critic Role Communication Style Optimization',
+    roleRu: 'critic — системный промпт',
+    roleEn: 'critic — system prompt',
+    contextRu: 'ТехноМодератор выявил ~18% информационного шума в ответах Критика. Гипотеза: удаление вводных оборотов и добавление токен-лимита сократит объём ответа на ~23% при сохранении 100% смысла.',
+    contextEn: 'TechnoModerator detected ~18% noise in Critic responses. Hypothesis: removing filler phrases and adding token limits will reduce response size by ~23% while retaining 100% semantics.',
+    metricsBefore: { promptTokens: 420, avgResponseTokens: 680, noisePct: 18 },
+    metricsAfterTarget: { promptTokens: 380, avgResponseTokens: 520, noisePct: 5, tokenReductionPct: 9.5, responseReductionPct: 23.5 },
+    resolution: 'pending' as const,
+    resolutionCommentRu: '',
+    resolutionCommentEn: '',
+  },
+  {
+    id: 'HYDRA-EVO-002',
+    date: '2026-02-19',
+    status: 'pending' as const,
+    titleRu: 'Калибровка модели для роли Консультанта в D-Chat',
+    titleEn: 'Consultant Role Model Calibration for D-Chat',
+    roleRu: 'consultant — конфигурация модели',
+    roleEn: 'consultant — model configuration',
+    contextRu: 'Pro-модели генерируют избыточно детализированные ответы на простые запросы. Tier-стратегия: быстрая модель по умолчанию + детектор сложности + автоэскалейшн к Pro.',
+    contextEn: 'Pro models generate over-detailed responses for simple queries. Tier strategy: fast model by default + complexity detector + auto-escalation to Pro.',
+    metricsBefore: { latencyMs: 4200, costPer10: 0.047 },
+    metricsAfterTarget: { latencyMs: 1800, costPer10: 0.012, latencyReductionPct: 57, costReductionPct: 74 },
+    resolution: 'pending' as const,
+    resolutionCommentRu: '',
+    resolutionCommentEn: '',
+  },
+];
+
+type ChronicleEntry = typeof CHRONICLES_ENTRIES[number];
+
+const STATUS_CONFIG = {
+  done: { label: { ru: 'Выполнено', en: 'Completed' }, color: 'text-emerald-400', bg: 'bg-emerald-500/5 border-emerald-500/30', icon: CheckCheck },
+  pending: { label: { ru: 'Ожидает тестирования', en: 'Awaiting Testing' }, color: 'text-amber-400', bg: 'bg-amber-500/5 border-amber-500/30', icon: Timer },
+};
+
+const RESOLUTION_CONFIG = {
+  agree: { label: { ru: '✅ Согласен', en: '✅ Agreed' }, color: 'text-emerald-400' },
+  wish: { label: { ru: '💬 Пожелание', en: '💬 User Wish' }, color: 'text-blue-400' },
+  disagree: { label: { ru: '❌ Не согласен', en: '❌ Disagreed' }, color: 'text-red-400' },
+  pending: { label: { ru: '⏳ Ожидает', en: '⏳ Pending' }, color: 'text-muted-foreground' },
+};
+
+function ChroniclesTab({ language }: { language: string }) {
+  const isRu = language === 'ru';
+
+  return (
+    <div className="space-y-6">
+      {/* Header banner */}
+      <Card className="border-amber-500/30 bg-amber-500/5">
+        <CardContent className="p-5">
+          <div className="flex items-start gap-4">
+            <div className="rounded-xl p-3 bg-amber-500/15 border border-amber-500/30 shrink-0">
+              <ScrollText className="h-6 w-6 text-amber-400" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <h2 className="text-lg font-bold text-amber-400">
+                {isRu ? 'Хроники Эволюции Hydra' : 'Chronicles of Hydra Evolution'}
+              </h2>
+              <p className="text-sm text-muted-foreground mt-1">
+                {isRu
+                  ? 'Публичный артефакт Отдела Эволюционирования. Каждая запись — доказательство того, что «живая архитектура» Hydra не метафора, а инженерный факт.'
+                  : "A public artifact of the Evolution Department. Each entry proves that Hydra's \"living architecture\" is not a metaphor — it is an engineering fact."}
+              </p>
+              <div className="flex flex-wrap items-center gap-4 mt-3">
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <FlaskConical className="h-3.5 w-3.5 text-emerald-400" />
+                  <span className="text-emerald-400 font-medium">{isRu ? 'Эволюционист' : 'Evolutioner'}</span>
+                  <span>{isRu ? '→ тестирует и измеряет' : '→ tests & measures'}</span>
+                </div>
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <ScrollText className="h-3.5 w-3.5 text-amber-400" />
+                  <span className="text-amber-400 font-medium">{isRu ? 'Летописец' : 'Chronicler'}</span>
+                  <span>{isRu ? '→ фиксирует и архивирует' : '→ records & archives'}</span>
+                </div>
+              </div>
+            </div>
+            <a href="https://github.com/alexkuz60/ai-hydra/blob/main/CHRONICLES.md" target="_blank" rel="noopener noreferrer" className="shrink-0">
+              <Button variant="outline" size="sm" className="gap-1.5 border-amber-500/30 text-amber-400 hover:bg-amber-500/10">
+                <ExternalLink className="h-3.5 w-3.5" />
+                GitHub
+              </Button>
+            </a>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Stats */}
+      <div className="grid grid-cols-3 gap-4">
+        <Card><CardContent className="p-4 flex items-center gap-3">
+          <div className="rounded-lg p-2 bg-muted"><ScrollText className="h-4 w-4 text-amber-400" /></div>
+          <div><p className="text-xs text-muted-foreground">{isRu ? 'Всего записей' : 'Total entries'}</p><p className="text-2xl font-bold">{CHRONICLES_ENTRIES.length}</p></div>
+        </CardContent></Card>
+        <Card><CardContent className="p-4 flex items-center gap-3">
+          <div className="rounded-lg p-2 bg-muted"><CheckCheck className="h-4 w-4 text-emerald-400" /></div>
+          <div><p className="text-xs text-muted-foreground">{isRu ? 'Выполнено' : 'Completed'}</p><p className="text-2xl font-bold">{CHRONICLES_ENTRIES.filter(e => e.status === 'done').length}</p></div>
+        </CardContent></Card>
+        <Card><CardContent className="p-4 flex items-center gap-3">
+          <div className="rounded-lg p-2 bg-muted"><Timer className="h-4 w-4 text-amber-400" /></div>
+          <div><p className="text-xs text-muted-foreground">{isRu ? 'В процессе' : 'In progress'}</p><p className="text-2xl font-bold">{CHRONICLES_ENTRIES.filter(e => e.status === 'pending').length}</p></div>
+        </CardContent></Card>
+      </div>
+
+      {/* Entries */}
+      <div className="space-y-4">
+        {CHRONICLES_ENTRIES.map((entry: ChronicleEntry) => {
+          const statusCfg = STATUS_CONFIG[entry.status];
+          const StatusIcon = statusCfg.icon;
+          const resolutionCfg = RESOLUTION_CONFIG[entry.resolution];
+          const mb = entry.metricsBefore;
+          const mat = entry.metricsAfterTarget;
+          return (
+            <motion.div key={entry.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
+              <Card className={`border ${statusCfg.bg}`}>
+                <CardHeader className="pb-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                      <Badge variant="outline" className="font-mono text-xs shrink-0 border-muted-foreground/30">{entry.id}</Badge>
+                      <span className={`inline-flex items-center gap-1 text-xs ${statusCfg.color}`}>
+                        <StatusIcon className="h-3 w-3" />
+                        {statusCfg.label[isRu ? 'ru' : 'en']}
+                      </span>
+                    </div>
+                    <span className="text-xs text-muted-foreground shrink-0">{entry.date}</span>
+                  </div>
+                  <CardTitle className="text-base mt-1">{isRu ? entry.titleRu : entry.titleEn}</CardTitle>
+                  <p className="text-xs text-muted-foreground">
+                    <span className="font-medium">{isRu ? 'Объект:' : 'Target:'}</span> {isRu ? entry.roleRu : entry.roleEn}
+                  </p>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <p className="text-sm text-muted-foreground leading-relaxed">{isRu ? entry.contextRu : entry.contextEn}</p>
+
+                  {/* Metrics before/after */}
+                  {mb && mat && (
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="rounded-lg border border-border p-3 space-y-1.5">
+                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{isRu ? 'До' : 'Before'}</p>
+                        {('promptTokens' in mb) && (
+                          <>
+                            <div className="flex justify-between text-xs"><span className="text-muted-foreground">{isRu ? 'Токены промпта' : 'Prompt tokens'}</span><span className="font-mono font-medium">{(mb as any).promptTokens}</span></div>
+                            <div className="flex justify-between text-xs"><span className="text-muted-foreground">{isRu ? 'Ср. ответ' : 'Avg response'}</span><span className="font-mono font-medium">{(mb as any).avgResponseTokens} tok</span></div>
+                            <div className="flex justify-between text-xs"><span className="text-muted-foreground">{isRu ? 'Шум' : 'Noise'}</span><span className="font-mono font-medium text-destructive">{(mb as any).noisePct}%</span></div>
+                          </>
+                        )}
+                        {('latencyMs' in mb) && (
+                          <>
+                            <div className="flex justify-between text-xs"><span className="text-muted-foreground">Latency</span><span className="font-mono font-medium">{(mb as any).latencyMs}ms</span></div>
+                            <div className="flex justify-between text-xs"><span className="text-muted-foreground">{isRu ? 'Стоимость/10' : 'Cost/10'}</span><span className="font-mono font-medium">${(mb as any).costPer10}</span></div>
+                          </>
+                        )}
+                      </div>
+                      <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-3 space-y-1.5">
+                        <p className="text-xs font-medium text-emerald-400 uppercase tracking-wide">{isRu ? 'Цель →' : 'Target →'}</p>
+                        {('promptTokens' in mat) && (
+                          <>
+                            <div className="flex justify-between text-xs"><span className="text-muted-foreground">{isRu ? 'Токены промпта' : 'Prompt tokens'}</span><span className="font-mono font-medium text-emerald-400">{(mat as any).promptTokens} <span className="opacity-60">(-{(mat as any).tokenReductionPct}%)</span></span></div>
+                            <div className="flex justify-between text-xs"><span className="text-muted-foreground">{isRu ? 'Ср. ответ' : 'Avg response'}</span><span className="font-mono font-medium text-emerald-400">{(mat as any).avgResponseTokens} <span className="opacity-60">(-{(mat as any).responseReductionPct}%)</span></span></div>
+                            <div className="flex justify-between text-xs"><span className="text-muted-foreground">{isRu ? 'Шум' : 'Noise'}</span><span className="font-mono font-medium text-emerald-400">&lt;{(mat as any).noisePct}%</span></div>
+                          </>
+                        )}
+                        {('latencyMs' in mat) && (
+                          <>
+                            <div className="flex justify-between text-xs"><span className="text-muted-foreground">Latency</span><span className="font-mono font-medium text-emerald-400">{(mat as any).latencyMs}ms <span className="opacity-60">(-{(mat as any).latencyReductionPct}%)</span></span></div>
+                            <div className="flex justify-between text-xs"><span className="text-muted-foreground">{isRu ? 'Стоимость/10' : 'Cost/10'}</span><span className="font-mono font-medium text-emerald-400">${(mat as any).costPer10} <span className="opacity-60">(-{(mat as any).costReductionPct}%)</span></span></div>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Resolution */}
+                  <div className="flex items-center gap-2 pt-1 border-t border-border">
+                    <span className="text-xs text-muted-foreground">{isRu ? 'Резолюция супервизора:' : 'Supervisor resolution:'}</span>
+                    <span className={`text-xs font-medium ${resolutionCfg.color}`}>{resolutionCfg.label[isRu ? 'ru' : 'en']}</span>
+                    {entry.status === 'done' && entry.resolutionCommentRu && (
+                      <span className="text-xs text-muted-foreground ml-1">— {isRu ? entry.resolutionCommentRu : entry.resolutionCommentEn}</span>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 
@@ -2966,6 +3179,10 @@ export default function HydraMemory() {
               <TrendingUp className="h-3.5 w-3.5" />
               {t('memory.hub.ragDashboard')}
             </TabsTrigger>
+            <TabsTrigger value="chronicles" className="gap-2 text-amber-400 data-[state=active]:text-amber-400">
+              <ScrollText className="h-3.5 w-3.5" />
+              {language === 'ru' ? 'Хроники Эволюции' : 'Evolution Chronicles'}
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="arsenal" className="mt-6">
@@ -2988,6 +3205,9 @@ export default function HydraMemory() {
           </TabsContent>
           <TabsContent value="rag" className="mt-6">
             <RagDashboardTab />
+          </TabsContent>
+          <TabsContent value="chronicles" className="mt-6">
+            <ChroniclesTab language={language} />
           </TabsContent>
         </Tabs>
       </div>

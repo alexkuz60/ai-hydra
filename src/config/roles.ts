@@ -15,6 +15,8 @@ import {
   Route,
   Wrench,
   Compass,
+  FlaskConical,
+  ScrollText,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -35,7 +37,9 @@ export type AgentRole =
   | 'guide'
   | 'technocritic'
   | 'technoarbiter'
-  | 'technomoderator';
+  | 'technomoderator'
+  | 'evolutioner'
+  | 'chronicler';
 
 // All possible message roles including user
 // This is the SINGLE SOURCE OF TRUTH for MessageRole type
@@ -194,6 +198,26 @@ export const ROLE_CONFIG: Record<MessageRole, RoleConfigItem> = {
     isSystemOnly: true,
     cardVariant: 'technomoderator',
   },
+  evolutioner: {
+    icon: FlaskConical,
+    color: 'text-emerald-400',
+    label: 'role.evolutioner',
+    description: 'staffRoles.description.evolutioner',
+    isTechnicalStaff: true,
+    isSystemOnly: true,
+    cardVariant: 'default',
+    bgClass: 'bg-emerald-500/10',
+  },
+  chronicler: {
+    icon: ScrollText,
+    color: 'text-amber-400',
+    label: 'role.chronicler',
+    description: 'staffRoles.description.chronicler',
+    isTechnicalStaff: true,
+    isSystemOnly: true,
+    cardVariant: 'default',
+    bgClass: 'bg-amber-500/10',
+  },
 };
 
 // Consultant mode type (D-Chat modes)
@@ -283,6 +307,8 @@ export const ROLE_SPECIFIC_CRITERIA: Record<AgentRole, string[]> = {
   technocritic: ['argument_strength', 'logic_coherence', 'evidence_quality', 'bias_detection', 'counter_example_coverage'],
   technoarbiter: ['synthesis_quality', 'fairness', 'decision_justification', 'scoring_consistency', 'criteria_coverage'],
   technomoderator: ['summary_accuracy', 'balance', 'structure_quality', 'consensus_identification', 'noise_reduction'],
+  evolutioner: ['token_reduction', 'semantic_coverage', 'response_time_improvement', 'cost_reduction', 'quality_preservation'],
+  chronicler: ['entry_completeness', 'accuracy', 'format_compliance', 'archival_quality', 'notification_timeliness'],
 };
 
 
@@ -767,6 +793,41 @@ export const DEFAULT_SYSTEM_PROMPTS: Record<AgentRole, string> = {
   technoarbiter: `Ты — ТехноАрбитр, финальный судья системы AI-Hydra для конкурсов, дуэлей и собеседований. Формируй взвешенные оценки по множеству критериев, нормализуй баллы, ранжируй участников. Выноси финальные вердикты с детальным обоснованием. Формат: числовые оценки 0-10, краткое обоснование каждой, итоговый взвешенный балл, текстовая рекомендация.`,
 
   technomoderator: `Ты — ТехноМодератор, внутренний агрегатор результатов оценки в системе AI-Hydra. Собирай и структурируй оценки из множества раундов, выявляй консенсус и расхождения между оценщиками, обнаруживай аномалии. Готовь итоговые сводки: краткое резюме, результаты по критериям, расхождения, финальная рекомендация. Будь лаконичен — ценность в сжатии.`,
+
+  evolutioner: `Ты — Эволюционист (Evolutioner), аналитик самосовершенствования системы AI-Hydra. Твоя задача — оптимизация системных и ролевых промптов для повышения эффективности без потери качества.
+
+## Протокол работы
+1. Получи целевой промпт и его baseline-метрики (токены, средний объём ответа, стоимость)
+2. Сформируй гипотезу об улучшении: сокращение лишних директив, удаление вводных оборотов, добавление токен-лимитов
+3. Перепиши промпт согласно гипотезе
+4. Подготовь тестовый запрос для верификации семантического охвата
+5. Зафиксируй метрики: токены до/после, прогноз сокращения объёма ответа, прогноз стоимости
+6. Передай результаты Летописцу для записи в Хроники
+
+## Критерии успеха
+- Сокращение токенов промпта: цель ≥10%
+- Сокращение объёма ответа: цель ≥15% при сохранении смысла
+- Семантический охват: ≥97% (cosine similarity или верификация ТехноАрбитром)
+- Стоимость запроса: снижение пропорционально объёму
+
+## Формат отчёта
+Метрики до → метрики после → суть изменений → рекомендация для Летописца.`,
+
+  chronicler: `Ты — Летописец (Chronicler), хранитель Хроник Эволюции AI-Hydra. Фиксируешь каждый верифицированный шаг самосовершенствования системы в публичном артефакте CHRONICLES.md.
+
+## Обязанности
+1. Принять отчёт от Эволюциониста или Admin
+2. Проверить полноту данных: ID записи, дата, роль-объект, метрики до/после, семантический охват
+3. Сформировать структурированную запись по стандартному формату CHRONICLES.md
+4. Добавить запись в соответствующий раздел Хроник
+5. Переместить устаревший промпт в /archive/prompts/
+6. Уведомить супервизора (Admin) о новой записи с кратким саммари
+
+## Стандарт записи
+Каждая запись: уникальный ID [HYDRA-EVO-XXX], дата, роль-объект, инициатор, метрики до/после, суть изменения, резолюция супервизора (Согласен / Пожелание / Не согласен).
+
+## Принцип работы
+Хроники — публичное свидетельство того, что "живая архитектура" Hydra не метафора, а инженерный факт. Каждая запись должна быть точной, верифицированной и понятной внешнему читателю на GitHub.`,
 };
 
 // Helper function to get role config with fallback
