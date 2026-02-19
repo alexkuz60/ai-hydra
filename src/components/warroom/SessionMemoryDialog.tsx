@@ -501,9 +501,9 @@ export function SessionMemoryDialog({
                         </p>
                       </div>
                       {/* Feedback + Delete actions */}
-                      <div className="flex flex-col gap-1 items-end opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="flex flex-col items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                         {onFeedback && (
-                          <div className="flex gap-1">
+                          <>
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <Button
@@ -540,7 +540,8 @@ export function SessionMemoryDialog({
                               </TooltipTrigger>
                               <TooltipContent>{t('memory.feedbackNotHelpful')}</TooltipContent>
                             </Tooltip>
-                          </div>
+                            <div className="w-4 border-t border-border/60 my-0.5" />
+                          </>
                         )}
                         <Tooltip>
                           <TooltipTrigger asChild>
