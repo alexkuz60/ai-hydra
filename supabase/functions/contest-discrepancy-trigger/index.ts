@@ -47,7 +47,7 @@ serve(async (req) => {
       );
     }
 
-    // Расхождение превышает порог — запускаем Эволюциониста
+    // Расхождение превышает порог — запускаем Эволюционера
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
       throw new Error("LOVABLE_API_KEY is not configured");
@@ -57,7 +57,7 @@ serve(async (req) => {
       ? `Пользователь оценил ВЫШЕ Арбитра (+${delta.toFixed(1)} балла). Возможно, Арбитр занижает оценки или критерии слишком строгие.`
       : `Пользователь оценил НИЖЕ Арбитра (-${delta.toFixed(1)} балла). Возможно, Арбитр завышает оценки или не улавливает субъективные ожидания пользователя.`;
 
-    const evolutionerPrompt = `Ты — Evolutioner (Эволюционист), системный аналитик качества AI-ролей платформы Hydra.
+    const evolutionerPrompt = `Ты — Evolutioner (Эволюционер), системный аналитик качества AI-ролей платформы Hydra.
 
 Зафиксировано критическое расхождение оценок на конкурсе моделей:
 
@@ -148,7 +148,7 @@ serve(async (req) => {
           target_delta: `< ${DISCREPANCY_THRESHOLD}`,
           description: "Ожидается снижение расхождения между оценкой пользователя и арбитра",
         },
-        summary: `Автоматически зафиксировано расхождение оценок: пользователь — ${user_score}/10, арбитр — ${arbiter_score}/10 (дельта: ${delta.toFixed(1)}). Эволюционист предложил гипотезу для калибровки.`,
+        summary: `Автоматически зафиксировано расхождение оценок: пользователь — ${user_score}/10, арбитр — ${arbiter_score}/10 (дельта: ${delta.toFixed(1)}). Эволюционер предложил гипотезу для калибровки.`,
         is_visible: true,
       })
       .select()
@@ -170,7 +170,7 @@ serve(async (req) => {
         user_id: s.user_id,
         chronicle_id: newEntry.id,
         entry_code: entryCode,
-        message: `Эволюционист зафиксировал расхождение оценок (Δ${delta.toFixed(1)} балла) по модели ${model_id.split("/").pop()}. Запись ${entryCode} в Хрониках требует вашей резолюции.`,
+        message: `Эволюционер зафиксировал расхождение оценок (Δ${delta.toFixed(1)} балла) по модели ${model_id.split("/").pop()}. Запись ${entryCode} в Хрониках требует вашей резолюции.`,
         is_read: false,
       }));
       await supabase.from("supervisor_notifications").insert(notifRows);
