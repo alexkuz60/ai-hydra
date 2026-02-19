@@ -142,10 +142,10 @@ export function BlueprintEditor({
   const isValid = name.trim() && description.trim() && stages.length > 0 && stages.every(s => s.name.trim() && s.roles.length > 0);
 
   const categoryColors: Record<string, string> = {
-    planning: 'text-blue-400',
-    creative: 'text-purple-400',
-    analysis: 'text-green-400',
-    technical: 'text-orange-400',
+    planning: 'text-hydra-info',
+    creative: 'text-hydra-expert',
+    analysis: 'text-hydra-success',
+    technical: 'text-hydra-webhunter',
   };
 
   return (

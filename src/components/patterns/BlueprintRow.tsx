@@ -19,10 +19,10 @@ interface BlueprintRowProps {
 }
 
 const categoryColors: Record<string, string> = {
-  planning: 'text-blue-400',
-  creative: 'text-purple-400',
-  analysis: 'text-green-400',
-  technical: 'text-orange-400',
+  planning: 'text-hydra-info',
+  creative: 'text-hydra-expert',
+  analysis: 'text-hydra-success',
+  technical: 'text-hydra-webhunter',
 };
 
 export function BlueprintRow({

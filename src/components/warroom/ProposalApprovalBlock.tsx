@@ -38,16 +38,16 @@ interface ProposalApprovalBlockProps {
 }
 
 const priorityConfig: Record<ProposalPriority, { label: string; color: string; bgColor: string }> = {
-  high: { label: 'high', color: 'text-red-400', bgColor: 'bg-red-500/20 border-red-500/30' },
-  medium: { label: 'medium', color: 'text-amber-400', bgColor: 'bg-amber-500/20 border-amber-500/30' },
-  low: { label: 'low', color: 'text-blue-400', bgColor: 'bg-blue-500/20 border-blue-500/30' },
+  high: { label: 'high', color: 'text-hydra-critical', bgColor: 'bg-hydra-critical/20 border-hydra-critical/30' },
+  medium: { label: 'medium', color: 'text-hydra-warning', bgColor: 'bg-hydra-warning/20 border-hydra-warning/30' },
+  low: { label: 'low', color: 'text-hydra-info', bgColor: 'bg-hydra-info/20 border-hydra-info/30' },
 };
 
 const statusConfig: Record<ProposalStatus, { icon: React.ElementType; color: string; bgColor: string }> = {
   pending: { icon: Clock, color: 'text-muted-foreground', bgColor: 'bg-muted/50' },
   approved: { icon: CheckCircle2, color: 'text-hydra-success', bgColor: 'bg-hydra-success/10' },
   rejected: { icon: XCircle, color: 'text-destructive', bgColor: 'bg-destructive/10' },
-  needs_clarification: { icon: AlertCircle, color: 'text-amber-400', bgColor: 'bg-amber-500/10' },
+  needs_clarification: { icon: AlertCircle, color: 'text-hydra-warning', bgColor: 'bg-hydra-warning/10' },
 };
 
 export function ProposalApprovalBlock({ 

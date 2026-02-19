@@ -35,19 +35,19 @@ import { ROLE_CONFIG } from '@/config/roles';
 // ─── Design tokens ───────────────────────────────────────────────────────────
 
 const MEMORY_TYPE_COLORS: Record<string, string> = {
-  experience: 'bg-blue-500/15 text-blue-400 border-blue-500/30',
-  preference: 'bg-purple-500/15 text-purple-400 border-purple-500/30',
-  skill: 'bg-green-500/15 text-green-400 border-green-500/30',
-  mistake: 'bg-red-500/15 text-red-400 border-red-500/30',
-  success: 'bg-amber-500/15 text-amber-400 border-amber-500/30',
+  experience: 'bg-hydra-info/15 text-hydra-info border-hydra-info/30',
+  preference: 'bg-hydra-expert/15 text-hydra-expert border-hydra-expert/30',
+  skill: 'bg-hydra-success/15 text-hydra-success border-hydra-success/30',
+  mistake: 'bg-hydra-critical/15 text-hydra-critical border-hydra-critical/30',
+  success: 'bg-hydra-warning/15 text-hydra-warning border-hydra-warning/30',
 };
 
 const CHUNK_TYPE_COLORS: Record<string, string> = {
-  decision: 'bg-cyan-500/15 text-cyan-400',
-  context: 'bg-blue-500/15 text-blue-400',
-  instruction: 'bg-violet-500/15 text-violet-400',
-  evaluation: 'bg-amber-500/15 text-amber-400',
-  summary: 'bg-green-500/15 text-green-400',
+  decision: 'bg-hydra-cyan/15 text-hydra-cyan',
+  context: 'bg-hydra-info/15 text-hydra-info',
+  instruction: 'bg-hydra-memory/15 text-hydra-memory',
+  evaluation: 'bg-hydra-warning/15 text-hydra-warning',
+  summary: 'bg-hydra-success/15 text-hydra-success',
   message: 'bg-muted text-muted-foreground',
 };
 
@@ -991,8 +991,8 @@ function RagDashboardTab() {
   const totalRetrievals = rows.reduce((s, r) => s + r.retrieved_count, 0);
 
   const chunkTypeColor: Record<string, string> = {
-    decision: 'text-cyan-400', context: 'text-blue-400', instruction: 'text-violet-400',
-    evaluation: 'text-amber-400', summary: 'text-green-400', message: 'text-muted-foreground',
+    decision: 'text-hydra-cyan', context: 'text-hydra-info', instruction: 'text-hydra-memory',
+    evaluation: 'text-hydra-warning', summary: 'text-hydra-success', message: 'text-muted-foreground',
   };
 
   const chunkTypeLabel: Record<string, string> = {
@@ -1821,9 +1821,9 @@ function StorageTab() {
   }, [files, activeBucket, searchQuery]);
 
   const bucketColors: Record<string, string> = {
-    'message-files': 'text-blue-400 border-blue-500/30',
-    'task-files': 'text-amber-400 border-amber-500/30',
-    'avatars': 'text-green-400 border-green-500/30',
+    'message-files': 'text-hydra-info border-hydra-info/30',
+    'task-files': 'text-hydra-warning border-hydra-warning/30',
+    'avatars': 'text-hydra-success border-hydra-success/30',
   };
 
   const bucketLabels: Record<string, { label: string; hint: string }> = {
@@ -2929,18 +2929,18 @@ interface ChronicleDBEntry {
 }
 
 const RESOLUTION_CONFIG: Record<string, { label: { ru: string; en: string }; color: string }> = {
-  approved: { label: { ru: '✅ Согласен', en: '✅ Agreed' }, color: 'text-emerald-400' },
-  wish: { label: { ru: '💬 Пожелание', en: '💬 User Wish' }, color: 'text-blue-400' },
-  rejected: { label: { ru: '❌ Не согласен', en: '❌ Disagreed' }, color: 'text-red-400' },
+  approved: { label: { ru: '✅ Согласен', en: '✅ Agreed' }, color: 'text-hydra-success' },
+  wish: { label: { ru: '💬 Пожелание', en: '💬 User Wish' }, color: 'text-hydra-info' },
+  rejected: { label: { ru: '❌ Не согласен', en: '❌ Disagreed' }, color: 'text-hydra-critical' },
   pending: { label: { ru: '⏳ Ожидает', en: '⏳ Pending' }, color: 'text-muted-foreground' },
-  revised: { label: { ru: '🔄 Пересмотрено ИИ', en: '🔄 AI Revised' }, color: 'text-purple-400' },
+  revised: { label: { ru: '🔄 Пересмотрено ИИ', en: '🔄 AI Revised' }, color: 'text-hydra-expert' },
 };
 
 const STATUS_DISPLAY: Record<string, { label: { ru: string; en: string }; color: string; bg: string; Icon: React.ElementType }> = {
-  completed: { label: { ru: 'Выполнено', en: 'Completed' }, color: 'text-emerald-400', bg: 'bg-emerald-500/5 border-emerald-500/30', Icon: CheckCheck },
-  pending: { label: { ru: 'Ожидает тестирования', en: 'Awaiting Testing' }, color: 'text-amber-400', bg: 'bg-amber-500/5 border-amber-500/30', Icon: Timer },
-  sample: { label: { ru: 'Образцовая запись', en: 'Sample Entry' }, color: 'text-amber-400', bg: 'bg-amber-500/5 border-amber-500/30', Icon: Timer },
-  revised: { label: { ru: 'Пересмотрено ИИ', en: 'AI Revised' }, color: 'text-purple-400', bg: 'bg-purple-500/5 border-purple-500/30', Icon: FlaskConical },
+  completed: { label: { ru: 'Выполнено', en: 'Completed' }, color: 'text-hydra-success', bg: 'bg-hydra-success/5 border-hydra-success/30', Icon: CheckCheck },
+  pending: { label: { ru: 'Ожидает тестирования', en: 'Awaiting Testing' }, color: 'text-hydra-warning', bg: 'bg-hydra-warning/5 border-hydra-warning/30', Icon: Timer },
+  sample: { label: { ru: 'Образцовая запись', en: 'Sample Entry' }, color: 'text-hydra-warning', bg: 'bg-hydra-warning/5 border-hydra-warning/30', Icon: Timer },
+  revised: { label: { ru: 'Пересмотрено ИИ', en: 'AI Revised' }, color: 'text-hydra-expert', bg: 'bg-hydra-expert/5 border-hydra-expert/30', Icon: FlaskConical },
 };
 
 const EMPTY_FORM = {
@@ -3449,10 +3449,10 @@ function ChroniclesTab({ language, isSupervisor }: { language: string; isSupervi
 
       {/* Autorun banner for supervisors */}
       {isSupervisor && !loading && rejectedCount > 0 && (
-        <div className="sticky top-0 z-10 rounded-xl border border-red-500/40 bg-red-950/60 backdrop-blur-sm p-3 flex items-center justify-between gap-3">
+        <div className="sticky top-0 z-10 rounded-xl border border-hydra-critical/40 bg-hydra-critical/10 backdrop-blur-sm p-3 flex items-center justify-between gap-3">
           <div className="flex items-center gap-2 text-sm">
-            <AlertCircle className="h-4 w-4 text-red-400 shrink-0" />
-            <span className="text-red-300 font-medium">
+            <AlertCircle className="h-4 w-4 text-hydra-critical shrink-0" />
+            <span className="text-hydra-critical font-medium">
               {isRu
                 ? `${rejectedCount} ${rejectedCount === 1 ? 'запись отклонена' : rejectedCount < 5 ? 'записи отклонены' : 'записей отклонено'} — требуют авторевизии Эволюционера`
                 : `${rejectedCount} ${rejectedCount === 1 ? 'entry rejected' : 'entries rejected'} — awaiting Evolutioner auto-revision`}
@@ -3462,7 +3462,7 @@ function ChroniclesTab({ language, isSupervisor }: { language: string; isSupervi
             size="sm"
             onClick={() => triggerEvolution(null, 'autorun')}
             disabled={autorunning}
-            className="gap-1.5 shrink-0 bg-red-600 hover:bg-red-500 text-white border-0"
+            className="gap-1.5 shrink-0 bg-hydra-critical/80 hover:bg-hydra-critical text-white border-0"
           >
             {autorunning
               ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
