@@ -398,33 +398,33 @@ export default function Profile() {
         </div>
 
         <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
-          <TabsList className="flex w-full max-w-2xl h-auto flex-wrap gap-0.5">
-            <TabsTrigger value="profile" className="flex items-center gap-2 flex-1 min-w-0">
+          <TabsList className="flex w-full h-auto flex-wrap gap-0.5">
+            <TabsTrigger value="profile" className="flex items-center gap-2 flex-1">
               <User className="h-4 w-4 shrink-0" />
-              <span className="hidden sm:inline truncate">{t('nav.profile')}</span>
+              <span>{t('nav.profile')}</span>
             </TabsTrigger>
-            <TabsTrigger value="preferences" className="flex items-center gap-2 flex-1 min-w-0">
+            <TabsTrigger value="preferences" className="flex items-center gap-2 flex-1">
               <Settings className="h-4 w-4 shrink-0" />
-              <span className="hidden sm:inline truncate">{t('profile.preferences')}</span>
+              <span>{t('profile.preferences')}</span>
             </TabsTrigger>
-            <TabsTrigger value="api-keys" className="flex items-center gap-2 flex-1 min-w-0">
+            <TabsTrigger value="api-keys" className="flex items-center gap-2 flex-1">
               <Key className="h-4 w-4 shrink-0" />
-              <span className="hidden sm:inline truncate">{t('profile.apiKeys')}</span>
+              <span>{t('profile.apiKeys')}</span>
             </TabsTrigger>
             {language === 'ru' && (
-              <TabsTrigger value="proxyapi" className="flex items-center gap-2 flex-1 min-w-0">
+              <TabsTrigger value="proxyapi" className="flex items-center gap-2 flex-1">
                 <Gauge className="h-4 w-4 shrink-0" />
-                <span className="hidden sm:inline truncate">ProxyAPI</span>
+                <span>ProxyAPI</span>
               </TabsTrigger>
             )}
-            <TabsTrigger value="stats" className="flex items-center gap-2 flex-1 min-w-0">
+            <TabsTrigger value="stats" className="flex items-center gap-2 flex-1">
               <BarChart3 className="h-4 w-4 shrink-0" />
-              <span className="hidden sm:inline truncate">{t('profile.stats')}</span>
+              <span>{t('profile.stats')}</span>
             </TabsTrigger>
             {isSupervisor && (
               <TabsTrigger value="notifications" className="flex items-center gap-2 shrink-0 whitespace-nowrap">
                 <Bell className="h-4 w-4 shrink-0" />
-                <span className="hidden sm:inline">{language === 'ru' ? 'Уведомления' : 'Notifications'}</span>
+                <span>{language === 'ru' ? 'Уведомления' : 'Notifications'}</span>
                 {unreadCount > 0 && (
                   <Badge className="ml-1 h-5 min-w-5 px-1 text-[10px] bg-destructive text-destructive-foreground">
                     {unreadCount > 9 ? '9+' : unreadCount}
