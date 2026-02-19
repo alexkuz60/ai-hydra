@@ -62,6 +62,12 @@ const translations: Translations = {
   'memory.hub.storage': { ru: 'Файлохранилище', en: 'File Storage' },
   'memory.hub.storageFiles': { ru: 'Всего файлов', en: 'Total files' },
   'memory.hub.storageBuckets': { ru: 'Бакетов', en: 'Buckets' },
+  'memory.storage.bucketMessageFiles': { ru: 'Архив чатов', en: 'Chat archive' },
+  'memory.storage.bucketMessageFilesHint': { ru: 'Вложения из сообщений чатов', en: 'Attachments from chat messages' },
+  'memory.storage.bucketTaskFiles': { ru: 'Файлы задач', en: 'Task files' },
+  'memory.storage.bucketTaskFilesHint': { ru: 'Вложения к задачам и сессиям', en: 'Attachments for tasks and sessions' },
+  'memory.storage.bucketAvatars': { ru: 'Аватары', en: 'Avatars' },
+  'memory.storage.bucketAvatarsHint': { ru: 'Фотографии профилей пользователей', en: 'User profile pictures' },
   'memory.hub.storageSize': { ru: 'Занято места', en: 'Storage used' },
   'memory.hub.storageEmpty': { ru: 'Файлы не найдены', en: 'No files found' },
   // Hydra Memory – extended
