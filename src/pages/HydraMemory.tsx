@@ -57,7 +57,7 @@ const CHUNK_TYPE_CONFIG: Record<ChunkType, { icon: React.ElementType; color: str
   decision: { icon: Lightbulb, color: 'text-hydra-success', labelKey: 'memory.decisions' },
   context: { icon: BookOpen, color: 'text-hydra-expert', labelKey: 'memory.context' },
   instruction: { icon: ListChecks, color: 'text-hydra-critical', labelKey: 'memory.instructions' },
-  evaluation: { icon: Star, color: 'text-yellow-500', labelKey: 'memory.evaluations' },
+  evaluation: { icon: Star, color: 'text-hydra-warning', labelKey: 'memory.evaluations' },
 };
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -95,10 +95,10 @@ function fileIcon(mime: string | null) {
 
 function StatCard({ label, value, icon: Icon, accent, description }: { label: string; value: string | number; icon: React.ElementType; accent?: boolean; description?: string }) {
   return (
-    <Card className={`border ${accent ? 'border-[hsl(var(--hydra-memory)/0.4)] bg-[hsl(var(--hydra-memory)/0.05)]' : 'border-border bg-card'}`}>
+    <Card className={`border ${accent ? 'border-hydra-memory/40 bg-hydra-memory/5' : 'border-border bg-card'}`}>
       <CardContent className="flex items-start gap-3 p-4">
-        <div className={`rounded-lg p-2 mt-0.5 shrink-0 ${accent ? 'bg-[hsl(var(--hydra-memory)/0.15)]' : 'bg-muted'}`}>
-          <Icon className={`h-5 w-5 ${accent ? 'text-[hsl(var(--hydra-memory))]' : 'text-muted-foreground'}`} />
+        <div className={`rounded-lg p-2 mt-0.5 shrink-0 ${accent ? 'bg-hydra-memory/15' : 'bg-muted'}`}>
+          <Icon className={`h-5 w-5 ${accent ? 'text-hydra-memory' : 'text-muted-foreground'}`} />
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-bold leading-tight">{label}</p>
@@ -274,8 +274,8 @@ function SessionMemoryTab({ stats, loading }: { stats: ReturnType<typeof useHydr
               onChange={e => handleSearchChange(e.target.value)}
               className={cn(
                 'pl-9 h-9 pr-10',
-                searchMode === 'semantic' && 'border-hydra-cyan/50 focus-visible:ring-hydra-cyan/30',
-                searchMode === 'hybrid' && 'border-purple-500/50 focus-visible:ring-purple-500/30',
+                 searchMode === 'semantic' && 'border-hydra-cyan/50 focus-visible:ring-hydra-cyan/30',
+                 searchMode === 'hybrid' && 'border-hydra-expert/50 focus-visible:ring-hydra-expert/30',
               )}
             />
           </div>
@@ -286,8 +286,8 @@ function SessionMemoryTab({ stats, loading }: { stats: ReturnType<typeof useHydr
                 size="icon"
                 className={cn(
                   'h-9 w-9 shrink-0',
-                  searchMode === 'semantic' && 'bg-hydra-cyan/20 text-hydra-cyan hover:bg-hydra-cyan/30',
-                  searchMode === 'hybrid' && 'bg-purple-500/20 text-purple-400 hover:bg-purple-500/30',
+                   searchMode === 'semantic' && 'bg-hydra-cyan/20 text-hydra-cyan hover:bg-hydra-cyan/30',
+                   searchMode === 'hybrid' && 'bg-hydra-expert/20 text-hydra-expert hover:bg-hydra-expert/30',
                 )}
                 onClick={cycleSearchMode}
               >
@@ -323,7 +323,7 @@ function SessionMemoryTab({ stats, loading }: { stats: ReturnType<typeof useHydr
           </div>
         )}
         {searchMode === 'hybrid' && (
-          <div className="flex items-center gap-2 text-xs text-purple-400/80">
+          <div className="flex items-center gap-2 text-xs text-hydra-expert/80">
             <GitMerge className="h-3 w-3" />
             <span>{t('memory.hub.hybridSearchHint')}</span>
           </div>
@@ -409,7 +409,7 @@ function SessionMemoryTab({ stats, loading }: { stats: ReturnType<typeof useHydr
                       key={item.id}
                       className={cn(
                         'p-3 hover:bg-muted/50 transition-colors group',
-                        isDuplicate && 'bg-amber-500/5 border-l-2 border-l-amber-500/50',
+                        isDuplicate && 'bg-hydra-warning/5 border-l-2 border-l-hydra-warning/50',
                         isSemanticResult && 'border-l-2 border-l-hydra-cyan/50'
                       )}
                     >
@@ -427,7 +427,7 @@ function SessionMemoryTab({ stats, loading }: { stats: ReturnType<typeof useHydr
                               <Tooltip>
                                 <TooltipTrigger asChild>
                                   <span>
-                                    <Badge variant="outline" className="text-[10px] h-5 text-amber-500 border-amber-500/50">
+                                    <Badge variant="outline" className="text-[10px] h-5 text-hydra-warning border-hydra-warning/50">
                                       <Copy className="h-2.5 w-2.5 mr-0.5" />{t('memory.duplicate')}
                                     </Badge>
                                   </span>
@@ -520,7 +520,7 @@ function SessionMemoryTab({ stats, loading }: { stats: ReturnType<typeof useHydr
           <div className="flex justify-between items-center pt-1">
             <span className="text-xs text-muted-foreground">
               {t('memory.totalChunks')}: {globalMemory.chunks.length}
-              {duplicateCount > 0 && <span className="ml-2 text-amber-500">({duplicateCount} {t('memory.duplicateGroups')})</span>}
+              {duplicateCount > 0 && <span className="ml-2 text-hydra-warning">({duplicateCount} {t('memory.duplicateGroups')})</span>}
             </span>
             <div className="flex gap-2">
               {confirmClearAll && (
@@ -897,9 +897,9 @@ function KnowledgeTab({ stats, loading }: { stats: ReturnType<typeof useHydraMem
                         <Clock className="h-3.5 w-3.5" />
                         {t('memory.hub.outdatedVersions')} ({allOutdatedToDelete.length} {t('memory.hub.chunks')})
                       </p>
-                      <Button
-                        size="sm" variant="outline"
-                        className="h-6 text-[10px] border-orange-500/40 text-orange-400 hover:bg-orange-500/10"
+                       <Button
+                         size="sm" variant="outline"
+                         className="h-6 text-[10px] border-hydra-webhunter/40 text-hydra-webhunter hover:bg-hydra-webhunter/10"
                         disabled={deletingIds.size > 0}
                         onClick={() => deleteEntries(allOutdatedToDelete)}
                       >
@@ -909,10 +909,10 @@ function KnowledgeTab({ stats, loading }: { stats: ReturnType<typeof useHydraMem
                     </div>
                     <div className="space-y-1.5 max-h-40 overflow-y-auto pr-1">
                       {outdatedGroups.map((group, gi) => (
-                        <div key={gi} className="rounded border border-orange-500/20 bg-orange-500/5 px-3 py-2 text-xs">
-                          <div className="flex items-center justify-between">
-                            <span className="text-muted-foreground truncate">{group[0].source_url}</span>
-                            <span className="text-orange-400 ml-2 shrink-0">{group.map(r => r.version).join(', ')}</span>
+                         <div key={gi} className="rounded border border-hydra-webhunter/20 bg-hydra-webhunter/5 px-3 py-2 text-xs">
+                           <div className="flex items-center justify-between">
+                             <span className="text-muted-foreground truncate">{group[0].source_url}</span>
+                             <span className="text-hydra-webhunter ml-2 shrink-0">{group.map(r => r.version).join(', ')}</span>
                           </div>
                         </div>
                       ))}
@@ -934,8 +934,8 @@ function KnowledgeTab({ stats, loading }: { stats: ReturnType<typeof useHydraMem
             <CardHeader className="pb-2 pt-3 px-4"><CardTitle className="text-sm">{role}</CardTitle></CardHeader>
             <CardContent className="pb-3 px-4 flex flex-wrap gap-2">
               {categories.map(({ category, count }) => (
-                <Badge key={category} variant="outline" className="text-xs gap-1.5">
-                  {category} <span className="font-bold text-[hsl(var(--hydra-memory))]">{count}</span>
+                 <Badge key={category} variant="outline" className="text-xs gap-1.5">
+                   {category} <span className="font-bold text-hydra-memory">{count}</span>
                 </Badge>
               ))}
             </CardContent>
@@ -1495,7 +1495,7 @@ function MemoryGraphTab({ stats }: { stats: ReturnType<typeof useHydraMemoryStat
                     <circle
                       cx={node.x} cy={node.y} r={node.r + 5}
                       fill="none"
-                      stroke="hsl(38, 92%, 50%)"
+                      stroke="hsl(var(--hydra-arbiter))"
                       strokeWidth="1.5"
                       strokeDasharray="3 2"
                       opacity="0.65"
@@ -1606,7 +1606,7 @@ function MemoryGraphTab({ stats }: { stats: ReturnType<typeof useHydraMemoryStat
                           <span>{t('memory.hub.nodeAvgConfidence')}: <strong className="text-foreground">{(selected.confidence * 100).toFixed(0)}%</strong></span>
                         )}
                         {(selected.usageCount ?? 0) > 0 && (
-                          <span className="flex items-center gap-1 text-amber-400">
+                          <span className="flex items-center gap-1 text-hydra-arbiter">
                             <Zap className="h-3 w-3" />
                             {t('memory.hub.nodeUsages')}: {selected.usageCount}
                           </span>
@@ -1650,7 +1650,7 @@ function MemoryGraphTab({ stats }: { stats: ReturnType<typeof useHydraMemoryStat
       {stats.roleMemory.filter(r => (roleMemoryDetails[r.role]?.usageCount || 0) > 0).length > 0 && (
         <div className="px-4 pb-4 space-y-2">
           <p className="text-xs text-muted-foreground font-medium flex items-center gap-1.5">
-            <Zap className="h-3.5 w-3.5 text-amber-400" />
+            <Zap className="h-3.5 w-3.5 text-hydra-arbiter" />
             {t('memory.hub.roleActivity')}
           </p>
           <div className="space-y-1">
@@ -1669,13 +1669,13 @@ function MemoryGraphTab({ stats }: { stats: ReturnType<typeof useHydraMemoryStat
                     <span className="text-xs text-muted-foreground w-28 truncate shrink-0">{roleLabel}</span>
                     <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
                       <div
-                        className="h-full rounded-full bg-[hsl(var(--hydra-memory))] transition-all"
+                        className="h-full rounded-full bg-hydra-memory transition-all"
                         style={{ width: `${pct}%` }}
                       />
                     </div>
                     <span className="text-xs text-muted-foreground w-6 text-right shrink-0">{usage}</span>
                     {kCount > 0 && (
-                      <span className="text-[10px] text-[hsl(var(--hydra-glow))] w-12 shrink-0">
+                      <span className="text-[10px] text-hydra-glow w-12 shrink-0">
                         +{kCount} {language === 'ru' ? 'знаний' : 'docs'}
                       </span>
                     )}
@@ -1914,7 +1914,7 @@ function StorageTab() {
                       className={cn(
                         'shrink-0 flex items-center justify-center rounded overflow-hidden',
                         isImage
-                          ? 'w-10 h-10 border border-border bg-muted hover:border-[hsl(var(--hydra-memory)/0.5)] transition-colors cursor-pointer'
+                          ? 'w-10 h-10 border border-border bg-muted hover:border-hydra-memory/50 transition-colors cursor-pointer'
                           : 'w-7 h-7 cursor-default pointer-events-none'
                       )}
                       onClick={() => isImage && handlePreview(file)}
@@ -1936,7 +1936,7 @@ function StorageTab() {
 
                     <div className="flex-1 min-w-0">
                       <p
-                        className={cn('text-sm font-medium truncate', isImage && 'cursor-pointer hover:text-[hsl(var(--hydra-memory))] transition-colors')}
+                        className={cn('text-sm font-medium truncate', isImage && 'cursor-pointer hover:text-hydra-memory transition-colors')}
                         onClick={() => isImage && handlePreview(file)}
                       >
                         {file.name}
@@ -1958,7 +1958,7 @@ function StorageTab() {
                           <TooltipTrigger asChild>
                             <Button
                               variant="ghost" size="icon"
-                              className="h-7 w-7 text-muted-foreground hover:text-[hsl(var(--hydra-memory))]"
+                              className="h-7 w-7 text-muted-foreground hover:text-hydra-memory"
                               onClick={() => handlePreview(file)}
                               disabled={previewLoading}
                             >
@@ -1995,7 +1995,7 @@ function StorageTab() {
         <DialogContent className="max-w-3xl p-0 overflow-hidden bg-background/95 backdrop-blur">
           <DialogHeader className="px-4 pt-4 pb-3 border-b border-border flex-row items-center justify-between space-y-0">
             <DialogTitle className="text-sm font-medium truncate max-w-[calc(100%-5rem)] flex items-center gap-2">
-              <FileImage className="h-4 w-4 text-[hsl(var(--hydra-memory))] shrink-0" />
+              <FileImage className="h-4 w-4 text-hydra-memory shrink-0" />
               {preview?.file.name}
             </DialogTitle>
             <div className="flex items-center gap-1 shrink-0">
@@ -2182,40 +2182,40 @@ function CognitiveArsenalTab({ stats }: { stats: ReturnType<typeof useHydraMemor
 
   const LAYER_STYLES: Record<LayerColor, { text: string; bg: string; border: string; glow: string }> = {
     violet: {
-      text: 'text-violet-400',
-      bg: 'bg-violet-500/10',
-      border: 'border-violet-500/25',
-      glow: 'shadow-violet-500/10',
+      text: 'text-hydra-expert',
+      bg: 'bg-hydra-expert/10',
+      border: 'border-hydra-expert/25',
+      glow: 'shadow-hydra-expert/10',
     },
     amber: {
-      text: 'text-amber-400',
-      bg: 'bg-amber-500/10',
-      border: 'border-amber-500/25',
-      glow: 'shadow-amber-500/10',
+      text: 'text-hydra-arbiter',
+      bg: 'bg-hydra-arbiter/10',
+      border: 'border-hydra-arbiter/25',
+      glow: 'shadow-hydra-arbiter/10',
     },
     blue: {
-      text: 'text-blue-400',
-      bg: 'bg-blue-500/10',
-      border: 'border-blue-500/25',
-      glow: 'shadow-blue-500/10',
+      text: 'text-hydra-info',
+      bg: 'bg-hydra-info/10',
+      border: 'border-hydra-info/25',
+      glow: 'shadow-hydra-info/10',
     },
     emerald: {
-      text: 'text-emerald-400',
-      bg: 'bg-emerald-500/10',
-      border: 'border-emerald-500/25',
-      glow: 'shadow-emerald-500/10',
+      text: 'text-hydra-success',
+      bg: 'bg-hydra-success/10',
+      border: 'border-hydra-success/25',
+      glow: 'shadow-hydra-success/10',
     },
     teal: {
-      text: 'text-[hsl(var(--hydra-memory))]',
-      bg: 'bg-[hsl(var(--hydra-memory)/0.1)]',
-      border: 'border-[hsl(var(--hydra-memory)/0.25)]',
-      glow: 'shadow-[hsl(var(--hydra-memory)/0.1)]',
+      text: 'text-hydra-memory',
+      bg: 'bg-hydra-memory/10',
+      border: 'border-hydra-memory/25',
+      glow: 'shadow-hydra-memory/10',
     },
     cyan: {
-      text: 'text-cyan-400',
-      bg: 'bg-cyan-500/10',
-      border: 'border-cyan-500/25',
-      glow: 'shadow-cyan-500/10',
+      text: 'text-hydra-cyan',
+      bg: 'bg-hydra-cyan/10',
+      border: 'border-hydra-cyan/25',
+      glow: 'shadow-hydra-cyan/10',
     },
   };
 
@@ -2656,12 +2656,12 @@ function ArsenalConnectionsGraph({
 
     // 6 layer nodes arranged in a hexagon
     const layerDefs = [
-      { id: 'instincts', label: isRu ? 'Инстинкты' : 'Instincts', value: counts.prompts.total, color: '#a78bfa', glow: 'rgba(167,139,250,0.4)' },
-      { id: 'patterns',  label: isRu ? 'Паттерны' : 'Patterns',   value: counts.blueprints.total + counts.behaviors.total, color: '#fbbf24', glow: 'rgba(251,191,36,0.4)' },
-      { id: 'tools',     label: isRu ? 'Инструменты' : 'Tools',    value: counts.tools.total, color: '#60a5fa', glow: 'rgba(96,165,250,0.4)' },
-      { id: 'flows',     label: isRu ? 'Потоки' : 'Flows',          value: counts.flows.total, color: '#22d3ee', glow: 'rgba(34,211,238,0.4)' },
-      { id: 'achieve',   label: isRu ? 'Достижения' : 'Achieve',   value: 0, color: '#34d399', glow: 'rgba(52,211,153,0.4)' },
-      { id: 'memory',    label: isRu ? 'Память' : 'Memory',         value: stats.totalRoleMemory + stats.totalKnowledge + stats.sessionMemory.total, color: 'hsl(var(--hydra-memory))', glow: 'rgba(99,219,214,0.4)' },
+      { id: 'instincts', label: isRu ? 'Инстинкты' : 'Instincts', value: counts.prompts.total, color: 'hsl(var(--hydra-expert))', glow: 'hsl(var(--hydra-expert) / 0.4)' },
+      { id: 'patterns',  label: isRu ? 'Паттерны' : 'Patterns',   value: counts.blueprints.total + counts.behaviors.total, color: 'hsl(var(--hydra-arbiter))', glow: 'hsl(var(--hydra-arbiter) / 0.4)' },
+      { id: 'tools',     label: isRu ? 'Инструменты' : 'Tools',    value: counts.tools.total, color: 'hsl(var(--hydra-info))', glow: 'hsl(var(--hydra-info) / 0.4)' },
+      { id: 'flows',     label: isRu ? 'Потоки' : 'Flows',          value: counts.flows.total, color: 'hsl(var(--hydra-cyan))', glow: 'hsl(var(--hydra-cyan) / 0.4)' },
+      { id: 'achieve',   label: isRu ? 'Достижения' : 'Achieve',   value: 0, color: 'hsl(var(--hydra-success))', glow: 'hsl(var(--hydra-success) / 0.4)' },
+      { id: 'memory',    label: isRu ? 'Память' : 'Memory',         value: stats.totalRoleMemory + stats.totalKnowledge + stats.sessionMemory.total, color: 'hsl(var(--hydra-memory))', glow: 'hsl(var(--hydra-memory) / 0.4)' },
     ];
 
     const maxLayerVal = Math.max(...layerDefs.map(l => l.value), 1);
@@ -2703,8 +2703,8 @@ function ArsenalConnectionsGraph({
         x: cx + roleR * Math.cos(angle),
         y: cy + roleR * Math.sin(angle),
         r: nodeR,
-        color: '#94a3b8',
-        glow: 'rgba(148,163,184,0.3)',
+         color: 'hsl(var(--muted-foreground))',
+         glow: 'hsl(var(--muted-foreground) / 0.3)',
         type: 'role' as const,
         value: total,
       };
@@ -2718,22 +2718,22 @@ function ArsenalConnectionsGraph({
 
     topRoles.forEach(r => {
       const roleId = `role_${r.role}`;
-      if (r.promptCount > 0) {
-        allEdges.push({ source: 'instincts', target: roleId, weight: r.promptCount / maxEdgeWeight, color: '#a78bfa' });
-      }
-      if (r.memCount > 0) {
-        allEdges.push({ source: 'memory', target: roleId, weight: r.memCount / maxLayerVal, color: 'hsl(var(--hydra-memory))' });
-      }
-      if (r.knowledgeCount > 0) {
-        allEdges.push({ source: 'memory', target: roleId, weight: r.knowledgeCount / maxLayerVal, color: '#34d399' });
-      }
-    });
+       if (r.promptCount > 0) {
+         allEdges.push({ source: 'instincts', target: roleId, weight: r.promptCount / maxEdgeWeight, color: 'hsl(var(--hydra-expert))' });
+       }
+       if (r.memCount > 0) {
+         allEdges.push({ source: 'memory', target: roleId, weight: r.memCount / maxLayerVal, color: 'hsl(var(--hydra-memory))' });
+       }
+       if (r.knowledgeCount > 0) {
+         allEdges.push({ source: 'memory', target: roleId, weight: r.knowledgeCount / maxLayerVal, color: 'hsl(var(--hydra-success))' });
+       }
+     });
 
-    // Layer-to-layer edges
-    allEdges.push({ source: 'instincts', target: 'patterns', weight: 0.4, color: '#c4b5fd' });
-    allEdges.push({ source: 'patterns', target: 'tools', weight: 0.35, color: '#93c5fd' });
-    allEdges.push({ source: 'tools', target: 'flows', weight: 0.35, color: '#67e8f9' });
-    allEdges.push({ source: 'memory', target: 'achieve', weight: 0.3, color: '#6ee7b7' });
+     // Layer-to-layer edges
+     allEdges.push({ source: 'instincts', target: 'patterns', weight: 0.4, color: 'hsl(var(--hydra-expert) / 0.6)' });
+     allEdges.push({ source: 'patterns', target: 'tools', weight: 0.35, color: 'hsl(var(--hydra-info) / 0.6)' });
+     allEdges.push({ source: 'tools', target: 'flows', weight: 0.35, color: 'hsl(var(--hydra-cyan) / 0.6)' });
+     allEdges.push({ source: 'memory', target: 'achieve', weight: 0.3, color: 'hsl(var(--hydra-success) / 0.6)' });
 
     return { nodes: allNodes, edges: allEdges };
   }, [size, counts, stats, roleData, isRu]);
@@ -2745,7 +2745,7 @@ function ArsenalConnectionsGraph({
       <CardHeader className="pb-3 pt-4 px-5">
         <div className="flex items-center justify-between">
           <CardTitle className="text-sm font-semibold flex items-center gap-2">
-            <GitBranch className="h-4 w-4 text-[hsl(var(--hydra-memory))]" />
+            <GitBranch className="h-4 w-4 text-hydra-memory" />
             {isRu ? 'Граф связей' : 'Connections Graph'}
           </CardTitle>
           <p className="text-[11px] text-muted-foreground">
@@ -3227,14 +3227,14 @@ function ChroniclesTab({ language, isSupervisor }: { language: string; isSupervi
   return (
     <div className="space-y-6">
       {/* Header banner */}
-      <Card className="border-amber-500/30 bg-amber-500/5">
-        <CardContent className="p-5">
-          <div className="flex items-start gap-4">
-            <div className="rounded-xl p-3 bg-amber-500/15 border border-amber-500/30 shrink-0">
-              <ScrollText className="h-6 w-6 text-amber-400" />
+       <Card className="border-hydra-arbiter/30 bg-hydra-arbiter/5">
+         <CardContent className="p-5">
+           <div className="flex items-start gap-4">
+             <div className="rounded-xl p-3 bg-hydra-arbiter/15 border border-hydra-arbiter/30 shrink-0">
+               <ScrollText className="h-6 w-6 text-hydra-arbiter" />
             </div>
             <div className="flex-1 min-w-0">
-              <h2 className="text-lg font-bold text-amber-400">
+              <h2 className="text-lg font-bold text-hydra-arbiter">
                 {isRu ? 'Хроники Эволюции Hydra' : 'Chronicles of Hydra Evolution'}
               </h2>
               <p className="text-sm text-muted-foreground mt-1">
@@ -3244,13 +3244,13 @@ function ChroniclesTab({ language, isSupervisor }: { language: string; isSupervi
               </p>
               <div className="flex flex-wrap items-center gap-4 mt-3">
                 <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                  <FlaskConical className="h-3.5 w-3.5 text-emerald-400" />
-                  <span className="text-emerald-400 font-medium">{isRu ? 'Эволюционер' : 'Evolutioner'}</span>
-                  <span>{isRu ? '→ тестирует и измеряет' : '→ tests & measures'}</span>
-                </div>
-                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                  <ScrollText className="h-3.5 w-3.5 text-amber-400" />
-                  <span className="text-amber-400 font-medium">{isRu ? 'Летописец' : 'Chronicler'}</span>
+                   <FlaskConical className="h-3.5 w-3.5 text-hydra-success" />
+                   <span className="text-hydra-success font-medium">{isRu ? 'Эволюционер' : 'Evolutioner'}</span>
+                   <span>{isRu ? '→ тестирует и измеряет' : '→ tests & measures'}</span>
+                 </div>
+                 <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                   <ScrollText className="h-3.5 w-3.5 text-hydra-arbiter" />
+                   <span className="text-hydra-arbiter font-medium">{isRu ? 'Летописец' : 'Chronicler'}</span>
                   <span>{isRu ? '→ фиксирует и архивирует' : '→ records & archives'}</span>
                 </div>
                 {isSupervisor && rejectedCount > 0 && (
@@ -3259,7 +3259,7 @@ function ChroniclesTab({ language, isSupervisor }: { language: string; isSupervi
                       variant="outline" size="sm"
                       onClick={() => triggerEvolution(null, 'autorun')}
                       disabled={autorunning}
-                      className="gap-1.5 border-purple-500/30 text-purple-400 hover:bg-purple-500/10"
+                      className="gap-1.5 border-hydra-expert/30 text-hydra-expert hover:bg-hydra-expert/10"
                     >
                       {autorunning ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FlaskConical className="h-3.5 w-3.5" />}
                       {isRu ? `Автопробег (${rejectedCount} отклонённых)` : `Autorun (${rejectedCount} rejected)`}
@@ -3435,7 +3435,7 @@ function ChroniclesTab({ language, isSupervisor }: { language: string; isSupervi
                     size="sm"
                     onClick={handleSave}
                     disabled={saving}
-                    className="bg-amber-500/20 text-amber-400 border border-amber-500/40 hover:bg-amber-500/30"
+                    className="bg-hydra-arbiter/20 text-hydra-arbiter border border-hydra-arbiter/40 hover:bg-hydra-arbiter/30"
                   >
                     {saving ? <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> : <ScrollText className="h-3.5 w-3.5 mr-1.5" />}
                     {isRu ? 'Зафиксировать запись' : 'Save Entry'}
@@ -3611,12 +3611,12 @@ function ChroniclesTab({ language, isSupervisor }: { language: string; isSupervi
                             </div>
                           ))}
                         </div>
-                        <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-3 space-y-1.5">
-                          <p className="text-xs font-medium text-emerald-400 uppercase tracking-wide">{isRu ? 'Цель →' : 'Target →'}</p>
-                          {Object.entries(mat).map(([k, v]) => (
-                            <div key={k} className="flex justify-between text-xs">
-                              <span className="text-muted-foreground">{k}</span>
-                              <span className="font-mono font-medium text-emerald-400">{String(v)}</span>
+                         <div className="rounded-lg border border-hydra-success/30 bg-hydra-success/5 p-3 space-y-1.5">
+                           <p className="text-xs font-medium text-hydra-success uppercase tracking-wide">{isRu ? 'Цель →' : 'Target →'}</p>
+                           {Object.entries(mat).map(([k, v]) => (
+                             <div key={k} className="flex justify-between text-xs">
+                               <span className="text-muted-foreground">{k}</span>
+                               <span className="font-mono font-medium text-hydra-success">{String(v)}</span>
                             </div>
                           ))}
                         </div>
@@ -3624,15 +3624,15 @@ function ChroniclesTab({ language, isSupervisor }: { language: string; isSupervi
                     )}
                     {/* AI Revision */}
                     {entry.ai_revision && (
-                      <div className="rounded-lg border border-purple-500/30 bg-purple-500/5 p-3">
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="flex items-center gap-1.5 text-xs text-purple-400 font-medium">
-                            <FlaskConical className="h-3.5 w-3.5" />
-                            {isRu ? 'ИИ-ревизия Эволюционера' : 'AI Evolutioner Revision'}
-                          </div>
-                          <Button variant="ghost" size="sm"
-                            onClick={() => setExpandedRevision(expandedRevision === entry.id ? null : entry.id)}
-                            className="h-6 text-xs text-purple-400 hover:bg-purple-500/10">
+                       <div className="rounded-lg border border-hydra-expert/30 bg-hydra-expert/5 p-3">
+                         <div className="flex items-center justify-between mb-2">
+                           <div className="flex items-center gap-1.5 text-xs text-hydra-expert font-medium">
+                             <FlaskConical className="h-3.5 w-3.5" />
+                             {isRu ? 'ИИ-ревизия Эволюционера' : 'AI Evolutioner Revision'}
+                           </div>
+                           <Button variant="ghost" size="sm"
+                             onClick={() => setExpandedRevision(expandedRevision === entry.id ? null : entry.id)}
+                             className="h-6 text-xs text-hydra-expert hover:bg-hydra-expert/10">
                             {expandedRevision === entry.id ? (isRu ? 'Свернуть' : 'Collapse') : (isRu ? 'Развернуть' : 'Expand')}
                           </Button>
                         </div>
@@ -3657,18 +3657,18 @@ function ChroniclesTab({ language, isSupervisor }: { language: string; isSupervi
                               <Button variant="ghost" size="sm"
                                 onClick={() => setResolution(entry.id, 'approved')}
                                 disabled={entry.supervisor_resolution === 'approved'}
-                                className={cn('h-6 text-xs', entry.supervisor_resolution === 'approved' ? 'text-emerald-400 bg-emerald-500/10' : 'text-muted-foreground hover:text-emerald-400')}
-                              >✅ {isRu ? 'Согласен' : 'Agree'}</Button>
-                              <Button variant="ghost" size="sm"
-                                onClick={() => setResolution(entry.id, 'wish')}
-                                disabled={entry.supervisor_resolution === 'wish'}
-                                className={cn('h-6 text-xs', entry.supervisor_resolution === 'wish' ? 'text-blue-400 bg-blue-500/10' : 'text-muted-foreground hover:text-blue-400')}
-                              >💬 {isRu ? 'Пожелание' : 'Wish'}</Button>
-                              <Button variant="ghost" size="sm"
-                                onClick={() => setResolution(entry.id, 'rejected')}
-                                disabled={entry.supervisor_resolution === 'rejected'}
-                                className={cn('h-6 text-xs', entry.supervisor_resolution === 'rejected' ? 'text-red-400 bg-red-500/10' : 'text-muted-foreground hover:text-red-400')}
-                              >❌ {isRu ? 'Не согласен' : 'Reject'}</Button>
+                                 className={cn('h-6 text-xs', entry.supervisor_resolution === 'approved' ? 'text-hydra-success bg-hydra-success/10' : 'text-muted-foreground hover:text-hydra-success')}
+                               >✅ {isRu ? 'Согласен' : 'Agree'}</Button>
+                               <Button variant="ghost" size="sm"
+                                 onClick={() => setResolution(entry.id, 'wish')}
+                                 disabled={entry.supervisor_resolution === 'wish'}
+                                 className={cn('h-6 text-xs', entry.supervisor_resolution === 'wish' ? 'text-hydra-info bg-hydra-info/10' : 'text-muted-foreground hover:text-hydra-info')}
+                               >💬 {isRu ? 'Пожелание' : 'Wish'}</Button>
+                               <Button variant="ghost" size="sm"
+                                 onClick={() => setResolution(entry.id, 'rejected')}
+                                 disabled={entry.supervisor_resolution === 'rejected'}
+                                 className={cn('h-6 text-xs', entry.supervisor_resolution === 'rejected' ? 'text-hydra-critical bg-hydra-critical/10' : 'text-muted-foreground hover:text-hydra-critical')}
+                               >❌ {isRu ? 'Не согласен' : 'Reject'}</Button>
                             </>
                           )}
                         </div>
@@ -3700,11 +3700,11 @@ interface EvolutionerPrompt {
 }
 
 const PROMPT_LABELS: Record<string, { ru: string; en: string; color: string }> = {
-  contest_discrepancy: { ru: 'Расхождение оценок (Конкурс)', en: 'Score Discrepancy (Contest)', color: 'text-blue-400 border-blue-500/30 bg-blue-500/10' },
-  rejected_default:   { ru: 'Отклонение (универсальный)', en: 'Rejected (default)', color: 'text-amber-400 border-amber-500/30 bg-amber-500/10' },
-  rejected_technoarbiter: { ru: 'Отклонение → ТехноАрбитр', en: 'Rejected → TechnoArbiter', color: 'text-purple-400 border-purple-500/30 bg-purple-500/10' },
-  rejected_technocritic:  { ru: 'Отклонение → ТехноКритик', en: 'Rejected → TechnoCritic', color: 'text-red-400 border-red-500/30 bg-red-500/10' },
-  rejected_guide:         { ru: 'Отклонение → Гид', en: 'Rejected → Guide', color: 'text-green-400 border-green-500/30 bg-green-500/10' },
+  contest_discrepancy: { ru: 'Расхождение оценок (Конкурс)', en: 'Score Discrepancy (Contest)', color: 'text-hydra-info border-hydra-info/30 bg-hydra-info/10' },
+  rejected_default:   { ru: 'Отклонение (универсальный)', en: 'Rejected (default)', color: 'text-hydra-arbiter border-hydra-arbiter/30 bg-hydra-arbiter/10' },
+  rejected_technoarbiter: { ru: 'Отклонение → ТехноАрбитр', en: 'Rejected → TechnoArbiter', color: 'text-hydra-expert border-hydra-expert/30 bg-hydra-expert/10' },
+  rejected_technocritic:  { ru: 'Отклонение → ТехноКритик', en: 'Rejected → TechnoCritic', color: 'text-hydra-critical border-hydra-critical/30 bg-hydra-critical/10' },
+  rejected_guide:         { ru: 'Отклонение → Гид', en: 'Rejected → Guide', color: 'text-hydra-success border-hydra-success/30 bg-hydra-success/10' },
 };
 
 function EvolutionerPromptsPanel({ isRu }: { isRu: boolean }) {
@@ -3754,15 +3754,15 @@ function EvolutionerPromptsPanel({ isRu }: { isRu: boolean }) {
   };
 
   return (
-    <Card className="border-emerald-500/20 bg-emerald-500/5 mt-4">
-      <CardHeader className="pb-3 cursor-pointer" onClick={() => setOpen(o => !o)}>
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <FlaskConical className="h-4 w-4 text-emerald-400" />
-            <CardTitle className="text-sm font-semibold text-emerald-400">
-              {isRu ? 'Промпты Эволюционера' : "Evolutioner's Prompts"}
-            </CardTitle>
-            <Badge variant="secondary" className="text-xs bg-emerald-500/15 text-emerald-400">
+     <Card className="border-hydra-success/20 bg-hydra-success/5 mt-4">
+       <CardHeader className="pb-3 cursor-pointer" onClick={() => setOpen(o => !o)}>
+         <div className="flex items-center justify-between gap-2">
+           <div className="flex items-center gap-2">
+             <FlaskConical className="h-4 w-4 text-hydra-success" />
+             <CardTitle className="text-sm font-semibold text-hydra-success">
+               {isRu ? 'Промпты Эволюционера' : "Evolutioner's Prompts"}
+             </CardTitle>
+             <Badge variant="secondary" className="text-xs bg-hydra-success/15 text-hydra-success">
               {isRu ? 'только Супервизор' : 'Supervisor only'}
             </Badge>
           </div>
@@ -3817,7 +3817,7 @@ function EvolutionerPromptsPanel({ isRu }: { isRu: boolean }) {
                           </Button>
                           <Button
                             size="sm"
-                            className="h-6 text-xs bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 hover:bg-emerald-500/30"
+                            className="h-6 text-xs bg-hydra-success/20 text-hydra-success border border-hydra-success/40 hover:bg-hydra-success/30"
                             onClick={() => savePrompt(p.id)}
                             disabled={saving}
                           >
@@ -3883,8 +3883,8 @@ export default function HydraMemory() {
         {/* Header */}
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="rounded-xl p-2.5 bg-[hsl(var(--hydra-memory)/0.12)] border border-[hsl(var(--hydra-memory)/0.3)]">
-              <BrainCircuit className="h-6 w-6 text-[hsl(var(--hydra-memory))]" />
+             <div className="rounded-xl p-2.5 bg-hydra-memory/12 border border-hydra-memory/30">
+               <BrainCircuit className="h-6 w-6 text-hydra-memory" />
             </div>
             <div>
               <h1 className="text-2xl font-bold">{t('memory.hub.title')}</h1>
@@ -3930,7 +3930,7 @@ export default function HydraMemory() {
               <TrendingUp className="h-3.5 w-3.5" />
               {t('memory.hub.ragDashboard')}
             </TabsTrigger>
-            <TabsTrigger value="chronicles" className="gap-2 text-amber-400 data-[state=active]:text-amber-400">
+            <TabsTrigger value="chronicles" className="gap-2 text-hydra-arbiter data-[state=active]:text-hydra-arbiter">
               <ScrollText className="h-3.5 w-3.5" />
               {language === 'ru' ? 'Хроники Эволюции' : 'Evolution Chronicles'}
             </TabsTrigger>
