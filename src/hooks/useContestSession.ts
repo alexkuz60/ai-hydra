@@ -247,7 +247,48 @@ export function useContestSession() {
       return;
     }
     setResults(prev => prev.map(r => r.id === resultId ? { ...r, ...updates } : r));
-  }, [toast]);
+
+    // ── Contest discrepancy trigger ──
+    // Срабатывает когда пользователь выставил оценку и уже есть оценка арбитра
+    if (updates.user_score != null) {
+      const existingResult = results.find(r => r.id === resultId);
+      const arbiterScore = existingResult?.arbiter_score ?? updates.arbiter_score ?? null;
+      if (arbiterScore != null) {
+        const delta = Math.abs(updates.user_score - arbiterScore);
+        if (delta >= 2.5) {
+          // Асинхронно — не блокируем UI
+          const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+          const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+          supabase.auth.getSession().then(({ data: { session: authSession } }) => {
+            const round = rounds.find(r => r.id === existingResult?.round_id);
+            fetch(`${supabaseUrl}/functions/v1/contest-discrepancy-trigger`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${authSession?.access_token || supabaseKey}`,
+                'apikey': supabaseKey,
+              },
+              body: JSON.stringify({
+                result_id: resultId,
+                model_id: existingResult?.model_id,
+                user_score: updates.user_score,
+                arbiter_score: arbiterScore,
+                session_id: existingResult?.session_id,
+                round_prompt: round?.prompt,
+              }),
+            }).then(async (res) => {
+              if (res.ok) {
+                const data = await res.json();
+                if (data.triggered) {
+                  console.info(`[discrepancy-trigger] Chronicle ${data.entry_code} created (Δ${delta.toFixed(1)})`);
+                }
+              }
+            }).catch(err => console.warn('[discrepancy-trigger] Fire-and-forget error:', err));
+          });
+        }
+      }
+    }
+  }, [toast, results, rounds]);
 
   // Update session status
   const updateSessionStatus = useCallback(async (status: ContestSession['status']) => {
