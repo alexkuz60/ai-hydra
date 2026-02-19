@@ -973,18 +973,22 @@ In each model's settings you can choose:
 
 Карточки анимированы через Framer Motion; счётчики обновляются в реальном времени из \`useHydraMemoryStats\`.
 
-## Граф памяти
+## Графы памяти и связей
+
+Оба графа расположены в одном табе в виде двух колонок на десктопе с синхронизированной фиксированной высотой **560px**.
+
+### Граф памяти
 
 SVG-визуализация связей всех трёх уровней:
 
 - **Центральный узел** — Гидра (локализован: «Гидра» / «Hydra»)
 - **Узлы ролей** — по кругу, размер пропорционален количеству записей опыта
 - **Узлы сессий** — на орбите роли, содержат первые 8 символов session_id
-- **Горячие роли** — пунктирный ореол + ⚡ при высоком \`usage_count\`
+- **Горячие роли** — пунктирный ореол + ⚡ при высоком % использований (\`usage_count\`)
 - Клик на узел → детали: количество записей, средний confidence, связанные сессии
 - Прогресс-бары активности ролей под графом
 
-## Граф связей
+### Граф связей
 
 SVG-граф показывает роли как **мосты** между когнитивными слоями. Адаптируется к ширине контейнера через ResizeObserver.
 
@@ -992,7 +996,7 @@ SVG-граф показывает роли как **мосты** между ко
 - **До 7 активных ролей** — внутренняя орбита; узел масштабируется по объёму данных (промпты + опыт + знания)
 - **Рёбра** весовые; цвет кодирует тип связи: 💜 промпты, 🔵 опыт, 🟢 знания
 - **Hover** — подсвечивает узел и рёбра; тултип с локализованным именем роли и счётчиками
-- Граф занимает полную ширину (55% высоты, макс. 600px); радиусы пересчитываются динамически
+- Оба SVG-контейнера имеют фиксированную высоту 560px для синхронизированного вида
 
 > [!TIP] Локализация
 > Метки ролей в обоих графах отображаются на языке интерфейса (RU/EN) через \`ROLE_CONFIG\` + \`t(roleConfig.label)\`.
@@ -1069,18 +1073,22 @@ The **"Cognitive Arsenal"** tab — a strategic dashboard of Hydra's "subconscio
 
 Cards are animated via Framer Motion; counters update in real time from \`useHydraMemoryStats\`.
 
-## Memory Graph
+## Memory & Connections Graphs
+
+Both graphs are displayed in a single tab as two columns on desktop with synchronized fixed height of **560px**.
+
+### Memory Graph
 
 SVG visualization of connections across all three layers:
 
 - **Central node** — Hydra (localized: «Гидра» / «Hydra»)
 - **Role nodes** — arranged in a circle, size proportional to experience record count
 - **Session nodes** — in orbit around their role, showing first 8 chars of session_id
-- **Hot roles** — dashed glow + ⚡ for high \`usage_count\`
+- **Hot roles** — dashed glow + ⚡ for high usage % (\`usage_count\`)
 - Click on a node → details panel: record count, average confidence, linked sessions
 - Role activity progress bars below the graph
 
-## Connections Graph
+### Connections Graph
 
 SVG graph showing roles as **bridges** between cognitive layers. Adapts to container width via ResizeObserver.
 
@@ -1088,7 +1096,7 @@ SVG graph showing roles as **bridges** between cognitive layers. Adapts to conta
 - **Up to 7 active roles** — inner orbit; node scales by total data volume (prompts + experience + knowledge)
 - **Weighted edges**; color encodes connection type: 💜 prompts, 🔵 experience, 🟢 knowledge
 - **Hover** — highlights node and edges; tooltip with localized role name and counters
-- Graph spans full width (55% height ratio, max 600px); radii recalculated dynamically
+- Both SVG containers have a fixed height of 560px for synchronized desktop layout
 
 > [!TIP] Localization
 > Role labels in both graphs are displayed in the current interface language (RU/EN) via \`ROLE_CONFIG\` + \`t(roleConfig.label)\`.
