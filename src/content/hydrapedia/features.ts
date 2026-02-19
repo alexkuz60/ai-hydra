@@ -923,55 +923,35 @@ In each model's settings you can choose:
     content: {
       ru: `# Память Гидры
 
-Центр управления памятью ИИ-Гидры — RAG-хаб, объединяющий три уровня хранилища в едином интерфейсе. Доступен через иконку 🧠 в боковом меню (\`/hydra-memory\`).
+Центральный командный центр всей когнитивной подсистемы Гидры — 8 функциональных областей в едином полноширинном интерфейсе. Доступен через иконку 🧠 в боковом меню (\`/hydra-memory\`).
 
-## Три уровня памяти
+## 8 функциональных областей
 
-| Уровень | Таблица | Назначение |
-|---------|---------|------------|
-| **Память сессий** | \`session_memory\` | Тактические чанки текущих диалогов |
-| **Опыт ролей** | \`role_memory\` | Долгосрочный опыт, накопленный ролями между сессиями |
-| **База знаний** | \`role_knowledge\` | Документальная база RAG-контекста для ролей |
-
-## Вкладка «Память сессий»
-
-- Статистика: всего чанков, количество сессий, типов данных
-- Breakdown по типам: \`decision / context / instruction / evaluation / summary / message\`
-- Кнопка **«Управление памятью»** → открывает \`SessionMemoryDialog\`:
-  - Семантический, текстовый и **гибридный** поиск (BM25 + pgvector + RRF)
-  - Фильтрация по типам чанков
-  - Обнаружение и массовое удаление дубликатов
-  - Полная очистка памяти
-
-## Вкладка «Опыт ролей»
-
-- Статистика: всего записей, количество ролей, средний confidence
-- Список ролей с раскрывающимися записями опыта
-- Inline-удаление отдельных записей
-- Типы памяти с цветовыми бейджами: \`experience / preference / skill / mistake / success\`
-
-## Вкладка «База знаний»
-
-- Статистика: чанков знаний, ролей с базой, категорий
-- Группировка: роли → категории
-- **Инструменты очистки** (аккордеон):
-  - Сканирование дубликатов по первым 200 символам контента
-  - Удаление устаревших версий (чанки с одинаковым \`source_url\` и не-последней \`version\`)
-  - Предупреждение при наличии чанков без эмбеддинга
+| Вкладка | Назначение |
+|---------|------------|
+| **Когнитивный арсенал** | Дашборд «подсознания» Гидры в 6 слоях: Инстинкты (промпты), Паттерны (поведение), Арсенал инструментов (Prompt/HTTP), Потоки мыслей, Достижения (конкурсы/собеседования), Долгосрочная память (3-уровневый RAG) |
+| **Контекст сессий** | Inline-менеджер чанков \`session_memory\` с фильтрами типов (decision/context/instruction/evaluation/summary/message), обнаружение дубликатов, массовое удаление, фидбэк 👍/👎 |
+| **Опыт ролей** | Записи \`role_memory\` с confidence-скорами, группировка по ролям, inline-удаление, раскрывающиеся детали |
+| **База знаний** | \`role_knowledge\` (RAG) — инструменты очистки: сканирование дубликатов, удаление устаревших версий по \`source_url\`, фильтрация по роли и категории |
+| **Графы памяти и связей** | Два SVG-графа в двухколоночном layout (560px): Граф памяти (Гидра → роли → сессии, hover-glow, «горячие роли» ⚡) и Граф связей арсенала (гексагональная структура когнитивных слоёв) |
+| **Файлохранилище** | Файловый браузер с локализованными метками бакетов (Архив чатов / Файлы задач / Аватары) и тултипами технических ID |
+| **RAG-аналитика** | Мониторинг-дашборд: средняя релевантность, общее число извлечений, статистика фидбэка, распределение типов чанков |
+| **Хроники эволюции** | Лог автономной рефлексии: AI-ревизии от Эволюционера, резолюции Супервизора (✅/❌/💬/🔄), фильтры по роли/дате/статусу, редактор промпта Эволюционера |
 
 ## Когнитивный арсенал
 
-Вкладка **«Когнитивный арсенал»** — стратегический дашборд «подсознания» Гидры. Отображает всё накопленное интеллектуальное имущество в виде карточек с живыми счётчиками и быстрыми действиями.
+Стратегический дашборд «подсознания» Гидры. Отображает всё накопленное интеллектуальное имущество в виде карточек с живыми счётчиками и быстрыми действиями.
 
 | Слой | Что считается | Быстрые действия |
 |------|---------------|-----------------|
 | **Инстинкты** | Системные промпты | Создать промпт → Библиотека |
 | **Паттерны мышления** | Шаблоны + паттерны поведения | Создать шаблон → Паттерны |
-| **Арсенал инструментов** | Кастомные инструменты + потоки | Создать инструмент / Новый поток |
+| **Арсенал инструментов** | Prompt-шаблоны и HTTP API | Создать инструмент / Новый поток |
+| **Потоки мыслей** | Flow-диаграммы | Новый поток → Flow Editor |
 | **Достижения** | Собеседования + конкурсы | Собеседование / Конкурс |
-| **Долгосрочная память** | Опыт ролей + знания + сессии | Очистить сессии (с подтверждением) |
+| **Долгосрочная память** | 3 уровня RAG: Опыт ролей, База знаний, Контекст сессий | Очистить сессии (с подтверждением) |
 
-Карточки анимированы через Framer Motion; счётчики обновляются в реальном времени из \`useHydraMemoryStats\`.
+Карточки анимированы через Framer Motion; счётчики обновляются в реальном времени из \`useHydraMemoryStats\`. Слой «Потоки мыслей» выделен бирюзовой темой (\`cyan\`).
 
 ## Графы памяти и связей
 
@@ -986,22 +966,17 @@ SVG-визуализация связей всех трёх уровней:
 - **Узлы сессий** — на орбите роли, содержат первые 8 символов session_id
 - **Горячие роли** — пунктирный ореол + ⚡ при высоком % использований (\`usage_count\`)
 - Клик на узел → детали: количество записей, средний confidence, связанные сессии
-- Прогресс-бары активности ролей под графом
 
-### Граф связей
+### Граф связей арсенала
 
-SVG-граф показывает роли как **мосты** между когнитивными слоями. Адаптируется к ширине контейнера через ResizeObserver.
+SVG-граф с гексагональной структурой показывает роли как **мосты** между когнитивными слоями. Адаптируется к ширине контейнера через ResizeObserver.
 
-- **Пять слоёв** (Инстинкты, Паттерны, Инструменты, Достижения, Память) — внешний пятиугольник
-- **До 7 активных ролей** — внутренняя орбита; узел масштабируется по объёму данных (промпты + опыт + знания)
+- **Шесть слоёв** (Инстинкты, Паттерны, Инструменты, Потоки мыслей, Достижения, Память) — внешняя структура
+- **До 7 активных ролей** — внутренняя орбита; узел масштабируется по объёму данных
 - **Рёбра** весовые; цвет кодирует тип связи: 💜 промпты, 🔵 опыт, 🟢 знания
-- **Hover** — подсвечивает узел и рёбра; тултип с локализованным именем роли и счётчиками
-- Оба SVG-контейнера имеют фиксированную высоту 560px для синхронизированного вида
+- **Hover** — подсвечивает узел и рёбра; тултип с локализованным именем роли
 
-> [!TIP] Локализация
-> Метки ролей в обоих графах отображаются на языке интерфейса (RU/EN) через \`ROLE_CONFIG\` + \`t(roleConfig.label)\`.
-
-## Поисковые режимы
+## Гибридный поиск
 
 | Режим | Иконка | Алгоритм |
 |-------|--------|----------|
@@ -1009,9 +984,20 @@ SVG-граф показывает роли как **мосты** между ко
 | Семантический | 🧠 | Cosine similarity (pgvector) |
 | Гибридный | ⚡ | BM25 + pgvector + RRF (k=60) |
 
-## RAG Pipeline (Архивариус)
+## Реранжирование
 
-При работе роли Архивариуса знания извлекаются через многоэтапный пайплайн:
+После гибридного поиска кандидаты проходят re-scoring через \`gemini-3-flash-preview\`:
+- Формула: \`final_score = rerank × 0.7 + hybrid × 0.3\`
+- Модель оценивает релевантность чанка к запросу по шкале 0–1
+
+## HyDE (Hypothetical Document Embeddings)
+
+Перед поиском генерируется гипотетический документ:
+- Смешивание эмбеддингов: \`query × 0.4 + hyde × 0.6\`
+- L2-нормализация результирующего вектора
+- Улучшает точность поиска за счёт семантического обогащения запроса
+
+## RAG Pipeline (Архивариус)
 
 \`\`\`
 Запрос → generate-embeddings + HyDE-генерация [параллельно]
@@ -1023,55 +1009,35 @@ SVG-граф показывает роли как **мосты** между ко
 \`\`\``,
       en: `# Hydra Memory
 
-Hydra's memory management hub — a RAG center combining three storage layers in a single interface. Accessible via the 🧠 icon in the sidebar (\`/hydra-memory\`).
+Central command center of Hydra's entire cognitive subsystem — 8 functional areas in a single full-width interface. Accessible via the 🧠 icon in the sidebar (\`/hydra-memory\`).
 
-## Three Memory Layers
+## 8 Functional Areas
 
-| Layer | Table | Purpose |
-|-------|-------|---------|
-| **Session Memory** | \`session_memory\` | Tactical chunks from active dialogues |
-| **Role Experience** | \`role_memory\` | Long-term experience accumulated by roles across sessions |
-| **Knowledge Base** | \`role_knowledge\` | Documentary RAG context base for roles |
-
-## Session Memory Tab
-
-- Stats: total chunks, session count, data types
-- Breakdown by type: \`decision / context / instruction / evaluation / summary / message\`
-- **"Manage Memory"** button → opens \`SessionMemoryDialog\`:
-  - Semantic, text, and **hybrid** search (BM25 + pgvector + RRF)
-  - Filter by chunk types
-  - Duplicate detection and bulk deletion
-  - Full memory clear
-
-## Role Experience Tab
-
-- Stats: total records, role count, average confidence
-- Expandable role list with experience records
-- Inline deletion of individual records
-- Memory type badges: \`experience / preference / skill / mistake / success\`
-
-## Knowledge Base Tab
-
-- Stats: knowledge chunks, roles with base, categories
-- Grouping: roles → categories
-- **Cleanup Tools** (accordion):
-  - Duplicate scan by first 200 chars of content
-  - Stale version deletion (chunks with same \`source_url\` but non-latest \`version\`)
-  - Warning for chunks without embeddings
+| Tab | Purpose |
+|-----|---------|
+| **Cognitive Arsenal** | Dashboard of Hydra's "subconscious" in 6 layers: Instincts (prompts), Patterns (behavior), Tool Arsenal (Prompt/HTTP), Thought Flows, Achievements (contests/interviews), Long-term Memory (3-level RAG) |
+| **Session Memory** | Inline chunk manager for \`session_memory\` with type filters (decision/context/instruction/evaluation/summary/message), duplicate detection, batch deletion, feedback 👍/👎 |
+| **Role Experience** | \`role_memory\` records with confidence scores, role grouping, inline deletion, expandable details |
+| **Knowledge Base** | \`role_knowledge\` (RAG) — cleanup tools: duplicate scanning, outdated version deletion by \`source_url\`, filtering by role and category |
+| **Memory & Connections Graphs** | Two SVG graphs in two-column layout (560px): Memory Graph (Hydra → roles → sessions, hover-glow, "hot roles" ⚡) and Arsenal Connections Graph (hexagonal cognitive layer structure) |
+| **File Storage** | File browser with localized bucket labels (Chat Archive / Task Files / Avatars) and technical ID tooltips |
+| **RAG Analytics** | Monitoring dashboard: average relevance, total retrievals, feedback statistics, chunk type distribution |
+| **Evolution Chronicles** | Autonomous reflection log: AI revisions from Evolutioner, Supervisor resolutions (✅/❌/💬/🔄), filters by role/date/status, Evolutioner prompt editor |
 
 ## Cognitive Arsenal
 
-The **"Cognitive Arsenal"** tab — a strategic dashboard of Hydra's "subconscious". Displays all accumulated intellectual assets as cards with live counters and quick actions.
+Strategic dashboard of Hydra's "subconscious". Displays all accumulated intellectual assets as cards with live counters and quick actions.
 
 | Layer | What is counted | Quick actions |
 |-------|-----------------|---------------|
 | **Instincts** | System prompts | Create prompt → Library |
 | **Thinking Patterns** | Blueprints + behavioral patterns | Create blueprint → Patterns |
-| **Tool Arsenal** | Custom tools + flows | Create tool / New flow |
+| **Tool Arsenal** | Prompt templates and HTTP APIs | Create tool / New flow |
+| **Thought Flows** | Flow diagrams | New flow → Flow Editor |
 | **Achievements** | Interviews + contests | Interview / Contest |
-| **Living Memory** | Role experience + knowledge + sessions | Clear sessions (with confirmation) |
+| **Living Memory** | 3 RAG levels: Role experience, Knowledge base, Session context | Clear sessions (with confirmation) |
 
-Cards are animated via Framer Motion; counters update in real time from \`useHydraMemoryStats\`.
+Cards are animated via Framer Motion; counters update in real time from \`useHydraMemoryStats\`. The "Thought Flows" layer uses a cyan color theme.
 
 ## Memory & Connections Graphs
 
@@ -1086,22 +1052,17 @@ SVG visualization of connections across all three layers:
 - **Session nodes** — in orbit around their role, showing first 8 chars of session_id
 - **Hot roles** — dashed glow + ⚡ for high usage % (\`usage_count\`)
 - Click on a node → details panel: record count, average confidence, linked sessions
-- Role activity progress bars below the graph
 
-### Connections Graph
+### Arsenal Connections Graph
 
-SVG graph showing roles as **bridges** between cognitive layers. Adapts to container width via ResizeObserver.
+SVG graph with hexagonal structure showing roles as **bridges** between cognitive layers. Adapts to container width via ResizeObserver.
 
-- **Five layers** (Instincts, Patterns, Tools, Achievements, Memory) — outer pentagon
-- **Up to 7 active roles** — inner orbit; node scales by total data volume (prompts + experience + knowledge)
+- **Six layers** (Instincts, Patterns, Tools, Thought Flows, Achievements, Memory) — outer structure
+- **Up to 7 active roles** — inner orbit; node scales by total data volume
 - **Weighted edges**; color encodes connection type: 💜 prompts, 🔵 experience, 🟢 knowledge
-- **Hover** — highlights node and edges; tooltip with localized role name and counters
-- Both SVG containers have a fixed height of 560px for synchronized desktop layout
+- **Hover** — highlights node and edges; tooltip with localized role name
 
-> [!TIP] Localization
-> Role labels in both graphs are displayed in the current interface language (RU/EN) via \`ROLE_CONFIG\` + \`t(roleConfig.label)\`.
-
-## Search Modes
+## Hybrid Search
 
 | Mode | Icon | Algorithm |
 |------|------|-----------|
@@ -1109,9 +1070,20 @@ SVG graph showing roles as **bridges** between cognitive layers. Adapts to conta
 | Semantic | 🧠 | Cosine similarity (pgvector) |
 | Hybrid | ⚡ | BM25 + pgvector + RRF (k=60) |
 
-## RAG Pipeline (Archivist role)
+## Reranking
 
-When the Archivist role retrieves knowledge, it uses a multi-stage pipeline:
+After hybrid search, candidates are re-scored via \`gemini-3-flash-preview\`:
+- Formula: \`final_score = rerank × 0.7 + hybrid × 0.3\`
+- The model evaluates chunk relevance to the query on a 0–1 scale
+
+## HyDE (Hypothetical Document Embeddings)
+
+Before searching, a hypothetical document is generated:
+- Embedding blend: \`query × 0.4 + hyde × 0.6\`
+- L2-normalization of the resulting vector
+- Improves search accuracy through semantic query enrichment
+
+## RAG Pipeline (Archivist role)
 
 \`\`\`
 Query → generate-embeddings + HyDE generation [parallel]
