@@ -4,7 +4,7 @@ import {
   BrainCircuit, Database, Layers, BookOpen, Trash2, RefreshCw,
   HardDrive, FolderOpen, FileImage, FileText, File, Search,
   Loader2, Filter, Copy, Sparkles, Text, MessageSquare, Lightbulb,
-  ListChecks, Star, Archive, AlertTriangle, Eye, X, Download, GitMerge,
+  ListChecks, Star, Archive, AlertTriangle, AlertCircle, Eye, X, Download, GitMerge,
   GitBranch, Wrench, BarChart2, Zap, ScanSearch, Clock, CheckCircle2, XCircle,
   ExternalLink, Trophy, Users, Cpu, Network, ThumbsUp, ThumbsDown,
   TrendingUp, Activity, Target, Award, ScrollText, FlaskConical, CheckCheck, Timer,
@@ -3298,6 +3298,31 @@ function ChroniclesTab({ language, isSupervisor }: { language: string; isSupervi
               </CardContent>
             </Card>
           )}
+        </div>
+      )}
+
+      {/* Autorun banner for supervisors */}
+      {isSupervisor && !loading && rejectedCount > 0 && (
+        <div className="sticky top-0 z-10 rounded-xl border border-red-500/40 bg-red-950/60 backdrop-blur-sm p-3 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2 text-sm">
+            <AlertCircle className="h-4 w-4 text-red-400 shrink-0" />
+            <span className="text-red-300 font-medium">
+              {isRu
+                ? `${rejectedCount} ${rejectedCount === 1 ? 'запись отклонена' : rejectedCount < 5 ? 'записи отклонены' : 'записей отклонено'} — требуют авторевизии Эволюционера`
+                : `${rejectedCount} ${rejectedCount === 1 ? 'entry rejected' : 'entries rejected'} — awaiting Evolutioner auto-revision`}
+            </span>
+          </div>
+          <Button
+            size="sm"
+            onClick={() => triggerEvolution(null, 'autorun')}
+            disabled={autorunning}
+            className="gap-1.5 shrink-0 bg-red-600 hover:bg-red-500 text-white border-0"
+          >
+            {autorunning
+              ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              : <FlaskConical className="h-3.5 w-3.5" />}
+            {isRu ? 'Запустить авторевизию всех отклонённых' : 'Auto-revise all rejected'}
+          </Button>
         </div>
       )}
 
