@@ -29,7 +29,6 @@ export async function streamWithTimeout(opts: StreamOptions): Promise<StreamResu
 
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
     if (attempt > 0) {
-      console.log(`[stream-retry] Retry attempt ${attempt} for ${body.model_id}`);
       // Small delay before retry
       await new Promise(r => setTimeout(r, 2000));
     }
@@ -37,10 +36,10 @@ export async function streamWithTimeout(opts: StreamOptions): Promise<StreamResu
     try {
       const result = await doStream(url, body, authToken, apiKey, signal, timeoutMs, onToken);
       return result;
-    } catch (err: any) {
-      if (err.name === 'AbortError') throw err; // User-initiated cancel
-      lastError = err;
-      console.warn(`[stream-timeout] Attempt ${attempt + 1} failed for ${body.model_id}:`, err.message);
+    } catch (err: unknown) {
+      const error = err instanceof Error ? err : new Error(String(err));
+      if (error.name === 'AbortError') throw error; // User-initiated cancel
+      lastError = error;
     }
   }
 
@@ -105,40 +104,47 @@ async function doStream(
     let accumulated = '';
     let buffer = '';
     let tokenCount = 0;
+    let doneSignal = false;
 
     resetIdleTimeout(); // Start idle timer
 
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
+    try {
+      while (!doneSignal) {
+        const { done, value } = await reader.read();
+        if (done) break;
 
-      resetIdleTimeout(); // Got data, reset idle timer
-      buffer += decoder.decode(value, { stream: true });
+        resetIdleTimeout(); // Got data, reset idle timer
+        buffer += decoder.decode(value, { stream: true });
 
-      let newlineIdx: number;
-      while ((newlineIdx = buffer.indexOf('\n')) !== -1) {
-        let line = buffer.slice(0, newlineIdx);
-        buffer = buffer.slice(newlineIdx + 1);
-        if (line.endsWith('\r')) line = line.slice(0, -1);
-        if (line.startsWith(':') || line.trim() === '' || line.startsWith('event:')) continue;
-        if (!line.startsWith('data: ')) continue;
-        const jsonStr = line.slice(6).trim();
-        if (jsonStr === '[DONE]') break;
-        try {
-          const parsed = JSON.parse(jsonStr);
-          const content = parsed.choices?.[0]?.delta?.content as string | undefined;
-          if (content) {
-            accumulated += content;
-            tokenCount++;
-            onToken(accumulated, tokenCount);
-          }
-        } catch { /* partial JSON */ }
+        let newlineIdx: number;
+        while ((newlineIdx = buffer.indexOf('\n')) !== -1) {
+          let line = buffer.slice(0, newlineIdx);
+          buffer = buffer.slice(newlineIdx + 1);
+          if (line.endsWith('\r')) line = line.slice(0, -1);
+          if (line.startsWith(':') || line.trim() === '' || line.startsWith('event:')) continue;
+          if (!line.startsWith('data: ')) continue;
+          const jsonStr = line.slice(6).trim();
+          if (jsonStr === '[DONE]') { doneSignal = true; break; }
+          try {
+            const parsed = JSON.parse(jsonStr) as Record<string, unknown>;
+            const choices = parsed.choices as Array<{ delta?: { content?: string } }> | undefined;
+            const content = choices?.[0]?.delta?.content;
+            if (content) {
+              accumulated += content;
+              tokenCount++;
+              onToken(accumulated, tokenCount);
+            }
+          } catch { /* partial JSON */ }
+        }
       }
+    } finally {
+      // Always release the reader lock to prevent resource leaks
+      try { reader.cancel(); } catch { /* already released */ }
     }
 
     const elapsed = Date.now() - startTime;
 
-    // If response is empty after successful stream, treat as timeout
+    // If response is empty after successful stream, treat as stalled
     if (!accumulated.trim()) {
       throw new Error('Empty response from model');
     }
