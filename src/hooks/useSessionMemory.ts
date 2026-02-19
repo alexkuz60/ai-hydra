@@ -18,6 +18,11 @@ export interface SessionMemoryChunk {
   metadata: Json;
   created_at: string;
   updated_at: string;
+  // RAG quality monitoring fields
+  retrieved_count?: number;
+  last_retrieved_at?: string | null;
+  relevance_score?: number | null;
+  feedback?: number | null; // 1 = helpful, -1 = not helpful
 }
 
 export interface CreateMemoryChunkInput {
@@ -363,6 +368,56 @@ export function useSessionMemory(sessionId: string | null) {
     [chunks]
   );
 
+  // Record chunk retrieval (called after RAG retrieval for quality tracking)
+  const recordRetrieval = useCallback(
+    async (chunkIds: string[], similarities: number[]) => {
+      if (!user || chunkIds.length === 0) return;
+      try {
+        await supabase.rpc('record_chunk_retrieval' as any, {
+          p_chunk_ids: chunkIds,
+          p_similarities: similarities,
+        });
+        // Optimistically update local cache
+        queryClient.setQueryData(queryKey, (old: SessionMemoryChunk[] | undefined) => {
+          if (!old) return old;
+          return old.map(chunk => {
+            const idx = chunkIds.indexOf(chunk.id);
+            if (idx === -1) return chunk;
+            const newCount = (chunk.retrieved_count ?? 0) + 1;
+            const prevScore = chunk.relevance_score ?? null;
+            const newScore = prevScore === null
+              ? similarities[idx]
+              : (prevScore * (newCount - 1) + similarities[idx]) / newCount;
+            return { ...chunk, retrieved_count: newCount, last_retrieved_at: new Date().toISOString(), relevance_score: newScore };
+          });
+        });
+      } catch (err) {
+        console.error('[Memory] Failed to record retrieval:', err);
+      }
+    },
+    [user, queryClient, queryKey]
+  );
+
+  // Submit feedback for a chunk (👍/👎)
+  const submitFeedback = useCallback(
+    async (chunkId: string, feedback: 1 | -1) => {
+      if (!user) return;
+      try {
+        await supabase.rpc('submit_chunk_feedback' as any, {
+          p_chunk_id: chunkId,
+          p_feedback: feedback,
+        });
+        queryClient.setQueryData(queryKey, (old: SessionMemoryChunk[] | undefined) => {
+          if (!old) return old;
+          return old.map(c => c.id === chunkId ? { ...c, feedback } : c);
+        });
+      } catch (err) {
+        console.error('[Memory] Failed to submit feedback:', err);
+      }
+    },
+    [user, queryClient, queryKey]
+  );
+
   // Get set of message IDs that are saved in memory
   const savedMessageIds = useMemo(() => {
     const ids = new Set<string>();
@@ -485,6 +540,10 @@ export function useSessionMemory(sessionId: string | null) {
     semanticSearch,
     hybridSearch,
     generateEmbedding,
+
+    // RAG quality monitoring
+    recordRetrieval,
+    submitFeedback,
 
     // Helpers
     getChunksByType,

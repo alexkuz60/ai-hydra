@@ -979,8 +979,12 @@ export type Database = {
           content: string
           created_at: string
           embedding: string | null
+          feedback: number | null
           id: string
+          last_retrieved_at: string | null
           metadata: Json | null
+          relevance_score: number | null
+          retrieved_count: number
           session_id: string
           source_message_id: string | null
           updated_at: string
@@ -991,8 +995,12 @@ export type Database = {
           content: string
           created_at?: string
           embedding?: string | null
+          feedback?: number | null
           id?: string
+          last_retrieved_at?: string | null
           metadata?: Json | null
+          relevance_score?: number | null
+          retrieved_count?: number
           session_id: string
           source_message_id?: string | null
           updated_at?: string
@@ -1003,8 +1011,12 @@ export type Database = {
           content?: string
           created_at?: string
           embedding?: string | null
+          feedback?: number | null
           id?: string
+          last_retrieved_at?: string | null
           metadata?: Json | null
+          relevance_score?: number | null
+          retrieved_count?: number
           session_id?: string
           source_message_id?: string | null
           updated_at?: string
@@ -1333,6 +1345,20 @@ export type Database = {
           usage_count: number
         }[]
       }
+      get_rag_analytics: {
+        Args: never
+        Returns: {
+          chunk_id: string
+          chunk_type: string
+          content_preview: string
+          created_at: string
+          feedback: number
+          last_retrieved_at: string
+          relevance_score: number
+          retrieved_count: number
+          session_id: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -1385,6 +1411,10 @@ export type Database = {
         Returns: undefined
       }
       is_admin_or_supervisor: { Args: { _user_id: string }; Returns: boolean }
+      record_chunk_retrieval: {
+        Args: { p_chunk_ids: string[]; p_similarities: number[] }
+        Returns: undefined
+      }
       save_api_key: {
         Args: { p_api_key: string; p_provider: string }
         Returns: undefined
@@ -1451,6 +1481,10 @@ export type Database = {
           p_user_id: string
         }
         Returns: string
+      }
+      submit_chunk_feedback: {
+        Args: { p_chunk_id: string; p_feedback: number }
+        Returns: undefined
       }
     }
     Enums: {
