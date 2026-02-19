@@ -1380,50 +1380,43 @@ function MemoryGraphTab({ stats }: { stats: ReturnType<typeof useHydraMemoryStat
   ];
 
   return (
-    <div className="flex flex-col gap-4">
-      {/* Layer toggles */}
-      <div className="flex items-center gap-3 flex-wrap">
-        {layerButtons.map(({ key, label, color }) => (
-          <button
-            key={key}
-            onClick={() => toggleLayer(key)}
-            className={cn(
-              'flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs border transition-all',
-              activeLayers.has(key)
-                ? 'border-border bg-muted/60 text-foreground'
-                : 'border-transparent bg-transparent text-muted-foreground opacity-50'
-            )}
-          >
-            <span
-              className="h-2.5 w-2.5 rounded-full shrink-0"
-              style={{ background: color }}
-            />
-            {label}
-            {key === 'cross' && (
-              <span className="ml-0.5 text-[10px] opacity-70">({t('memory.hub.legendCrossHint')})</span>
-            )}
-          </button>
-        ))}
-        <div className="flex items-center gap-1.5 ml-auto text-xs text-muted-foreground">
-          <Zap className="h-3 w-3 text-amber-400" />
-          <span>{t('memory.hub.legendHot')}</span>
-        </div>
-      </div>
-
-      {/* SVG Graph */}
-      <Card className="overflow-hidden border-border">
-        <CardHeader className="pb-2 pt-3 px-4">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-sm font-semibold flex items-center gap-2">
-              <BrainCircuit className="h-4 w-4 text-[hsl(var(--hydra-memory))]" />
-              {language === 'ru' ? 'Граф памяти' : 'Memory Graph'}
-            </CardTitle>
-            <p className="text-[11px] text-muted-foreground flex items-center gap-1">
-              <Zap className="h-3 w-3 text-amber-400" />
-              {language === 'ru' ? 'Горячая роль (высокий % использования)' : 'Hot role (high usage %)'}
-            </p>
+    <Card className="overflow-hidden border-border">
+      <CardHeader className="pb-2 pt-3 px-4">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-sm font-semibold flex items-center gap-2">
+            <BrainCircuit className="h-4 w-4 text-[hsl(var(--hydra-memory))]" />
+            {language === 'ru' ? 'Граф памяти' : 'Memory Graph'}
+          </CardTitle>
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <Zap className="h-3 w-3 text-amber-400" />
+            <span>{t('memory.hub.legendHot')}</span>
           </div>
-        </CardHeader>
+        </div>
+        {/* Layer toggles */}
+        <div className="flex items-center gap-3 flex-wrap pt-1">
+          {layerButtons.map(({ key, label, color }) => (
+            <button
+              key={key}
+              onClick={() => toggleLayer(key)}
+              className={cn(
+                'flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs border transition-all',
+                activeLayers.has(key)
+                  ? 'border-border bg-muted/60 text-foreground'
+                  : 'border-transparent bg-transparent text-muted-foreground opacity-50'
+              )}
+            >
+              <span
+                className="h-2.5 w-2.5 rounded-full shrink-0"
+                style={{ background: color }}
+              />
+              {label}
+              {key === 'cross' && (
+                <span className="ml-0.5 text-[10px] opacity-70">({t('memory.hub.legendCrossHint')})</span>
+              )}
+            </button>
+          ))}
+        </div>
+      </CardHeader>
         <div ref={containerRef} className="relative w-full" style={{ height: 'calc(100vh - 260px)', minHeight: 360 }}>
           <svg
             ref={svgRef}
@@ -1652,11 +1645,9 @@ function MemoryGraphTab({ stats }: { stats: ReturnType<typeof useHydraMemoryStat
             )}
           </AnimatePresence>
         </div>
-      </Card>
-
       {/* Hot roles activity bar */}
       {stats.roleMemory.filter(r => (roleMemoryDetails[r.role]?.usageCount || 0) > 0).length > 0 && (
-        <div className="space-y-2">
+        <div className="px-4 pb-4 space-y-2">
           <p className="text-xs text-muted-foreground font-medium flex items-center gap-1.5">
             <Zap className="h-3.5 w-3.5 text-amber-400" />
             {t('memory.hub.roleActivity')}
@@ -1693,7 +1684,7 @@ function MemoryGraphTab({ stats }: { stats: ReturnType<typeof useHydraMemoryStat
           </div>
         </div>
       )}
-    </div>
+    </Card>
   );
 }
 
