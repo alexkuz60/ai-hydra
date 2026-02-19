@@ -98,8 +98,6 @@ export function MultiModelSelector({ value, onChange, className }: MultiModelSel
       ALL_VALID_MODEL_IDS.includes(id) && !unavailableModelIds.includes(id)
     );
     if (validValues.length !== value.length) {
-      const removedIds = value.filter(id => !validValues.includes(id));
-      console.log('[MultiModelSelector] Cleaning up unavailable model IDs:', removedIds);
       onChange(validValues);
     }
   }, [unavailableModelIds]);

@@ -122,7 +122,6 @@ export function useFlowRuntime(options: UseFlowRuntimeOptions = {}) {
 
     } catch (error) {
       if ((error as Error).name === 'AbortError') {
-        console.log('[useFlowRuntime] Execution aborted');
         return;
       }
 

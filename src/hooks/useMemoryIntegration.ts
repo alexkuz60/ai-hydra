@@ -182,7 +182,6 @@ export function useMemoryIntegration({
                 source_message_id: msg.id,
                 metadata: jsonMetadata,
               });
-              console.log(`[Memory] Auto-saved arbiter evaluation from message ${msg.id}`);
             } catch (error) {
               console.error('[Memory] Failed to auto-save evaluation:', error);
             }
@@ -203,7 +202,6 @@ export function useMemoryIntegration({
                 saved_at: new Date().toISOString(),
               },
             });
-            console.log(`[Memory] Auto-saved decision from message ${msg.id} (rating: ${rating})`);
           } catch (error) {
             console.error('[Memory] Failed to auto-save decision:', error);
           }

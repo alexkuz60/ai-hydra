@@ -71,8 +71,8 @@ function FlowEditorContent() {
         variant: 'destructive',
       });
     },
-    onCheckpoint: (nodeId, message) => {
-      console.log('[FlowEditor] Checkpoint reached:', nodeId, message);
+    onCheckpoint: (_nodeId, _message) => {
+      // checkpoint handled by FlowCheckpointDialog
     },
   });
 

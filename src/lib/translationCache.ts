@@ -73,7 +73,6 @@ export function getCachedTranslation(originalText: string, targetLang: string): 
   const entry = cache.entries[hash];
   
   if (entry && entry.originalText === originalText.trim() && entry.targetLang === targetLang) {
-    console.log('[TranslationCache] Cache hit for', targetLang, 'translation');
     return entry.translation;
   }
   
@@ -105,7 +104,6 @@ export function cacheTranslation(originalText: string, translation: string, targ
     };
     
     saveCache(cache);
-    console.log('[TranslationCache] Cached translation for', targetLang);
   } catch (e) {
     console.error('[TranslationCache] Error caching translation:', e);
   }
@@ -126,10 +124,6 @@ export function getCachedTranslations(texts: string[], targetLang: string): Map<
     if (entry && entry.originalText === text.trim() && entry.targetLang === targetLang) {
       result.set(text, entry.translation);
     }
-  }
-  
-  if (result.size > 0) {
-    console.log(`[TranslationCache] Found ${result.size}/${texts.length} translations in cache`);
   }
   
   return result;
@@ -161,7 +155,6 @@ export function cacheTranslations(translations: Array<{ original: string; transl
     }
     
     saveCache(cache);
-    console.log(`[TranslationCache] Cached ${translations.length} translations`);
   } catch (e) {
     console.error('[TranslationCache] Error caching translations:', e);
   }
@@ -173,7 +166,6 @@ export function cacheTranslations(translations: Array<{ original: string; transl
 export function clearTranslationCache(): void {
   try {
     sessionStorage.removeItem(CACHE_KEY);
-    console.log('[TranslationCache] Cache cleared');
   } catch (e) {
     console.error('[TranslationCache] Error clearing cache:', e);
   }

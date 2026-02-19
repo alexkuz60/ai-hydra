@@ -51,7 +51,6 @@ export function useGuideKnowledgeSync() {
         localStorage.setItem(storageKey, contentHash);
       } catch { /* ignore */ }
 
-      console.log('[useGuideKnowledgeSync] Knowledge synced successfully');
     } catch (err) {
       console.error('[useGuideKnowledgeSync] Error:', err);
     } finally {

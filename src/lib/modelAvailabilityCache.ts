@@ -97,7 +97,6 @@ export function markModelUnavailable(
     }
     
     saveCache(entries);
-    console.log(`[ModelCache] Marked model as unavailable: ${modelId} (${errorCode})`);
   } catch (e) {
     console.error('[ModelCache] Error saving cache:', e);
   }
@@ -113,7 +112,6 @@ export function markModelAvailable(modelId: string): void {
     
     if (filteredEntries.length !== entries.length) {
       saveCache(filteredEntries);
-      console.log(`[ModelCache] Marked model as available: ${modelId}`);
     }
   } catch (e) {
     console.error('[ModelCache] Error updating cache:', e);
@@ -126,7 +124,6 @@ export function markModelAvailable(modelId: string): void {
 export function clearModelCache(): void {
   try {
     localStorage.removeItem(CACHE_KEY);
-    console.log('[ModelCache] Cache cleared');
   } catch (e) {
     console.error('[ModelCache] Error clearing cache:', e);
   }
