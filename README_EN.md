@@ -133,18 +133,24 @@ Automatic experience consolidation: patterns from `role_memory` are distilled in
 - Request logs, analytics, model catalog
 - Prioritization settings
 
-### 14. Hydra Memory
-- **RAG memory management hub** — three layers in one interface: sessions, role experience, knowledge base
-- **Session Memory** — chunk statistics by type, "Manage Memory" button → `SessionMemoryDialog`
-- **Role Experience** — `role_memory` records with confidence scores, inline deletion, role grouping
-- **Knowledge Base** — `role_knowledge` with cleanup tools: duplicate detection, outdated version deletion by `source_url`
-- **File Storage** — file browser with localized bucket labels (Chat Archive / Task Files / Avatars) and tooltips explaining technical bucket IDs
-- **Memory Graph** — SVG visualization of connections: central Hydra node → roles → sessions, hover-glow, click → details panel, role activity progress bars; hot roles marked with ⚡ "high usage %"
+### 14. Hydra Memory Hub
+
+Central command center of Hydra's entire cognitive subsystem — 8 tabs in a single full-width interface:
+
+| Tab | Purpose |
+|-----|---------|
+| **Cognitive Arsenal** | Dashboard of Hydra's "subconscious" in 6 layers: Instincts (prompts), Patterns (behavior), Tool Arsenal (Prompt/HTTP), Thought Flows, Achievements (contests/interviews), Long-term Memory (3-level RAG) |
+| **Session Memory** | Inline chunk manager for `session_memory` with type filters (decision/context/instruction/evaluation/summary/message), duplicate detection, batch deletion, feedback 👍/👎 |
+| **Role Experience** | `role_memory` records with confidence scores, role grouping, inline deletion, expandable details |
+| **Knowledge Base** | `role_knowledge` (RAG) — cleanup tools: duplicate scanning, outdated version deletion by `source_url`, filtering by role and category |
+| **Memory & Connections Graphs** | Two SVG graphs in two-column layout (560px): Memory Graph (Hydra → roles → sessions, hover-glow, "hot roles" ⚡) and Arsenal Connections Graph (hexagonal cognitive layer structure) |
+| **File Storage** | File browser with localized bucket labels (Chat Archive / Task Files / Avatars) and technical ID tooltips |
+| **RAG Analytics** | Monitoring dashboard: average relevance, total retrievals, feedback statistics, chunk type distribution |
+| **Evolution Chronicles** | Autonomous reflection log: AI revisions from Evolutioner, Supervisor resolutions (✅/❌/💬/🔄), filters by role/date/status, Evolutioner prompt editor |
+
 - **Hybrid Search** — three modes: Text / Semantic / Hybrid (BM25 + pgvector + RRF k=60)
 - **Reranking** — re-scoring via `gemini-3-flash-preview`, formula `final_score = rerank×0.7 + hybrid×0.3`
 - **HyDE** — hypothetical document generation before search, embedding blend `query×0.4 + hyde×0.6`
-- **Cognitive Arsenal** — dashboard overview of Hydra's entire "subconscious": counters for prompts, blueprints, tools, flows, tests, and memory; cards with quick actions (create, navigate, clear)
-- **Connections Graph** — SVG visualization of roles as bridges between cognitive layers (Instincts / Patterns / Tools / Achievements / Memory); both SVG graphs are height-synchronized (560px) in a two-column desktop layout
 
 ### 15. User Profile
 - **Avatar** — photo upload with Canvas cropper (drag, scroll-zoom, 260×260 JPEG, 2MB limit)
