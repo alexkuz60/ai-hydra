@@ -29,6 +29,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import type { SessionMemoryChunk, ChunkType, SearchResult } from '@/hooks/useSessionMemory';
+import { useUserRoles } from '@/hooks/useUserRoles';
 import { ROLE_CONFIG } from '@/config/roles';
 
 // ─── Design tokens ───────────────────────────────────────────────────────────
@@ -2908,73 +2909,118 @@ function ArsenalConnectionsGraph({
 
 // ─── Chronicles Tab ───────────────────────────────────────────────────────────
 
-const CHRONICLES_ENTRIES = [
-  {
-    id: 'HYDRA-EVO-003',
-    date: '2026-02-19',
-    status: 'done' as const,
-    titleRu: 'Структурирование Отдела Эволюционирования',
-    titleEn: 'Evolution Department Established',
-    roleRu: 'Архитектура Hydra — роли evolutioner и chronicler',
-    roleEn: 'Hydra Architecture — evolutioner & chronicler roles',
-    contextRu: 'Для подтверждения принципа "живой архитектуры" создан Отдел Эволюционирования с двумя системными ролями и публичным артефактом CHRONICLES.md.',
-    contextEn: 'To substantiate the "living architecture" principle, the Evolution Department was established with two system roles and the public artifact CHRONICLES.md.',
-    resolution: 'agree' as const,
-    resolutionCommentRu: 'Отдел Эволюционирования официально запущен',
-    resolutionCommentEn: 'Evolution Department officially launched',
-    metricsBefore: null as null,
-    metricsAfterTarget: null as null,
-  },
-  {
-    id: 'HYDRA-EVO-001',
-    date: '2026-02-19',
-    status: 'pending' as const,
-    titleRu: 'Оптимизация коммуникативного стиля роли Критика',
-    titleEn: 'Critic Role Communication Style Optimization',
-    roleRu: 'critic — системный промпт',
-    roleEn: 'critic — system prompt',
-    contextRu: 'ТехноМодератор выявил ~18% информационного шума в ответах Критика. Гипотеза: удаление вводных оборотов и добавление токен-лимита сократит объём ответа на ~23% при сохранении 100% смысла.',
-    contextEn: 'TechnoModerator detected ~18% noise in Critic responses. Hypothesis: removing filler phrases and adding token limits will reduce response size by ~23% while retaining 100% semantics.',
-    metricsBefore: { promptTokens: 420, avgResponseTokens: 680, noisePct: 18 },
-    metricsAfterTarget: { promptTokens: 380, avgResponseTokens: 520, noisePct: 5, tokenReductionPct: 9.5, responseReductionPct: 23.5 },
-    resolution: 'pending' as const,
-    resolutionCommentRu: '',
-    resolutionCommentEn: '',
-  },
-  {
-    id: 'HYDRA-EVO-002',
-    date: '2026-02-19',
-    status: 'pending' as const,
-    titleRu: 'Калибровка модели для роли Консультанта в D-Chat',
-    titleEn: 'Consultant Role Model Calibration for D-Chat',
-    roleRu: 'consultant — конфигурация модели',
-    roleEn: 'consultant — model configuration',
-    contextRu: 'Pro-модели генерируют избыточно детализированные ответы на простые запросы. Tier-стратегия: быстрая модель по умолчанию + детектор сложности + автоэскалейшн к Pro.',
-    contextEn: 'Pro models generate over-detailed responses for simple queries. Tier strategy: fast model by default + complexity detector + auto-escalation to Pro.',
-    metricsBefore: { latencyMs: 4200, costPer10: 0.047 },
-    metricsAfterTarget: { latencyMs: 1800, costPer10: 0.012, latencyReductionPct: 57, costReductionPct: 74 },
-    resolution: 'pending' as const,
-    resolutionCommentRu: '',
-    resolutionCommentEn: '',
-  },
-];
+interface ChronicleDBEntry {
+  id: string;
+  entry_code: string;
+  title: string;
+  entry_date: string;
+  role_object: string;
+  initiator: string;
+  status: string;
+  supervisor_resolution: string;
+  supervisor_comment: string | null;
+  hypothesis: string | null;
+  metrics_before: Record<string, unknown> | null;
+  metrics_after: Record<string, unknown> | null;
+  summary: string | null;
+  ai_revision: string | null;
+  created_at: string;
+  updated_at: string;
+}
 
-type ChronicleEntry = typeof CHRONICLES_ENTRIES[number];
-
-const STATUS_CONFIG = {
-  done: { label: { ru: 'Выполнено', en: 'Completed' }, color: 'text-emerald-400', bg: 'bg-emerald-500/5 border-emerald-500/30', icon: CheckCheck },
-  pending: { label: { ru: 'Ожидает тестирования', en: 'Awaiting Testing' }, color: 'text-amber-400', bg: 'bg-amber-500/5 border-amber-500/30', icon: Timer },
-};
-
-const RESOLUTION_CONFIG = {
-  agree: { label: { ru: '✅ Согласен', en: '✅ Agreed' }, color: 'text-emerald-400' },
+const RESOLUTION_CONFIG: Record<string, { label: { ru: string; en: string }; color: string }> = {
+  approved: { label: { ru: '✅ Согласен', en: '✅ Agreed' }, color: 'text-emerald-400' },
   wish: { label: { ru: '💬 Пожелание', en: '💬 User Wish' }, color: 'text-blue-400' },
-  disagree: { label: { ru: '❌ Не согласен', en: '❌ Disagreed' }, color: 'text-red-400' },
+  rejected: { label: { ru: '❌ Не согласен', en: '❌ Disagreed' }, color: 'text-red-400' },
   pending: { label: { ru: '⏳ Ожидает', en: '⏳ Pending' }, color: 'text-muted-foreground' },
+  revised: { label: { ru: '🔄 Пересмотрено ИИ', en: '🔄 AI Revised' }, color: 'text-purple-400' },
 };
 
-function ChroniclesTab({ language }: { language: string }) {
+const STATUS_DISPLAY: Record<string, { label: { ru: string; en: string }; color: string; bg: string; Icon: React.ElementType }> = {
+  completed: { label: { ru: 'Выполнено', en: 'Completed' }, color: 'text-emerald-400', bg: 'bg-emerald-500/5 border-emerald-500/30', Icon: CheckCheck },
+  pending: { label: { ru: 'Ожидает тестирования', en: 'Awaiting Testing' }, color: 'text-amber-400', bg: 'bg-amber-500/5 border-amber-500/30', Icon: Timer },
+  sample: { label: { ru: 'Образцовая запись', en: 'Sample Entry' }, color: 'text-amber-400', bg: 'bg-amber-500/5 border-amber-500/30', Icon: Timer },
+  revised: { label: { ru: 'Пересмотрено ИИ', en: 'AI Revised' }, color: 'text-purple-400', bg: 'bg-purple-500/5 border-purple-500/30', Icon: FlaskConical },
+};
+
+function ChroniclesTab({ language, isSupervisor }: { language: string; isSupervisor: boolean }) {
   const isRu = language === 'ru';
+  const [entries, setEntries] = useState<ChronicleDBEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [autorunning, setAutorunning] = useState(false);
+  const [expandedRevision, setExpandedRevision] = useState<string | null>(null);
+
+  const loadEntries = useCallback(async () => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('chronicles')
+        .select('*')
+        .order('entry_code', { ascending: false });
+      if (error) throw error;
+      setEntries((data || []) as ChronicleDBEntry[]);
+    } catch (err) {
+      console.error('Failed to load chronicles:', err);
+      toast.error(isRu ? 'Ошибка загрузки хроник' : 'Failed to load chronicles');
+    } finally {
+      setLoading(false);
+    }
+  }, [isRu]);
+
+  useEffect(() => { loadEntries(); }, [loadEntries]);
+
+  const setResolution = async (entryId: string, resolution: string) => {
+    setUpdatingId(entryId);
+    try {
+      const { error } = await supabase
+        .from('chronicles')
+        .update({ supervisor_resolution: resolution })
+        .eq('id', entryId);
+      if (error) throw error;
+      setEntries(prev => prev.map(e => e.id === entryId ? { ...e, supervisor_resolution: resolution } : e));
+      toast.success(isRu ? 'Резолюция сохранена' : 'Resolution saved');
+      if (resolution === 'rejected') {
+        triggerEvolution(entryId, 'single');
+      }
+    } catch {
+      toast.error(isRu ? 'Ошибка сохранения' : 'Save failed');
+    } finally {
+      setUpdatingId(null);
+    }
+  };
+
+  const triggerEvolution = async (chronicleId: string | null, mode: 'single' | 'autorun') => {
+    if (mode === 'autorun') setAutorunning(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/evolution-trigger`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session?.access_token}` },
+          body: JSON.stringify({ mode, chronicle_id: chronicleId }),
+        }
+      );
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || 'Evolution trigger failed');
+      toast.success(
+        mode === 'autorun'
+          ? (isRu ? `Автопробег завершён: ${result.revised}/${result.total} пересмотрено` : `Autorun complete: ${result.revised}/${result.total} revised`)
+          : (isRu ? 'ИИ-ревизия запущена' : 'AI revision triggered')
+      );
+      await loadEntries();
+    } catch (err) {
+      console.error('Evolution trigger error:', err);
+      toast.error(isRu ? 'Ошибка запуска Эволюциониста' : 'Evolution trigger failed');
+    } finally {
+      if (mode === 'autorun') setAutorunning(false);
+    }
+  };
+
+  const rejectedCount = entries.filter(e => e.supervisor_resolution === 'rejected').length;
+  const approvedCount = entries.filter(e => e.supervisor_resolution === 'approved').length;
+  const pendingCount = entries.filter(e => e.supervisor_resolution === 'pending').length;
 
   return (
     <div className="space-y-6">
@@ -3005,6 +3051,19 @@ function ChroniclesTab({ language }: { language: string }) {
                   <span className="text-amber-400 font-medium">{isRu ? 'Летописец' : 'Chronicler'}</span>
                   <span>{isRu ? '→ фиксирует и архивирует' : '→ records & archives'}</span>
                 </div>
+                {isSupervisor && rejectedCount > 0 && (
+                  <div className="ml-auto">
+                    <Button
+                      variant="outline" size="sm"
+                      onClick={() => triggerEvolution(null, 'autorun')}
+                      disabled={autorunning}
+                      className="gap-1.5 border-purple-500/30 text-purple-400 hover:bg-purple-500/10"
+                    >
+                      {autorunning ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FlaskConical className="h-3.5 w-3.5" />}
+                      {isRu ? `Автопробег (${rejectedCount} отклонённых)` : `Autorun (${rejectedCount} rejected)`}
+                    </Button>
+                  </div>
+                )}
               </div>
             </div>
             <a href="https://github.com/alexkuz60/ai-hydra/blob/main/CHRONICLES.md" target="_blank" rel="noopener noreferrer" className="shrink-0">
@@ -3021,100 +3080,144 @@ function ChroniclesTab({ language }: { language: string }) {
       <div className="grid grid-cols-3 gap-4">
         <Card><CardContent className="p-4 flex items-center gap-3">
           <div className="rounded-lg p-2 bg-muted"><ScrollText className="h-4 w-4 text-amber-400" /></div>
-          <div><p className="text-xs text-muted-foreground">{isRu ? 'Всего записей' : 'Total entries'}</p><p className="text-2xl font-bold">{CHRONICLES_ENTRIES.length}</p></div>
+          <div><p className="text-xs text-muted-foreground">{isRu ? 'Всего записей' : 'Total entries'}</p><p className="text-2xl font-bold">{entries.length}</p></div>
         </CardContent></Card>
         <Card><CardContent className="p-4 flex items-center gap-3">
           <div className="rounded-lg p-2 bg-muted"><CheckCheck className="h-4 w-4 text-emerald-400" /></div>
-          <div><p className="text-xs text-muted-foreground">{isRu ? 'Выполнено' : 'Completed'}</p><p className="text-2xl font-bold">{CHRONICLES_ENTRIES.filter(e => e.status === 'done').length}</p></div>
+          <div><p className="text-xs text-muted-foreground">{isRu ? 'Одобрено' : 'Approved'}</p><p className="text-2xl font-bold">{approvedCount}</p></div>
         </CardContent></Card>
         <Card><CardContent className="p-4 flex items-center gap-3">
           <div className="rounded-lg p-2 bg-muted"><Timer className="h-4 w-4 text-amber-400" /></div>
-          <div><p className="text-xs text-muted-foreground">{isRu ? 'В процессе' : 'In progress'}</p><p className="text-2xl font-bold">{CHRONICLES_ENTRIES.filter(e => e.status === 'pending').length}</p></div>
+          <div><p className="text-xs text-muted-foreground">{isRu ? 'Ожидает' : 'Pending'}</p><p className="text-2xl font-bold">{pendingCount}</p></div>
         </CardContent></Card>
       </div>
 
       {/* Entries */}
-      <div className="space-y-4">
-        {CHRONICLES_ENTRIES.map((entry: ChronicleEntry) => {
-          const statusCfg = STATUS_CONFIG[entry.status];
-          const StatusIcon = statusCfg.icon;
-          const resolutionCfg = RESOLUTION_CONFIG[entry.resolution];
-          const mb = entry.metricsBefore;
-          const mat = entry.metricsAfterTarget;
-          return (
-            <motion.div key={entry.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
-              <Card className={`border ${statusCfg.bg}`}>
-                <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-center gap-2 flex-1 min-w-0">
-                      <Badge variant="outline" className="font-mono text-xs shrink-0 border-muted-foreground/30">{entry.id}</Badge>
-                      <span className={`inline-flex items-center gap-1 text-xs ${statusCfg.color}`}>
-                        <StatusIcon className="h-3 w-3" />
-                        {statusCfg.label[isRu ? 'ru' : 'en']}
-                      </span>
-                    </div>
-                    <span className="text-xs text-muted-foreground shrink-0">{entry.date}</span>
-                  </div>
-                  <CardTitle className="text-base mt-1">{isRu ? entry.titleRu : entry.titleEn}</CardTitle>
-                  <p className="text-xs text-muted-foreground">
-                    <span className="font-medium">{isRu ? 'Объект:' : 'Target:'}</span> {isRu ? entry.roleRu : entry.roleEn}
-                  </p>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <p className="text-sm text-muted-foreground leading-relaxed">{isRu ? entry.contextRu : entry.contextEn}</p>
-
-                  {/* Metrics before/after */}
-                  {mb && mat && (
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="rounded-lg border border-border p-3 space-y-1.5">
-                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{isRu ? 'До' : 'Before'}</p>
-                        {('promptTokens' in mb) && (
-                          <>
-                            <div className="flex justify-between text-xs"><span className="text-muted-foreground">{isRu ? 'Токены промпта' : 'Prompt tokens'}</span><span className="font-mono font-medium">{(mb as any).promptTokens}</span></div>
-                            <div className="flex justify-between text-xs"><span className="text-muted-foreground">{isRu ? 'Ср. ответ' : 'Avg response'}</span><span className="font-mono font-medium">{(mb as any).avgResponseTokens} tok</span></div>
-                            <div className="flex justify-between text-xs"><span className="text-muted-foreground">{isRu ? 'Шум' : 'Noise'}</span><span className="font-mono font-medium text-destructive">{(mb as any).noisePct}%</span></div>
-                          </>
-                        )}
-                        {('latencyMs' in mb) && (
-                          <>
-                            <div className="flex justify-between text-xs"><span className="text-muted-foreground">Latency</span><span className="font-mono font-medium">{(mb as any).latencyMs}ms</span></div>
-                            <div className="flex justify-between text-xs"><span className="text-muted-foreground">{isRu ? 'Стоимость/10' : 'Cost/10'}</span><span className="font-mono font-medium">${(mb as any).costPer10}</span></div>
-                          </>
-                        )}
+      {loading ? (
+        <div className="space-y-4">{[1,2,3].map(i => <Skeleton key={i} className="h-40 w-full" />)}</div>
+      ) : (
+        <div className="space-y-4">
+          {entries.map((entry) => {
+            const statusCfg = STATUS_DISPLAY[entry.status] || STATUS_DISPLAY['pending'];
+            const StatusIcon = statusCfg.Icon;
+            const resolutionCfg = RESOLUTION_CONFIG[entry.supervisor_resolution] || RESOLUTION_CONFIG['pending'];
+            const mb = entry.metrics_before;
+            const mat = entry.metrics_after;
+            const isUpdating = updatingId === entry.id;
+            return (
+              <motion.div key={entry.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
+                <Card className={`border ${statusCfg.bg}`}>
+                  <CardHeader className="pb-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                        <Badge variant="outline" className="font-mono text-xs shrink-0 border-muted-foreground/30">{entry.entry_code}</Badge>
+                        <span className={`inline-flex items-center gap-1 text-xs ${statusCfg.color}`}>
+                          <StatusIcon className="h-3 w-3" />
+                          {statusCfg.label[isRu ? 'ru' : 'en']}
+                        </span>
                       </div>
-                      <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-3 space-y-1.5">
-                        <p className="text-xs font-medium text-emerald-400 uppercase tracking-wide">{isRu ? 'Цель →' : 'Target →'}</p>
-                        {('promptTokens' in mat) && (
-                          <>
-                            <div className="flex justify-between text-xs"><span className="text-muted-foreground">{isRu ? 'Токены промпта' : 'Prompt tokens'}</span><span className="font-mono font-medium text-emerald-400">{(mat as any).promptTokens} <span className="opacity-60">(-{(mat as any).tokenReductionPct}%)</span></span></div>
-                            <div className="flex justify-between text-xs"><span className="text-muted-foreground">{isRu ? 'Ср. ответ' : 'Avg response'}</span><span className="font-mono font-medium text-emerald-400">{(mat as any).avgResponseTokens} <span className="opacity-60">(-{(mat as any).responseReductionPct}%)</span></span></div>
-                            <div className="flex justify-between text-xs"><span className="text-muted-foreground">{isRu ? 'Шум' : 'Noise'}</span><span className="font-mono font-medium text-emerald-400">&lt;{(mat as any).noisePct}%</span></div>
-                          </>
-                        )}
-                        {('latencyMs' in mat) && (
-                          <>
-                            <div className="flex justify-between text-xs"><span className="text-muted-foreground">Latency</span><span className="font-mono font-medium text-emerald-400">{(mat as any).latencyMs}ms <span className="opacity-60">(-{(mat as any).latencyReductionPct}%)</span></span></div>
-                            <div className="flex justify-between text-xs"><span className="text-muted-foreground">{isRu ? 'Стоимость/10' : 'Cost/10'}</span><span className="font-mono font-medium text-emerald-400">${(mat as any).costPer10} <span className="opacity-60">(-{(mat as any).costReductionPct}%)</span></span></div>
-                          </>
-                        )}
-                      </div>
+                      <span className="text-xs text-muted-foreground shrink-0">{entry.entry_date}</span>
                     </div>
-                  )}
-
-                  {/* Resolution */}
-                  <div className="flex items-center gap-2 pt-1 border-t border-border">
-                    <span className="text-xs text-muted-foreground">{isRu ? 'Резолюция супервизора:' : 'Supervisor resolution:'}</span>
-                    <span className={`text-xs font-medium ${resolutionCfg.color}`}>{resolutionCfg.label[isRu ? 'ru' : 'en']}</span>
-                    {entry.status === 'done' && entry.resolutionCommentRu && (
-                      <span className="text-xs text-muted-foreground ml-1">— {isRu ? entry.resolutionCommentRu : entry.resolutionCommentEn}</span>
+                    <CardTitle className="text-base mt-1">{entry.title}</CardTitle>
+                    <p className="text-xs text-muted-foreground">
+                      <span className="font-medium">{isRu ? 'Объект:' : 'Target:'}</span> {entry.role_object}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      <span className="font-medium">{isRu ? 'Инициатор:' : 'Initiator:'}</span> {entry.initiator}
+                    </p>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {entry.hypothesis && (
+                      <div className="rounded-lg bg-muted/50 p-3">
+                        <p className="text-xs font-medium text-muted-foreground mb-1">{isRu ? 'Гипотеза' : 'Hypothesis'}</p>
+                        <p className="text-sm text-muted-foreground leading-relaxed">{entry.hypothesis}</p>
+                      </div>
                     )}
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
-          );
-        })}
-      </div>
+                    {entry.summary && (
+                      <p className="text-sm text-muted-foreground leading-relaxed">{entry.summary}</p>
+                    )}
+                    {/* Metrics */}
+                    {mb && mat && Object.keys(mb).length > 0 && Object.keys(mat).length > 0 && (
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="rounded-lg border border-border p-3 space-y-1.5">
+                          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{isRu ? 'До' : 'Before'}</p>
+                          {Object.entries(mb).map(([k, v]) => (
+                            <div key={k} className="flex justify-between text-xs">
+                              <span className="text-muted-foreground">{k}</span>
+                              <span className="font-mono font-medium">{String(v)}</span>
+                            </div>
+                          ))}
+                        </div>
+                        <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-3 space-y-1.5">
+                          <p className="text-xs font-medium text-emerald-400 uppercase tracking-wide">{isRu ? 'Цель →' : 'Target →'}</p>
+                          {Object.entries(mat).map(([k, v]) => (
+                            <div key={k} className="flex justify-between text-xs">
+                              <span className="text-muted-foreground">{k}</span>
+                              <span className="font-mono font-medium text-emerald-400">{String(v)}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {/* AI Revision */}
+                    {entry.ai_revision && (
+                      <div className="rounded-lg border border-purple-500/30 bg-purple-500/5 p-3">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-1.5 text-xs text-purple-400 font-medium">
+                            <FlaskConical className="h-3.5 w-3.5" />
+                            {isRu ? 'ИИ-ревизия Эволюциониста' : 'AI Evolutioner Revision'}
+                          </div>
+                          <Button variant="ghost" size="sm"
+                            onClick={() => setExpandedRevision(expandedRevision === entry.id ? null : entry.id)}
+                            className="h-6 text-xs text-purple-400 hover:bg-purple-500/10">
+                            {expandedRevision === entry.id ? (isRu ? 'Свернуть' : 'Collapse') : (isRu ? 'Развернуть' : 'Expand')}
+                          </Button>
+                        </div>
+                        {expandedRevision === entry.id && (
+                          <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">{entry.ai_revision}</p>
+                        )}
+                      </div>
+                    )}
+                    {/* Resolution row */}
+                    <div className="flex items-center gap-2 pt-1 border-t border-border flex-wrap">
+                      <span className="text-xs text-muted-foreground">{isRu ? 'Резолюция супервизора:' : 'Supervisor resolution:'}</span>
+                      <span className={`text-xs font-medium ${resolutionCfg.color}`}>{resolutionCfg.label[isRu ? 'ru' : 'en']}</span>
+                      {entry.supervisor_comment && (
+                        <span className="text-xs text-muted-foreground">— {entry.supervisor_comment}</span>
+                      )}
+                      {isSupervisor && (
+                        <div className="flex items-center gap-1 ml-auto">
+                          {isUpdating ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
+                          ) : (
+                            <>
+                              <Button variant="ghost" size="sm"
+                                onClick={() => setResolution(entry.id, 'approved')}
+                                disabled={entry.supervisor_resolution === 'approved'}
+                                className={cn('h-6 text-xs', entry.supervisor_resolution === 'approved' ? 'text-emerald-400 bg-emerald-500/10' : 'text-muted-foreground hover:text-emerald-400')}
+                              >✅ {isRu ? 'Согласен' : 'Agree'}</Button>
+                              <Button variant="ghost" size="sm"
+                                onClick={() => setResolution(entry.id, 'wish')}
+                                disabled={entry.supervisor_resolution === 'wish'}
+                                className={cn('h-6 text-xs', entry.supervisor_resolution === 'wish' ? 'text-blue-400 bg-blue-500/10' : 'text-muted-foreground hover:text-blue-400')}
+                              >💬 {isRu ? 'Пожелание' : 'Wish'}</Button>
+                              <Button variant="ghost" size="sm"
+                                onClick={() => setResolution(entry.id, 'rejected')}
+                                disabled={entry.supervisor_resolution === 'rejected'}
+                                className={cn('h-6 text-xs', entry.supervisor_resolution === 'rejected' ? 'text-red-400 bg-red-500/10' : 'text-muted-foreground hover:text-red-400')}
+                              >❌ {isRu ? 'Не согласен' : 'Reject'}</Button>
+                            </>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
@@ -3125,6 +3228,7 @@ function ChroniclesTab({ language }: { language: string }) {
 export default function HydraMemory() {
   const { t, language } = useLanguage();
   const stats = useHydraMemoryStats();
+  const { isSupervisor } = useUserRoles();
 
   return (
     <Layout>
@@ -3207,7 +3311,7 @@ export default function HydraMemory() {
             <RagDashboardTab />
           </TabsContent>
           <TabsContent value="chronicles" className="mt-6">
-            <ChroniclesTab language={language} />
+            <ChroniclesTab language={language} isSupervisor={isSupervisor} />
           </TabsContent>
         </Tabs>
       </div>

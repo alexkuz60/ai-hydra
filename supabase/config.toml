@@ -30,5 +30,8 @@ verify_jwt = false
 [functions.interview-test-runner]
 verify_jwt = false
 
+[functions.evolution-trigger]
+verify_jwt = false
+
 [functions.interview-verdict]
 verify_jwt = false
