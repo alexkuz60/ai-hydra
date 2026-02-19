@@ -2269,7 +2269,7 @@ function CognitiveArsenalTab({ stats }: { stats: ReturnType<typeof useHydraMemor
     {
       id: 'memory',
       label: isRu ? 'Долгосрочная память' : 'Long-term Memory',
-      description: isRu ? 'Опыт, знания, сессии' : 'Experience, knowledge, sessions',
+      description: isRu ? 'Опыт ролей · база знаний RAG · контекст сессий' : 'Role experience · RAG knowledge · session context',
       icon: BrainCircuit,
       color: 'teal',
       href: '/hydra-memory',
