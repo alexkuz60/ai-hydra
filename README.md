@@ -3,7 +3,7 @@
   <p><em>Where even dogmas evolve</em></p>
   <p><a href="README_RU.md">🇷🇺 Русский</a> · 🇬🇧 <b>English</b></p>
 
-  ![Version](https://img.shields.io/badge/version-0.2.18--alpha-0ff?style=flat-square&logo=semver&logoColor=white)
+  ![Version](https://img.shields.io/badge/version-0.2.19--alpha-0ff?style=flat-square&logo=semver&logoColor=white)
   ![Build](https://img.shields.io/badge/build-passing-brightgreen?style=flat-square&logo=github-actions&logoColor=white)
   ![License](https://img.shields.io/badge/license-MIT-blue?style=flat-square)
   ![Stack](https://img.shields.io/badge/stack-React%2018%20%2B%20TypeScript%20%2B%20Supabase-8b5cf6?style=flat-square)
@@ -90,6 +90,7 @@ Automatic experience consolidation: patterns from `role_memory` are distilled in
 - Model configuration via **Sheet interface**
 - **Task Files** — attaching documents to sessions
 - **Session Memory** — contextual chunks with embeddings
+- **Tutorial Examples** — pre-seeded system sessions (`is_system: true`) with 26 realistic multi-model conversations covering creative brainstorming, code review, product strategy, and Q&A. Serve as warm-start data for RAG memory, Evolution Chronicles, and model statistics. Clone-to-personal functionality included
 
 ### 7. Prompt Library
 - CRUD for system prompts with tags and descriptions
@@ -182,7 +183,7 @@ React 18 + TypeScript + Vite
 Lovable Cloud (Supabase)
 ├── Auth: Email/password authentication
 ├── Database: PostgreSQL with RLS
-├── Edge Functions: Deno runtime (14 functions)
+├── Edge Functions: Deno runtime (16 functions)
 ├── Vault: Secure API key storage
 ├── Storage: File attachments & avatars
 ├── Vector Search: pgvector for embeddings
@@ -196,6 +197,8 @@ Lovable Cloud (Supabase)
 | `hydra-stream` | Streaming responses from AI providers |
 | `hydra-orchestrator` | Routing, tool calling, multi-provider |
 | `contest-arbiter` | AI arbitration for model contests |
+| `contest-discrepancy-trigger` | Discrepancy detection in contest scores |
+| `evolution-trigger` | ReAct evolution with memory & knowledge |
 | `interview-briefing` | Briefing generation for interviews |
 | `interview-test-runner` | Test task execution |
 | `interview-verdict` | Verdict and HR summary generation |
@@ -331,7 +334,7 @@ src/
 ├── styles/             # Design system docs
 └── types/              # TypeScript definitions
 
-supabase/functions/     # 14 Edge Functions
+supabase/functions/     # 16 Edge Functions
 ```
 
 ---

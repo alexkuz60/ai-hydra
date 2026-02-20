@@ -554,7 +554,31 @@ The indicator is consolidated in one place (page header) instead of being duplic
 
 ## TaskIndicator
 
-В глобальном хедере отображается индикатор текущей задачи — название и ссылка на страницу задач. Это позволяет всегда видеть, над чем вы работаете, независимо от текущего раздела.`,
+В глобальном хедере отображается индикатор текущей задачи — название и ссылка на страницу задач. Это позволяет всегда видеть, над чем вы работаете, независимо от текущего раздела.
+
+## Учебные примеры (Tutorial Examples)
+
+Список задач разделён на две группы:
+
+### 📚 Учебные примеры
+Системные задачи (\`is_system: true\`) — публичные шаблоны только для чтения, защищённые от удаления. Включают 4 кейса:
+
+| Кейс | Модели | Содержание |
+|------|--------|------------|
+| **Креативный брейнсторм** | Gemini 2.5 Pro, GPT-5, GPT-5-mini | Стартап-идеи, RICE-скоринг, валидационные гипотезы |
+| **Код-ревью** | Gemini 2.5 Pro, GPT-5 | Рефакторинг React God Context, чеклист безопасности |
+| **Продуктовая стратегия** | Gemini 2.5 Pro, GPT-5, GPT-5-mini | Q2 Roadmap (OKR), формула TIDE для техдолга |
+| **Quick Q&A** | GPT-5, GPT-5-mini | Сравнение RAG-архитектур, промпт Техноарбитра |
+
+Каждый кейс содержит 5–8 реалистичных мультимодельных сообщений с ролями Аналитика, Консультанта и Критика.
+
+### 🎯 Назначение
+- **RAG warm-start** — сегменты decision/evaluation/context/instruction для немедленной работы поиска по памяти
+- **Хроники Эволюции** — стратегические решения для механизма Эволюционера
+- **Статистика моделей** — базовые данные для досье и портфолио
+
+### 📋 Клонирование
+Учебные примеры можно клонировать в личные задачи для редактирования и экспериментов. Оригинал остаётся неизменным.`,
       en: `# Tasks
 
 Task management module for organizing work with AI.
@@ -568,7 +592,31 @@ Task management module for organizing work with AI.
 
 ## TaskIndicator
 
-The global header displays a current task indicator — title and link to the tasks page. This lets you always see what you're working on, regardless of the current section.`,
+The global header displays a current task indicator — title and link to the tasks page. This lets you always see what you're working on, regardless of the current section.
+
+## Tutorial Examples
+
+The task list is split into two groups:
+
+### 📚 Tutorial Examples
+System tasks (\`is_system: true\`) — public read-only templates protected from deletion. Include 4 cases:
+
+| Case | Models | Content |
+|------|--------|---------|
+| **Creative Brainstorming** | Gemini 2.5 Pro, GPT-5, GPT-5-mini | Startup ideas, RICE scoring, validation hypotheses |
+| **Code Review** | Gemini 2.5 Pro, GPT-5 | React God Context refactoring, security checklist |
+| **Product Strategy** | Gemini 2.5 Pro, GPT-5, GPT-5-mini | Q2 Roadmap (OKR), TIDE formula for tech debt |
+| **Quick Q&A** | GPT-5, GPT-5-mini | RAG architecture comparison, Technoarbiter prompt |
+
+Each case contains 5–8 realistic multi-model messages with Analyst, Consultant, and Critic roles.
+
+### 🎯 Purpose
+- **RAG warm-start** — decision/evaluation/context/instruction segments for immediate memory search
+- **Evolution Chronicles** — strategic decisions for the Evolutioner mechanism
+- **Model statistics** — baseline data for dossiers and portfolios
+
+### 📋 Cloning
+Tutorial examples can be cloned into personal tasks for editing and experimentation. The original remains unchanged.`,
     },
   },
   {
