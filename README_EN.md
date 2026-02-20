@@ -349,4 +349,10 @@ supabase/functions/     # 14 Edge Functions
 
 ---
 
+## 🏷️ Keywords
+
+`ai-platform` · `multi-model` · `llm` · `agent-roles` · `rag` · `prompt-engineering` · `flow-editor` · `model-evaluation` · `beauty-contest` · `interview-pipeline` · `react` · `typescript` · `supabase` · `edge-functions` · `pgvector` · `streaming` · `tool-calling` · `multi-agent` · `knowledge-base` · `self-evolving-ai`
+
+---
+
 *Last updated: February 20, 2026*
