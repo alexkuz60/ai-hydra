@@ -2947,6 +2947,51 @@ function ArsenalConnectionsGraph({
   );
 }
 
+// ─── Chronicles helpers ──────────────────────────────────────────────────────
+
+/** Map a free-text role string (e.g. "critic — системный промпт") to a ROLE_CONFIG key */
+const ROLE_ALIASES: Record<string, string> = {
+  flow_regulator: 'flowregulator',
+  prompt_engineer: 'promptengineer',
+  supervisor: 'user', // mapped to user icon w/ supervisor color override
+  admin: 'user',
+  evolutioner: 'evolutioner',
+  chronicler: 'chronicler',
+};
+
+function matchRoleKey(raw: string): string | null {
+  const lower = raw.toLowerCase().trim();
+  // direct match
+  if (ROLE_CONFIG[lower as keyof typeof ROLE_CONFIG]) return lower;
+  // alias match
+  if (ROLE_ALIASES[lower]) return ROLE_ALIASES[lower];
+  // check if starts with a known role key (e.g. "consultant — ...")
+  for (const key of Object.keys(ROLE_CONFIG)) {
+    if (lower.startsWith(key)) return key;
+  }
+  for (const [alias, target] of Object.entries(ROLE_ALIASES)) {
+    if (lower.startsWith(alias)) return target;
+  }
+  return null;
+}
+
+function RoleBadge({ value, isRu }: { value: string; isRu: boolean }) {
+  const roleKey = matchRoleKey(value);
+  if (roleKey && ROLE_CONFIG[roleKey as keyof typeof ROLE_CONFIG]) {
+    const cfg = ROLE_CONFIG[roleKey as keyof typeof ROLE_CONFIG];
+    const Icon = cfg.icon;
+    const isSup = value.toLowerCase().startsWith('supervisor') || value.toLowerCase().startsWith('admin');
+    const color = isSup ? 'text-hydra-supervisor' : cfg.color;
+    return (
+      <Badge variant="outline" className={cn('text-xs font-medium gap-1 border', color, cfg.bgClass || '')}>
+        <Icon className={cn('h-3 w-3', color)} />
+        {value}
+      </Badge>
+    );
+  }
+  return <Badge variant="outline" className="text-xs">{value}</Badge>;
+}
+
 // ─── Chronicles Tab ───────────────────────────────────────────────────────────
 
 interface ChronicleDBEntry {
@@ -3094,6 +3139,7 @@ function ChroniclesTab({ language, isSupervisor }: { language: string; isSupervi
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [autorunning, setAutorunning] = useState(false);
   const [expandedRevision, setExpandedRevision] = useState<string | null>(null);
+  const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
@@ -3669,12 +3715,13 @@ function ChroniclesTab({ language, isSupervisor }: { language: string; isSupervi
                       <span className="text-xs text-muted-foreground shrink-0">{entry.entry_date}</span>
                     </div>
                     <CardTitle className="text-base mt-1">{entry.title}</CardTitle>
-                    <p className="text-xs text-muted-foreground">
-                      <span className="font-medium">{isRu ? 'Объект:' : 'Target:'}</span> {entry.role_object}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      <span className="font-medium">{isRu ? 'Инициатор:' : 'Initiator:'}</span> {entry.initiator}
-                    </p>
+                    <div className="flex items-center gap-2 flex-wrap mt-1">
+                      <span className="text-xs text-muted-foreground font-medium">{isRu ? 'Объект:' : 'Target:'}</span>
+                      <RoleBadge value={entry.role_object} isRu={isRu} />
+                      <span className="text-xs text-muted-foreground">·</span>
+                      <span className="text-xs text-muted-foreground font-medium">{isRu ? 'Инициатор:' : 'Initiator:'}</span>
+                      <RoleBadge value={entry.initiator} isRu={isRu} />
+                    </div>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     {entry.hypothesis && (
@@ -3683,52 +3730,79 @@ function ChroniclesTab({ language, isSupervisor }: { language: string; isSupervi
                         <p className="text-sm text-muted-foreground leading-relaxed">{entry.hypothesis}</p>
                       </div>
                     )}
-                    {entry.summary && (
-                      <p className="text-sm text-muted-foreground leading-relaxed">{entry.summary}</p>
-                    )}
-                    {/* Metrics */}
-                    {mb && mat && Object.keys(mb).length > 0 && Object.keys(mat).length > 0 && (
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="rounded-lg border border-border p-3 space-y-1.5">
-                          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{isRu ? 'До' : 'Before'}</p>
-                          {Object.entries(mb).map(([k, v]) => (
-                            <div key={k} className="flex justify-between text-xs">
-                              <TermLabel term={k} className="text-muted-foreground">{getTermLabel(k, isRu)}</TermLabel>
-                              <span className="font-mono font-medium">{String(v)}</span>
-                            </div>
-                          ))}
-                        </div>
-                         <div className="rounded-lg border border-hydra-success/30 bg-hydra-success/5 p-3 space-y-1.5">
-                           <p className="text-xs font-medium text-hydra-success uppercase tracking-wide">{isRu ? 'Цель →' : 'Target →'}</p>
-                           {Object.entries(mat).map(([k, v]) => (
-                             <div key={k} className="flex justify-between text-xs">
-                               <TermLabel term={k} className="text-muted-foreground">{getTermLabel(k, isRu)}</TermLabel>
-                               <span className="font-mono font-medium text-hydra-success">{String(v)}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                    {/* AI Revision */}
-                    {entry.ai_revision && (
-                       <div className="rounded-lg border border-hydra-expert/30 bg-hydra-expert/5 p-3">
-                         <div className="flex items-center justify-between mb-2">
-                           <div className="flex items-center gap-1.5 text-xs text-hydra-expert font-medium">
-                             <FlaskConical className="h-3.5 w-3.5" />
-                             {isRu ? 'ИИ-ревизия Эволюционера' : 'AI Evolutioner Revision'}
-                           </div>
-                           <Button variant="ghost" size="sm"
-                             onClick={() => setExpandedRevision(expandedRevision === entry.id ? null : entry.id)}
-                             className="h-6 text-xs text-hydra-expert hover:bg-hydra-expert/10">
-                            {expandedRevision === entry.id ? (isRu ? 'Свернуть' : 'Collapse') : (isRu ? 'Развернуть' : 'Expand')}
-                          </Button>
-                        </div>
-                        {expandedRevision === entry.id && (
-                          <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">{entry.ai_revision}</p>
+
+                    {/* Collapse toggle */}
+                    {(entry.summary || entry.ai_revision || (mb && mat && Object.keys(mb).length > 0)) && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setExpandedCards(prev => {
+                          const next = new Set(prev);
+                          next.has(entry.id) ? next.delete(entry.id) : next.add(entry.id);
+                          return next;
+                        })}
+                        className="h-6 text-xs text-muted-foreground hover:text-foreground w-full justify-center gap-1"
+                      >
+                        {expandedCards.has(entry.id)
+                          ? (isRu ? '▲ Свернуть детали' : '▲ Collapse details')
+                          : (isRu ? '▼ Показать детали' : '▼ Show details')}
+                        {!expandedCards.has(entry.id) && entry.ai_revision && (
+                          <FlaskConical className="h-3 w-3 text-hydra-expert ml-1" />
                         )}
-                      </div>
+                      </Button>
                     )}
-                    {/* Resolution row */}
+
+                    {expandedCards.has(entry.id) && (
+                      <>
+                        {entry.summary && (
+                          <p className="text-sm text-muted-foreground leading-relaxed">{entry.summary}</p>
+                        )}
+                        {/* Metrics */}
+                        {mb && mat && Object.keys(mb).length > 0 && Object.keys(mat).length > 0 && (
+                          <div className="grid grid-cols-2 gap-3">
+                            <div className="rounded-lg border border-border p-3 space-y-1.5">
+                              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{isRu ? 'До' : 'Before'}</p>
+                              {Object.entries(mb).map(([k, v]) => (
+                                <div key={k} className="flex justify-between text-xs">
+                                  <TermLabel term={k} className="text-muted-foreground">{getTermLabel(k, isRu)}</TermLabel>
+                                  <span className="font-mono font-medium">{String(v)}</span>
+                                </div>
+                              ))}
+                            </div>
+                            <div className="rounded-lg border border-hydra-success/30 bg-hydra-success/5 p-3 space-y-1.5">
+                              <p className="text-xs font-medium text-hydra-success uppercase tracking-wide">{isRu ? 'Цель →' : 'Target →'}</p>
+                              {Object.entries(mat).map(([k, v]) => (
+                                <div key={k} className="flex justify-between text-xs">
+                                  <TermLabel term={k} className="text-muted-foreground">{getTermLabel(k, isRu)}</TermLabel>
+                                  <span className="font-mono font-medium text-hydra-success">{String(v)}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        {/* AI Revision */}
+                        {entry.ai_revision && (
+                          <div className="rounded-lg border border-hydra-expert/30 bg-hydra-expert/5 p-3">
+                            <div className="flex items-center justify-between mb-2">
+                              <div className="flex items-center gap-1.5 text-xs text-hydra-expert font-medium">
+                                <FlaskConical className="h-3.5 w-3.5" />
+                                {isRu ? 'ИИ-ревизия Эволюционера' : 'AI Evolutioner Revision'}
+                              </div>
+                              <Button variant="ghost" size="sm"
+                                onClick={() => setExpandedRevision(expandedRevision === entry.id ? null : entry.id)}
+                                className="h-6 text-xs text-hydra-expert hover:bg-hydra-expert/10">
+                                {expandedRevision === entry.id ? (isRu ? 'Свернуть' : 'Collapse') : (isRu ? 'Развернуть' : 'Expand')}
+                              </Button>
+                            </div>
+                            {expandedRevision === entry.id && (
+                              <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">{entry.ai_revision}</p>
+                            )}
+                          </div>
+                        )}
+                      </>
+                    )}
+
+                    {/* Resolution row — always visible */}
                     <div className="flex items-center gap-2 pt-1 border-t border-border flex-wrap">
                       <span className="text-xs text-muted-foreground">{isRu ? 'Резолюция супервизора:' : 'Supervisor resolution:'}</span>
                       <span className={`text-xs font-medium ${resolutionCfg.color}`}>{resolutionCfg.label[isRu ? 'ru' : 'en']}</span>
@@ -3744,18 +3818,18 @@ function ChroniclesTab({ language, isSupervisor }: { language: string; isSupervi
                               <Button variant="ghost" size="sm"
                                 onClick={() => setResolution(entry.id, 'approved')}
                                 disabled={entry.supervisor_resolution === 'approved'}
-                                 className={cn('h-6 text-xs', entry.supervisor_resolution === 'approved' ? 'text-hydra-success bg-hydra-success/10' : 'text-muted-foreground hover:text-hydra-success')}
-                               >✅ {isRu ? 'Согласен' : 'Agree'}</Button>
-                               <Button variant="ghost" size="sm"
-                                 onClick={() => setResolution(entry.id, 'wish')}
-                                 disabled={entry.supervisor_resolution === 'wish'}
-                                 className={cn('h-6 text-xs', entry.supervisor_resolution === 'wish' ? 'text-hydra-info bg-hydra-info/10' : 'text-muted-foreground hover:text-hydra-info')}
-                               >💬 {isRu ? 'Пожелание' : 'Wish'}</Button>
-                               <Button variant="ghost" size="sm"
-                                 onClick={() => setResolution(entry.id, 'rejected')}
-                                 disabled={entry.supervisor_resolution === 'rejected'}
-                                 className={cn('h-6 text-xs', entry.supervisor_resolution === 'rejected' ? 'text-hydra-critical bg-hydra-critical/10' : 'text-muted-foreground hover:text-hydra-critical')}
-                               >❌ {isRu ? 'Не согласен' : 'Reject'}</Button>
+                                className={cn('h-6 text-xs', entry.supervisor_resolution === 'approved' ? 'text-hydra-success bg-hydra-success/10' : 'text-muted-foreground hover:text-hydra-success')}
+                              >✅ {isRu ? 'Согласен' : 'Agree'}</Button>
+                              <Button variant="ghost" size="sm"
+                                onClick={() => setResolution(entry.id, 'wish')}
+                                disabled={entry.supervisor_resolution === 'wish'}
+                                className={cn('h-6 text-xs', entry.supervisor_resolution === 'wish' ? 'text-hydra-info bg-hydra-info/10' : 'text-muted-foreground hover:text-hydra-info')}
+                              >💬 {isRu ? 'Пожелание' : 'Wish'}</Button>
+                              <Button variant="ghost" size="sm"
+                                onClick={() => setResolution(entry.id, 'rejected')}
+                                disabled={entry.supervisor_resolution === 'rejected'}
+                                className={cn('h-6 text-xs', entry.supervisor_resolution === 'rejected' ? 'text-hydra-critical bg-hydra-critical/10' : 'text-muted-foreground hover:text-hydra-critical')}
+                              >❌ {isRu ? 'Не согласен' : 'Reject'}</Button>
                             </>
                           )}
                         </div>
