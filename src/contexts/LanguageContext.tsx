@@ -765,6 +765,11 @@ const translations: Translations = {
    'tasks.open': { ru: 'Открыть', en: 'Open' },
    'tasks.activeSession': { ru: 'Активная задача', en: 'Active Task' },
    'tasks.clickToManage': { ru: 'Нажмите для управления задачами', en: 'Click to manage tasks' },
+   'tasks.tutorialExamples': { ru: 'Учебные примеры', en: 'Tutorial Examples' },
+   'tasks.myTasks': { ru: 'Мои задачи', en: 'My Tasks' },
+   'tasks.systemTask': { ru: 'Системная задача (только чтение)', en: 'System task (read-only)' },
+   'tasks.duplicateToOwn': { ru: 'Копировать себе', en: 'Copy to my tasks' },
+   'tasks.duplicated': { ru: 'Задача скопирована в ваш список', en: 'Task copied to your list' },
   
   // Models
   'model.gemini': { ru: 'Gemini Pro', en: 'Gemini Pro' },

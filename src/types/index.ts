@@ -58,6 +58,8 @@ export interface Task {
   title: string;
   description: string | null;
   is_active: boolean;
+  is_system: boolean;
+  is_shared: boolean;
   session_config: SessionConfig | null;
   created_at: string;
   updated_at: string;

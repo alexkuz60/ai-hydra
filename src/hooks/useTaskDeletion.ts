@@ -75,11 +75,12 @@ export function useTaskDeletion({ userId, onTaskDeleted }: UseTaskDeletionProps)
     setDeleting(true);
 
     try {
-      // Get all user sessions
+      // Get all user sessions (excluding system tasks)
       const { data: sessions } = await supabase
         .from('sessions')
         .select('id')
-        .eq('user_id', userId);
+        .eq('user_id', userId)
+        .eq('is_system', false);
 
       if (!sessions || sessions.length === 0) {
         toast.info(t('tasks.empty'));
@@ -127,7 +128,7 @@ export function useTaskDeletion({ userId, onTaskDeleted }: UseTaskDeletionProps)
       }
 
       // 6. Delete all sessions
-      await supabase.from('sessions').delete().eq('user_id', userId);
+      await supabase.from('sessions').delete().eq('user_id', userId).eq('is_system', false);
 
       onTaskDeleted('__all__');
       toast.success(t('tasks.allDeleted'));

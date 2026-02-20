@@ -1105,6 +1105,8 @@ export type Database = {
           description: string | null
           id: string
           is_active: boolean
+          is_shared: boolean
+          is_system: boolean
           session_config: Json | null
           title: string
           updated_at: string
@@ -1115,6 +1117,8 @@ export type Database = {
           description?: string | null
           id?: string
           is_active?: boolean
+          is_shared?: boolean
+          is_system?: boolean
           session_config?: Json | null
           title?: string
           updated_at?: string
@@ -1125,6 +1129,8 @@ export type Database = {
           description?: string | null
           id?: string
           is_active?: boolean
+          is_shared?: boolean
+          is_system?: boolean
           session_config?: Json | null
           title?: string
           updated_at?: string
