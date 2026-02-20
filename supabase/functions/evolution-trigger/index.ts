@@ -446,6 +446,13 @@ serve(async (req) => {
       });
     }
 
+    // Batching: limit autorun to BATCH_SIZE entries per invocation to avoid timeouts
+    const BATCH_SIZE = 3;
+    const totalBeforeBatch = targetEntries.length;
+    if (mode === "autorun" && targetEntries.length > BATCH_SIZE) {
+      targetEntries = targetEntries.slice(0, BATCH_SIZE);
+    }
+
     if (targetEntries.length === 0) {
       return new Response(JSON.stringify({ message: "No rejected entries found", revised: 0, total: 0, results: [] }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -533,11 +540,15 @@ serve(async (req) => {
       }
     }
 
+    const revisedCount = results.filter(r => r.status === "revised").length;
+    const remaining = mode === "autorun" ? Math.max(0, totalBeforeBatch - BATCH_SIZE) : 0;
+
     return new Response(
       JSON.stringify({
         message: `Evolution cycle complete (ReAct v2 — verified)`,
-        revised: results.filter(r => r.status === "revised").length,
+        revised: revisedCount,
         total: targetEntries.length,
+        remaining,
         results,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
