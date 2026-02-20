@@ -280,6 +280,74 @@ export const MEMORY_GLOSSARY: Record<string, GlossaryEntry> = {
     descEn: 'Proportion of filler (low-information text) in model responses.',
   },
 
+  // ── Evolution / Interview Metrics ────────────────────────────────────────
+  clarity_score: {
+    labelRu: 'Ясность',
+    labelEn: 'Clarity score',
+    descRu: 'Оценка ясности и структурированности ответов модели (0–10).',
+    descEn: 'Score for clarity and structure of model responses (0–10).',
+  },
+  completion_rate: {
+    labelRu: 'Полнота выполнения',
+    labelEn: 'Completion rate',
+    descRu: 'Доля задач, выполненных моделью полностью и корректно (0–100%).',
+    descEn: 'Proportion of tasks completed fully and correctly by the model (0–100%).',
+  },
+  response_quality: {
+    labelRu: 'Качество ответа',
+    labelEn: 'Response quality',
+    descRu: 'Общая оценка качества ответов модели по совокупности критериев.',
+    descEn: 'Overall quality score for model responses across all criteria.',
+  },
+  blind_accuracy: {
+    labelRu: 'Слепая точность',
+    labelEn: 'Blind accuracy',
+    descRu: 'Точность модели при анонимном (слепом) сравнительном тесте.',
+    descEn: 'Model accuracy in anonymous (blind) comparative testing.',
+  },
+  depth_score: {
+    labelRu: 'Глубина анализа',
+    labelEn: 'Depth score',
+    descRu: 'Оценка глубины и детальности анализа в ответах модели.',
+    descEn: 'Score for depth and detail of analysis in model responses.',
+  },
+  bias_index: {
+    labelRu: 'Индекс предвзятости',
+    labelEn: 'Bias index',
+    descRu: 'Показатель предвзятости модели. Ближе к 0 = более объективная.',
+    descEn: 'Model bias indicator. Closer to 0 = more objective.',
+  },
+  argument_depth: {
+    labelRu: 'Глубина аргументации',
+    labelEn: 'Argument depth',
+    descRu: 'Оценка глубины и обоснованности аргументации модели.',
+    descEn: 'Score for depth and soundness of model argumentation.',
+  },
+  context_usage: {
+    labelRu: 'Использование контекста',
+    labelEn: 'Context usage',
+    descRu: 'Насколько эффективно модель использует предоставленный контекст.',
+    descEn: 'How effectively the model uses provided context.',
+  },
+  template_rate: {
+    labelRu: 'Шаблонность',
+    labelEn: 'Template rate',
+    descRu: 'Доля шаблонных/типовых фраз в ответах. Ниже = оригинальнее.',
+    descEn: 'Proportion of template/boilerplate phrases. Lower = more original.',
+  },
+  score_variance: {
+    labelRu: 'Разброс оценок',
+    labelEn: 'Score variance',
+    descRu: 'Дисперсия оценок модели между раундами. Ниже = стабильнее.',
+    descEn: 'Variance of model scores between rounds. Lower = more consistent.',
+  },
+  conflict_resolution_quality: {
+    labelRu: 'Качество разрешения конфликтов',
+    labelEn: 'Conflict resolution quality',
+    descRu: 'Оценка способности модели эффективно разрешать противоречия.',
+    descEn: 'Score for model ability to effectively resolve contradictions.',
+  },
+
   // ── Graph ───────────────────────────────────────────────────────────────
   session_chunks: {
     labelRu: 'Чанков сессии',
