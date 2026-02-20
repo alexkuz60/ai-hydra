@@ -2,19 +2,17 @@ import React, { useState, useMemo, useCallback } from 'react';
 import { Layout } from '@/components/layout/Layout';
 import { useLanguage } from '@/contexts/LanguageContext';
 import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+  Table, TableBody, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
 import {
   ResizablePanelGroup, ResizablePanel, ResizableHandle,
 } from '@/components/ui/resizable';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Wrench, Users, Settings, ChevronDown, ChevronRight, Sparkles, Loader2, Cpu, ShieldCheck, ShieldAlert, RefreshCw } from 'lucide-react';
+import { Users, Settings, Sparkles, Loader2, ShieldAlert, RefreshCw } from 'lucide-react';
 import { CloudSyncIndicator } from '@/components/ui/CloudSyncIndicator';
 import { useCloudSyncStatus } from '@/hooks/useCloudSettings';
 import { ROLE_CONFIG, AGENT_ROLES, type AgentRole } from '@/config/roles';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUserRoles } from '@/hooks/useUserRoles';
@@ -22,52 +20,22 @@ import { cn } from '@/lib/utils';
 import RoleDetailsPanel from '@/components/staff/RoleDetailsPanel';
 import { InterviewPanel } from '@/components/staff/InterviewPanel';
 import { RecertificationPanel } from '@/components/staff/RecertificationPanel';
+import { StaffRoleRow } from '@/components/staff/StaffRoleRow';
+import { StaffGroupHeader } from '@/components/staff/StaffGroupHeader';
+import { useStaffSeedActions } from '@/hooks/useStaffSeedActions';
 import { useUnsavedChanges } from '@/hooks/useUnsavedChanges';
 import { UnsavedChangesDialog } from '@/components/ui/unsaved-changes-dialog';
 import { useNavigatorResize } from '@/hooks/useNavigatorResize';
 import { NavigatorHeader } from '@/components/layout/NavigatorHeader';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
-import { getTechRoleDefaultModel } from '@/hooks/useTechRoleDefaults';
-import { getModelShortName } from '@/components/warroom/permodel/types';
-import { useKnowledgeVersioning } from '@/hooks/useKnowledgeVersioning';
-
-/** Small badge that shows if a role's knowledge changed since last certification */
-function KnowledgeChangedBadge({ role, isRu, onRecertify }: { role: string; isRu: boolean; onRecertify?: () => void }) {
-  const { hasChanged, changeSummary } = useKnowledgeVersioning(role);
-  if (!hasChanged) return null;
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <Badge
-          variant="outline"
-          className={cn(
-            "gap-1 text-[10px] py-0 text-hydra-warning border-hydra-warning/30 animate-pulse",
-            onRecertify && "cursor-pointer hover:bg-hydra-warning/10"
-          )}
-          onClick={(e) => {
-            if (onRecertify) {
-              e.stopPropagation();
-              onRecertify();
-            }
-          }}
-        >
-          <RefreshCw className="h-2.5 w-2.5" />
-          {isRu ? 'Обновлено' : 'Updated'}
-        </Badge>
-      </TooltipTrigger>
-      <TooltipContent side="top" className="text-xs max-w-[200px]">
-        {isRu ? 'Знания изменились с последней аттестации. Нажмите для переаттестации.' : 'Knowledge changed since last certification. Click to re-certify.'}
-        {changeSummary && <div className="font-mono text-[10px] mt-0.5">{changeSummary}</div>}
-      </TooltipContent>
-    </Tooltip>
-  );
-}
 
 const StaffRoles = () => {
   const { t, language } = useLanguage();
   const { user } = useAuth();
   const { isAdmin } = useUserRoles();
   const cloudSynced = useCloudSyncStatus();
+  const isRu = language === 'ru';
+
   const [interviewRoleInit] = useState<AgentRole | null>(() => {
     try {
       const stored = localStorage.getItem('hydra-interview-panel-role');
@@ -83,8 +51,6 @@ const StaffRoles = () => {
   const [expertsExpanded, setExpertsExpanded] = useState(true);
   const [technicalExpanded, setTechnicalExpanded] = useState(true);
   const [otkExpanded, setOtkExpanded] = useState(true);
-  const [isBulkSeeding, setIsBulkSeeding] = useState(false);
-  const [isForceSyncing, setIsForceSyncing] = useState(false);
   const [interviewRole, setInterviewRole] = useState<AgentRole | null>(interviewRoleInit);
   const [recertRole, setRecertRole] = useState<AgentRole | null>(null);
 
@@ -136,13 +102,33 @@ const StaffRoles = () => {
     staleTime: 30_000,
   });
 
+  // Group roles
+  const { expertRoles, technicalRoles, otkRoles } = useMemo(() => {
+    const experts: AgentRole[] = [];
+    const technical: AgentRole[] = [];
+    const otk: AgentRole[] = [];
+    AGENT_ROLES.forEach((role) => {
+      const config = ROLE_CONFIG[role];
+      if (config.isSystemOnly) otk.push(role);
+      else if (config.isTechnicalStaff) technical.push(role);
+      else experts.push(role);
+    });
+    return { expertRoles: experts, technicalRoles: technical, otkRoles: otk };
+  }, []);
+
+  // Seed actions
+  const { isBulkSeeding, isForceSyncing, handleBulkSeed, handleForceSeed } = useStaffSeedActions({
+    technicalRoles,
+    language,
+  });
+
   const handleOpenInterview = useCallback((role: AgentRole) => {
-    setRecertRole(null); // Close recert if open
+    setRecertRole(null);
     setInterviewRole(role);
   }, []);
 
   const handleOpenRecert = useCallback((role: AgentRole) => {
-    setInterviewRole(null); // Close interview if open
+    setInterviewRole(null);
     setRecertRole(role);
   }, []);
 
@@ -153,31 +139,8 @@ const StaffRoles = () => {
     }
   }, [selectedRole]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const handleCloseInterview = useCallback(() => {
-    setInterviewRole(null);
-  }, []);
-
-  const handleCloseRecert = useCallback(() => {
-    setRecertRole(null);
-  }, []);
-
-  // Группируем роли на экспертов и технический персонал
-  const { expertRoles, technicalRoles, otkRoles } = useMemo(() => {
-    const experts: AgentRole[] = [];
-    const technical: AgentRole[] = [];
-    const otk: AgentRole[] = [];
-    AGENT_ROLES.forEach((role) => {
-      const config = ROLE_CONFIG[role];
-      if (config.isSystemOnly) {
-        otk.push(role);
-      } else if (config.isTechnicalStaff) {
-        technical.push(role);
-      } else {
-        experts.push(role);
-      }
-    });
-    return { expertRoles: experts, technicalRoles: technical, otkRoles: otk };
-  }, []);
+  const handleCloseInterview = useCallback(() => setInterviewRole(null), []);
+  const handleCloseRecert = useCallback(() => setRecertRole(null), []);
 
   const handleRoleSelect = useCallback((role: AgentRole) => {
     if (role === selectedRole) return;
@@ -192,155 +155,6 @@ const StaffRoles = () => {
     unsavedChanges.setHasUnsavedChanges(hasChanges);
   }, [unsavedChanges]);
 
-  const handleBulkSeed = useCallback(async () => {
-    setIsBulkSeeding(true);
-    let totalSeeded = 0;
-    let rolesProcessed = 0;
-    let skipped = 0;
-
-    try {
-      for (const role of technicalRoles) {
-        const { data, error } = await supabase.functions.invoke('seed-role-knowledge', {
-          body: { role, include_system_prompt: true, force: false },
-        });
-        if (error) { console.error(`[BulkSeed] Error for ${role}:`, error); continue; }
-        if (data?.skipped) { skipped++; }
-        else if (data?.seeded > 0) { totalSeeded += data.seeded; rolesProcessed++; }
-      }
-
-      if (totalSeeded > 0) {
-        toast.success(
-          language === 'ru'
-            ? `Загружено ${totalSeeded} фрагментов для ${rolesProcessed} ролей${skipped > 0 ? ` (${skipped} пропущено)` : ''}`
-            : `Loaded ${totalSeeded} chunks for ${rolesProcessed} roles${skipped > 0 ? ` (${skipped} skipped)` : ''}`
-        );
-      } else if (skipped === technicalRoles.length) {
-        toast.info(
-          language === 'ru'
-            ? 'Все техроли уже имеют знания. Используйте пересидинг на вкладке роли.'
-            : 'All tech roles already have knowledge. Use re-seed in role tab.'
-        );
-      } else {
-        toast.info(language === 'ru' ? 'Нет новых знаний для загрузки' : 'No new knowledge to load');
-      }
-    } catch (error) {
-      console.error('[BulkSeed] Error:', error);
-      toast.error(language === 'ru' ? 'Ошибка массовой загрузки' : 'Bulk seed failed');
-    } finally {
-      setIsBulkSeeding(false);
-    }
-  }, [language, technicalRoles]);
-
-  const handleForceSeed = useCallback(async () => {
-    setIsForceSyncing(true);
-    try {
-      let totalSeeded = 0;
-      for (const role of technicalRoles) {
-        const { data, error } = await supabase.functions.invoke('seed-role-knowledge', {
-          body: { role, include_system_prompt: true, force: true },
-        });
-        if (error) { console.error(`[ForceSeed] Error for ${role}:`, error); continue; }
-        if (data?.seeded > 0) totalSeeded += data.seeded;
-      }
-      toast.success(
-        language === 'ru'
-          ? `Принудительно обновлено ${totalSeeded} фрагментов знаний`
-          : `Force-refreshed ${totalSeeded} knowledge chunks`
-      );
-    } catch (error) {
-      console.error('[ForceSeed] Error:', error);
-      toast.error(language === 'ru' ? 'Ошибка обновления' : 'Force refresh failed');
-    } finally {
-      setIsForceSyncing(false);
-    }
-  }, [language, technicalRoles]);
-
-  const renderRoleRow = useCallback((role: AgentRole) => {
-    const config = ROLE_CONFIG[role];
-    const IconComponent = config.icon;
-    const isSelected = selectedRole === role;
-    const assignment = activeAssignments?.[role];
-    const defaultModel = assignment?.model_id || getTechRoleDefaultModel(role);
-
-    return (
-      <TableRow
-        key={role}
-        className={cn(
-          "cursor-pointer transition-colors",
-          isSelected ? "bg-primary/10 hover:bg-primary/15" : "hover:bg-muted/30"
-        )}
-        onClick={() => handleRoleSelect(role)}
-      >
-        <TableCell className="pl-8">
-          <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center", `bg-${config.color.replace('text-', '')}/10`)}>
-            <IconComponent className={cn("h-5 w-5", config.color)} />
-          </div>
-        </TableCell>
-        <TableCell>
-          <div className="flex flex-col gap-1">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className={cn("font-medium", config.color)}>{t(config.label)}</span>
-              {isSelected && unsavedChanges.hasUnsavedChanges && (
-                <span className="w-2 h-2 rounded-full bg-hydra-warning animate-pulse-glow shrink-0" title="Unsaved changes" />
-              )}
-              {config.isTechnicalStaff && (
-                <Badge variant="secondary" className="gap-1 text-xs py-0">
-                  <Wrench className="h-3 w-3" />
-                </Badge>
-              )}
-              {defaultModel && (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Badge variant="outline" className="gap-1 text-[10px] py-0 font-mono text-muted-foreground cursor-default">
-                      <Cpu className="h-3.5 w-3.5" />
-                      {getModelShortName(defaultModel)}
-                    </Badge>
-                  </TooltipTrigger>
-                  <TooltipContent side="top" className="text-xs font-mono">
-                    {defaultModel}
-                  </TooltipContent>
-                </Tooltip>
-              )}
-              {assignment && (
-                <Badge variant="outline" className="gap-1 text-[10px] py-0 text-hydra-success border-hydra-success/30">
-                  <ShieldCheck className="h-2.5 w-2.5" />
-                  {new Date(assignment.assigned_at).toLocaleDateString(language === 'ru' ? 'ru-RU' : 'en-US', { day: 'numeric', month: 'short' })}
-                </Badge>
-              )}
-              {assignment && <KnowledgeChangedBadge role={role} isRu={language === 'ru'} onRecertify={() => handleOpenRecert(role)} />}
-            </div>
-            <span className="text-xs text-muted-foreground font-mono">{role}</span>
-          </div>
-        </TableCell>
-      </TableRow>
-    );
-  }, [selectedRole, unsavedChanges.hasUnsavedChanges, handleRoleSelect, t, activeAssignments, language]);
-
-  const renderGroupHeader = useCallback((
-    expanded: boolean,
-    onToggle: () => void,
-    icon: React.ReactNode,
-    label: string,
-    count: number,
-    guideId: string,
-    nested?: boolean,
-  ) => (
-    <TableRow
-      className={cn("hover:bg-muted/40 cursor-pointer", nested ? "bg-muted/15" : "bg-muted/30")}
-      onClick={onToggle}
-      data-guide={guideId}
-    >
-      <TableCell colSpan={2} className="py-2">
-        <div className={cn("flex items-center gap-2 text-sm font-medium text-muted-foreground", nested && "pl-4")}>
-          {expanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-          {icon}
-          {label}
-          <Badge variant="outline" className="ml-auto text-xs">{count}</Badge>
-        </div>
-      </TableCell>
-    </TableRow>
-  ), []);
-
   return (
     <Layout>
       <div className="h-[calc(100vh-4rem)] flex flex-col">
@@ -352,26 +166,23 @@ const StaffRoles = () => {
           <div className="flex items-center gap-2">
             <CloudSyncIndicator loaded={cloudSynced} />
             <Button
-              variant="outline"
-              size="sm"
-              className="gap-1.5"
+              variant="outline" size="sm" className="gap-1.5"
               onClick={handleBulkSeed}
               disabled={isBulkSeeding || isForceSyncing}
               data-guide="staff-seed-button"
             >
               {isBulkSeeding ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-              {language === 'ru' ? 'Обучить всех техников' : 'Seed All Tech Roles'}
+              {isRu ? 'Обучить всех техников' : 'Seed All Tech Roles'}
             </Button>
             {isAdmin && (
               <Button
-                variant="outline"
-                size="sm"
+                variant="outline" size="sm"
                 className="gap-1.5 text-hydra-warning border-hydra-warning/30 hover:bg-hydra-warning/10"
                 onClick={handleForceSeed}
                 disabled={isBulkSeeding || isForceSyncing}
               >
                 {isForceSyncing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-                {language === 'ru' ? 'Обновить брифинг' : 'Force Refresh'}
+                {isRu ? 'Обновить брифинг' : 'Force Refresh'}
               </Button>
             )}
           </div>
@@ -381,17 +192,12 @@ const StaffRoles = () => {
           <ResizablePanel
             ref={nav.panelRef}
             defaultSize={nav.panelSize}
-            minSize={4}
-            maxSize={50}
+            minSize={4} maxSize={50}
             onResize={nav.onPanelResize}
             data-guide="staff-list"
           >
             <div className="h-full flex flex-col hydra-nav-surface">
-              <NavigatorHeader
-                title={t('nav.staffRoles')}
-                isMinimized={nav.isMinimized}
-                onToggle={nav.toggle}
-              />
+              <NavigatorHeader title={t('nav.staffRoles')} isMinimized={nav.isMinimized} onToggle={nav.toggle} />
               <div className="flex-1 overflow-auto">
                 {nav.isMinimized ? (
                   <TooltipProvider delayDuration={200}>
@@ -443,14 +249,35 @@ const StaffRoles = () => {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {renderGroupHeader(expertsExpanded, () => setExpertsExpanded(!expertsExpanded), <Users className="h-4 w-4" />, t('staffRoles.expertsGroup'), expertRoles.length, 'staff-experts-group')}
-                      {expertsExpanded && expertRoles.map(renderRoleRow)}
+                      <StaffGroupHeader expanded={expertsExpanded} onToggle={() => setExpertsExpanded(!expertsExpanded)} icon={<Users className="h-4 w-4" />} label={t('staffRoles.expertsGroup')} count={expertRoles.length} guideId="staff-experts-group" />
+                      {expertsExpanded && expertRoles.map(role => (
+                        <StaffRoleRow
+                          key={role} role={role} isSelected={selectedRole === role}
+                          hasUnsavedChanges={unsavedChanges.hasUnsavedChanges}
+                          assignment={activeAssignments?.[role]} language={language}
+                          onSelect={handleRoleSelect} onRecertify={handleOpenRecert} t={t}
+                        />
+                      ))}
 
-                      {renderGroupHeader(technicalExpanded, () => setTechnicalExpanded(!technicalExpanded), <Settings className="h-4 w-4" />, t('staffRoles.technicalGroup'), technicalRoles.length + otkRoles.length, 'staff-technical-group')}
-                      {technicalExpanded && technicalRoles.map(renderRoleRow)}
+                      <StaffGroupHeader expanded={technicalExpanded} onToggle={() => setTechnicalExpanded(!technicalExpanded)} icon={<Settings className="h-4 w-4" />} label={t('staffRoles.technicalGroup')} count={technicalRoles.length + otkRoles.length} guideId="staff-technical-group" />
+                      {technicalExpanded && technicalRoles.map(role => (
+                        <StaffRoleRow
+                          key={role} role={role} isSelected={selectedRole === role}
+                          hasUnsavedChanges={unsavedChanges.hasUnsavedChanges}
+                          assignment={activeAssignments?.[role]} language={language}
+                          onSelect={handleRoleSelect} onRecertify={handleOpenRecert} t={t}
+                        />
+                      ))}
 
-                      {technicalExpanded && renderGroupHeader(otkExpanded, () => setOtkExpanded(!otkExpanded), <ShieldAlert className="h-4 w-4" />, language === 'ru' ? 'Отдел ТехКонтроля (ОТК)' : 'Quality Control Dept.', otkRoles.length, 'staff-otk-group', true)}
-                      {technicalExpanded && otkExpanded && otkRoles.map(renderRoleRow)}
+                      {technicalExpanded && <StaffGroupHeader expanded={otkExpanded} onToggle={() => setOtkExpanded(!otkExpanded)} icon={<ShieldAlert className="h-4 w-4" />} label={isRu ? 'Отдел ТехКонтроля (ОТК)' : 'Quality Control Dept.'} count={otkRoles.length} guideId="staff-otk-group" nested />}
+                      {technicalExpanded && otkExpanded && otkRoles.map(role => (
+                        <StaffRoleRow
+                          key={role} role={role} isSelected={selectedRole === role}
+                          hasUnsavedChanges={unsavedChanges.hasUnsavedChanges}
+                          assignment={activeAssignments?.[role]} language={language}
+                          onSelect={handleRoleSelect} onRecertify={handleOpenRecert} t={t}
+                        />
+                      ))}
                     </TableBody>
                   </Table>
                   </TooltipProvider>
@@ -485,12 +312,8 @@ const StaffRoles = () => {
             className={cn(!interviewRole && !recertRole && "hidden")}
           >
             <div className="h-full border-l border-border">
-              {interviewRole && (
-                <InterviewPanel role={interviewRole} onClose={handleCloseInterview} />
-              )}
-              {recertRole && (
-                <RecertificationPanel role={recertRole} onClose={handleCloseRecert} />
-              )}
+              {interviewRole && <InterviewPanel role={interviewRole} onClose={handleCloseInterview} />}
+              {recertRole && <RecertificationPanel role={recertRole} onClose={handleCloseRecert} />}
             </div>
           </ResizablePanel>
         </ResizablePanelGroup>
