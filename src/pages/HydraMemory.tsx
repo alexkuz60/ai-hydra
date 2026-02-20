@@ -3184,8 +3184,15 @@ function ChroniclesTab({ language, isSupervisor }: { language: string; isSupervi
       if (mode === 'autorun') {
         const revised = result.revised ?? 0;
         const total = result.total ?? 0;
+        const remaining = result.remaining ?? 0;
         if (total === 0) {
           toast.info(isRu ? 'Нет записей для авторевизии — все уже пересмотрены' : 'No entries to revise — all already processed');
+        } else if (remaining > 0) {
+          toast.success(
+            isRu
+              ? `Батч завершён: ${revised}/${total} пересмотрено. Осталось ещё ${remaining} — запустите повторно.`
+              : `Batch complete: ${revised}/${total} revised. ${remaining} remaining — run again.`
+          );
         } else {
           toast.success(isRu ? `Автопробег завершён: ${revised}/${total} пересмотрено` : `Autorun complete: ${revised}/${total} revised`);
         }
