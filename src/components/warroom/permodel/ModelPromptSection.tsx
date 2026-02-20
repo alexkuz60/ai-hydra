@@ -45,7 +45,7 @@ export function ModelPromptSection({
   const [savingPrompt, setSavingPrompt] = useState(false);
   const [libraryOpen, setLibraryOpen] = useState(false);
 
-  const promptTokens = estimateTokens(modelSettings.systemPrompt);
+  const promptTokens = estimateTokens(modelSettings.systemPrompt || '');
   const pricing = getModelPricing(modelId);
   const promptCost = pricing ? (promptTokens / 1_000_000) * pricing.input : null;
 
