@@ -1,40 +1,32 @@
- import React, { useState, useEffect, useMemo, useRef } from 'react';
- import { useNavigate } from 'react-router-dom';
- import { useAuth } from '@/contexts/AuthContext';
- import { useLanguage } from '@/contexts/LanguageContext';
- import { Layout } from '@/components/layout/Layout';
- import { Button } from '@/components/ui/button';
- import { Input } from '@/components/ui/input';
- import { Table, TableBody } from '@/components/ui/table';
- import { supabase } from '@/integrations/supabase/client';
- import { toast } from 'sonner';
- import { Plus, Loader2, MessageSquare, Search, ListTodo } from 'lucide-react';
- import {
-   AlertDialog,
-   AlertDialogAction,
-   AlertDialogCancel,
-   AlertDialogContent,
-   AlertDialogDescription,
-   AlertDialogFooter,
-   AlertDialogHeader,
-   AlertDialogTitle,
- } from '@/components/ui/alert-dialog';
- import {
-   ResizablePanelGroup,
-   ResizablePanel,
-   ResizableHandle,
- } from '@/components/ui/resizable';
- import { MultiModelSelector } from '@/components/warroom/MultiModelSelector';
- import { PerModelSettingsData, DEFAULT_MODEL_SETTINGS } from '@/components/warroom/PerModelSettings';
- import { ALL_VALID_MODEL_IDS, getModelDisplayName, getModelInfo } from '@/hooks/useAvailableModels';
- import { TaskRow, Task } from '@/components/tasks/TaskRow';
- import { TaskDetailsPanel } from '@/components/tasks/TaskDetailsPanel';
- import { UnsavedChangesDialog } from '@/components/ui/unsaved-changes-dialog';
- import { Bot, Sparkles, Cpu } from 'lucide-react';
- import { useNavigatorResize } from '@/hooks/useNavigatorResize';
- import { NavigatorHeader } from '@/components/layout/NavigatorHeader';
- import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
- import { cn } from '@/lib/utils';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { Layout } from '@/components/layout/Layout';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Table, TableBody } from '@/components/ui/table';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+import { Plus, Loader2, MessageSquare, Search, ListTodo, Flame } from 'lucide-react';
+import {
+  ResizablePanelGroup,
+  ResizablePanel,
+  ResizableHandle,
+} from '@/components/ui/resizable';
+import { MultiModelSelector } from '@/components/warroom/MultiModelSelector';
+import { PerModelSettingsData, DEFAULT_MODEL_SETTINGS } from '@/components/warroom/PerModelSettings';
+import { ALL_VALID_MODEL_IDS, getModelDisplayName, getModelInfo } from '@/hooks/useAvailableModels';
+import { TaskRow, Task } from '@/components/tasks/TaskRow';
+import { TaskDetailsPanel } from '@/components/tasks/TaskDetailsPanel';
+import { TaskDeleteDialog } from '@/components/tasks/TaskDeleteDialog';
+import { UnsavedChangesDialog } from '@/components/ui/unsaved-changes-dialog';
+import { useTaskDeletion, DeletionMode } from '@/hooks/useTaskDeletion';
+import { Bot, Sparkles, Cpu } from 'lucide-react';
+import { useNavigatorResize } from '@/hooks/useNavigatorResize';
+import { NavigatorHeader } from '@/components/layout/NavigatorHeader';
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
+import { cn } from '@/lib/utils';
  
  // Filter out deprecated/unavailable model IDs
  const filterValidModels = (modelIds: string[]): string[] => {
@@ -63,6 +55,7 @@ export default function Tasks() {
   const [creating, setCreating] = useState(false);
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [taskToDelete, setTaskToDelete] = useState<Task | null>(null);
+  const [showBulkDelete, setShowBulkDelete] = useState(false);
    const [saving, setSaving] = useState(false);
   
    // Search
@@ -83,6 +76,22 @@ export default function Tasks() {
   const [selectedModels, setSelectedModels] = useState<string[]>([]);
   const [perModelSettings, setPerModelSettings] = useState<PerModelSettingsData>({});
   const [useHybridStreaming, setUseHybridStreaming] = useState(true);
+
+  // Task deletion hook
+  const { deleteTask, deleteAllTasks, deleting } = useTaskDeletion({
+    userId: user?.id,
+    onTaskDeleted: (taskId) => {
+      if (taskId === '__all__') {
+        setTasks([]);
+        setSelectedTask(null);
+      } else {
+        setTasks(prev => prev.filter(t => t.id !== taskId));
+        if (selectedTask?.id === taskId) setSelectedTask(null);
+      }
+      setTaskToDelete(null);
+      setShowBulkDelete(false);
+    },
+  });
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -176,25 +185,7 @@ export default function Tasks() {
     }
   };
 
-  const handleDeleteTask = async () => {
-    if (!taskToDelete) return;
-    
-    try {
-      const { error } = await supabase
-        .from('sessions')
-        .delete()
-        .eq('id', taskToDelete.id);
 
-      if (error) throw error;
-
-      setTasks(tasks.filter(t => t.id !== taskToDelete.id));
-      toast.success(t('common.success'));
-    } catch (error: any) {
-      toast.error(error.message);
-    } finally {
-      setTaskToDelete(null);
-    }
-  };
 
    const handleUpdateTitle = async (taskId: string, newTitle: string) => {
      setSaving(true);
@@ -276,29 +267,11 @@ export default function Tasks() {
      setTaskToDelete(task);
    };
 
-   const handleConfirmDelete = async () => {
-     if (!taskToDelete) return;
-     
-     try {
-       const { error } = await supabase
-         .from('sessions')
-         .delete()
-         .eq('id', taskToDelete.id);
- 
-       if (error) throw error;
- 
-       setTasks(tasks.filter(t => t.id !== taskToDelete.id));
-       if (selectedTask?.id === taskToDelete.id) {
-         setSelectedTask(null);
-       }
-       toast.success(t('common.success'));
-     } catch (error: any) {
-       toast.error(error.message);
-     } finally {
-       setTaskToDelete(null);
-     }
-   };
- 
+    const handleConfirmDelete = async (mode: DeletionMode) => {
+      if (!taskToDelete) return;
+      await deleteTask(taskToDelete.id, mode);
+    };
+
    // Get role label for a model (for new task form)
    const getModelRole = (modelId: string) => {
      const settings = perModelSettings[modelId];
@@ -320,15 +293,31 @@ export default function Tasks() {
     <Layout>
        <div className="h-[calc(100vh-4rem)] flex flex-col">
          {/* Header */}
-         <div className="px-6 py-4 border-b flex items-center justify-between shrink-0">
-           <div>
-             <div className="flex items-center gap-3">
-               <ListTodo className="h-6 w-6 text-primary" />
-               <h1 className="text-2xl font-bold">{t('tasks.title')}</h1>
+          <div className="px-6 py-4 border-b flex items-center justify-between shrink-0">
+            <div>
+              <div className="flex items-center gap-3">
+                <ListTodo className="h-6 w-6 text-primary" />
+                <h1 className="text-2xl font-bold">{t('tasks.title')}</h1>
+             </div>
+              <p className="text-sm text-muted-foreground mt-1">{t('tasks.pageDescription')}</p>
             </div>
-             <p className="text-sm text-muted-foreground mt-1">{t('tasks.pageDescription')}</p>
-           </div>
-         </div>
+            {tasks.length > 0 && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-2 text-destructive border-destructive/30 hover:bg-destructive/10"
+                    onClick={() => setShowBulkDelete(true)}
+                  >
+                    <Flame className="h-4 w-4" />
+                    <span className="hidden sm:inline">{t('tasks.startFresh')}</span>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>{t('tasks.deleteAllDescription')}</TooltipContent>
+              </Tooltip>
+            )}
+          </div>
 
          {/* Main content */}
          <ResizablePanelGroup direction="horizontal" className="flex-1">
@@ -496,31 +485,25 @@ export default function Tasks() {
             </ResizablePanel>
          </ResizablePanelGroup>
        </div>
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog open={!!taskToDelete} onOpenChange={(open) => !open && setTaskToDelete(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{t('tasks.deleteConfirmTitle')}</AlertDialogTitle>
-            <AlertDialogDescription>
-              {t('tasks.deleteConfirmDescription')}
-              {taskToDelete && (
-                <span className="block mt-2 font-medium text-foreground">
-                  "{taskToDelete.title}"
-                </span>
-              )}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
-            <AlertDialogAction 
-               onClick={handleConfirmDelete}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              {t('tasks.delete')}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+       {/* Delete Task Dialog */}
+       <TaskDeleteDialog
+         open={!!taskToDelete}
+         onOpenChange={(open) => !open && setTaskToDelete(null)}
+         taskTitle={taskToDelete?.title || ''}
+         deleting={deleting}
+         onConfirm={handleConfirmDelete}
+       />
+
+       {/* Bulk Delete Dialog */}
+       <TaskDeleteDialog
+         open={showBulkDelete}
+         onOpenChange={setShowBulkDelete}
+         taskTitle=""
+         deleting={deleting}
+         onConfirm={() => deleteAllTasks()}
+         bulk
+         taskCount={tasks.length}
+       />
       
       {/* Unsaved Changes Dialog */}
       <UnsavedChangesDialog
