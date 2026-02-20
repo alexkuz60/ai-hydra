@@ -34,7 +34,8 @@ import {
   Users,
   Crown,
   Star,
-  User
+  User,
+  X
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -198,11 +199,22 @@ export default function Admin() {
   return (
     <Layout>
       <div className="container py-8 px-4 max-w-6xl mx-auto">
-        <div className="flex items-center gap-3 mb-8">
-          <Shield className="h-8 w-8 text-hydra-arbiter" />
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-hydra-arbiter to-primary bg-clip-text text-transparent">
-            Панель администратора
-          </h1>
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center gap-3">
+            <Shield className="h-8 w-8 text-hydra-arbiter" />
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-hydra-arbiter to-primary bg-clip-text text-transparent">
+              Панель администратора
+            </h1>
+          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => navigate('/profile')}
+            className="text-muted-foreground hover:text-foreground"
+            title="Закрыть"
+          >
+            <X className="h-5 w-5" />
+          </Button>
         </div>
 
         <div className="grid gap-6 lg:grid-cols-3">

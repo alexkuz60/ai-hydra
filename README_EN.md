@@ -1,6 +1,7 @@
 <div align="center">
   <img src="public/banner.png" alt="ai*hYdra" width="640"/>
   <p><em>Where even dogmas evolve</em></p>
+  <p><a href="README.md">🇷🇺 Русский</a> · 🇬🇧 <b>English</b></p>
 
   ![Version](https://img.shields.io/badge/version-0.2.18--alpha-0ff?style=flat-square&logo=semver&logoColor=white)
   ![Build](https://img.shields.io/badge/build-passing-brightgreen?style=flat-square&logo=github-actions&logoColor=white)
