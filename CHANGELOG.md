@@ -4,6 +4,33 @@
 
 ---
 
+## [2026-02-20] Модуляризация Hydra Memory Hub
+
+### Новое
+- `src/components/memory/shared.tsx` — дизайн-токены, утилиты (`matchRoleKey`, `parseAiRevision`, `findDuplicates`), компоненты `StatCard`, `RoleBadge`
+- `src/components/memory/SessionMemoryTab.tsx` — таб памяти сессий с гибридным поиском
+- `src/components/memory/RoleMemoryTab.tsx` — таб опыта ролей с confidence-метриками
+- `src/components/memory/KnowledgeTab.tsx` — таб базы знаний (RAG) с дедупликацией
+- `src/components/memory/CognitiveArsenalTab.tsx` — дашборд когнитивного арсенала (6 слоёв)
+- `src/components/memory/MemoryGraphTab.tsx` — SVG-граф памяти
+- `src/components/memory/DualGraphsTab.tsx` — двойные графы (память + арсенал)
+- `src/components/memory/StorageTab.tsx` — файлохранилище по бакетам
+- `src/components/memory/ChroniclesTab.tsx` — Хроники Эволюции с редактором промптов
+- `src/components/memory/RagDashboardTab.tsx` — RAG-аналитика
+- `src/components/memory/index.ts` — barrel-экспорт всех модулей
+
+### Изменено
+- `src/pages/HydraMemory.tsx` — сокращён с 4225 до ~115 строк (тонкая оболочка с делегацией табам)
+
+### Как работает
+Монолитный файл декомпозирован на 11 модулей. Общая инфраструктура (токены цветов, роль-бейджи, утилиты парсинга) централизована в `shared.tsx`. Каждый таб — изолированный компонент со своими зависимостями. Страница-оболочка управляет только навигацией между табами.
+
+### Связанные разделы Гидропедии
+- Хаб Памяти → Архитектура модулей
+- Хроники Эволюции → EVO-004
+
+---
+
 ## [2026-02-17] Аватар профиля, скрининг-интервью, история собеседований, синхронизация Подиума со Штатом
 
 ### Новое
