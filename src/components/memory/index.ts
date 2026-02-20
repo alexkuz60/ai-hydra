@@ -3,3 +3,7 @@ export { RoleMemoryTab } from './RoleMemoryTab';
 export { KnowledgeTab } from './KnowledgeTab';
 export { RagDashboardTab } from './RagDashboardTab';
 export { MemoryGraphTab } from './MemoryGraphTab';
+export { StorageTab } from './StorageTab';
+export { CognitiveArsenalTab } from './CognitiveArsenalTab';
+export { DualGraphsTab } from './DualGraphsTab';
+export { ChroniclesTab } from './ChroniclesTab';
