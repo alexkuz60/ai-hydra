@@ -3,7 +3,7 @@
   <p><em>Здесь даже догмы эволюционируют</em></p>
   <p>🇷🇺 <b>Русский</b> · <a href="README.md">🇬🇧 English</a></p>
 
-  ![Version](https://img.shields.io/badge/version-0.2.18--alpha-0ff?style=flat-square&logo=semver&logoColor=white)
+  ![Version](https://img.shields.io/badge/version-0.2.19--alpha-0ff?style=flat-square&logo=semver&logoColor=white)
   ![Build](https://img.shields.io/badge/build-passing-brightgreen?style=flat-square&logo=github-actions&logoColor=white)
   ![License](https://img.shields.io/badge/license-MIT-blue?style=flat-square)
   ![Stack](https://img.shields.io/badge/stack-React%2018%20%2B%20TypeScript%20%2B%20Supabase-8b5cf6?style=flat-square)
@@ -90,6 +90,7 @@ Hydra строится по принципу **живой архитектуры
 - Конфигурация моделей через **Sheet-интерфейс**
 - **Файлы задач** — прикрепление документов к сессиям
 - **Память сессий** (Session Memory) — контекстные чанки с эмбеддингами
+- **Учебные примеры** — преднаполненные системные задачи (`is_system: true`) с 26 реалистичными мультимодельными диалогами (креативный брейнсторм, код-ревью, продуктовая стратегия, Q&A). Обеспечивают «тёплый старт» для RAG-памяти, Хроник Эволюции и статистики моделей. Поддерживается клонирование в личные задачи
 
 ### 7. Библиотека промптов (Prompt Library)
 - CRUD для системных промптов с тегами и описаниями
@@ -177,7 +178,7 @@ React 18 + TypeScript + Vite
 Lovable Cloud (Supabase)
 ├── Auth: Email/password authentication
 ├── Database: PostgreSQL с RLS
-├── Edge Functions: Deno runtime (12 функций)
+├── Edge Functions: Deno runtime (16 функций)
 ├── Vault: Secure API key storage
 ├── Storage: File attachments
 ├── Vector Search: pgvector для эмбеддингов
@@ -191,6 +192,8 @@ Lovable Cloud (Supabase)
 | `hydra-stream` | Streaming-ответы от AI-провайдеров |
 | `hydra-orchestrator` | Маршрутизация, tool calling, мульти-провайдер |
 | `contest-arbiter` | AI-арбитраж конкурсов моделей |
+| `contest-discrepancy-trigger` | Обнаружение расхождений в оценках конкурсов |
+| `evolution-trigger` | ReAct-эволюция с памятью и знаниями |
 | `interview-briefing` | Генерация брифингов для собеседований |
 | `interview-test-runner` | Запуск тестовых заданий |
 | `interview-verdict` | Формирование вердикта и HR-резюме |
@@ -326,7 +329,7 @@ src/
 ├── styles/             # Design system docs
 └── types/              # TypeScript definitions
 
-supabase/functions/     # 14 Edge Functions
+supabase/functions/     # 16 Edge Functions
 ```
 
 ---
