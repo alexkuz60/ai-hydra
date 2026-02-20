@@ -3088,6 +3088,7 @@ function generateChroniclesMD(entries: ChronicleDBEntry[], isRu: boolean): strin
 
 function ChroniclesTab({ language, isSupervisor }: { language: string; isSupervisor: boolean }) {
   const isRu = language === 'ru';
+  const { user } = useAuth();
   const [entries, setEntries] = useState<ChronicleDBEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
@@ -3155,8 +3156,40 @@ function ChroniclesTab({ language, isSupervisor }: { language: string; isSupervi
         .update({ supervisor_resolution: resolution })
         .eq('id', entryId);
       if (error) throw error;
+
+      const entry = entries.find(e => e.id === entryId);
       setEntries(prev => prev.map(e => e.id === entryId ? { ...e, supervisor_resolution: resolution } : e));
       toast.success(isRu ? 'Резолюция сохранена' : 'Resolution saved');
+
+      // Phase 3: Record outcome for meta-learning when resolving a revised entry
+      if (entry?.status === 'revised' && entry?.ai_revision && (resolution === 'approved' || resolution === 'rejected')) {
+        try {
+          let strategyTags: string[] = [];
+          let confidence = 0.5;
+          try {
+            const parsed = JSON.parse(entry.ai_revision);
+            strategyTags = parsed.strategy_tags || [];
+            confidence = parsed.confidence || 0.5;
+          } catch { /* plain text */ }
+
+          await supabase.functions.invoke('evolution-trigger', {
+            body: {
+              mode: 'record_outcome',
+              entry_code: entry.entry_code,
+              title: entry.title,
+              role_object: entry.role_object,
+              strategy_tags: strategyTags,
+              confidence,
+              resolution: resolution === 'approved' ? 'accepted' : 'rejected',
+              supervisor_comment: entry.supervisor_comment,
+              user_id: user?.id,
+            },
+          });
+        } catch (e) {
+          console.warn('[Phase3] Outcome recording failed:', e);
+        }
+      }
+
       if (resolution === 'rejected') {
         triggerEvolution(entryId, 'single');
       }

@@ -10,6 +10,7 @@ import {
   analyzePastRevisions,
   buildVerification,
 } from "./memory.ts";
+import { buildMetaLearning, formatMetaContext, saveRevisionOutcome } from "./meta.ts";
 import type { TrajectoryStep, StructuredRevision, MemoryHit, KnowledgeHit } from "./types.ts";
 
 const corsHeaders = {
@@ -31,6 +32,11 @@ async function executeReActPipeline(
   const trajectory: TrajectoryStep[] = [];
   const now = () => new Date().toISOString();
 
+  // ── Step 0: META — Load meta-learning context (Phase 3) ──
+  const roleForSearch = resolveRoleForSearch((entry.role_object as string) || "");
+  const meta = await buildMetaLearning(supabase, roleForSearch, (entry.role_object as string) || "");
+  const metaContext = formatMetaContext(meta);
+
   // ── Step 1: THINK — Analyze the rejected entry ──
   const thinkPrompt = `Проанализируй отклонённую запись Хроник Hydra.
 
@@ -40,12 +46,14 @@ async function executeReActPipeline(
 Комментарий Супервизора: ${entry.supervisor_comment || "не указан"}
 Метрики ДО: ${JSON.stringify(entry.metrics_before || {}, null, 2)}
 Метрики ПОСЛЕ: ${JSON.stringify(entry.metrics_after || {}, null, 2)}
+${metaContext}
 
 Определи:
 1. Тип проблемы (промпт / модель / неясный запрос / конфигурация)
 2. Корневую причину отклонения
 3. Какие данные из памяти Hydra помогут сформировать ревизию
 4. Ключевые слова для поиска в базе знаний роли
+${meta.avoided_tags.length > 0 ? `5. ВНИМАНИЕ: избегай стратегий [${meta.avoided_tags.join(", ")}] — они показали низкий % успеха` : ""}
 
 Ответь кратко, структурированно.`;
 
@@ -65,7 +73,7 @@ async function executeReActPipeline(
   });
 
   // ── Step 2: ACT — Search memory with semantic retrieval (Phase 2) ──
-  const roleForSearch = resolveRoleForSearch((entry.role_object as string) || "");
+  // roleForSearch already resolved in Step 0
 
   // Build search query from Think analysis + entry context
   const searchQuery = `${entry.title} ${entry.hypothesis || ""} ${entry.supervisor_comment || ""}`.trim();
@@ -135,11 +143,12 @@ ${knowledgeResults.slice(0, 3).map(k => `[${k.category}] ${k.content.substring(0
 - Успешные стратегии: ${analysis.successfulStrategies.join(", ") || "нет данных"}
 - Неуспешные стратегии: ${analysis.failedStrategies.join(", ") || "нет данных"}
 - Оценка риска: ${verification.risk_assessment}
+${metaContext}
 
 Ответь:
 1. Подтверждается ли диагноз данными из памяти? (да/частично/нет)
 2. Какие паттерны подтверждены или опровергнуты?
-3. Рекомендуемая стратегия ревизии с учётом прошлого опыта
+3. Рекомендуемая стратегия ревизии с учётом прошлого опыта и мета-обучения
 4. Уровень уверенности (0.0-1.0)
 
 Кратко, не более 150 слов.`;
@@ -221,8 +230,9 @@ ${contextFromMemory}${contextFromKnowledge}
       0.7,
     );
 
-    // Calculate confidence with verification boost
+    // Calculate confidence with verification boost + meta-learning modifier (Phase 3)
     let confidence = calculateConfidence(entry, memoryResults.length, pastRevs.length, verification);
+    confidence = Math.min(Math.max(confidence + meta.meta_confidence_modifier, 0.2), 0.95);
 
     const strategyTags = extractStrategyTags(thinkResult.content);
 
@@ -403,6 +413,32 @@ serve(async (req) => {
     const body = await req.json();
     const { mode, chronicle_id } = body;
 
+    // ── Phase 3: Record outcome mode ──
+    if (mode === "record_outcome") {
+      const { entry_code, title, role_object, strategy_tags, confidence, resolution, supervisor_comment, user_id } = body;
+      if (!entry_code || !resolution || !user_id) {
+        return new Response(JSON.stringify({ error: "Missing required fields: entry_code, resolution, user_id" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const role = resolveRoleForSearch(role_object || "");
+      await saveRevisionOutcome(supabase, {
+        role,
+        userId: user_id,
+        entryCode: entry_code,
+        title: title || "",
+        roleObject: role_object || "",
+        strategyTags: strategy_tags || [],
+        confidence: confidence || 0.5,
+        resolution,
+        supervisorComment: supervisor_comment,
+      });
+      return new Response(JSON.stringify({ message: "Outcome recorded", memory_type: resolution === "accepted" ? "success" : "mistake" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     let targetEntries: Record<string, unknown>[] = [];
 
     const loadEvolutionerPrompt = async (promptKey: string): Promise<string | null> => {
@@ -440,7 +476,7 @@ serve(async (req) => {
       if (error) throw error;
       targetEntries = data || [];
     } else {
-      return new Response(JSON.stringify({ error: "Invalid mode. Use 'single' or 'autorun'" }), {
+      return new Response(JSON.stringify({ error: "Invalid mode. Use 'single', 'autorun', or 'record_outcome'" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
