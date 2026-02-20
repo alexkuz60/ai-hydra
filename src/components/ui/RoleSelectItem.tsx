@@ -14,6 +14,7 @@ interface RoleSelectItemProps {
 export function RoleSelectItem({ value, className }: RoleSelectItemProps) {
   const { t } = useLanguage();
   const config = ROLE_CONFIG[value];
+  if (!config) return null;
   const Icon = config.icon;
 
   return (
@@ -55,6 +56,7 @@ interface RoleDisplayProps {
 export function RoleDisplay({ role, className }: RoleDisplayProps) {
   const { t } = useLanguage();
   const config = ROLE_CONFIG[role];
+  if (!config) return <span className={className}>{role}</span>;
   const Icon = config.icon;
 
   return (
