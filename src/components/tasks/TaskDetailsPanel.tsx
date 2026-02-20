@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
-import { MessageSquare, Play, Trash2, Pencil, Check, X, Bot, Sparkles, Cpu, Loader2, Save } from 'lucide-react';
+import { MessageSquare, Play, Trash2, Pencil, Check, X, Bot, Sparkles, Cpu, Loader2, Save, Lock, Copy } from 'lucide-react';
 import { TaskFilesPanel } from './TaskFilesPanel';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
@@ -38,6 +38,7 @@ interface TaskDetailsPanelProps {
   onUpdateTitle: (taskId: string, title: string) => Promise<void>;
   onUpdateConfig: (taskId: string, config: Task['session_config']) => Promise<void>;
   onDelete: () => void;
+  onDuplicate?: (task: Task) => void;
   onRequestTaskChange?: (task: Task) => void;
   saving?: boolean;
   hasUnsavedChangesRef?: React.MutableRefObject<boolean>;
@@ -48,6 +49,7 @@ export function TaskDetailsPanel({
   onUpdateTitle,
   onUpdateConfig,
   onDelete,
+  onDuplicate,
   onRequestTaskChange,
   saving = false,
   hasUnsavedChangesRef,
@@ -207,17 +209,22 @@ export function TaskDetailsPanel({
                    </Button>
                  </div>
                ) : (
-                 <div className="flex items-center gap-2">
-                   <h2 className="text-xl font-semibold truncate">{task.title}</h2>
-                   <Button
-                     variant="ghost"
-                     size="icon"
-                     className="h-7 w-7 opacity-50 hover:opacity-100"
-                     onClick={handleStartEditTitle}
-                   >
-                     <Pencil className="h-3.5 w-3.5" />
-                   </Button>
-                 </div>
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-xl font-semibold truncate">{task.title}</h2>
+                    {task.is_system && (
+                      <Lock className="h-4 w-4 text-muted-foreground shrink-0" />
+                    )}
+                    {!task.is_system && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 opacity-50 hover:opacity-100"
+                        onClick={handleStartEditTitle}
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                      </Button>
+                    )}
+                  </div>
                )}
                <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
                  <span>{format(new Date(task.updated_at), 'dd.MM.yyyy HH:mm')}</span>
@@ -233,38 +240,51 @@ export function TaskDetailsPanel({
              </div>
            </div>
            
-            {/* Actions */}
-            <div className="flex items-center gap-2">
-              {hasChanges && (
-                <Button 
-                  onClick={handleSaveConfig}
-                  size="sm"
-                  className="min-w-[140px] h-9"
-                  disabled={saving}
+             {/* Actions */}
+             <div className="flex items-center gap-2">
+               {hasChanges && !task.is_system && (
+                 <Button 
+                   onClick={handleSaveConfig}
+                   size="sm"
+                   className="min-w-[140px] h-9"
+                   disabled={saving}
+                 >
+                   {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
+                   {t('tasks.saveConfig')}
+                 </Button>
+               )}
+               {task.is_system && onDuplicate && (
+                 <Button
+                   variant="outline"
+                   size="sm"
+                   className="h-9 gap-2"
+                   onClick={() => onDuplicate(task)}
+                 >
+                   <Copy className="h-4 w-4" />
+                   {t('tasks.duplicateToOwn')}
+                 </Button>
+               )}
+               {!task.is_system && (
+                <Button
+                  variant="destructive"
+                  size="icon"
+                  className="h-9 w-9"
+                  onClick={onDelete}
+                  data-guide="tasks-delete-btn"
                 >
-                  {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
-                  {t('tasks.saveConfig')}
-                </Button>
-              )}
+                 <Trash2 className="h-4 w-4" />
+               </Button>
+               )}
                <Button
-                 variant="destructive"
-                 size="icon"
-                 className="h-9 w-9"
-                 onClick={onDelete}
-                 data-guide="tasks-delete-btn"
+                 onClick={handleOpenTask}
+                 disabled={selectedModels.length === 0}
+                 className="hydra-glow-sm"
+                 data-guide="tasks-open-btn"
                >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-              <Button
-                onClick={handleOpenTask}
-                disabled={selectedModels.length === 0}
-                className="hydra-glow-sm"
-                data-guide="tasks-open-btn"
-              >
-                <Play className="h-4 w-4 mr-2" />
-                {t('tasks.open')}
-              </Button>
-            </div>
+                 <Play className="h-4 w-4 mr-2" />
+                 {t('tasks.open')}
+               </Button>
+             </div>
           </div>
         </div>
 

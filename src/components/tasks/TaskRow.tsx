@@ -4,25 +4,27 @@
  import { Badge } from '@/components/ui/badge';
  import { Button } from '@/components/ui/button';
  import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
- import { MessageSquare, Settings, Trash2, Bot, Sparkles, Cpu } from 'lucide-react';
+ import { MessageSquare, Settings, Trash2, Bot, Sparkles, Cpu, Lock, Copy } from 'lucide-react';
  import { cn } from '@/lib/utils';
  import { format } from 'date-fns';
  import { getModelInfo, getModelDisplayName } from '@/hooks/useAvailableModels';
  import type { PerModelSettingsData, DEFAULT_MODEL_SETTINGS } from '@/components/warroom/PerModelSettings';
  
- export interface Task {
-   id: string;
-   title: string;
-   description: string | null;
-   is_active: boolean;
-   created_at: string;
-   updated_at: string;
-   session_config: {
-     selectedModels?: string[];
-     perModelSettings?: PerModelSettingsData;
-     useHybridStreaming?: boolean;
-   } | null;
- }
+export interface Task {
+  id: string;
+  title: string;
+  description: string | null;
+  is_active: boolean;
+  is_system: boolean;
+  is_shared: boolean;
+  created_at: string;
+  updated_at: string;
+  session_config: {
+    selectedModels?: string[];
+    perModelSettings?: PerModelSettingsData;
+    useHybridStreaming?: boolean;
+  } | null;
+}
  
  function getModelIcon(modelId: string) {
    const { isLovable, model } = getModelInfo(modelId);
@@ -43,6 +45,7 @@ interface TaskRowProps {
   onSelect: (task: Task) => void;
   onConfigure?: (task: Task, e: React.MouseEvent) => void;
   onDelete?: (task: Task, e: React.MouseEvent) => void;
+  onDuplicate?: (task: Task, e: React.MouseEvent) => void;
 }
  
 export function TaskRow({
@@ -53,6 +56,7 @@ export function TaskRow({
   onSelect,
   onConfigure,
   onDelete,
+  onDuplicate,
 }: TaskRowProps) {
    const { t } = useLanguage();
  
@@ -81,10 +85,18 @@ export function TaskRow({
          <div className="flex items-center justify-between gap-2">
            <div className="flex flex-col gap-1 flex-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="font-medium truncate">{task.title}</span>
-                {hasUnsavedChanges && (
-                  <span className="w-2 h-2 rounded-full bg-hydra-warning animate-pulse-glow shrink-0" title="Unsaved changes" />
-                )}
+                 <span className="font-medium truncate">{task.title}</span>
+                 {task.is_system && (
+                   <Tooltip>
+                     <TooltipTrigger asChild>
+                       <Lock className="h-3 w-3 text-muted-foreground shrink-0" />
+                     </TooltipTrigger>
+                     <TooltipContent>{t('tasks.systemTask')}</TooltipContent>
+                   </Tooltip>
+                 )}
+                 {hasUnsavedChanges && (
+                   <span className="w-2 h-2 rounded-full bg-hydra-warning animate-pulse-glow shrink-0" title="Unsaved changes" />
+                 )}
                {modelCount > 0 && (
                  <Badge variant="secondary" className="text-[10px]">
                    {modelCount} {modelCount === 1 ? t('tasks.model') : t('tasks.models')}
@@ -114,38 +126,53 @@ export function TaskRow({
                </div>
              )}
            </div>
-           {/* Action buttons */}
-           <div className="flex items-center gap-1 shrink-0">
-             {onConfigure && (
-               <Tooltip>
-                 <TooltipTrigger asChild>
-                   <Button
-                     variant="ghost"
-                     size="icon"
-                     className="opacity-0 group-hover:opacity-100 transition-opacity"
-                     onClick={(e) => onConfigure(task, e)}
-                   >
-                     <Settings className="h-4 w-4" />
-                   </Button>
-                 </TooltipTrigger>
-                 <TooltipContent>{t('tasks.modelConfig')}</TooltipContent>
-               </Tooltip>
-             )}
-             {onDelete && (
-               <Tooltip>
-                 <TooltipTrigger asChild>
-                   <Button
-                     variant="ghost"
-                     size="icon"
-                     className="opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive"
-                     onClick={(e) => onDelete(task, e)}
-                   >
-                     <Trash2 className="h-4 w-4" />
-                   </Button>
-                 </TooltipTrigger>
-                 <TooltipContent>{t('common.delete')}</TooltipContent>
-               </Tooltip>
-             )}
+            {/* Action buttons */}
+            <div className="flex items-center gap-1 shrink-0">
+              {task.is_system && onDuplicate && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={(e) => onDuplicate(task, e)}
+                    >
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>{t('tasks.duplicateToOwn')}</TooltipContent>
+                </Tooltip>
+              )}
+              {onConfigure && !task.is_system && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={(e) => onConfigure(task, e)}
+                    >
+                      <Settings className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>{t('tasks.modelConfig')}</TooltipContent>
+                </Tooltip>
+              )}
+              {onDelete && !task.is_system && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive"
+                      onClick={(e) => onDelete(task, e)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>{t('common.delete')}</TooltipContent>
+                </Tooltip>
+              )}
            </div>
          </div>
        </TableCell>

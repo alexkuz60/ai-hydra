@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody } from '@/components/ui/table';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Plus, Loader2, MessageSquare, Search, ListTodo, Flame } from 'lucide-react';
+import { Plus, Loader2, MessageSquare, Search, ListTodo, Flame, BookOpen, FolderOpen } from 'lucide-react';
 import {
   ResizablePanelGroup,
   ResizablePanel,
@@ -18,6 +18,7 @@ import { MultiModelSelector } from '@/components/warroom/MultiModelSelector';
 import { PerModelSettingsData, DEFAULT_MODEL_SETTINGS } from '@/components/warroom/PerModelSettings';
 import { ALL_VALID_MODEL_IDS, getModelDisplayName, getModelInfo } from '@/hooks/useAvailableModels';
 import { TaskRow, Task } from '@/components/tasks/TaskRow';
+import { StaffGroupHeader } from '@/components/staff/StaffGroupHeader';
 import { TaskDetailsPanel } from '@/components/tasks/TaskDetailsPanel';
 import { TaskDeleteDialog } from '@/components/tasks/TaskDeleteDialog';
 import { UnsavedChangesDialog } from '@/components/ui/unsaved-changes-dialog';
@@ -104,33 +105,56 @@ export default function Tasks() {
     }
   }, [user, authLoading, navigate]);
 
-   // Filter tasks
-   const filteredTasks = useMemo(() => {
-     if (!searchQuery.trim()) return tasks;
-     return tasks.filter(task => 
-       task.title.toLowerCase().includes(searchQuery.toLowerCase())
-     );
+   // Group expand states
+   const [showSystemTasks, setShowSystemTasks] = useState(true);
+   const [showUserTasks, setShowUserTasks] = useState(true);
+
+   // Filter and split tasks into groups
+   const { systemTasks, userTasks } = useMemo(() => {
+     const filtered = searchQuery.trim()
+       ? tasks.filter(task => task.title.toLowerCase().includes(searchQuery.toLowerCase()))
+       : tasks;
+     return {
+       systemTasks: filtered.filter(t => t.is_system),
+       userTasks: filtered.filter(t => !t.is_system),
+     };
    }, [tasks, searchQuery]);
+
+   const filteredTasks = useMemo(() => [...systemTasks, ...userTasks], [systemTasks, userTasks]);
  
   const fetchTasks = async () => {
     if (!user) return;
 
     try {
-      const { data, error } = await supabase
-        .from('sessions')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('updated_at', { ascending: false });
+      // Fetch user's own tasks + system tasks (visible to everyone via RLS)
+      const [userResult, systemResult] = await Promise.all([
+        supabase
+          .from('sessions')
+          .select('*')
+          .eq('user_id', user.id)
+          .eq('is_system', false)
+          .order('updated_at', { ascending: false }),
+        supabase
+          .from('sessions')
+          .select('*')
+          .eq('is_system', true)
+          .order('updated_at', { ascending: false }),
+      ]);
 
-      if (error) throw error;
+      if (userResult.error) throw userResult.error;
+      if (systemResult.error) throw systemResult.error;
       
-      // Parse session_config for each task
-      const tasksWithConfig = (data || []).map(task => ({
+      const parseConfig = (task: any): Task => ({
         ...task,
-        session_config: task.session_config as Task['session_config']
-      }));
+        session_config: task.session_config as Task['session_config'],
+      });
       
-      setTasks(tasksWithConfig);
+      const allTasks = [
+        ...(systemResult.data || []).map(parseConfig),
+        ...(userResult.data || []).map(parseConfig),
+      ];
+      
+      setTasks(allTasks);
     } catch (error: any) {
       toast.error(error.message);
     } finally {
@@ -264,8 +288,41 @@ export default function Tasks() {
   
    const handleDeleteClick = (task: Task, e: React.MouseEvent) => {
      e.stopPropagation();
+     if (task.is_system) return; // Safety check
      setTaskToDelete(task);
    };
+
+    const handleDuplicateTask = async (task: Task, e: React.MouseEvent) => {
+      e.stopPropagation();
+      if (!user) return;
+      try {
+        const { data, error } = await supabase
+          .from('sessions')
+          .insert([{
+            user_id: user.id,
+            title: `${task.title} (${t('common.copy')})`,
+            description: task.description,
+            session_config: JSON.parse(JSON.stringify(task.session_config)),
+            is_system: false,
+            is_shared: false,
+          }])
+          .select()
+          .single();
+
+        if (error) throw error;
+
+        const newTask: Task = {
+          ...data,
+          session_config: data.session_config as Task['session_config'],
+        };
+        // Re-fetch to get proper ordering
+        await fetchTasks();
+        setSelectedTask(newTask);
+        toast.success(t('tasks.duplicated'));
+      } catch (error: any) {
+        toast.error(error.message);
+      }
+    };
 
     const handleConfirmDelete = async (mode: DeletionMode) => {
       if (!taskToDelete) return;
@@ -301,7 +358,7 @@ export default function Tasks() {
              </div>
               <p className="text-sm text-muted-foreground mt-1">{t('tasks.pageDescription')}</p>
             </div>
-            {tasks.length > 0 && (
+            {userTasks.length > 0 && (
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
@@ -349,7 +406,10 @@ export default function Tasks() {
                               )}
                               onClick={() => handleSelectTask(task)}
                             >
-                              <MessageSquare className={cn("h-5 w-5", task.is_active ? "text-primary" : "text-muted-foreground")} />
+                               {task.is_system 
+                                 ? <BookOpen className="h-5 w-5 text-hydra-info" />
+                                 : <MessageSquare className={cn("h-5 w-5", task.is_active ? "text-primary" : "text-muted-foreground")} />
+                               }
                               {selectedTask?.id === task.id && hasUnsavedChangesRef.current && (
                                 <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-hydra-warning animate-pulse-glow" />
                               )}
@@ -448,9 +508,42 @@ export default function Tasks() {
                      </div>
                    </div>
                  ) : (
-                   <Table>
-                     <TableBody>
-                       {filteredTasks.map((task) => (
+                    <Table>
+                      <TableBody>
+                        {/* System tasks group */}
+                        {systemTasks.length > 0 && (
+                          <>
+                            <StaffGroupHeader
+                              expanded={showSystemTasks}
+                              onToggle={() => setShowSystemTasks(v => !v)}
+                              icon={<BookOpen className="h-4 w-4 text-hydra-info" />}
+                              label={t('tasks.tutorialExamples')}
+                              count={systemTasks.length}
+                              guideId="tasks-system-group"
+                            />
+                            {showSystemTasks && systemTasks.map((task) => (
+                              <TaskRow
+                                key={task.id}
+                                task={task}
+                                isSelected={selectedTask?.id === task.id}
+                                validModels={filterValidModels(task.session_config?.selectedModels || [])}
+                                hasUnsavedChanges={selectedTask?.id === task.id && hasUnsavedChangesRef.current}
+                                onSelect={handleSelectTask}
+                                onDuplicate={handleDuplicateTask}
+                              />
+                            ))}
+                          </>
+                        )}
+                        {/* User tasks group */}
+                        <StaffGroupHeader
+                          expanded={showUserTasks}
+                          onToggle={() => setShowUserTasks(v => !v)}
+                          icon={<FolderOpen className="h-4 w-4 text-primary" />}
+                          label={t('tasks.myTasks')}
+                          count={userTasks.length}
+                          guideId="tasks-user-group"
+                        />
+                        {showUserTasks && userTasks.map((task) => (
                           <TaskRow
                             key={task.id}
                             task={task}
@@ -460,9 +553,9 @@ export default function Tasks() {
                             onSelect={handleSelectTask}
                             onDelete={handleDeleteClick}
                           />
-                       ))}
-                     </TableBody>
-                   </Table>
+                        ))}
+                      </TableBody>
+                    </Table>
                  )}
                 </div>
               </div>
@@ -474,14 +567,15 @@ export default function Tasks() {
  
            {/* Right panel - Details */}
             <ResizablePanel defaultSize={100 - nav.panelSize} minSize={40} maxSize={96} data-guide="tasks-details">
-              <TaskDetailsPanel
-                task={selectedTask}
-                onUpdateTitle={handleUpdateTitle}
-                onUpdateConfig={handleUpdateConfig}
-                onDelete={() => selectedTask && setTaskToDelete(selectedTask)}
-                saving={saving}
-                hasUnsavedChangesRef={hasUnsavedChangesRef}
-              />
+               <TaskDetailsPanel
+                 task={selectedTask}
+                 onUpdateTitle={handleUpdateTitle}
+                 onUpdateConfig={handleUpdateConfig}
+                 onDelete={() => selectedTask && !selectedTask.is_system && setTaskToDelete(selectedTask)}
+                 onDuplicate={(task) => handleDuplicateTask(task, { stopPropagation: () => {} } as React.MouseEvent)}
+                 saving={saving}
+                 hasUnsavedChangesRef={hasUnsavedChangesRef}
+               />
             </ResizablePanel>
          </ResizablePanelGroup>
        </div>
@@ -502,7 +596,7 @@ export default function Tasks() {
          deleting={deleting}
          onConfirm={() => deleteAllTasks()}
          bulk
-         taskCount={tasks.length}
+         taskCount={userTasks.length}
        />
       
       {/* Unsaved Changes Dialog */}
