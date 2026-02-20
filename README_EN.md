@@ -2,7 +2,7 @@
   <img src="public/banner.png" alt="ai*hYdra" width="640"/>
   <p><em>Where even dogmas evolve</em></p>
 
-  ![Version](https://img.shields.io/badge/version-0.2.17--alpha-0ff?style=flat-square&logo=semver&logoColor=white)
+  ![Version](https://img.shields.io/badge/version-0.2.18--alpha-0ff?style=flat-square&logo=semver&logoColor=white)
   ![Build](https://img.shields.io/badge/build-passing-brightgreen?style=flat-square&logo=github-actions&logoColor=white)
   ![License](https://img.shields.io/badge/license-MIT-blue?style=flat-square)
   ![Stack](https://img.shields.io/badge/stack-React%2018%20%2B%20TypeScript%20%2B%20Supabase-8b5cf6?style=flat-square)
@@ -310,6 +310,7 @@ src/
 │   ├── guide/          # Guided Tours
 │   ├── hydrapedia/     # Built-in documentation
 │   ├── layout/         # Layout, Sidebar, Navigator
+│   ├── memory/         # Hydra Memory Hub (11 modules: tabs, shared utilities)
 │   ├── patterns/       # Behavioral Patterns editor
 │   ├── profile/        # Profile, API keys, ProxyAPI, Avatar cropper
 │   ├── prompts/        # Prompt Library
@@ -348,4 +349,4 @@ supabase/functions/     # 14 Edge Functions
 
 ---
 
-*Last updated: February 19, 2026*
+*Last updated: February 20, 2026*
