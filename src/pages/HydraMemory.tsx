@@ -2978,6 +2978,7 @@ function matchRoleKey(raw: string): string | null {
 }
 
 function RoleBadge({ value, isRu }: { value: string; isRu: boolean }) {
+  const { t } = useLanguage();
   const roleKey = matchRoleKey(value);
   if (roleKey && ROLE_CONFIG[roleKey as keyof typeof ROLE_CONFIG]) {
     const cfg = ROLE_CONFIG[roleKey as keyof typeof ROLE_CONFIG];
@@ -2987,7 +2988,7 @@ function RoleBadge({ value, isRu }: { value: string; isRu: boolean }) {
     return (
       <Badge variant="outline" className={cn('text-xs font-medium gap-1 border', color, cfg.bgClass || '')}>
         <Icon className={cn('h-3 w-3', color)} />
-        {value}
+        {t(cfg.label)}
       </Badge>
     );
   }
