@@ -1006,7 +1006,30 @@ SVG-граф с гексагональной структурой показыв
   → pre-filter (similarity > 0.2 || hybrid_score > 0.005)
   → rerank [gemini-3-flash-preview] — final_score = rerank×0.7 + hybrid×0.3
   → top-5 → system prompt injection
-\`\`\``,
+\`\`\`
+
+## Модульная архитектура (v0.2.18)
+
+Начиная с версии 0.2.18, Memory Hub реализован как набор из 11 независимых модулей в \`src/components/memory/\`. Монолитный файл (4225 строк) декомпозирован на атомарные компоненты:
+
+| Модуль | Назначение |
+|--------|------------|
+| **shared.tsx** | Дизайн-токены, утилиты, компоненты StatCard и RoleBadge |
+| **SessionMemoryTab** | Память сессий + гибридный поиск |
+| **RoleMemoryTab** | Опыт ролей с confidence-метриками |
+| **KnowledgeTab** | База знаний (RAG) с дедупликацией |
+| **CognitiveArsenalTab** | Дашборд подсознания (6 слоёв) |
+| **MemoryGraphTab** | SVG-граф памяти |
+| **DualGraphsTab** | Двойные графы (память + арсенал) |
+| **StorageTab** | Файлохранилище по бакетам |
+| **ChroniclesTab** | Хроники Эволюции |
+| **RagDashboardTab** | RAG-аналитика |
+| **index.ts** | Barrel-экспорт |
+
+Страница HydraMemory.tsx (~115 строк) — тонкая оболочка, управляющая табами. Активная вкладка сохраняется в localStorage.
+
+> [!TIP] Преимущество модульности
+> Каждый таб можно модифицировать независимо — без риска регрессий в других модулях.`,
       en: `# Hydra Memory
 
 Central command center of Hydra's entire cognitive subsystem — 8 functional areas in a single full-width interface. Accessible via the 🧠 icon in the sidebar (\`/hydra-memory\`).
@@ -1092,7 +1115,30 @@ Query → generate-embeddings + HyDE generation [parallel]
   → pre-filter (similarity > 0.2 || hybrid_score > 0.005)
   → rerank [gemini-3-flash-preview] — final_score = rerank×0.7 + hybrid×0.3
   → top-5 → system prompt injection
-\`\`\``,
+\`\`\`
+
+## Modular Architecture (v0.2.18)
+
+Since v0.2.18, Memory Hub is implemented as 11 independent modules in \`src/components/memory/\`. The monolithic file (4,225 lines) was decomposed into atomic components:
+
+| Module | Purpose |
+|--------|---------|
+| **shared.tsx** | Design tokens, utilities, StatCard and RoleBadge components |
+| **SessionMemoryTab** | Session memory + hybrid search |
+| **RoleMemoryTab** | Role experience with confidence metrics |
+| **KnowledgeTab** | Knowledge base (RAG) with deduplication |
+| **CognitiveArsenalTab** | Subconscious dashboard (6 layers) |
+| **MemoryGraphTab** | SVG memory graph |
+| **DualGraphsTab** | Dual graphs (memory + arsenal) |
+| **StorageTab** | File storage by buckets |
+| **ChroniclesTab** | Evolution Chronicles |
+| **RagDashboardTab** | RAG analytics |
+| **index.ts** | Barrel export |
+
+HydraMemory.tsx (~115 lines) is a thin shell managing tabs. Active tab persisted in localStorage.
+
+> [!TIP] Modularity Advantage
+> Each tab can be modified independently — no regression risk in other modules.`,
     },
   },
   {
