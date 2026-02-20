@@ -39,7 +39,7 @@ const FREE_TIER_INFO = {
 interface TestResult {
   model: string;
   name: string;
-  status: 'idle' | 'testing' | 'ok' | 'quota' | 'not_found' | 'error';
+  status: 'idle' | 'testing' | 'ok' | 'quota' | 'no_credits' | 'not_found' | 'error';
   latency?: number;
   error?: string;
 }
@@ -130,6 +130,8 @@ export function OpenRouterLimitsDialog({ hasKey }: OpenRouterLimitsDialogProps) 
           newResults[i] = { model: m.id, name: m.name, status: 'ok', latency };
         } else if (res.status === 429) {
           newResults[i] = { model: m.id, name: m.name, status: 'quota', latency, error: 'Rate limited' };
+        } else if (res.status === 402) {
+          newResults[i] = { model: m.id, name: m.name, status: 'no_credits', latency, error: 'Insufficient credits' };
         } else if (res.status === 404) {
           newResults[i] = { model: m.id, name: m.name, status: 'not_found', latency, error: 'Model not found' };
         } else {
@@ -160,6 +162,7 @@ export function OpenRouterLimitsDialog({ hasKey }: OpenRouterLimitsDialogProps) 
       case 'testing': return <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />;
       case 'ok': return <CheckCircle2 className="h-4 w-4 text-emerald-500" />;
       case 'quota': return <AlertTriangle className="h-4 w-4 text-amber-500" />;
+      case 'no_credits': return <CreditCard className="h-4 w-4 text-amber-500" />;
       case 'not_found': return <XCircle className="h-4 w-4 text-muted-foreground" />;
       case 'error': return <XCircle className="h-4 w-4 text-destructive" />;
       default: return <span className="h-4 w-4" />;
@@ -178,6 +181,11 @@ export function OpenRouterLimitsDialog({ hasKey }: OpenRouterLimitsDialogProps) 
       case 'quota': return (
         <span className="text-amber-500 font-medium">
           429 — {language === 'ru' ? 'Лимит исчерпан' : 'Rate limited'}
+        </span>
+      );
+      case 'no_credits': return (
+        <span className="text-amber-500 font-medium">
+          402 — {language === 'ru' ? 'Нет кредитов' : 'No credits'}
         </span>
       );
       case 'not_found': return (
