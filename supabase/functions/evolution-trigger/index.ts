@@ -447,7 +447,7 @@ serve(async (req) => {
     }
 
     if (targetEntries.length === 0) {
-      return new Response(JSON.stringify({ message: "No rejected entries found", revised: 0 }), {
+      return new Response(JSON.stringify({ message: "No rejected entries found", revised: 0, total: 0, results: [] }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
