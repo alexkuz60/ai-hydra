@@ -3339,7 +3339,7 @@ function ChroniclesTab({ language, isSupervisor }: { language: string; isSupervi
         entry_code: formData.entry_code.trim(),
         title: formData.title.trim(),
         role_object: formData.role_object.trim(),
-        initiator: formData.initiator.trim() || 'Supervisor',
+        initiator: formData.initiator.trim() || 'Evolutioner',
         status: formData.status,
         hypothesis: formData.hypothesis.trim() || null,
         summary: formData.summary.trim() || null,
