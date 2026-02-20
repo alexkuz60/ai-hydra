@@ -85,13 +85,21 @@ export function TaskDetailsPanel({
     }
   }, [hasChanges, hasUnsavedChangesRef]);
 
+  // Track whether we're in "initial load" to suppress change detection from normalization
+  const suppressChangeRef = React.useRef(false);
+
   // Initialize state when task changes or when config is updated
   React.useEffect(() => {
     if (task) {
+      suppressChangeRef.current = true;
       setSelectedModels(filterValidModels(task.session_config?.selectedModels || []));
       setPerModelSettings(task.session_config?.perModelSettings || {});
       setUseHybridStreaming(task.session_config?.useHybridStreaming ?? true);
       setHasChanges(false);
+      // Allow a tick for PerModelSettings normalization to settle
+      requestAnimationFrame(() => {
+        suppressChangeRef.current = false;
+      });
     }
   }, [task?.id, configKey]);
  
@@ -127,15 +135,15 @@ export function TaskDetailsPanel({
      setHasChanges(true);
    };
  
-   const handleSettingsChange = (settings: PerModelSettingsData) => {
-     setPerModelSettings(settings);
-     setHasChanges(true);
-   };
- 
-   const handleHybridChange = (value: boolean) => {
-     setUseHybridStreaming(value);
-     setHasChanges(true);
-   };
+    const handleSettingsChange = (settings: PerModelSettingsData) => {
+      setPerModelSettings(settings);
+      if (!suppressChangeRef.current) setHasChanges(true);
+    };
+  
+    const handleHybridChange = (value: boolean) => {
+      setUseHybridStreaming(value);
+      if (!suppressChangeRef.current) setHasChanges(true);
+    };
  
    const handleSaveConfig = async () => {
      await onUpdateConfig(task.id, {
