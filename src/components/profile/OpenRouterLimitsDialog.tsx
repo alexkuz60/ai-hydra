@@ -10,10 +10,23 @@ import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { PERSONAL_KEY_MODELS } from '@/hooks/useAvailableModels';
 
-// Free OpenRouter models from useAvailableModels
+// All OpenRouter models from useAvailableModels
 const OPENROUTER_FREE_MODELS = PERSONAL_KEY_MODELS.filter(
   m => m.provider === 'openrouter' && m.id.includes(':free')
 );
+
+const OPENROUTER_PAID_MODELS: { id: string; name: string }[] = [
+  { id: 'google/gemini-2.5-flash', name: 'Gemini 2.5 Flash' },
+  { id: 'google/gemini-2.5-pro', name: 'Gemini 2.5 Pro' },
+  { id: 'anthropic/claude-3.5-haiku', name: 'Claude 3.5 Haiku' },
+  { id: 'openai/gpt-4o-mini', name: 'GPT-4o Mini' },
+  { id: 'meta-llama/llama-3.3-70b-instruct', name: 'Llama 3.3 70B' },
+];
+
+const ALL_OPENROUTER_MODELS = [
+  ...OPENROUTER_FREE_MODELS.map(m => ({ id: m.id, name: m.name, free: true })),
+  ...OPENROUTER_PAID_MODELS.map(m => ({ ...m, free: false })),
+];
 
 // Static info about OpenRouter free tier
 const FREE_TIER_INFO = {
@@ -48,7 +61,7 @@ export function OpenRouterLimitsDialog({ hasKey }: OpenRouterLimitsDialogProps) 
   const { language } = useLanguage();
   const [open, setOpen] = useState(false);
   const [results, setResults] = useState<TestResult[]>(
-    OPENROUTER_FREE_MODELS.map(m => ({ model: m.id, name: m.name, status: 'idle' }))
+    ALL_OPENROUTER_MODELS.map(m => ({ model: m.id, name: m.name, status: 'idle' }))
   );
   const [testing, setTesting] = useState(false);
   const [keyInfo, setKeyInfo] = useState<KeyInfo | null>(null);
@@ -92,8 +105,8 @@ export function OpenRouterLimitsDialog({ hasKey }: OpenRouterLimitsDialogProps) 
 
     const newResults: TestResult[] = [...results];
 
-    for (let i = 0; i < OPENROUTER_FREE_MODELS.length; i++) {
-      const m = OPENROUTER_FREE_MODELS[i];
+    for (let i = 0; i < ALL_OPENROUTER_MODELS.length; i++) {
+      const m = ALL_OPENROUTER_MODELS[i];
       newResults[i] = { model: m.id, name: m.name, status: 'testing' };
       setResults([...newResults]);
 
@@ -193,7 +206,7 @@ export function OpenRouterLimitsDialog({ hasKey }: OpenRouterLimitsDialogProps) 
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             {Logo && <Logo className={cn("h-5 w-5", color)} />}
-            {language === 'ru' ? 'OpenRouter — бесплатные модели' : 'OpenRouter — Free Models'}
+            {language === 'ru' ? 'OpenRouter — диагностика' : 'OpenRouter — Diagnostics'}
           </DialogTitle>
         </DialogHeader>
 
@@ -211,8 +224,8 @@ export function OpenRouterLimitsDialog({ hasKey }: OpenRouterLimitsDialogProps) 
           <TabsContent value="test" className="space-y-4">
             <p className="text-sm text-muted-foreground">
               {language === 'ru'
-                ? 'Отправляет мини-запрос к каждой бесплатной модели для проверки доступности.'
-                : 'Sends a minimal request to each free model to check availability.'}
+                ? 'Отправляет мини-запрос к бесплатным и популярным платным моделям для проверки доступности ключа.'
+                : 'Sends a minimal request to free and popular paid models to check key availability.'}
             </p>
 
             <Button onClick={testModels} disabled={testing || !hasKey} size="sm" className="gap-2">
@@ -235,7 +248,9 @@ export function OpenRouterLimitsDialog({ hasKey }: OpenRouterLimitsDialogProps) 
                   </tr>
                 </thead>
                 <tbody>
-                  {results.map(r => (
+                  {results.map((r, idx) => {
+                    const modelMeta = ALL_OPENROUTER_MODELS[idx];
+                    return (
                     <tr key={r.model} className={cn(
                       "border-b last:border-0",
                       r.status === 'quota' && "bg-amber-500/5",
@@ -243,14 +258,20 @@ export function OpenRouterLimitsDialog({ hasKey }: OpenRouterLimitsDialogProps) 
                     )}>
                       <td className="p-3">
                         <span className="font-medium text-xs">{r.name}</span>
-                        <span className="block text-xs text-muted-foreground font-mono truncate max-w-[200px]">{r.model}</span>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-xs text-muted-foreground font-mono truncate max-w-[200px]">{r.model}</span>
+                          <Badge variant={modelMeta?.free ? 'secondary' : 'outline'} className="text-[10px] px-1 py-0 h-4">
+                            {modelMeta?.free ? 'free' : 'paid'}
+                          </Badge>
+                        </div>
                       </td>
                       <td className="p-3 flex items-center gap-2">
                         {statusIcon(r.status)}
                         {statusLabel(r)}
                       </td>
                     </tr>
-                  ))}
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
