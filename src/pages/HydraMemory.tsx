@@ -3181,11 +3181,17 @@ function ChroniclesTab({ language, isSupervisor }: { language: string; isSupervi
       );
       const result = await res.json();
       if (!res.ok) throw new Error(result.error || 'Evolution trigger failed');
-      toast.success(
-        mode === 'autorun'
-          ? (isRu ? `Автопробег завершён: ${result.revised}/${result.total} пересмотрено` : `Autorun complete: ${result.revised}/${result.total} revised`)
-          : (isRu ? 'ИИ-ревизия запущена' : 'AI revision triggered')
-      );
+      if (mode === 'autorun') {
+        const revised = result.revised ?? 0;
+        const total = result.total ?? 0;
+        if (total === 0) {
+          toast.info(isRu ? 'Нет записей для авторевизии — все уже пересмотрены' : 'No entries to revise — all already processed');
+        } else {
+          toast.success(isRu ? `Автопробег завершён: ${revised}/${total} пересмотрено` : `Autorun complete: ${revised}/${total} revised`);
+        }
+      } else {
+        toast.success(isRu ? 'ИИ-ревизия запущена' : 'AI revision triggered');
+      }
       await loadEntries();
     } catch (err) {
       console.error('Evolution trigger error:', err);
@@ -3249,7 +3255,7 @@ function ChroniclesTab({ language, isSupervisor }: { language: string; isSupervi
     }
   };
 
-  const rejectedCount = entries.filter(e => e.supervisor_resolution === 'rejected').length;
+  const rejectedCount = entries.filter(e => e.supervisor_resolution === 'rejected' && e.status !== 'revised').length;
   const approvedCount = entries.filter(e => e.supervisor_resolution === 'approved').length;
   const pendingCount = entries.filter(e => e.supervisor_resolution === 'pending').length;
 
