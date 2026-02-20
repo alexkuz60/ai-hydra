@@ -2,7 +2,6 @@ import { useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { allHydrapediaSections } from '@/content/hydrapedia/_data';
-import { useLanguage } from '@/contexts/LanguageContext';
 
 /**
  * Syncs all Hydrapedia content into role_knowledge for the Guide role.
@@ -10,7 +9,6 @@ import { useLanguage } from '@/contexts/LanguageContext';
  */
 export function useGuideKnowledgeSync() {
   const { user } = useAuth();
-  const { language } = useLanguage();
   const syncingRef = useRef(false);
   const lastSyncRef = useRef<string | null>(null);
 
