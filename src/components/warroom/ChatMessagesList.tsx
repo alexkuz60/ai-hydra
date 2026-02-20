@@ -161,11 +161,19 @@ export function ChatMessagesList({
         {/* Streaming responses - real-time content from parallel SSE streams */}
         <AnimatePresence mode="popLayout">
           {streamingResponses && Array.from(streamingResponses.values()).map(response => (
-            <StreamingMessageCard
+            <motion.div
               key={`streaming-${response.modelId}`}
-              response={response}
-              onStop={onStopStreaming}
-            />
+              initial={{ opacity: 0, y: 20, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -10, scale: 0.95 }}
+              transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+              layout
+            >
+              <StreamingMessageCard
+                response={response}
+                onStop={onStopStreaming}
+              />
+            </motion.div>
           ))}
         </AnimatePresence>
         
