@@ -34,6 +34,8 @@ import { toast } from 'sonner';
 import type { SessionMemoryChunk, ChunkType, SearchResult } from '@/hooks/useSessionMemory';
 import { useUserRoles } from '@/hooks/useUserRoles';
 import { ROLE_CONFIG } from '@/config/roles';
+import { MarkdownRenderer } from '@/components/warroom/MarkdownRenderer';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 // ─── Design tokens ───────────────────────────────────────────────────────────
 
@@ -2992,6 +2994,24 @@ function RoleBadge({ value, isRu }: { value: string; isRu: boolean }) {
   return <Badge variant="outline" className="text-xs">{value}</Badge>;
 }
 
+/** Extract readable markdown from ai_revision (may be JSON with trajectory or plain text) */
+function parseAiRevision(raw: string): string {
+  try {
+    const parsed = JSON.parse(raw);
+    if (parsed.trajectory && Array.isArray(parsed.trajectory)) {
+      return parsed.trajectory
+        .filter((s: any) => s.content && typeof s.content === 'string')
+        .map((s: any) => s.content)
+        .join('\n\n');
+    }
+    // If it's JSON but no trajectory, return as-is
+    return raw;
+  } catch {
+    // Plain text / markdown
+    return raw;
+  }
+}
+
 // ─── Chronicles Tab ───────────────────────────────────────────────────────────
 
 interface ChronicleDBEntry {
@@ -3724,80 +3744,156 @@ function ChroniclesTab({ language, isSupervisor }: { language: string; isSupervi
                     </div>
                   </CardHeader>
                   <CardContent className="space-y-4">
+                    {/* Hypothesis — collapsible frame with toggle inside */}
                     {entry.hypothesis && (
-                      <div className="rounded-lg bg-muted/50 p-3">
-                        <p className="text-xs font-medium text-muted-foreground mb-1">{isRu ? 'Гипотеза' : 'Hypothesis'}</p>
-                        <p className="text-sm text-muted-foreground leading-relaxed">{entry.hypothesis}</p>
-                      </div>
-                    )}
-
-                    {/* Collapse toggle */}
-                    {(entry.summary || entry.ai_revision || (mb && mat && Object.keys(mb).length > 0)) && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setExpandedCards(prev => {
+                      <Collapsible
+                        open={expandedCards.has(entry.id)}
+                        onOpenChange={() => setExpandedCards(prev => {
                           const next = new Set(prev);
                           next.has(entry.id) ? next.delete(entry.id) : next.add(entry.id);
                           return next;
                         })}
-                        className="h-6 text-xs text-muted-foreground hover:text-foreground w-full justify-center gap-1"
                       >
-                        {expandedCards.has(entry.id)
-                          ? (isRu ? '▲ Свернуть детали' : '▲ Collapse details')
-                          : (isRu ? '▼ Показать детали' : '▼ Show details')}
-                        {!expandedCards.has(entry.id) && entry.ai_revision && (
-                          <FlaskConical className="h-3 w-3 text-hydra-expert ml-1" />
-                        )}
-                      </Button>
+                        <div className="rounded-lg border border-border bg-muted/20 p-3">
+                          <CollapsibleTrigger className="flex items-center justify-between w-full">
+                            <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                              <Lightbulb className="h-3.5 w-3.5" />
+                              {isRu ? 'Гипотеза' : 'Hypothesis'}
+                            </div>
+                            <span className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1">
+                              {expandedCards.has(entry.id)
+                                ? (isRu ? 'Свернуть детали' : 'Collapse details')
+                                : (isRu ? 'Показать детали' : 'Show details')}
+                              {!expandedCards.has(entry.id) && entry.ai_revision && (
+                                <FlaskConical className="h-3 w-3 text-hydra-expert ml-1" />
+                              )}
+                            </span>
+                          </CollapsibleTrigger>
+                          <p className="text-sm text-muted-foreground leading-relaxed mt-2">{entry.hypothesis}</p>
+                        </div>
+
+                        <CollapsibleContent className="space-y-4 mt-4">
+                          {/* Summary */}
+                          {entry.summary && (
+                            <div className="rounded-lg border border-border bg-muted/20 p-3">
+                              <p className="text-xs font-medium text-muted-foreground mb-2">{isRu ? 'Результат' : 'Summary'}</p>
+                              <p className="text-sm text-muted-foreground leading-relaxed">{entry.summary}</p>
+                            </div>
+                          )}
+
+                          {/* Metrics — show even if only one side has data */}
+                          {((mb && Object.keys(mb).length > 0) || (mat && Object.keys(mat).length > 0)) && (
+                            <div className="grid grid-cols-2 gap-3">
+                              {mb && Object.keys(mb).length > 0 && (
+                                <div className="rounded-lg border border-border p-3 space-y-1.5">
+                                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{isRu ? 'До' : 'Before'}</p>
+                                  {Object.entries(mb).map(([k, v]) => (
+                                    <div key={k} className="flex justify-between text-xs">
+                                      <TermLabel term={k} className="text-muted-foreground">{getTermLabel(k, isRu)}</TermLabel>
+                                      <span className="font-mono font-medium">{String(v)}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                              {mat && Object.keys(mat).length > 0 && (
+                                <div className="rounded-lg border border-hydra-success/30 bg-hydra-success/5 p-3 space-y-1.5">
+                                  <p className="text-xs font-medium text-hydra-success uppercase tracking-wide">{isRu ? 'Цель →' : 'Target →'}</p>
+                                  {Object.entries(mat).map(([k, v]) => (
+                                    <div key={k} className="flex justify-between text-xs">
+                                      <TermLabel term={k} className="text-muted-foreground">{getTermLabel(k, isRu)}</TermLabel>
+                                      <span className="font-mono font-medium text-hydra-success">{String(v)}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          )}
+
+                          {/* AI Revision — with markdown rendering */}
+                          {entry.ai_revision && (
+                            <Collapsible
+                              open={expandedRevision === entry.id}
+                              onOpenChange={() => setExpandedRevision(expandedRevision === entry.id ? null : entry.id)}
+                            >
+                              <div className="rounded-lg border border-hydra-expert/30 bg-hydra-expert/5 p-3">
+                                <CollapsibleTrigger className="flex items-center justify-between w-full">
+                                  <div className="flex items-center gap-1.5 text-xs text-hydra-expert font-medium">
+                                    <FlaskConical className="h-3.5 w-3.5" />
+                                    {isRu ? 'ИИ-ревизия Эволюционера' : 'AI Evolutioner Revision'}
+                                  </div>
+                                  <span className="text-xs text-hydra-expert hover:text-hydra-expert/80">
+                                    {expandedRevision === entry.id ? (isRu ? 'Свернуть' : 'Collapse') : (isRu ? 'Развернуть' : 'Expand')}
+                                  </span>
+                                </CollapsibleTrigger>
+                                <CollapsibleContent>
+                                  <div className="mt-2 prose prose-sm dark:prose-invert max-w-none">
+                                    <MarkdownRenderer content={parseAiRevision(entry.ai_revision)} className="text-sm" />
+                                  </div>
+                                </CollapsibleContent>
+                              </div>
+                            </Collapsible>
+                          )}
+                        </CollapsibleContent>
+                      </Collapsible>
                     )}
 
-                    {expandedCards.has(entry.id) && (
+                    {/* If no hypothesis but has other details — show them directly */}
+                    {!entry.hypothesis && (entry.summary || entry.ai_revision || (mb && Object.keys(mb).length > 0) || (mat && Object.keys(mat).length > 0)) && (
                       <>
                         {entry.summary && (
-                          <p className="text-sm text-muted-foreground leading-relaxed">{entry.summary}</p>
-                        )}
-                        {/* Metrics */}
-                        {mb && mat && Object.keys(mb).length > 0 && Object.keys(mat).length > 0 && (
-                          <div className="grid grid-cols-2 gap-3">
-                            <div className="rounded-lg border border-border p-3 space-y-1.5">
-                              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{isRu ? 'До' : 'Before'}</p>
-                              {Object.entries(mb).map(([k, v]) => (
-                                <div key={k} className="flex justify-between text-xs">
-                                  <TermLabel term={k} className="text-muted-foreground">{getTermLabel(k, isRu)}</TermLabel>
-                                  <span className="font-mono font-medium">{String(v)}</span>
-                                </div>
-                              ))}
-                            </div>
-                            <div className="rounded-lg border border-hydra-success/30 bg-hydra-success/5 p-3 space-y-1.5">
-                              <p className="text-xs font-medium text-hydra-success uppercase tracking-wide">{isRu ? 'Цель →' : 'Target →'}</p>
-                              {Object.entries(mat).map(([k, v]) => (
-                                <div key={k} className="flex justify-between text-xs">
-                                  <TermLabel term={k} className="text-muted-foreground">{getTermLabel(k, isRu)}</TermLabel>
-                                  <span className="font-mono font-medium text-hydra-success">{String(v)}</span>
-                                </div>
-                              ))}
-                            </div>
+                          <div className="rounded-lg border border-border bg-muted/20 p-3">
+                            <p className="text-xs font-medium text-muted-foreground mb-2">{isRu ? 'Результат' : 'Summary'}</p>
+                            <p className="text-sm text-muted-foreground leading-relaxed">{entry.summary}</p>
                           </div>
                         )}
-                        {/* AI Revision */}
-                        {entry.ai_revision && (
-                          <div className="rounded-lg border border-hydra-expert/30 bg-hydra-expert/5 p-3">
-                            <div className="flex items-center justify-between mb-2">
-                              <div className="flex items-center gap-1.5 text-xs text-hydra-expert font-medium">
-                                <FlaskConical className="h-3.5 w-3.5" />
-                                {isRu ? 'ИИ-ревизия Эволюционера' : 'AI Evolutioner Revision'}
+                        {((mb && Object.keys(mb).length > 0) || (mat && Object.keys(mat).length > 0)) && (
+                          <div className="grid grid-cols-2 gap-3">
+                            {mb && Object.keys(mb).length > 0 && (
+                              <div className="rounded-lg border border-border p-3 space-y-1.5">
+                                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{isRu ? 'До' : 'Before'}</p>
+                                {Object.entries(mb).map(([k, v]) => (
+                                  <div key={k} className="flex justify-between text-xs">
+                                    <TermLabel term={k} className="text-muted-foreground">{getTermLabel(k, isRu)}</TermLabel>
+                                    <span className="font-mono font-medium">{String(v)}</span>
+                                  </div>
+                                ))}
                               </div>
-                              <Button variant="ghost" size="sm"
-                                onClick={() => setExpandedRevision(expandedRevision === entry.id ? null : entry.id)}
-                                className="h-6 text-xs text-hydra-expert hover:bg-hydra-expert/10">
-                                {expandedRevision === entry.id ? (isRu ? 'Свернуть' : 'Collapse') : (isRu ? 'Развернуть' : 'Expand')}
-                              </Button>
-                            </div>
-                            {expandedRevision === entry.id && (
-                              <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">{entry.ai_revision}</p>
+                            )}
+                            {mat && Object.keys(mat).length > 0 && (
+                              <div className="rounded-lg border border-hydra-success/30 bg-hydra-success/5 p-3 space-y-1.5">
+                                <p className="text-xs font-medium text-hydra-success uppercase tracking-wide">{isRu ? 'Цель →' : 'Target →'}</p>
+                                {Object.entries(mat).map(([k, v]) => (
+                                  <div key={k} className="flex justify-between text-xs">
+                                    <TermLabel term={k} className="text-muted-foreground">{getTermLabel(k, isRu)}</TermLabel>
+                                    <span className="font-mono font-medium text-hydra-success">{String(v)}</span>
+                                  </div>
+                                ))}
+                              </div>
                             )}
                           </div>
+                        )}
+                        {entry.ai_revision && (
+                          <Collapsible
+                            open={expandedRevision === entry.id}
+                            onOpenChange={() => setExpandedRevision(expandedRevision === entry.id ? null : entry.id)}
+                          >
+                            <div className="rounded-lg border border-hydra-expert/30 bg-hydra-expert/5 p-3">
+                              <CollapsibleTrigger className="flex items-center justify-between w-full">
+                                <div className="flex items-center gap-1.5 text-xs text-hydra-expert font-medium">
+                                  <FlaskConical className="h-3.5 w-3.5" />
+                                  {isRu ? 'ИИ-ревизия Эволюционера' : 'AI Evolutioner Revision'}
+                                </div>
+                                <span className="text-xs text-hydra-expert hover:text-hydra-expert/80">
+                                  {expandedRevision === entry.id ? (isRu ? 'Свернуть' : 'Collapse') : (isRu ? 'Развернуть' : 'Expand')}
+                                </span>
+                              </CollapsibleTrigger>
+                              <CollapsibleContent>
+                                <div className="mt-2 prose prose-sm dark:prose-invert max-w-none">
+                                  <MarkdownRenderer content={parseAiRevision(entry.ai_revision)} className="text-sm" />
+                                </div>
+                              </CollapsibleContent>
+                            </div>
+                          </Collapsible>
                         )}
                       </>
                     )}
