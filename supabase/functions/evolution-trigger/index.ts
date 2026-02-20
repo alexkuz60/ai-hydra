@@ -422,6 +422,7 @@ serve(async (req) => {
         .select("*")
         .eq("id", chronicle_id)
         .eq("supervisor_resolution", "rejected")
+        .neq("status", "revised")
         .single();
       if (error || !data) {
         return new Response(JSON.stringify({ error: "Chronicle not found or not rejected" }), {
@@ -434,7 +435,8 @@ serve(async (req) => {
       const { data, error } = await supabase
         .from("chronicles")
         .select("*")
-        .eq("supervisor_resolution", "rejected");
+        .eq("supervisor_resolution", "rejected")
+        .neq("status", "revised");
       if (error) throw error;
       targetEntries = data || [];
     } else {
