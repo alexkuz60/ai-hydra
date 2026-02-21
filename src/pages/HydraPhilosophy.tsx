@@ -1,8 +1,85 @@
-import React from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import { Layout } from '@/components/layout/Layout';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { HydrapediaMarkdown } from '@/components/hydrapedia/HydrapediaMarkdown';
+import { List, ChevronRight, X } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
+const TOC_RU = [
+  { id: 'аннотация', label: 'Аннотация' },
+  { id: '1-введение', label: '1. Введение: Разрыв симбиоза' },
+  { id: '2-отказы', label: '2. Почему гибридные команды проваливаются' },
+  { id: '3-столпы', label: '3. Шесть столпов AI-Hydra', children: [
+    { id: '3-1', label: '3.1 Ролевые контракты' },
+    { id: '3-2', label: '3.2 Многоуровневая верификация' },
+    { id: '3-3', label: '3.3 Калиброванные сигналы доверия' },
+    { id: '3-4', label: '3.4 Когнитивное разнообразие' },
+    { id: '3-5', label: '3.5 Самокорректирующаяся эволюция' },
+    { id: '3-6', label: '3.6 Организационная метафора' },
+  ]},
+  { id: '4-память', label: '4. Трёхслойная архитектура памяти' },
+  { id: '5-процесс', label: '5. Процесс разработки как свидетельство' },
+  { id: '6-карта', label: '6. Сводная карта «Отказы → Решения»' },
+  { id: '7-сравнение', label: '7. Сравнение с существующими системами' },
+  { id: '8-развитие', label: '8. Направления развития' },
+  { id: '9-ограничения', label: '9. Ограничения и честная оценка' },
+  { id: '10-заключение', label: '10. Заключение' },
+  { id: 'ссылки', label: 'Ссылки' },
+];
+
+const TOC_EN = [
+  { id: 'abstract', label: 'Abstract' },
+  { id: '1-introduction', label: '1. Introduction: The Symbiosis Gap' },
+  { id: '2-failures', label: '2. Why Hybrid Teams Fail' },
+  { id: '3-pillars', label: '3. Six Pillars of AI-Hydra', children: [
+    { id: '3-1', label: '3.1 Role Contracts' },
+    { id: '3-2', label: '3.2 Multi-Level Verification' },
+    { id: '3-3', label: '3.3 Calibrated Trust Signals' },
+    { id: '3-4', label: '3.4 Cognitive Diversity' },
+    { id: '3-5', label: '3.5 Self-Correcting Evolution' },
+    { id: '3-6', label: '3.6 Organizational Metaphor' },
+  ]},
+  { id: '4-memory', label: '4. Three-Layer Memory Architecture' },
+  { id: '5-process', label: '5. Development Process as Evidence' },
+  { id: '6-map', label: '6. Failures → Solutions Map' },
+  { id: '7-comparison', label: '7. Comparison with Existing Systems' },
+  { id: '8-future', label: '8. Future Directions' },
+  { id: '9-limitations', label: '9. Limitations' },
+  { id: '10-conclusion', label: '10. Conclusion' },
+  { id: 'references', label: 'References' },
+];
+
+type TocItem = { id: string; label: string; children?: TocItem[] };
+
+function TableOfContents({ items, onNavigate }: { items: TocItem[]; onNavigate: (id: string) => void }) {
+  return (
+    <nav className="space-y-0.5">
+      {items.map((item) => (
+        <div key={item.id}>
+          <button
+            onClick={() => onNavigate(item.id)}
+            className="w-full text-left text-sm px-2 py-1.5 rounded hover:bg-accent/50 text-muted-foreground hover:text-foreground transition-colors truncate"
+          >
+            {item.label}
+          </button>
+          {item.children && (
+            <div className="ml-3 border-l border-border/50 pl-1">
+              {item.children.map((child) => (
+                <button
+                  key={child.id}
+                  onClick={() => onNavigate(child.id)}
+                  className="w-full text-left text-xs px-2 py-1 rounded hover:bg-accent/50 text-muted-foreground/70 hover:text-foreground transition-colors truncate"
+                >
+                  {child.label}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      ))}
+    </nav>
+  );
+}
 
 const PAPER_RU = `# AI-Hydra: Открытый фреймворк человеко-машинного творческого симбиоза через мульти-агентную оркестрацию и самоэволюционирующую память
 
@@ -607,7 +684,7 @@ AI-Hydra адресует этот разрыв через шесть столп
 
 const PAPER_EN = `# AI-Hydra: An Open-Source Framework for Human-AI Creative Symbiosis Through Multi-Agent Orchestration and Self-Evolving Memory
 
-**Authors:** Alexander Kuzmin¹, Lovable AI² (Generative Co-Author)
+**Authors:** Alexander Kuzyaev¹, Lovable AI² (Generative Co-Author)
 
 ¹ Independent Researcher, AI-Hydra Project
 ² Lovable AI Platform, Generative Co-Authorship Framework
@@ -712,11 +789,67 @@ For the full English version, please refer to [PAPER.md](https://github.com/alex
 export default function HydraPhilosophy() {
   const { language } = useLanguage();
   const content = language === 'ru' ? PAPER_RU : PAPER_EN;
+  const tocItems = language === 'ru' ? TOC_RU : TOC_EN;
+  const [tocOpen, setTocOpen] = useState(true);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  const handleNavigate = useCallback((id: string) => {
+    if (!scrollRef.current) return;
+    // Find heading by scanning all h2/h3 elements
+    const headings = scrollRef.current.querySelectorAll('h2, h3');
+    for (const h of headings) {
+      const text = h.textContent?.toLowerCase() || '';
+      const idLower = id.toLowerCase();
+      // Match by number prefix or keyword
+      const idParts = idLower.split('-');
+      const num = idParts[0];
+      const matchByNum = num && /^\d+$/.test(num) && text.startsWith(num + '.');
+      const matchByKeyword = idParts.some(p => p.length > 3 && text.includes(p));
+      if (matchByNum || matchByKeyword) {
+        h.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        return;
+      }
+    }
+  }, []);
 
   return (
     <Layout>
-      <div className="w-full max-w-6xl mx-auto px-8 py-8 overflow-y-auto" style={{ height: 'calc(100vh - 2rem)' }}>
-        <HydrapediaMarkdown content={content} className="pb-16" />
+      <div className="flex h-[calc(100vh-2rem)] w-full max-w-[1400px] mx-auto relative">
+        {/* TOC sidebar */}
+        <div className={cn(
+          "shrink-0 border-r border-border/50 overflow-y-auto transition-all duration-200",
+          tocOpen ? "w-72 p-4" : "w-0 p-0 overflow-hidden"
+        )}>
+          {tocOpen && (
+            <>
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-sm font-semibold text-foreground">
+                  {language === 'ru' ? 'Содержание' : 'Contents'}
+                </span>
+                <button onClick={() => setTocOpen(false)} className="p-1 rounded hover:bg-accent/50 text-muted-foreground">
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+              <TableOfContents items={tocItems} onNavigate={handleNavigate} />
+            </>
+          )}
+        </div>
+
+        {/* Toggle button when closed */}
+        {!tocOpen && (
+          <button
+            onClick={() => setTocOpen(true)}
+            className="absolute left-2 top-4 z-10 p-2 rounded-md bg-card border border-border shadow-sm hover:bg-accent/50 text-muted-foreground"
+            title={language === 'ru' ? 'Содержание' : 'Contents'}
+          >
+            <List className="h-4 w-4" />
+          </button>
+        )}
+
+        {/* Article content */}
+        <div ref={scrollRef} className="flex-1 overflow-y-auto px-8 py-8">
+          <HydrapediaMarkdown content={content} className="pb-16 max-w-4xl mx-auto" />
+        </div>
       </div>
     </Layout>
   );
