@@ -48,7 +48,8 @@ import {
   Sparkles,
   Compass,
   Map,
-  BrainCircuit
+  BrainCircuit,
+  Atom
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useGuideTourContext } from '@/contexts/GuideTourContext';
@@ -87,9 +88,11 @@ export function AppSidebar() {
     { path: '/hydra-memory', icon: BrainCircuit, label: t('nav.hydraMemory') },
     { path: '/model-ratings', icon: BarChart3, label: t('nav.modelRatings') },
     { path: '/hydrapedia', icon: BookOpen, label: t('nav.hydrapedia') },
+    { path: '/hydra-philosophy', icon: Atom, label: t('nav.hydraPhilosophy') },
   ] : [
-    // Guest users only see Hydrapedia
+    // Guest users only see Hydrapedia and Philosophy
     { path: '/hydrapedia', icon: BookOpen, label: t('nav.hydrapedia') },
+    { path: '/hydra-philosophy', icon: Atom, label: t('nav.hydraPhilosophy') },
   ];
 
   return (
