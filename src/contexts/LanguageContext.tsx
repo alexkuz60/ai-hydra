@@ -42,6 +42,7 @@ const translations: Translations = {
   'nav.expand': { ru: 'Развернуть', en: 'Expand' },
    'nav.collapse': { ru: 'Свернуть', en: 'Collapse' },
   'nav.hydraMemory': { ru: 'Память Гидры', en: 'Hydra Memory' },
+  'nav.hydraPhilosophy': { ru: 'Философия Гидры', en: 'Hydra Philosophy' },
 
   // Hydra Memory Hub
   'memory.hub.title': { ru: 'Центр управления памятью', en: 'Memory Control Hub' },
