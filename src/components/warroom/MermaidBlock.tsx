@@ -116,7 +116,7 @@ export function MermaidBlock({ content, className, defaultZoom = 1 }: MermaidBlo
         ref={containerRef}
         data-mermaid-container
         className="overflow-auto p-4 bg-background/50"
-        style={{ maxHeight: '500px' }}
+        style={{ maxHeight: '800px' }}
       >
         <div
           className="flex items-center justify-center transition-transform duration-200"

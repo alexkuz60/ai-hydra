@@ -2,7 +2,7 @@ import React from 'react';
 import { Layout } from '@/components/layout/Layout';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { HydrapediaMarkdown } from '@/components/hydrapedia/HydrapediaMarkdown';
-import { ScrollArea } from '@/components/ui/scroll-area';
+
 
 const PAPER_RU = `# AI-Hydra: Открытый фреймворк человеко-машинного творческого симбиоза через мульти-агентную оркестрацию и самоэволюционирующую память
 
@@ -715,10 +715,8 @@ export default function HydraPhilosophy() {
 
   return (
     <Layout>
-      <div className="flex flex-col h-[calc(100vh-2rem)] max-w-5xl mx-auto w-full px-4 py-6">
-        <ScrollArea className="flex-1">
-          <HydrapediaMarkdown content={content} className="pb-12" />
-        </ScrollArea>
+      <div className="w-full max-w-6xl mx-auto px-8 py-8 overflow-y-auto" style={{ height: 'calc(100vh - 2rem)' }}>
+        <HydrapediaMarkdown content={content} className="pb-16" />
       </div>
     </Layout>
   );
