@@ -55,9 +55,12 @@ export function useDotPointData(hasKey: boolean) {
   const [massTestProgress, setMassTestProgress] = useState({ done: 0, total: 0 });
   const [logsRefreshTrigger, setLogsRefreshTrigger] = useState(0);
 
-  // All user-added models from the catalog
+  // All user-added models — with placeholder for IDs not yet in catalog
   const userAddedModels = useMemo(() => {
-    return dotpointCatalog.filter(m => userModelIds.has(m.id));
+    const catalogMap = new Map(dotpointCatalog.map(m => [m.id, m]));
+    return Array.from(userModelIds).map(id =>
+      catalogMap.get(id) || { id, object: 'model', created: 0, owned_by: 'unknown' } as ProxyApiCatalogModel
+    );
   }, [dotpointCatalog, userModelIds]);
 
   const filteredCatalogModels = useMemo(() => {
