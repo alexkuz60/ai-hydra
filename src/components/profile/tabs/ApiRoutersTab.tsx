@@ -5,7 +5,8 @@ import { OpenRouterLimitsDialog } from '@/components/profile/OpenRouterLimitsDia
 import { HydraCard, HydraCardHeader, HydraCardTitle, HydraCardContent } from '@/components/ui/hydra-card';
 import { ApiKeyField, type KeyMetadata } from '@/components/profile/ApiKeyField';
 import { Badge } from '@/components/ui/badge';
-import { Network, Globe, Zap, Sparkles, AlertTriangle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Network, Globe, Zap, Sparkles, AlertTriangle, Save, Loader2 } from 'lucide-react';
 
 interface ApiRoutersTabProps {
   apiKeys: Record<string, string>;
@@ -14,6 +15,8 @@ interface ApiRoutersTabProps {
   t: (key: string) => string;
   onKeyChange: (provider: string, v: string) => void;
   onExpirationChange: (provider: string, date: string | null) => void;
+  onSave: () => Promise<void>;
+  saving: boolean;
   proxyapiPriority: boolean;
   onPriorityChange: (val: boolean) => void;
   userId?: string;
@@ -22,7 +25,7 @@ interface ApiRoutersTabProps {
 
 export function ApiRoutersTab({
   apiKeys, keyMetadata, language, t, onKeyChange, onExpirationChange,
-  proxyapiPriority, onPriorityChange, userId, isAdmin,
+  onSave, saving, proxyapiPriority, onPriorityChange, userId, isAdmin,
 }: ApiRoutersTabProps) {
   const [activeRouter, setActiveRouter] = useState('openrouter');
 
@@ -72,6 +75,8 @@ export function ApiRoutersTab({
             language={language}
             onKeyChange={(v) => onKeyChange('openrouter', v)}
             onExpirationChange={(d) => onExpirationChange('openrouter', d)}
+            onSave={onSave}
+            saving={saving}
           />
         </TabsContent>
 
@@ -94,6 +99,8 @@ export function ApiRoutersTab({
             language={language}
             onKeyChange={(v) => onKeyChange('dotpoint', v)}
             onExpirationChange={(d) => onExpirationChange('dotpoint', d)}
+            onSave={onSave}
+            saving={saving}
           />
         </TabsContent>
       </Tabs>
@@ -144,12 +151,14 @@ function LovableAIPanel({ language }: { language: string }) {
 
 // ── OpenRouter Panel ─────────────────────────────────
 
-function OpenRouterPanel({ apiKey, metadata, language, onKeyChange, onExpirationChange }: {
+function OpenRouterPanel({ apiKey, metadata, language, onKeyChange, onExpirationChange, onSave, saving }: {
   apiKey: string;
   metadata?: KeyMetadata;
   language: string;
   onKeyChange: (v: string) => void;
   onExpirationChange: (d: string | null) => void;
+  onSave: () => Promise<void>;
+  saving: boolean;
 }) {
   return (
     <HydraCard variant="glass" className="p-6">
@@ -181,6 +190,12 @@ function OpenRouterPanel({ apiKey, metadata, language, onKeyChange, onExpiration
           }
         />
         {apiKey && <OpenRouterLimitsDialog hasKey={!!apiKey} />}
+        <div className="flex justify-end pt-2">
+          <Button onClick={onSave} disabled={saving} size="sm">
+            {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
+            {language === 'ru' ? 'Сохранить' : 'Save'}
+          </Button>
+        </div>
       </HydraCardContent>
     </HydraCard>
   );
@@ -188,12 +203,14 @@ function OpenRouterPanel({ apiKey, metadata, language, onKeyChange, onExpiration
 
 // ── DotPoint Panel ─────────────────────────────────
 
-function DotPointPanel({ apiKey, metadata, language, onKeyChange, onExpirationChange }: {
+function DotPointPanel({ apiKey, metadata, language, onKeyChange, onExpirationChange, onSave, saving }: {
   apiKey: string;
   metadata?: KeyMetadata;
   language: string;
   onKeyChange: (v: string) => void;
   onExpirationChange: (d: string | null) => void;
+  onSave: () => Promise<void>;
+  saving: boolean;
 }) {
   return (
     <HydraCard variant="glass" className="p-6">
@@ -288,6 +305,12 @@ const data = await resp.json();`}</pre>
             </p>
           </div>
         )}
+        <div className="flex justify-end pt-2">
+          <Button onClick={onSave} disabled={saving} size="sm">
+            {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
+            {language === 'ru' ? 'Сохранить' : 'Save'}
+          </Button>
+        </div>
       </HydraCardContent>
     </HydraCard>
   );

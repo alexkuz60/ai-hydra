@@ -50,6 +50,7 @@ const RPC_KEY_MAP: Record<string, string> = {
   firecrawl_api_key: 'firecrawl',
   mistral_api_key: 'mistral',
   proxyapi_api_key: 'proxyapi',
+  dotpoint_api_key: 'dotpoint',
 };
 
 const USER_TAB_KEY = 'profile-user-tab';
@@ -59,7 +60,7 @@ const VALID_API_TABS = ['api-keys', 'api-routers', 'stats'];
 
 const ALL_PROVIDERS = [
   'openai', 'gemini', 'anthropic', 'xai', 'openrouter', 'groq', 'deepseek', 'mistral',
-  'firecrawl', 'tavily', 'perplexity',
+  'firecrawl', 'tavily', 'perplexity', 'dotpoint',
 ];
 
 export default function Profile() {
@@ -433,6 +434,8 @@ export default function Profile() {
                 t={t}
                 onKeyChange={setKeyValue}
                 onExpirationChange={handleExpirationChange}
+                onSave={handleSaveApiKeys}
+                saving={saving}
                 proxyapiPriority={proxyapiPriority}
                 onPriorityChange={async (val) => {
                   setProxyapiPriority(val);
