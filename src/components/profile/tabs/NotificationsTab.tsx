@@ -6,6 +6,7 @@ import { Bell, BellOff, CheckCheck, Check, ScrollText, Trash2, ExternalLink, Loa
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { getProfileText } from '../i18n';
 
 interface Notification {
   id: string;
@@ -30,21 +31,18 @@ export function NotificationsTab({
   notifications, loading, unreadCount, language,
   onMarkRead, onMarkAllRead, onDelete,
 }: NotificationsTabProps) {
+  const isRu = language === 'ru';
+  const p = (key: string) => getProfileText(key, isRu);
+
   return (
     <HydraCard variant="glass" className="p-6">
       <HydraCardHeader>
         <Bell className="h-5 w-5 text-hydra-arbiter" />
-        <HydraCardTitle>
-          {language === 'ru' ? 'Уведомления Супервизора' : 'Supervisor Notifications'}
-        </HydraCardTitle>
+        <HydraCardTitle>{p('supervisorNotifications')}</HydraCardTitle>
       </HydraCardHeader>
       <HydraCardContent className="space-y-4">
         <div className="flex items-center justify-between">
-          <p className="text-sm text-muted-foreground">
-            {language === 'ru'
-              ? 'Новые ИИ-ревизии Эволюциониста, требующие вашей оценки'
-              : 'New AI revisions from the Evolutioner awaiting your review'}
-          </p>
+          <p className="text-sm text-muted-foreground">{p('notificationsDescription')}</p>
           {notifications.length > 0 && (
             <Button
               variant="ghost"
@@ -54,9 +52,7 @@ export function NotificationsTab({
               className="gap-1.5 text-xs"
             >
               <CheckCheck className="h-3.5 w-3.5" />
-              {unreadCount === 0
-                ? (language === 'ru' ? 'Прочитаны все' : 'All read')
-                : (language === 'ru' ? 'Прочитать все' : 'Mark all read')}
+              {unreadCount === 0 ? p('allRead') : p('markAllRead')}
             </Button>
           )}
         </div>
@@ -64,12 +60,12 @@ export function NotificationsTab({
         {loading ? (
           <div className="flex items-center gap-2 text-sm text-muted-foreground py-4">
             <Loader2 className="h-4 w-4 animate-spin" />
-            {language === 'ru' ? 'Загрузка...' : 'Loading...'}
+            {p('loading')}
           </div>
         ) : notifications.length === 0 ? (
           <div className="flex flex-col items-center gap-2 py-10 text-muted-foreground">
             <BellOff className="h-8 w-8 opacity-30" />
-            <p className="text-sm">{language === 'ru' ? 'Нет уведомлений' : 'No notifications'}</p>
+            <p className="text-sm">{p('noNotifications')}</p>
           </div>
         ) : (
           <div className="space-y-3">
@@ -89,7 +85,7 @@ export function NotificationsTab({
                     <Badge variant="outline" className="font-mono text-xs shrink-0">{n.entry_code}</Badge>
                     {!n.is_read && (
                       <span className="text-[10px] font-medium text-hydra-arbiter uppercase tracking-wide">
-                        {language === 'ru' ? 'Новое' : 'New'}
+                        {p('new')}
                       </span>
                     )}
                     <span className="text-[10px] text-muted-foreground ml-auto">
@@ -100,18 +96,18 @@ export function NotificationsTab({
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
                   {!n.is_read && (
-                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onMarkRead(n.id)} title={language === 'ru' ? 'Прочитано' : 'Mark read'}>
+                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onMarkRead(n.id)} title={p('markRead')}>
                       <Check className="h-3.5 w-3.5 text-hydra-success" />
                     </Button>
                   )}
                   {n.chronicle_id && (
                     <Button variant="ghost" size="icon" className="h-7 w-7" asChild>
-                      <Link to="/hydra-memory" title={language === 'ru' ? 'Перейти к Хроникам' : 'Go to Chronicles'}>
+                      <Link to="/hydra-memory" title={p('goToChronicles')}>
                         <ExternalLink className="h-3.5 w-3.5 text-muted-foreground" />
                       </Link>
                     </Button>
                   )}
-                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onDelete(n.id)} title={language === 'ru' ? 'Удалить' : 'Delete'}>
+                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onDelete(n.id)} title={p('delete')}>
                     <Trash2 className="h-3.5 w-3.5 text-muted-foreground hover:text-destructive" />
                   </Button>
                 </div>
