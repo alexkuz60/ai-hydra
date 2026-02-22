@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Loader2, Zap, Play, CheckCircle, XCircle, Clock, WifiOff, RefreshCw, Search, Plus, Network } from 'lucide-react';
+import { Loader2, Zap, Play, CheckCircle, XCircle, Clock, WifiOff, RefreshCw, Search, Plus, Network, Trash2 } from 'lucide-react';
 import { PROVIDER_LOGOS, PROVIDER_COLORS } from '@/components/ui/ProviderLogos';
 import { cn } from '@/lib/utils';
 import { type ModelRegistryEntry, STRENGTH_LABELS } from '@/config/modelRegistry';
@@ -27,6 +27,7 @@ interface DotPointCatalogSectionProps {
   onTestModel: (modelId: string) => void;
   onMassTest: () => void;
   onAddUserModel: (modelId: string) => void;
+  onRemoveUserModel: (modelId: string) => void;
   onRefreshCatalog: () => void;
 }
 
@@ -36,7 +37,7 @@ export function DotPointCatalogSection({
   catalogLoading, catalogLoaded, catalogCount,
   testResults, testingModel,
   massTestRunning, massTestProgress,
-  onTestModel, onMassTest, onAddUserModel, onRefreshCatalog,
+  onTestModel, onMassTest, onAddUserModel, onRemoveUserModel, onRefreshCatalog,
 }: DotPointCatalogSectionProps) {
   const totalModels = dotpointModels.length + userAddedModels.length;
 
@@ -114,6 +115,7 @@ export function DotPointCatalogSection({
                 testResult={testResults[model.id]}
                 isTesting={testingModel === model.id}
                 onTest={() => onTestModel(model.id)}
+                onRemove={() => onRemoveUserModel(model.id)}
               />
             ))}
           </div>
@@ -139,11 +141,12 @@ export function DotPointCatalogSection({
 
 // ─── Sub-components ────────────────────────────────────
 
-function UserModelRow({ model, testResult, isTesting, onTest }: {
+function UserModelRow({ model, testResult, isTesting, onTest, onRemove }: {
   model: ProxyApiCatalogModel;
   testResult?: TestResult;
   isTesting: boolean;
   onTest: () => void;
+  onRemove: () => void;
 }) {
   const expl = testResult ? STATUS_EXPLANATIONS[testResult.status] : null;
   return (
@@ -173,6 +176,9 @@ function UserModelRow({ model, testResult, isTesting, onTest }: {
       )}
       <Button size="sm" variant="ghost" className="flex-shrink-0 h-8 w-8 p-0" onClick={onTest} disabled={isTesting} title="Тест модели">
         {isTesting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
+      </Button>
+      <Button size="sm" variant="ghost" className="flex-shrink-0 h-8 w-8 p-0 text-muted-foreground hover:text-destructive" onClick={onRemove} title="Удалить из списка">
+        <Trash2 className="h-4 w-4" />
       </Button>
     </div>
   );
