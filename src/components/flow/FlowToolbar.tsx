@@ -49,6 +49,7 @@ import {
 import { FlowDiagram, FlowNodeData } from '@/types/flow';
 import { EdgeStyleSettings } from '@/types/edgeTypes';
 import { EdgeStyleSelector } from './EdgeStyleSelector';
+import { useFlowI18n } from './i18n';
 
 import { DiagramHistoryDialog } from './DiagramHistoryDialog';
 import { CONTEST_FLOW_TEMPLATES } from '@/lib/contestFlowTemplates';
@@ -116,6 +117,7 @@ export function FlowHeaderActions({
   'onExportPdf' | 'onCopyToClipboard' | 'onGenerateMermaid' | 'isSaving' | 'hasChanges'
 >) {
   const { t, language } = useLanguage();
+  const tf = useFlowI18n();
   const [mermaidCode, setMermaidCode] = useState('');
   const [mermaidOpen, setMermaidOpen] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -345,6 +347,7 @@ export function FlowToolbar({
   'onToggleLogistics' | 'isLogisticsOpen'
 >) {
   const { t } = useLanguage();
+  const tf = useFlowI18n();
 
   return (
     <div className="h-12 bg-card border-b border-border flex items-center gap-3 px-4">
@@ -376,7 +379,7 @@ export function FlowToolbar({
             </Button>
           </TooltipTrigger>
           <TooltipContent side="bottom">
-            <p>Отменить (Ctrl+Z)</p>
+            <p>{tf('undoTooltip')}</p>
           </TooltipContent>
         </Tooltip>
         
@@ -393,7 +396,7 @@ export function FlowToolbar({
             </Button>
           </TooltipTrigger>
           <TooltipContent side="bottom">
-            <p>Повторить (Ctrl+Shift+Z)</p>
+            <p>{tf('redoTooltip')}</p>
           </TooltipContent>
         </Tooltip>
       </div>

@@ -16,6 +16,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import type { useHydraMemoryStats } from '@/hooks/useHydraMemoryStats';
+import { useMemoryI18n } from './i18n';
 
 interface ArsenalAction {
   label: string;
@@ -52,6 +53,7 @@ export function CognitiveArsenalTab({ stats }: { stats: ReturnType<typeof useHyd
   const { user } = useAuth();
   const { language } = useLanguage();
   const isRu = language === 'ru';
+  const tm = useMemoryI18n();
 
   const [counts, setCounts] = useState({
     prompts: { total: 0, system: 0, custom: 0 },
@@ -117,10 +119,10 @@ export function CognitiveArsenalTab({ stats }: { stats: ReturnType<typeof useHyd
       if (!user?.id) return;
       const { error } = await supabase.from('session_memory').delete().eq('user_id', user.id);
       if (error) throw error;
-      toast.success(isRu ? 'Память сессий очищена' : 'Session memory cleared');
+      toast.success(tm('sessionCleared'));
       stats.refresh();
     } catch {
-      toast.error(isRu ? 'Ошибка очистки памяти' : 'Failed to clear memory');
+      toast.error(tm('sessionClearError'));
     } finally {
       setConfirmClearMemory(false);
     }
@@ -129,78 +131,78 @@ export function CognitiveArsenalTab({ stats }: { stats: ReturnType<typeof useHyd
   const layers: ArsenalLayer[] = [
     {
       id: 'instincts',
-      label: isRu ? 'Инстинкты' : 'Instincts',
-      description: isRu ? 'Системные промпты и правила' : 'System prompts and rules',
+      label: tm('layer.instincts'),
+      description: tm('layer.instinctsDesc'),
       icon: Sparkles, color: 'violet', href: '/role-library',
       total: counts.prompts.total,
       items: [
-        { label: isRu ? 'Системных' : 'System', value: counts.prompts.system },
-        { label: isRu ? 'Пользовательских' : 'Custom', value: counts.prompts.custom },
+        { label: tm('item.system'), value: counts.prompts.system },
+        { label: tm('item.custom'), value: counts.prompts.custom },
       ],
-      actions: [{ label: isRu ? 'Создать промпт' : 'Create prompt', icon: Sparkles, href: '/role-library' }],
+      actions: [{ label: tm('action.createPrompt'), icon: Sparkles, href: '/role-library' }],
     },
     {
       id: 'patterns',
-      label: isRu ? 'Паттерны мышления' : 'Thinking Patterns',
-      description: isRu ? 'Шаблоны задач и поведение' : 'Task blueprints and behaviors',
+      label: tm('layer.patterns'),
+      description: tm('layer.patternsDesc'),
       icon: GitMerge, color: 'amber', href: '/behavioral-patterns',
       total: counts.blueprints.total + counts.behaviors.total,
       items: [
-        { label: isRu ? 'Шаблонов задач' : 'Blueprints', value: counts.blueprints.total },
-        { label: isRu ? 'Профилей поведения' : 'Behaviors', value: counts.behaviors.total },
+        { label: tm('item.blueprints'), value: counts.blueprints.total },
+        { label: tm('item.behaviors'), value: counts.behaviors.total },
       ],
-      actions: [{ label: isRu ? 'Создать шаблон' : 'Create blueprint', icon: GitMerge, href: '/behavioral-patterns' }],
+      actions: [{ label: tm('action.createBlueprint'), icon: GitMerge, href: '/behavioral-patterns' }],
     },
     {
       id: 'tools',
-      label: isRu ? 'Арсенал инструментов' : 'Tool Arsenal',
-      description: isRu ? 'Промпт-штампы и HTTP API' : 'Prompt stamps and HTTP API',
+      label: tm('layer.tools'),
+      description: tm('layer.toolsDesc'),
       icon: Wrench, color: 'blue', href: '/tools-library',
       total: counts.tools.total,
       items: [
-        { label: isRu ? 'Промпт-штампы' : 'Prompt stamps', value: counts.tools.prompt },
-        { label: isRu ? 'HTTP API' : 'HTTP API', value: counts.tools.http },
+        { label: tm('item.promptStamps'), value: counts.tools.prompt },
+        { label: tm('item.httpApi'), value: counts.tools.http },
       ],
-      actions: [{ label: isRu ? 'Создать инструмент' : 'Create tool', icon: Wrench, href: '/tools-library' }],
+      actions: [{ label: tm('action.createTool'), icon: Wrench, href: '/tools-library' }],
     },
     {
       id: 'flows',
-      label: isRu ? 'Потоки мыслей' : 'Thought Flows',
-      description: isRu ? 'Схемы логики и оркестрации ИИ' : 'AI logic and orchestration diagrams',
+      label: tm('layer.flows'),
+      description: tm('layer.flowsDesc'),
       icon: GitBranch, color: 'cyan', href: '/flow-editor',
       total: counts.flows.total,
-      items: [{ label: isRu ? 'Схем потоков' : 'Flow diagrams', value: counts.flows.total }],
-      actions: [{ label: isRu ? 'Новая схема' : 'New flow', icon: Network, href: '/flow-editor' }],
+      items: [{ label: tm('item.flowDiagrams'), value: counts.flows.total }],
+      actions: [{ label: tm('action.newFlow'), icon: Network, href: '/flow-editor' }],
     },
     {
       id: 'achievements',
-      label: isRu ? 'Достижения' : 'Achievements',
-      description: isRu ? 'Собеседования и конкурсы' : 'Interviews and contests',
+      label: tm('layer.achievements'),
+      description: tm('layer.achievementsDesc'),
       icon: Trophy, color: 'emerald', href: '/staff-roles',
       total: counts.interviews.total + counts.contests.total,
       items: [
-        { label: isRu ? 'Собеседований' : 'Interviews', value: counts.interviews.total },
-        { label: isRu ? 'Конкурсов' : 'Contests', value: counts.contests.total },
+        { label: tm('item.interviews'), value: counts.interviews.total },
+        { label: tm('item.contests'), value: counts.contests.total },
       ],
       actions: [
-        { label: isRu ? 'Собеседование' : 'Interview', icon: Users, href: '/staff-roles' },
-        { label: isRu ? 'Конкурс' : 'Contest', icon: Trophy, href: '/model-ratings' },
+        { label: tm('action.interview'), icon: Users, href: '/staff-roles' },
+        { label: tm('action.contest'), icon: Trophy, href: '/model-ratings' },
       ],
     },
     {
       id: 'memory',
-      label: isRu ? 'Долгосрочная память' : 'Long-term Memory',
-      description: isRu ? 'Опыт ролей · база знаний RAG · контекст сессий' : 'Role experience · RAG knowledge · session context',
+      label: tm('layer.memory'),
+      description: tm('layer.memoryDesc'),
       icon: BrainCircuit, color: 'teal', href: '/hydra-memory',
       total: stats.totalRoleMemory + stats.totalKnowledge + stats.sessionMemory.total,
       items: [
-        { label: isRu ? 'Опыт ролей' : 'Role memory', value: stats.totalRoleMemory },
-        { label: isRu ? 'База знаний' : 'Knowledge', value: stats.totalKnowledge },
-        { label: isRu ? 'Сессии' : 'Session memory', value: stats.sessionMemory.total },
+        { label: tm('item.roleMemory'), value: stats.totalRoleMemory },
+        { label: tm('item.knowledge'), value: stats.totalKnowledge },
+        { label: tm('item.sessionMemory'), value: stats.sessionMemory.total },
       ],
       actions: [
         {
-          label: confirmClearMemory ? (isRu ? 'Подтвердить' : 'Confirm') : (isRu ? 'Очистить сессии' : 'Clear sessions'),
+          label: confirmClearMemory ? tm('action.confirm') : tm('action.clearSessions'),
           icon: confirmClearMemory ? AlertTriangle : Trash2,
           onClick: handleClearSessionMemory,
           variant: confirmClearMemory ? 'destructive' : 'outline',
@@ -221,7 +223,7 @@ export function CognitiveArsenalTab({ stats }: { stats: ReturnType<typeof useHyd
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-xs text-muted-foreground mb-0.5">
-              {isRu ? 'Когнитивный арсенал Гидры' : "Hydra's Cognitive Arsenal"}
+              {tm('arsenal.title')}
             </p>
             {isDataLoading ? (
               <Skeleton className="h-9 w-32" />
@@ -229,14 +231,12 @@ export function CognitiveArsenalTab({ stats }: { stats: ReturnType<typeof useHyd
               <p className="text-4xl font-bold leading-none">
                 {grandTotal}
                 <span className="text-sm font-normal text-muted-foreground ml-2">
-                  {isRu ? 'объектов' : 'objects'}
+                  {tm('arsenal.objects')}
                 </span>
               </p>
             )}
             <p className="text-[11px] text-muted-foreground mt-1.5 hidden sm:block">
-              {isRu
-                ? 'Инстинкты · Паттерны · Инструменты · Достижения · Память'
-                : 'Instincts · Patterns · Tools · Achievements · Memory'}
+              {tm('arsenal.summary')}
             </p>
           </div>
         </CardContent>
@@ -262,26 +262,26 @@ export function CognitiveArsenalTab({ stats }: { stats: ReturnType<typeof useHyd
                       <div>
                         {layer.id === 'memory' ? (
                           <TooltipProvider delayDuration={300}>
-                            <Tooltip>
+                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <p className={`text-sm font-semibold ${s.text} cursor-help`}>{layer.label}</p>
                               </TooltipTrigger>
                               <TooltipContent side="bottom" className="max-w-xs p-3 space-y-2">
                                 <p className="text-xs font-semibold text-foreground mb-1">
-                                  {isRu ? 'Три слоя долгосрочной памяти:' : 'Three layers of long-term memory:'}
+                                  {tm('tooltip.memoryTitle')}
                                 </p>
                                 <div className="space-y-1.5 text-xs">
                                   <div>
-                                    <span className="font-medium text-foreground">{isRu ? '🧠 Опыт ролей' : '🧠 Role Experience'}</span>
-                                    <p className="text-muted-foreground">{isRu ? 'Поведенческие паттерны, стиль общения и предпочтения каждой роли, накопленные в ходе сессий' : 'Behavioral patterns, communication style and preferences for each role, accumulated through sessions'}</p>
+                                    <span className="font-medium text-foreground">{tm('tooltip.roleExpTitle')}</span>
+                                    <p className="text-muted-foreground">{tm('tooltip.roleExpDesc')}</p>
                                   </div>
                                   <div>
-                                    <span className="font-medium text-foreground">{isRu ? '📚 База знаний RAG' : '📚 RAG Knowledge Base'}</span>
-                                    <p className="text-muted-foreground">{isRu ? 'Семантически индексированные документы и факты, используемые для контекстного поиска при генерации ответов' : 'Semantically indexed documents and facts used for contextual retrieval during response generation'}</p>
+                                    <span className="font-medium text-foreground">{tm('tooltip.ragTitle')}</span>
+                                    <p className="text-muted-foreground">{tm('tooltip.ragDesc')}</p>
                                   </div>
                                   <div>
-                                    <span className="font-medium text-foreground">{isRu ? '💬 Контекст сессий' : '💬 Session Context'}</span>
-                                    <p className="text-muted-foreground">{isRu ? 'Чанки диалогов, решения и инсайты из прошлых сессий, доступные для повторного использования' : 'Conversation chunks, decisions and insights from past sessions, available for reuse'}</p>
+                                    <span className="font-medium text-foreground">{tm('tooltip.sessionTitle')}</span>
+                                    <p className="text-muted-foreground">{tm('tooltip.sessionDesc')}</p>
                                   </div>
                                 </div>
                               </TooltipContent>
@@ -302,7 +302,7 @@ export function CognitiveArsenalTab({ stats }: { stats: ReturnType<typeof useHyd
                   ) : (
                     <div className="flex items-baseline gap-1.5">
                       <span className={`text-3xl font-bold tabular-nums ${s.text}`}>{layer.total}</span>
-                      <span className="text-xs text-muted-foreground">{isRu ? 'объектов' : 'objects'}</span>
+                      <span className="text-xs text-muted-foreground">{tm('arsenal.objects')}</span>
                     </div>
                   )}
 

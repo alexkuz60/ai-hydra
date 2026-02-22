@@ -6,6 +6,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { ROLE_CONFIG } from '@/config/roles';
 import { MemoryGraphTab } from './MemoryGraphTab';
+import { useMemoryI18n } from './i18n';
 import type { useHydraMemoryStats } from '@/hooks/useHydraMemoryStats';
 
 // ─── Arsenal Connections Graph ──────────────────────────────────────────────
@@ -50,6 +51,7 @@ function ArsenalConnectionsGraph({
   const [hovered, setHovered] = useState<string | null>(null);
   const { language, t } = useLanguage();
   const isRu = language === 'ru';
+  const tm = useMemoryI18n();
 
   useEffect(() => {
     const el = containerRef.current;
@@ -74,12 +76,12 @@ function ArsenalConnectionsGraph({
     const roleR = Math.min(cx, cy) * 0.30;
 
     const layerDefs = [
-      { id: 'instincts', label: isRu ? 'Инстинкты' : 'Instincts', value: counts.prompts.total, color: 'hsl(var(--hydra-expert))', glow: 'hsl(var(--hydra-expert) / 0.4)' },
-      { id: 'patterns',  label: isRu ? 'Паттерны' : 'Patterns',   value: counts.blueprints.total + counts.behaviors.total, color: 'hsl(var(--hydra-arbiter))', glow: 'hsl(var(--hydra-arbiter) / 0.4)' },
-      { id: 'tools',     label: isRu ? 'Инструменты' : 'Tools',    value: counts.tools.total, color: 'hsl(var(--hydra-info))', glow: 'hsl(var(--hydra-info) / 0.4)' },
-      { id: 'flows',     label: isRu ? 'Потоки' : 'Flows',          value: counts.flows.total, color: 'hsl(var(--hydra-cyan))', glow: 'hsl(var(--hydra-cyan) / 0.4)' },
-      { id: 'achieve',   label: isRu ? 'Достижения' : 'Achieve',   value: 0, color: 'hsl(var(--hydra-success))', glow: 'hsl(var(--hydra-success) / 0.4)' },
-      { id: 'memory',    label: isRu ? 'Память' : 'Memory',         value: stats.totalRoleMemory + stats.totalKnowledge + stats.sessionMemory.total, color: 'hsl(var(--hydra-memory))', glow: 'hsl(var(--hydra-memory) / 0.4)' },
+      { id: 'instincts', label: tm('dualGraph.layerInstincts'), value: counts.prompts.total, color: 'hsl(var(--hydra-expert))', glow: 'hsl(var(--hydra-expert) / 0.4)' },
+      { id: 'patterns',  label: tm('dualGraph.layerPatterns'),  value: counts.blueprints.total + counts.behaviors.total, color: 'hsl(var(--hydra-arbiter))', glow: 'hsl(var(--hydra-arbiter) / 0.4)' },
+      { id: 'tools',     label: tm('dualGraph.layerTools'),     value: counts.tools.total, color: 'hsl(var(--hydra-info))', glow: 'hsl(var(--hydra-info) / 0.4)' },
+      { id: 'flows',     label: tm('dualGraph.layerFlows'),     value: counts.flows.total, color: 'hsl(var(--hydra-cyan))', glow: 'hsl(var(--hydra-cyan) / 0.4)' },
+      { id: 'achieve',   label: tm('dualGraph.layerAchieve'),   value: 0, color: 'hsl(var(--hydra-success))', glow: 'hsl(var(--hydra-success) / 0.4)' },
+      { id: 'memory',    label: tm('dualGraph.layerMemory'),    value: stats.totalRoleMemory + stats.totalKnowledge + stats.sessionMemory.total, color: 'hsl(var(--hydra-memory))', glow: 'hsl(var(--hydra-memory) / 0.4)' },
     ];
 
     const maxLayerVal = Math.max(...layerDefs.map(l => l.value), 1);
@@ -142,10 +144,10 @@ function ArsenalConnectionsGraph({
         <div className="flex items-center justify-between">
           <CardTitle className="text-sm font-semibold flex items-center gap-2">
             <GitBranch className="h-4 w-4 text-hydra-memory" />
-            {isRu ? 'Граф связей' : 'Connections Graph'}
+            {tm('dualGraph.connectionsTitle')}
           </CardTitle>
           <p className="text-[11px] text-muted-foreground">
-            {isRu ? 'Роли как мосты между слоями' : 'Roles as bridges between layers'}
+            {tm('dualGraph.connectionsHint')}
           </p>
         </div>
       </CardHeader>
@@ -241,16 +243,16 @@ function ArsenalConnectionsGraph({
                 <p className="font-semibold">{n.label}</p>
                 {n.type === 'role' && (() => {
                   const rd = roleData.find(r => `role_${r.role}` === n.id);
-                  return rd ? (
+                   return rd ? (
                     <div className="mt-1 space-y-0.5 text-muted-foreground">
-                      {rd.promptCount > 0 && <p>💜 {isRu ? 'Промпты' : 'Prompts'}: {rd.promptCount}</p>}
-                      {rd.memCount > 0 && <p>🔵 {isRu ? 'Память' : 'Memory'}: {rd.memCount}</p>}
-                      {rd.knowledgeCount > 0 && <p>🟢 {isRu ? 'Знания' : 'Knowledge'}: {rd.knowledgeCount}</p>}
+                      {rd.promptCount > 0 && <p>💜 {tm('dualGraph.prompts')}: {rd.promptCount}</p>}
+                      {rd.memCount > 0 && <p>🔵 {tm('dualGraph.memory')}: {rd.memCount}</p>}
+                      {rd.knowledgeCount > 0 && <p>🟢 {tm('dualGraph.knowledge')}: {rd.knowledgeCount}</p>}
                     </div>
                   ) : null;
                 })()}
                 {n.type === 'layer' && (
-                  <p className="text-muted-foreground mt-0.5">{isRu ? 'Объектов' : 'Objects'}: {n.value}</p>
+                  <p className="text-muted-foreground mt-0.5">{tm('dualGraph.objectsCount')}: {n.value}</p>
                 )}
               </div>
             );
