@@ -4,6 +4,23 @@
 
 ---
 
+## [2026-02-22] Полная локализация Memory Hub
+
+### Новое
+- **Двуязычный контент Хроник** — добавлены колонки `title_en`, `hypothesis_en`, `supervisor_comment_en`, `summary_en` в таблицу `chronicles`; все существующие записи (EVO-001 → EVO-CYCLE-005) переведены на английский
+- **Локализованный опыт ролей** — записи `role_memory` отображают `metadata.content_en` при переключении на английский язык
+- **Кастомный Calendar в фильтрах Хроник** — нативные `<input type="date">` (зависимые от ОС) заменены на shadcn Calendar с передачей `locale` (ru/enUS) из date-fns; добавлена кнопка «Очистить»/«Clear»
+
+### Изменено
+- `src/components/memory/ChroniclesTab.tsx` — хелпер `loc(ru, en)` для переключения контента; поиск по обоим языкам; Popover+Calendar вместо нативных дат
+- `src/components/memory/RoleMemoryTab.tsx` — `getLocalizedContent()` + выборка `metadata` в запросе к Supabase
+
+### Связанные разделы Гидропедии
+- Память Гидры → Хроники Эволюции
+- Память Гидры → Опыт ролей
+
+---
+
 ## [2026-02-22] Реорганизация профиля, DotPoint роутер, облачная персистентность
 
 ### Новое
