@@ -329,6 +329,32 @@ export const RATINGS_I18N = {
   candidatesLabel: { ru: 'кандидат', en: 'candidate' },
   roleLabel: { ru: 'Роль', en: 'Role' },
   concurrency: { ru: 'Параллельно', en: 'Concurrency' },
+
+  // ===== SCREENING PANEL (extra) =====
+  queued: { ru: 'В очереди', en: 'Queued' },
+  assemblingBriefing: { ru: 'Сбор брифинга...', en: 'Assembling briefing...' },
+  resumeTests: { ru: 'Возобновить тесты', en: 'Resume Tests' },
+  runTests: { ru: 'Запустить тесты', en: 'Run Tests' },
+  runVerdict: { ru: 'Вынести вердикт', en: 'Run Verdict' },
+  phase: { ru: 'Фаза', en: 'Phase' },
+  stop: { ru: 'Остановить', en: 'Cancel' },
+  briefingReady: { ru: 'Брифинг собран — запустите тесты', en: 'Briefing ready — run tests to proceed' },
+  noHistoryBaseEstimate: { ru: 'Нет истории — используется базовая оценка', en: 'No history — using base estimate' },
+  thinkingModelBudget: { ru: 'Модель с рассуждениями — рекомендуется 2x бюджет', en: 'Thinking model — 2x budget recommended' },
+  multiplier: { ru: 'Множитель', en: 'Multiplier' },
+  estCost: { ru: 'Оценка стоимости', en: 'Est. cost' },
+  forecastLabel: { ru: 'Прогноз', en: 'Forecast' },
+
+  // ===== MODEL DOSSIER (extra) =====
+  respShort: { ru: 'отв.', en: 'resp.' },
+  dismShort: { ru: 'откл.', en: 'dism.' },
+  contShort: { ru: 'конк.', en: 'cont.' },
+  scoreLabel: { ru: 'баллы', en: 'score' },
+  hallShort: { ru: 'галл.', en: 'hall.' },
+  sinceLabel: { ru: 'с ', en: 'since ' },
+
+  // ===== CONTEST PODIUM (extra) =====
+  interviewComingSoon: { ru: 'Режим собеседования — в разработке', en: 'Interview mode — coming soon' },
 } as const;
 
 export type RatingsI18nKey = keyof typeof RATINGS_I18N;

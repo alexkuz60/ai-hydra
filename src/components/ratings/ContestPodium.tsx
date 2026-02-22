@@ -75,7 +75,7 @@ export function ContestPodium({ duelConfig }: ContestPodiumProps) {
               <div className="text-center py-12 space-y-3">
                 <UserCheck className="h-10 w-10 text-muted-foreground/40 mx-auto" />
                 <p className="text-sm text-muted-foreground">
-                  {isRu ? 'Режим собеседования — в разработке' : 'Interview mode — coming soon'}
+                  {getRatingsText('interviewComingSoon', isRu)}
                 </p>
               </div>
             </div>
