@@ -174,15 +174,26 @@ graph TD
 
 ## Профиль пользователя
 
-Страница профиля содержит 4 вкладки (5 в русской локали):
+Страница профиля разделена на два независимых блока вкладок:
+
+### Блок «Личное»
 
 | Вкладка | Содержимое |
 |---------|-----------|
 | **Профиль** | Аватар, email, отображаемое имя, username |
 | **Настройки** | Тема (светлая/тёмная), язык, размер шрифта |
-| **API-ключи** | BYOK-ключи всех провайдеров |
-| **ProxyAPI** | Дашборд ProxyAPI (только RU) |
-| **Статистика** | Аналитика использования |
+| **Уведомления** | Настройка уведомлений |
+| **Финансы** | Оценка расходов по провайдерам |
+
+### Блок «Управление API»
+
+| Вкладка | Содержимое |
+|---------|-----------|
+| **Ключи** | BYOK-ключи всех провайдеров с диагностикой |
+| **Роутеры** | Управление API-роутерами (OpenRouter, ProxyAPI, DotPoint, Lovable AI) |
+| **Статистика** | Аналитика использования по моделям |
+
+Состояние активной вкладки каждого блока сохраняется в localStorage.
 
 ### Аватар
 
@@ -257,15 +268,26 @@ Unauthenticated users can browse the homepage and Hydrapedia. Attempting to open
 
 ## User Profile
 
-The profile page has 4 tabs (5 in Russian locale):
+The profile page is divided into two independent tab groups:
+
+### "Personal" Group
 
 | Tab | Contents |
 |-----|----------|
 | **Profile** | Avatar, email, display name, username |
 | **Preferences** | Theme (dark/light), language, font size |
-| **API Keys** | BYOK keys for all providers |
-| **ProxyAPI** | ProxyAPI dashboard (RU locale only) |
-| **Stats** | Usage analytics |
+| **Notifications** | Notification settings |
+| **Finance** | Estimated spend by provider |
+
+### "API Management" Group
+
+| Tab | Contents |
+|-----|----------|
+| **Keys** | BYOK keys for all providers with diagnostics |
+| **Routers** | API router management (OpenRouter, ProxyAPI, DotPoint, Lovable AI) |
+| **Stats** | Usage analytics by model |
+
+Active tab state for each group persists in localStorage.
 
 ### Avatar
 
