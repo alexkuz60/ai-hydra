@@ -14,6 +14,7 @@ import { guidePlugin, COMPETENCY_LABELS as GD_LABELS } from './guidePlugin';
 import { technocriticPlugin, COMPETENCY_LABELS as TC_LABELS } from './technocriticPlugin';
 import { technoarbiterPlugin, COMPETENCY_LABELS as TA_LABELS } from './technoarbiterPlugin';
 import { technomoderatorPlugin, COMPETENCY_LABELS as TM_LABELS } from './technomoderatorPlugin';
+import { translatorPlugin, COMPETENCY_LABELS as TR_LABELS } from './translatorPlugin';
 
 // ── Registry ──
 
@@ -34,6 +35,7 @@ register(guidePlugin, GD_LABELS);
 register(technocriticPlugin, TC_LABELS);
 register(technoarbiterPlugin, TA_LABELS);
 register(technomoderatorPlugin, TM_LABELS);
+register(translatorPlugin, TR_LABELS);
 
 // ── Public API ──
 

@@ -226,6 +226,7 @@ export const ROLE_CONFIG: Record<MessageRole, RoleConfigItem> = {
     label: 'role.translator',
     description: 'staffRoles.description.translator',
     isTechnicalStaff: true,
+    isSystemOnly: true,
     cardVariant: 'translator',
     bgClass: 'bg-sky-500/10',
   },
