@@ -62,8 +62,8 @@ function ArbiterRoundGroups({
         const isFollowUp = round ? round.round_index >= initialRoundCount : false;
         const roundLabel = round
           ? isFollowUp
-            ? (isRu ? `Дополнительный вопрос ${round.round_index - initialRoundCount + 1}` : `Follow-up ${round.round_index - initialRoundCount + 1}`)
-            : (isRu ? `Тур ${round.round_index + 1}` : `Round ${round.round_index + 1}`)
+            ? `${getRatingsText('arbiterFollowUp', isRu)} ${round.round_index - initialRoundCount + 1}`
+            : `${getRatingsText('arbiterRound', isRu)} ${round.round_index + 1}`
           : '';
 
         return (

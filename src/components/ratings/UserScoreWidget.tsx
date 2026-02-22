@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Brain } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { getRatingsText } from './i18n';
 
 interface UserScoreWidgetProps {
   resultId: string;
@@ -15,7 +16,7 @@ export function UserScoreWidget({ resultId, currentScore, onScore, isRu, isExtra
   return (
     <div className="flex items-center gap-0.5">
       <span className="text-xs text-muted-foreground mr-1 shrink-0">
-        {isRu ? 'Рейтинг:' : 'Rating:'}
+        {getRatingsText('ratingLabel', isRu)}
       </span>
       {Array.from({ length: 11 }, (_, i) => (
         <button

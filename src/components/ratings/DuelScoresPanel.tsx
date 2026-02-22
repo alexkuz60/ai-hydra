@@ -96,15 +96,15 @@ export function DuelScoresPanel({
         <div className="px-3 py-2 border-b border-border/30 flex items-center gap-2">
           <Swords className="h-3.5 w-3.5 text-primary" />
           <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            {isRu ? 'Итоги дуэли' : 'Duel Summary'}
+            {getRatingsText('duelSummary', isRu)}
           </span>
           <Badge variant="outline" className="text-[10px] ml-1">
             {roundWins.winsA}W — {roundWins.draws}D — {roundWins.winsB}W
           </Badge>
-          <Badge variant="secondary" className="text-[10px] ml-auto">
-            {scoringScheme === 'weighted-avg' ? (isRu ? 'Средневзвеш.' : 'Weighted')
-              : scoringScheme === 'tournament' ? (isRu ? 'Турнир' : 'Tournament')
-              : (isRu ? 'Эло' : 'Elo')}
+           <Badge variant="secondary" className="text-[10px] ml-auto">
+             {scoringScheme === 'weighted-avg' ? getRatingsText('duelWeighted', isRu)
+               : scoringScheme === 'tournament' ? getRatingsText('duelTournament', isRu)
+               : getRatingsText('duelElo', isRu)}
           </Badge>
         </div>
 
@@ -113,13 +113,13 @@ export function DuelScoresPanel({
             <TableHeader>
               <TableRow className="text-[11px]">
                 <TableHead className="w-8">#</TableHead>
-                <TableHead>{isRu ? 'Дуэлянт' : 'Duelist'}</TableHead>
+                <TableHead>{getRatingsText('duelDuelist', isRu)}</TableHead>
                 <TableHead className="text-center">W</TableHead>
                 <TableHead className="text-center">D</TableHead>
                 <TableHead className="text-center">L</TableHead>
                 <TableHead className="text-center">👤</TableHead>
                 <TableHead className="text-center">⚖️</TableHead>
-                <TableHead className="text-center font-bold">{isRu ? 'Итог' : 'Score'}</TableHead>
+                <TableHead className="text-center font-bold">{getRatingsText('duelScore2', isRu)}</TableHead>
                 {allCriteriaKeys.map(key => (
                   <TableHead key={key} className="text-center text-[10px] px-1.5">
                     {getCriterionLabel(key, isRu)}
@@ -186,7 +186,7 @@ export function DuelScoresPanel({
         <div className="px-3 py-2 border-b border-border/30 flex items-center gap-2">
           <BarChart3 className="h-3.5 w-3.5 text-muted-foreground" />
           <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            {isRu ? 'По раундам' : 'Per Round'}
+            {getRatingsText('duelPerRound', isRu)}
           </span>
         </div>
         <div className="overflow-x-auto">
@@ -196,7 +196,7 @@ export function DuelScoresPanel({
                 <TableHead className="w-16">{getRatingsText('duelRoundN', isRu)}</TableHead>
                 <TableHead className="text-center">{nameA} ⚖️</TableHead>
                 <TableHead className="text-center">{nameB} ⚖️</TableHead>
-                <TableHead className="text-center">{isRu ? 'Результат' : 'Result'}</TableHead>
+                <TableHead className="text-center">{getRatingsText('duelResult', isRu)}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>

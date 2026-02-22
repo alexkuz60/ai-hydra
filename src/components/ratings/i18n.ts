@@ -355,6 +355,118 @@ export const RATINGS_I18N = {
 
   // ===== CONTEST PODIUM (extra) =====
   interviewComingSoon: { ru: 'Режим собеседования — в разработке', en: 'Interview mode — coming soon' },
+
+  // ===== CONTEST ARBITER PANEL =====
+  arbiterFollowUp: { ru: 'Дополнительный вопрос', en: 'Follow-up' },
+  arbiterRound: { ru: 'Тур', en: 'Round' },
+
+  // ===== CONTEST ARBITRATION =====
+  contestArbitrationStep: { ru: 'Шаг 4', en: 'Step 4' },
+  juryCompositionLabel: { ru: 'Состав жюри', en: 'Jury Composition' },
+  scoreWeightLabel: { ru: 'Вес оценки: Пользователь vs Арбитр', en: 'Score Weight: User vs Arbiter' },
+  userLabel: { ru: 'Пользователь', en: 'User' },
+  arbiterLabel: { ru: 'Арбитр', en: 'Arbiter' },
+  candidateEvalCategories: { ru: 'Категории оценки кандидатов', en: 'Candidate Evaluation Categories' },
+  criteriaWeightsLabel: { ru: 'Веса критериев', en: 'Criteria Weights' },
+  sumLabel: { ru: 'сумма', en: 'total' },
+  finalScoringSchemeLabel: { ru: 'Схема итоговой оценки', en: 'Final Scoring Scheme' },
+
+  // ===== DUEL SCORES PANEL =====
+  duelSummary: { ru: 'Итоги дуэли', en: 'Duel Summary' },
+  duelDuelist: { ru: 'Дуэлянт', en: 'Duelist' },
+  duelResult: { ru: 'Результат', en: 'Result' },
+  duelPerRound: { ru: 'По раундам', en: 'Per Round' },
+  duelWeighted: { ru: 'Средневзвеш.', en: 'Weighted' },
+  duelTournament: { ru: 'Турнир', en: 'Tournament' },
+  duelElo: { ru: 'Эло', en: 'Elo' },
+  duelScore2: { ru: 'Итог', en: 'Score' },
+
+  // ===== DUEL PODIUM SCOREBOARD =====
+  duelWinner: { ru: 'Победитель:', en: 'Winner:' },
+  duelDraws: { ru: 'ничьих', en: 'draws' },
+  duelDrawResult: { ru: 'Ничья!', en: 'Draw!' },
+  duelRoundProgress: { ru: 'Раунд', en: 'R' },
+  duelFinishButton: { ru: 'Завершить', en: 'Finish' },
+
+  // ===== CONTEST RULES EDITOR =====
+  rulesStep2: { ru: 'Шаг 2', en: 'Step 2' },
+  rulesContestRules: { ru: 'Правила конкурса', en: 'Contest Rules' },
+  rulesRoundCount: { ru: 'Количество туров', en: 'Number of Rounds' },
+  rulesRoundN: { ru: 'Тур', en: 'Round' },
+  rulesAssignmentType: { ru: 'Тип задания', en: 'Assignment Type' },
+  rulesFreePrompt: { ru: 'Свободный промпт', en: 'Free Prompt' },
+  rulesRoleBased: { ru: 'По роли', en: 'Role-based' },
+  rulesRolePlaceholder: { ru: 'Роль...', en: 'Role...' },
+  rulesExperts: { ru: 'Эксперты', en: 'Experts' },
+  rulesTechStaff: { ru: 'Технический персонал', en: 'Technical Staff' },
+  rulesQC: { ru: 'ОТК', en: 'QC Dept' },
+  rulesRoleTooltip: { ru: 'Ролевой промпт из Штатного расписания будет автоматически объединён с промптом тура. Ролевые критерии оценки добавятся к плану.', en: 'Role system prompt from Staff will be merged with round prompt. Role-specific evaluation criteria will be added to the plan.' },
+  rulesRoleCriteria: { ru: 'Критерии роли (добавятся автоматически):', en: 'Role criteria (auto-added):' },
+  rulesRoundPrompt: { ru: 'Промпт тура', en: 'Round Prompt' },
+  rulesPromptPlaceholder: { ru: 'Введите задание для моделей...', en: 'Enter assignment for models...' },
+  rulesEvalCriteria: { ru: 'Критерии оценки', en: 'Evaluation Criteria' },
+  rulesEliminationRule: { ru: 'Правило прохождения', en: 'Elimination Rule' },
+  rulesThresholdLabel: { ru: 'Порог (из 10):', en: 'Threshold (of 10):' },
+  rulesThresholdDesc: { ru: 'Модели с баллом ниже будут автоматически отсеяны', en: 'Models scoring below will be auto-eliminated' },
+
+  // ===== CONTEST SUMMARY ACTIONS =====
+  actionsImport: { ru: 'Импорт', en: 'Import' },
+  actionsExport: { ru: 'Экспорт', en: 'Export' },
+  actionsResetAll: { ru: 'Сбросить всё', en: 'Reset All' },
+  actionsResetTitle: { ru: 'Сбросить настройки конкурса?', en: 'Reset contest settings?' },
+  actionsResetDesc: { ru: 'Все настройки конкурса (участники, правила, пайплайн, арбитраж, сохранённый план) будут удалены. Это действие нельзя отменить.', en: 'All contest settings (participants, rules, pipeline, arbitration, saved plan) will be cleared. This cannot be undone.' },
+  actionsCancel: { ru: 'Отмена', en: 'Cancel' },
+  actionsReset: { ru: 'Сбросить', en: 'Reset' },
+  actionsExported: { ru: 'Настройки экспортированы', en: 'Settings exported' },
+  actionsImported: { ru: 'Настройки импортированы', en: 'Settings imported' },
+  actionsImportError: { ru: 'Ошибка чтения файла', en: 'Failed to read file' },
+  actionsResetDone: { ru: 'Настройки конкурса сброшены', en: 'Contest settings reset' },
+
+  // ===== CONTEST FOLLOW-UP INPUT =====
+  followUpQuestionForLabel: { ru: 'Вопрос для:', en: 'Question for:' },
+  followUpAllLabel: { ru: '(всем)', en: '(all)' },
+  followUpSendAll: { ru: 'Отправить всем конкурсантам', en: 'Send to all contestants' },
+  followUpSendModel: { ru: 'Отправить только', en: 'Send only to' },
+
+  // ===== CONTEST SUMMARY TOASTS =====
+  planSaved: { ru: 'План конкурса сохранён', en: 'Contest plan saved' },
+  validationError: { ru: 'Ошибка валидации:', en: 'Validation error:' },
+  errorPrefix: { ru: 'Ошибка:', en: 'Error:' },
+
+  // ===== CONTEST FINISH DIALOG =====
+  finishContestTitle: { ru: 'Завершить конкурс?', en: 'Finish contest?' },
+  finishContestDesc: { ru: 'Все текущие раунды будут завершены. Это действие нельзя отменить.', en: 'All current rounds will be completed. This action cannot be undone.' },
+
+  // ===== CONTEST PROMPT PREVIEW =====
+  round1Prompt: { ru: 'Промпт тура 1', en: 'Round 1 Prompt' },
+
+  // ===== CONTEST ARBITRATION DETAILS =====
+  arbitrationSection: { ru: 'Арбитраж', en: 'Arbitration' },
+  juryLabel: { ru: 'Жюри', en: 'Jury' },
+  schemeLabel: { ru: 'Схема', en: 'Scheme' },
+
+  // ===== USER SCORE WIDGET =====
+  ratingLabel: { ru: 'Рейтинг:', en: 'Rating:' },
+
+  // ===== DUEL PLAN EDITOR =====
+  duelStep1: { ru: 'Шаг 1', en: 'Step 1' },
+  duelStep2: { ru: 'Шаг 2', en: 'Step 2' },
+  duelStep3: { ru: 'Шаг 3', en: 'Step 3' },
+  duelStep4: { ru: 'Шаг 4', en: 'Step 4' },
+  duelTemplateInfo: { ru: 'Шаблон определяет цепочку: аргументы дуэлянтов → перекрёстное слияние → арбитраж → итоги раунда.', en: 'Template defines the chain: duelist arguments → cross-merge → arbitration → round results.' },
+  duelSelectFlowStep2: { ru: 'Выберите шаблон потока в шаге 2', en: 'Select flow template in step 2' },
+  duelPlanSaved: { ru: 'План дуэли сохранён', en: 'Duel plan saved' },
+  duelNotSelected: { ru: 'Не выбран', en: 'Not selected' },
+  duelAutoGenDesc: { ru: 'Автогенерация из плана дуэли. Раундов:', en: 'Auto-generated from duel plan. Rounds:' },
+  contestAutoGenDesc: { ru: 'Автогенерация из плана конкурса. Участников:', en: 'Auto-generated from contest plan. Participants:' },
+  contestAutoGenRounds: { ru: 'Туров:', en: 'Rounds:' },
+  contestPrefix: { ru: 'Конкурс', en: 'Contest' },
+  duelPrefix: { ru: 'Дуэль', en: 'Duel' },
+
+  // ===== CONTEXT ROUND LABELS =====
+  withContextRounds: { ru: 'с контекстом', en: 'with' },
+  roundContextSuffix: { ru: 'тура', en: 'round' },
+  roundsContextSuffix: { ru: 'туров', en: 'rounds' },
 } as const;
 
 export type RatingsI18nKey = keyof typeof RATINGS_I18N;

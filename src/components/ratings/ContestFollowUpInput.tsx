@@ -47,7 +47,7 @@ export function ContestFollowUpInput({
               return (
                 <>
                   {ProviderLogo && <ProviderLogo className={cn("h-2.5 w-2.5", color)} />}
-                  {isRu ? `Вопрос для: ${name}` : `Question for: ${name}`}
+                  {`${getRatingsText('followUpQuestionForLabel', isRu)} ${name}`}
                 </>
               );
             })()}
@@ -56,7 +56,7 @@ export function ContestFollowUpInput({
             className="text-[10px] text-muted-foreground hover:text-foreground transition-colors"
             onClick={() => onActiveModelChange('all')}
           >
-            {isRu ? '(всем)' : '(all)'}
+            {getRatingsText('followUpAllLabel', isRu)}
           </button>
         </div>
       )}
@@ -102,10 +102,9 @@ export function ContestFollowUpInput({
               </Button>
             </TooltipTrigger>
             <TooltipContent>
-              {activeModel === 'all'
-                ? (isRu ? 'Отправить всем конкурсантам' : 'Send to all contestants')
-                : (isRu ? `Отправить только ${getModelRegistryEntry(activeModel)?.displayName || activeModel.split('/').pop()}` : `Send only to ${getModelRegistryEntry(activeModel)?.displayName || activeModel.split('/').pop()}`)
-              }
+               {activeModel === 'all'
+                 ? getRatingsText('followUpSendAll', isRu)
+                 : `${getRatingsText('followUpSendModel', isRu)} ${getModelRegistryEntry(activeModel)?.displayName || activeModel.split('/').pop()}`}
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
