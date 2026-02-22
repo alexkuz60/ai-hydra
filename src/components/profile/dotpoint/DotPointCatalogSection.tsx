@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -43,7 +44,21 @@ export function DotPointCatalogSection({
 }: DotPointCatalogSectionProps) {
   const [userListOpen, setUserListOpen] = useState(true);
   const [nativeListOpen, setNativeListOpen] = useState(true);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const totalModels = dotpointModels.length + userAddedModels.length;
+
+  const toggleSelected = useCallback((id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const handleBulkAdd = useCallback(() => {
+    selectedIds.forEach(id => onAddUserModel(id));
+    setSelectedIds(new Set());
+  }, [selectedIds, onAddUserModel]);
 
   return (
     <AccordionItem value="catalog" className="border rounded-lg px-4">
@@ -93,15 +108,26 @@ export function DotPointCatalogSection({
 
         {/* Search results from live catalog */}
         {filteredCatalogModels.length > 0 && (
-          <div className="border rounded-lg bg-card/50 max-h-[240px] overflow-y-auto">
-            {filteredCatalogModels.map(model => (
-              <div key={model.id} className="flex items-center gap-2 px-3 py-2 hover:bg-muted/50 cursor-pointer border-b border-border/30 last:border-0" onClick={() => onAddUserModel(model.id)}>
-                <Network className="h-3.5 w-3.5 flex-shrink-0 text-primary" />
-                <span className="text-sm truncate flex-1 font-mono">{model.id}</span>
-                <Badge variant="outline" className="text-[10px] px-1.5 py-0">{model.owned_by}</Badge>
-                <Plus className="h-3.5 w-3.5 text-primary flex-shrink-0" />
-              </div>
-            ))}
+          <div className="space-y-2">
+            <div className="border rounded-lg bg-card/50 max-h-[240px] overflow-y-auto">
+              {filteredCatalogModels.map(model => (
+                <label key={model.id} className="flex items-center gap-2 px-3 py-2 hover:bg-muted/50 cursor-pointer border-b border-border/30 last:border-0">
+                  <Checkbox
+                    checked={selectedIds.has(model.id)}
+                    onCheckedChange={() => toggleSelected(model.id)}
+                  />
+                  <Network className="h-3.5 w-3.5 flex-shrink-0 text-primary" />
+                  <span className="text-sm truncate flex-1 font-mono">{model.id}</span>
+                  <Badge variant="outline" className="text-[10px] px-1.5 py-0">{model.owned_by}</Badge>
+                </label>
+              ))}
+            </div>
+            {selectedIds.size > 0 && (
+              <Button size="sm" onClick={handleBulkAdd} className="gap-2">
+                <Plus className="h-4 w-4" />
+                Добавить ({selectedIds.size})
+              </Button>
+            )}
           </div>
         )}
         {catalogSearch.trim() && filteredCatalogModels.length === 0 && !catalogLoading && (
