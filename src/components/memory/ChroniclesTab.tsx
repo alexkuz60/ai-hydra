@@ -28,16 +28,20 @@ interface ChronicleDBEntry {
   id: string;
   entry_code: string;
   title: string;
+  title_en: string | null;
   entry_date: string;
   role_object: string;
   initiator: string;
   status: string;
   supervisor_resolution: string;
   supervisor_comment: string | null;
+  supervisor_comment_en: string | null;
   hypothesis: string | null;
+  hypothesis_en: string | null;
   metrics_before: Record<string, unknown> | null;
   metrics_after: Record<string, unknown> | null;
   summary: string | null;
+  summary_en: string | null;
   ai_revision: string | null;
   created_at: string;
   updated_at: string;
@@ -299,6 +303,12 @@ function EvolutionerPromptsPanel({ isRu }: { isRu: boolean }) {
 export function ChroniclesTab({ language, isSupervisor }: { language: string; isSupervisor: boolean }) {
   const isRu = language === 'ru';
   const tm = useMemoryI18n();
+  
+  // Localized content accessor
+  const loc = (ru: string | null, en: string | null): string | null => {
+    if (!isRu && en) return en;
+    return ru;
+  };
   const { user } = useAuth();
   const [entries, setEntries] = useState<ChronicleDBEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -330,7 +340,7 @@ export function ChroniclesTab({ language, isSupervisor }: { language: string; is
       if (filterDateTo && e.entry_date > filterDateTo) return false;
       if (searchText.trim()) {
         const q = searchText.toLowerCase();
-        const haystack = [e.title, e.entry_code, e.role_object, e.initiator, e.hypothesis, e.summary, e.ai_revision]
+        const haystack = [e.title, e.title_en, e.entry_code, e.role_object, e.initiator, e.hypothesis, e.hypothesis_en, e.summary, e.summary_en, e.ai_revision, e.supervisor_comment, e.supervisor_comment_en]
           .filter(Boolean).join(' ').toLowerCase();
         if (!haystack.includes(q)) return false;
       }
@@ -748,7 +758,7 @@ export function ChroniclesTab({ language, isSupervisor }: { language: string; is
                       </div>
                       <span className="text-xs text-muted-foreground shrink-0">{entry.entry_date}</span>
                     </div>
-                    <CardTitle className="text-base mt-1">{entry.title}</CardTitle>
+                    <CardTitle className="text-base mt-1">{loc(entry.title, entry.title_en) || entry.title}</CardTitle>
                     <div className="flex items-center gap-2 flex-wrap mt-1">
                       <span className="text-xs text-muted-foreground font-medium">{tm('chron.target')}</span>
                       <RoleBadge value={entry.role_object} isRu={isRu} />
@@ -779,14 +789,14 @@ export function ChroniclesTab({ language, isSupervisor }: { language: string; is
                               {!expandedCards.has(entry.id) && entry.ai_revision && <FlaskConical className="h-3 w-3 text-hydra-expert ml-1" />}
                             </span>
                           </CollapsibleTrigger>
-                          <p className="text-sm text-muted-foreground leading-relaxed mt-2">{entry.hypothesis}</p>
+                          <p className="text-sm text-muted-foreground leading-relaxed mt-2">{loc(entry.hypothesis, entry.hypothesis_en)}</p>
                         </div>
 
                         <CollapsibleContent className="space-y-4 mt-4">
                           {entry.summary && (
                             <div className="rounded-lg border border-border bg-muted/20 p-3">
                               <p className="text-xs font-medium text-muted-foreground mb-2">{tm('chron.result')}</p>
-                              <p className="text-sm text-muted-foreground leading-relaxed">{entry.summary}</p>
+                              <p className="text-sm text-muted-foreground leading-relaxed">{loc(entry.summary, entry.summary_en)}</p>
                             </div>
                           )}
 
@@ -847,7 +857,7 @@ export function ChroniclesTab({ language, isSupervisor }: { language: string; is
                         {entry.summary && (
                           <div className="rounded-lg border border-border bg-muted/20 p-3">
                             <p className="text-xs font-medium text-muted-foreground mb-2">{tm('chron.result')}</p>
-                            <p className="text-sm text-muted-foreground leading-relaxed">{entry.summary}</p>
+                            <p className="text-sm text-muted-foreground leading-relaxed">{loc(entry.summary, entry.summary_en)}</p>
                           </div>
                         )}
                         {((mb && Object.keys(mb).length > 0) || (mat && Object.keys(mat).length > 0)) && (
@@ -904,7 +914,7 @@ export function ChroniclesTab({ language, isSupervisor }: { language: string; is
                       <span className="text-xs text-muted-foreground">{tm('chron.supervisorResolution')}</span>
                       <span className={`text-xs font-medium ${resolutionCfg.color}`}>{resolutionCfg.label[isRu ? 'ru' : 'en']}</span>
                       {entry.supervisor_comment && (
-                        <span className="text-xs text-muted-foreground">— {entry.supervisor_comment}</span>
+                        <span className="text-xs text-muted-foreground">— {loc(entry.supervisor_comment, entry.supervisor_comment_en)}</span>
                       )}
                       {isSupervisor && (
                         <div className="flex items-center gap-1 ml-auto">
