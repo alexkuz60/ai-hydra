@@ -130,10 +130,14 @@ Automatic experience consolidation: patterns from `role_memory` are distilled in
 - Tour editor for administrators
 - Step-by-step navigation with element highlighting
 
-### 13. ProxyAPI Dashboard
-- ProxyAPI provider usage monitoring
-- Request logs, analytics, model catalog
-- Prioritization settings
+### 13. API Routers (ProxyAPI / DotPoint / Lovable AI)
+- **ProxyAPI** & **DotPoint** — Russian AI gateways with ruble payments, VPN-free access
+- Live model catalog (400+) with search and user-added models
+- **Collapsible model lists** — independently foldable native and user sections
+- Per-model testing with **cloud-persistent** test results
+- Mass testing with progress bar
+- Latency analytics, request logs, CSV export
+- **Lovable AI** tab for admins — built-in models without API key
 
 ### 14. Hydra Memory Hub
 
@@ -155,9 +159,10 @@ Central command center of Hydra's entire cognitive subsystem — 8 tabs in a sin
 - **HyDE** — hypothetical document generation before search, embedding blend `query×0.4 + hyde×0.6`
 
 ### 15. User Profile
+- **Two tab groups**: Personal (Profile, Preferences, Notifications, Finance) + API Management (Keys, Routers, Stats)
 - **Avatar** — photo upload with Canvas cropper (drag, scroll-zoom, 260×260 JPEG, 2MB limit)
 - Signed URL generated dynamically for 2 hours — avatars never "expire"
-- Tabs: Profile (avatar/name), Preferences (theme/language), API Keys, ProxyAPI, Stats
+- **Cloud-synced settings** — router configs, user model lists, and test results persist across devices
 
 ---
 
@@ -183,7 +188,7 @@ React 18 + TypeScript + Vite
 Lovable Cloud (Supabase)
 ├── Auth: Email/password authentication
 ├── Database: PostgreSQL with RLS
-├── Edge Functions: Deno runtime (16 functions)
+├── Edge Functions: Deno runtime (17 functions)
 ├── Vault: Secure API key storage
 ├── Storage: File attachments & avatars
 ├── Vector Search: pgvector for embeddings
@@ -210,6 +215,7 @@ Lovable Cloud (Supabase)
 | `sync-guide-knowledge` | Guide knowledge synchronization |
 | `firecrawl-scrape` | Web scraping via Firecrawl |
 | `proxy-api-test` | ProxyAPI testing |
+| `dotpoint-api-test` | DotPoint testing |
 
 ### Key Database Tables
 
@@ -255,6 +261,7 @@ Lovable Cloud (Supabase)
 | **Perplexity** | Personal key | Sonar models |
 | **OpenRouter** | Personal key | 100+ models |
 | **ProxyAPI** | Personal key | Multi-provider with fallback |
+| **DotPoint** | Personal key | Russian AI router, ruble payments |
 
 ### Automatic Availability Check
 - Caching unavailable models (localStorage, TTL 1h)
@@ -359,4 +366,4 @@ supabase/functions/     # 16 Edge Functions
 
 ---
 
-*Last updated: February 20, 2026*
+*Last updated: February 22, 2026*

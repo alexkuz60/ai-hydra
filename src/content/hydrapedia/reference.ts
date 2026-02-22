@@ -189,46 +189,44 @@ HTTP tools have SSRF protection — requests to internal networks and local addr
     titleKey: 'hydrapedia.sections.proxyApi',
     icon: 'Zap',
     content: {
-      ru: `# ProxyAPI — Единый ключ
+      ru: `# API-Роутеры — ProxyAPI и DotPoint
 
-ProxyAPI — это внешний шлюз, позволяющий использовать десятки ИИ-моделей разных провайдеров через один API-ключ. Дашборд ProxyAPI в Hydra даёт полный контроль над каталогом, тестированием и аналитикой.
+Hydra поддерживает два внешних роутера для доступа к ИИ-моделям через единый ключ: **ProxyAPI** и **DotPoint**. Оба предоставляют доступ без VPN из России с оплатой в рублях. Управление доступно в **Профиль → Роутеры**.
 
-## Зачем это нужно
+## ProxyAPI
 
-Вместо настройки 10+ API-ключей у разных провайдеров, вы добавляете **один ключ ProxyAPI** и получаете доступ к сотням моделей — OpenAI, Anthropic, Google, DeepSeek, Meta и многим другим.
+ProxyAPI — российский шлюз для доступа к моделям OpenAI, Anthropic, Google, DeepSeek и других провайдеров.
 
-## Как подключить
+## DotPoint
 
-1. Перейдите в **Профиль → API-ключи → ProxyAPI**
-2. Введите ваш ключ от ProxyAPI
-3. Откройте **Профиль → ProxyAPI Dashboard**
+DotPoint — альтернативный российский AI-роутер с аналогичным функционалом и поддержкой оплаты в рублях. Подключается отдельным ключом.
 
-## Дашборд ProxyAPI
+## Общий дашборд роутеров
+
+Оба роутера имеют идентичную структуру дашборда:
 
 ### Каталог моделей
 
-Живой каталог с поиском по 400+ моделям ProxyAPI:
+Живой каталог с поиском по 400+ моделям:
 
 - **Поиск** — мгновенный поиск по всему каталогу
-- **Добавить в избранное** — клик по модели добавляет её в личный список
+- **Пользовательский список** — добавление моделей из каталога в личный набор
+- **Схлопывание** — списки пользовательских и нативных моделей независимо сворачиваются
 - **Тест модели** — кнопка ▶ отправляет тестовый запрос и показывает латенси
 - **Массовый тест** — «Тест всех моделей» проверяет все выбранные модели с прогресс-баром
+- **Персистентность тестов** — результаты тестов сохраняются в облаке и не теряются при переключении вкладок
 
 > [!TIP] Статусы тестирования
 > ✓ Зелёный — модель работает (показана латенси в мс). ⚠ Жёлтый — таймаут. ✗ Красный — ошибка (наведите для расшифровки). 📡 Серый — модель удалена (410 Gone).
 
 ### Аналитика
 
-Визуализация производительности моделей:
-
-- **График латенси** — горизонтальный bar chart со средним временем отклика каждой модели
-- **Карточки статистики** — общее количество запросов, успешные/ошибки для каждой модели
+- **График латенси** — горизонтальный bar chart со средним временем отклика
+- **Карточки статистики** — запросы, успешные/ошибки для каждой модели
 - **Проблемные модели** — карточки с красной подсветкой для моделей с 100% ошибок
-- **Удаление статистики** — кнопка ✕ на карточке очищает данные модели (включая логи)
+- **Удаление статистики** — кнопка ✕ очищает данные модели (включая логи)
 
 ### Логи
-
-Детальная таблица всех запросов:
 
 | Столбец | Описание |
 |---------|----------|
@@ -236,7 +234,6 @@ ProxyAPI — это внешний шлюз, позволяющий исполь
 | Статус | success / error / timeout / gone |
 | Латенси | Время ответа в миллисекундах |
 | Токены | Входные/выходные (если доступно) |
-| Провайдер | Через какой сервис был выполнен запрос |
 | Дата | Временная метка запроса |
 
 - **CSV-экспорт** — выгрузка всех логов для внешнего анализа
@@ -249,55 +246,50 @@ ProxyAPI — это внешний шлюз, позволяющий исполь
 | **Макс. повторов** | Количество автоматических retry | 0–3 |
 | **Фолбэк** | Автопереключение на Lovable AI при ошибке | вкл/выкл |
 
-> [!CAUTION] Настройки локальны
-> Параметры сохраняются в localStorage вашего браузера, а не в облаке.
+> [!NOTE] Облачная синхронизация
+> Настройки, пользовательские модели и результаты тестов синхронизируются через облако и доступны с любого устройства.
 
-## Диагностика
+## Lovable AI (только для администраторов)
 
-Кнопки в заголовке дашборда:
-- **Пинг** — проверка связи с ProxyAPI
-- **Проверить ключ** — валидация API-ключа
-- **Обновить каталог** — принудительная загрузка актуального списка моделей`,
-      en: `# ProxyAPI — Single Key
+В секции роутеров доступна вкладка **Lovable AI** — встроенный роутер без необходимости собственного ключа. Отображает список доступных моделей (Gemini 2.5/3, GPT-5 и др.).`,
+      en: `# API Routers — ProxyAPI & DotPoint
 
-ProxyAPI is an external gateway that lets you use dozens of AI models from different providers through a single API key. The ProxyAPI dashboard in Hydra gives full control over catalog, testing, and analytics.
+Hydra supports two external routers for accessing AI models via a single key: **ProxyAPI** and **DotPoint**. Both provide VPN-free access from Russia with ruble payments. Management available in **Profile → Routers**.
 
-## Why You Need It
+## ProxyAPI
 
-Instead of configuring 10+ API keys from different providers, you add **one ProxyAPI key** and get access to hundreds of models — OpenAI, Anthropic, Google, DeepSeek, Meta, and many more.
+ProxyAPI — a Russian gateway for accessing OpenAI, Anthropic, Google, DeepSeek, and other provider models.
 
-## How to Connect
+## DotPoint
 
-1. Go to **Profile → API Keys → ProxyAPI**
-2. Enter your ProxyAPI key
-3. Open **Profile → ProxyAPI Dashboard**
+DotPoint — an alternative Russian AI router with similar functionality and ruble payment support. Connects via a separate key.
 
-## ProxyAPI Dashboard
+## Common Router Dashboard
+
+Both routers share an identical dashboard structure:
 
 ### Model Catalog
 
-A live catalog searching 400+ ProxyAPI models:
+A live catalog searching 400+ models:
 
 - **Search** — instant search across the entire catalog
-- **Add to favorites** — clicking a model adds it to your personal list
+- **User list** — add models from the catalog to your personal set
+- **Collapsible sections** — user-added and native model lists independently collapse
 - **Test model** — the ▶ button sends a test request and shows latency
 - **Mass test** — "Test All Models" checks all selected models with a progress bar
+- **Persistent tests** — test results are saved to the cloud and persist across tab switches
 
 > [!TIP] Test Statuses
 > ✓ Green — model works (latency shown in ms). ⚠ Yellow — timeout. ✗ Red — error (hover for details). 📡 Gray — model removed (410 Gone).
 
 ### Analytics
 
-Model performance visualization:
-
 - **Latency chart** — horizontal bar chart with average response time per model
 - **Stats cards** — total requests, successes/errors for each model
 - **Problem models** — cards highlighted in red for models with 100% errors
-- **Delete stats** — the ✕ button on a card clears model data (including logs)
+- **Delete stats** — the ✕ button clears model data (including logs)
 
 ### Logs
-
-Detailed table of all requests:
 
 | Column | Description |
 |--------|-------------|
@@ -305,7 +297,6 @@ Detailed table of all requests:
 | Status | success / error / timeout / gone |
 | Latency | Response time in milliseconds |
 | Tokens | Input/output (if available) |
-| Provider | Which service executed the request |
 | Date | Request timestamp |
 
 - **CSV export** — download all logs for external analysis
@@ -318,15 +309,12 @@ Detailed table of all requests:
 | **Max retries** | Number of automatic retries | 0–3 |
 | **Fallback** | Auto-switch to Lovable AI on error | on/off |
 
-> [!CAUTION] Settings are Local
-> Parameters are saved in your browser's localStorage, not in the cloud.
+> [!NOTE] Cloud Sync
+> Settings, user models, and test results are synced via the cloud and accessible from any device.
 
-## Diagnostics
+## Lovable AI (Admin Only)
 
-Buttons in the dashboard header:
-- **Ping** — connectivity check with ProxyAPI
-- **Check key** — API key validation
-- **Refresh catalog** — force reload of the current model list`,
+The routers section includes a **Lovable AI** tab — a built-in router requiring no personal key. Displays available models (Gemini 2.5/3, GPT-5, etc.).`,
     },
   },
   {
