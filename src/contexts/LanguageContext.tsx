@@ -191,6 +191,7 @@ const translations: Translations = {
   'staffRoles.description.technomoderator': { ru: 'Технический агрегатор. Собирает и структурирует результаты оценки, выявляет консенсус и аномалии. Готовит итоговые сводки по конкурсам и собеседованиям.', en: 'Technical aggregator. Collects and structures evaluation results, identifies consensus and anomalies. Prepares final summaries for contests and interviews.' },
   'staffRoles.description.evolutioner': { ru: 'Эволюционер Отдела Эволюционирования. Тестирует промпты и конфигурации, собирает метрики эффективности (токены, latency, стоимость). Формирует гипотезы об улучшениях для Хроник.', en: 'Evolutioner of the Evolution Department. Tests prompts and configurations, collects efficiency metrics (tokens, latency, cost). Forms improvement hypotheses for the Chronicles.' },
   'staffRoles.description.chronicler': { ru: 'Летописец Отдела Эволюционирования. Фиксирует верифицированные шаги самосовершенствования Hydra в публичном CHRONICLES.md. Уведомляет супервизора о новых записях.', en: 'Chronicler of the Evolution Department. Records verified self-improvement steps in the public CHRONICLES.md. Notifies the supervisor about new entries.' },
+  'staffRoles.description.translator': { ru: 'Переводчик. Обеспечивает билингвальную целостность контента RU↔EN: промпты, задачи, знания, результаты конкурсов. Контролирует семантический drift через cosine similarity эмбеддингов.', en: 'Translator. Ensures bilingual content integrity RU↔EN: prompts, tasks, knowledge, contest results. Monitors semantic drift via embedding cosine similarity.' },
   
   // Behavioral Patterns
   'patterns.description': { ru: 'Шаблоны логики решения задач и поведенческие модели AI-ролей', en: 'Task-solving logic templates and AI role behavioral models' },
@@ -799,6 +800,7 @@ const translations: Translations = {
   'role.technomoderator': { ru: 'ТехноМодератор', en: 'TechnoModerator' },
   'role.evolutioner': { ru: 'Эволюционер', en: 'Evolutioner' },
   'role.chronicler': { ru: 'Летописец', en: 'Chronicler' },
+  'role.translator': { ru: 'Переводчик', en: 'Translator' },
   
   // Consultant feature
   'consultant.select': { ru: 'Консультант', en: 'Consultant' },

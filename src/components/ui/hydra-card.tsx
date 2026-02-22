@@ -19,7 +19,8 @@ type HydraCardVariant =
   // Technical staff judges
   | 'technocritic'
   | 'technoarbiter'
-  | 'technomoderator';
+  | 'technomoderator'
+  | 'translator';
 
 interface HydraCardProps extends React.HTMLAttributes<HTMLDivElement> {
   variant?: HydraCardVariant;
@@ -51,6 +52,7 @@ export function HydraCard({
           'hydra-card-analyst': variant === 'analyst',
           'hydra-card-webhunter': variant === 'webhunter',
           'hydra-card-guide': variant === 'guide',
+          'hydra-card-translator': variant === 'translator',
           'hydra-glow-sm hover:hydra-glow': glow,
         },
         className

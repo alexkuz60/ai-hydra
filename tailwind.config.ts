@@ -116,6 +116,7 @@ export default {
 				technocritic: 'hsl(var(--hydra-technocritic))',
 				technoarbiter: 'hsl(var(--hydra-technoarbiter))',
 				technomoderator: 'hsl(var(--hydra-technomoderator))',
+				translator: 'hsl(var(--hydra-translator))',
 				memory: 'hsl(var(--hydra-memory))',
 				cyan: 'hsl(var(--hydra-cyan))',
 				info: 'hsl(var(--hydra-info))',

@@ -66,6 +66,7 @@
     --hydra-technocritic: 350 75% 50%; /* deep rose for techno-critic */
     --hydra-technoarbiter: 55 80% 45%; /* gold-olive for techno-arbiter */
     --hydra-technomoderator: 215 75% 50%; /* steel blue for techno-moderator */
+    --hydra-translator: 195 85% 45%; /* sky blue for translator */
     --hydra-memory: 260 70% 60%; /* violet for memory/embedding features */
     --hydra-cyan: 190 95% 50%; /* cyan for streaming/tech */
     /* Flow editor nodes */
@@ -146,6 +147,7 @@
     --hydra-technocritic: 350 80% 55%; /* deep rose for techno-critic */
     --hydra-technoarbiter: 55 85% 50%; /* gold-olive for techno-arbiter */
     --hydra-technomoderator: 215 80% 55%; /* steel blue for techno-moderator */
+    --hydra-translator: 195 90% 50%; /* sky blue for translator */
     --hydra-memory: 260 75% 65%; /* violet for memory/embedding features */
     --hydra-cyan: 190 100% 55%; /* cyan for streaming/tech */
     /* Flow editor nodes - Dark */
@@ -324,6 +326,11 @@
   .hydra-card-guide {
     border-left: 3px solid hsl(var(--hydra-guide));
     background: linear-gradient(90deg, hsl(var(--hydra-guide) / 0.08), transparent);
+  }
+
+  .hydra-card-translator {
+    border-left: 3px solid hsl(var(--hydra-translator));
+    background: linear-gradient(90deg, hsl(var(--hydra-translator) / 0.08), transparent);
   }
 
   /* Scrollbar styling */
