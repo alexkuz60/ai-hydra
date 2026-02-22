@@ -60,7 +60,7 @@ const VALID_API_TABS = ['api-keys', 'api-routers', 'stats'];
 
 const ALL_PROVIDERS = [
   'openai', 'gemini', 'anthropic', 'xai', 'openrouter', 'groq', 'deepseek', 'mistral',
-  'firecrawl', 'tavily', 'perplexity', 'dotpoint',
+  'firecrawl', 'tavily', 'perplexity', 'proxyapi', 'dotpoint',
 ];
 
 export default function Profile() {
@@ -181,11 +181,8 @@ export default function Profile() {
     if (!user) return;
     setSaving(true);
     try {
-      const providers = language === 'ru'
-        ? [...ALL_PROVIDERS, 'proxyapi']
-        : ALL_PROVIDERS;
       const results = await Promise.all(
-        providers.map(p => supabase.rpc('save_api_key', { p_provider: p, p_api_key: apiKeys[p] || '' }))
+        ALL_PROVIDERS.map(p => supabase.rpc('save_api_key', { p_provider: p, p_api_key: apiKeys[p] || '' }))
       );
       const error = results.find(r => r.error)?.error;
       if (error) throw error;
