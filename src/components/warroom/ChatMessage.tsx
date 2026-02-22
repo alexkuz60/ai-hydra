@@ -21,6 +21,7 @@ import { ToolCall, ToolResult } from '@/types/tools';
 import { getRoleConfig } from '@/config/roles';
 import { ProposalApprovalBlock } from './ProposalApprovalBlock';
 import type { Proposal } from '@/types/patterns';
+import { wt } from './i18n';
 
 export interface UserDisplayInfo {
   displayName: string | null;
@@ -169,7 +170,7 @@ export function ChatMessage({ message, userDisplayInfo, onDelete, onRatingChange
                     </span>
                   </TooltipTrigger>
                   <TooltipContent side="bottom">
-                    <p className="text-xs">{language === 'ru' ? 'Из конкурса моделей' : 'From model contest'}</p>
+                    <p className="text-xs">{wt('message.fromContest', language)}</p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
@@ -178,7 +179,7 @@ export function ChatMessage({ message, userDisplayInfo, onDelete, onRatingChange
           {isFollowUp && (
             <span className="ml-1 inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-[hsl(var(--hydra-arbiter))]/20 text-[hsl(var(--hydra-arbiter))] border border-[hsl(var(--hydra-arbiter))]/30">
               <MessageCircleQuestion className="h-3 w-3" />
-              {language === 'ru' ? 'Доп. вопрос' : 'Follow-up'}
+              {wt('message.followUp', language)}
             </span>
           )}
         </HydraCardTitle>

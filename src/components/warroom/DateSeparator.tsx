@@ -3,6 +3,7 @@ import { format, isToday, isYesterday } from 'date-fns';
 import { ru, enUS } from 'date-fns/locale';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Calendar } from 'lucide-react';
+import { wt } from './i18n';
 
 interface DateSeparatorProps {
   date: Date;
@@ -13,12 +14,8 @@ export function DateSeparator({ date }: DateSeparatorProps) {
   const locale = language === 'ru' ? ru : enUS;
 
   const getDateLabel = () => {
-    if (isToday(date)) {
-      return language === 'ru' ? 'Сегодня' : 'Today';
-    }
-    if (isYesterday(date)) {
-      return language === 'ru' ? 'Вчера' : 'Yesterday';
-    }
+    if (isToday(date)) return wt('date.today', language);
+    if (isYesterday(date)) return wt('date.yesterday', language);
     return format(date, 'd MMMM yyyy', { locale });
   };
 

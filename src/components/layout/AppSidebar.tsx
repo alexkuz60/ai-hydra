@@ -55,6 +55,7 @@ import { cn } from '@/lib/utils';
 import { useGuideTourContext } from '@/contexts/GuideTourContext';
 import { MiniHydraGears } from './MiniHydraGears';
 import hydraLogo from '@/assets/hydra-logo.png';
+import { wt } from '@/components/warroom/i18n';
 
 
 export function AppSidebar() {
@@ -188,11 +189,11 @@ export function AppSidebar() {
               <SidebarMenuItem>
                 <SidebarMenuButton
                   onClick={openGuideTour}
-                  tooltip={language === 'ru' ? 'Экскурсия' : 'Guided Tour'}
+                  tooltip={wt('nav.guidedTour', language)}
                   className="transition-all duration-200 active:scale-95 border-2 border-dashed border-hydra-guide/30 rounded-md hover:bg-hydra-guide/10 py-3 text-hydra-guide"
                 >
                   <Compass className="h-4 w-4" />
-                  <span>{language === 'ru' ? 'Экскурсия' : 'Guided Tour'}</span>
+                  <span>{wt('nav.guidedTour', language)}</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               {isAdmin && (
@@ -200,7 +201,7 @@ export function AppSidebar() {
                   <SidebarMenuButton
                     asChild
                     isActive={isActive('/guide-editor')}
-                    tooltip={language === 'ru' ? 'Редактор экскурсий' : 'Tour Editor'}
+                    tooltip={wt('nav.tourEditor', language)}
                     className={cn(
                       "transition-all duration-200 active:scale-95 border-2 border-muted rounded-md hover:bg-muted/50 py-3",
                       isActive('/guide-editor') && "hydra-menu-active bg-accent/30"
@@ -215,7 +216,7 @@ export function AppSidebar() {
                         "transition-colors duration-200",
                         isActive('/guide-editor') && "text-sidebar-primary font-medium"
                       )}>
-                        {language === 'ru' ? 'Редактор экскурсий' : 'Tour Editor'}
+                        {wt('nav.tourEditor', language)}
                       </span>
                     </Link>
                   </SidebarMenuButton>

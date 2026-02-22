@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils';
 import { Copy, User, Search, Shield, Scale, Users, Lightbulb, Square } from 'lucide-react';
 import type { ConsultantMode } from '@/hooks/useStreamingChat';
 import { ModelNameWithIcon } from '@/components/ui/ModelNameWithIcon';
+import { wt } from './i18n';
 
 interface ModeConfig {
   id: ConsultantMode;
@@ -76,7 +77,7 @@ export function StreamingMessage({
           <Lightbulb className="h-3 w-3 text-hydra-consultant" />
         )}
         <span>
-          {isUser ? 'Вы' : modelName ? <ModelNameWithIcon modelName={modelName} iconSize="h-3 w-3" /> : 'Консультант'}
+          {isUser ? wt('streaming.you', language) : modelName ? <ModelNameWithIcon modelName={modelName} iconSize="h-3 w-3" /> : wt('streaming.consultant', language)}
         </span>
         <span className="ml-auto">
           {format(new Date(createdAt), 'HH:mm', {
@@ -105,7 +106,7 @@ export function StreamingMessage({
             onClick={onStopStreaming}
           >
             <Square className="h-3 w-3 mr-1 fill-current" />
-            Остановить
+            {wt('streaming.stop', language)}
           </Button>
         </div>
       )}
