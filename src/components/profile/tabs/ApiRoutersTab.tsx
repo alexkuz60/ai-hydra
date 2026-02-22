@@ -234,6 +234,50 @@ function DotPointPanel({ apiKey, metadata, language, onKeyChange, onExpirationCh
             </p>
           </div>
         </div>
+        <div className="space-y-2">
+          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+            {language === 'ru' ? 'Примеры интеграции' : 'Integration Examples'}
+          </p>
+          <div className="space-y-2">
+            <details className="group">
+              <summary className="cursor-pointer text-xs font-medium text-primary hover:underline">JavaScript (fetch)</summary>
+              <pre className="mt-2 p-3 rounded-lg bg-muted/50 border border-border text-[11px] leading-relaxed overflow-x-auto font-mono text-foreground/80">{`const apiKey = "your_api_key";
+const baseUrl = "https://llms.dotpoin.com/v1";
+const prompt = "You are a helpful assistant.";
+
+const resp = await fetch(\`\${baseUrl}/chat/completions\`, {
+  method: "POST",
+  headers: {
+    "Authorization": \`Bearer \${apiKey}\`,
+    "Content-Type": "application/json"
+  },
+  body: JSON.stringify({
+    model: "deepseek-chat",
+    messages: [
+      { role: "system", content: prompt },
+      { role: "user", content: "Hello!" }
+    ],
+    stream: false
+  })
+});
+const data = await resp.json();`}</pre>
+            </details>
+            <details className="group">
+              <summary className="cursor-pointer text-xs font-medium text-primary hover:underline">cURL</summary>
+              <pre className="mt-2 p-3 rounded-lg bg-muted/50 border border-border text-[11px] leading-relaxed overflow-x-auto font-mono text-foreground/80">{`curl -X POST https://llms.dotpoin.com/v1/chat/completions \\
+  -H "Authorization: Bearer your_api_key" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "model": "deepseek-chat",
+    "messages": [
+      {"role":"system","content":"You are a helpful assistant."},
+      {"role":"user","content":"Hello!"}
+    ],
+    "stream": false
+  }'`}</pre>
+            </details>
+          </div>
+        </div>
         {!apiKey && (
           <div className="p-6 rounded-lg border-2 border-dashed border-muted text-center">
             <Network className="h-10 w-10 mx-auto mb-3 text-muted-foreground/50" />
