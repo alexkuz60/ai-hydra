@@ -38,6 +38,7 @@ import { EmbeddingNode } from './nodes/EmbeddingNode';
 import { MemoryNode } from './nodes/MemoryNode';
 import { ClassifierNode } from './nodes/ClassifierNode';
 import { GroupNode } from './nodes/GroupNode';
+import { TranslateNode } from './nodes/TranslateNode';
 import { CustomEdge } from './edges/CustomEdge';
 import { FlowNodeType } from '@/types/flow';
 import { EdgeStyleSettings, FlowEdgeData } from '@/types/edgeTypes';
@@ -67,6 +68,7 @@ const nodeTypes = {
   embedding: EmbeddingNode,
   memory: MemoryNode,
   classifier: ClassifierNode,
+  translate: TranslateNode,
   group: GroupNode,
 } as const;
 

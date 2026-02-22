@@ -170,6 +170,9 @@ export function exportToMermaid(nodes: Node[], edges: Edge[]): string {
       case 'tool':
         shape = ['>>', ']'];
         break;
+      case 'translate':
+        shape = ['{{', '}}'];
+        break;
       default:
         shape = ['[', ']'];
     }

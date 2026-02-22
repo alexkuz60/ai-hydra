@@ -35,6 +35,7 @@ export const CONNECTION_RULES: Record<FlowNodeType, FlowNodeType[] | 'any'> = {
   embedding: ['memory', 'model', 'output', 'transform', 'filter'],
   memory: ['model', 'output', 'transform'],
   classifier: ['condition', 'switch', 'output', 'transform'],
+  translate: ['output', 'transform', 'filter', 'model', 'merge'],
   
   // Grouping (groups don't connect - they contain nodes)
   group: [],
@@ -74,6 +75,7 @@ export const NODE_OUTPUT_TYPES: Partial<Record<FlowNodeType, FlowDataType>> = {
   embedding: 'json',
   memory: 'json',
   classifier: 'json',
+  translate: 'text',
   tool: 'any',
   condition: 'signal',
   switch: 'signal',

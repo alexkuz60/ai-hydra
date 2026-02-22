@@ -401,6 +401,7 @@ const translations: Translations = {
   'flowEditor.nodes.embedding': { ru: 'Эмбеддинг', en: 'Embedding' },
   'flowEditor.nodes.memory': { ru: 'Память', en: 'Memory' },
   'flowEditor.nodes.classifier': { ru: 'Классификатор', en: 'Classifier' },
+  'flowEditor.nodes.translate': { ru: 'Перевод', en: 'Translate' },
   'flowEditor.nodes.group': { ru: 'Группа', en: 'Group' },
   'flowEditor.sidebar.elements': { ru: 'Элементы', en: 'Elements' },
   'flowEditor.sidebar.dragHint': { ru: 'Перетащите на холст', en: 'Drag to canvas' },
@@ -462,7 +463,11 @@ const translations: Translations = {
   'flowEditor.properties.noToolsAvailable': { ru: 'Нет доступных инструментов', en: 'No tools available' },
   'flowEditor.properties.noToolSelected': { ru: 'Выберите инструмент', en: 'Select a tool' },
   'flowEditor.properties.orConfigureManually': { ru: 'или настройте вручную', en: 'or configure manually' },
-  
+
+  // Translate node properties
+  'flowEditor.properties.translateDirection': { ru: 'Направление перевода', en: 'Translation Direction' },
+  'flowEditor.properties.verifySemantic': { ru: 'Проверять семантику', en: 'Verify Semantics' },
+
   // Transform node properties
   'flowEditor.properties.transformType': { ru: 'Тип трансформации', en: 'Transform Type' },
   'flowEditor.properties.selectTransformType': { ru: 'Выберите тип', en: 'Select type' },

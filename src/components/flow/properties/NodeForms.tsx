@@ -493,6 +493,36 @@ export function ClassifierNodeForm({ node, onDataChange }: NodeFormProps) {
 }
 
 // ═══════════════════════════════════════════════
+// Translate node form
+// ═══════════════════════════════════════════════
+
+export function TranslateNodeForm({ node, onDataChange }: NodeFormProps) {
+  const { t } = useLanguage();
+  return (
+    <>
+      <div className="space-y-2">
+        <Label htmlFor="label">{t('flowEditor.properties.label')}</Label>
+        <Input id="label" value={(node.data.label as string) || ''} onChange={e => onDataChange('label', e.target.value)} placeholder="Перевод" />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="translateDirection">{t('flowEditor.properties.translateDirection')}</Label>
+        <Select value={(node.data.translateDirection as string) || 'ru-en'} onValueChange={v => onDataChange('translateDirection', v)}>
+          <SelectTrigger id="translateDirection"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="ru-en">RU → EN</SelectItem>
+            <SelectItem value="en-ru">EN → RU</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="flex items-center justify-between">
+        <Label htmlFor="verifySemantic">{t('flowEditor.properties.verifySemantic')}</Label>
+        <Switch id="verifySemantic" checked={Boolean(node.data.verifySemantic)} onCheckedChange={v => onDataChange('verifySemantic', v)} />
+      </div>
+    </>
+  );
+}
+
+// ═══════════════════════════════════════════════
 // Default fallback
 // ═══════════════════════════════════════════════
 

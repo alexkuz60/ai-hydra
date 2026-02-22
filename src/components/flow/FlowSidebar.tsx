@@ -27,7 +27,8 @@ import {
   Tags,
   ChevronDown,
   ChevronRight,
-  Group
+  Group,
+  Languages,
 } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { FLOW_DICT } from './i18n';
@@ -53,6 +54,7 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   MemoryStick,
   Tags,
   Group,
+  Languages,
 };
 
 const colorMap: Record<string, string> = {
@@ -67,6 +69,7 @@ const colorMap: Record<string, string> = {
   'hydra-archivist': 'bg-hydra-archivist/20 text-hydra-archivist',
   'hydra-webhunter': 'bg-hydra-webhunter/20 text-hydra-webhunter',
   'hydra-moderator': 'bg-hydra-moderator/20 text-hydra-moderator',
+  'hydra-translator': 'bg-hydra-translator/20 text-hydra-translator',
   'muted': 'bg-muted text-muted-foreground',
 };
 
