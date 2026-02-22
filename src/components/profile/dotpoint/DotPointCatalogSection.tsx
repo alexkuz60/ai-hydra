@@ -143,6 +143,7 @@ export function DotPointCatalogSection({
                 testResult={testResults[model.id]}
                 isTesting={testingModel === model.id}
                 onTest={() => onTestModel(model.id)}
+                onAdd={() => onAddUserModel(model.id)}
               />
             ))}
           </CollapsibleContent>
@@ -196,11 +197,12 @@ function UserModelRow({ model, testResult, isTesting, onTest, onRemove }: {
   );
 }
 
-function ModelRow({ model, testResult, isTesting, onTest }: {
+function ModelRow({ model, testResult, isTesting, onTest, onAdd }: {
   model: ModelRegistryEntry;
   testResult?: TestResult;
   isTesting: boolean;
   onTest: () => void;
+  onAdd: () => void;
 }) {
   const creatorProvider = model.creator.includes('OpenAI') ? 'openai'
     : model.creator.includes('Anthropic') ? 'anthropic'
@@ -295,6 +297,9 @@ function ModelRow({ model, testResult, isTesting, onTest }: {
 
       <Button size="sm" variant="ghost" className="flex-shrink-0 h-8 w-8 p-0" onClick={onTest} disabled={isTesting} title="Тест модели">
         {isTesting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
+      </Button>
+      <Button size="sm" variant="ghost" className="flex-shrink-0 h-8 w-8 p-0 text-muted-foreground hover:text-primary" onClick={onAdd} title="Добавить в пользовательский список">
+        <Plus className="h-4 w-4" />
       </Button>
     </div>
   );
