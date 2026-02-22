@@ -47,9 +47,12 @@ export function DotPointDashboard({ hasKey, apiKeyValue, onApiKeyChange, keyMeta
             metadata={keyMeta}
             onExpirationChange={onExpirationChange}
             hint={
-              isRu
-                ? 'Получите API-ключ в личном кабинете DotPoint'
-                : 'Get your API key from the DotPoint dashboard'
+              <>
+                {isRu ? 'Получите ключ на' : 'Get your key at'}{' '}
+                <a href="https://dotpoin.com/" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                  dotpoin.com
+                </a>
+              </>
             }
           />
         </AccordionContent>
