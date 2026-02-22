@@ -173,6 +173,7 @@ export function ProxyApiDashboard({ hasKey, proxyapiPriority, onPriorityChange, 
             proxyModels={api.proxyModels}
             userAddedModels={api.userAddedModels}
             filteredCatalogModels={api.filteredCatalogModels}
+            userModelIds={api.userModelIds}
             catalogSearch={api.catalogSearch}
             onCatalogSearchChange={api.setCatalogSearch}
             catalogLoading={api.catalogLoading}
