@@ -7,6 +7,7 @@ import { ApiKeyField, type KeyMetadata } from '@/components/profile/ApiKeyField'
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Network, Globe, Zap, Sparkles, AlertTriangle, Save, Loader2 } from 'lucide-react';
+import { DotPointDashboard } from '@/components/profile/DotPointDashboard';
 
 interface ApiRoutersTabProps {
   apiKeys: Record<string, string>;
@@ -95,14 +96,15 @@ export function ApiRoutersTab({
         </TabsContent>
 
         <TabsContent value="dotpoint">
-          <DotPointPanel
-            apiKey={apiKeys['dotpoint'] || ''}
-            metadata={keyMetadata['dotpoint']}
-            language={language}
-            onKeyChange={(v) => onKeyChange('dotpoint', v)}
+          <DotPointDashboard
+            hasKey={!!apiKeys['dotpoint']}
+            apiKeyValue={apiKeys['dotpoint'] || ''}
+            onApiKeyChange={(v) => onKeyChange('dotpoint', v)}
+            keyMetadata={keyMetadata['dotpoint']}
             onExpirationChange={(d) => onExpirationChange('dotpoint', d)}
             onSave={onSave}
             saving={saving}
+            language={language}
           />
         </TabsContent>
       </Tabs>
@@ -203,117 +205,4 @@ function OpenRouterPanel({ apiKey, metadata, language, onKeyChange, onExpiration
   );
 }
 
-// ── DotPoint Panel ─────────────────────────────────
-
-function DotPointPanel({ apiKey, metadata, language, onKeyChange, onExpirationChange, onSave, saving }: {
-  apiKey: string;
-  metadata?: KeyMetadata;
-  language: string;
-  onKeyChange: (v: string) => void;
-  onExpirationChange: (d: string | null) => void;
-  onSave: () => Promise<void>;
-  saving: boolean;
-}) {
-  return (
-    <HydraCard variant="glass" className="p-6">
-      <HydraCardHeader>
-        <Network className="h-5 w-5 text-primary" />
-        <HydraCardTitle>DotPoint AI</HydraCardTitle>
-      </HydraCardHeader>
-      <HydraCardContent className="space-y-4">
-        <p className="text-sm text-muted-foreground">
-          {language === 'ru'
-            ? 'Роутер для доступа к AI-моделям через единый API. Подключите ключ для начала работы.'
-            : 'AI model router via unified API. Connect your key to get started.'}
-        </p>
-        <ApiKeyField
-          provider="dotpoint"
-          label="DotPoint API Key"
-          value={apiKey}
-          onChange={onKeyChange}
-          placeholder="dp-..."
-          metadata={metadata}
-          onExpirationChange={onExpirationChange}
-          hint={
-            language === 'ru'
-              ? 'Получите API-ключ в личном кабинете DotPoint'
-              : 'Get your API key from the DotPoint dashboard'
-          }
-        />
-        <div className="flex items-center gap-3 p-3 rounded-lg bg-amber-500/10 border border-amber-500/30">
-          <AlertTriangle className="h-5 w-5 text-amber-500 flex-shrink-0" />
-          <div className="flex-1">
-            <p className="text-sm font-semibold text-amber-400 mb-1">
-              {language === 'ru' ? 'Альтернативный роутер для России' : 'Alternative router for Russia'}
-            </p>
-            <p className="text-xs text-muted-foreground">
-              {language === 'ru'
-                ? 'DotPoint — российский AI-роутер с доступом к моделям OpenAI, Anthropic, Google и другим без VPN. Поддерживает оплату в рублях. Используется как замена OpenRouter при блокировках.'
-                : 'DotPoint — Russian AI router providing access to OpenAI, Anthropic, Google and other models without VPN. Supports payment in rubles. Used as an OpenRouter alternative when blocked.'}
-            </p>
-          </div>
-        </div>
-        <div className="space-y-2">
-          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-            {language === 'ru' ? 'Примеры интеграции' : 'Integration Examples'}
-          </p>
-          <div className="space-y-2">
-            <details className="group">
-              <summary className="cursor-pointer text-xs font-medium text-primary hover:underline">JavaScript (fetch)</summary>
-              <pre className="mt-2 p-3 rounded-lg bg-muted/50 border border-border text-[11px] leading-relaxed overflow-x-auto font-mono text-foreground/80">{`const apiKey = "your_api_key";
-const baseUrl = "https://llms.dotpoin.com/v1";
-const prompt = "You are a helpful assistant.";
-
-const resp = await fetch(\`\${baseUrl}/chat/completions\`, {
-  method: "POST",
-  headers: {
-    "Authorization": \`Bearer \${apiKey}\`,
-    "Content-Type": "application/json"
-  },
-  body: JSON.stringify({
-    model: "deepseek-chat",
-    messages: [
-      { role: "system", content: prompt },
-      { role: "user", content: "Hello!" }
-    ],
-    stream: false
-  })
-});
-const data = await resp.json();`}</pre>
-            </details>
-            <details className="group">
-              <summary className="cursor-pointer text-xs font-medium text-primary hover:underline">cURL</summary>
-              <pre className="mt-2 p-3 rounded-lg bg-muted/50 border border-border text-[11px] leading-relaxed overflow-x-auto font-mono text-foreground/80">{`curl -X POST https://llms.dotpoin.com/v1/chat/completions \\
-  -H "Authorization: Bearer your_api_key" \\
-  -H "Content-Type: application/json" \\
-  -d '{
-    "model": "deepseek-chat",
-    "messages": [
-      {"role":"system","content":"You are a helpful assistant."},
-      {"role":"user","content":"Hello!"}
-    ],
-    "stream": false
-  }'`}</pre>
-            </details>
-          </div>
-        </div>
-        {!apiKey && (
-          <div className="p-6 rounded-lg border-2 border-dashed border-muted text-center">
-            <Network className="h-10 w-10 mx-auto mb-3 text-muted-foreground/50" />
-            <p className="text-sm text-muted-foreground">
-              {language === 'ru'
-                ? 'Введите API-ключ для доступа к каталогу моделей, аналитике и тестированию'
-                : 'Enter your API key to access model catalog, analytics and testing'}
-            </p>
-          </div>
-        )}
-        <div className="flex justify-end pt-2">
-          <Button onClick={onSave} disabled={saving} size="sm">
-            {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
-            {language === 'ru' ? 'Сохранить' : 'Save'}
-          </Button>
-        </div>
-      </HydraCardContent>
-    </HydraCard>
-  );
-}
+// DotPoint panel is now in DotPointDashboard component
