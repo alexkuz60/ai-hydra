@@ -1,0 +1,41 @@
+const dict = {
+  // DateSeparator
+  'date.today': { ru: 'Сегодня', en: 'Today' },
+  'date.yesterday': { ru: 'Вчера', en: 'Yesterday' },
+
+  // StreamingMessage
+  'streaming.you': { ru: 'Вы', en: 'You' },
+  'streaming.consultant': { ru: 'Консультант', en: 'Consultant' },
+  'streaming.stop': { ru: 'Остановить', en: 'Stop' },
+
+  // ChatMessage
+  'message.fromContest': { ru: 'Из конкурса моделей', en: 'From model contest' },
+  'message.followUp': { ru: 'Доп. вопрос', en: 'Follow-up' },
+
+  // FlowDiagramPickerDialog
+  'flowPicker.nodes': { ru: 'узлов', en: 'nodes' },
+  'flowPicker.edges': { ru: 'связей', en: 'edges' },
+  'flowPicker.preview': { ru: 'Превью', en: 'Preview' },
+  'flowPicker.hoverToPreview': { ru: 'Наведите на диаграмму для превью', en: 'Hover over a diagram to preview' },
+
+  // TaskFilesPanel
+  'taskFiles.title': { ru: 'Файлы задачи', en: 'Task Files' },
+  'taskFiles.upload': { ru: 'Загрузить', en: 'Upload' },
+  'taskFiles.noFiles': { ru: 'Нет прикреплённых файлов', en: 'No attached files' },
+  'taskFiles.download': { ru: 'Скачать', en: 'Download' },
+  'taskFiles.delete': { ru: 'Удалить', en: 'Delete' },
+
+  // Layout - AppSidebar
+  'nav.guidedTour': { ru: 'Экскурсия', en: 'Guided Tour' },
+  'nav.tourEditor': { ru: 'Редактор экскурсий', en: 'Tour Editor' },
+
+  // Layout - MemoryControls
+  'memory.domainKnowledge': { ru: 'Профильные знания (RAG)', en: 'Domain Knowledge (RAG)' },
+} as const;
+
+export type WarroomKey = keyof typeof dict;
+
+export function wt(key: WarroomKey, lang: string): string {
+  const entry = dict[key];
+  return lang === 'ru' ? entry.ru : entry.en;
+}

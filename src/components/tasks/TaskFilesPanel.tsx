@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Paperclip, Upload, Trash2, FileText, Image, File, Loader2, Download } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
+import { wt } from '@/components/warroom/i18n';
 
 interface TaskFilesPanelProps {
   sessionId: string | null;
@@ -26,7 +27,6 @@ function getFileIcon(mimeType: string | null) {
 
 export function TaskFilesPanel({ sessionId, className }: TaskFilesPanelProps) {
   const { language } = useLanguage();
-  const isRu = language === 'ru';
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { files, loading, uploading, uploadFile, deleteFile, getSignedUrl } = useTaskFiles(sessionId);
 
@@ -56,7 +56,7 @@ export function TaskFilesPanel({ sessionId, className }: TaskFilesPanelProps) {
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-medium text-muted-foreground flex items-center gap-1.5">
           <Paperclip className="h-3.5 w-3.5" />
-          {isRu ? 'Файлы задачи' : 'Task Files'}
+          {wt('taskFiles.title', language)}
           {files.length > 0 && (
             <span className="text-[10px] bg-muted/50 px-1.5 py-0.5 rounded">
               {files.length}
@@ -71,7 +71,7 @@ export function TaskFilesPanel({ sessionId, className }: TaskFilesPanelProps) {
           disabled={uploading}
         >
           {uploading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Upload className="h-3 w-3" />}
-          {isRu ? 'Загрузить' : 'Upload'}
+          {wt('taskFiles.upload', language)}
         </Button>
         <input
           ref={fileInputRef}
@@ -89,7 +89,7 @@ export function TaskFilesPanel({ sessionId, className }: TaskFilesPanelProps) {
       ) : files.length === 0 ? (
         <div className="p-3 rounded-md border border-dashed border-border/40 bg-muted/10 text-center">
           <p className="text-[11px] text-muted-foreground/60">
-            {isRu ? 'Нет прикреплённых файлов' : 'No attached files'}
+            {wt('taskFiles.noFiles', language)}
           </p>
         </div>
       ) : (
@@ -116,7 +116,7 @@ export function TaskFilesPanel({ sessionId, className }: TaskFilesPanelProps) {
                       <Download className="h-3 w-3" />
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent className="text-xs">{isRu ? 'Скачать' : 'Download'}</TooltipContent>
+                  <TooltipContent className="text-xs">{wt('taskFiles.download', language)}</TooltipContent>
                 </Tooltip>
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -129,7 +129,7 @@ export function TaskFilesPanel({ sessionId, className }: TaskFilesPanelProps) {
                       <Trash2 className="h-3 w-3" />
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent className="text-xs">{isRu ? 'Удалить' : 'Delete'}</TooltipContent>
+                  <TooltipContent className="text-xs">{wt('taskFiles.delete', language)}</TooltipContent>
                 </Tooltip>
               </div>
             ))}

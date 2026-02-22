@@ -14,6 +14,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { ru, enUS } from 'date-fns/locale';
 import { MermaidPreview } from './MermaidPreview';
 import { FlowDiagram } from '@/types/flow';
+import { wt } from './i18n';
 
 interface FlowDiagramPickerDialogProps {
   open: boolean;
@@ -126,9 +127,9 @@ export function FlowDiagramPickerDialog({
                       </div>
                     </div>
                     <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground/70">
-                      <span>{diagram.nodes.length} {language === 'ru' ? 'узлов' : 'nodes'}</span>
+                      <span>{diagram.nodes.length} {wt('flowPicker.nodes', language)}</span>
                       <span>•</span>
-                      <span>{diagram.edges.length} {language === 'ru' ? 'связей' : 'edges'}</span>
+                      <span>{diagram.edges.length} {wt('flowPicker.edges', language)}</span>
                     </div>
                   </button>
                 ))}
@@ -140,7 +141,7 @@ export function FlowDiagramPickerDialog({
               <div className="sticky top-0">
                 <div className="flex items-center gap-1.5 mb-2 text-xs text-muted-foreground">
                   <Eye className="h-3.5 w-3.5" />
-                  <span>{language === 'ru' ? 'Превью' : 'Preview'}</span>
+                  <span>{wt('flowPicker.preview', language)}</span>
                 </div>
                 {hoveredMermaid ? (
                   <MermaidPreview 
@@ -151,9 +152,7 @@ export function FlowDiagramPickerDialog({
                 ) : (
                   <div className="h-[280px] rounded border border-dashed border-border/50 bg-muted/20 flex items-center justify-center">
                     <p className="text-xs text-muted-foreground/50 text-center px-4">
-                      {language === 'ru' 
-                        ? 'Наведите на диаграмму для превью' 
-                        : 'Hover over a diagram to preview'}
+                      {wt('flowPicker.hoverToPreview', language)}
                     </p>
                   </div>
                 )}

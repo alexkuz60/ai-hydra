@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils';
  import { Brain, RefreshCw, Check, Settings2, BookOpen } from 'lucide-react';
  import { motion, AnimatePresence } from 'framer-motion';
  import { ROLE_CONFIG, type AgentRole } from '@/config/roles';
+ import { wt } from '@/components/warroom/i18n';
  
 interface MemoryStats {
   total: number;
@@ -101,7 +102,7 @@ interface MemoryStats {
              <TooltipContent side="bottom">
                <div className="text-xs space-y-1">
                  <p className="font-medium">
-                   {language === 'ru' ? 'Профильные знания (RAG)' : 'Domain Knowledge (RAG)'}
+                   {wt('memory.domainKnowledge', language)}
                  </p>
                  {Object.entries(knowledgeByRole).map(([role, count]) => {
                    const config = ROLE_CONFIG[role as AgentRole];
