@@ -10,8 +10,9 @@ import { Loader2, Zap, Play, CheckCircle, XCircle, Clock, WifiOff, RefreshCw, Se
 import { PROVIDER_LOGOS, PROVIDER_COLORS } from '@/components/ui/ProviderLogos';
 import { cn } from '@/lib/utils';
 import { type ModelRegistryEntry, STRENGTH_LABELS } from '@/config/modelRegistry';
+import { useLanguage } from '@/contexts/LanguageContext';
 import type { ProxyApiCatalogModel, TestResult } from '../proxyapi/types';
-import { STATUS_EXPLANATIONS } from '../proxyapi/types';
+import { getStatusExpl } from '../proxyapi/types';
 
 interface DotPointCatalogSectionProps {
   dotpointModels: ModelRegistryEntry[];
@@ -42,6 +43,9 @@ export function DotPointCatalogSection({
   massTestRunning, massTestProgress,
   onTestModel, onMassTest, onAddUserModel, onRemoveUserModel, onRefreshCatalog,
 }: DotPointCatalogSectionProps) {
+  const { language } = useLanguage();
+  const isRu = language === 'ru';
+  const lang = isRu ? 'ru' : 'en';
   const [userListOpen, setUserListOpen] = useState(true);
   const [nativeListOpen, setNativeListOpen] = useState(true);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -65,10 +69,10 @@ export function DotPointCatalogSection({
       <AccordionTrigger className="hover:no-underline">
         <div className="flex items-center gap-2">
           <Zap className="h-4 w-4 text-primary" />
-          <span className="font-semibold">Каталог моделей</span>
+          <span className="font-semibold">{isRu ? 'Каталог моделей' : 'Model Catalog'}</span>
           <Badge variant="secondary" className="ml-2">
             {totalModels}
-            {catalogLoaded && <span className="text-muted-foreground ml-1">/ {catalogCount} в каталоге</span>}
+            {catalogLoaded && <span className="text-muted-foreground ml-1">/ {catalogCount} {isRu ? 'в каталоге' : 'in catalog'}</span>}
           </Badge>
         </div>
       </AccordionTrigger>
@@ -80,13 +84,15 @@ export function DotPointCatalogSection({
             <Input
               value={catalogSearch}
               onChange={e => onCatalogSearchChange(e.target.value)}
-              placeholder={catalogLoading ? 'Загрузка каталога...' : `Поиск среди ${catalogCount} моделей DotPoint...`}
+              placeholder={catalogLoading
+                ? (isRu ? 'Загрузка каталога...' : 'Loading catalog...')
+                : (isRu ? `Поиск среди ${catalogCount} моделей DotPoint...` : `Search ${catalogCount} DotPoint models...`)}
               className="pl-9 focus-visible:ring-offset-0"
               disabled={catalogLoading}
             />
             {catalogLoading && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />}
           </div>
-          <Button variant="outline" size="icon" onClick={onRefreshCatalog} disabled={catalogLoading} title="Обновить каталог">
+          <Button variant="outline" size="icon" onClick={onRefreshCatalog} disabled={catalogLoading} title={isRu ? 'Обновить каталог' : 'Refresh catalog'}>
             <RefreshCw className={cn("h-4 w-4", catalogLoading && "animate-spin")} />
           </Button>
         </div>
@@ -110,13 +116,15 @@ export function DotPointCatalogSection({
             {selectedIds.size > 0 && (
               <Button size="sm" onClick={handleBulkAdd} className="gap-2">
                 <Plus className="h-4 w-4" />
-                Добавить ({selectedIds.size})
+                {isRu ? 'Добавить' : 'Add'} ({selectedIds.size})
               </Button>
             )}
           </div>
         )}
         {catalogSearch.trim() && filteredCatalogModels.length === 0 && !catalogLoading && (
-          <p className="text-xs text-muted-foreground text-center py-2">Ничего не найдено среди {catalogCount} моделей</p>
+          <p className="text-xs text-muted-foreground text-center py-2">
+            {isRu ? `Ничего не найдено среди ${catalogCount} моделей` : `No results among ${catalogCount} models`}
+          </p>
         )}
 
         {/* User-added models */}
@@ -124,7 +132,7 @@ export function DotPointCatalogSection({
           <Collapsible open={userListOpen} onOpenChange={setUserListOpen}>
             <CollapsibleTrigger className="flex items-center gap-1 text-xs text-muted-foreground font-medium cursor-pointer hover:text-foreground transition-colors w-full">
               <ChevronRight className={cn("h-3 w-3 transition-transform", userListOpen && "rotate-90")} />
-              Пользовательский список ({userAddedModels.length})
+              {isRu ? 'Пользовательский список' : 'User list'} ({userAddedModels.length})
             </CollapsibleTrigger>
             <CollapsibleContent className="space-y-1 mt-1">
               {userAddedModels.map(model => (
@@ -135,6 +143,7 @@ export function DotPointCatalogSection({
                   isTesting={testingModel === model.id}
                   onTest={() => onTestModel(model.id)}
                   onRemove={() => onRemoveUserModel(model.id)}
+                  lang={lang}
                 />
               ))}
             </CollapsibleContent>
@@ -146,8 +155,8 @@ export function DotPointCatalogSection({
           <Button size="sm" variant="outline" onClick={onMassTest} disabled={massTestRunning || totalModels === 0} className="gap-2">
             {massTestRunning ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
             {massTestRunning
-              ? `Тестирование ${massTestProgress.done}/${massTestProgress.total}...`
-              : `Тест всех моделей (${totalModels})`}
+              ? (isRu ? `Тестирование ${massTestProgress.done}/${massTestProgress.total}...` : `Testing ${massTestProgress.done}/${massTestProgress.total}...`)
+              : (isRu ? `Тест всех моделей (${totalModels})` : `Test all models (${totalModels})`)}
           </Button>
           {massTestRunning && (
             <div className="flex-1 h-2 rounded-full bg-secondary overflow-hidden">
@@ -160,7 +169,7 @@ export function DotPointCatalogSection({
         <Collapsible open={nativeListOpen} onOpenChange={setNativeListOpen}>
           <CollapsibleTrigger className="flex items-center gap-1 text-xs text-muted-foreground font-medium cursor-pointer hover:text-foreground transition-colors w-full">
             <ChevronRight className={cn("h-3 w-3 transition-transform", nativeListOpen && "rotate-90")} />
-            Модели DotPoint ({dotpointModels.length})
+            {isRu ? 'Модели DotPoint' : 'DotPoint models'} ({dotpointModels.length})
           </CollapsibleTrigger>
           <CollapsibleContent className="space-y-1 mt-1">
             {dotpointModels.map(model => (
@@ -172,6 +181,7 @@ export function DotPointCatalogSection({
                 onTest={() => onTestModel(model.id)}
                 onAdd={() => onAddUserModel(model.id)}
                 isAdded={userModelIds.has(model.id)}
+                lang={lang}
               />
             ))}
           </CollapsibleContent>
@@ -183,13 +193,15 @@ export function DotPointCatalogSection({
 
 // ─── Sub-components ────────────────────────────────────
 
-function UserModelRow({ model, testResult, isTesting, onTest, onRemove }: {
+function UserModelRow({ model, testResult, isTesting, onTest, onRemove, lang }: {
   model: ProxyApiCatalogModel;
   testResult?: TestResult;
   isTesting: boolean;
   onTest: () => void;
   onRemove: () => void;
+  lang: 'ru' | 'en';
 }) {
+  const isRu = lang === 'ru';
   return (
     <div className="flex items-center gap-3 p-3 rounded-lg border border-primary/20 bg-accent/30 hover:bg-accent/50 transition-colors">
       <Network className="h-4 w-4 flex-shrink-0 text-primary" />
@@ -210,29 +222,31 @@ function UserModelRow({ model, testResult, isTesting, onTest, onRemove }: {
               </div>
             </TooltipTrigger>
             <TooltipContent side="top" className="max-w-[250px]">
-              <p className="text-xs">{STATUS_EXPLANATIONS[testResult.status]?.description || testResult.error}</p>
+              <p className="text-xs">{getStatusExpl(testResult.status, lang)?.description || testResult.error}</p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
       )}
-      <Button size="sm" variant="ghost" className="flex-shrink-0 h-8 w-8 p-0" onClick={onTest} disabled={isTesting} title="Тест модели">
+      <Button size="sm" variant="ghost" className="flex-shrink-0 h-8 w-8 p-0" onClick={onTest} disabled={isTesting} title={isRu ? 'Тест модели' : 'Test model'}>
         {isTesting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
       </Button>
-      <Button size="sm" variant="ghost" className="flex-shrink-0 h-8 w-8 p-0 text-muted-foreground hover:text-destructive" onClick={onRemove} title="Удалить из списка">
+      <Button size="sm" variant="ghost" className="flex-shrink-0 h-8 w-8 p-0 text-muted-foreground hover:text-destructive" onClick={onRemove} title={isRu ? 'Удалить из списка' : 'Remove from list'}>
         <Trash2 className="h-4 w-4" />
       </Button>
     </div>
   );
 }
 
-function ModelRow({ model, testResult, isTesting, onTest, onAdd, isAdded }: {
+function ModelRow({ model, testResult, isTesting, onTest, onAdd, isAdded, lang }: {
   model: ModelRegistryEntry;
   testResult?: TestResult;
   isTesting: boolean;
   onTest: () => void;
   onAdd: () => void;
   isAdded: boolean;
+  lang: 'ru' | 'en';
 }) {
+  const isRu = lang === 'ru';
   const creatorProvider = model.creator.includes('OpenAI') ? 'openai'
     : model.creator.includes('Anthropic') ? 'anthropic'
     : model.creator.includes('Google') ? 'gemini'
@@ -245,7 +259,7 @@ function ModelRow({ model, testResult, isTesting, onTest, onAdd, isAdded }: {
 
   const Logo = PROVIDER_LOGOS[creatorProvider];
   const color = PROVIDER_COLORS[creatorProvider];
-  const testStatusExpl = testResult ? STATUS_EXPLANATIONS[testResult.status] : null;
+  const testExpl = testResult ? getStatusExpl(testResult.status, lang) : null;
 
   return (
     <div className="flex items-center gap-3 p-3 rounded-lg border bg-card/50 hover:bg-card/80 transition-colors">
@@ -260,7 +274,7 @@ function ModelRow({ model, testResult, isTesting, onTest, onAdd, isAdded }: {
       <div className="hidden md:flex items-center gap-1 flex-shrink-0">
         {model.strengths.slice(0, 3).map(s => (
           <Badge key={s} variant="outline" className="text-[10px] px-1.5 py-0">
-            {STRENGTH_LABELS[s]?.ru || s}
+            {(isRu ? STRENGTH_LABELS[s]?.ru : STRENGTH_LABELS[s]?.en) || STRENGTH_LABELS[s]?.ru || s}
           </Badge>
         ))}
       </div>
@@ -277,8 +291,8 @@ function ModelRow({ model, testResult, isTesting, onTest, onAdd, isAdded }: {
                   </div>
                 </TooltipTrigger>
                 <TooltipContent side="top" className="max-w-[220px]">
-                  <p className="text-xs">{testStatusExpl?.description}</p>
-                  {testResult.tokens && <p className="text-xs text-muted-foreground mt-1">Токены: {testResult.tokens.input}/{testResult.tokens.output}</p>}
+                  <p className="text-xs">{testExpl?.description}</p>
+                  {testResult.tokens && <p className="text-xs text-muted-foreground mt-1">{isRu ? 'Токены' : 'Tokens'}: {testResult.tokens.input}/{testResult.tokens.output}</p>}
                 </TooltipContent>
               </Tooltip>
             ) : testResult.status === 'gone' ? (
@@ -290,7 +304,7 @@ function ModelRow({ model, testResult, isTesting, onTest, onAdd, isAdded }: {
                   </div>
                 </TooltipTrigger>
                 <TooltipContent side="top" className="max-w-[250px]">
-                  <p className="text-xs">{testStatusExpl?.description}</p>
+                  <p className="text-xs">{testExpl?.description}</p>
                 </TooltipContent>
               </Tooltip>
             ) : testResult.status === 'timeout' ? (
@@ -298,11 +312,11 @@ function ModelRow({ model, testResult, isTesting, onTest, onAdd, isAdded }: {
                 <TooltipTrigger asChild>
                   <div className="flex items-center gap-1 cursor-help">
                     <Clock className="h-3.5 w-3.5 text-amber-500" />
-                    <span className="text-amber-500">Таймаут</span>
+                    <span className="text-amber-500">{isRu ? 'Таймаут' : 'Timeout'}</span>
                   </div>
                 </TooltipTrigger>
                 <TooltipContent side="top" className="max-w-[250px]">
-                  <p className="text-xs">{testStatusExpl?.description}</p>
+                  <p className="text-xs">{testExpl?.description}</p>
                 </TooltipContent>
               </Tooltip>
             ) : (
@@ -314,8 +328,8 @@ function ModelRow({ model, testResult, isTesting, onTest, onAdd, isAdded }: {
                   </div>
                 </TooltipTrigger>
                 <TooltipContent side="top" className="max-w-[280px]">
-                  <p className="text-xs font-medium mb-1">Ошибка</p>
-                  <p className="text-xs text-muted-foreground">{testStatusExpl?.description}</p>
+                  <p className="text-xs font-medium mb-1">{isRu ? 'Ошибка' : 'Error'}</p>
+                  <p className="text-xs text-muted-foreground">{testExpl?.description}</p>
                   {testResult.error && <p className="text-xs text-destructive mt-1">{testResult.error}</p>}
                 </TooltipContent>
               </Tooltip>
@@ -324,11 +338,11 @@ function ModelRow({ model, testResult, isTesting, onTest, onAdd, isAdded }: {
         </TooltipProvider>
       )}
 
-      <Button size="sm" variant="ghost" className="flex-shrink-0 h-8 w-8 p-0" onClick={onTest} disabled={isTesting} title="Тест модели">
+      <Button size="sm" variant="ghost" className="flex-shrink-0 h-8 w-8 p-0" onClick={onTest} disabled={isTesting} title={isRu ? 'Тест модели' : 'Test model'}>
         {isTesting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
       </Button>
       {!isAdded && (
-        <Button size="sm" variant="ghost" className="flex-shrink-0 h-8 w-8 p-0 text-muted-foreground hover:text-primary" onClick={onAdd} title="Добавить в пользовательский список">
+        <Button size="sm" variant="ghost" className="flex-shrink-0 h-8 w-8 p-0 text-muted-foreground hover:text-primary" onClick={onAdd} title={isRu ? 'Добавить в пользовательский список' : 'Add to user list'}>
           <Plus className="h-4 w-4" />
         </Button>
       )}

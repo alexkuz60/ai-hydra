@@ -85,14 +85,48 @@ export const DEFAULT_SETTINGS: ProxyApiSettings = {
 export const SETTINGS_KEY = 'proxyapi_settings';
 export const USER_MODELS_KEY = 'proxyapi_user_models';
 
-export const STATUS_EXPLANATIONS: Record<string, { label: string; description: string }> = {
-  success: { label: 'Успешно', description: 'Запрос выполнен без ошибок. Модель ответила корректно.' },
-  error: { label: 'Ошибка', description: 'Запрос завершился с ошибкой. Возможные причины: невалидный API-ключ, превышение лимита запросов, внутренняя ошибка провайдера или проблемы с сетью.' },
-  timeout: { label: 'Таймаут', description: 'Модель не успела ответить за отведённое время. Попробуйте увеличить таймаут в настройках или использовать более быструю модель.' },
-  gone: { label: '410 Gone', description: 'Модель навсегда удалена из сервиса ProxyAPI (HTTP 410). Она больше не доступна для запросов. Рекомендуется скрыть её из каталога.' },
-  skipped: { label: 'Пропущен', description: 'Тест не выполнен — этот тип модели (STT/Image Edit) требует загрузки файла и не поддерживает автоматическое тестирование.' },
-  fallback: { label: 'Фолбэк', description: 'Основной провайдер (ProxyAPI) вернул ошибку, запрос автоматически перенаправлен на резервный шлюз (Lovable AI).' },
-  stream: { label: 'Стриминг', description: 'Потоковый запрос к модели через ProxyAPI. Токены отправляются по мере генерации.' },
-  ping: { label: 'Пинг', description: 'Проверка доступности сервиса ProxyAPI. Измеряет латенси до API-сервера.' },
-  test: { label: 'Тест', description: 'Одиночный тестовый запрос к модели для проверки её работоспособности.' },
+export const STATUS_EXPLANATIONS: Record<string, { label: { ru: string; en: string }; description: { ru: string; en: string } }> = {
+  success: {
+    label: { ru: 'Успешно', en: 'Success' },
+    description: { ru: 'Запрос выполнен без ошибок. Модель ответила корректно.', en: 'Request completed without errors. Model responded correctly.' },
+  },
+  error: {
+    label: { ru: 'Ошибка', en: 'Error' },
+    description: { ru: 'Запрос завершился с ошибкой. Возможные причины: невалидный API-ключ, превышение лимита запросов, внутренняя ошибка провайдера или проблемы с сетью.', en: 'Request failed. Possible causes: invalid API key, rate limit exceeded, provider internal error, or network issues.' },
+  },
+  timeout: {
+    label: { ru: 'Таймаут', en: 'Timeout' },
+    description: { ru: 'Модель не успела ответить за отведённое время. Попробуйте увеличить таймаут в настройках или использовать более быструю модель.', en: 'Model did not respond in time. Try increasing the timeout in settings or using a faster model.' },
+  },
+  gone: {
+    label: { ru: '410 Gone', en: '410 Gone' },
+    description: { ru: 'Модель навсегда удалена из сервиса ProxyAPI (HTTP 410). Она больше не доступна для запросов. Рекомендуется скрыть её из каталога.', en: 'Model permanently removed from ProxyAPI (HTTP 410). It is no longer available. Consider hiding it from the catalog.' },
+  },
+  skipped: {
+    label: { ru: 'Пропущен', en: 'Skipped' },
+    description: { ru: 'Тест не выполнен — этот тип модели (STT/Image Edit) требует загрузки файла и не поддерживает автоматическое тестирование.', en: 'Test skipped — this model type (STT/Image Edit) requires file upload and does not support automatic testing.' },
+  },
+  fallback: {
+    label: { ru: 'Фолбэк', en: 'Fallback' },
+    description: { ru: 'Основной провайдер (ProxyAPI) вернул ошибку, запрос автоматически перенаправлен на резервный шлюз (Lovable AI).', en: 'Primary provider (ProxyAPI) returned an error, request automatically redirected to fallback gateway (Lovable AI).' },
+  },
+  stream: {
+    label: { ru: 'Стриминг', en: 'Streaming' },
+    description: { ru: 'Потоковый запрос к модели через ProxyAPI. Токены отправляются по мере генерации.', en: 'Streaming request to model via ProxyAPI. Tokens are sent as they are generated.' },
+  },
+  ping: {
+    label: { ru: 'Пинг', en: 'Ping' },
+    description: { ru: 'Проверка доступности сервиса ProxyAPI. Измеряет латенси до API-сервера.', en: 'ProxyAPI service availability check. Measures latency to API server.' },
+  },
+  test: {
+    label: { ru: 'Тест', en: 'Test' },
+    description: { ru: 'Одиночный тестовый запрос к модели для проверки её работоспособности.', en: 'Single test request to model to verify its functionality.' },
+  },
 };
+
+/** Helper to get localized status explanation */
+export function getStatusExpl(status: string, lang: 'ru' | 'en') {
+  const e = STATUS_EXPLANATIONS[status];
+  if (!e) return null;
+  return { label: e.label[lang], description: e.description[lang] };
+}
