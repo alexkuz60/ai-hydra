@@ -16,6 +16,14 @@ import { StatCard, MEMORY_TYPE_COLORS, MEMORY_TYPE_LABELS } from './shared';
 
 export function RoleMemoryTab({ stats, loading, onRefresh }: { stats: ReturnType<typeof useHydraMemoryStats>; loading: boolean; onRefresh: () => void }) {
   const { t, language } = useLanguage();
+
+  const getLocalizedContent = (entry: any): string => {
+    if (language === 'en') {
+      const meta = (typeof entry.metadata === 'object' && entry.metadata !== null ? entry.metadata : {}) as Record<string, unknown>;
+      if (typeof meta.content_en === 'string' && meta.content_en) return meta.content_en;
+    }
+    return entry.content;
+  };
   const { user } = useAuth();
   const [deletingRole, setDeletingRole] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<string | null>(null);
@@ -101,7 +109,7 @@ export function RoleMemoryTab({ stats, loading, onRefresh }: { stats: ReturnType
                         <TermLabel term="confidence_score" className="text-xs text-muted-foreground">{(entry.confidence_score * 100).toFixed(0)}%</TermLabel>
                         {entry.usage_count > 0 && <TermLabel term="usage_count" className="text-xs text-muted-foreground">× {entry.usage_count}</TermLabel>}
                       </div>
-                      <p className="text-sm text-foreground/80 line-clamp-2">{entry.content}</p>
+                      <p className="text-sm text-foreground/80 line-clamp-2">{getLocalizedContent(entry)}</p>
                     </div>
                     <Button
                       variant="ghost" size="icon"
