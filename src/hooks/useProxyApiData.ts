@@ -73,7 +73,10 @@ export function useProxyApiData(hasKey: boolean) {
   }, [catalogSearch, proxyCatalog, userModelIds]);
 
   const userAddedModels = useMemo(() => {
-    return proxyCatalog.filter(m => userModelIds.has(m.id));
+    const catalogMap = new Map(proxyCatalog.map(m => [m.id, m]));
+    return Array.from(userModelIds).map(id =>
+      catalogMap.get(id) || { id, object: 'model', created: 0, owned_by: 'unknown' } as ProxyApiCatalogModel
+    );
   }, [proxyCatalog, userModelIds]);
 
   const analyticsData: AnalyticsEntry[] = useMemo(() => {
