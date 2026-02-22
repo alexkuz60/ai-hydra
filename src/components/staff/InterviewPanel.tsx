@@ -24,6 +24,7 @@ import { isThinkingModel, estimateCost, formatCost } from './interviewUtils';
 import { StepCard, SideBySideCard } from './InterviewStepCards';
 import { VerdictSection } from './InterviewVerdictView';
 import { SessionHistoryTable } from './InterviewHistoryTable';
+import { s } from './i18n';
 
 interface InterviewPanelProps {
   role: AgentRole;
@@ -66,7 +67,6 @@ export function InterviewPanel({ role, onClose }: InterviewPanelProps) {
     });
   }, [role]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Auto-detect thinking model and set 2x multiplier
   useEffect(() => {
     const modelId = session?.candidate_model;
     if (modelId && isThinkingModel(modelId) && session?.status === 'briefed') {
@@ -74,14 +74,12 @@ export function InterviewPanel({ role, onClose }: InterviewPanelProps) {
     }
   }, [session?.candidate_model, session?.status]);
 
-  // Fetch historical forecast when session is briefed
   useEffect(() => {
     if (session?.status === 'briefed' && session.candidate_model) {
       interview.getHistoricalTokenUsage(session.candidate_model, role).then(setHistoricalForecast);
     }
   }, [session?.status, session?.candidate_model, role]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Use live SSE data when testing, fallback to saved test_results
   const liveTotal = interview.totalSteps;
   const liveCompleted = Array.from(interview.stepStatuses.values()).filter(
     s => s.status === 'completed' || s.status === 'failed'
@@ -94,7 +92,6 @@ export function InterviewPanel({ role, onClose }: InterviewPanelProps) {
   const totalCount = interview.testing && liveTotal > 0 ? liveTotal : (testResults?.total_steps ?? steps.length);
   const progressPct = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
 
-  // Cost calculation
   const totalTokens = useMemo(() => {
     if (interview.testing && interview.stepStatuses.size > 0) {
       return Array.from(interview.stepStatuses.values()).reduce((sum, s) => sum + (s.token_count || 0), 0);
@@ -115,33 +112,24 @@ export function InterviewPanel({ role, onClose }: InterviewPanelProps) {
     return estimateCost(modelId, totalTokens);
   }, [session?.candidate_model, totalTokens]);
 
-  // Pre-test budget estimate (for briefed sessions)
   const preTestBudget = useMemo(() => {
     const modelId = session?.candidate_model;
     if (!modelId || session?.status !== 'briefed') return null;
-
     const baseTokens = historicalForecast?.median || 5000;
     const multiplier = budgetMultiplier;
     const totalEstimatedTokens = baseTokens * multiplier;
     const cost = estimateCost(modelId, totalEstimatedTokens);
     const isThinking = isThinkingModel(modelId);
-
     return {
-      estimatedTokens: totalEstimatedTokens,
-      baseTokens,
-      multiplier,
-      cost,
-      isThinking,
-      isHistorical: !!historicalForecast,
-      historicalCount: historicalForecast?.count || 0,
+      estimatedTokens: totalEstimatedTokens, baseTokens, multiplier, cost, isThinking,
+      isHistorical: !!historicalForecast, historicalCount: historicalForecast?.count || 0,
     };
   }, [session?.candidate_model, session?.status, budgetMultiplier, historicalForecast]);
 
   const toggleStep = useCallback((idx: number) => {
     setExpandedSteps(prev => {
       const next = new Set(prev);
-      if (next.has(idx)) next.delete(idx);
-      else next.add(idx);
+      if (next.has(idx)) next.delete(idx); else next.add(idx);
       return next;
     });
   }, []);
@@ -174,9 +162,7 @@ export function InterviewPanel({ role, onClose }: InterviewPanelProps) {
   }, [session, verdictHook, interview, role]);
 
   const handleReload = useCallback(async () => {
-    if (selectedSessionId) {
-      await interview.loadSession(selectedSessionId);
-    }
+    if (selectedSessionId) await interview.loadSession(selectedSessionId);
     const all = await interview.listSessions();
     setSessions(all.filter(s => s.role === role));
   }, [selectedSessionId, interview, role]);
@@ -223,12 +209,10 @@ export function InterviewPanel({ role, onClose }: InterviewPanelProps) {
         <IconComponent className={cn("h-5 w-5", config.color)} />
         <div className="flex-1 min-w-0">
           <h3 className="text-sm font-semibold truncate">
-            {isRu ? 'Собеседование' : 'Interview'}: {role}
+            {s('interview', isRu)}: {role}
           </h3>
           {session && (
-            <span className="text-[10px] text-muted-foreground font-mono">
-              {session.id.slice(0, 8)}
-            </span>
+            <span className="text-[10px] text-muted-foreground font-mono">{session.id.slice(0, 8)}</span>
           )}
         </div>
         <TooltipProvider delayDuration={300}>
@@ -239,9 +223,7 @@ export function InterviewPanel({ role, onClose }: InterviewPanelProps) {
                   <Plus className={cn("h-3.5 w-3.5", showNewForm && "text-primary")} />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent side="bottom">
-                {isRu ? 'Новое собеседование' : 'New Interview'}
-              </TooltipContent>
+              <TooltipContent side="bottom">{s('newInterview', isRu)}</TooltipContent>
             </Tooltip>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -249,9 +231,7 @@ export function InterviewPanel({ role, onClose }: InterviewPanelProps) {
                   <RefreshCw className={cn("h-3.5 w-3.5", interview.loading && "animate-spin")} />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent side="bottom">
-                {isRu ? 'Обновить' : 'Refresh'}
-              </TooltipContent>
+              <TooltipContent side="bottom">{s('refresh', isRu)}</TooltipContent>
             </Tooltip>
             <div className="w-px h-5 bg-border ml-1.5" />
             <Tooltip>
@@ -260,9 +240,7 @@ export function InterviewPanel({ role, onClose }: InterviewPanelProps) {
                   <X className="h-4 w-4" />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent side="bottom">
-                {isRu ? 'Закрыть' : 'Close'}
-              </TooltipContent>
+              <TooltipContent side="bottom">{s('close', isRu)}</TooltipContent>
             </Tooltip>
           </div>
         </TooltipProvider>
@@ -271,30 +249,12 @@ export function InterviewPanel({ role, onClose }: InterviewPanelProps) {
       {/* New Interview Form */}
       {showNewForm && (
         <div className="p-3 border-b border-border bg-muted/10 shrink-0 space-y-2">
-          <div className="text-xs font-medium">
-            {isRu ? 'Новое собеседование' : 'New Interview'}
-          </div>
-          <div className="text-[10px] text-muted-foreground">
-            {isRu ? 'Только модели с настроенными API-ключами (BYOK)' : 'Only models with configured API keys (BYOK)'}
-          </div>
-          <ModelSelector
-            value={newModel}
-            onChange={setNewModel}
-            className="w-full"
-            excludeLovableAI
-          />
-          <Button
-            size="sm"
-            className="w-full gap-2"
-            onClick={handleCreateInterview}
-            disabled={!newModel || interview.loading}
-          >
-            {interview.loading ? (
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            ) : (
-              <Play className="h-3.5 w-3.5" />
-            )}
-            {isRu ? 'Собрать брифинг' : 'Assemble Briefing'}
+          <div className="text-xs font-medium">{s('newInterview', isRu)}</div>
+          <div className="text-[10px] text-muted-foreground">{s('byokOnly', isRu)}</div>
+          <ModelSelector value={newModel} onChange={setNewModel} className="w-full" excludeLovableAI />
+          <Button size="sm" className="w-full gap-2" onClick={handleCreateInterview} disabled={!newModel || interview.loading}>
+            {interview.loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Play className="h-3.5 w-3.5" />}
+            {s('assembleBriefing', isRu)}
           </Button>
         </div>
       )}
@@ -305,12 +265,7 @@ export function InterviewPanel({ role, onClose }: InterviewPanelProps) {
             status={session.status}
             isTesting={interview.testing}
             isVerdicting={verdictHook.running}
-            activePhase={
-              viewMode === 'progress' ? 'briefing'
-                : viewMode === 'results' ? 'testing'
-                : viewMode === 'verdict' ? 'verdict'
-                : undefined
-            }
+            activePhase={viewMode === 'progress' ? 'briefing' : viewMode === 'results' ? 'testing' : viewMode === 'verdict' ? 'verdict' : undefined}
             onPhaseClick={(phase) => {
               if (phase === 'briefing') setViewMode('progress');
               else if (phase === 'testing') setViewMode('results');
@@ -319,27 +274,19 @@ export function InterviewPanel({ role, onClose }: InterviewPanelProps) {
             onRestart={handleRestart}
           />
           <div className="flex items-center gap-2 text-xs mt-1">
-            <Badge variant="outline" className="text-[10px]">
-              {session.status}
-            </Badge>
-            <span className="text-muted-foreground">
-              {session.candidate_model}
-            </span>
+            <Badge variant="outline" className="text-[10px]">{session.status}</Badge>
+            <span className="text-muted-foreground">{session.candidate_model}</span>
             {session.briefing_token_count && (
-              <span className="text-muted-foreground ml-auto">
-                ~{session.briefing_token_count.toLocaleString()} tok
-              </span>
+              <span className="text-muted-foreground ml-auto">~{session.briefing_token_count.toLocaleString()} tok</span>
             )}
           </div>
           {(interview.testing || steps.length > 0 || totalTokens > 0) && (
             <div className="mt-2 space-y-1">
               <div className="flex items-center justify-between text-[10px] text-muted-foreground">
                 <span>
-                  {completedCount}/{totalCount} {isRu ? 'шагов' : 'steps'}
+                  {completedCount}/{totalCount} {s('steps', isRu)}
                   {interview.testing && liveRunning > 0 && (
-                    <span className="text-primary ml-1">
-                      ({liveRunning} {isRu ? 'выполняется' : 'running'})
-                    </span>
+                    <span className="text-primary ml-1">({liveRunning} {s('running', isRu)})</span>
                   )}
                 </span>
                 <span>{progressPct}%</span>
@@ -348,14 +295,8 @@ export function InterviewPanel({ role, onClose }: InterviewPanelProps) {
               {totalTokens > 0 && (
                 <div className="flex items-center gap-3 text-[10px] text-muted-foreground mt-1 flex-wrap">
                   <span>🪙 {totalTokens.toLocaleString()} tok</span>
-                  {totalElapsed > 0 && (
-                    <span>⏱ {(totalElapsed / 1000).toFixed(1)}s</span>
-                  )}
-                  {costEstimate && (
-                    <span className="text-amber-500 font-medium">
-                      💰 {formatCost(costEstimate.total)}
-                    </span>
-                  )}
+                  {totalElapsed > 0 && <span>⏱ {(totalElapsed / 1000).toFixed(1)}s</span>}
+                  {costEstimate && <span className="text-amber-500 font-medium">💰 {formatCost(costEstimate.total)}</span>}
                 </div>
               )}
             </div>
@@ -368,33 +309,27 @@ export function InterviewPanel({ role, onClose }: InterviewPanelProps) {
         <div className="p-3 border-b border-border shrink-0 space-y-2">
           <div className="text-xs font-medium flex items-center gap-1.5">
             <DollarSign className="h-3.5 w-3.5 text-amber-500" />
-            {isRu ? 'Оценка бюджета' : 'Budget Estimate'}
+            {s('budgetEstimate', isRu)}
           </div>
           <div className="bg-muted/50 rounded-md p-2 text-[10px] space-y-1.5">
             {preTestBudget.isHistorical ? (
               <div className="flex justify-between">
                 <span className="text-muted-foreground">
-                  {isRu ? `Прогноз (${preTestBudget.historicalCount} интервью)` : `Forecast (${preTestBudget.historicalCount} interviews)`}:
+                  {s('forecastLabel', isRu)} ({preTestBudget.historicalCount} {s('interviewsLabel', isRu)}):
                 </span>
                 <span className="font-mono">~{preTestBudget.baseTokens.toLocaleString()} tok</span>
               </div>
             ) : (
-              <div className="text-muted-foreground italic">
-                {isRu ? 'Нет истории — используется базовая оценка' : 'No history — using base estimate'}
-              </div>
+              <div className="text-muted-foreground italic">{s('noHistoryBaseEstimate', isRu)}</div>
             )}
             {preTestBudget.isThinking && (
               <div className="flex items-center gap-1.5 text-amber-500 bg-amber-500/10 rounded px-1.5 py-1">
                 <AlertTriangle className="h-3 w-3 shrink-0" />
-                <span>
-                  {isRu
-                    ? 'Модель с рассуждениями — рекомендуется 2x бюджет'
-                    : 'Thinking model — 2x budget recommended'}
-                </span>
+                <span>{s('thinkingModelWarning', isRu)}</span>
               </div>
             )}
             <div className="flex items-center gap-2">
-              <span className="text-muted-foreground">{isRu ? 'Множитель' : 'Multiplier'}:</span>
+              <span className="text-muted-foreground">{s('multiplier', isRu)}:</span>
               <div className="flex gap-1">
                 {[1, 2, 3].map(m => (
                   <button
@@ -414,10 +349,8 @@ export function InterviewPanel({ role, onClose }: InterviewPanelProps) {
             </div>
             {preTestBudget.cost && (
               <div className="flex justify-between pt-1 border-t border-border font-medium">
-                <span>{isRu ? 'Оценка стоимости' : 'Est. cost'}:</span>
-                <span className="font-mono text-amber-500">
-                  ≤{formatCost(preTestBudget.cost.total)}
-                </span>
+                <span>{s('estimatedCost', isRu)}:</span>
+                <span className="font-mono text-amber-500">≤{formatCost(preTestBudget.cost.total)}</span>
               </div>
             )}
           </div>
@@ -431,22 +364,14 @@ export function InterviewPanel({ role, onClose }: InterviewPanelProps) {
             {session.status === 'testing' ? (
               <>
                 <RefreshCw className="h-3.5 w-3.5" />
-                {isRu ? 'Возобновить тесты' : 'Resume Tests'}
-                {completedCount > 0 && (
-                  <Badge variant="secondary" className="text-[10px] ml-1">
-                    {completedCount}/{totalCount}
-                  </Badge>
-                )}
+                {s('resumeTests', isRu)}
+                {completedCount > 0 && <Badge variant="secondary" className="text-[10px] ml-1">{completedCount}/{totalCount}</Badge>}
               </>
             ) : (
               <>
                 <Play className="h-3.5 w-3.5" />
-                {isRu ? 'Запустить тесты' : 'Run Tests'}
-                {budgetMultiplier > 1 && (
-                  <Badge variant="secondary" className="text-[10px] ml-1">
-                    {budgetMultiplier}x
-                  </Badge>
-                )}
+                {s('runTests', isRu)}
+                {budgetMultiplier > 1 && <Badge variant="secondary" className="text-[10px] ml-1">{budgetMultiplier}x</Badge>}
               </>
             )}
           </Button>
@@ -458,7 +383,7 @@ export function InterviewPanel({ role, onClose }: InterviewPanelProps) {
         <div className="p-3 border-b border-border shrink-0">
           <Button size="sm" className="w-full gap-2" onClick={handleRunVerdict}>
             <Gavel className="h-3.5 w-3.5" />
-            {isRu ? 'Вынести вердикт' : 'Run Verdict'}
+            {s('runVerdict', isRu)}
           </Button>
         </div>
       )}
@@ -467,11 +392,11 @@ export function InterviewPanel({ role, onClose }: InterviewPanelProps) {
         <div className="p-3 border-b border-border shrink-0 space-y-2">
           <div className="flex items-center gap-2 text-xs">
             <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
-            <span>{isRu ? 'Фаза' : 'Phase'}: {verdictHook.currentPhase}</span>
+            <span>{s('phase', isRu)}: {verdictHook.currentPhase}</span>
           </div>
           <Button size="sm" variant="destructive" className="w-full gap-2" onClick={verdictHook.cancelVerdict}>
             <XCircle className="h-3.5 w-3.5" />
-            {isRu ? 'Остановить' : 'Cancel'}
+            {s('stop', isRu)}
           </Button>
         </div>
       )}
@@ -480,7 +405,7 @@ export function InterviewPanel({ role, onClose }: InterviewPanelProps) {
         <div className="p-3 border-b border-border shrink-0">
           <Button size="sm" variant="destructive" className="w-full gap-2" onClick={interview.cancelTests}>
             <XCircle className="h-3.5 w-3.5" />
-            {isRu ? 'Остановить' : 'Cancel'}
+            {s('stop', isRu)}
           </Button>
         </div>
       )}
@@ -489,9 +414,7 @@ export function InterviewPanel({ role, onClose }: InterviewPanelProps) {
       <ScrollArea className="flex-1">
         <div className="p-3 space-y-2">
           {!session && !interview.loading && (
-            <p className="text-sm text-muted-foreground text-center py-8">
-              {isRu ? 'Нет активных собеседований для этой роли' : 'No interview sessions for this role'}
-            </p>
+            <p className="text-sm text-muted-foreground text-center py-8">{s('noSessions', isRu)}</p>
           )}
 
           {interview.loading && (
@@ -500,26 +423,14 @@ export function InterviewPanel({ role, onClose }: InterviewPanelProps) {
             </div>
           )}
 
-          {/* Progress view */}
           {viewMode === 'progress' && steps.map((step, idx) => (
-            <StepCard
-              key={idx}
-              step={step}
-              index={idx}
-              expanded={expandedSteps.has(idx)}
-              onToggle={() => toggleStep(idx)}
-              statusIcon={getStepStatusIcon(step.status)}
-              isRu={isRu}
-              modelId={session?.candidate_model}
-            />
+            <StepCard key={idx} step={step} index={idx} expanded={expandedSteps.has(idx)} onToggle={() => toggleStep(idx)} statusIcon={getStepStatusIcon(step.status)} isRu={isRu} modelId={session?.candidate_model} />
           ))}
 
-          {/* Side-by-side results view */}
           {viewMode === 'results' && steps.filter(s => s.status === 'completed').map((step, idx) => (
             <SideBySideCard key={idx} step={step} index={idx} isRu={isRu} modelId={session?.candidate_model} />
           ))}
 
-          {/* Verdict view */}
           {viewMode === 'verdict' && <VerdictSection
             session={session}
             verdict={verdictHook.verdict || (session?.verdict as unknown as InterviewVerdict | null)}
@@ -533,20 +444,13 @@ export function InterviewPanel({ role, onClose }: InterviewPanelProps) {
               sessions={sessions}
               selectedSessionId={selectedSessionId}
               currentSessionId={sessions[0]?.id}
-              onSelect={(id) => {
-                setSelectedSessionId(id);
-                interview.loadSession(id);
-              }}
+              onSelect={(id) => { setSelectedSessionId(id); interview.loadSession(id); }}
               onDeleted={async () => {
                 const all = await interview.listSessions();
                 const roleSessions = all.filter(s => s.role === role);
                 setSessions(roleSessions);
-                if (roleSessions.length > 0) {
-                  setSelectedSessionId(roleSessions[0].id);
-                  interview.loadSession(roleSessions[0].id);
-                } else {
-                  setSelectedSessionId(null);
-                }
+                if (roleSessions.length > 0) { setSelectedSessionId(roleSessions[0].id); interview.loadSession(roleSessions[0].id); }
+                else { setSelectedSessionId(null); }
               }}
               isRu={isRu}
             />

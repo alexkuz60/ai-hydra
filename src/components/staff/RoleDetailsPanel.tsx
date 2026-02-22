@@ -18,6 +18,7 @@ import { useTechRoleDefaults } from '@/hooks/useTechRoleDefaults';
 import { RolePromptSection } from './RolePromptSection';
 import { RoleHierarchySection } from './RoleHierarchySection';
 import { RoleSettingsSection } from './RoleSettingsSection';
+import { s } from './i18n';
 
 interface RoleDetailsPanelProps {
   selectedRole: AgentRole | null;
@@ -29,6 +30,7 @@ interface RoleDetailsPanelProps {
 const RoleDetailsPanel = forwardRef<HTMLDivElement, RoleDetailsPanelProps>(
   ({ selectedRole, onHasUnsavedChanges, onOpenInterview, onOpenRecert }, ref) => {
     const { t, language } = useLanguage();
+    const isRu = language === 'ru';
     const { user } = useAuth();
     const { behavior, isLoading: isLoadingBehavior, isSaving, saveRequiresApproval } = useRoleBehavior(selectedRole);
     const promptEditor = useRolePromptEditor(selectedRole, user?.id);
@@ -64,16 +66,11 @@ const RoleDetailsPanel = forwardRef<HTMLDivElement, RoleDetailsPanelProps>(
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <button
-                        className="p-2 rounded-lg hover:bg-hydra-warning/10 transition-colors"
-                        onClick={() => onOpenRecert(selectedRole)}
-                      >
+                      <button className="p-2 rounded-lg hover:bg-hydra-warning/10 transition-colors" onClick={() => onOpenRecert(selectedRole)}>
                         <RefreshCw className="h-5 w-5 text-hydra-warning hover:text-hydra-warning transition-colors animate-pulse" />
                       </button>
                     </TooltipTrigger>
-                    <TooltipContent>
-                      <p>{language === 'ru' ? 'Переаттестация' : 'Re-certify'}</p>
-                    </TooltipContent>
+                    <TooltipContent><p>{s('recertify', isRu)}</p></TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
               )}
@@ -81,16 +78,11 @@ const RoleDetailsPanel = forwardRef<HTMLDivElement, RoleDetailsPanelProps>(
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <button
-                        className="p-2 rounded-lg hover:bg-muted/50 transition-colors"
-                        onClick={() => onOpenInterview(selectedRole)}
-                      >
+                      <button className="p-2 rounded-lg hover:bg-muted/50 transition-colors" onClick={() => onOpenInterview(selectedRole)}>
                         <ClipboardCheck className="h-5 w-5 text-muted-foreground hover:text-primary transition-colors" />
                       </button>
                     </TooltipTrigger>
-                    <TooltipContent>
-                      <p>{language === 'ru' ? 'Собеседование' : 'Interview'}</p>
-                    </TooltipContent>
+                    <TooltipContent><p>{s('interview', isRu)}</p></TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
               )}
@@ -114,56 +106,42 @@ const RoleDetailsPanel = forwardRef<HTMLDivElement, RoleDetailsPanelProps>(
 
             <Separator />
 
-            {/* Prompt Section */}
             <div data-guide="role-prompt-section">
-            <RolePromptSection
-              selectedRole={selectedRole}
-              systemPrompt={systemPrompt}
-              userId={user?.id}
-              {...promptEditor}
-            />
+              <RolePromptSection selectedRole={selectedRole} systemPrompt={systemPrompt} userId={user?.id} {...promptEditor} />
             </div>
 
             <Separator />
 
-            {/* Hierarchy Section */}
             <div data-guide="role-hierarchy-section">
-            <RoleHierarchySection
-              selectedRole={selectedRole}
-              userId={user?.id}
-              onHasUnsavedChanges={onHasUnsavedChanges}
-            />
+              <RoleHierarchySection selectedRole={selectedRole} userId={user?.id} onHasUnsavedChanges={onHasUnsavedChanges} />
             </div>
 
-            {/* Knowledge - technical staff only */}
             {config.isTechnicalStaff && (
               <>
                 <Separator />
                 <div data-guide="role-knowledge-section">
-                <RoleKnowledgeTab role={selectedRole} />
+                  <RoleKnowledgeTab role={selectedRole} />
                 </div>
               </>
             )}
 
             <Separator />
 
-            {/* Assignment History */}
             <RoleAssignmentHistory role={selectedRole} />
 
             <Separator />
 
-            {/* Settings */}
             <div data-guide="role-settings-section">
-            <RoleSettingsSection
-              selectedRole={selectedRole}
-              isTechnicalStaff={config.isTechnicalStaff}
-              requiresApproval={behavior?.requires_approval ?? false}
-              isSaving={isSaving}
-              isLoading={isLoadingBehavior}
-              userId={user?.id}
-              syncLoaded={techRoleLoaded}
-              onSaveRequiresApproval={saveRequiresApproval}
-            />
+              <RoleSettingsSection
+                selectedRole={selectedRole}
+                isTechnicalStaff={config.isTechnicalStaff}
+                requiresApproval={behavior?.requires_approval ?? false}
+                isSaving={isSaving}
+                isLoading={isLoadingBehavior}
+                userId={user?.id}
+                syncLoaded={techRoleLoaded}
+                onSaveRequiresApproval={saveRequiresApproval}
+              />
             </div>
           </div>
         </ScrollArea>

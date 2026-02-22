@@ -9,6 +9,7 @@ import { ChevronDown, ChevronRight, Columns2, Maximize2 } from 'lucide-react';
 import { InterviewExpandDialog } from './InterviewExpandDialog';
 import { getCompetencyLabel, estimateCost, formatCost } from './interviewUtils';
 import type { InterviewTestStep } from '@/types/interview';
+import { s } from './i18n';
 
 // ── Step Card (progress view) ──
 
@@ -39,19 +40,13 @@ export function StepCard({ step, index, expanded, onToggle, statusIcon, isRu, mo
             <span className="text-muted-foreground ml-2">#{index + 1}</span>
           </div>
           {step.elapsed_ms > 0 && (
-            <span className="text-[10px] text-muted-foreground">
-              {(step.elapsed_ms / 1000).toFixed(1)}s
-            </span>
+            <span className="text-[10px] text-muted-foreground">{(step.elapsed_ms / 1000).toFixed(1)}s</span>
           )}
           {step.token_count > 0 && (
-            <span className="text-[10px] text-muted-foreground">
-              {step.token_count} tok
-            </span>
+            <span className="text-[10px] text-muted-foreground">{step.token_count} tok</span>
           )}
           {stepCost && (
-            <span className="text-[10px] text-amber-500 font-medium">
-              {formatCost(stepCost.total)}
-            </span>
+            <span className="text-[10px] text-amber-500 font-medium">{formatCost(stepCost.total)}</span>
           )}
           {expanded ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
         </div>
@@ -59,17 +54,17 @@ export function StepCard({ step, index, expanded, onToggle, statusIcon, isRu, mo
       <CollapsibleContent>
         <div className="pl-6 pr-2 pb-2 space-y-2">
           <div className="text-xs">
-            <span className="text-muted-foreground font-medium">{isRu ? 'Задание:' : 'Task:'}</span>
+            <span className="text-muted-foreground font-medium">{s('taskLabel', isRu)}</span>
             <p className="mt-0.5 text-foreground/80">{step.task_prompt}</p>
           </div>
           {step.candidate_output?.proposed_value && (
             <div className="text-xs">
               <div className="flex items-center gap-1.5">
-                <span className="text-muted-foreground font-medium">{isRu ? 'Ответ кандидата:' : 'Candidate output:'}</span>
+                <span className="text-muted-foreground font-medium">{s('candidateOutput', isRu)}</span>
                 <button
                   className="text-muted-foreground hover:text-foreground transition-colors p-0.5 rounded"
                   onClick={(e) => { e.stopPropagation(); setExpandDialogOpen(true); }}
-                  title={isRu ? 'Развернуть' : 'Expand'}
+                  title={s('expand', isRu)}
                 >
                   <Maximize2 className="h-3 w-3" />
                 </button>
@@ -134,7 +129,7 @@ export function SideBySideCard({ step, index, isRu, modelId }: SideBySideCardPro
             {hasBaseline && (
               <div className="space-y-1">
                 <div className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
-                  {isRu ? 'Текущее (Baseline)' : 'Current (Baseline)'}
+                  {s('currentBaseline', isRu)}
                 </div>
                 <div className="p-2 rounded-md bg-muted/20 border border-border max-h-64 overflow-y-auto">
                   <MarkdownRenderer content={step.baseline!.current_value} className="text-xs" />
@@ -144,11 +139,11 @@ export function SideBySideCard({ step, index, isRu, modelId }: SideBySideCardPro
             {hasCandidate && (
               <div className="space-y-1">
                 <div className="text-[10px] font-medium text-primary uppercase tracking-wider flex items-center gap-1.5">
-                  {isRu ? 'Кандидат' : 'Candidate'}
+                  {s('candidateLabel', isRu)}
                   <button
                     className="text-muted-foreground hover:text-foreground transition-colors p-0.5 rounded"
                     onClick={(e) => { e.stopPropagation(); setExpandDialogOpen(true); }}
-                    title={isRu ? 'Развернуть' : 'Expand'}
+                    title={s('expand', isRu)}
                   >
                     <Maximize2 className="h-3 w-3" />
                   </button>

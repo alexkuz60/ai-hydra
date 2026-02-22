@@ -11,9 +11,9 @@ import { useAvailableModels } from '@/hooks/useAvailableModels';
 import { useTechRoleDefaults } from '@/hooks/useTechRoleDefaults';
 import { ModelNameWithIcon } from '@/components/ui/ModelNameWithIcon';
 import type { AgentRole } from '@/config/roles';
+import { s } from './i18n';
 
 const MODEL_CHOICE_RATIONALE: Record<string, { ru: string; en: string }> = {
-  // Expert roles
   assistant: {
     ru: 'Gemini 2.5 Pro — сильные аналитические и генеративные способности. Идеальный баланс глубины и универсальности для роли первичного эксперта.',
     en: 'Gemini 2.5 Pro — strong analytical and generative capabilities. Ideal balance of depth and versatility for the primary expert role.',
@@ -38,7 +38,6 @@ const MODEL_CHOICE_RATIONALE: Record<string, { ru: string; en: string }> = {
     ru: 'Gemini 2.5 Pro — практичные рекомендации требуют глубокого понимания контекста. Большой контекст и аналитика обеспечивают качественные советы.',
     en: 'Gemini 2.5 Pro — practical recommendations require deep contextual understanding. Large context and analytics ensure quality advice.',
   },
-  // Technical staff
   archivist: {
     ru: 'Gemini 2.5 Flash — баланс скорости и качества для суммаризации и поиска по архивам. Хорошо справляется с большими контекстами при умеренной стоимости.',
     en: 'Gemini 2.5 Flash — balanced speed and quality for summarization and archive retrieval. Handles large contexts well at moderate cost.',
@@ -82,6 +81,7 @@ interface RoleSettingsSectionProps {
 
 export function RoleSettingsSection({ isTechnicalStaff, requiresApproval, isSaving, isLoading, userId, selectedRole, syncLoaded = true, onSaveRequiresApproval }: RoleSettingsSectionProps) {
   const { t, language } = useLanguage();
+  const isRu = language === 'ru';
   const { lovableModels, personalModels } = useAvailableModels();
   const { getDefaultModel, setDefaultModel } = useTechRoleDefaults();
 
@@ -97,36 +97,33 @@ export function RoleSettingsSection({ isTechnicalStaff, requiresApproval, isSavi
         </label>
       </div>
 
-       {/* Default model selector for technical staff */}
        {selectedRole && allModels.length > 0 && (
          <div className="pt-3 space-y-1.5">
            <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Bot className="h-4 w-4 text-muted-foreground" />
                 <label className="text-sm font-medium">
-                  {language === 'ru' ? 'Модель по умолчанию' : 'Default Model'}
+                  {s('defaultModel', isRu)}
                 </label>
               </div>
             </div>
           <p className="text-xs text-muted-foreground">
-            {language === 'ru'
-              ? 'Модель, используемая при вызове этого техника. Пользователь может переназначить.'
-              : 'Model used when calling this technician. User can override.'}
+            {s('defaultModelHint', isRu)}
           </p>
           <Select
             value={currentDefault || '__none__'}
             onValueChange={(val) => {
               const modelId = val === '__none__' ? null : val;
               setDefaultModel(selectedRole, modelId);
-              toast.success(language === 'ru' ? 'Модель по умолчанию обновлена' : 'Default model updated');
+              toast.success(s('defaultModelUpdated', isRu));
             }}
           >
             <SelectTrigger className="h-9 text-sm">
-              <SelectValue placeholder={language === 'ru' ? 'Не назначена' : 'Not assigned'} />
+              <SelectValue placeholder={s('notAssigned', isRu)} />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="__none__" className="text-muted-foreground text-sm">
-                {language === 'ru' ? '— Не назначена —' : '— Not assigned —'}
+                {s('notAssignedDash', isRu)}
               </SelectItem>
               {allModels.map(model => (
                 <SelectItem key={model.id} value={model.id} className="text-sm">
@@ -139,7 +136,7 @@ export function RoleSettingsSection({ isTechnicalStaff, requiresApproval, isSavi
             <div className="flex gap-2 rounded-md border border-hydra-warning/30 bg-hydra-warning/10 px-3 py-2">
               <Lightbulb className="h-4 w-4 shrink-0 mt-0.5 text-hydra-warning" />
               <p className="text-xs text-hydra-warning leading-relaxed">
-                {language === 'ru' ? MODEL_CHOICE_RATIONALE[selectedRole].ru : MODEL_CHOICE_RATIONALE[selectedRole].en}
+                {isRu ? MODEL_CHOICE_RATIONALE[selectedRole].ru : MODEL_CHOICE_RATIONALE[selectedRole].en}
               </p>
             </div>
           )}
