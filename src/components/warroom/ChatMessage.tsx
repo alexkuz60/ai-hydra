@@ -119,11 +119,14 @@ export function ChatMessage({ message, userDisplayInfo, onDelete, onRatingChange
     onRequestProposalDetails?.(message.id, proposalIds);
   }, [onRequestProposalDetails, message.id]);
 
-  const lines = message.content.split('\n');
-  const isLongContent = lines.length > MAX_COLLAPSED_LINES || message.content.length > 300;
+  // Use translated content when language is EN and translation is available
+  const displayContent = (language === 'en' && message.content_en) ? message.content_en : message.content;
+
+  const lines = displayContent.split('\n');
+  const isLongContent = lines.length > MAX_COLLAPSED_LINES || displayContent.length > 300;
   const truncatedContent = isLongContent && !isExpanded
     ? lines.slice(0, MAX_COLLAPSED_LINES).join('\n').slice(0, 300) + '...'
-    : message.content;
+    : displayContent;
 
   const cardVariant = isUserMessage && userDisplayInfo?.isSupervisor ? 'supervisor' : config.cardVariant || 'default';
 
