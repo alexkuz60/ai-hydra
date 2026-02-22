@@ -221,6 +221,16 @@ const texts: Record<string, { ru: string; en: string }> = {
   modelsWord: { ru: 'моделей', en: 'models' },
   proxyModels: { ru: 'ProxyAPI модели', en: 'ProxyAPI models' },
   dotpointModels: { ru: 'Модели DotPoint', en: 'DotPoint models' },
+
+  // ProxyApiDashboard
+  searchModels: { ru: 'Поиск среди', en: 'Search' },
+  modelsProxyAPI: { ru: 'моделей ProxyAPI...', en: 'ProxyAPI models...' },
+
+  // ProxyCatalog statuses
+  statusRequestError: { ru: 'ошибка запроса', en: 'request error' },
+  statusTimeoutExceeded: { ru: 'превышение таймаута', en: 'timeout exceeded' },
+  statusModelRemoved: { ru: 'модель удалена (410)', en: 'model removed (410)' },
+  statusAutoFallback: { ru: 'авто-переключение', en: 'auto-fallback' },
 };
 
 export function getProfileText(key: string, isRu: boolean): string {

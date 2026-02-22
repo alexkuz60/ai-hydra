@@ -163,6 +163,20 @@ export const STAFF_I18N = {
   // === Forecast ===
   forecastLabel: { ru: 'Прогноз', en: 'Forecast' },
   interviewsLabel: { ru: 'интервью', en: 'interviews' },
+
+  // === Interview History Table ===
+  confirmDeleteSession: { ru: 'Удалить эту сессию собеседования?', en: 'Delete this interview session?' },
+  sessionDeleted: { ru: 'Сессия удалена', en: 'Session deleted' },
+  interviewHistory: { ru: 'История собеседований', en: 'Interview History' },
+  backToCurrent: { ru: 'К текущему', en: 'Back to current' },
+  thModel: { ru: 'Модель', en: 'Model' },
+  thRouter: { ru: 'Роутер', en: 'Router' },
+  thTokens: { ru: 'Токены', en: 'Tokens' },
+  thTime: { ru: 'Время', en: 'Time' },
+  thCost: { ru: 'Цена', en: 'Cost' },
+  thScore: { ru: 'Балл', en: 'Score' },
+  thDecision: { ru: 'Решение', en: 'Decision' },
+  deleteSession: { ru: 'Удалить сессию', en: 'Delete session' },
 } as const;
 
 export type StaffI18nKey = keyof typeof STAFF_I18N;

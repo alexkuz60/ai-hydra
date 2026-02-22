@@ -75,10 +75,10 @@ export function ProxyLogsTable({ logs, logsLoading, onRefresh, onExportCSV }: Pr
                           <TooltipContent side="top" className="max-w-[250px]">
                             <div className="text-xs space-y-1">
                               <p><strong className="text-emerald-400">success</strong> — OK</p>
-                              <p><strong className="text-destructive">error</strong> — {isRu ? 'ошибка запроса' : 'request error'}</p>
-                              <p><strong className="text-amber-500">timeout</strong> — {isRu ? 'превышение таймаута' : 'timeout exceeded'}</p>
-                              <p><strong className="text-destructive">gone</strong> — {isRu ? 'модель удалена (410)' : 'model removed (410)'}</p>
-                              <p><strong className="text-blue-400">fallback</strong> — {isRu ? 'авто-переключение' : 'auto-fallback'}</p>
+                              <p><strong className="text-destructive">error</strong> — {p('statusRequestError')}</p>
+                              <p><strong className="text-amber-500">timeout</strong> — {p('statusTimeoutExceeded')}</p>
+                              <p><strong className="text-destructive">gone</strong> — {p('statusModelRemoved')}</p>
+                              <p><strong className="text-blue-400">fallback</strong> — {p('statusAutoFallback')}</p>
                             </div>
                           </TooltipContent>
                         </Tooltip>
