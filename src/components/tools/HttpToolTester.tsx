@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/collapsible';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface ToolParameter {
   name: string;
@@ -52,6 +53,7 @@ interface HttpToolTesterProps {
 }
 
 export function HttpToolTester({ httpConfig, parameters, toolName }: HttpToolTesterProps) {
+  const { t } = useLanguage();
   const [testParams, setTestParams] = useState<Record<string, string>>({});
   const [testing, setTesting] = useState(false);
   const [result, setResult] = useState<TestResult | null>(null);
@@ -70,7 +72,7 @@ export function HttpToolTester({ httpConfig, parameters, toolName }: HttpToolTes
       if (!token) {
         setResult({
           success: false,
-          error: 'Необходима авторизация для тестирования'
+          error: t('tools.authRequired')
         });
         return;
       }
@@ -100,7 +102,7 @@ export function HttpToolTester({ httpConfig, parameters, toolName }: HttpToolTes
         });
       }
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : 'Неизвестная ошибка';
+      const message = error instanceof Error ? error.message : t('tools.unknownError');
       setResult({
         success: false,
         error: message,
@@ -132,7 +134,7 @@ export function HttpToolTester({ httpConfig, parameters, toolName }: HttpToolTes
         >
           <span className="flex items-center gap-2">
             <Play className="h-4 w-4" />
-            Тестирование
+            {t('tools.testing')}
           </span>
           {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
         </Button>
@@ -142,7 +144,7 @@ export function HttpToolTester({ httpConfig, parameters, toolName }: HttpToolTes
         {/* Test Parameters */}
         {parameters.length > 0 && (
           <div className="space-y-3">
-            <Label className="text-sm font-medium">Тестовые значения параметров</Label>
+            <Label className="text-sm font-medium">{t('tools.testParamValues')}</Label>
             <div className="grid gap-2">
               {parameters.map((param) => (
                 <div key={param.name} className="flex gap-2 items-center">
@@ -153,7 +155,7 @@ export function HttpToolTester({ httpConfig, parameters, toolName }: HttpToolTes
                   <Input
                     value={testParams[param.name] || ''}
                     onChange={(e) => updateParam(param.name, e.target.value)}
-                    placeholder={param.description || `Значение для ${param.name}`}
+                    placeholder={param.description || `${t('tools.valueFor')} ${param.name}`}
                     className="flex-1 text-sm h-8"
                     type={param.type === 'number' ? 'number' : 'text'}
                   />
@@ -174,12 +176,12 @@ export function HttpToolTester({ httpConfig, parameters, toolName }: HttpToolTes
           {testing ? (
             <>
               <Loader2 className="h-4 w-4 animate-spin mr-2" />
-              Тестирование...
+              {t('tools.testingInProgress')}
             </>
           ) : (
             <>
               <Play className="h-4 w-4 mr-2" />
-              Выполнить тест
+              {t('tools.runTest')}
             </>
           )}
         </Button>
@@ -203,7 +205,7 @@ export function HttpToolTester({ httpConfig, parameters, toolName }: HttpToolTes
                 "font-medium",
                 result.success ? "text-emerald-500" : "text-destructive"
               )}>
-                {result.success ? 'Успешно' : 'Ошибка'}
+                {result.success ? t('tools.testSuccess') : t('tools.testError')}
               </span>
               {result.duration_ms && (
                 <span className="text-xs text-muted-foreground ml-auto">
@@ -241,7 +243,7 @@ export function HttpToolTester({ httpConfig, parameters, toolName }: HttpToolTes
             {result.full_response && (
               <details className="mt-2">
                 <summary className="text-xs text-muted-foreground cursor-pointer hover:text-foreground">
-                  Полный ответ
+                  {t('tools.fullResponse')}
                 </summary>
                 <ScrollArea className="max-h-[150px] mt-1">
                   <pre className="text-xs font-mono whitespace-pre-wrap break-all bg-background/50 rounded p-2">
@@ -255,7 +257,7 @@ export function HttpToolTester({ httpConfig, parameters, toolName }: HttpToolTes
             {result.response_body && (
               <details className="mt-2">
                 <summary className="text-xs text-muted-foreground cursor-pointer hover:text-foreground">
-                  Тело ответа
+                  {t('tools.responseBody')}
                 </summary>
                 <pre className="text-xs font-mono whitespace-pre-wrap break-all bg-background/50 rounded p-2 mt-1">
                   {result.response_body}
@@ -268,7 +270,7 @@ export function HttpToolTester({ httpConfig, parameters, toolName }: HttpToolTes
         {/* Help Text */}
         {!result && (
           <p className="text-xs text-muted-foreground">
-            Заполните тестовые значения параметров и нажмите "Выполнить тест" для проверки конфигурации.
+            {t('tools.testHelpText')}
           </p>
         )}
       </CollapsibleContent>

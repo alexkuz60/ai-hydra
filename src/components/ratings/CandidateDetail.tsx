@@ -15,6 +15,7 @@ import { Separator } from '@/components/ui/separator';
 import { AGENT_ROLES, ROLE_CONFIG, type AgentRole } from '@/config/roles';
 import { RoleSelectOptions, RoleDisplay } from '@/components/ui/RoleSelectItem';
 import type { DuelType } from '@/hooks/useDuelConfig';
+import { getRatingsText } from './i18n';
 
 const COLLAPSE_KEY = 'hydra-candidate-detail-open';
 
@@ -90,22 +91,22 @@ export function CandidateDetail({
                   </h2>
                   <div className="flex items-center gap-2 shrink-0">
                     <Badge variant={isAvailable ? 'default' : 'secondary'} className="text-[10px] px-1.5 py-0">
-                      {isAvailable ? (
-                        <><Check className="h-3 w-3 mr-0.5" />{isRu ? 'Доступна' : 'Available'}</>
-                      ) : (
-                        <><X className="h-3 w-3 mr-0.5" />{isRu ? 'Недоступна' : 'Unavailable'}</>
-                      )}
+                     {isAvailable ? (
+                         <><Check className="h-3 w-3 mr-0.5" />{getRatingsText('candidateAvailable', isRu)}</>
+                       ) : (
+                         <><X className="h-3 w-3 mr-0.5" />{getRatingsText('candidateUnavailable', isRu)}</>
+                       )}
                     </Badge>
                     {isSelectedForContest && (
                       <Badge variant="default" className="text-[10px] px-1.5 py-0 bg-hydra-arbiter/20 text-hydra-arbiter border-hydra-arbiter/30">
                         <Crown className="h-3 w-3 mr-0.5" />
-                        {isRu ? 'На подиуме' : 'On podium'}
+                        {getRatingsText('candidateOnPodium', isRu)}
                       </Badge>
                     )}
                     {isSelectedForDuel && (
                       <Badge variant="default" className="text-[10px] px-1.5 py-0 bg-primary/20 text-primary border-primary/30">
                         <Swords className="h-3 w-3 mr-0.5" />
-                        {isRu ? 'Дуэлянт' : 'Duelist'}
+                        {getRatingsText('candidateDuelist', isRu)}
                       </Badge>
                     )}
                     <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0 transition-transform group-data-[state=open]:rotate-180" />
@@ -119,16 +120,16 @@ export function CandidateDetail({
                     {registry && (
                       <div className="flex-1 min-w-0 pr-4 border-r border-border">
                         <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-sm">
-                          <InfoRow icon={Cpu} label={isRu ? 'Создатель' : 'Creator'} value={registry.creator} />
-                          <InfoRow icon={Calendar} label={isRu ? 'Дата выпуска' : 'Released'} value={registry.releaseDate} />
-                          <InfoRow icon={Scale} label={isRu ? 'Параметры' : 'Parameters'} value={registry.parameterCount} />
-                          <InfoRow icon={DollarSign} label={isRu ? 'Тарифы' : 'Pricing'} value={formatPricing(registry.pricing)} />
-                          <InfoRow
-                            icon={KeyRound}
-                            label={isRu ? 'Тип' : 'Type'}
-                            value={model.requiresApiKey ? 'BYOK' : 'Lovable AI'}
-                          />
-                          <InfoRow icon={Globe} label={isRu ? 'Провайдер' : 'Provider'} value={model.provider} />
+                           <InfoRow icon={Cpu} label={getRatingsText('candidateCreator', isRu)} value={registry.creator} />
+                           <InfoRow icon={Calendar} label={getRatingsText('candidateReleased', isRu)} value={registry.releaseDate} />
+                           <InfoRow icon={Scale} label={getRatingsText('candidateParams', isRu)} value={registry.parameterCount} />
+                           <InfoRow icon={DollarSign} label={getRatingsText('candidatePricing', isRu)} value={formatPricing(registry.pricing)} />
+                           <InfoRow
+                             icon={KeyRound}
+                             label={getRatingsText('candidateType', isRu)}
+                             value={model.requiresApiKey ? 'BYOK' : 'Lovable AI'}
+                           />
+                           <InfoRow icon={Globe} label={getRatingsText('candidateProvider', isRu)} value={model.provider} />
                         </div>
                       </div>
                     )}
@@ -150,7 +151,7 @@ export function CandidateDetail({
                     <div className="w-52 shrink-0 pl-4 space-y-2.5">
                       {!isAvailable && model.requiresApiKey && (
                         <p className="text-[10px] text-muted-foreground p-1.5 rounded bg-muted/30">
-                          {isRu ? 'Добавьте API-ключ в профиле' : 'Add API key in profile'}
+                          {getRatingsText('candidateAddApiKey', isRu)}
                         </p>
                       )}
 
@@ -160,7 +161,7 @@ export function CandidateDetail({
                         disabled={!isAvailable}
                       >
                         <SelectTrigger className="h-8 text-xs">
-                          <SelectValue placeholder={isRu ? 'Роль...' : 'Role...'}>
+                          <SelectValue placeholder={getRatingsText('candidateRolePlaceholder', isRu)}>
                             {contestRole && ROLE_CONFIG[contestRole as AgentRole] ? (
                               <RoleDisplay role={contestRole as AgentRole} className="text-xs [&_svg]:h-3.5 [&_svg]:w-3.5" />
                             ) : undefined}
@@ -180,9 +181,9 @@ export function CandidateDetail({
                           onClick={() => onToggleContest?.(model.id)}
                         >
                           <Crown className="h-3.5 w-3.5 mr-1.5 text-hydra-arbiter" />
-                          {isSelectedForContest
-                            ? (isRu ? 'Убрать с подиума' : 'Remove from podium')
-                            : (isRu ? 'Пригласить на подиум' : 'Invite to podium')}
+                           {isSelectedForContest
+                             ? getRatingsText('candidateRemoveFromPodium', isRu)
+                             : getRatingsText('candidateInviteToPodium', isRu)}
                         </Button>
                         <Badge variant="secondary" className="text-[10px] px-1.5 py-0.5 shrink-0">
                           {contestModelCount}/8
@@ -205,9 +206,9 @@ export function CandidateDetail({
                             disabled={!isAvailable || isDuelRunning}
                             className="h-3.5 w-3.5"
                           />
-                          <span className="text-muted-foreground">{isRu ? 'Критик' : 'Critic'}</span>
-                        </label>
-                        <label className="flex items-center gap-1.5 cursor-pointer">
+                           <span className="text-muted-foreground">{getRatingsText('candidateCritic', isRu)}</span>
+                         </label>
+                         <label className="flex items-center gap-1.5 cursor-pointer">
                           <Checkbox
                             checked={isSelectedForDuel ? duelType === 'arbiter' : pendingDuelType === 'arbiter'}
                             onCheckedChange={() => {
@@ -220,13 +221,13 @@ export function CandidateDetail({
                             disabled={!isAvailable || isDuelRunning}
                             className="h-3.5 w-3.5"
                           />
-                          <span className="text-muted-foreground">{isRu ? 'Арбитр' : 'Arbiter'}</span>
+                           <span className="text-muted-foreground">{getRatingsText('candidateArbiter', isRu)}</span>
                         </label>
                       </div>
 
                       {isDuelRunning && (
                         <p className="text-[10px] text-muted-foreground italic">
-                          {isRu ? 'Дуэль идёт — замена запрещена' : 'Duel in progress — changes locked'}
+                          {getRatingsText('candidateDuelLocked', isRu)}
                         </p>
                       )}
 
@@ -248,9 +249,9 @@ export function CandidateDetail({
                           }}
                         >
                           <Swords className="h-3.5 w-3.5 mr-1.5 text-primary" />
-                          {isSelectedForDuel
-                            ? (isRu ? 'Отменить дуэль' : 'Cancel duel')
-                            : (isRu ? 'Вызвать на дуэль' : 'Challenge to duel')}
+                           {isSelectedForDuel
+                             ? getRatingsText('candidateCancelDuel', isRu)
+                             : getRatingsText('candidateChallengeDuel', isRu)}
                         </Button>
                         <Badge variant="secondary" className="text-[10px] px-1.5 py-0.5 shrink-0">
                           {duelModelCount}/2
@@ -267,7 +268,7 @@ export function CandidateDetail({
             <div className="text-center py-8 text-muted-foreground">
               <Brain className="h-10 w-10 mx-auto mb-3 opacity-30" />
               <p className="text-sm">
-                {isRu ? 'Подробная информация о модели пока недоступна' : 'Detailed model info not yet available'}
+                {getRatingsText('candidateNoDetailedInfo', isRu)}
               </p>
             </div>
           )}

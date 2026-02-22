@@ -12,6 +12,7 @@ import {
   ResizablePanel,
   ResizableHandle,
 } from '@/components/ui/resizable';
+import { getRatingsText } from './i18n';
 
 const STORAGE_KEY = 'portfolio-panel-size';
 const SELECTED_KEY = 'portfolio-selected-model';
@@ -142,9 +143,7 @@ export function ModelPortfolio() {
         if (Object.keys(next).length <= 3) {
           toast({
             variant: 'destructive',
-            description: isRu
-              ? 'Минимум 3 участника конкурса для корректного пьедестала.'
-              : 'Minimum 3 contest participants for a valid podium.',
+            description: getRatingsText('portfolioMinContestants', isRu),
           });
           return prev;
         }
@@ -153,9 +152,7 @@ export function ModelPortfolio() {
         if (Object.keys(next).length >= 8) {
           toast({
             variant: 'destructive',
-            description: isRu
-              ? 'Максимум 8 участников конкурса.'
-              : 'Maximum 8 contest participants.',
+            description: getRatingsText('portfolioMaxContestants', isRu),
           });
           return prev;
         }
@@ -173,9 +170,7 @@ export function ModelPortfolio() {
     if (isDuelRunning) {
       toast({
         variant: 'destructive',
-        description: isRu
-          ? 'Нельзя менять дуэлянтов во время дуэли. Дождитесь завершения.'
-          : 'Cannot change duelists while a duel is running. Wait for it to finish.',
+        description: getRatingsText('portfolioCannotChangeDuel', isRu),
       });
       return;
     }
@@ -187,9 +182,7 @@ export function ModelPortfolio() {
         if (Object.keys(next).length >= 2) {
           toast({
             variant: 'destructive',
-            description: isRu
-              ? 'Максимум 2 дуэлянта. Сначала уберите одного из выбранных.'
-              : 'Maximum 2 duelists. Remove one first.',
+            description: getRatingsText('portfolioMaxDuelists', isRu),
           });
           return prev;
         }
@@ -203,9 +196,7 @@ export function ModelPortfolio() {
     if (isDuelRunning) {
       toast({
         variant: 'destructive',
-        description: isRu
-          ? 'Нельзя менять тип дуэлянта во время дуэли.'
-          : 'Cannot change duelist type during a running duel.',
+        description: getRatingsText('portfolioCannotChangeType', isRu),
       });
       return;
     }
@@ -256,7 +247,7 @@ export function ModelPortfolio() {
             <div className="text-center">
               <Brain className="h-10 w-10 mx-auto mb-3 opacity-30" />
               <p className="text-sm">
-                {isRu ? 'Выберите модель для просмотра досье' : 'Select a model to view its dossier'}
+                {getRatingsText('portfolioSelectModel', isRu)}
               </p>
             </div>
           </div>
