@@ -55,5 +55,6 @@ export interface Message {
   reasoning_translated: string | null;
   confidence_score: number | null;
   created_at: string;
+  content_en?: string | null;
   metadata?: MessageMetadata | unknown;
 }

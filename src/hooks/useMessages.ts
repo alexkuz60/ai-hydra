@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Message, MessageMetadata } from '@/types/messages';
@@ -99,6 +99,33 @@ export function useMessages({ sessionId, onBeforeDeleteMessage }: UseMessagesPro
       supabase.removeChannel(channel);
     };
   }, [sessionId, fetchMessages]);
+
+  // Background translation: debounce translate-messages calls
+  const translateTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const scheduleBackgroundTranslation = useCallback(() => {
+    if (translateTimerRef.current) clearTimeout(translateTimerRef.current);
+    translateTimerRef.current = setTimeout(async () => {
+      try {
+        await supabase.functions.invoke('translate-messages', {
+          body: { batchSize: 5, targetLang: 'en' },
+        });
+      } catch (e) {
+        console.warn('[Messages] Background translation failed:', e);
+      }
+    }, 3000); // 3s debounce after last new message
+  }, []);
+
+  // Trigger background translation when new messages without content_en appear
+  useEffect(() => {
+    const hasUntranslated = messages.some(m => !m.content_en);
+    if (hasUntranslated && messages.length > 0) {
+      scheduleBackgroundTranslation();
+    }
+    return () => {
+      if (translateTimerRef.current) clearTimeout(translateTimerRef.current);
+    };
+  }, [messages, scheduleBackgroundTranslation]);
 
   // Delete a single message
   const handleDeleteMessage = useCallback(async (messageId: string) => {
