@@ -30,6 +30,7 @@ import {
   Group
 } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { FLOW_DICT } from './i18n';
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   ArrowDownToLine,
@@ -69,13 +70,20 @@ const colorMap: Record<string, string> = {
   'muted': 'bg-muted text-muted-foreground',
 };
 
-const categoryLabels: Record<string, { ru: string; en: string }> = {
-  basic: { ru: 'Базовые', en: 'Basic' },
-  data: { ru: 'Данные', en: 'Data' },
-  integration: { ru: 'Интеграции', en: 'Integrations' },
-  logic: { ru: 'Логика', en: 'Logic' },
-  ai: { ru: 'AI', en: 'AI' },
-  structure: { ru: 'Структура', en: 'Structure' },
+const categoryDictKey: Record<string, string> = {
+  basic: 'category.basic',
+  data: 'category.data',
+  integration: 'category.integration',
+  logic: 'category.logic',
+  ai: 'category.ai',
+  structure: 'category.structure',
+};
+
+const getCategoryLabel = (category: string, language: string): string => {
+  const key = categoryDictKey[category];
+  if (!key) return category;
+  const entry = FLOW_DICT[key];
+  return entry?.[language === 'ru' ? 'ru' : 'en'] ?? category;
 };
 
 const categoryOrder = ['basic', 'data', 'integration', 'logic', 'ai', 'structure'];
@@ -212,7 +220,7 @@ export function FlowSidebar({ onDragStart, isMinimized = false, onToggle }: Flow
                     <div className="space-y-1">
                       <span className="font-medium text-sm">{getNodeLabel(item.type)}</span>
                       <p className="text-xs text-muted-foreground">
-                        {categoryLabels[item.category]?.[language] || item.category}
+                        {getCategoryLabel(item.category, language)}
                       </p>
                     </div>
                   </TooltipContent>
@@ -247,7 +255,7 @@ export function FlowSidebar({ onDragStart, isMinimized = false, onToggle }: Flow
             >
               <CollapsibleTrigger className="flex items-center justify-between w-full px-2 py-1.5 rounded-md hover:bg-accent/50 transition-colors group">
                 <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider group-hover:text-foreground transition-colors">
-                  {categoryLabels[category]?.[language] || category}
+                  {getCategoryLabel(category, language)}
                 </span>
                 <div className="flex items-center gap-1">
                   <span className="text-[10px] text-muted-foreground/70">

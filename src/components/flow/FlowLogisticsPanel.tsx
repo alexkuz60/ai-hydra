@@ -19,6 +19,7 @@ import {
   Route,
   User,
 } from 'lucide-react';
+import { useFlowI18n } from './i18n';
 
 interface FlowLogisticsPanelProps {
   nodes: Node[];
@@ -33,9 +34,11 @@ interface FlowLogisticsPanelProps {
 function LogisticsMessageBubble({
   message,
   onStop,
+  tf,
 }: {
   message: LogisticsMessage;
   onStop?: () => void;
+  tf: (key: string) => string;
 }) {
   const isUser = message.role === 'user';
   const roleConfig = ROLE_CONFIG.flowregulator;
@@ -55,7 +58,7 @@ function LogisticsMessageBubble({
         ) : (
           <Route className={cn('h-3 w-3', roleConfig.color)} />
         )}
-        <span>{isUser ? 'Вы' : 'Логистик'}</span>
+        <span>{isUser ? tf('logistics.you') : tf('logistics.logistician')}</span>
       </div>
 
       <div className="prose prose-sm dark:prose-invert max-w-none">
@@ -74,7 +77,7 @@ function LogisticsMessageBubble({
             onClick={onStop}
           >
             <Square className="h-3 w-3 mr-1 fill-current" />
-            Остановить
+            {tf('logistics.stop')}
           </Button>
         </div>
       )}
@@ -91,6 +94,7 @@ export function FlowLogisticsPanel({
   initialQuestion,
 }: FlowLogisticsPanelProps) {
   const { t } = useLanguage();
+  const tf = useFlowI18n();
   const [input, setInput] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const initialSentRef = useRef(false);
@@ -183,6 +187,7 @@ export function FlowLogisticsPanel({
                 key={msg.id}
                 message={msg}
                 onStop={msg.isStreaming ? stopStreaming : undefined}
+                tf={tf}
               />
             ))
           )}

@@ -14,6 +14,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { ROLE_CONFIG } from '@/config/roles';
 import type { useHydraMemoryStats } from '@/hooks/useHydraMemoryStats';
+import { useMemoryI18n } from './i18n';
 
 type GraphNodeType = 'center' | 'role' | 'session' | 'knowledge';
 
@@ -44,6 +45,7 @@ type GraphLayer = 'role' | 'session' | 'knowledge' | 'cross';
 export function MemoryGraphTab({ stats }: { stats: ReturnType<typeof useHydraMemoryStats> }) {
   const { user } = useAuth();
   const { t, language } = useLanguage();
+  const tm = useMemoryI18n();
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [svgSize, setSvgSize] = useState({ w: 900, h: 560 });
@@ -118,7 +120,7 @@ export function MemoryGraphTab({ stats }: { stats: ReturnType<typeof useHydraMem
     const sessionIds = new Set<string>();
     const maxCount = Math.max(...stats.roleMemory.map(r => r.count), 1);
 
-    allNodes.push({ id: 'center', label: language === 'ru' ? 'Гидра' : 'Hydra', type: 'center', x: cx, y: cy, r: 20 });
+    allNodes.push({ id: 'center', label: tm('graph.hydra'), type: 'center', x: cx, y: cy, r: 20 });
 
     const roleRadius = Math.min(cx, cy) * 0.58;
     const sessionRadius = roleRadius * 1.58;
@@ -226,7 +228,7 @@ export function MemoryGraphTab({ stats }: { stats: ReturnType<typeof useHydraMem
         <div className="flex items-center justify-between">
           <CardTitle className="text-sm font-semibold flex items-center gap-2">
             <BrainCircuit className="h-4 w-4 text-[hsl(var(--hydra-memory))]" />
-            {language === 'ru' ? 'Граф памяти' : 'Memory Graph'}
+            {tm('graph.title')}
           </CardTitle>
           <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
             <Zap className="h-3 w-3 text-amber-400" />
