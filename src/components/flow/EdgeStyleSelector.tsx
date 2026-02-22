@@ -1,5 +1,6 @@
 import React from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useFlowI18n } from './i18n';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -43,6 +44,7 @@ const LINE_TYPE_ICONS: Record<EdgeLineType, React.ReactNode> = {
 export function EdgeStyleSelector({ settings, onSettingsChange, syncLoaded = true }: EdgeStyleSelectorProps) {
   const { language } = useLanguage();
   const isRu = language === 'ru';
+  const ft = useFlowI18n();
 
   const handleLineTypeChange = (lineType: EdgeLineType) => {
     onSettingsChange({ ...settings, defaultLineType: lineType });
@@ -69,14 +71,14 @@ export function EdgeStyleSelector({ settings, onSettingsChange, syncLoaded = tru
         <Button variant="outline" size="sm" className="gap-1.5">
           {LINE_TYPE_ICONS[settings.defaultLineType]}
           <span className="hidden md:inline">
-            {isRu ? 'Стиль связей' : 'Edge Style'}
+            {ft('edge.style')}
           </span>
           <ChevronDown className="h-3 w-3" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
         <DropdownMenuLabel>
-          {isRu ? 'Тип линии' : 'Line Type'}
+          {ft('edge.lineType')}
         </DropdownMenuLabel>
         {EDGE_LINE_OPTIONS.map((option) => (
           <DropdownMenuItem
@@ -95,7 +97,7 @@ export function EdgeStyleSelector({ settings, onSettingsChange, syncLoaded = tru
         <DropdownMenuSeparator />
         
         <DropdownMenuLabel>
-          {isRu ? 'Тип стрелки' : 'Arrow Type'}
+          {ft('edge.arrowType')}
         </DropdownMenuLabel>
         {EDGE_MARKER_OPTIONS.map((option) => (
           <DropdownMenuItem
@@ -117,14 +119,14 @@ export function EdgeStyleSelector({ settings, onSettingsChange, syncLoaded = tru
           checked={settings.defaultAnimated}
           onCheckedChange={handleAnimatedChange}
         >
-          {isRu ? 'Анимация потока' : 'Flow Animation'}
+          {ft('edge.flowAnimation')}
         </DropdownMenuCheckboxItem>
         
         <DropdownMenuCheckboxItem
           checked={settings.showDirectionStyles}
           onCheckedChange={handleDirectionStylesChange}
         >
-          {isRu ? 'Стили направления' : 'Direction Styles'}
+          {ft('edge.directionStyles')}
         </DropdownMenuCheckboxItem>
       </DropdownMenuContent>
     </DropdownMenu>

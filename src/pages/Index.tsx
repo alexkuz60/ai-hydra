@@ -7,7 +7,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import hydraLogo from '@/assets/hydra-logo.png';
 
 const Index = () => {
-  const { language } = useLanguage();
+  const { t } = useLanguage();
   return (
     <Layout defaultSidebarOpen={false}>
       <div className="relative w-full h-[calc(100vh-2.5rem)] flex items-center justify-center overflow-hidden">
@@ -25,7 +25,7 @@ const Index = () => {
             className="text-muted-foreground/60 pl-[4.25rem]"
             style={{ fontFamily: '"Quicksand", sans-serif', fontSize: 13, fontWeight: 500, lineHeight: 1.2 }}
           >
-            {language === 'ru' ? 'Здесь даже догмы эволюционируют' : 'Where even dogmas evolve'}
+            {t('page.home.tagline')}
           </span>
         </div>
         <HydraGears

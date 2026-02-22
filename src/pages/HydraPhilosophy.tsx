@@ -787,7 +787,7 @@ For the full English version, please refer to [PAPER.md](https://github.com/alex
 `;
 
 export default function HydraPhilosophy() {
-  const { language } = useLanguage();
+  const { t, language } = useLanguage();
   const content = language === 'ru' ? PAPER_RU : PAPER_EN;
   const tocItems = language === 'ru' ? TOC_RU : TOC_EN;
   const [tocOpen, setTocOpen] = useState(true);
@@ -824,7 +824,7 @@ export default function HydraPhilosophy() {
             <>
               <div className="flex items-center justify-between mb-3">
                 <span className="text-sm font-semibold text-foreground">
-                  {language === 'ru' ? 'Содержание' : 'Contents'}
+                  {t('hydrapedia.contents')}
                 </span>
                 <button onClick={() => setTocOpen(false)} className="p-1 rounded hover:bg-accent/50 text-muted-foreground">
                   <X className="h-4 w-4" />
@@ -840,7 +840,7 @@ export default function HydraPhilosophy() {
           <button
             onClick={() => setTocOpen(true)}
             className="absolute left-2 top-4 z-10 p-2 rounded-md bg-card border border-border shadow-sm hover:bg-accent/50 text-muted-foreground"
-            title={language === 'ru' ? 'Содержание' : 'Contents'}
+            title={t('hydrapedia.contents')}
           >
             <List className="h-4 w-4" />
           </button>

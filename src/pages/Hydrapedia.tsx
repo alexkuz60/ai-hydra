@@ -228,7 +228,7 @@ export default function Hydrapedia() {
     url.searchParams.set('heading', headingId);
     
     navigator.clipboard.writeText(url.toString());
-    toast.success(language === 'ru' ? 'Ссылка скопирована!' : 'Link copied!');
+    toast.success(t('hydrapedia.linkCopied'));
   }, [activeSection, language]);
 
   const handleSearchResultClick = useCallback((result: SearchResult) => {
@@ -405,7 +405,7 @@ export default function Hydrapedia() {
             onClick={() => setSearchOpen(true)}
           >
             <Search className="h-4 w-4" />
-            <span className="text-xs">{language === 'ru' ? 'Поиск' : 'Search'}</span>
+            <span className="text-xs">{t('hydrapedia.search')}</span>
             <kbd className="hidden md:inline-flex h-5 select-none items-center gap-1 rounded border border-primary/30 bg-primary/10 px-1.5 font-mono text-[10px] font-medium text-primary">
               ⌘K
             </kbd>
@@ -452,7 +452,7 @@ export default function Hydrapedia() {
                   ref={searchInputRef}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder={language === 'ru' ? 'Поиск по документации...' : 'Search documentation...'}
+                  placeholder={t('hydrapedia.searchPlaceholder')}
                   className="border-0 focus-visible:ring-0 p-0 h-auto text-sm"
                 />
                 <Button
@@ -490,12 +490,12 @@ export default function Hydrapedia() {
                     </div>
                   ) : (
                     <div className="p-6 text-center text-muted-foreground text-sm">
-                      {language === 'ru' ? 'Ничего не найдено' : 'No results found'}
+                      {t('hydrapedia.noResults')}
                     </div>
                   )
                 ) : (
                   <div className="p-6 text-center text-muted-foreground text-sm">
-                    {language === 'ru' ? 'Введите минимум 2 символа' : 'Enter at least 2 characters'}
+                    {t('hydrapedia.minChars')}
                   </div>
                 )}
               </ScrollArea>
@@ -654,7 +654,7 @@ export default function Hydrapedia() {
                     : "opacity-0 translate-y-4 pointer-events-none"
                 )}
                 onClick={scrollToTop}
-                aria-label={language === 'ru' ? 'Наверх' : 'Scroll to top'}
+                aria-label={t('hydrapedia.scrollToTop')}
               >
                 <ArrowUp className="h-5 w-5" />
               </Button>
@@ -674,7 +674,7 @@ export default function Hydrapedia() {
               <div className="p-3">
                 <div className="flex items-center gap-2 px-2 py-1.5 mb-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   <List className="h-3.5 w-3.5" />
-                  <span>{language === 'ru' ? 'Содержание' : 'Contents'}</span>
+                  <span>{t('hydrapedia.contents')}</span>
                 </div>
                 
                 <nav className="space-y-1">
@@ -712,7 +712,7 @@ export default function Hydrapedia() {
                         size="icon"
                         className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 mr-1"
                         onClick={(e) => copyLinkToHeading(heading.id, e)}
-                        title={language === 'ru' ? 'Скопировать ссылку' : 'Copy link'}
+                        title={t('hydrapedia.copyLink')}
                       >
                         <Link2 className="h-3 w-3" />
                       </Button>

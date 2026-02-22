@@ -172,7 +172,7 @@ const StaffRoles = () => {
               data-guide="staff-seed-button"
             >
               {isBulkSeeding ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-              {isRu ? 'Обучить всех техников' : 'Seed All Tech Roles'}
+              {t('staffRoles.seedAll')}
             </Button>
             {isAdmin && (
               <Button
@@ -182,7 +182,7 @@ const StaffRoles = () => {
                 disabled={isBulkSeeding || isForceSyncing}
               >
                 {isForceSyncing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-                {isRu ? 'Обновить брифинг' : 'Force Refresh'}
+                {t('staffRoles.forceRefresh')}
               </Button>
             )}
           </div>
@@ -269,7 +269,7 @@ const StaffRoles = () => {
                         />
                       ))}
 
-                      {technicalExpanded && <StaffGroupHeader expanded={otkExpanded} onToggle={() => setOtkExpanded(!otkExpanded)} icon={<ShieldAlert className="h-4 w-4" />} label={isRu ? 'Отдел ТехКонтроля (ОТК)' : 'Quality Control Dept.'} count={otkRoles.length} guideId="staff-otk-group" nested />}
+                      {technicalExpanded && <StaffGroupHeader expanded={otkExpanded} onToggle={() => setOtkExpanded(!otkExpanded)} icon={<ShieldAlert className="h-4 w-4" />} label={t('staffRoles.otkGroup')} count={otkRoles.length} guideId="staff-otk-group" nested />}
                       {technicalExpanded && otkExpanded && otkRoles.map(role => (
                         <StaffRoleRow
                           key={role} role={role} isSelected={selectedRole === role}

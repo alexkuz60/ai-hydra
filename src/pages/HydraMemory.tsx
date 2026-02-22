@@ -63,7 +63,7 @@ export default function HydraMemory() {
           <TabsList className="w-full justify-start flex-wrap gap-1 h-auto">
             <TabsTrigger value="arsenal" className="gap-2">
               <BrainCircuit className="h-3.5 w-3.5" />
-              {language === 'ru' ? 'Арсенал' : 'Arsenal'}
+              {t('memory.tab.arsenal')}
             </TabsTrigger>
             <TabsTrigger value="session" className="gap-2">
               <Database className="h-3.5 w-3.5" />
@@ -82,7 +82,7 @@ export default function HydraMemory() {
             </TabsTrigger>
             <TabsTrigger value="graphs" className="gap-2">
               <GitBranch className="h-3.5 w-3.5" />
-              {language === 'ru' ? 'Графы памяти и связей' : 'Memory & Connections Graphs'}
+              {t('memory.tab.graphs')}
             </TabsTrigger>
             <TabsTrigger value="storage" className="gap-2">
               <HardDrive className="h-3.5 w-3.5" />
@@ -94,7 +94,7 @@ export default function HydraMemory() {
             </TabsTrigger>
             <TabsTrigger value="chronicles" className="gap-2 text-hydra-arbiter data-[state=active]:text-hydra-arbiter">
               <ScrollText className="h-3.5 w-3.5" />
-              {language === 'ru' ? 'Хроники Эволюции' : 'Evolution Chronicles'}
+              {t('memory.tab.chronicles')}
             </TabsTrigger>
           </TabsList>
 

@@ -17,6 +17,24 @@ const dict: Record<string, { ru: string; en: string }> = {
   'category.logic': { ru: 'Логика', en: 'Logic' },
   'category.ai': { ru: 'AI', en: 'AI' },
   'category.structure': { ru: 'Структура', en: 'Structure' },
+
+  // EdgeStyleSelector
+  'edge.style': { ru: 'Стиль связей', en: 'Edge Style' },
+  'edge.lineType': { ru: 'Тип линии', en: 'Line Type' },
+  'edge.arrowType': { ru: 'Тип стрелки', en: 'Arrow Type' },
+  'edge.flowAnimation': { ru: 'Анимация потока', en: 'Flow Animation' },
+  'edge.directionStyles': { ru: 'Стили направления', en: 'Direction Styles' },
+
+  // EdgePropertiesPanel
+  'edge.properties': { ru: 'Свойства связи', en: 'Edge Properties' },
+  'edge.source': { ru: 'Источник', en: 'Source' },
+  'edge.target': { ru: 'Цель', en: 'Target' },
+  'edge.label': { ru: 'Подпись', en: 'Label' },
+  'edge.labelPlaceholder': { ru: 'Добавить подпись...', en: 'Add label...' },
+  'edge.dataType': { ru: 'Тип данных', en: 'Data Type' },
+  'edge.strokeWidth': { ru: 'Толщина', en: 'Stroke Width' },
+  'edge.animation': { ru: 'Анимация', en: 'Animation' },
+  'edge.delete': { ru: 'Удалить связь', en: 'Delete Edge' },
 };
 
 export function useFlowI18n() {

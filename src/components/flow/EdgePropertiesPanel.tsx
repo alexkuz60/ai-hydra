@@ -1,6 +1,7 @@
 import React from 'react';
 import { Edge } from '@xyflow/react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useFlowI18n } from './i18n';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -38,6 +39,7 @@ export function EdgePropertiesPanel({
 }: EdgePropertiesPanelProps) {
   const { language } = useLanguage();
   const isRu = language === 'ru';
+  const ft = useFlowI18n();
 
   const edgeData: FlowEdgeData = selectedEdge.data || {};
 
@@ -57,7 +59,7 @@ export function EdgePropertiesPanel({
         <div className="flex items-center gap-2">
           <Link2 className="h-4 w-4 text-primary" />
           <h3 className="font-semibold text-sm">
-            {isRu ? 'Свойства связи' : 'Edge Properties'}
+            {ft('edge.properties')}
           </h3>
         </div>
         <Button variant="ghost" size="icon" className="h-6 w-6" onClick={onClose}>
@@ -67,24 +69,24 @@ export function EdgePropertiesPanel({
 
       {/* Edge Info */}
       <div className="text-xs text-muted-foreground bg-muted/50 rounded p-2">
-        <div>{isRu ? 'Источник' : 'Source'}: <span className="text-foreground">{selectedEdge.source}</span></div>
-        <div>{isRu ? 'Цель' : 'Target'}: <span className="text-foreground">{selectedEdge.target}</span></div>
+        <div>{ft('edge.source')}: <span className="text-foreground">{selectedEdge.source}</span></div>
+        <div>{ft('edge.target')}: <span className="text-foreground">{selectedEdge.target}</span></div>
       </div>
 
       {/* Label */}
       <div className="space-y-2">
-        <Label className="text-xs">{isRu ? 'Подпись' : 'Label'}</Label>
+        <Label className="text-xs">{ft('edge.label')}</Label>
         <Input
           value={edgeData.label || ''}
           onChange={(e) => handleDataChange({ label: e.target.value })}
-          placeholder={isRu ? 'Добавить подпись...' : 'Add label...'}
+          placeholder={ft('edge.labelPlaceholder')}
           className="h-8 text-sm"
         />
       </div>
 
       {/* Line Type */}
       <div className="space-y-2">
-        <Label className="text-xs">{isRu ? 'Тип линии' : 'Line Type'}</Label>
+        <Label className="text-xs">{ft('edge.lineType')}</Label>
         <Select
           value={edgeData.lineType || 'smoothstep'}
           onValueChange={(value) => handleDataChange({ lineType: value as EdgeLineType })}
@@ -104,7 +106,7 @@ export function EdgePropertiesPanel({
 
       {/* Data Type */}
       <div className="space-y-2">
-        <Label className="text-xs">{isRu ? 'Тип данных' : 'Data Type'}</Label>
+        <Label className="text-xs">{ft('edge.dataType')}</Label>
         <Select
           value={edgeData.dataType || 'any'}
           onValueChange={(value) => handleDataChange({ dataType: value as FlowDataType })}
@@ -131,7 +133,7 @@ export function EdgePropertiesPanel({
       {/* Stroke Width */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <Label className="text-xs">{isRu ? 'Толщина' : 'Stroke Width'}</Label>
+          <Label className="text-xs">{ft('edge.strokeWidth')}</Label>
           <span className="text-xs text-muted-foreground">{edgeData.strokeWidth || 2}px</span>
         </div>
         <Slider
@@ -146,7 +148,7 @@ export function EdgePropertiesPanel({
 
       {/* Animation Toggle */}
       <div className="flex items-center justify-between">
-        <Label className="text-xs">{isRu ? 'Анимация' : 'Animation'}</Label>
+        <Label className="text-xs">{ft('edge.animation')}</Label>
         <Switch
           checked={edgeData.animated ?? true}
           onCheckedChange={(checked) => handleDataChange({ animated: checked })}
@@ -162,7 +164,7 @@ export function EdgePropertiesPanel({
           onClick={handleDelete}
         >
           <Trash2 className="h-4 w-4" />
-          {isRu ? 'Удалить связь' : 'Delete Edge'}
+          {ft('edge.delete')}
         </Button>
       </div>
     </div>

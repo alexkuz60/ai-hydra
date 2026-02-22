@@ -28,18 +28,18 @@ import { DuelArena } from '@/components/ratings/DuelArena';
 
 type Section = 'portfolio' | 'rules' | 'contest' | 'duel' | 'interview' | 'ratings';
 
-const SECTIONS: { id: Section; icon: React.ComponentType<{ className?: string }>; labelRu: string; labelEn: string; descRu: string; descEn: string }[] = [
-  { id: 'portfolio', icon: Briefcase, labelRu: 'Портфолио ИИ-моделей', labelEn: 'AI Model Portfolio', descRu: 'Каталог всех доступных моделей', descEn: 'Catalog of all available models' },
-  { id: 'rules', icon: ScrollText, labelRu: 'Правила конкурса', labelEn: 'Contest Rules', descRu: 'Настройка туров и критериев', descEn: 'Rounds and criteria setup' },
-  { id: 'contest', icon: Crown, labelRu: 'Конкурс интеллект-красоты', labelEn: 'Intelligence Contest', descRu: 'Соревнования между моделями', descEn: 'AI model competitions' },
-  { id: 'duel', icon: TournamentIcon, labelRu: 'Дуэль «К барьеру»', labelEn: 'Duel «En Garde»', descRu: 'Попарное состязание кандидатов', descEn: 'Head-to-head candidate battle' },
-  { id: 'interview', icon: UserCheck, labelRu: 'Скрининг-интервью', labelEn: 'Screening Interview', descRu: 'Пакетное тестирование победителей', descEn: 'Batch testing of contest winners' },
-  { id: 'ratings', icon: BarChart3, labelRu: 'Рейтинги ИИ-моделей', labelEn: 'AI Model Ratings', descRu: 'Статистика и оценки', descEn: 'Stats and evaluations' },
+const SECTIONS: { id: Section; icon: React.ComponentType<{ className?: string }>; labelKey: string; descKey: string }[] = [
+  { id: 'portfolio', icon: Briefcase, labelKey: 'page.podium.portfolio', descKey: 'page.podium.portfolioDesc' },
+  { id: 'rules', icon: ScrollText, labelKey: 'page.podium.rules', descKey: 'page.podium.rulesDesc' },
+  { id: 'contest', icon: Crown, labelKey: 'page.podium.contest', descKey: 'page.podium.contestDesc' },
+  { id: 'duel', icon: TournamentIcon, labelKey: 'page.podium.duel', descKey: 'page.podium.duelDesc' },
+  { id: 'interview', icon: UserCheck, labelKey: 'page.podium.interview', descKey: 'page.podium.interviewDesc' },
+  { id: 'ratings', icon: BarChart3, labelKey: 'page.podium.ratings', descKey: 'page.podium.ratingsDesc' },
 ];
 
 export default function ModelRatings() {
   const { user, loading: authLoading } = useAuth();
-  const { language } = useLanguage();
+  const { t, language } = useLanguage();
   const navigate = useNavigate();
   const cloudSynced = useCloudSyncStatus();
   const duelConfig = useDuelConfig();
@@ -110,10 +110,10 @@ export default function ModelRatings() {
         <div className="px-4 py-4 border-b border-border flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold">
-              {language === 'ru' ? 'Подиум ИИ-моделей' : 'AI Model Podium'}
+              {t('page.podium.title')}
             </h1>
             <p className="text-sm text-muted-foreground">
-              {language === 'ru' ? 'Портфолио, конкурсы и рейтинги' : 'Portfolio, contests & ratings'}
+              {t('page.podium.subtitle')}
             </p>
           </div>
           <CloudSyncIndicator loaded={cloudSynced} />
@@ -130,7 +130,7 @@ export default function ModelRatings() {
           >
             <div className="h-full flex flex-col hydra-nav-surface">
               <NavigatorHeader
-                title={language === 'ru' ? 'Разделы' : 'Sections'}
+                title={t('page.podium.sections')}
                 isMinimized={nav.isMinimized}
                 onToggle={nav.toggle}
               />
@@ -140,7 +140,7 @@ export default function ModelRatings() {
                   {SECTIONS.map(section => {
                     const Icon = section.icon;
                     const isActive = activeSection === section.id;
-                    const label = language === 'ru' ? section.labelRu : section.labelEn;
+                    const label = t(section.labelKey);
                     const guideAttr = `podium-${section.id}-btn`;
 
                     if (nav.isMinimized) {
@@ -163,7 +163,7 @@ export default function ModelRatings() {
                           <TooltipContent side="right" className="max-w-[200px]">
                             <div className="font-medium text-sm">{label}</div>
                             <div className="text-xs text-muted-foreground mt-1">
-                              {language === 'ru' ? section.descRu : section.descEn}
+                              {t(section.descKey)}
                             </div>
                           </TooltipContent>
                         </Tooltip>
@@ -186,7 +186,7 @@ export default function ModelRatings() {
                         <div className="min-w-0">
                           <div className="text-sm font-medium truncate">{label}</div>
                           <div className="text-xs opacity-60 truncate">
-                            {language === 'ru' ? section.descRu : section.descEn}
+                            {t(section.descKey)}
                           </div>
                         </div>
                       </button>
