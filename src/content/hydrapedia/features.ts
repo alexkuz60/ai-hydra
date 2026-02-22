@@ -979,12 +979,12 @@ In each model's settings you can choose:
 |---------|------------|
 | **Когнитивный арсенал** | Дашборд «подсознания» Гидры в 6 слоях: Инстинкты (промпты), Паттерны (поведение), Арсенал инструментов (Prompt/HTTP), Потоки мыслей, Достижения (конкурсы/собеседования), Долгосрочная память (3-уровневый RAG) |
 | **Контекст сессий** | Inline-менеджер чанков \`session_memory\` с фильтрами типов (decision/context/instruction/evaluation/summary/message), обнаружение дубликатов, массовое удаление, фидбэк 👍/👎 |
-| **Опыт ролей** | Записи \`role_memory\` с confidence-скорами, группировка по ролям, inline-удаление, раскрывающиеся детали |
+| **Опыт ролей** | Записи \`role_memory\` с confidence-скорами, группировка по ролям, inline-удаление, раскрывающиеся детали. Локализованный контент через \`metadata.content_en\` |
 | **База знаний** | \`role_knowledge\` (RAG) — инструменты очистки: сканирование дубликатов, удаление устаревших версий по \`source_url\`, фильтрация по роли и категории |
 | **Графы памяти и связей** | Два SVG-графа в двухколоночном layout (560px): Граф памяти (Гидра → роли → сессии, hover-glow, «горячие роли» ⚡) и Граф связей арсенала (гексагональная структура когнитивных слоёв) |
 | **Файлохранилище** | Файловый браузер с локализованными метками бакетов (Архив чатов / Файлы задач / Аватары) и тултипами технических ID |
 | **RAG-аналитика** | Мониторинг-дашборд: средняя релевантность, общее число извлечений, статистика фидбэка, распределение типов чанков |
-| **Хроники эволюции** | Лог автономной рефлексии: AI-ревизии от Эволюционера, резолюции Супервизора (✅/❌/💬/🔄), фильтры по роли/дате/статусу, редактор промпта Эволюционера |
+| **Хроники эволюции** | Лог автономной рефлексии: AI-ревизии от Эволюционера, резолюции Супервизора (✅/❌/💬/🔄), фильтры по роли/дате/статусу с кастомным Calendar (locale-aware), редактор промпта Эволюционера. Полная двуязычность контента (title_en, hypothesis_en, summary_en, supervisor_comment_en) |
 
 ## Когнитивный арсенал
 
@@ -1088,12 +1088,12 @@ Central command center of Hydra's entire cognitive subsystem — 8 functional ar
 |-----|---------|
 | **Cognitive Arsenal** | Dashboard of Hydra's "subconscious" in 6 layers: Instincts (prompts), Patterns (behavior), Tool Arsenal (Prompt/HTTP), Thought Flows, Achievements (contests/interviews), Long-term Memory (3-level RAG) |
 | **Session Memory** | Inline chunk manager for \`session_memory\` with type filters (decision/context/instruction/evaluation/summary/message), duplicate detection, batch deletion, feedback 👍/👎 |
-| **Role Experience** | \`role_memory\` records with confidence scores, role grouping, inline deletion, expandable details |
+| **Role Experience** | \`role_memory\` records with confidence scores, role grouping, inline deletion, expandable details. Localized content display via \`metadata.content_en\` |
 | **Knowledge Base** | \`role_knowledge\` (RAG) — cleanup tools: duplicate scanning, outdated version deletion by \`source_url\`, filtering by role and category |
 | **Memory & Connections Graphs** | Two SVG graphs in two-column layout (560px): Memory Graph (Hydra → roles → sessions, hover-glow, "hot roles" ⚡) and Arsenal Connections Graph (hexagonal cognitive layer structure) |
 | **File Storage** | File browser with localized bucket labels (Chat Archive / Task Files / Avatars) and technical ID tooltips |
 | **RAG Analytics** | Monitoring dashboard: average relevance, total retrievals, feedback statistics, chunk type distribution |
-| **Evolution Chronicles** | Autonomous reflection log: AI revisions from Evolutioner, Supervisor resolutions (✅/❌/💬/🔄), filters by role/date/status, Evolutioner prompt editor |
+| **Evolution Chronicles** | Autonomous reflection log: AI revisions from Evolutioner, Supervisor resolutions (✅/❌/💬/🔄), locale-aware Calendar date filters (ru/en), Evolutioner prompt editor. Full bilingual content support (title_en, hypothesis_en, summary_en, supervisor_comment_en) |
 
 ## Cognitive Arsenal
 
