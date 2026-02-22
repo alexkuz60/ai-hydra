@@ -9,6 +9,7 @@ import { History, UserCheck, UserMinus, FlaskConical, Ghost, RefreshCw } from 'l
 import { cn } from '@/lib/utils';
 import { getModelShortName } from '@/components/warroom/permodel/types';
 import type { AgentRole } from '@/config/roles';
+import { s } from './i18n';
 
 interface AssignmentRecord {
   id: string;
@@ -27,14 +28,15 @@ interface RoleAssignmentHistoryProps {
   role: AgentRole;
 }
 
-const reasonConfig: Record<string, { icon: typeof UserCheck; label: { ru: string; en: string }; color: string }> = {
-  replaced: { icon: UserMinus, label: { ru: 'Замещён', en: 'Replaced' }, color: 'text-destructive' },
-  manual: { icon: RefreshCw, label: { ru: 'Вручную', en: 'Manual' }, color: 'text-muted-foreground' },
-  retest_failed: { icon: FlaskConical, label: { ru: 'Не прошёл ретест', en: 'Retest failed' }, color: 'text-hydra-warning' },
+const reasonConfig: Record<string, { icon: typeof UserCheck; labelKey: 'replaced' | 'manual' | 'retestFailed'; color: string }> = {
+  replaced: { icon: UserMinus, labelKey: 'replaced', color: 'text-destructive' },
+  manual: { icon: RefreshCw, labelKey: 'manual', color: 'text-muted-foreground' },
+  retest_failed: { icon: FlaskConical, labelKey: 'retestFailed', color: 'text-hydra-warning' },
 };
 
 export function RoleAssignmentHistory({ role }: RoleAssignmentHistoryProps) {
   const { language } = useLanguage();
+  const isRu = language === 'ru';
   const { user } = useAuth();
   const [records, setRecords] = useState<AssignmentRecord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -63,7 +65,7 @@ export function RoleAssignmentHistory({ role }: RoleAssignmentHistoryProps) {
       <div className="space-y-3">
         <h3 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
           <History className="h-4 w-4" />
-          {language === 'ru' ? 'История назначений' : 'Assignment History'}
+          {s('assignmentHistory', isRu)}
         </h3>
         <div className="space-y-2">
           <Skeleton className="h-14 w-full" />
@@ -78,10 +80,10 @@ export function RoleAssignmentHistory({ role }: RoleAssignmentHistoryProps) {
       <div className="space-y-3">
         <h3 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
           <History className="h-4 w-4" />
-          {language === 'ru' ? 'История назначений' : 'Assignment History'}
+          {s('assignmentHistory', isRu)}
         </h3>
         <p className="text-xs text-muted-foreground italic">
-          {language === 'ru' ? 'Назначений пока нет. Проведите собеседование.' : 'No assignments yet. Run an interview.'}
+          {s('noAssignments', isRu)}
         </p>
       </div>
     );
@@ -93,7 +95,7 @@ export function RoleAssignmentHistory({ role }: RoleAssignmentHistoryProps) {
     <div className="space-y-3">
       <h3 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
         <History className="h-4 w-4" />
-        {language === 'ru' ? 'История назначений' : 'Assignment History'}
+        {s('assignmentHistory', isRu)}
         <Badge variant="outline" className="text-[10px] ml-auto">{records.length}</Badge>
       </h3>
 
@@ -122,7 +124,7 @@ export function RoleAssignmentHistory({ role }: RoleAssignmentHistoryProps) {
                     {isActive && (
                       <Badge variant="default" className="text-[10px] py-0 gap-1">
                         <UserCheck className="h-2.5 w-2.5" />
-                        {language === 'ru' ? 'Активен' : 'Active'}
+                        {s('active', isRu)}
                       </Badge>
                     )}
                   </div>
@@ -144,13 +146,13 @@ export function RoleAssignmentHistory({ role }: RoleAssignmentHistoryProps) {
 
                 <div className="flex items-center justify-between mt-1.5 text-[11px] text-muted-foreground">
                   <span>
-                    {new Date(record.assigned_at).toLocaleDateString(language === 'ru' ? 'ru-RU' : 'en-US', {
+                    {new Date(record.assigned_at).toLocaleDateString(isRu ? 'ru-RU' : 'en-US', {
                       day: 'numeric', month: 'short', year: '2-digit'
                     })}
                     {record.removed_at && (
                       <>
                         {' → '}
-                        {new Date(record.removed_at).toLocaleDateString(language === 'ru' ? 'ru-RU' : 'en-US', {
+                        {new Date(record.removed_at).toLocaleDateString(isRu ? 'ru-RU' : 'en-US', {
                           day: 'numeric', month: 'short', year: '2-digit'
                         })}
                       </>
@@ -160,7 +162,7 @@ export function RoleAssignmentHistory({ role }: RoleAssignmentHistoryProps) {
                   {reason && ReasonIcon && (
                     <span className={cn("flex items-center gap-1", reason.color)}>
                       <ReasonIcon className="h-3 w-3" />
-                      {reason.label[language]}
+                      {s(reason.labelKey, isRu)}
                     </span>
                   )}
                 </div>

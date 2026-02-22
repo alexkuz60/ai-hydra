@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { useKnowledgeVersioning } from '@/hooks/useKnowledgeVersioning';
+import { s } from './i18n';
 
 interface KnowledgeChangedBadgeProps {
   role: string;
@@ -32,11 +33,11 @@ export function KnowledgeChangedBadge({ role, isRu, onRecertify }: KnowledgeChan
           }}
         >
           <RefreshCw className="h-2.5 w-2.5" />
-          {isRu ? 'Обновлено' : 'Updated'}
+          {s('updated', isRu)}
         </Badge>
       </TooltipTrigger>
       <TooltipContent side="top" className="text-xs max-w-[200px]">
-        {isRu ? 'Знания изменились с последней аттестации. Нажмите для переаттестации.' : 'Knowledge changed since last certification. Click to re-certify.'}
+        {s('knowledgeChangedHint', isRu)}
         {changeSummary && <div className="font-mono text-[10px] mt-0.5">{changeSummary}</div>}
       </TooltipContent>
     </Tooltip>
