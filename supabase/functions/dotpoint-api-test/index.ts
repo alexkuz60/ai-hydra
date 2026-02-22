@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { detectModelType, getEndpointForType, buildTestPayload, type ProxyModelType } from "../_shared/proxyapi.ts";
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
@@ -99,31 +100,64 @@ Deno.serve(async (req) => {
 
     if (action === "test" && model_id) {
       const realModel = model_id.replace("dotpoint/", "");
+      // Detect model type for correct endpoint & payload
+      const modelType: ProxyModelType = body.model_type || detectModelType(model_id);
+
+      // STT and image_edit require file upload — skip
+      if (modelType === "stt" || modelType === "image_edit") {
+        return new Response(JSON.stringify({
+          status: "skipped",
+          model_type: modelType,
+          message: modelType === "stt"
+            ? "STT models require audio file upload — manual testing needed"
+            : "Image edit models require image upload — manual testing needed",
+        }), {
+          headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
+        });
+      }
+
+      const endpointPath = getEndpointForType(modelType);
+      const baseUrl = "https://llms.dotpoin.com";
+      const testUrl = `${baseUrl}${endpointPath}`;
+      const payload = buildTestPayload(realModel, modelType);
       const start = Date.now();
 
       try {
-        const resp = await fetch(`${DOTPOINT_BASE_URL}/chat/completions`, {
+        const resp = await fetch(testUrl, {
           method: "POST",
           headers: {
             Authorization: `Bearer ${dotpointKey}`,
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({
-            model: realModel,
-            messages: [{ role: "user", content: "Say hi in 3 words." }],
-            max_tokens: 30,
-            stream: false,
-          }),
+          body: JSON.stringify(payload),
           signal: AbortSignal.timeout(30_000),
         });
 
         const latency = Date.now() - start;
 
         if (resp.ok) {
-          const data = await resp.json();
-          const content = data.choices?.[0]?.message?.content || "";
-          const tokensIn = data.usage?.prompt_tokens || 0;
-          const tokensOut = data.usage?.completion_tokens || 0;
+          let content = "";
+          let tokensIn = 0;
+          let tokensOut = 0;
+
+          if (modelType === "tts") {
+            // TTS returns binary audio — just confirm 200
+            content = `[audio ${resp.headers.get("content-type") || "binary"}]`;
+            await resp.arrayBuffer();
+          } else if (modelType === "image") {
+            const data = await resp.json();
+            content = data.data?.[0]?.url ? "[image generated]" : "[ok]";
+          } else if (modelType === "embedding") {
+            const data = await resp.json();
+            const dims = data.data?.[0]?.embedding?.length || 0;
+            content = `[embedding ${dims}d]`;
+            tokensIn = data.usage?.prompt_tokens || 0;
+          } else {
+            const data = await resp.json();
+            content = data.choices?.[0]?.message?.content || "";
+            tokensIn = data.usage?.prompt_tokens || 0;
+            tokensOut = data.usage?.completion_tokens || 0;
+          }
 
           await supabase.from("proxy_api_logs").insert({
             user_id: user.id,
@@ -140,6 +174,7 @@ Deno.serve(async (req) => {
             status: "success",
             latency_ms: latency,
             content,
+            model_type: modelType,
             tokens: { input: tokensIn, output: tokensOut },
           }), {
             headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
