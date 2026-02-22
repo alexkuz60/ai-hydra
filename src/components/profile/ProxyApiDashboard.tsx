@@ -13,6 +13,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose,
 } from '@/components/ui/dialog';
 import { useProxyApiData } from '@/hooks/useProxyApiData';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { ProxyAnalyticsSection } from './proxyapi/ProxyAnalyticsSection';
 import { ProxyCatalogSection } from './proxyapi/ProxyCatalogSection';
 import { ProxyLogsTable } from './proxyapi/ProxyLogsTable';
@@ -34,6 +35,8 @@ interface ProxyApiDashboardProps {
 
 export function ProxyApiDashboard({ hasKey, proxyapiPriority, onPriorityChange, apiKeyValue, onApiKeyChange, keyMetadata: keyMeta, onExpirationChange, onSave, saving }: ProxyApiDashboardProps) {
   const api = useProxyApiData(hasKey);
+  const { language } = useLanguage();
+  const isRu = language === 'ru';
 
   // ── Shared sections ──────────────────────────────
   const renderKeySection = () => (
@@ -42,8 +45,8 @@ export function ProxyApiDashboard({ hasKey, proxyapiPriority, onPriorityChange, 
         <AccordionTrigger className="hover:no-underline">
           <div className="flex items-center gap-2">
             <Key className="h-4 w-4 text-primary" />
-            <span className="font-semibold">API-ключ</span>
-            {hasKey && <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30 ml-2">Активен</Badge>}
+            <span className="font-semibold">API-{isRu ? 'ключ' : 'key'}</span>
+            {hasKey && <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30 ml-2">{isRu ? 'Активен' : 'Active'}</Badge>}
           </div>
         </AccordionTrigger>
         <AccordionContent className="pb-4">
@@ -57,7 +60,7 @@ export function ProxyApiDashboard({ hasKey, proxyapiPriority, onPriorityChange, 
             onExpirationChange={onExpirationChange}
             hint={
               <>
-                Получите ключ на{' '}
+                {isRu ? 'Получите ключ на' : 'Get your key at'}{' '}
                 <a href="https://console.proxyapi.ru/keys" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
                   console.proxyapi.ru/keys
                 </a>
@@ -73,10 +76,13 @@ export function ProxyApiDashboard({ hasKey, proxyapiPriority, onPriorityChange, 
     <div className="flex items-center gap-3 mb-4 p-3 rounded-lg bg-amber-500/10 border border-amber-500/30">
       <AlertTriangle className="h-5 w-5 text-amber-500 flex-shrink-0" />
       <div className="flex-1">
-        <p className="text-sm font-semibold text-amber-400 mb-1">Альтернатива OpenRouter для России</p>
+        <p className="text-sm font-semibold text-amber-400 mb-1">
+          {isRu ? 'Альтернатива OpenRouter для России' : 'OpenRouter alternative for Russia'}
+        </p>
         <p className="text-xs text-muted-foreground mb-2">
-          ProxyAPI — российский шлюз для доступа к моделям OpenAI, Anthropic, Google и DeepSeek без VPN.
-          Поддерживает оплату в рублях. Используется как замена OpenRouter при блокировках.
+          {isRu
+            ? 'ProxyAPI — российский шлюз для доступа к моделям OpenAI, Anthropic, Google и DeepSeek без VPN. Поддерживает оплату в рублях. Используется как замена OpenRouter при блокировках.'
+            : 'ProxyAPI — Russian gateway for accessing OpenAI, Anthropic, Google, and DeepSeek models without VPN. Supports payment in rubles. Used as an OpenRouter replacement when blocked.'}
         </p>
         <div className="flex items-center gap-2">
           <Checkbox
@@ -85,7 +91,7 @@ export function ProxyApiDashboard({ hasKey, proxyapiPriority, onPriorityChange, 
             onCheckedChange={(checked) => onPriorityChange(!!checked)}
           />
           <Label htmlFor="dash-proxyapi-priority" className="text-sm text-muted-foreground cursor-pointer">
-            Приоритет над OpenRouter
+            {isRu ? 'Приоритет над OpenRouter' : 'Priority over OpenRouter'}
           </Label>
         </div>
       </div>
@@ -106,13 +112,15 @@ export function ProxyApiDashboard({ hasKey, proxyapiPriority, onPriorityChange, 
           <div className="flex items-center gap-3 p-4 rounded-lg bg-muted/50 border border-border">
             <AlertTriangle className="h-5 w-5 text-amber-500 flex-shrink-0" />
             <p className="text-sm text-muted-foreground">
-              Добавьте ключ ProxyAPI выше и сохраните для доступа к дашборду.
+              {isRu
+                ? 'Добавьте ключ ProxyAPI выше и сохраните для доступа к дашборду.'
+                : 'Add your ProxyAPI key above and save to access the dashboard.'}
             </p>
           </div>
           <div className="flex justify-end pt-2">
             <Button onClick={onSave} disabled={saving} size="sm">
               {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
-              Сохранить
+              {isRu ? 'Сохранить' : 'Save'}
             </Button>
           </div>
         </HydraCardContent>
@@ -141,8 +149,8 @@ export function ProxyApiDashboard({ hasKey, proxyapiPriority, onPriorityChange, 
             <AccordionTrigger className="hover:no-underline">
               <div className="flex items-center gap-2">
                 <Wifi className="h-4 w-4 text-primary" />
-                <span className="font-semibold">Статус подключения</span>
-                {api.pingResult && <StatusBadge status={api.pingResult.status} />}
+                <span className="font-semibold">{isRu ? 'Статус подключения' : 'Connection Status'}</span>
+                {api.pingResult && <StatusBadge status={api.pingResult.status} isRu={isRu} />}
               </div>
             </AccordionTrigger>
             <AccordionContent className="space-y-4 pb-4">
@@ -154,11 +162,11 @@ export function ProxyApiDashboard({ hasKey, proxyapiPriority, onPriorityChange, 
                 {api.pingResult && (
                   <div className="flex items-center gap-4 text-sm">
                     <span className="text-muted-foreground">
-                      Латенси: <strong className="text-foreground">{api.pingResult.latency_ms}ms</strong>
+                      {isRu ? 'Латенси' : 'Latency'}: <strong className="text-foreground">{api.pingResult.latency_ms}ms</strong>
                     </span>
                     {api.pingResult.model_count !== undefined && (
                       <span className="text-muted-foreground">
-                        Моделей: <strong className="text-foreground">{api.pingResult.model_count}</strong>
+                        {isRu ? 'Моделей' : 'Models'}: <strong className="text-foreground">{api.pingResult.model_count}</strong>
                       </span>
                     )}
                     {api.pingResult.error && <span className="text-destructive text-xs">{api.pingResult.error}</span>}
@@ -214,7 +222,7 @@ export function ProxyApiDashboard({ hasKey, proxyapiPriority, onPriorityChange, 
         <div className="flex justify-end pt-4">
           <Button onClick={onSave} disabled={saving} size="sm">
             {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
-            Сохранить
+            {isRu ? 'Сохранить' : 'Save'}
           </Button>
         </div>
       </HydraCardContent>
@@ -225,19 +233,20 @@ export function ProxyApiDashboard({ hasKey, proxyapiPriority, onPriorityChange, 
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <WifiOff className="h-5 w-5 text-destructive" />
-              Модель удалена
+              {isRu ? 'Модель удалена' : 'Model removed'}
             </DialogTitle>
             <DialogDescription>
-              Модель <strong>{api.goneModel?.displayName}</strong> была навсегда удалена из сервиса ProxyAPI (HTTP 410 Gone).
-              Она больше не доступна для запросов. Скрыть её из каталога?
+              {isRu
+                ? <>Модель <strong>{api.goneModel?.displayName}</strong> была навсегда удалена из сервиса ProxyAPI (HTTP 410 Gone). Она больше не доступна для запросов. Скрыть её из каталога?</>
+                : <>Model <strong>{api.goneModel?.displayName}</strong> has been permanently removed from ProxyAPI (HTTP 410 Gone). It is no longer available. Hide it from the catalog?</>}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <DialogClose asChild>
-              <Button variant="ghost">Оставить</Button>
+              <Button variant="ghost">{isRu ? 'Оставить' : 'Keep'}</Button>
             </DialogClose>
             <Button variant="destructive" onClick={api.handleConfirmRemove}>
-              Скрыть модель
+              {isRu ? 'Скрыть модель' : 'Hide model'}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -248,8 +257,8 @@ export function ProxyApiDashboard({ hasKey, proxyapiPriority, onPriorityChange, 
 
 // ─── Sub-components ────────────────────────────────────
 
-function StatusBadge({ status }: { status: string }) {
-  if (status === 'online') return <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30">Онлайн</Badge>;
-  if (status === 'timeout') return <Badge variant="destructive">Таймаут</Badge>;
-  return <Badge variant="destructive">Ошибка</Badge>;
+function StatusBadge({ status, isRu }: { status: string; isRu: boolean }) {
+  if (status === 'online') return <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30">{isRu ? 'Онлайн' : 'Online'}</Badge>;
+  if (status === 'timeout') return <Badge variant="destructive">{isRu ? 'Таймаут' : 'Timeout'}</Badge>;
+  return <Badge variant="destructive">{isRu ? 'Ошибка' : 'Error'}</Badge>;
 }

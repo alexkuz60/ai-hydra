@@ -128,7 +128,7 @@ export function DotPointDashboard({ hasKey, apiKeyValue, onApiKeyChange, keyMeta
               <div className="flex items-center gap-2">
                 <Wifi className="h-4 w-4 text-primary" />
                 <span className="font-semibold">{isRu ? 'Статус подключения' : 'Connection Status'}</span>
-                {api.pingResult && <StatusBadge status={api.pingResult.status} />}
+                {api.pingResult && <StatusBadge status={api.pingResult.status} isRu={isRu} />}
               </div>
             </AccordionTrigger>
             <AccordionContent className="space-y-4 pb-4">
@@ -208,8 +208,8 @@ export function DotPointDashboard({ hasKey, apiKeyValue, onApiKeyChange, keyMeta
   );
 }
 
-function StatusBadge({ status }: { status: string }) {
-  if (status === 'online') return <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30">Онлайн</Badge>;
-  if (status === 'timeout') return <Badge variant="destructive">Таймаут</Badge>;
-  return <Badge variant="destructive">Ошибка</Badge>;
+function StatusBadge({ status, isRu }: { status: string; isRu: boolean }) {
+  if (status === 'online') return <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30">{isRu ? 'Онлайн' : 'Online'}</Badge>;
+  if (status === 'timeout') return <Badge variant="destructive">{isRu ? 'Таймаут' : 'Timeout'}</Badge>;
+  return <Badge variant="destructive">{isRu ? 'Ошибка' : 'Error'}</Badge>;
 }

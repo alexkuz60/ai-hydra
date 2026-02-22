@@ -10,8 +10,9 @@ import { Loader2, Zap, Play, CheckCircle, XCircle, Clock, WifiOff, RefreshCw, Se
 import { ProxyApiLogo, PROVIDER_LOGOS, PROVIDER_COLORS } from '@/components/ui/ProviderLogos';
 import { cn } from '@/lib/utils';
 import { type ModelRegistryEntry, STRENGTH_LABELS } from '@/config/modelRegistry';
+import { useLanguage } from '@/contexts/LanguageContext';
 import type { ProxyApiCatalogModel, TestResult } from './types';
-import { STATUS_EXPLANATIONS, detectModelType, MODEL_TYPE_LABELS } from './types';
+import { getStatusExpl, detectModelType, MODEL_TYPE_LABELS } from './types';
 
 interface ProxyCatalogSectionProps {
   proxyModels: ModelRegistryEntry[];
@@ -42,6 +43,9 @@ export function ProxyCatalogSection({
   massTestRunning, massTestProgress,
   onTestModel, onMassTest, onAddUserModel, onRemoveUserModel, onRefreshCatalog,
 }: ProxyCatalogSectionProps) {
+  const { language } = useLanguage();
+  const isRu = language === 'ru';
+  const lang = isRu ? 'ru' : 'en';
   const [userListOpen, setUserListOpen] = useState(true);
   const [nativeListOpen, setNativeListOpen] = useState(true);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -65,10 +69,10 @@ export function ProxyCatalogSection({
       <AccordionTrigger className="hover:no-underline">
         <div className="flex items-center gap-2">
           <Zap className="h-4 w-4 text-primary" />
-          <span className="font-semibold">Каталог моделей</span>
+          <span className="font-semibold">{isRu ? 'Каталог моделей' : 'Model Catalog'}</span>
           <Badge variant="secondary" className="ml-2">
             {totalModels}
-            {catalogLoaded && <span className="text-muted-foreground ml-1">/ {proxyCatalogCount} в каталоге</span>}
+            {catalogLoaded && <span className="text-muted-foreground ml-1">/ {proxyCatalogCount} {isRu ? 'в каталоге' : 'in catalog'}</span>}
           </Badge>
         </div>
       </AccordionTrigger>
@@ -80,13 +84,15 @@ export function ProxyCatalogSection({
             <Input
               value={catalogSearch}
               onChange={e => onCatalogSearchChange(e.target.value)}
-              placeholder={catalogLoading ? 'Загрузка каталога...' : `Поиск среди ${proxyCatalogCount} моделей ProxyAPI...`}
+              placeholder={catalogLoading
+                ? (isRu ? 'Загрузка каталога...' : 'Loading catalog...')
+                : (isRu ? `Поиск среди ${proxyCatalogCount} моделей ProxyAPI...` : `Search ${proxyCatalogCount} ProxyAPI models...`)}
               className="pl-9 focus-visible:ring-offset-0"
               disabled={catalogLoading}
             />
             {catalogLoading && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />}
           </div>
-          <Button variant="outline" size="icon" onClick={onRefreshCatalog} disabled={catalogLoading} title="Обновить каталог">
+          <Button variant="outline" size="icon" onClick={onRefreshCatalog} disabled={catalogLoading} title={isRu ? 'Обновить каталог' : 'Refresh catalog'}>
             <RefreshCw className={cn("h-4 w-4", catalogLoading && "animate-spin")} />
           </Button>
         </div>
@@ -111,13 +117,15 @@ export function ProxyCatalogSection({
             {selectedIds.size > 0 && (
               <Button size="sm" onClick={handleBulkAdd} className="gap-2">
                 <Plus className="h-4 w-4" />
-                Добавить ({selectedIds.size})
+                {isRu ? 'Добавить' : 'Add'} ({selectedIds.size})
               </Button>
             )}
           </div>
         )}
         {catalogSearch.trim() && filteredCatalogModels.length === 0 && !catalogLoading && (
-          <p className="text-xs text-muted-foreground text-center py-2">Ничего не найдено среди {proxyCatalogCount} моделей</p>
+          <p className="text-xs text-muted-foreground text-center py-2">
+            {isRu ? `Ничего не найдено среди ${proxyCatalogCount} моделей` : `No results among ${proxyCatalogCount} models`}
+          </p>
         )}
 
         {/* User-added models */}
@@ -125,7 +133,7 @@ export function ProxyCatalogSection({
           <Collapsible open={userListOpen} onOpenChange={setUserListOpen}>
             <CollapsibleTrigger className="flex items-center gap-1 text-xs text-muted-foreground font-medium cursor-pointer hover:text-foreground transition-colors w-full">
               <ChevronRight className={cn("h-3 w-3 transition-transform", userListOpen && "rotate-90")} />
-              Пользовательский список ({userAddedModels.length})
+              {isRu ? 'Пользовательский список' : 'User list'} ({userAddedModels.length})
             </CollapsibleTrigger>
             <CollapsibleContent className="space-y-1 mt-1">
               {userAddedModels.map(model => (
@@ -136,6 +144,7 @@ export function ProxyCatalogSection({
                   isTesting={testingModel === model.id}
                   onTest={() => onTestModel(model.id)}
                   onRemove={() => onRemoveUserModel(model.id)}
+                  lang={lang}
                 />
               ))}
             </CollapsibleContent>
@@ -147,8 +156,8 @@ export function ProxyCatalogSection({
           <Button size="sm" variant="outline" onClick={onMassTest} disabled={massTestRunning || totalModels === 0} className="gap-2">
             {massTestRunning ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
             {massTestRunning
-              ? `Тестирование ${massTestProgress.done}/${massTestProgress.total}...`
-              : `Тест всех моделей (${totalModels})`}
+              ? (isRu ? `Тестирование ${massTestProgress.done}/${massTestProgress.total}...` : `Testing ${massTestProgress.done}/${massTestProgress.total}...`)
+              : (isRu ? `Тест всех моделей (${totalModels})` : `Test all models (${totalModels})`)}
           </Button>
           {massTestRunning && (
             <div className="flex-1 h-2 rounded-full bg-secondary overflow-hidden">
@@ -161,7 +170,7 @@ export function ProxyCatalogSection({
         <Collapsible open={nativeListOpen} onOpenChange={setNativeListOpen}>
           <CollapsibleTrigger className="flex items-center gap-1 text-xs text-muted-foreground font-medium cursor-pointer hover:text-foreground transition-colors w-full">
             <ChevronRight className={cn("h-3 w-3 transition-transform", nativeListOpen && "rotate-90")} />
-            ProxyAPI модели ({proxyModels.length})
+            {isRu ? 'ProxyAPI модели' : 'ProxyAPI models'} ({proxyModels.length})
           </CollapsibleTrigger>
           <CollapsibleContent className="space-y-1 mt-1">
             {proxyModels.map(model => (
@@ -173,6 +182,7 @@ export function ProxyCatalogSection({
                 onTest={() => onTestModel(model.id)}
                 onAdd={() => onAddUserModel(model.id)}
                 isAdded={userModelIds.has(model.id)}
+                lang={lang}
               />
             ))}
           </CollapsibleContent>
@@ -186,7 +196,7 @@ export function ProxyCatalogSection({
 
 function ModelTypeBadge({ modelId }: { modelId: string }) {
   const type = detectModelType(modelId);
-  if (type === 'chat') return null; // Default, no badge needed
+  if (type === 'chat') return null;
   const info = MODEL_TYPE_LABELS[type];
   return (
     <Badge variant="outline" className={cn("text-[10px] px-1.5 py-0", info.color)}>
@@ -195,13 +205,15 @@ function ModelTypeBadge({ modelId }: { modelId: string }) {
   );
 }
 
-function UserModelRow({ model, testResult, isTesting, onTest, onRemove }: {
+function UserModelRow({ model, testResult, isTesting, onTest, onRemove, lang }: {
   model: ProxyApiCatalogModel;
   testResult?: TestResult;
   isTesting: boolean;
   onTest: () => void;
   onRemove: () => void;
+  lang: 'ru' | 'en';
 }) {
+  const isRu = lang === 'ru';
   const modelType = detectModelType(model.id);
   const typeInfo = MODEL_TYPE_LABELS[modelType];
   return (
@@ -218,11 +230,11 @@ function UserModelRow({ model, testResult, isTesting, onTest, onRemove }: {
         </div>
         <p className="text-xs text-muted-foreground">{model.owned_by}</p>
       </div>
-      {testResult && <TestStatusIcon testResult={testResult} />}
-      <Button size="sm" variant="ghost" className="flex-shrink-0 h-8 w-8 p-0" onClick={onTest} disabled={isTesting} title="Тест модели">
+      {testResult && <TestStatusIcon testResult={testResult} lang={lang} />}
+      <Button size="sm" variant="ghost" className="flex-shrink-0 h-8 w-8 p-0" onClick={onTest} disabled={isTesting} title={isRu ? 'Тест модели' : 'Test model'}>
         {isTesting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
       </Button>
-      <Button size="sm" variant="ghost" className="flex-shrink-0 h-8 w-8 p-0 text-muted-foreground hover:text-destructive" onClick={onRemove} title="Удалить из списка">
+      <Button size="sm" variant="ghost" className="flex-shrink-0 h-8 w-8 p-0 text-muted-foreground hover:text-destructive" onClick={onRemove} title={isRu ? 'Удалить из списка' : 'Remove from list'}>
         <Trash2 className="h-4 w-4" />
       </Button>
     </div>
@@ -230,8 +242,9 @@ function UserModelRow({ model, testResult, isTesting, onTest, onRemove }: {
 }
 
 // Shared test status icon with tooltip
-function TestStatusIcon({ testResult }: { testResult: TestResult }) {
-  const expl = STATUS_EXPLANATIONS[testResult.status];
+function TestStatusIcon({ testResult, lang }: { testResult: TestResult; lang: 'ru' | 'en' }) {
+  const isRu = lang === 'ru';
+  const expl = getStatusExpl(testResult.status, lang);
   return (
     <TooltipProvider delayDuration={200}>
       <Tooltip>
@@ -251,9 +264,9 @@ function TestStatusIcon({ testResult }: { testResult: TestResult }) {
         </TooltipTrigger>
         <TooltipContent side="top" className="max-w-[280px]">
           <p className="text-xs">{testResult.message || expl?.description || testResult.error}</p>
-          {testResult.model_type && <p className="text-xs text-muted-foreground mt-1">Тип: {MODEL_TYPE_LABELS[testResult.model_type]?.label || testResult.model_type}</p>}
+          {testResult.model_type && <p className="text-xs text-muted-foreground mt-1">{isRu ? 'Тип' : 'Type'}: {MODEL_TYPE_LABELS[testResult.model_type]?.label || testResult.model_type}</p>}
           {testResult.tokens && (testResult.tokens.input > 0 || testResult.tokens.output > 0) && (
-            <p className="text-xs text-muted-foreground mt-1">Токены: {testResult.tokens.input}/{testResult.tokens.output}</p>
+            <p className="text-xs text-muted-foreground mt-1">{isRu ? 'Токены' : 'Tokens'}: {testResult.tokens.input}/{testResult.tokens.output}</p>
           )}
         </TooltipContent>
       </Tooltip>
@@ -261,14 +274,16 @@ function TestStatusIcon({ testResult }: { testResult: TestResult }) {
   );
 }
 
-function ModelRow({ model, testResult, isTesting, onTest, onAdd, isAdded }: {
+function ModelRow({ model, testResult, isTesting, onTest, onAdd, isAdded, lang }: {
   model: ModelRegistryEntry;
   testResult?: TestResult;
   isTesting: boolean;
   onTest: () => void;
   onAdd: () => void;
   isAdded: boolean;
+  lang: 'ru' | 'en';
 }) {
+  const isRu = lang === 'ru';
   const isDeprecated = model.displayName.includes('⚠️');
   const creatorProvider = model.creator.includes('OpenAI') ? 'openai'
     : model.creator.includes('Anthropic') ? 'anthropic'
@@ -293,18 +308,18 @@ function ModelRow({ model, testResult, isTesting, onTest, onAdd, isAdded }: {
       <div className="hidden md:flex items-center gap-1 flex-shrink-0">
         {model.strengths.slice(0, 3).map(s => (
           <Badge key={s} variant="outline" className="text-[10px] px-1.5 py-0">
-            {STRENGTH_LABELS[s]?.ru || s}
+            {(isRu ? STRENGTH_LABELS[s]?.ru : STRENGTH_LABELS[s]?.en) || STRENGTH_LABELS[s]?.ru || s}
           </Badge>
         ))}
       </div>
 
-      {testResult && <TestStatusIcon testResult={testResult} />}
+      {testResult && <TestStatusIcon testResult={testResult} lang={lang} />}
 
-      <Button size="sm" variant="ghost" className="flex-shrink-0 h-8 w-8 p-0" onClick={onTest} disabled={isTesting} title="Тест модели">
+      <Button size="sm" variant="ghost" className="flex-shrink-0 h-8 w-8 p-0" onClick={onTest} disabled={isTesting} title={isRu ? 'Тест модели' : 'Test model'}>
         {isTesting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
       </Button>
       {!isAdded && (
-        <Button size="sm" variant="ghost" className="flex-shrink-0 h-8 w-8 p-0 text-muted-foreground hover:text-primary" onClick={onAdd} title="Добавить в пользовательский список">
+        <Button size="sm" variant="ghost" className="flex-shrink-0 h-8 w-8 p-0 text-muted-foreground hover:text-primary" onClick={onAdd} title={isRu ? 'Добавить в пользовательский список' : 'Add to user list'}>
           <Plus className="h-4 w-4" />
         </Button>
       )}
