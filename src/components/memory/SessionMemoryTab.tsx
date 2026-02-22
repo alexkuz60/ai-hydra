@@ -22,7 +22,16 @@ import { TermLabel } from '@/components/ui/TermLabel';
 import { StatCard, CHUNK_TYPE_CONFIG, CHUNK_TYPE_COLORS, findDuplicates } from './shared';
 
 export function SessionMemoryTab({ stats, loading }: { stats: ReturnType<typeof useHydraMemoryStats>; loading: boolean }) {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+
+  // Helper: get localized content from chunk
+  const getLocalizedContent = (item: SessionMemoryChunk | SearchResult): string => {
+    if (language === 'en') {
+      const meta = (typeof item.metadata === 'object' && item.metadata !== null ? item.metadata : {}) as Record<string, unknown>;
+      if (typeof meta.content_en === 'string' && meta.content_en) return meta.content_en;
+    }
+    return item.content;
+  };
   const globalMemory = useGlobalSessionMemory();
 
   const [activeFilter, setActiveFilter] = useState<ChunkType | 'all' | 'duplicates'>('all');
@@ -96,7 +105,7 @@ export function SessionMemoryTab({ stats, loading }: { stats: ReturnType<typeof 
     else if (activeFilter !== 'all') result = result.filter(c => c.chunk_type === activeFilter);
     if (!isAdvancedSearch && searchQuery.trim()) {
       const q = searchQuery.toLowerCase().trim();
-      result = result.filter(c => c.content.toLowerCase().includes(q));
+      result = result.filter(c => getLocalizedContent(c).toLowerCase().includes(q));
     }
     return result.map(c => ({ ...c, isSemanticResult: false, similarity: undefined }));
   }, [globalMemory.chunks, activeFilter, searchQuery, duplicateIds, isAdvancedSearch, searchResults]);
@@ -352,7 +361,7 @@ export function SessionMemoryTab({ stats, loading }: { stats: ReturnType<typeof 
                               </span>
                             )}
                           </div>
-                          <p className="text-sm line-clamp-3 text-foreground/90">{item.content}</p>
+                          <p className="text-sm line-clamp-3 text-foreground/90">{getLocalizedContent(item)}</p>
                           {'retrieved_count' in item && (item as SessionMemoryChunk).retrieved_count! > 0 && (
                             <div className="flex items-center gap-1.5 mt-1">
                               <TermLabel term="retrieved_count" className="text-[10px] text-muted-foreground flex items-center gap-0.5">
