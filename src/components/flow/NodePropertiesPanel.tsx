@@ -3,7 +3,7 @@ import { Node } from '@xyflow/react';
 import {
   X, ArrowDownToLine, ArrowUpFromLine, FileText, Brain, GitBranch, Wrench,
   Shuffle, Filter, Combine, Split, Database, Globe, HardDrive, Repeat, Clock, LayoutList,
-  Sparkles, MemoryStick, Tags, Group, SkipForward
+  Sparkles, MemoryStick, Tags, Group, SkipForward, Languages
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -22,7 +22,7 @@ import {
   InputNodeForm, OutputNodeForm, ModelNodeForm, PromptNodeForm, ToolNodeForm,
   ConditionNodeForm, TransformNodeForm, FilterNodeForm, MergeNodeForm, SplitNodeForm,
   LoopNodeForm, DelayNodeForm, SwitchNodeForm,
-  EmbeddingNodeForm, MemoryNodeForm, ClassifierNodeForm, DefaultNodeForm,
+  EmbeddingNodeForm, MemoryNodeForm, ClassifierNodeForm, TranslateNodeForm, DefaultNodeForm,
 } from './properties/NodeForms';
 
 interface PromptLibraryItem {
@@ -45,7 +45,8 @@ const nodeIcons: Record<FlowNodeType, React.ElementType> = {
   condition: GitBranch, tool: Wrench, transform: Shuffle, filter: Filter,
   merge: Combine, split: Split, database: Database, api: Globe,
   storage: HardDrive, loop: Repeat, delay: Clock, switch: LayoutList,
-  embedding: Sparkles, memory: MemoryStick, classifier: Tags, group: Group,
+  embedding: Sparkles, memory: MemoryStick, classifier: Tags, translate: Languages,
+  group: Group,
 };
 
 const nodeColors: Record<FlowNodeType, string> = {
@@ -55,7 +56,7 @@ const nodeColors: Record<FlowNodeType, string> = {
   split: 'text-hydra-archivist', database: 'text-hydra-analyst', api: 'text-hydra-webhunter',
   storage: 'text-hydra-archivist', loop: 'text-hydra-moderator', delay: 'text-muted-foreground',
   switch: 'text-hydra-warning', embedding: 'text-hydra-expert', memory: 'text-hydra-advisor',
-  classifier: 'text-hydra-success', group: 'text-primary',
+  classifier: 'text-hydra-success', translate: 'text-hydra-translator', group: 'text-primary',
 };
 
 export function NodePropertiesPanel({ selectedNode, onClose, onUpdateNode, onDeleteNode }: NodePropertiesPanelProps) {
@@ -134,6 +135,7 @@ export function NodePropertiesPanel({ selectedNode, onClose, onUpdateNode, onDel
       case 'embedding': return <EmbeddingNodeForm {...props} />;
       case 'memory': return <MemoryNodeForm {...props} />;
       case 'classifier': return <ClassifierNodeForm {...props} />;
+      case 'translate': return <TranslateNodeForm {...props} />;
       default: return <DefaultNodeForm {...props} />;
     }
   };

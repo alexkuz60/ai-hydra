@@ -1003,6 +1003,65 @@ export const runFilterNode: NodeRunner = async (ctx) => {
 };
 
 /**
+ * Translate Node Runner
+ * Translates text between RU and EN using translate-batch edge function
+ */
+export const runTranslateNode: NodeRunner = async (ctx) => {
+  const { node, inputs, flowContext } = ctx;
+  const direction = (node.data.translateDirection as string) || 'ru-en';
+  const verifySemantic = Boolean(node.data.verifySemantic);
+  const targetLang = direction === 'ru-en' ? 'en' : 'ru';
+  
+  const inputText = String(Object.values(inputs)[0] || '');
+  if (!inputText.trim()) {
+    return { success: true, output: '' };
+  }
+
+  ctx.sendEvent({
+    type: 'node_progress',
+    nodeId: node.id,
+    data: { message: `Translating ${direction.toUpperCase()}...` },
+  });
+
+  const supabaseUrl = flowContext.supabaseUrl as string;
+  const supabaseKey = flowContext.supabaseKey as string;
+
+  const response = await fetch(`${supabaseUrl}/functions/v1/translate-batch`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${supabaseKey}`,
+      'Content-Type': 'application/json',
+      'apikey': supabaseKey,
+    },
+    body: JSON.stringify({
+      items: [{ id: 'flow', text: inputText }],
+      targetLang,
+      verifySemantic,
+    }),
+  });
+
+  if (!response.ok) {
+    const errText = await response.text();
+    return { success: false, output: null, error: `Translation failed: ${errText}` };
+  }
+
+  const data = await response.json();
+  const translation = data.results?.[0]?.translation || '';
+  const similarity = data.results?.[0]?.cosineSimilarity;
+
+  ctx.sendEvent({
+    type: 'node_progress',
+    nodeId: node.id,
+    data: { 
+      message: `Translated (${direction})${similarity != null ? ` — similarity: ${similarity}` : ''}`,
+      similarity,
+    },
+  });
+
+  return { success: true, output: translation };
+};
+
+/**
  * Registry of all node runners
  */
 export const nodeRunners: Record<string, NodeRunner> = {
@@ -1024,6 +1083,7 @@ export const nodeRunners: Record<string, NodeRunner> = {
   embedding: runEmbeddingNode,
   memory: runMemoryNode,
   classifier: runClassifierNode,
+  translate: runTranslateNode,
 };
 
 /**

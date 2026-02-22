@@ -10,6 +10,8 @@ export type FlowNodeType =
   | 'loop' | 'delay' | 'switch'
   // AI-specific
   | 'embedding' | 'memory' | 'classifier'
+  // Translation
+  | 'translate'
   // Grouping
   | 'group';
 
@@ -68,6 +70,9 @@ export interface FlowNodeData {
   memoryType?: 'short' | 'long' | 'rag';
   // Classifier node specific
   classifierLabels?: string[];
+  // Translate node specific
+  translateDirection?: 'ru-en' | 'en-ru';
+  verifySemantic?: boolean;
   // Bypass mode - skip execution during runtime
   bypassed?: boolean;
   // Allow additional properties
@@ -267,6 +272,15 @@ export const NODE_PALETTE: NodePaletteItem[] = [
     description: 'Классификация',
     icon: 'Tags',
     color: 'hydra-success',
+    category: 'ai',
+  },
+  // AI — Translate
+  {
+    type: 'translate',
+    label: 'Перевод',
+    description: 'Перевод RU↔EN',
+    icon: 'Languages',
+    color: 'hydra-translator',
     category: 'ai',
   },
   // Structure nodes
