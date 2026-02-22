@@ -103,7 +103,7 @@ export function BeautyContest({ selectedWinners, onToggleWinner: handleToggleWin
     if (!user || !contest.session) return;
     const taskId = contest.session.config?.taskId;
     if (!taskId) {
-      toast({ variant: 'destructive', description: isRu ? 'Задача не выбрана в конфигурации конкурса' : 'No task selected in contest config' });
+      toast({ variant: 'destructive', description: getRatingsText('noTaskInConfig', isRu) });
       return;
     }
     const exportableResults = contest.results.filter(r => r.response_text);
@@ -308,7 +308,7 @@ export function BeautyContest({ selectedWinners, onToggleWinner: handleToggleWin
           <CollapsibleTrigger className="w-full flex items-center gap-2 px-4 py-1.5 border-b border-border/30 hover:bg-muted/20 transition-colors text-left">
             <FileText className="h-3 w-3 text-muted-foreground flex-shrink-0" />
             <span className="text-[11px] font-medium text-muted-foreground truncate flex-1">
-              {isRu ? `Промпт ${getRatingsText('round', isRu)} ${(currentRoundIndex >= 0 ? currentRoundIndex : 0) + 1}` : `Round ${(currentRoundIndex >= 0 ? currentRoundIndex : 0) + 1} prompt`}
+               {isRu ? `Промпт ${getRatingsText('round', isRu)} ${(currentRoundIndex >= 0 ? currentRoundIndex : 0) + 1}` : `Round ${(currentRoundIndex >= 0 ? currentRoundIndex : 0) + 1} prompt`}
             </span>
             {promptOpen ? <ChevronUp className="h-3 w-3 text-muted-foreground" /> : <ChevronDown className="h-3 w-3 text-muted-foreground" />}
           </CollapsibleTrigger>
@@ -376,11 +376,11 @@ export function BeautyContest({ selectedWinners, onToggleWinner: handleToggleWin
               eliminationThreshold={(contest.session?.config as any)?.rules?.eliminationThreshold ?? 3}
               onEliminateModel={async (modelId) => {
                 await contest.eliminateModel(modelId);
-                toast({ description: isRu ? 'Модель снята с конкурса' : 'Model eliminated from contest' });
-              }}
-              onRestoreModel={async (modelId) => {
-                await contest.restoreModel(modelId);
-                toast({ description: isRu ? 'Модель возвращена в конкурс' : 'Model restored to contest' });
+                 toast({ description: getRatingsText('modelEliminated', isRu) });
+               }}
+               onRestoreModel={async (modelId) => {
+                 await contest.restoreModel(modelId);
+                 toast({ description: getRatingsText('modelRestored', isRu) });
               }}
             />
             <ScoringSchemeComparison
@@ -450,7 +450,7 @@ export function BeautyContest({ selectedWinners, onToggleWinner: handleToggleWin
         onConfirm={async () => {
           await contest.updateSessionStatus('completed');
           setFinishDialogOpen(false);
-          toast({ description: isRu ? 'Конкурс завершён' : 'Contest finished' });
+          toast({ description: getRatingsText('contestFinished', isRu) });
         }}
       />
     </div>

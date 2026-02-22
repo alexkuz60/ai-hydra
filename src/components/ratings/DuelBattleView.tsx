@@ -121,13 +121,13 @@ export function DuelBattleView({
       {/* Action row: extra round + prompt preview */}
       <div className="px-3 py-1.5 border-b border-border/30 flex items-center gap-2">
         <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={() => setPromptPreviewOpen(true)}
-          title={isRu ? 'Промпт последнего раунда' : 'Last round prompt'}>
+          title={getRatingsText('lastRoundPrompt', isRu)}>
           <FileText className="h-3.5 w-3.5" />
         </Button>
         {onAddExtraRound && !executing && !arbiterRunning && (
           <Button variant="outline" size="sm" className="h-7 text-xs gap-1" onClick={() => setExtraRoundOpen(true)}>
             <PlusCircle className="h-3 w-3" />
-            {isRu ? 'Доп. раунд' : 'Extra Round'}
+            {getRatingsText('extraRound', isRu)}
           </Button>
         )}
       </div>
@@ -207,19 +207,17 @@ export function DuelBattleView({
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <PlusCircle className="h-4 w-4" />
-              {isRu ? 'Дополнительный раунд' : 'Extra Round'}
+              {getRatingsText('extraRoundTitle', isRu)}
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
-            <p className="text-sm text-muted-foreground">
-              {isRu
-                ? 'Введите задание для дополнительного раунда дуэли.'
-                : 'Enter the prompt for the extra duel round.'}
-            </p>
-            <Textarea
-              value={extraRoundPrompt}
-              onChange={e => setExtraRoundPrompt(e.target.value)}
-              placeholder={isRu ? 'Задание для дополнительного раунда...' : 'Extra round prompt...'}
+             <p className="text-sm text-muted-foreground">
+               {getRatingsText('extraRoundDesc', isRu)}
+             </p>
+             <Textarea
+               value={extraRoundPrompt}
+               onChange={e => setExtraRoundPrompt(e.target.value)}
+               placeholder={getRatingsText('extraRoundPlaceholder', isRu)}
               className="min-h-[80px] text-xs resize-y"
             />
             <div className="flex gap-2 justify-end">
@@ -231,7 +229,7 @@ export function DuelBattleView({
                 onClick={() => { onAddExtraRound?.(extraRoundPrompt.trim()); setExtraRoundOpen(false); setExtraRoundPrompt(''); }}
               >
                 <Swords className="h-3 w-3 mr-1" />
-                {isRu ? 'Запустить раунд' : 'Start Round'}
+                {getRatingsText('startRound', isRu)}
               </Button>
             </div>
           </div>
@@ -244,7 +242,7 @@ export function DuelBattleView({
           <DialogHeader>
             <DialogTitle className="flex items-center gap-3">
               <FileText className="h-4 w-4" />
-              {isRu ? 'Промпт последнего раунда' : 'Last Round Prompt'}
+              {getRatingsText('lastRoundPrompt', isRu)}
               {promptB && (
                 <div className="flex gap-1 ml-auto">
                   <Button
