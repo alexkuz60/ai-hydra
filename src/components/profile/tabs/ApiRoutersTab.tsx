@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ProxyApiDashboard } from '@/components/profile/ProxyApiDashboard';
 import { OpenRouterLimitsDialog } from '@/components/profile/OpenRouterLimitsDialog';
@@ -6,8 +6,9 @@ import { HydraCard, HydraCardHeader, HydraCardTitle, HydraCardContent } from '@/
 import { ApiKeyField, type KeyMetadata } from '@/components/profile/ApiKeyField';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Network, Globe, Zap, Sparkles, AlertTriangle, Save, Loader2 } from 'lucide-react';
+import { Network, Globe, Zap, Sparkles, AlertTriangle, Save, Loader2, Wallet, RefreshCw } from 'lucide-react';
 import { DotPointDashboard } from '@/components/profile/DotPointDashboard';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ApiRoutersTabProps {
   apiKeys: Record<string, string>;
@@ -153,6 +154,67 @@ function LovableAIPanel({ language }: { language: string }) {
   );
 }
 
+// ── OpenRouter Balance Widget ─────────────────────────
+function OpenRouterBalanceWidget({ hasKey, language }: { hasKey: boolean; language: string }) {
+  const [balance, setBalance] = useState<{ usage_daily: number; usage_monthly: number; limit: number | null; limit_remaining: number | null } | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  const fetchBalance = useCallback(async () => {
+    if (!hasKey) return;
+    setLoading(true);
+    try {
+      const { data } = await supabase.rpc('get_my_api_keys');
+      const apiKey = data?.[0]?.openrouter_api_key;
+      if (!apiKey) return;
+      const res = await fetch('https://openrouter.ai/api/v1/key', {
+        headers: { 'Authorization': `Bearer ${apiKey}` },
+      });
+      if (res.ok) {
+        const json = await res.json();
+        setBalance(json.data);
+      }
+    } catch { /* silent */ } finally {
+      setLoading(false);
+    }
+  }, [hasKey]);
+
+  useEffect(() => {
+    if (hasKey) fetchBalance();
+  }, [hasKey, fetchBalance]);
+
+  if (!hasKey) return null;
+
+  return (
+    <div className="rounded-lg border bg-muted/30 p-3 space-y-2">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Wallet className="h-4 w-4 text-primary" />
+          <span className="text-sm font-medium">{language === 'ru' ? 'Баланс' : 'Balance'}</span>
+        </div>
+        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={fetchBalance} disabled={loading}>
+          <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
+        </Button>
+      </div>
+      {balance ? (
+        <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+          <span className="text-muted-foreground">{language === 'ru' ? 'Сегодня' : 'Today'}:</span>
+          <span className="font-mono text-right">${balance.usage_daily?.toFixed(4) ?? '0'}</span>
+          <span className="text-muted-foreground">{language === 'ru' ? 'Месяц' : 'Month'}:</span>
+          <span className="font-mono text-right">${balance.usage_monthly?.toFixed(4) ?? '0'}</span>
+          {balance.limit !== null && (
+            <>
+              <span className="text-muted-foreground">{language === 'ru' ? 'Остаток' : 'Remaining'}:</span>
+              <span className="font-mono text-right font-medium text-primary">${balance.limit_remaining?.toFixed(4)}</span>
+            </>
+          )}
+        </div>
+      ) : loading ? (
+        <div className="flex justify-center py-1"><Loader2 className="h-4 w-4 animate-spin text-muted-foreground" /></div>
+      ) : null}
+    </div>
+  );
+}
+
 // ── OpenRouter Panel ─────────────────────────────────
 
 function OpenRouterPanel({ apiKey, metadata, language, onKeyChange, onExpirationChange, onSave, saving }: {
@@ -193,6 +255,7 @@ function OpenRouterPanel({ apiKey, metadata, language, onKeyChange, onExpiration
             </>
           }
         />
+        <OpenRouterBalanceWidget hasKey={!!apiKey} language={language} />
         {apiKey && <OpenRouterLimitsDialog hasKey={!!apiKey} />}
         <div className="flex justify-end pt-2">
           <Button onClick={onSave} disabled={saving} size="sm">
