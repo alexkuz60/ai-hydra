@@ -46,7 +46,6 @@ export function ContestSummary() {
   const canSave = pipeline !== 'none' && pipeline in CONTEST_FLOW_TEMPLATES;
 
   const handleSavePlan = useCallback(async () => {
-    // Проверка обязательных полей
     const validationErrors = validateForSave();
     if (validationErrors.length > 0) {
       const errorMessages = validationErrors
@@ -54,9 +53,7 @@ export function ContestSummary() {
         .join(', ');
       toast({
         variant: 'destructive',
-        description: isRu 
-          ? `Ошибка валидации: ${errorMessages}` 
-          : `Validation error: ${errorMessages}`,
+        description: `${getRatingsText('validationError', isRu)} ${errorMessages}`,
       });
       return;
     }
@@ -78,14 +75,12 @@ export function ContestSummary() {
       taskPrompt: taskPrompt || undefined,
     });
 
-    const diagramName = `${isRu ? 'Конкурс' : 'Contest'}: ${isRu ? template.ru : template.en}`;
+    const diagramName = `${getRatingsText('contestPrefix', isRu)}: ${isRu ? template.ru : template.en}`;
 
     try {
       const result = await saveDiagram({
         name: diagramName,
-        description: isRu
-          ? `Автогенерация из плана конкурса. Участников: ${candidates.length}, Туров: ${roundCount}`
-          : `Auto-generated from contest plan. Participants: ${candidates.length}, Rounds: ${roundCount}`,
+        description: `${getRatingsText('contestAutoGenDesc', isRu)} ${candidates.length}, ${getRatingsText('contestAutoGenRounds', isRu)} ${roundCount}`,
         nodes,
         edges,
         viewport: { x: 0, y: 0, zoom: 0.75 },
@@ -102,12 +97,12 @@ export function ContestSummary() {
       });
 
       toast({
-        description: isRu ? 'План конкурса сохранён' : 'Contest plan saved',
+        description: getRatingsText('planSaved', isRu),
       });
     } catch (err: any) {
       toast({
         variant: 'destructive',
-        description: isRu ? `Ошибка: ${err.message}` : `Error: ${err.message}`,
+        description: `${getRatingsText('errorPrefix', isRu)} ${err.message}`,
       });
     }
   }, [canSave, pipeline, arbitration, roundCount, isRu, saveDiagram, toast, roundPrompt, updateSavedPlan, validateForSave]);
@@ -185,4 +180,3 @@ export function ContestSummary() {
     </HydraCard>
   );
 }
-

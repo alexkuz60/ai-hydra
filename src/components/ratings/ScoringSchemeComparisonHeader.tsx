@@ -3,6 +3,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { BarChart3, Info } from 'lucide-react';
 import type { ScoringScheme } from '@/lib/contestScoring';
+import { getRatingsText } from './i18n';
 
 interface ScoringSchemeComparisonHeaderProps {
   isRu: boolean;
@@ -19,23 +20,19 @@ export function ScoringSchemeComparisonHeader({
 }: ScoringSchemeComparisonHeaderProps) {
   return (
     <>
-      {/* Title */}
       <div className="px-3 py-2 border-b border-border/30 flex items-center gap-2">
         <BarChart3 className="h-3.5 w-3.5 text-muted-foreground" />
         <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          {isRu ? 'Сравнение схем оценки' : 'Scoring Schemes Comparison'}
+          {getRatingsText('schemesComparison', isRu)}
         </span>
         {disagreementCount > 0 && (
           <Badge variant="secondary" className="text-[10px] ml-auto gap-1">
             <Info className="h-2.5 w-2.5" />
-            {isRu
-              ? `${disagreementCount} расхождени${disagreementCount === 1 ? 'е' : 'й'}`
-              : `${disagreementCount} disagreement${disagreementCount > 1 ? 's' : ''}`}
+            {disagreementCount} {getRatingsText('schemesDisagreement', isRu)}
           </Badge>
         )}
       </div>
 
-      {/* Scheme labels row */}
       <div className="px-3 pt-2 pb-1 flex items-center gap-2">
         <div className="w-[120px] shrink-0" />
         <div className="flex-1 grid grid-cols-3 gap-2">

@@ -8,6 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import { MermaidPreview } from '@/components/warroom/MermaidPreview';
 import { MermaidBlock } from '@/components/warroom/MermaidBlock';
 import { SummaryItem } from './ContestSummaryItem';
+import { getRatingsText } from './i18n';
 
 interface SavedPlan {
   diagramId: string;
@@ -35,7 +36,7 @@ export function ContestSavedPlan({ savedPlan }: ContestSavedPlanProps) {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wider">
           <Workflow className="h-3 w-3" />
-          {isRu ? 'Сохранённый поток' : 'Saved Flow'}
+          {getRatingsText('savedFlow', isRu)}
         </div>
         <Button
           variant="ghost"
@@ -44,19 +45,19 @@ export function ContestSavedPlan({ savedPlan }: ContestSavedPlanProps) {
           onClick={() => navigate(`/flow-editor?diagram=${savedPlan.diagramId}`)}
         >
           <ExternalLink className="h-3 w-3" />
-          {isRu ? 'Открыть в редакторе' : 'Open in Editor'}
+          {getRatingsText('openInEditor', isRu)}
         </Button>
       </div>
 
       <div className="flex flex-wrap gap-x-4 gap-y-1">
         <SummaryItem
           icon={<Workflow className="h-3.5 w-3.5" />}
-          label={isRu ? 'Узлов' : 'Nodes'}
+          label={getRatingsText('nodesLabel', isRu)}
           value={String(savedPlan.nodeCount)}
         />
         <SummaryItem
           icon={<Workflow className="h-3.5 w-3.5" />}
-          label={isRu ? 'Связей' : 'Edges'}
+          label={getRatingsText('edgesLabel', isRu)}
           value={String(savedPlan.edgeCount)}
         />
       </div>

@@ -5,6 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Workflow, Info } from 'lucide-react';
 import { CONTEST_FLOW_TEMPLATES, type ContestFlowTemplateId } from '@/lib/contestFlowTemplates';
 import { useContestConfigContext } from '@/contexts/ContestConfigContext';
+import { getRatingsText } from './i18n';
 
 const PIPELINE_OPTIONS: { id: ContestFlowTemplateId; ru: string; en: string; descRu?: string; descEn?: string }[] = [
   { id: 'none', ru: 'Не нужен', en: 'Not needed' },
@@ -30,18 +31,18 @@ export function ContestPipelineSelector() {
         <div className="flex items-center gap-2 text-hydra-cyan">
           <Workflow className="h-4 w-4" />
           <span className="text-xs font-bold uppercase tracking-wider opacity-60">
-            {isRu ? 'Шаг 3' : 'Step 3'}
+            {getRatingsText('pipelineStep3', isRu)}
           </span>
         </div>
         <HydraCardTitle>
-          {isRu ? 'Пайплайн (шаблон потока)' : 'Pipeline (Flow Template)'}
+          {getRatingsText('pipelineTitle', isRu)}
         </HydraCardTitle>
       </HydraCardHeader>
 
       <HydraCardContent className="space-y-4">
         <div className="space-y-1.5">
           <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-            {isRu ? 'Шаблон потока выполнения' : 'Execution Flow Template'}
+            {getRatingsText('pipelineFlowTemplate', isRu)}
           </label>
            <Select value={pipeline} onValueChange={updatePipeline}>
             <SelectTrigger className="h-9">
@@ -56,7 +57,6 @@ export function ContestPipelineSelector() {
             </SelectContent>
           </Select>
 
-          {/* Description of selected template */}
           {selectedOption && selectedOption.id !== 'none' && (
             <p className="text-[10px] text-muted-foreground/80 mt-1">
               {isRu ? selectedOption.descRu : selectedOption.descEn}
@@ -65,9 +65,7 @@ export function ContestPipelineSelector() {
 
           {pipeline === 'none' && (
             <p className="text-[10px] text-muted-foreground/60">
-              {isRu
-                ? 'Без шаблона конкурс будет выполняться вручную.'
-                : 'Without a template the contest will run manually.'}
+              {getRatingsText('pipelineNoTemplate', isRu)}
             </p>
           )}
         </div>
@@ -75,9 +73,7 @@ export function ContestPipelineSelector() {
         <div className="flex items-start gap-2 p-2.5 rounded-md bg-muted/20 border border-border/20">
           <Info className="h-3.5 w-3.5 text-muted-foreground shrink-0 mt-0.5" />
           <p className="text-[11px] text-muted-foreground leading-relaxed">
-            {isRu
-              ? 'Шаблон определяет автоматическую цепочку: ответы кандидатов → оценки пользователя → арбитраж → подведение итогов.'
-              : 'Template defines the automated chain: candidate responses → user ratings → arbitration → final results.'}
+            {getRatingsText('pipelineInfo', isRu)}
           </p>
         </div>
       </HydraCardContent>
