@@ -101,6 +101,7 @@ export function useProxyApiData(hasKey: boolean) {
           body: JSON.stringify({ action: 'models' }),
         }
       );
+      if (!resp.ok) { setCatalogLoading(false); return; }
       const data = await resp.json();
       if (data.models) {
         setProxyCatalog(data.models as ProxyApiCatalogModel[]);
