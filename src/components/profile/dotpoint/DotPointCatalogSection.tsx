@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Loader2, Zap, Play, CheckCircle, XCircle, Clock, WifiOff, RefreshCw, Search, Plus, Network, Trash2 } from 'lucide-react';
+import { Loader2, Zap, Play, CheckCircle, XCircle, Clock, WifiOff, RefreshCw, Search, Plus, Network, Trash2, ChevronRight } from 'lucide-react';
 import { PROVIDER_LOGOS, PROVIDER_COLORS } from '@/components/ui/ProviderLogos';
 import { cn } from '@/lib/utils';
 import { type ModelRegistryEntry, STRENGTH_LABELS } from '@/config/modelRegistry';
@@ -39,6 +40,8 @@ export function DotPointCatalogSection({
   massTestRunning, massTestProgress,
   onTestModel, onMassTest, onAddUserModel, onRemoveUserModel, onRefreshCatalog,
 }: DotPointCatalogSectionProps) {
+  const [userListOpen, setUserListOpen] = useState(true);
+  const [nativeListOpen, setNativeListOpen] = useState(true);
   const totalModels = dotpointModels.length + userAddedModels.length;
 
   return (
@@ -106,34 +109,44 @@ export function DotPointCatalogSection({
 
         {/* User-added models */}
         {userAddedModels.length > 0 && (
-          <div className="space-y-1">
-            <p className="text-xs text-muted-foreground font-medium">Пользовательский список ({userAddedModels.length})</p>
-            {userAddedModels.map(model => (
-              <UserModelRow
+          <Collapsible open={userListOpen} onOpenChange={setUserListOpen}>
+            <CollapsibleTrigger className="flex items-center gap-1 text-xs text-muted-foreground font-medium cursor-pointer hover:text-foreground transition-colors w-full">
+              <ChevronRight className={cn("h-3 w-3 transition-transform", userListOpen && "rotate-90")} />
+              Пользовательский список ({userAddedModels.length})
+            </CollapsibleTrigger>
+            <CollapsibleContent className="space-y-1 mt-1">
+              {userAddedModels.map(model => (
+                <UserModelRow
+                  key={model.id}
+                  model={model}
+                  testResult={testResults[model.id]}
+                  isTesting={testingModel === model.id}
+                  onTest={() => onTestModel(model.id)}
+                  onRemove={() => onRemoveUserModel(model.id)}
+                />
+              ))}
+            </CollapsibleContent>
+          </Collapsible>
+        )}
+
+        {/* DotPoint registry models */}
+        <Collapsible open={nativeListOpen} onOpenChange={setNativeListOpen}>
+          <CollapsibleTrigger className="flex items-center gap-1 text-xs text-muted-foreground font-medium cursor-pointer hover:text-foreground transition-colors w-full">
+            <ChevronRight className={cn("h-3 w-3 transition-transform", nativeListOpen && "rotate-90")} />
+            Модели DotPoint ({dotpointModels.length})
+          </CollapsibleTrigger>
+          <CollapsibleContent className="space-y-1 mt-1">
+            {dotpointModels.map(model => (
+              <ModelRow
                 key={model.id}
                 model={model}
                 testResult={testResults[model.id]}
                 isTesting={testingModel === model.id}
                 onTest={() => onTestModel(model.id)}
-                onRemove={() => onRemoveUserModel(model.id)}
               />
             ))}
-          </div>
-        )}
-
-        {/* DotPoint registry models */}
-        <div className="space-y-1">
-          {userAddedModels.length > 0 && <p className="text-xs text-muted-foreground font-medium">Модели DotPoint</p>}
-          {dotpointModels.map(model => (
-            <ModelRow
-              key={model.id}
-              model={model}
-              testResult={testResults[model.id]}
-              isTesting={testingModel === model.id}
-              onTest={() => onTestModel(model.id)}
-            />
-          ))}
-        </div>
+          </CollapsibleContent>
+        </Collapsible>
       </AccordionContent>
     </AccordionItem>
   );
