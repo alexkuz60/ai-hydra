@@ -1351,6 +1351,44 @@ const translations: Translations = {
    
    // Common
    'common.and': { ru: 'и', en: 'and' },
+
+   // Pages
+   'page.home.tagline': { ru: 'Здесь даже догмы эволюционируют', en: 'Where even dogmas evolve' },
+   'page.podium.title': { ru: 'Подиум ИИ-моделей', en: 'AI Model Podium' },
+   'page.podium.subtitle': { ru: 'Портфолио, конкурсы и рейтинги', en: 'Portfolio, contests & ratings' },
+   'page.podium.sections': { ru: 'Разделы', en: 'Sections' },
+   'page.podium.portfolio': { ru: 'Портфолио ИИ-моделей', en: 'AI Model Portfolio' },
+   'page.podium.portfolioDesc': { ru: 'Каталог всех доступных моделей', en: 'Catalog of all available models' },
+   'page.podium.rules': { ru: 'Правила конкурса', en: 'Contest Rules' },
+   'page.podium.rulesDesc': { ru: 'Настройка туров и критериев', en: 'Rounds and criteria setup' },
+   'page.podium.contest': { ru: 'Конкурс интеллект-красоты', en: 'Intelligence Contest' },
+   'page.podium.contestDesc': { ru: 'Соревнования между моделями', en: 'AI model competitions' },
+   'page.podium.duel': { ru: 'Дуэль «К барьеру»', en: 'Duel «En Garde»' },
+   'page.podium.duelDesc': { ru: 'Попарное состязание кандидатов', en: 'Head-to-head candidate battle' },
+   'page.podium.interview': { ru: 'Скрининг-интервью', en: 'Screening Interview' },
+   'page.podium.interviewDesc': { ru: 'Пакетное тестирование победителей', en: 'Batch testing of contest winners' },
+   'page.podium.ratings': { ru: 'Рейтинги ИИ-моделей', en: 'AI Model Ratings' },
+   'page.podium.ratingsDesc': { ru: 'Статистика и оценки', en: 'Stats and evaluations' },
+
+   // Hydrapedia
+   'hydrapedia.search': { ru: 'Поиск', en: 'Search' },
+   'hydrapedia.searchPlaceholder': { ru: 'Поиск по документации...', en: 'Search documentation...' },
+   'hydrapedia.noResults': { ru: 'Ничего не найдено', en: 'No results found' },
+   'hydrapedia.minChars': { ru: 'Введите минимум 2 символа', en: 'Enter at least 2 characters' },
+   'hydrapedia.scrollToTop': { ru: 'Наверх', en: 'Scroll to top' },
+   'hydrapedia.contents': { ru: 'Содержание', en: 'Contents' },
+   'hydrapedia.copyLink': { ru: 'Скопировать ссылку', en: 'Copy link' },
+   'hydrapedia.linkCopied': { ru: 'Ссылка скопирована!', en: 'Link copied!' },
+
+   // HydraMemory tabs
+   'memory.tab.arsenal': { ru: 'Арсенал', en: 'Arsenal' },
+   'memory.tab.graphs': { ru: 'Графы памяти и связей', en: 'Memory & Connections Graphs' },
+   'memory.tab.chronicles': { ru: 'Хроники Эволюции', en: 'Evolution Chronicles' },
+
+   // StaffRoles
+   'staffRoles.seedAll': { ru: 'Обучить всех техников', en: 'Seed All Tech Roles' },
+   'staffRoles.forceRefresh': { ru: 'Обновить брифинг', en: 'Force Refresh' },
+   'staffRoles.otkGroup': { ru: 'Отдел ТехКонтроля (ОТК)', en: 'Quality Control Dept.' },
 };
 
 interface LanguageContextType {
