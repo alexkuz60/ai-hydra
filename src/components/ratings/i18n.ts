@@ -467,6 +467,91 @@ export const RATINGS_I18N = {
   withContextRounds: { ru: 'с контекстом', en: 'with' },
   roundContextSuffix: { ru: 'тура', en: 'round' },
   roundsContextSuffix: { ru: 'туров', en: 'rounds' },
+
+  // ===== DUEL PLAN EDITOR (scoring descriptions) =====
+  scoringDescWeightedAvg: { ru: 'Итоговый балл = среднее взвешенное по выбранным критериям', en: 'Final score = weighted average across selected criteria' },
+  scoringDescTournament: { ru: 'Модели проходят через сетку попарных сравнений', en: 'Models go through a bracket of pairwise comparisons' },
+  scoringDescElo: { ru: 'Динамический рейтинг по системе Эло на основе дуэлей', en: 'Dynamic rating based on Elo system from duels' },
+  duelTemplateChainInfo: { ru: 'Шаблон определяет цепочку: аргументы дуэлянтов → перекрёстное слияние → арбитраж → итоги раунда.', en: 'Template defines the chain: duelist arguments → cross-merge → arbitration → round results.' },
+
+  // ===== CRITIQUE SUMMARY CARD =====
+  critiqueTitle: { ru: 'Критика', en: 'Critique' },
+
+  // ===== LIKERT SUMMARY CARD =====
+  likertSummaryTitle: { ru: 'Сводка оценок арбитража', en: 'Arbitration Assessment Summary' },
+  likertAvgScore: { ru: 'Средний балл', en: 'Avg score' },
+  likertClaims: { ru: 'Аргументов', en: 'Claims' },
+  likertSessions: { ru: 'Сессий', en: 'Sessions' },
+  likertDistribution: { ru: 'Распределение оценок', en: 'Score Distribution' },
+  likertDisputed: { ru: 'Спорные аргументы', en: 'Disputed Arguments' },
+
+  // ===== LIKERT EVALUATION DISPLAY =====
+  likertArgumentAssessment: { ru: 'Оценка аргументов', en: 'Argument Assessment' },
+  likertShowArguments: { ru: 'Показать {count} аргументов', en: 'Show {count} arguments' },
+
+  // ===== CONTEST TASK SELECTOR =====
+  taskStep1: { ru: 'Шаг 1', en: 'Step 1' },
+  taskParticipantsAndTask: { ru: 'Участники и Задача', en: 'Participants & Task' },
+  taskLabel2: { ru: 'Задача', en: 'Task' },
+  taskSelectPlaceholder: { ru: 'Выберите задачу...', en: 'Select a task...' },
+  taskUntitled: { ru: 'Без названия', en: 'Untitled' },
+  taskAttachedFiles: { ru: 'Прикреплённые файлы', en: 'Attached Files' },
+  taskNoFilesAttach: { ru: 'Нет файлов. Прикрепите в панели Задач.', en: 'No files. Attach in Tasks panel.' },
+  taskSelectToViewFiles: { ru: 'Выберите задачу для просмотра файлов', en: 'Select a task to view files' },
+  taskPodiumParticipants: { ru: 'Участники подиума', en: 'Podium Participants' },
+  taskAddModel: { ru: 'Добавить модель', en: 'Add model' },
+  taskSearchModel: { ru: 'Поиск модели...', en: 'Search model...' },
+  taskNoModelsAvailable: { ru: 'Нет доступных моделей', en: 'No available models' },
+  taskAddModelsHint: { ru: 'Добавьте модели кнопкой выше или на вкладке «Портфолио»', en: 'Add models with the button above or from the "Portfolio" tab' },
+  taskRemove: { ru: 'Убрать', en: 'Remove' },
+
+  // ===== CONTEST PIPELINE SELECTOR =====
+  pipelineStep3: { ru: 'Шаг 3', en: 'Step 3' },
+  pipelineTitle: { ru: 'Пайплайн (шаблон потока)', en: 'Pipeline (Flow Template)' },
+  pipelineFlowTemplate: { ru: 'Шаблон потока выполнения', en: 'Execution Flow Template' },
+  pipelineNoTemplate: { ru: 'Без шаблона конкурс будет выполняться вручную.', en: 'Without a template the contest will run manually.' },
+  pipelineInfo: { ru: 'Шаблон определяет автоматическую цепочку: ответы кандидатов → оценки пользователя → арбитраж → подведение итогов.', en: 'Template defines the automated chain: candidate responses → user ratings → arbitration → final results.' },
+
+  // ===== CONTEST SAVED PLAN =====
+  savedFlow: { ru: 'Сохранённый поток', en: 'Saved Flow' },
+  openInEditor: { ru: 'Открыть в редакторе', en: 'Open in Editor' },
+  nodesLabel: { ru: 'Узлов', en: 'Nodes' },
+  edgesLabel: { ru: 'Связей', en: 'Edges' },
+
+  // ===== SCORING SCHEME COMPARISON =====
+  schemesComparison: { ru: 'Сравнение схем оценки', en: 'Scoring Schemes Comparison' },
+  schemesDisagreement: { ru: 'расхождений', en: 'disagreements' },
+  schemesFooter: { ru: '▲▼ — изменение позиции относительно средневзвешенного балла • Подсветка = расхождение рейтингов между схемами', en: '▲▼ — rank change vs weighted avg baseline • Highlight = ranking disagreement between schemes' },
+
+  // ===== MODEL PORTFOLIO =====
+  portfolioSelectModel: { ru: 'Выберите модель для просмотра досье', en: 'Select a model to view its dossier' },
+  portfolioMinContestants: { ru: 'Минимум 3 участника конкурса для корректного пьедестала.', en: 'Minimum 3 contest participants for a valid podium.' },
+  portfolioMaxContestants: { ru: 'Максимум 8 участников конкурса.', en: 'Maximum 8 contest participants.' },
+  portfolioCannotChangeDuel: { ru: 'Нельзя менять дуэлянтов во время дуэли. Дождитесь завершения.', en: 'Cannot change duelists while a duel is running. Wait for it to finish.' },
+  portfolioMaxDuelists: { ru: 'Максимум 2 дуэлянта. Сначала уберите одного из выбранных.', en: 'Maximum 2 duelists. Remove one first.' },
+  portfolioCannotChangeType: { ru: 'Нельзя менять тип дуэлянта во время дуэли.', en: 'Cannot change duelist type during a running duel.' },
+
+  // ===== CANDIDATE DETAIL =====
+  candidateAvailable: { ru: 'Доступна', en: 'Available' },
+  candidateUnavailable: { ru: 'Недоступна', en: 'Unavailable' },
+  candidateOnPodium: { ru: 'На подиуме', en: 'On podium' },
+  candidateDuelist: { ru: 'Дуэлянт', en: 'Duelist' },
+  candidateCreator: { ru: 'Создатель', en: 'Creator' },
+  candidateReleased: { ru: 'Дата выпуска', en: 'Released' },
+  candidateParams: { ru: 'Параметры', en: 'Parameters' },
+  candidatePricing: { ru: 'Тарифы', en: 'Pricing' },
+  candidateType: { ru: 'Тип', en: 'Type' },
+  candidateProvider: { ru: 'Провайдер', en: 'Provider' },
+  candidateAddApiKey: { ru: 'Добавьте API-ключ в профиле', en: 'Add API key in profile' },
+  candidateRolePlaceholder: { ru: 'Роль...', en: 'Role...' },
+  candidateRemoveFromPodium: { ru: 'Убрать с подиума', en: 'Remove from podium' },
+  candidateInviteToPodium: { ru: 'Пригласить на подиум', en: 'Invite to podium' },
+  candidateCritic: { ru: 'Критик', en: 'Critic' },
+  candidateArbiter: { ru: 'Арбитр', en: 'Arbiter' },
+  candidateDuelLocked: { ru: 'Дуэль идёт — замена запрещена', en: 'Duel in progress — changes locked' },
+  candidateCancelDuel: { ru: 'Отменить дуэль', en: 'Cancel duel' },
+  candidateChallengeDuel: { ru: 'Вызвать на дуэль', en: 'Challenge to duel' },
+  candidateNoDetailedInfo: { ru: 'Подробная информация о модели пока недоступна', en: 'Detailed model info not yet available' },
 } as const;
 
 export type RatingsI18nKey = keyof typeof RATINGS_I18N;

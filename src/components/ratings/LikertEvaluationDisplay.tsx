@@ -36,7 +36,6 @@ const LIKERT_COLORS = {
 export function LikertEvaluationDisplay({ claims, isRu }: LikertEvaluationDisplayProps) {
   if (!claims || claims.length === 0) return null;
 
-  // Count claims by score
   const scoreDistribution = {
     5: claims.filter(c => c.score === 5).length,
     4: claims.filter(c => c.score === 4).length,
@@ -52,10 +51,9 @@ export function LikertEvaluationDisplay({ claims, isRu }: LikertEvaluationDispla
   return (
     <div className="space-y-2">
       <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-        📊 {isRu ? 'Оценка аргументов' : 'Argument Assessment'} ({totalClaims})
+        📊 {getRatingsText('likertArgumentAssessment', isRu)} ({totalClaims})
       </div>
 
-      {/* Distribution bars */}
       <div className="space-y-1.5">
         {([5, 4, 3, 2, 1, 0] as const).map(score => {
           const count = scoreDistribution[score];
@@ -83,10 +81,9 @@ export function LikertEvaluationDisplay({ claims, isRu }: LikertEvaluationDispla
         })}
       </div>
 
-      {/* Claims breakdown (collapsed) */}
       <details className="text-[10px]">
         <summary className="cursor-pointer text-primary hover:underline">
-          {isRu ? `Показать ${totalClaims} аргументов` : `Show ${totalClaims} arguments`}
+          {getRatingsText('likertShowArguments', isRu).replace('{count}', String(totalClaims))}
         </summary>
         <div className="mt-2 space-y-1.5 pl-2 border-l border-border/50">
           {claims.map((claim, idx) => (

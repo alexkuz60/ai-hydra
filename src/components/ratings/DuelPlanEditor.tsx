@@ -143,14 +143,12 @@ export function DuelPlanEditor({ config, isRu, onLaunch }: DuelPlanEditorProps) 
       duelPrompt: config.config.duelPrompt,
     } as any);
 
-    const diagramName = `${isRu ? 'Дуэль' : 'Duel'}: ${isRu ? template.ru : template.en}`;
+    const diagramName = `${getRatingsText('duelPrefix', isRu)}: ${isRu ? template.ru : template.en}`;
 
     try {
       const result = await saveDiagram({
         name: diagramName,
-        description: isRu
-          ? `Автогенерация из плана дуэли. Раундов: ${config.config.roundCount}`
-          : `Auto-generated from duel plan. Rounds: ${config.config.roundCount}`,
+        description: `${getRatingsText('duelAutoGenDesc', isRu)} ${config.config.roundCount}`,
         nodes,
         edges,
         viewport: { x: 0, y: 0, zoom: 0.75 },
@@ -168,9 +166,9 @@ export function DuelPlanEditor({ config, isRu, onLaunch }: DuelPlanEditorProps) 
       setSavedPlan(plan);
       localStorage.setItem('hydra-duel-saved-plan', JSON.stringify(plan));
 
-      toast({ description: isRu ? 'План дуэли сохранён' : 'Duel plan saved' });
+      toast({ description: getRatingsText('duelPlanSaved', isRu) });
     } catch (err: any) {
-      toast({ variant: 'destructive', description: `${isRu ? 'Ошибка' : 'Error'}: ${err.message}` });
+      toast({ variant: 'destructive', description: `${getRatingsText('errorPrefix', isRu)} ${err.message}` });
     }
   }, [canSavePlan, pipeline, config, isRu, saveDiagram, toast]);
 
@@ -186,7 +184,7 @@ export function DuelPlanEditor({ config, isRu, onLaunch }: DuelPlanEditorProps) 
               <div className="flex items-center gap-2 text-primary mb-1">
                 <Swords className="h-4 w-4" />
                 <span className="text-xs font-bold uppercase tracking-wider opacity-60">
-                  {isRu ? 'Шаг 1' : 'Step 1'}
+                  {getRatingsText('duelStep1', isRu)}
                 </span>
               </div>
               <HydraCardTitle>{getRatingsText('duelPlanTitle', isRu)}</HydraCardTitle>
@@ -246,7 +244,7 @@ export function DuelPlanEditor({ config, isRu, onLaunch }: DuelPlanEditorProps) 
           <div className="flex items-center gap-2 text-hydra-cyan">
             <Workflow className="h-4 w-4" />
             <span className="text-xs font-bold uppercase tracking-wider opacity-60">
-              {isRu ? 'Шаг 2' : 'Step 2'}
+              {getRatingsText('duelStep2', isRu)}
             </span>
           </div>
           <HydraCardTitle>{getRatingsText('duelFlowTemplate', isRu)}</HydraCardTitle>
@@ -274,9 +272,7 @@ export function DuelPlanEditor({ config, isRu, onLaunch }: DuelPlanEditorProps) 
           <div className="flex items-start gap-2 p-2.5 rounded-md bg-muted/20 border border-border/20">
             <Info className="h-3.5 w-3.5 text-muted-foreground shrink-0 mt-0.5" />
             <p className="text-[11px] text-muted-foreground leading-relaxed">
-              {isRu
-                ? 'Шаблон определяет цепочку: аргументы дуэлянтов → перекрёстное слияние → арбитраж → итоги раунда.'
-                : 'Template defines the chain: duelist arguments → cross-merge → arbitration → round results.'}
+              {getRatingsText('duelTemplateChainInfo', isRu)}
             </p>
           </div>
         </HydraCardContent>
@@ -288,7 +284,7 @@ export function DuelPlanEditor({ config, isRu, onLaunch }: DuelPlanEditorProps) 
           <div className="flex items-center gap-2 text-hydra-arbiter">
             <Scale className="h-4 w-4" />
             <span className="text-xs font-bold uppercase tracking-wider opacity-60">
-              {isRu ? 'Шаг 3' : 'Step 3'}
+              {getRatingsText('duelStep3', isRu)}
             </span>
           </div>
           <HydraCardTitle>{getRatingsText('duelArbitration', isRu)}</HydraCardTitle>
@@ -334,7 +330,7 @@ export function DuelPlanEditor({ config, isRu, onLaunch }: DuelPlanEditorProps) 
                 <Weight className="h-3 w-3" />
                 {getRatingsText('criteriaWeights', isRu)}
                 <span className="text-[10px] opacity-50 normal-case font-normal">
-                  ({isRu ? 'сумма' : 'total'}: {totalWeight}%)
+                  ({getRatingsText('sumLabel', isRu)}: {totalWeight}%)
                 </span>
               </label>
               <div className="space-y-1.5">
@@ -412,10 +408,10 @@ export function DuelPlanEditor({ config, isRu, onLaunch }: DuelPlanEditorProps) 
             </Select>
             <p className="text-[10px] text-muted-foreground/60">
               {config.config.scoringScheme === 'weighted-avg'
-                ? (isRu ? 'Итоговый балл = среднее взвешенное по выбранным критериям' : 'Final score = weighted average across selected criteria')
+                ? getRatingsText('scoringDescWeightedAvg', isRu)
                 : config.config.scoringScheme === 'tournament'
-                ? (isRu ? 'Модели проходят через сетку попарных сравнений' : 'Models go through a bracket of pairwise comparisons')
-                : (isRu ? 'Динамический рейтинг по системе Эло на основе дуэлей' : 'Dynamic rating based on Elo system from duels')}
+                ? getRatingsText('scoringDescTournament', isRu)
+                : getRatingsText('scoringDescElo', isRu)}
             </p>
           </div>
         </HydraCardContent>
@@ -427,7 +423,7 @@ export function DuelPlanEditor({ config, isRu, onLaunch }: DuelPlanEditorProps) 
           <div className="flex items-center gap-2 text-hydra-arbiter">
             <Trophy className="h-4 w-4" />
             <span className="text-xs font-bold uppercase tracking-wider opacity-60">
-              {isRu ? 'Шаг 4' : 'Step 4'}
+              {getRatingsText('duelStep4', isRu)}
             </span>
           </div>
           <HydraCardTitle>{getRatingsText('previewAndLaunch', isRu)}</HydraCardTitle>
@@ -458,7 +454,7 @@ export function DuelPlanEditor({ config, isRu, onLaunch }: DuelPlanEditorProps) 
               icon={<Workflow className="h-3.5 w-3.5" />}
               label={getRatingsText('duelFlowTemplate', isRu)}
               value={pipeline === 'none'
-                ? (isRu ? 'Не выбран' : 'Not selected')
+                ? getRatingsText('duelNotSelected', isRu)
                 : (isRu
                     ? CONTEST_FLOW_TEMPLATES[pipeline as keyof typeof CONTEST_FLOW_TEMPLATES]?.ru
                     : CONTEST_FLOW_TEMPLATES[pipeline as keyof typeof CONTEST_FLOW_TEMPLATES]?.en) || '—'}
@@ -572,7 +568,7 @@ export function DuelPlanEditor({ config, isRu, onLaunch }: DuelPlanEditorProps) 
                 {!canSavePlan && (
                   <TooltipContent>
                     <p className="text-xs">
-                      {isRu ? 'Выберите шаблон потока в шаге 2' : 'Select flow template in step 2'}
+                      {getRatingsText('duelSelectFlowStep2', isRu)}
                     </p>
                   </TooltipContent>
                 )}

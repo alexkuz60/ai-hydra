@@ -5,6 +5,7 @@ import { HydraCard, HydraCardHeader, HydraCardTitle, HydraCardContent } from '@/
 import { Badge } from '@/components/ui/badge';
 import { Scale, TrendingUp, AlertTriangle, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { getRatingsText } from './i18n';
 
 interface LikertClaim {
   claim: string;
@@ -64,7 +65,6 @@ export function LikertSummaryCard({ modelId, isRu }: LikertSummaryCardProps) {
 
       (data || []).forEach(row => {
         const scores = row.criteria_scores as any;
-        // Support both legacy key "claims" and current "likert_claims"
         const claimsArr = scores?.likert_claims ?? scores?.claims;
         if (claimsArr && Array.isArray(claimsArr)) {
           sessionIds.add(row.session_id);
@@ -87,7 +87,6 @@ export function LikertSummaryCard({ modelId, isRu }: LikertSummaryCardProps) {
 
   if (loading || allClaims.length === 0) return null;
 
-  // Aggregate
   const distribution: Record<number, number> = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0, 0: 0 };
   allClaims.forEach(c => {
     const s = Math.max(0, Math.min(5, Math.round(c.score)));
@@ -99,7 +98,6 @@ export function LikertSummaryCard({ modelId, isRu }: LikertSummaryCardProps) {
   const normalizedScore = (avgScore / 5) * 10;
   const maxCount = Math.max(...Object.values(distribution), 1);
 
-  // Most disputed claims (score <= 2)
   const disputed = allClaims
     .filter(c => c.score <= 2)
     .sort((a, b) => a.score - b.score)
@@ -109,28 +107,26 @@ export function LikertSummaryCard({ modelId, isRu }: LikertSummaryCardProps) {
     <HydraCard variant="default">
       <HydraCardHeader className="py-3">
         <Scale className="h-5 w-5 text-hydra-arbiter" />
-        <HydraCardTitle>{isRu ? 'Сводка оценок арбитража' : 'Arbitration Assessment Summary'}</HydraCardTitle>
+        <HydraCardTitle>{getRatingsText('likertSummaryTitle', isRu)}</HydraCardTitle>
       </HydraCardHeader>
       <HydraCardContent>
         <div className="space-y-4">
-          {/* Summary stats */}
           <div className="flex flex-wrap items-center gap-3">
             <Badge variant="outline" className="gap-1.5 text-xs">
               <TrendingUp className="h-3 w-3" />
-              <span>{isRu ? 'Средний балл' : 'Avg score'}: <strong>{normalizedScore.toFixed(1)}/10</strong></span>
+              <span>{getRatingsText('likertAvgScore', isRu)}: <strong>{normalizedScore.toFixed(1)}/10</strong></span>
             </Badge>
             <Badge variant="outline" className="gap-1.5 text-xs">
-              <span>{isRu ? 'Аргументов' : 'Claims'}: <strong>{totalClaims}</strong></span>
+              <span>{getRatingsText('likertClaims', isRu)}: <strong>{totalClaims}</strong></span>
             </Badge>
             <Badge variant="outline" className="gap-1.5 text-xs">
-              <span>{isRu ? 'Сессий' : 'Sessions'}: <strong>{sessionCount}</strong></span>
+              <span>{getRatingsText('likertSessions', isRu)}: <strong>{sessionCount}</strong></span>
             </Badge>
           </div>
 
-          {/* Distribution */}
           <div className="space-y-1.5">
             <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-              {isRu ? 'Распределение оценок' : 'Score Distribution'}
+              {getRatingsText('likertDistribution', isRu)}
             </p>
             {([5, 4, 3, 2, 1, 0] as const).map(score => {
               const count = distribution[score];
@@ -153,13 +149,12 @@ export function LikertSummaryCard({ modelId, isRu }: LikertSummaryCardProps) {
             })}
           </div>
 
-          {/* Most disputed */}
           {disputed.length > 0 && (
             <div className="space-y-2">
               <div className="flex items-center gap-1.5">
                 <AlertTriangle className="h-3.5 w-3.5 text-destructive" />
                 <p className="text-[12px] font-semibold text-muted-foreground uppercase tracking-wider">
-                  {isRu ? 'Спорные аргументы' : 'Disputed Arguments'}
+                  {getRatingsText('likertDisputed', isRu)}
                 </p>
               </div>
                <div className="space-y-1.5 pl-2 border-l-2 border-destructive/30">

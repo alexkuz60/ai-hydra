@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { HydraCard, HydraCardHeader, HydraCardTitle, HydraCardContent } from '@/components/ui/hydra-card';
 import { FileText, Trophy, Swords, Brain, MessageSquare, Scale } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { getRatingsText } from './i18n';
 import type { CritiqueEntry } from '@/hooks/useModelDossier';
 
 interface CritiqueSummaryCardProps {
@@ -59,7 +60,7 @@ export function CritiqueSummaryCard({ critiques, legacyCritique, isRu }: Critiqu
       <HydraCard variant="default">
         <HydraCardHeader className="py-3">
           <FileText className="h-5 w-5 text-hydra-critic" />
-          <HydraCardTitle>{isRu ? 'Критика' : 'Critique'}</HydraCardTitle>
+          <HydraCardTitle>{getRatingsText('critiqueTitle', isRu)}</HydraCardTitle>
         </HydraCardHeader>
         <HydraCardContent>
           <p className="text-sm text-muted-foreground italic">"{legacyCritique}"</p>
@@ -72,7 +73,7 @@ export function CritiqueSummaryCard({ critiques, legacyCritique, isRu }: Critiqu
     <HydraCard variant="default">
       <HydraCardHeader className="py-3">
         <FileText className="h-5 w-5 text-hydra-critic" />
-        <HydraCardTitle>{isRu ? 'Критика' : 'Critique'}</HydraCardTitle>
+        <HydraCardTitle>{getRatingsText('critiqueTitle', isRu)}</HydraCardTitle>
         <span className="text-xs text-muted-foreground ml-auto">{critiques.length}</span>
       </HydraCardHeader>
       <HydraCardContent>
