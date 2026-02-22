@@ -185,6 +185,7 @@ export function ProxyApiDashboard({ hasKey, proxyapiPriority, onPriorityChange, 
             onTestModel={api.handleTestModel}
             onMassTest={api.handleMassTest}
             onAddUserModel={api.addUserModel}
+            onRemoveUserModel={api.removeUserModel}
             onRefreshCatalog={() => api.fetchCatalog(true)}
           />
 
