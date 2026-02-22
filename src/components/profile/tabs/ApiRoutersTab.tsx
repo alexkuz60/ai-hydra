@@ -65,12 +65,12 @@ export function ApiRoutersTab({
         </TabsList>
 
         {isAdmin && (
-          <TabsContent value="lovable">
+          <TabsContent value="lovable" forceMount className="data-[state=inactive]:hidden">
             <LovableAIPanel language={language} />
           </TabsContent>
         )}
 
-        <TabsContent value="openrouter">
+        <TabsContent value="openrouter" forceMount className="data-[state=inactive]:hidden">
           <OpenRouterPanel
             apiKey={apiKeys['openrouter'] || ''}
             metadata={keyMetadata['openrouter']}
@@ -82,7 +82,7 @@ export function ApiRoutersTab({
           />
         </TabsContent>
 
-        <TabsContent value="proxyapi">
+        <TabsContent value="proxyapi" forceMount className="data-[state=inactive]:hidden">
           <ProxyApiDashboard
             hasKey={!!apiKeys['proxyapi']}
             proxyapiPriority={proxyapiPriority && !!apiKeys['proxyapi']}
@@ -96,7 +96,7 @@ export function ApiRoutersTab({
           />
         </TabsContent>
 
-        <TabsContent value="dotpoint">
+        <TabsContent value="dotpoint" forceMount className="data-[state=inactive]:hidden">
           <DotPointDashboard
             hasKey={!!apiKeys['dotpoint']}
             apiKeyValue={apiKeys['dotpoint'] || ''}
