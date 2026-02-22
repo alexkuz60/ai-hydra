@@ -519,6 +519,7 @@ export type Database = {
         Row: {
           confidence_score: number | null
           content: string
+          content_en: string | null
           created_at: string
           id: string
           metadata: Json | null
@@ -532,6 +533,7 @@ export type Database = {
         Insert: {
           confidence_score?: number | null
           content: string
+          content_en?: string | null
           created_at?: string
           id?: string
           metadata?: Json | null
@@ -545,6 +547,7 @@ export type Database = {
         Update: {
           confidence_score?: number | null
           content?: string
+          content_en?: string | null
           created_at?: string
           id?: string
           metadata?: Json | null
