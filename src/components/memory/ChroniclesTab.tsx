@@ -2,8 +2,11 @@ import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import {
   Search, Loader2, Filter, X, Download, AlertCircle,
   CheckCircle2, Lightbulb, FlaskConical, CheckCheck, Timer,
-  ScrollText, Wrench, ExternalLink,
+  ScrollText, Wrench, ExternalLink, CalendarIcon,
 } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { ru as ruLocale, enUS } from 'date-fns/locale';
 import { TermLabel } from '@/components/ui/TermLabel';
 import { getTermLabel } from '@/config/memoryGlossary';
 import { Badge } from '@/components/ui/badge';
@@ -714,9 +717,57 @@ export function ChroniclesTab({ language, isSupervisor }: { language: string; is
               )}
               <div className="flex items-center gap-1.5 ml-auto">
                 <span className="text-xs text-muted-foreground shrink-0">{tm('chron.from')}</span>
-                <input type="date" value={filterDateFrom} onChange={e => setFilterDateFrom(e.target.value)} className="h-8 rounded-md border border-input bg-background px-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring" />
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="sm" className={cn("h-8 px-2 text-xs font-normal gap-1", !filterDateFrom && "text-muted-foreground")}>
+                      <CalendarIcon className="h-3.5 w-3.5" />
+                      {filterDateFrom ? format(new Date(filterDateFrom), 'dd.MM.yyyy') : (isRu ? 'дд.мм.гггг' : 'dd.mm.yyyy')}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="end">
+                    <Calendar
+                      mode="single"
+                      selected={filterDateFrom ? new Date(filterDateFrom) : undefined}
+                      onSelect={(d) => setFilterDateFrom(d ? format(d, 'yyyy-MM-dd') : '')}
+                      locale={isRu ? ruLocale : enUS}
+                      initialFocus
+                      className="p-3 pointer-events-auto"
+                    />
+                    {filterDateFrom && (
+                      <div className="border-t p-2">
+                        <Button variant="ghost" size="sm" className="w-full h-7 text-xs" onClick={() => setFilterDateFrom('')}>
+                          {isRu ? 'Очистить' : 'Clear'}
+                        </Button>
+                      </div>
+                    )}
+                  </PopoverContent>
+                </Popover>
                 <span className="text-xs text-muted-foreground shrink-0">{tm('chron.to')}</span>
-                <input type="date" value={filterDateTo} onChange={e => setFilterDateTo(e.target.value)} className="h-8 rounded-md border border-input bg-background px-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring" />
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="sm" className={cn("h-8 px-2 text-xs font-normal gap-1", !filterDateTo && "text-muted-foreground")}>
+                      <CalendarIcon className="h-3.5 w-3.5" />
+                      {filterDateTo ? format(new Date(filterDateTo), 'dd.MM.yyyy') : (isRu ? 'дд.мм.гггг' : 'dd.mm.yyyy')}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="end">
+                    <Calendar
+                      mode="single"
+                      selected={filterDateTo ? new Date(filterDateTo) : undefined}
+                      onSelect={(d) => setFilterDateTo(d ? format(d, 'yyyy-MM-dd') : '')}
+                      locale={isRu ? ruLocale : enUS}
+                      initialFocus
+                      className="p-3 pointer-events-auto"
+                    />
+                    {filterDateTo && (
+                      <div className="border-t p-2">
+                        <Button variant="ghost" size="sm" className="w-full h-7 text-xs" onClick={() => setFilterDateTo('')}>
+                          {isRu ? 'Очистить' : 'Clear'}
+                        </Button>
+                      </div>
+                    )}
+                  </PopoverContent>
+                </Popover>
               </div>
             </div>
             {hasActiveFilters && (
