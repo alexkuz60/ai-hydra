@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { Loader2, Wifi, Zap, AlertTriangle, Key, WifiOff } from 'lucide-react';
+import { Loader2, Wifi, Zap, AlertTriangle, Key, WifiOff, Save } from 'lucide-react';
 
 import { ProxyApiLogo } from '@/components/ui/ProviderLogos';
 import { ApiKeyField, type KeyMetadata } from '@/components/profile/ApiKeyField';
@@ -28,9 +28,11 @@ interface ProxyApiDashboardProps {
   onApiKeyChange: (value: string) => void;
   keyMetadata?: KeyMetadata;
   onExpirationChange: (date: string | null) => void;
+  onSave: () => Promise<void>;
+  saving: boolean;
 }
 
-export function ProxyApiDashboard({ hasKey, proxyapiPriority, onPriorityChange, apiKeyValue, onApiKeyChange, keyMetadata: keyMeta, onExpirationChange }: ProxyApiDashboardProps) {
+export function ProxyApiDashboard({ hasKey, proxyapiPriority, onPriorityChange, apiKeyValue, onApiKeyChange, keyMetadata: keyMeta, onExpirationChange, onSave, saving }: ProxyApiDashboardProps) {
   const api = useProxyApiData(hasKey);
 
   // ── Shared sections ──────────────────────────────
@@ -106,6 +108,12 @@ export function ProxyApiDashboard({ hasKey, proxyapiPriority, onPriorityChange, 
             <p className="text-sm text-muted-foreground">
               Добавьте ключ ProxyAPI выше и сохраните для доступа к дашборду.
             </p>
+          </div>
+          <div className="flex justify-end pt-2">
+            <Button onClick={onSave} disabled={saving} size="sm">
+              {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
+              Сохранить
+            </Button>
           </div>
         </HydraCardContent>
       </HydraCard>
@@ -201,6 +209,12 @@ export function ProxyApiDashboard({ hasKey, proxyapiPriority, onPriorityChange, 
             onDeleteStats={api.deleteModelStats}
           />
         </Accordion>
+        <div className="flex justify-end pt-4">
+          <Button onClick={onSave} disabled={saving} size="sm">
+            {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
+            Сохранить
+          </Button>
+        </div>
       </HydraCardContent>
 
       {/* Gone model dialog */}
