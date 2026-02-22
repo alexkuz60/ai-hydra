@@ -179,7 +179,7 @@ function UserModelRow({ model, testResult, isTesting, onTest, onRemove }: {
   const modelType = detectModelType(model.id);
   const typeInfo = MODEL_TYPE_LABELS[modelType];
   return (
-    <div className="flex items-center gap-3 p-3 rounded-lg border bg-card/50 hover:bg-card/80 transition-colors">
+    <div className="flex items-center gap-3 p-3 rounded-lg border border-primary/20 bg-accent/30 hover:bg-accent/50 transition-colors">
       <ProxyApiLogo className="h-4 w-4 flex-shrink-0" />
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-1.5">

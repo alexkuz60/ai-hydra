@@ -165,7 +165,7 @@ function UserModelRow({ model, testResult, isTesting, onTest, onRemove }: {
   onRemove: () => void;
 }) {
   return (
-    <div className="flex items-center gap-3 p-3 rounded-lg border bg-card/50 hover:bg-card/80 transition-colors">
+    <div className="flex items-center gap-3 p-3 rounded-lg border border-primary/20 bg-accent/30 hover:bg-accent/50 transition-colors">
       <Network className="h-4 w-4 flex-shrink-0 text-primary" />
       <div className="min-w-0 flex-1">
         <p className="text-sm font-mono truncate">{model.id}</p>
