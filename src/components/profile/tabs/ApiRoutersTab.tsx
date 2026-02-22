@@ -5,7 +5,7 @@ import { OpenRouterLimitsDialog } from '@/components/profile/OpenRouterLimitsDia
 import { HydraCard, HydraCardHeader, HydraCardTitle, HydraCardContent } from '@/components/ui/hydra-card';
 import { ApiKeyField, type KeyMetadata } from '@/components/profile/ApiKeyField';
 import { Badge } from '@/components/ui/badge';
-import { Network, Globe, Zap, Sparkles } from 'lucide-react';
+import { Network, Globe, Zap, Sparkles, AlertTriangle } from 'lucide-react';
 
 interface ApiRoutersTabProps {
   apiKeys: Record<string, string>;
@@ -221,6 +221,19 @@ function DotPointPanel({ apiKey, metadata, language, onKeyChange, onExpirationCh
               : 'Get your API key from the DotPoint dashboard'
           }
         />
+        <div className="flex items-center gap-3 p-3 rounded-lg bg-amber-500/10 border border-amber-500/30">
+          <AlertTriangle className="h-5 w-5 text-amber-500 flex-shrink-0" />
+          <div className="flex-1">
+            <p className="text-sm font-semibold text-amber-400 mb-1">
+              {language === 'ru' ? 'Альтернативный роутер для России' : 'Alternative router for Russia'}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {language === 'ru'
+                ? 'DotPoint — российский AI-роутер с доступом к моделям OpenAI, Anthropic, Google и другим без VPN. Поддерживает оплату в рублях. Используется как замена OpenRouter при блокировках.'
+                : 'DotPoint — Russian AI router providing access to OpenAI, Anthropic, Google and other models without VPN. Supports payment in rubles. Used as an OpenRouter alternative when blocked.'}
+            </p>
+          </div>
+        </div>
         {!apiKey && (
           <div className="p-6 rounded-lg border-2 border-dashed border-muted text-center">
             <Network className="h-10 w-10 mx-auto mb-3 text-muted-foreground/50" />
