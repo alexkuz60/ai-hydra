@@ -166,7 +166,7 @@ Administrators can create and edit **system** patterns (with ✏️ icon), which
 
 ## Отдел ТехКонтроля (ОТК)
 
-Три системных роли, работающих автоматически в фоновых процессах платформы. Они **не доступны** в D-Chat и техподдержке, а их системные промпты **заблокированы** от редактирования.
+Четыре системных роли, работающих автоматически в фоновых процессах платформы. Они **не доступны** в D-Chat и техподдержке, а их системные промпты **заблокированы** от редактирования.
 
 ### ТехноКритик (\`@technocritic\`)
 - Автоматический анализ слабых мест ответов
@@ -183,6 +183,12 @@ Administrators can create and edit **system** patterns (with ✏️ icon), which
 - Формирование итоговых заключений
 - Используется в собеседованиях для финального вердикта
 - Критерии: точность резюме, баланс, качество структуры, выявление консенсуса
+
+### Переводчик (\`@translator\`)
+- Двунаправленный перевод контента (RU↔EN)
+- Контроль единства терминологии Гидры
+- Семантическая верификация переводов через cosine similarity эмбеддингов
+- Критерии: точность перевода, единство терминологии, сохранение смысла, верность тона, cosine drift
 
 > [!TIP] Назначение моделей ОТК
 > Каждой роли ОТК можно назначить конкретную модель через **Собеседование** или вручную. Нанятая модель автоматически используется в системных функциях (конкурсы, дуэли, собеседования) вместо дефолтной.
@@ -261,7 +267,7 @@ The orchestrator (\`hydra-orchestrator\`) manages multi-agent interaction:
 
 ## Quality Control Department (QC Dept.)
 
-Three system roles that operate automatically in platform background processes. They are **not available** in D-Chat and tech support, and their system prompts are **locked** from editing.
+Four system roles that operate automatically in platform background processes. They are **not available** in D-Chat and tech support, and their system prompts are **locked** from editing.
 
 ### TechnoCritic (\`@technocritic\`)
 - Automatic response weakness analysis
@@ -278,6 +284,12 @@ Three system roles that operate automatically in platform background processes. 
 - Final conclusion formation
 - Used in interviews for the final verdict
 - Criteria: summary accuracy, balance, structure quality, consensus identification
+
+### Translator (\`@translator\`)
+- Bidirectional content translation (RU↔EN)
+- Hydra terminology consistency control
+- Semantic translation verification via embedding cosine similarity
+- Criteria: translation accuracy, terminology consistency, semantic preservation, tone fidelity, cosine drift
 
 > [!TIP] QC Dept. Model Assignment
 > Each QC Dept. role can be assigned a specific model via **Interview** or manually. The hired model is automatically used in system functions (contests, duels, interviews) instead of the default.

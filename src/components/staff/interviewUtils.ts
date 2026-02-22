@@ -60,6 +60,12 @@ export const COMPETENCY_I18N: Record<string, { ru: string; en: string }> = {
   decision_synthesis: { ru: 'Синтез решений', en: 'Decision Synthesis' },
   objective_evaluation: { ru: 'Объективная оценка', en: 'Objective Evaluation' },
   fairness_assessment: { ru: 'Оценка справедливости', en: 'Fairness Assessment' },
+  // translator
+  technical_translation: { ru: 'Технический перевод', en: 'Technical Translation' },
+  terminology_consistency: { ru: 'Единство терминологии', en: 'Terminology Consistency' },
+  semantic_preservation: { ru: 'Сохранение смысла', en: 'Semantic Preservation' },
+  tone_fidelity: { ru: 'Верность тона', en: 'Tone & Register Fidelity' },
+  bidirectional_fluency: { ru: 'Двунаправленная беглость', en: 'Bidirectional Fluency' },
   // generic
   self_awareness: { ru: 'Самоанализ', en: 'Self-Awareness' },
   teamwork: { ru: 'Командная работа', en: 'Teamwork' },
