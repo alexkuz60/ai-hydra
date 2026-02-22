@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { getAllRegistryEntries, type ModelRegistryEntry } from '@/config/modelRegistry';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCloudSettings } from '@/hooks/useCloudSettings';
 import {
@@ -36,6 +37,7 @@ export function useDotPointData(hasKey: boolean) {
   }, [updateCloudSettings]);
 
   const userModelIds = useMemo(() => new Set(cloudUserModels), [cloudUserModels]);
+  const dotpointModels = useMemo(() => getAllRegistryEntries().filter(m => m.provider === 'dotpoint'), []);
 
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [logsLoading, setLogsLoading] = useState(false);
@@ -147,6 +149,8 @@ export function useDotPointData(hasKey: boolean) {
   const handleTestModel = useCallback(async (modelId: string) => {
     if (!user) return;
     setTestingModel(modelId);
+    // Strip 'dotpoint/' prefix for API call, keep the rest as-is
+    const apiModelId = modelId.startsWith('dotpoint/') ? modelId.slice('dotpoint/'.length) : modelId;
     try {
       const { data: { session } } = await supabase.auth.getSession();
       const resp = await fetch(
@@ -154,7 +158,7 @@ export function useDotPointData(hasKey: boolean) {
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session?.access_token}` },
-          body: JSON.stringify({ action: 'test', model_id: modelId }),
+          body: JSON.stringify({ action: 'test', model_id: apiModelId }),
         }
       );
       const data = await resp.json() as TestResult;
@@ -169,7 +173,9 @@ export function useDotPointData(hasKey: boolean) {
 
   const handleMassTest = useCallback(async () => {
     if (!user || massTestRunning) return;
-    const allModels = userAddedModels.map(m => m.id);
+    const registryIds = dotpointModels.map(m => m.id);
+    const userIds = userAddedModels.map(m => m.id);
+    const allModels = [...registryIds, ...userIds];
     if (allModels.length === 0) return;
     setMassTestRunning(true);
     setMassTestProgress({ done: 0, total: allModels.length });
@@ -183,7 +189,7 @@ export function useDotPointData(hasKey: boolean) {
           {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session?.access_token}` },
-            body: JSON.stringify({ action: 'test', model_id: modelId }),
+            body: JSON.stringify({ action: 'test', model_id: modelId.startsWith('dotpoint/') ? modelId.slice('dotpoint/'.length) : modelId }),
           }
         );
         const data = await resp.json() as TestResult;
@@ -196,7 +202,7 @@ export function useDotPointData(hasKey: boolean) {
     setTestingModel(null);
     setMassTestRunning(false);
     fetchLogs();
-  }, [user, massTestRunning, userAddedModels, fetchLogs]);
+  }, [user, massTestRunning, userAddedModels, dotpointModels, fetchLogs]);
 
   const addUserModel = useCallback((modelId: string) => {
     updateCloudUserModels(prev => [...new Set([...prev, modelId])]);
@@ -251,7 +257,7 @@ export function useDotPointData(hasKey: boolean) {
     dotpointCatalog, catalogLoading, catalogLoaded,
     massTestRunning, massTestProgress,
     userModelIds,
-    userAddedModels, filteredCatalogModels, analyticsData,
+    dotpointModels, userAddedModels, filteredCatalogModels, analyticsData,
     handlePing, handleTestModel, handleMassTest,
     addUserModel, deleteModelStats,
     handleExportCSV,
