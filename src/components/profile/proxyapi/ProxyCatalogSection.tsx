@@ -91,21 +91,6 @@ export function ProxyCatalogSection({
           </Button>
         </div>
 
-        {/* Mass test */}
-        <div className="flex items-center gap-2">
-          <Button size="sm" variant="outline" onClick={onMassTest} disabled={massTestRunning || totalModels === 0} className="gap-2">
-            {massTestRunning ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
-            {massTestRunning
-              ? `Тестирование ${massTestProgress.done}/${massTestProgress.total}...`
-              : `Тест всех моделей (${totalModels})`}
-          </Button>
-          {massTestRunning && (
-            <div className="flex-1 h-2 rounded-full bg-secondary overflow-hidden">
-              <div className="h-full bg-primary transition-all duration-300" style={{ width: `${massTestProgress.total ? (massTestProgress.done / massTestProgress.total) * 100 : 0}%` }} />
-            </div>
-          )}
-        </div>
-
         {/* Search results */}
         {filteredCatalogModels.length > 0 && (
           <div className="space-y-2">
@@ -156,6 +141,21 @@ export function ProxyCatalogSection({
             </CollapsibleContent>
           </Collapsible>
         )}
+
+        {/* Mass test */}
+        <div className="flex items-center gap-2">
+          <Button size="sm" variant="outline" onClick={onMassTest} disabled={massTestRunning || totalModels === 0} className="gap-2">
+            {massTestRunning ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
+            {massTestRunning
+              ? `Тестирование ${massTestProgress.done}/${massTestProgress.total}...`
+              : `Тест всех моделей (${totalModels})`}
+          </Button>
+          {massTestRunning && (
+            <div className="flex-1 h-2 rounded-full bg-secondary overflow-hidden">
+              <div className="h-full bg-primary transition-all duration-300" style={{ width: `${massTestProgress.total ? (massTestProgress.done / massTestProgress.total) * 100 : 0}%` }} />
+            </div>
+          )}
+        </div>
 
         {/* ProxyAPI native models */}
         <Collapsible open={nativeListOpen} onOpenChange={setNativeListOpen}>
