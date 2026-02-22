@@ -14,6 +14,7 @@ import { useTaskFiles } from '@/hooks/useTaskFiles';
 import { useContestConfigContext } from '@/contexts/ContestConfigContext';
 import { useAllModels } from '@/components/ratings/ModelListSidebar';
 import { Input } from '@/components/ui/input';
+import { getRatingsText } from './i18n';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
@@ -51,7 +52,7 @@ function TaskFilesDisplay({ sessionId, isRu }: { sessionId: string | null; isRu:
     <div className="space-y-1.5">
       <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
         <Paperclip className="h-3 w-3" />
-        {isRu ? 'Прикреплённые файлы' : 'Attached Files'}
+        {getRatingsText('taskAttachedFiles', isRu)}
         {files.length > 0 && (
           <span className="text-[10px] bg-muted/50 px-1.5 py-0.5 rounded">{files.length}</span>
         )}
@@ -60,8 +61,8 @@ function TaskFilesDisplay({ sessionId, isRu }: { sessionId: string | null; isRu:
         <div className="p-2.5 rounded-md border border-dashed border-border/40 bg-muted/10 text-center">
           <p className="text-[11px] text-muted-foreground/60">
             {sessionId
-              ? (isRu ? 'Нет файлов. Прикрепите в панели Задач.' : 'No files. Attach in Tasks panel.')
-              : (isRu ? 'Выберите задачу для просмотра файлов' : 'Select a task to view files')}
+              ? getRatingsText('taskNoFilesAttach', isRu)
+              : getRatingsText('taskSelectToViewFiles', isRu)}
           </p>
         </div>
       ) : (
@@ -105,7 +106,7 @@ function ContestModelPicker({
       <PopoverTrigger asChild>
         <Button variant="outline" size="sm" className="gap-1.5 h-8 text-xs">
           <Plus className="h-3.5 w-3.5" />
-          {isRu ? 'Добавить модель' : 'Add model'}
+          {getRatingsText('taskAddModel', isRu)}
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-72 p-0" align="start">
@@ -115,7 +116,7 @@ function ContestModelPicker({
             <Input
               value={search}
               onChange={e => setSearch(e.target.value)}
-              placeholder={isRu ? 'Поиск модели...' : 'Search model...'}
+              placeholder={getRatingsText('taskSearchModel', isRu)}
               className="h-8 pl-7 text-xs"
               autoFocus
             />
@@ -125,7 +126,7 @@ function ContestModelPicker({
           <div className="p-1">
             {filtered.length === 0 ? (
               <p className="text-xs text-muted-foreground text-center py-4">
-                {isRu ? 'Нет доступных моделей' : 'No available models'}
+                {getRatingsText('taskNoModelsAvailable', isRu)}
               </p>
             ) : (
               filtered.map(e => {
@@ -201,11 +202,11 @@ export function ContestTaskSelector() {
         <div className="flex items-center gap-2 text-hydra-cyan">
           <ClipboardList className="h-4 w-4" />
           <span className="text-xs font-bold uppercase tracking-wider opacity-60">
-            {isRu ? 'Шаг 1' : 'Step 1'}
+            {getRatingsText('taskStep1', isRu)}
           </span>
         </div>
         <HydraCardTitle>
-          {isRu ? 'Участники и Задача' : 'Participants & Task'}
+          {getRatingsText('taskParticipantsAndTask', isRu)}
         </HydraCardTitle>
       </HydraCardHeader>
 
@@ -213,7 +214,7 @@ export function ContestTaskSelector() {
         {/* Task selector */}
         <div className="space-y-2">
           <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-            {isRu ? 'Задача' : 'Task'}
+            {getRatingsText('taskLabel2', isRu)}
           </label>
            <Select value={taskId || ''} onValueChange={(id) => {
              updateTaskId(id);
@@ -221,12 +222,12 @@ export function ContestTaskSelector() {
              updateTaskTitle(session?.title || id);
            }}>
              <SelectTrigger className="h-9">
-               <SelectValue placeholder={isRu ? 'Выберите задачу...' : 'Select a task...'} />
+               <SelectValue placeholder={getRatingsText('taskSelectPlaceholder', isRu)} />
              </SelectTrigger>
             <SelectContent>
               {sessions.map(s => (
                 <SelectItem key={s.id} value={s.id}>
-                  {s.title || (isRu ? 'Без названия' : 'Untitled')}
+                  {s.title || getRatingsText('taskUntitled', isRu)}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -249,7 +250,7 @@ export function ContestTaskSelector() {
           <div className="flex items-center justify-between">
             <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
               <Users className="h-3 w-3" />
-              {isRu ? 'Участники подиума' : 'Podium Participants'}
+              {getRatingsText('taskPodiumParticipants', isRu)}
               {contestModels.length > 0 && (
                 <Badge variant="secondary" className="text-[10px] px-1.5 py-0 bg-hydra-arbiter/20 text-hydra-arbiter border-hydra-arbiter/30">
                   {contestModels.length}
@@ -263,9 +264,7 @@ export function ContestTaskSelector() {
             <div className="p-3 rounded-md border border-dashed border-border/40 bg-muted/10 text-center">
               <Crown className="h-4 w-4 text-hydra-arbiter/40 mx-auto mb-1" />
               <p className="text-[11px] text-muted-foreground/60">
-                {isRu
-                  ? 'Добавьте модели кнопкой выше или на вкладке «Портфолио»'
-                  : 'Add models with the button above or from the "Portfolio" tab'}
+                 {getRatingsText('taskAddModelsHint', isRu)}
               </p>
             </div>
           ) : (
@@ -294,7 +293,7 @@ export function ContestTaskSelector() {
                     <button
                       onClick={() => handleRemoveModel(modelId)}
                       className="ml-0.5 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
-                      title={isRu ? 'Убрать' : 'Remove'}
+                      title={getRatingsText('taskRemove', isRu)}
                     >
                       <X className="h-3 w-3" />
                     </button>

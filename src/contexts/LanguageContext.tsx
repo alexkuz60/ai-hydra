@@ -1325,6 +1325,19 @@ const translations: Translations = {
   'tools.category.automation': { ru: 'Автоматизация', en: 'Automation' },
    'tools.category.utility': { ru: 'Утилиты', en: 'Utilities' },
    'tools.systemTools': { ru: 'Системные', en: 'System' },
+   // HTTP Tool Tester
+   'tools.testing': { ru: 'Тестирование', en: 'Testing' },
+   'tools.authRequired': { ru: 'Необходима авторизация для тестирования', en: 'Authentication required for testing' },
+   'tools.unknownError': { ru: 'Неизвестная ошибка', en: 'Unknown error' },
+   'tools.testParamValues': { ru: 'Тестовые значения параметров', en: 'Test parameter values' },
+   'tools.valueFor': { ru: 'Значение для', en: 'Value for' },
+   'tools.testingInProgress': { ru: 'Тестирование...', en: 'Testing...' },
+   'tools.runTest': { ru: 'Выполнить тест', en: 'Run Test' },
+   'tools.testSuccess': { ru: 'Успешно', en: 'Success' },
+   'tools.testError': { ru: 'Ошибка', en: 'Error' },
+   'tools.fullResponse': { ru: 'Полный ответ', en: 'Full Response' },
+   'tools.responseBody': { ru: 'Тело ответа', en: 'Response Body' },
+   'tools.testHelpText': { ru: 'Заполните тестовые значения параметров и нажмите "Выполнить тест" для проверки конфигурации.', en: 'Fill in test parameter values and click "Run Test" to verify configuration.' },
 
    // Supervisor Wishes Picker
    'supervisorWishes.selectWishes': { ru: 'Пожелания Супервизора', en: 'Supervisor Wishes' },
