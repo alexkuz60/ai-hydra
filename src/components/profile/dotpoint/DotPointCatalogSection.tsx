@@ -161,7 +161,6 @@ function UserModelRow({ model, testResult, isTesting, onTest, onRemove }: {
   onTest: () => void;
   onRemove: () => void;
 }) {
-  const expl = testResult ? STATUS_EXPLANATIONS[testResult.status] : null;
   return (
     <div className="flex items-center gap-3 p-3 rounded-lg border bg-card/50 hover:bg-card/80 transition-colors">
       <Network className="h-4 w-4 flex-shrink-0 text-primary" />
@@ -182,7 +181,7 @@ function UserModelRow({ model, testResult, isTesting, onTest, onRemove }: {
               </div>
             </TooltipTrigger>
             <TooltipContent side="top" className="max-w-[250px]">
-              <p className="text-xs">{expl?.description || testResult.error}</p>
+              <p className="text-xs">{STATUS_EXPLANATIONS[testResult.status]?.description || testResult.error}</p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
