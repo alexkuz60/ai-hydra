@@ -89,6 +89,8 @@ export function ApiRoutersTab({
             onApiKeyChange={(v) => onKeyChange('proxyapi', v)}
             keyMetadata={keyMetadata['proxyapi']}
             onExpirationChange={(d) => onExpirationChange('proxyapi', d)}
+            onSave={onSave}
+            saving={saving}
           />
         </TabsContent>
 
