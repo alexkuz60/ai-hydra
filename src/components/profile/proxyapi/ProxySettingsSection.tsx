@@ -6,6 +6,7 @@ import { Slider } from '@/components/ui/slider';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Settings2 } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { getProfileText } from '../i18n';
 
 import type { ProxyApiSettings } from './types';
 
@@ -18,6 +19,7 @@ interface ProxySettingsSectionProps {
 export function ProxySettingsSection({ settings, onSettingsChange, syncLoaded = true }: ProxySettingsSectionProps) {
   const { language } = useLanguage();
   const isRu = language === 'ru';
+  const p = (key: string) => getProfileText(key, isRu);
 
   return (
     <AccordionItem value="settings" className="border rounded-lg px-4">
@@ -25,14 +27,14 @@ export function ProxySettingsSection({ settings, onSettingsChange, syncLoaded = 
         <div className="flex items-center justify-between w-full pr-4">
           <div className="flex items-center gap-2">
             <Settings2 className="h-4 w-4 text-primary" />
-            <span className="font-semibold">{isRu ? 'Настройки' : 'Settings'}</span>
+            <span className="font-semibold">{p('settings')}</span>
           </div>
         </div>
       </AccordionTrigger>
       <AccordionContent className="pb-4 space-y-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label className="text-xs text-muted-foreground">{isRu ? 'Таймаут (сек)' : 'Timeout (sec)'}</Label>
+            <Label className="text-xs text-muted-foreground">{p('timeoutSec')}</Label>
             <div className="flex items-center gap-3">
               <Slider
                 value={[settings.timeout_sec]}
@@ -46,7 +48,7 @@ export function ProxySettingsSection({ settings, onSettingsChange, syncLoaded = 
             </div>
           </div>
           <div className="space-y-2">
-            <Label className="text-xs text-muted-foreground">{isRu ? 'Макс. повторов (retry)' : 'Max retries'}</Label>
+            <Label className="text-xs text-muted-foreground">{p('maxRetries')}</Label>
             <Select
               value={String(settings.max_retries)}
               onValueChange={(v) => onSettingsChange(s => ({ ...s, max_retries: Number(v) }))}
@@ -55,10 +57,10 @@ export function ProxySettingsSection({ settings, onSettingsChange, syncLoaded = 
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="0">{isRu ? '0 — без повторов' : '0 — no retries'}</SelectItem>
-                <SelectItem value="1">{isRu ? '1 повтор' : '1 retry'}</SelectItem>
-                <SelectItem value="2">{isRu ? '2 повтора' : '2 retries'}</SelectItem>
-                <SelectItem value="3">{isRu ? '3 повтора' : '3 retries'}</SelectItem>
+                <SelectItem value="0">{p('noRetries')}</SelectItem>
+                <SelectItem value="1">{p('retry1')}</SelectItem>
+                <SelectItem value="2">{p('retry2')}</SelectItem>
+                <SelectItem value="3">{p('retry3')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -70,14 +72,10 @@ export function ProxySettingsSection({ settings, onSettingsChange, syncLoaded = 
             onCheckedChange={(checked) => onSettingsChange(s => ({ ...s, fallback_enabled: !!checked }))}
           />
           <Label htmlFor="fallback-enabled" className="text-sm cursor-pointer">
-            {isRu ? 'Автоматический фолбэк на Lovable AI при ошибках' : 'Auto-fallback to Lovable AI on errors'}
+            {p('fallbackLabel')}
           </Label>
         </div>
-        <p className="text-xs text-muted-foreground">
-          {isRu
-            ? 'Настройки сохраняются локально и применяются при следующих запросах через ProxyAPI.'
-            : 'Settings are saved locally and applied to subsequent requests via ProxyAPI.'}
-        </p>
+        <p className="text-xs text-muted-foreground">{p('settingsSavedLocally')}</p>
       </AccordionContent>
     </AccordionItem>
   );

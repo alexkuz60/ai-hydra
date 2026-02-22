@@ -6,6 +6,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { History, RefreshCw, Download, HelpCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { getProfileText } from '../i18n';
 import type { LogEntry } from './types';
 import { getStatusExpl } from './types';
 
@@ -20,13 +21,14 @@ export function ProxyLogsTable({ logs, logsLoading, onRefresh, onExportCSV }: Pr
   const { language } = useLanguage();
   const isRu = language === 'ru';
   const lang = isRu ? 'ru' : 'en';
+  const p = (key: string) => getProfileText(key, isRu);
 
   return (
     <AccordionItem value="logs" className="border rounded-lg px-4">
       <AccordionTrigger className="hover:no-underline">
         <div className="flex items-center gap-2">
           <History className="h-4 w-4 text-primary" />
-          <span className="font-semibold">{isRu ? 'Последние запросы' : 'Recent Requests'}</span>
+          <span className="font-semibold">{p('recentRequests')}</span>
           <Badge variant="secondary" className="ml-2">{logs.length}</Badge>
         </div>
       </AccordionTrigger>
@@ -38,38 +40,34 @@ export function ProxyLogsTable({ logs, logsLoading, onRefresh, onExportCSV }: Pr
           </Button>
           <Button size="sm" variant="ghost" onClick={onRefresh} disabled={logsLoading}>
             <RefreshCw className={cn("h-3.5 w-3.5 mr-1", logsLoading && "animate-spin")} />
-            {isRu ? 'Обновить' : 'Refresh'}
+            {p('refresh')}
           </Button>
         </div>
         {logs.length === 0 ? (
-          <p className="text-sm text-muted-foreground text-center py-4">{isRu ? 'Нет записей' : 'No records'}</p>
+          <p className="text-sm text-muted-foreground text-center py-4">{p('noRecords')}</p>
         ) : (
           <div className="overflow-x-auto">
             <TooltipProvider delayDuration={200}>
               <table className="w-full text-xs">
                 <thead>
                   <tr className="border-b text-muted-foreground">
-                    <th className="text-left py-2 pr-3">{isRu ? 'Модель' : 'Model'}</th>
+                    <th className="text-left py-2 pr-3">{p('model')}</th>
                     <th className="text-left py-2 pr-3">
                       <div className="flex items-center gap-1">
-                        {isRu ? 'Тип' : 'Type'}
+                        {p('requestType')}
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <HelpCircle className="h-3 w-3 text-muted-foreground/60 cursor-help" />
                           </TooltipTrigger>
                           <TooltipContent side="top" className="max-w-[220px]">
-                            <p className="text-xs">
-                              {isRu
-                                ? 'Тип запроса: stream (потоковый), test (тестовый), ping (проверка связи)'
-                                : 'Request type: stream (streaming), test (testing), ping (connectivity check)'}
-                            </p>
+                            <p className="text-xs">{p('requestTypeHint')}</p>
                           </TooltipContent>
                         </Tooltip>
                       </div>
                     </th>
                     <th className="text-left py-2 pr-3">
                       <div className="flex items-center gap-1">
-                        {isRu ? 'Статус' : 'Status'}
+                        {p('status')}
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <HelpCircle className="h-3 w-3 text-muted-foreground/60 cursor-help" />
@@ -86,9 +84,9 @@ export function ProxyLogsTable({ logs, logsLoading, onRefresh, onExportCSV }: Pr
                         </Tooltip>
                       </div>
                     </th>
-                    <th className="text-right py-2 pr-3">{isRu ? 'Латенси' : 'Latency'}</th>
-                    <th className="text-right py-2 pr-3">{isRu ? 'Токены' : 'Tokens'}</th>
-                    <th className="text-right py-2">{isRu ? 'Дата' : 'Date'}</th>
+                    <th className="text-right py-2 pr-3">{p('latency')}</th>
+                    <th className="text-right py-2 pr-3">{p('tokens')}</th>
+                    <th className="text-right py-2">{p('date')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -107,6 +105,7 @@ export function ProxyLogsTable({ logs, logsLoading, onRefresh, onExportCSV }: Pr
 
 function LogRow({ log, lang }: { log: LogEntry; lang: 'ru' | 'en' }) {
   const isRu = lang === 'ru';
+  const p = (key: string) => getProfileText(key, isRu);
   const modelShort = log.model_id.replace('proxyapi/', '');
   const date = new Date(log.created_at);
   const locale = isRu ? 'ru-RU' : 'en-US';
@@ -148,7 +147,7 @@ function LogRow({ log, lang }: { log: LogEntry; lang: 'ru' | 'en' }) {
             <TooltipContent side="top" className="max-w-[250px]">
               <p className="text-xs font-medium mb-1">{statusExpl.label}</p>
               <p className="text-xs text-muted-foreground">{statusExpl.description}</p>
-              {log.error_message && <p className="text-xs text-destructive mt-1">{isRu ? 'Ошибка' : 'Error'}: {log.error_message}</p>}
+              {log.error_message && <p className="text-xs text-destructive mt-1">{p('error')}: {log.error_message}</p>}
             </TooltipContent>
           </Tooltip>
         ) : log.status}

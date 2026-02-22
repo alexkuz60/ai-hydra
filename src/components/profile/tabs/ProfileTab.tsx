@@ -7,6 +7,7 @@ import { Separator } from '@/components/ui/separator';
 import { HydraCard, HydraCardHeader, HydraCardTitle, HydraCardContent } from '@/components/ui/hydra-card';
 import { User, Camera, Trash2, Loader2, Check } from 'lucide-react';
 import { toast } from 'sonner';
+import { getProfileText } from '../i18n';
 
 interface ProfileTabProps {
   email: string;
@@ -29,6 +30,7 @@ export function ProfileTab({
   onDisplayNameChange, onUsernameChange, onSave, onAvatarFileSelect, onDeleteAvatar,
 }: ProfileTabProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const isRu = language === 'ru';
 
   return (
     <HydraCard variant="glass" className="p-6">
@@ -68,7 +70,7 @@ export function ProfileTab({
               className="gap-2"
             >
               <Camera className="h-4 w-4" />
-              {language === 'ru' ? 'Загрузить фото' : 'Upload photo'}
+              {getProfileText('uploadPhoto', isRu)}
             </Button>
             {avatarUrl && (
               <Button
@@ -79,11 +81,11 @@ export function ProfileTab({
                 className="gap-2 text-destructive hover:text-destructive"
               >
                 <Trash2 className="h-4 w-4" />
-                {language === 'ru' ? 'Удалить' : 'Delete'}
+                {getProfileText('deleteAvatar', isRu)}
               </Button>
             )}
             <p className="text-xs text-muted-foreground">
-              {language === 'ru' ? 'JPEG, PNG, WebP · до 2 МБ' : 'JPEG, PNG, WebP · up to 2 MB'}
+              {getProfileText('avatarHint', isRu)}
             </p>
           </div>
         </div>
