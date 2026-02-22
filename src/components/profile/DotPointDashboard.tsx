@@ -156,6 +156,7 @@ export function DotPointDashboard({ hasKey, apiKeyValue, onApiKeyChange, keyMeta
 
           {/* Catalog */}
           <DotPointCatalogSection
+            dotpointModels={api.dotpointModels}
             userAddedModels={api.userAddedModels}
             filteredCatalogModels={api.filteredCatalogModels}
             catalogSearch={api.catalogSearch}
