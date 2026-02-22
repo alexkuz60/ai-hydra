@@ -65,10 +65,10 @@ export function DuelArena({ duelConfig }: DuelArenaProps) {
     if (errors.length > 0) {
       const msg = errors.map(e => {
         const msgs: Record<string, { ru: string; en: string }> = {
-          modelARequired: { ru: 'Выберите модель A', en: 'Select Model A' },
-          modelBRequired: { ru: 'Выберите модель B', en: 'Select Model B' },
-          sameModels: { ru: 'Модели должны быть разными', en: 'Models must be different' },
-          promptRequired: { ru: 'Напишите стартовый промпт', en: 'Duel prompt required' },
+          modelARequired: { ru: getRatingsText('selectModelA', isRu), en: getRatingsText('selectModelA', false) },
+          modelBRequired: { ru: getRatingsText('selectModelB', isRu), en: getRatingsText('selectModelB', false) },
+          sameModels: { ru: getRatingsText('modelsMustDiffer', isRu), en: getRatingsText('modelsMustDiffer', false) },
+          promptRequired: { ru: getRatingsText('duelPromptRequired', isRu), en: getRatingsText('duelPromptRequired', false) },
         };
         return (msgs[e.messageKey] || {})[isRu ? 'ru' : 'en'] || e.messageKey;
       }).join('; ');
@@ -78,7 +78,7 @@ export function DuelArena({ duelConfig }: DuelArenaProps) {
 
     const result = await duelSession.createFromConfig(duelConfig.config);
     if (result) {
-      toast({ description: isRu ? 'Дуэль началась!' : 'Duel started!' });
+      toast({ description: getRatingsText('duelStarted', isRu) });
       await execution.executeDuelRound(result.session, result.rounds[0], result.results, result.rounds, duelSession.updateResult, duelConfig.config);
     }
   };
@@ -269,7 +269,7 @@ export function DuelArena({ duelConfig }: DuelArenaProps) {
       onAddExtraRound={async (prompt) => {
         const result = await duelSession.addExtraRound(prompt);
         if (result) {
-          toast({ description: isRu ? 'Дополнительный раунд добавлен' : 'Extra round added' });
+          toast({ description: getRatingsText('extraRoundAdded', isRu) });
           await execution.executeDuelRound(
             duelSession.session!, result.round, duelSession.results,
             [...duelSession.rounds, result.round], duelSession.updateResult, duelConfig.config,

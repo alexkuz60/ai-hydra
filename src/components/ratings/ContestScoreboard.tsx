@@ -116,7 +116,7 @@ export function ContestScoreboard({
               {onFinishContest && status === 'running' && (
                 <Button size="sm" variant="outline" className="h-6 text-[10px] gap-1 px-2 border-destructive/40 hover:bg-destructive/10 text-destructive" onClick={onFinishContest}>
                   <Square className="h-2.5 w-2.5" />
-                  {isRu ? 'Завершить' : 'Finish'}
+                  {getRatingsText('finish', isRu)}
                 </Button>
               )}
               {onNewContest && (

@@ -240,6 +240,95 @@ export const RATINGS_I18N = {
   modelEliminated: { ru: 'Модель снята с конкурса', en: 'Model eliminated from contest' },
   modelRestored: { ru: 'Модель возвращена в конкурс', en: 'Model restored to contest' },
   cannotEliminateMinModels: { ru: 'Нельзя снять — минимум 2 модели должны остаться', en: 'Cannot eliminate — at least 2 models must remain' },
+
+  // ===== CONTEST SCOREBOARD =====
+  finish: { ru: 'Завершить', en: 'Finish' },
+  contestFinished: { ru: 'Конкурс завершён', en: 'Contest finished' },
+
+  // ===== CONTEST RESPONSES =====
+  collapse: { ru: 'Свернуть', en: 'Collapse' },
+  expand: { ru: 'Развернуть', en: 'Expand' },
+  followUpN: { ru: 'Дополнительный вопрос', en: 'Follow-up' },
+  tourN: { ru: 'Тур', en: 'Round' },
+
+  // ===== CONTEST SCORES TABLE =====
+  scoresTable: { ru: 'Таблица оценок', en: 'Scores Table' },
+  selected: { ru: 'выбрано', en: 'selected' },
+  model: { ru: 'Модель', en: 'Model' },
+  average: { ru: 'Среднее', en: 'Average' },
+  eliminateModel: { ru: 'Снять модель с конкурса?', en: 'Eliminate model?' },
+  eliminateModelDesc: { ru: 'будет исключена из следующих раундов. Набранные баллы сохранятся.', en: 'will be excluded from future rounds. Earned scores are preserved.' },
+  cancel: { ru: 'Отмена', en: 'Cancel' },
+  confirmEliminate: { ru: 'Снять', en: 'Eliminate' },
+  restoreToContest: { ru: 'Вернуть в конкурс', en: 'Restore to contest' },
+  eliminateFromContest: { ru: 'Снять с конкурса', en: 'Eliminate from contest' },
+  minTwoModels: { ru: 'Минимум 2 модели должны остаться', en: 'At least 2 models must remain' },
+  selectWinnersToExpert: { ru: 'Выбрать победителей для отправки в Панель экспертов', en: 'Select winners to send to Expert Panel' },
+  outBadge: { ru: 'снята', en: 'out' },
+  dropBadge: { ru: 'снять?', en: 'drop?' },
+
+  // ===== BEAUTY CONTEST =====
+  sendWinnersToExpert: { ru: 'Отправить {count} победител{form} в Панель экспертов', en: 'Send {count} winner{formEn} to Expert Panel' },
+  screenCandidates: { ru: 'Скрининг {count} кандидат{form}', en: 'Screen {count} candidate{formEn}' },
+  noTaskInConfig: { ru: 'Задача не выбрана в конфигурации конкурса', en: 'No task selected in contest config' },
+
+  // ===== DUEL BATTLE VIEW =====
+  lastRoundPrompt: { ru: 'Промпт последнего раунда', en: 'Last Round Prompt' },
+  extraRound: { ru: 'Доп. раунд', en: 'Extra Round' },
+  extraRoundTitle: { ru: 'Дополнительный раунд', en: 'Extra Round' },
+  extraRoundDesc: { ru: 'Введите задание для дополнительного раунда дуэли.', en: 'Enter the prompt for the extra duel round.' },
+  extraRoundPlaceholder: { ru: 'Задание для дополнительного раунда...', en: 'Extra round prompt...' },
+  startRound: { ru: 'Запустить раунд', en: 'Start Round' },
+  duelStarted: { ru: 'Дуэль началась!', en: 'Duel started!' },
+  extraRoundAdded: { ru: 'Дополнительный раунд добавлен', en: 'Extra round added' },
+
+  // ===== DUEL ARENA VALIDATION =====
+  selectModelA: { ru: 'Выберите модель A', en: 'Select Model A' },
+  selectModelB: { ru: 'Выберите модель B', en: 'Select Model B' },
+  modelsMustDiffer: { ru: 'Модели должны быть разными', en: 'Models must be different' },
+  duelPromptRequired: { ru: 'Напишите стартовый промпт', en: 'Duel prompt required' },
+
+  // ===== MODEL DOSSIER =====
+  participationStats: { ru: 'Статистика участия', en: 'Participation Stats' },
+  criteriaProfile: { ru: 'Профиль по критериям', en: 'Criteria Profile' },
+  filterAll: { ru: 'Все', en: 'All' },
+  filterContest: { ru: 'Конкурс', en: 'Contest' },
+  filterDuelCritic: { ru: 'Дуэль (Критик)', en: 'Duel (Critic)' },
+  filterDuelArbiter: { ru: 'Дуэль (Арбитр)', en: 'Duel (Arbiter)' },
+  noDataForFilter: { ru: 'Нет данных для этого фильтра', en: 'No data for this filter' },
+  roleDistribution: { ru: 'Распределение ролей', en: 'Role Distribution' },
+  dChatDialogs: { ru: 'Диалоги в Д-чате', en: 'D-Chat Dialogs' },
+  taskHistory: { ru: 'Послужной список', en: 'Task History' },
+  noModelData: { ru: 'Нет данных об участии этой модели в задачах', en: 'No task participation data for this model' },
+  win: { ru: 'Победа', en: 'Win' },
+  loss: { ru: 'Поражение', en: 'Loss' },
+  draw: { ru: 'Ничья', en: 'Draw' },
+  other: { ru: 'Прочие', en: 'Other' },
+
+  // ===== MODEL LIST SIDEBAR =====
+  searchModel: { ru: 'Поиск модели...', en: 'Search model...' },
+  ofTotal: { ru: 'из', en: 'of' },
+  availableCount: { ru: 'доступно', en: 'available' },
+  collapseAll: { ru: 'Свернуть все', en: 'Collapse all' },
+  expandAll: { ru: 'Развернуть все', en: 'Expand all' },
+  filterAvailable: { ru: 'Доступные', en: 'Available' },
+  filterUnavailable: { ru: 'Недоступные', en: 'Unavailable' },
+  apiKeyConfigured: { ru: 'API-ключ настроен', en: 'API key configured' },
+  noApiKey: { ru: 'API-ключ не найден', en: 'No API key found' },
+
+  // ===== SCREENING PANEL =====
+  screeningInterview: { ru: 'Скрининг-интервью', en: 'Screening Interview' },
+  selectWinnersForScreening: { ru: 'Выберите победителей конкурса (👑) в таблице результатов, чтобы запустить пакетное тестирование', en: 'Select contest winners (👑) in the scores table to start batch screening' },
+  runScreening: { ru: 'Запустить скрининг', en: 'Run Screening' },
+  cancelScreening: { ru: 'Остановить', en: 'Cancel' },
+  doneCount: { ru: 'завершено', en: 'done' },
+  failedCount: { ru: 'ошибок', en: 'failed' },
+  stepsCount: { ru: 'шагов', en: 'steps' },
+  runningCount: { ru: 'выполняется', en: 'running' },
+  budgetEstimate: { ru: 'Оценка бюджета', en: 'Budget Estimate' },
+  candidatesLabel: { ru: 'кандидат', en: 'candidate' },
+  roleLabel: { ru: 'Роль', en: 'Role' },
+  concurrency: { ru: 'Параллельно', en: 'Concurrency' },
 } as const;
 
 export type RatingsI18nKey = keyof typeof RATINGS_I18N;

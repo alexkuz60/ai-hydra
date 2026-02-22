@@ -108,8 +108,8 @@ function RoundGroupedResults({
         const roundLabel = round.round_index < 0
           ? ''
           : isFollowUp
-            ? (isRu ? `Дополнительный вопрос ${round.round_index - initialRoundCount + 1}` : `Follow-up ${round.round_index - initialRoundCount + 1}`)
-            : (isRu ? `Тур ${round.round_index + 1}` : `Round ${round.round_index + 1}`);
+            ? `${getRatingsText('followUpN', isRu)} ${round.round_index - initialRoundCount + 1}`
+            : `${getRatingsText('tourN', isRu)} ${round.round_index + 1}`;
 
         return (
           <div key={round.id} className={cn("space-y-2", isFollowUp && "pl-5")}>
@@ -164,7 +164,7 @@ function RoundGroupedResults({
     </>
   );
 }
-function CollapsibleResponse({ content, isStreaming }: { content: string; isStreaming: boolean }) {
+function CollapsibleResponse({ content, isStreaming, isRu }: { content: string; isStreaming: boolean; isRu: boolean }) {
   const [expanded, setExpanded] = useState(false);
   return (
     <div className="text-sm relative">
@@ -177,7 +177,7 @@ function CollapsibleResponse({ content, isStreaming }: { content: string; isStre
           onClick={() => setExpanded(v => !v)}
           className="text-[10px] text-primary hover:underline mt-0.5"
         >
-          {expanded ? '▲ Свернуть' : '▼ Развернуть'}
+          {expanded ? `▲ ${getRatingsText('collapse', isRu)}` : `▼ ${getRatingsText('expand', isRu)}`}
         </button>
       )}
     </div>
@@ -232,6 +232,7 @@ function ResponseCard({
       <CollapsibleResponse
         content={result.response_text || streamingTexts[result.model_id] || ''}
         isStreaming={result.status === 'generating' && !result.response_text && !!streamingTexts[result.model_id]}
+        isRu={isRu}
       />
       {(result.status === 'ready' || result.status === 'judged') && (onScore || onLikertScore) && (
         <div className="flex items-center gap-4 flex-wrap pt-2 border-t border-border/40">
