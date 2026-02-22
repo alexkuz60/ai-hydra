@@ -21,7 +21,13 @@ export function useDotPointData(hasKey: boolean) {
 
   const [pingResult, setPingResult] = useState<PingResult | null>(null);
   const [pinging, setPinging] = useState(false);
-  const [testResults, setTestResults] = useState<Record<string, TestResult>>({});
+  const { value: cloudTestResults, update: updateCloudTestResults } = useCloudSettings<Record<string, TestResult>>(
+    'dotpoint-test-results', {}, 'dotpoint_test_results',
+  );
+  const testResults = cloudTestResults;
+  const setTestResults = useCallback((updater: Record<string, TestResult> | ((prev: Record<string, TestResult>) => Record<string, TestResult>)) => {
+    updateCloudTestResults(updater as any);
+  }, [updateCloudTestResults]);
   const [testingModel, setTestingModel] = useState<string | null>(null);
 
   const { value: cloudSettings, update: updateCloudSettings, loaded: settingsLoaded } = useCloudSettings<ProxyApiSettings>(
