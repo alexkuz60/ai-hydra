@@ -9,7 +9,7 @@ const CORS_HEADERS = {
 const PROXYAPI_URL = "https://openai.api.proxyapi.ru/v1/chat/completions";
 
 // ProxyAPI maps imported from shared module
-import { PROXYAPI_MODEL_MAP, resolveProxyApiModel } from "../_shared/proxyapi.ts";
+import { PROXYAPI_MODEL_MAP, resolveProxyApiModel, detectModelType, getEndpointForType, buildTestPayload, type ProxyModelType } from "../_shared/proxyapi.ts";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -105,33 +105,66 @@ Deno.serve(async (req) => {
     if (action === "test" && model_id) {
       // Test a specific model with a minimal request
       const realModel = resolveProxyApiModel(model_id);
-      const isOpenAI = realModel.startsWith("openai/");
+      // Allow client to override detected type
+      const modelType: ProxyModelType = body.model_type || detectModelType(model_id);
+
+      // STT requires audio file upload — not testable automatically
+      if (modelType === "stt" || modelType === "image_edit") {
+        return new Response(JSON.stringify({
+          status: "skipped",
+          model_type: modelType,
+          message: modelType === "stt"
+            ? "STT models require audio file upload — manual testing needed"
+            : "Image edit models require image upload — manual testing needed",
+        }), {
+          headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
+        });
+      }
+
+      const endpointPath = getEndpointForType(modelType);
+      const baseUrl = "https://openai.api.proxyapi.ru";
+      const testUrl = `${baseUrl}${endpointPath}`;
+      const payload = buildTestPayload(realModel, modelType);
       const start = Date.now();
 
       try {
-        const resp = await fetch(PROXYAPI_URL, {
+        const resp = await fetch(testUrl, {
           method: "POST",
           headers: {
             Authorization: `Bearer ${proxyapiKey}`,
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({
-            model: realModel,
-            messages: [{ role: "user", content: "Say hi in 3 words." }],
-            max_tokens: isOpenAI ? undefined : 30,
-            ...(isOpenAI ? { max_completion_tokens: 30 } : {}),
-            stream: false,
-          }),
+          body: JSON.stringify(payload),
           signal: AbortSignal.timeout(30_000),
         });
 
         const latency = Date.now() - start;
 
         if (resp.ok) {
-          const data = await resp.json();
-          const content = data.choices?.[0]?.message?.content || "";
-          const tokensIn = data.usage?.prompt_tokens || 0;
-          const tokensOut = data.usage?.completion_tokens || 0;
+          // Different model types return different response shapes
+          let content = "";
+          let tokensIn = 0;
+          let tokensOut = 0;
+
+          if (modelType === "tts") {
+            // TTS returns binary audio — just confirm 200
+            content = `[audio ${resp.headers.get("content-type") || "binary"}]`;
+            // Consume body
+            await resp.arrayBuffer();
+          } else if (modelType === "image") {
+            const data = await resp.json();
+            content = data.data?.[0]?.url ? "[image generated]" : "[ok]";
+          } else if (modelType === "embedding") {
+            const data = await resp.json();
+            const dims = data.data?.[0]?.embedding?.length || 0;
+            content = `[embedding ${dims}d]`;
+            tokensIn = data.usage?.prompt_tokens || 0;
+          } else {
+            const data = await resp.json();
+            content = data.choices?.[0]?.message?.content || "";
+            tokensIn = data.usage?.prompt_tokens || 0;
+            tokensOut = data.usage?.completion_tokens || 0;
+          }
 
           await supabase.from("proxy_api_logs").insert({
             user_id: user.id,
@@ -148,6 +181,7 @@ Deno.serve(async (req) => {
             status: "success",
             latency_ms: latency,
             content,
+            model_type: modelType,
             tokens: { input: tokensIn, output: tokensOut },
           }), {
             headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
