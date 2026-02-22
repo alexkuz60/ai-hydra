@@ -38,7 +38,7 @@ export function RoleMemoryTab({ stats, loading, onRefresh }: { stats: ReturnType
     try {
       const { data } = await supabase
         .from('role_memory')
-        .select('id, content, memory_type, confidence_score, created_at, usage_count')
+        .select('id, content, memory_type, confidence_score, created_at, usage_count, metadata')
         .eq('user_id', user!.id)
         .eq('role', role)
         .order('created_at', { ascending: false })
