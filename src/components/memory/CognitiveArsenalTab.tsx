@@ -352,7 +352,7 @@ export function CognitiveArsenalTab({ stats }: { stats: ReturnType<typeof useHyd
                         variant="ghost" size="sm" className="h-7 text-[11px]"
                         onClick={() => setConfirmClearMemory(false)}
                       >
-                        {isRu ? 'Отмена' : 'Cancel'}
+                        {tm('chron.cancel')}
                       </Button>
                     )}
                   </div>

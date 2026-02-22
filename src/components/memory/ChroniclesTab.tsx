@@ -20,6 +20,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { MarkdownRenderer } from '@/components/warroom/MarkdownRenderer';
 import { RoleBadge, parseAiRevision } from './shared';
+import { useMemoryI18n } from './i18n';
 
 // ─── Types & constants ───────────────────────────────────────────────────────
 
@@ -297,6 +298,7 @@ function EvolutionerPromptsPanel({ isRu }: { isRu: boolean }) {
 
 export function ChroniclesTab({ language, isSupervisor }: { language: string; isSupervisor: boolean }) {
   const isRu = language === 'ru';
+  const tm = useMemoryI18n();
   const { user } = useAuth();
   const [entries, setEntries] = useState<ChronicleDBEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -350,7 +352,7 @@ export function ChroniclesTab({ language, isSupervisor }: { language: string; is
       setEntries((data || []) as ChronicleDBEntry[]);
     } catch (err) {
       console.error('Failed to load chronicles:', err);
-      toast.error(isRu ? 'Ошибка загрузки хроник' : 'Failed to load chronicles');
+      toast.error(tm('chron.loadError'));
     } finally {
       setLoading(false);
     }
@@ -365,7 +367,7 @@ export function ChroniclesTab({ language, isSupervisor }: { language: string; is
       if (error) throw error;
       const entry = entries.find(e => e.id === entryId);
       setEntries(prev => prev.map(e => e.id === entryId ? { ...e, supervisor_resolution: resolution } : e));
-      toast.success(isRu ? 'Резолюция сохранена' : 'Resolution saved');
+      toast.success(tm('chron.resolutionSaved'));
 
       if (entry?.status === 'revised' && entry?.ai_revision && (resolution === 'approved' || resolution === 'rejected')) {
         try {
@@ -389,7 +391,7 @@ export function ChroniclesTab({ language, isSupervisor }: { language: string; is
 
       if (resolution === 'rejected') triggerEvolution(entryId, 'single');
     } catch {
-      toast.error(isRu ? 'Ошибка сохранения' : 'Save failed');
+      toast.error(tm('chron.saveError'));
     } finally {
       setUpdatingId(null);
     }
@@ -413,16 +415,16 @@ export function ChroniclesTab({ language, isSupervisor }: { language: string; is
         const revised = result.revised ?? 0;
         const total = result.total ?? 0;
         const remaining = result.remaining ?? 0;
-        if (total === 0) toast.info(isRu ? 'Нет записей для авторевизии — все уже пересмотрены' : 'No entries to revise — all already processed');
+        if (total === 0) toast.info(tm('chron.noAutorevise'));
         else if (remaining > 0) toast.success(isRu ? `Батч завершён: ${revised}/${total} пересмотрено. Осталось ещё ${remaining} — запустите повторно.` : `Batch complete: ${revised}/${total} revised. ${remaining} remaining — run again.`);
         else toast.success(isRu ? `Автопробег завершён: ${revised}/${total} пересмотрено` : `Autorun complete: ${revised}/${total} revised`);
       } else {
-        toast.success(isRu ? 'ИИ-ревизия запущена' : 'AI revision triggered');
+        toast.success(tm('chron.aiRevisionTriggered'));
       }
       await loadEntries();
     } catch (err) {
       console.error('Evolution trigger error:', err);
-      toast.error(isRu ? 'Ошибка запуска Эволюционера' : 'Evolution trigger failed');
+      toast.error(tm('chron.evolutionError'));
     } finally {
       if (mode === 'autorun') setAutorunning(false);
     }
@@ -441,7 +443,7 @@ export function ChroniclesTab({ language, isSupervisor }: { language: string; is
 
   const handleSave = async () => {
     if (!formData.title.trim() || !formData.entry_code.trim()) {
-      toast.error(isRu ? 'Заполните код и заголовок' : 'Entry code and title are required');
+      toast.error(tm('chron.codeAndTitleRequired'));
       return;
     }
     setSaving(true);
@@ -449,10 +451,10 @@ export function ChroniclesTab({ language, isSupervisor }: { language: string; is
       let metricsBefore: Record<string, unknown> | null = null;
       let metricsAfter: Record<string, unknown> | null = null;
       if (formData.metrics_before.trim()) {
-        try { metricsBefore = JSON.parse(formData.metrics_before); } catch { toast.error(isRu ? 'Метрики "До" — невалидный JSON' : '"Before" metrics: invalid JSON'); setSaving(false); return; }
+        try { metricsBefore = JSON.parse(formData.metrics_before); } catch { toast.error(tm('chron.beforeMetricsInvalid')); setSaving(false); return; }
       }
       if (formData.metrics_after.trim()) {
-        try { metricsAfter = JSON.parse(formData.metrics_after); } catch { toast.error(isRu ? 'Метрики "После" — невалидный JSON' : '"After" metrics: invalid JSON'); setSaving(false); return; }
+        try { metricsAfter = JSON.parse(formData.metrics_after); } catch { toast.error(tm('chron.afterMetricsInvalid')); setSaving(false); return; }
       }
       const { error } = await supabase.from('chronicles').insert([{
         entry_code: formData.entry_code.trim(),
@@ -468,7 +470,7 @@ export function ChroniclesTab({ language, isSupervisor }: { language: string; is
         is_visible: true,
       }]);
       if (error) throw error;
-      toast.success(isRu ? 'Запись создана' : 'Entry created');
+      toast.success(tm('chron.entryCreated'));
       setShowForm(false);
       setFormData(EMPTY_FORM);
       await loadEntries();
@@ -491,7 +493,7 @@ export function ChroniclesTab({ language, isSupervisor }: { language: string; is
     const a = document.createElement('a');
     a.href = url; a.download = 'CHRONICLES.md'; a.click();
     URL.revokeObjectURL(url);
-    toast.success(isRu ? 'CHRONICLES.md скачан' : 'CHRONICLES.md downloaded');
+    toast.success(tm('chron.mdDownloaded'));
   }, [entries, isRu]);
 
   return (
@@ -505,23 +507,21 @@ export function ChroniclesTab({ language, isSupervisor }: { language: string; is
             </div>
             <div className="flex-1 min-w-0">
               <h2 className="text-lg font-bold text-hydra-arbiter">
-                {isRu ? 'Хроники Эволюции Hydra' : 'Chronicles of Hydra Evolution'}
+                {tm('chron.title')}
               </h2>
               <p className="text-sm text-muted-foreground mt-1">
-                {isRu
-                  ? 'Публичный артефакт Отдела Эволюционирования. Каждая запись — доказательство того, что «живая архитектура» Hydra не метафора, а инженерный факт.'
-                  : "A public artifact of the Evolution Department. Each entry proves that Hydra's \"living architecture\" is not a metaphor — it is an engineering fact."}
+                {tm('chron.subtitle')}
               </p>
               <div className="flex flex-wrap items-center gap-4 mt-3">
                 <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                   <FlaskConical className="h-3.5 w-3.5 text-hydra-success" />
-                  <span className="text-hydra-success font-medium">{isRu ? 'Эволюционер' : 'Evolutioner'}</span>
-                  <span>{isRu ? '→ тестирует и измеряет' : '→ tests & measures'}</span>
+                  <span className="text-hydra-success font-medium">{tm('chron.evolutioner')}</span>
+                  <span>{tm('chron.evolutionerDesc')}</span>
                 </div>
                 <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                   <ScrollText className="h-3.5 w-3.5 text-hydra-arbiter" />
-                  <span className="text-hydra-arbiter font-medium">{isRu ? 'Летописец' : 'Chronicler'}</span>
-                  <span>{isRu ? '→ фиксирует и архивирует' : '→ records & archives'}</span>
+                  <span className="text-hydra-arbiter font-medium">{tm('chron.chronicler')}</span>
+                  <span>{tm('chron.chroniclerDesc')}</span>
                 </div>
                 {isSupervisor && rejectedCount > 0 && (
                   <div className="ml-auto">
@@ -532,7 +532,7 @@ export function ChroniclesTab({ language, isSupervisor }: { language: string; is
                       className="gap-1.5 border-hydra-expert/30 text-hydra-expert hover:bg-hydra-expert/10"
                     >
                       {autorunning ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FlaskConical className="h-3.5 w-3.5" />}
-                      {isRu ? `Автопробег (${rejectedCount} отклонённых)` : `Autorun (${rejectedCount} rejected)`}
+                      {isRu ? `Автопробег (${rejectedCount} откл.)` : `Autorun (${rejectedCount} rejected)`}
                     </Button>
                   </div>
                 )}
@@ -542,7 +542,7 @@ export function ChroniclesTab({ language, isSupervisor }: { language: string; is
               {isSupervisor && entries.length > 0 && (
                 <Button variant="outline" size="sm" onClick={exportToMarkdown} className="gap-1.5 border-amber-500/40 text-amber-300 hover:bg-amber-500/10">
                   <Download className="h-3.5 w-3.5" />
-                  {isRu ? 'Экспорт в MD' : 'Export MD'}
+                  {tm('chron.exportMd')}
                 </Button>
               )}
               <a href="https://github.com/alexkuz60/ai-hydra/blob/main/CHRONICLES.md" target="_blank" rel="noopener noreferrer">
@@ -560,15 +560,15 @@ export function ChroniclesTab({ language, isSupervisor }: { language: string; is
       <div className="grid grid-cols-3 gap-4">
         <Card><CardContent className="p-4 flex items-center gap-3">
           <div className="rounded-lg p-2 bg-muted"><ScrollText className="h-4 w-4 text-amber-400" /></div>
-          <div><p className="text-xs text-muted-foreground">{isRu ? 'Всего записей' : 'Total entries'}</p><p className="text-2xl font-bold">{entries.length}</p></div>
+          <div><p className="text-xs text-muted-foreground">{tm('chron.totalEntries')}</p><p className="text-2xl font-bold">{entries.length}</p></div>
         </CardContent></Card>
         <Card><CardContent className="p-4 flex items-center gap-3">
           <div className="rounded-lg p-2 bg-muted"><CheckCheck className="h-4 w-4 text-emerald-400" /></div>
-          <div><p className="text-xs text-muted-foreground">{isRu ? 'Одобрено' : 'Approved'}</p><p className="text-2xl font-bold">{approvedCount}</p></div>
+          <div><p className="text-xs text-muted-foreground">{tm('chron.approved')}</p><p className="text-2xl font-bold">{approvedCount}</p></div>
         </CardContent></Card>
         <Card><CardContent className="p-4 flex items-center gap-3">
           <div className="rounded-lg p-2 bg-muted"><Timer className="h-4 w-4 text-amber-400" /></div>
-          <div><p className="text-xs text-muted-foreground">{isRu ? 'Ожидает' : 'Pending'}</p><p className="text-2xl font-bold">{pendingCount}</p></div>
+          <div><p className="text-xs text-muted-foreground">{tm('chron.pending')}</p><p className="text-2xl font-bold">{pendingCount}</p></div>
         </CardContent></Card>
       </div>
 
@@ -578,7 +578,7 @@ export function ChroniclesTab({ language, isSupervisor }: { language: string; is
           {!showForm ? (
             <Button variant="outline" size="sm" onClick={openForm} className="gap-2 border-amber-500/40 text-amber-400 hover:bg-amber-500/10">
               <ScrollText className="h-4 w-4" />
-              {isRu ? 'Добавить запись Летописца' : 'Add Chronicle Entry'}
+              {tm('chron.addEntry')}
             </Button>
           ) : (
             <Card className="border-amber-500/30 bg-amber-500/5">
@@ -586,7 +586,7 @@ export function ChroniclesTab({ language, isSupervisor }: { language: string; is
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-sm font-semibold text-amber-400 flex items-center gap-2">
                     <ScrollText className="h-4 w-4" />
-                    {isRu ? 'Новая запись Летописца' : 'New Chronicle Entry'}
+                    {tm('chron.newEntry')}
                   </CardTitle>
                   <Button variant="ghost" size="icon" onClick={() => setShowForm(false)} className="h-7 w-7">
                     <X className="h-4 w-4" />
@@ -596,54 +596,54 @@ export function ChroniclesTab({ language, isSupervisor }: { language: string; is
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="text-xs text-muted-foreground mb-1 block">{isRu ? 'Код записи *' : 'Entry Code *'}</label>
+                    <label className="text-xs text-muted-foreground mb-1 block">{tm('chron.entryCode')}</label>
                     <Input value={formData.entry_code} onChange={e => setFormData(p => ({ ...p, entry_code: e.target.value }))} placeholder="EVO-001" className="h-8 font-mono text-sm" />
                   </div>
                   <div>
-                    <label className="text-xs text-muted-foreground mb-1 block">{isRu ? 'Статус' : 'Status'}</label>
+                    <label className="text-xs text-muted-foreground mb-1 block">{tm('chron.status')}</label>
                     <select value={formData.status} onChange={e => setFormData(p => ({ ...p, status: e.target.value }))} className="h-8 w-full rounded-md border border-input bg-background px-3 text-sm">
-                      <option value="pending">{isRu ? 'Ожидает тестирования' : 'Awaiting Testing'}</option>
-                      <option value="completed">{isRu ? 'Выполнено' : 'Completed'}</option>
+                      <option value="pending">{tm('chron.awaitingTesting')}</option>
+                      <option value="completed">{tm('chron.completed')}</option>
                     </select>
                   </div>
                 </div>
                 <div>
-                  <label className="text-xs text-muted-foreground mb-1 block">{isRu ? 'Заголовок *' : 'Title *'}</label>
-                  <Input value={formData.title} onChange={e => setFormData(p => ({ ...p, title: e.target.value }))} placeholder={isRu ? 'Оптимизация промпта Критика...' : 'Critic prompt optimization...'} className="h-8 text-sm" />
+                  <label className="text-xs text-muted-foreground mb-1 block">{tm('chron.titleField')}</label>
+                  <Input value={formData.title} onChange={e => setFormData(p => ({ ...p, title: e.target.value }))} placeholder={tm('chron.titlePlaceholder')} className="h-8 text-sm" />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="text-xs text-muted-foreground mb-1 block">{isRu ? 'Объект (роль)' : 'Target Role'}</label>
+                    <label className="text-xs text-muted-foreground mb-1 block">{tm('chron.targetRole')}</label>
                     <Input value={formData.role_object} onChange={e => setFormData(p => ({ ...p, role_object: e.target.value }))} placeholder="Critic, Evolutioner..." className="h-8 text-sm" />
                   </div>
                   <div>
-                    <label className="text-xs text-muted-foreground mb-1 block">{isRu ? 'Инициатор' : 'Initiator'}</label>
+                    <label className="text-xs text-muted-foreground mb-1 block">{tm('chron.initiator')}</label>
                     <Input value={formData.initiator} onChange={e => setFormData(p => ({ ...p, initiator: e.target.value }))} placeholder="Supervisor" className="h-8 text-sm" />
                   </div>
                 </div>
                 <div>
-                  <label className="text-xs text-muted-foreground mb-1 block">{isRu ? 'Гипотеза' : 'Hypothesis'}</label>
-                  <textarea value={formData.hypothesis} onChange={e => setFormData(p => ({ ...p, hypothesis: e.target.value }))} placeholder={isRu ? 'Что предполагается улучшить...' : 'What is expected to improve...'} rows={2} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm resize-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" />
+                  <label className="text-xs text-muted-foreground mb-1 block">{tm('chron.hypothesis')}</label>
+                  <textarea value={formData.hypothesis} onChange={e => setFormData(p => ({ ...p, hypothesis: e.target.value }))} placeholder={tm('chron.hypothesisPlaceholder')} rows={2} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm resize-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" />
                 </div>
                 <div>
-                  <label className="text-xs text-muted-foreground mb-1 block">{isRu ? 'Описание / Результат' : 'Summary / Result'}</label>
-                  <textarea value={formData.summary} onChange={e => setFormData(p => ({ ...p, summary: e.target.value }))} placeholder={isRu ? 'Что было сделано и что получилось...' : 'What was done and the outcome...'} rows={3} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm resize-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" />
+                  <label className="text-xs text-muted-foreground mb-1 block">{tm('chron.summaryField')}</label>
+                  <textarea value={formData.summary} onChange={e => setFormData(p => ({ ...p, summary: e.target.value }))} placeholder={tm('chron.summaryPlaceholder')} rows={3} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm resize-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="text-xs text-muted-foreground mb-1 block">{isRu ? 'Метрики "До" (JSON)' : '"Before" Metrics (JSON)'}</label>
+                    <label className="text-xs text-muted-foreground mb-1 block">{tm('chron.beforeMetrics')}</label>
                     <textarea value={formData.metrics_before} onChange={e => setFormData(p => ({ ...p, metrics_before: e.target.value }))} placeholder={'{"tokens": 450, "score": 6.2}'} rows={3} className="w-full rounded-md border border-input bg-background px-3 py-2 text-xs font-mono resize-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" />
                   </div>
                   <div>
-                    <label className="text-xs text-muted-foreground mb-1 block">{isRu ? 'Метрики "После" (JSON)' : '"After" Metrics (JSON)'}</label>
+                    <label className="text-xs text-muted-foreground mb-1 block">{tm('chron.afterMetrics')}</label>
                     <textarea value={formData.metrics_after} onChange={e => setFormData(p => ({ ...p, metrics_after: e.target.value }))} placeholder={'{"tokens": 310, "score": 7.8}'} rows={3} className="w-full rounded-md border border-input bg-background px-3 py-2 text-xs font-mono resize-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" />
                   </div>
                 </div>
                 <div className="flex justify-end gap-2 pt-2 border-t border-border">
-                  <Button variant="ghost" size="sm" onClick={() => setShowForm(false)} disabled={saving}>{isRu ? 'Отмена' : 'Cancel'}</Button>
+                  <Button variant="ghost" size="sm" onClick={() => setShowForm(false)} disabled={saving}>{tm('chron.cancel')}</Button>
                   <Button size="sm" onClick={handleSave} disabled={saving} className="bg-hydra-arbiter/20 text-hydra-arbiter border border-hydra-arbiter/40 hover:bg-hydra-arbiter/30">
                     {saving ? <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> : <ScrollText className="h-3.5 w-3.5 mr-1.5" />}
-                    {isRu ? 'Зафиксировать запись' : 'Save Entry'}
+                    {tm('chron.saveEntry')}
                   </Button>
                 </div>
               </CardContent>
@@ -659,13 +659,13 @@ export function ChroniclesTab({ language, isSupervisor }: { language: string; is
             <AlertCircle className="h-4 w-4 text-hydra-critical shrink-0" />
             <span className="text-hydra-critical font-medium">
               {isRu
-                ? `${rejectedCount} ${rejectedCount === 1 ? 'запись отклонена' : rejectedCount < 5 ? 'записи отклонены' : 'записей отклонено'} — требуют авторевизии Эволюционера`
-                : `${rejectedCount} ${rejectedCount === 1 ? 'entry rejected' : 'entries rejected'} — awaiting Evolutioner auto-revision`}
+                 ? `${rejectedCount} ${rejectedCount === 1 ? 'запись отклонена' : rejectedCount < 5 ? 'записи отклонены' : 'записей отклонено'} — требуют авторевизии`
+                 : `${rejectedCount} ${rejectedCount === 1 ? 'entry rejected' : 'entries rejected'} — awaiting auto-revision`}
             </span>
           </div>
           <Button size="sm" onClick={() => triggerEvolution(null, 'autorun')} disabled={autorunning} className="gap-1.5 shrink-0 bg-hydra-critical/80 hover:bg-hydra-critical text-white border-0">
             {autorunning ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FlaskConical className="h-3.5 w-3.5" />}
-            {isRu ? 'Запустить авторевизию всех отклонённых' : 'Auto-revise all rejected'}
+            {tm('chron.autoreviseAll')}
           </Button>
         </div>
       )}
@@ -677,41 +677,41 @@ export function ChroniclesTab({ language, isSupervisor }: { language: string; is
             <div className="flex items-center gap-2">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input value={searchText} onChange={e => setSearchText(e.target.value)} placeholder={isRu ? 'Поиск по тексту (заголовок, гипотеза, резолюция...)' : 'Search text (title, hypothesis, revision...)'} className="pl-9 h-9 text-sm" />
+                <Input value={searchText} onChange={e => setSearchText(e.target.value)} placeholder={tm('chron.searchPlaceholder')} className="pl-9 h-9 text-sm" />
               </div>
               {hasActiveFilters && (
                 <Button variant="ghost" size="sm" onClick={clearFilters} className="h-9 gap-1.5 text-muted-foreground hover:text-foreground shrink-0">
                   <X className="h-3.5 w-3.5" />
-                  {isRu ? 'Сбросить' : 'Reset'}
+                  {tm('chron.reset')}
                 </Button>
               )}
             </div>
             <div className="flex flex-wrap gap-2 items-center">
               <Filter className="h-4 w-4 text-muted-foreground shrink-0" />
               <select value={filterResolution} onChange={e => setFilterResolution(e.target.value)} className="h-8 rounded-md border border-input bg-background px-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring">
-                <option value="all">{isRu ? 'Все резолюции' : 'All resolutions'}</option>
-                <option value="pending">{isRu ? '⏳ Ожидает' : '⏳ Pending'}</option>
-                <option value="approved">{isRu ? '✅ Согласовано' : '✅ Approved'}</option>
-                <option value="rejected">{isRu ? '❌ Отклонено' : '❌ Rejected'}</option>
-                <option value="wish">{isRu ? '💬 Пожелание' : '💬 Wish'}</option>
-                <option value="revised">{isRu ? '🔄 Пересмотрено ИИ' : '🔄 AI Revised'}</option>
+                <option value="all">{tm('chron.allResolutions')}</option>
+                <option value="pending">{tm('chronicles.pending')}</option>
+                <option value="approved">{tm('chronicles.agreed')}</option>
+                <option value="rejected">{tm('chronicles.disagreed')}</option>
+                <option value="wish">{tm('chronicles.wish')}</option>
+                <option value="revised">{tm('chronicles.revised')}</option>
               </select>
               {uniqueRoles.length > 0 && (
                 <select value={filterRole} onChange={e => setFilterRole(e.target.value)} className="h-8 rounded-md border border-input bg-background px-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring">
-                  <option value="all">{isRu ? 'Все роли' : 'All roles'}</option>
+                  <option value="all">{tm('chron.allRoles')}</option>
                   {uniqueRoles.map(r => <option key={r} value={r}>{r}</option>)}
                 </select>
               )}
               <div className="flex items-center gap-1.5 ml-auto">
-                <span className="text-xs text-muted-foreground shrink-0">{isRu ? 'С' : 'From'}</span>
+                <span className="text-xs text-muted-foreground shrink-0">{tm('chron.from')}</span>
                 <input type="date" value={filterDateFrom} onChange={e => setFilterDateFrom(e.target.value)} className="h-8 rounded-md border border-input bg-background px-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring" />
-                <span className="text-xs text-muted-foreground shrink-0">{isRu ? 'по' : 'to'}</span>
+                <span className="text-xs text-muted-foreground shrink-0">{tm('chron.to')}</span>
                 <input type="date" value={filterDateTo} onChange={e => setFilterDateTo(e.target.value)} className="h-8 rounded-md border border-input bg-background px-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring" />
               </div>
             </div>
             {hasActiveFilters && (
               <p className="text-xs text-muted-foreground">
-                {isRu ? `Показано ${filteredEntries.length} из ${entries.length} записей` : `Showing ${filteredEntries.length} of ${entries.length} entries`}
+                {isRu ? `Показано ${filteredEntries.length} из ${entries.length}` : `Showing ${filteredEntries.length} of ${entries.length}`}
               </p>
             )}
           </CardContent>
@@ -723,7 +723,7 @@ export function ChroniclesTab({ language, isSupervisor }: { language: string; is
         <div className="space-y-4">{[1,2,3].map(i => <Skeleton key={i} className="h-40 w-full" />)}</div>
       ) : filteredEntries.length === 0 && entries.length > 0 ? (
         <div className="text-center py-12 text-muted-foreground text-sm">
-          {isRu ? 'Нет записей по выбранным фильтрам' : 'No entries match the selected filters'}
+          {tm('chron.noFilterResults')}
         </div>
       ) : (
         <div className="space-y-4">
@@ -750,10 +750,10 @@ export function ChroniclesTab({ language, isSupervisor }: { language: string; is
                     </div>
                     <CardTitle className="text-base mt-1">{entry.title}</CardTitle>
                     <div className="flex items-center gap-2 flex-wrap mt-1">
-                      <span className="text-xs text-muted-foreground font-medium">{isRu ? 'Объект:' : 'Target:'}</span>
+                      <span className="text-xs text-muted-foreground font-medium">{tm('chron.target')}</span>
                       <RoleBadge value={entry.role_object} isRu={isRu} />
                       <span className="text-xs text-muted-foreground">·</span>
-                      <span className="text-xs text-muted-foreground font-medium">{isRu ? 'Инициатор:' : 'Initiator:'}</span>
+                      <span className="text-xs text-muted-foreground font-medium">{tm('chron.initiatorLabel')}</span>
                       <RoleBadge value={entry.initiator} isRu={isRu} />
                     </div>
                   </CardHeader>
@@ -772,10 +772,10 @@ export function ChroniclesTab({ language, isSupervisor }: { language: string; is
                           <CollapsibleTrigger className="flex items-center justify-between w-full">
                             <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
                               <Lightbulb className="h-3.5 w-3.5" />
-                              {isRu ? 'Гипотеза' : 'Hypothesis'}
+                              {tm('chron.hypothesis')}
                             </div>
                             <span className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1">
-                              {expandedCards.has(entry.id) ? (isRu ? 'Свернуть детали' : 'Collapse details') : (isRu ? 'Показать детали' : 'Show details')}
+                              {expandedCards.has(entry.id) ? tm('chron.collapseDetails') : tm('chron.showDetails')}
                               {!expandedCards.has(entry.id) && entry.ai_revision && <FlaskConical className="h-3 w-3 text-hydra-expert ml-1" />}
                             </span>
                           </CollapsibleTrigger>
@@ -785,7 +785,7 @@ export function ChroniclesTab({ language, isSupervisor }: { language: string; is
                         <CollapsibleContent className="space-y-4 mt-4">
                           {entry.summary && (
                             <div className="rounded-lg border border-border bg-muted/20 p-3">
-                              <p className="text-xs font-medium text-muted-foreground mb-2">{isRu ? 'Результат' : 'Summary'}</p>
+                              <p className="text-xs font-medium text-muted-foreground mb-2">{tm('chron.result')}</p>
                               <p className="text-sm text-muted-foreground leading-relaxed">{entry.summary}</p>
                             </div>
                           )}
@@ -794,7 +794,7 @@ export function ChroniclesTab({ language, isSupervisor }: { language: string; is
                             <div className="grid grid-cols-2 gap-3">
                               {mb && Object.keys(mb).length > 0 && (
                                 <div className="rounded-lg border border-border p-3 space-y-1.5">
-                                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{isRu ? 'До' : 'Before'}</p>
+                                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{tm('chron.before')}</p>
                                   {Object.entries(mb).map(([k, v]) => (
                                     <div key={k} className="flex justify-between text-xs">
                                       <TermLabel term={k} className="text-muted-foreground">{getTermLabel(k, isRu)}</TermLabel>
@@ -805,7 +805,7 @@ export function ChroniclesTab({ language, isSupervisor }: { language: string; is
                               )}
                               {mat && Object.keys(mat).length > 0 && (
                                 <div className="rounded-lg border border-hydra-success/30 bg-hydra-success/5 p-3 space-y-1.5">
-                                  <p className="text-xs font-medium text-hydra-success uppercase tracking-wide">{isRu ? 'Цель →' : 'Target →'}</p>
+                                  <p className="text-xs font-medium text-hydra-success uppercase tracking-wide">{tm('chron.targetArrow')}</p>
                                   {Object.entries(mat).map(([k, v]) => (
                                     <div key={k} className="flex justify-between text-xs">
                                       <TermLabel term={k} className="text-muted-foreground">{getTermLabel(k, isRu)}</TermLabel>
@@ -823,10 +823,10 @@ export function ChroniclesTab({ language, isSupervisor }: { language: string; is
                                 <CollapsibleTrigger className="flex items-center justify-between w-full">
                                   <div className="flex items-center gap-1.5 text-xs text-hydra-expert font-medium">
                                     <FlaskConical className="h-3.5 w-3.5" />
-                                    {isRu ? 'ИИ-ревизия Эволюционера' : 'AI Evolutioner Revision'}
+                                     {tm('chron.aiRevision')}
                                   </div>
                                   <span className="text-xs text-hydra-expert hover:text-hydra-expert/80">
-                                    {expandedRevision === entry.id ? (isRu ? 'Свернуть' : 'Collapse') : (isRu ? 'Развернуть' : 'Expand')}
+                                    {expandedRevision === entry.id ? tm('chron.collapse') : tm('chron.expand')}
                                   </span>
                                 </CollapsibleTrigger>
                                 <CollapsibleContent>
@@ -846,7 +846,7 @@ export function ChroniclesTab({ language, isSupervisor }: { language: string; is
                       <>
                         {entry.summary && (
                           <div className="rounded-lg border border-border bg-muted/20 p-3">
-                            <p className="text-xs font-medium text-muted-foreground mb-2">{isRu ? 'Результат' : 'Summary'}</p>
+                            <p className="text-xs font-medium text-muted-foreground mb-2">{tm('chron.result')}</p>
                             <p className="text-sm text-muted-foreground leading-relaxed">{entry.summary}</p>
                           </div>
                         )}
@@ -854,7 +854,7 @@ export function ChroniclesTab({ language, isSupervisor }: { language: string; is
                           <div className="grid grid-cols-2 gap-3">
                             {mb && Object.keys(mb).length > 0 && (
                               <div className="rounded-lg border border-border p-3 space-y-1.5">
-                                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{isRu ? 'До' : 'Before'}</p>
+                                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{tm('chron.before')}</p>
                                 {Object.entries(mb).map(([k, v]) => (
                                   <div key={k} className="flex justify-between text-xs">
                                     <TermLabel term={k} className="text-muted-foreground">{getTermLabel(k, isRu)}</TermLabel>
@@ -865,7 +865,7 @@ export function ChroniclesTab({ language, isSupervisor }: { language: string; is
                             )}
                             {mat && Object.keys(mat).length > 0 && (
                               <div className="rounded-lg border border-hydra-success/30 bg-hydra-success/5 p-3 space-y-1.5">
-                                <p className="text-xs font-medium text-hydra-success uppercase tracking-wide">{isRu ? 'Цель →' : 'Target →'}</p>
+                                <p className="text-xs font-medium text-hydra-success uppercase tracking-wide">{tm('chron.targetArrow')}</p>
                                 {Object.entries(mat).map(([k, v]) => (
                                   <div key={k} className="flex justify-between text-xs">
                                     <TermLabel term={k} className="text-muted-foreground">{getTermLabel(k, isRu)}</TermLabel>
@@ -882,10 +882,10 @@ export function ChroniclesTab({ language, isSupervisor }: { language: string; is
                               <CollapsibleTrigger className="flex items-center justify-between w-full">
                                 <div className="flex items-center gap-1.5 text-xs text-hydra-expert font-medium">
                                   <FlaskConical className="h-3.5 w-3.5" />
-                                  {isRu ? 'ИИ-ревизия Эволюционера' : 'AI Evolutioner Revision'}
+                                   {tm('chron.aiRevision')}
                                 </div>
                                 <span className="text-xs text-hydra-expert hover:text-hydra-expert/80">
-                                  {expandedRevision === entry.id ? (isRu ? 'Свернуть' : 'Collapse') : (isRu ? 'Развернуть' : 'Expand')}
+                                  {expandedRevision === entry.id ? tm('chron.collapse') : tm('chron.expand')}
                                 </span>
                               </CollapsibleTrigger>
                               <CollapsibleContent>
@@ -901,7 +901,7 @@ export function ChroniclesTab({ language, isSupervisor }: { language: string; is
 
                     {/* Resolution row */}
                     <div className="flex items-center gap-2 pt-1 border-t border-border flex-wrap">
-                      <span className="text-xs text-muted-foreground">{isRu ? 'Резолюция супервизора:' : 'Supervisor resolution:'}</span>
+                      <span className="text-xs text-muted-foreground">{tm('chron.supervisorResolution')}</span>
                       <span className={`text-xs font-medium ${resolutionCfg.color}`}>{resolutionCfg.label[isRu ? 'ru' : 'en']}</span>
                       {entry.supervisor_comment && (
                         <span className="text-xs text-muted-foreground">— {entry.supervisor_comment}</span>
@@ -912,9 +912,9 @@ export function ChroniclesTab({ language, isSupervisor }: { language: string; is
                             <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
                           ) : (
                             <>
-                              <Button variant="ghost" size="sm" onClick={() => setResolution(entry.id, 'approved')} disabled={entry.supervisor_resolution === 'approved'} className={cn('h-6 text-xs', entry.supervisor_resolution === 'approved' ? 'text-hydra-success bg-hydra-success/10' : 'text-muted-foreground hover:text-hydra-success')}>✅ {isRu ? 'Согласен' : 'Agree'}</Button>
-                              <Button variant="ghost" size="sm" onClick={() => setResolution(entry.id, 'wish')} disabled={entry.supervisor_resolution === 'wish'} className={cn('h-6 text-xs', entry.supervisor_resolution === 'wish' ? 'text-hydra-info bg-hydra-info/10' : 'text-muted-foreground hover:text-hydra-info')}>💬 {isRu ? 'Пожелание' : 'Wish'}</Button>
-                              <Button variant="ghost" size="sm" onClick={() => setResolution(entry.id, 'rejected')} disabled={entry.supervisor_resolution === 'rejected'} className={cn('h-6 text-xs', entry.supervisor_resolution === 'rejected' ? 'text-hydra-critical bg-hydra-critical/10' : 'text-muted-foreground hover:text-hydra-critical')}>❌ {isRu ? 'Не согласен' : 'Reject'}</Button>
+                              <Button variant="ghost" size="sm" onClick={() => setResolution(entry.id, 'approved')} disabled={entry.supervisor_resolution === 'approved'} className={cn('h-6 text-xs', entry.supervisor_resolution === 'approved' ? 'text-hydra-success bg-hydra-success/10' : 'text-muted-foreground hover:text-hydra-success')}>✅ {tm('chron.agree')}</Button>
+                              <Button variant="ghost" size="sm" onClick={() => setResolution(entry.id, 'wish')} disabled={entry.supervisor_resolution === 'wish'} className={cn('h-6 text-xs', entry.supervisor_resolution === 'wish' ? 'text-hydra-info bg-hydra-info/10' : 'text-muted-foreground hover:text-hydra-info')}>💬 {tm('chron.wish')}</Button>
+                              <Button variant="ghost" size="sm" onClick={() => setResolution(entry.id, 'rejected')} disabled={entry.supervisor_resolution === 'rejected'} className={cn('h-6 text-xs', entry.supervisor_resolution === 'rejected' ? 'text-hydra-critical bg-hydra-critical/10' : 'text-muted-foreground hover:text-hydra-critical')}>❌ {tm('chron.reject')}</Button>
                             </>
                           )}
                         </div>
