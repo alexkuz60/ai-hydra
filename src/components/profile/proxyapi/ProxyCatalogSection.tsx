@@ -4,12 +4,12 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Loader2, Zap, Play, CheckCircle, XCircle, Clock, WifiOff, RefreshCw, Search, Plus } from 'lucide-react';
+import { Loader2, Zap, Play, CheckCircle, XCircle, Clock, WifiOff, RefreshCw, Search, Plus, SkipForward } from 'lucide-react';
 import { ProxyApiLogo, PROVIDER_LOGOS, PROVIDER_COLORS } from '@/components/ui/ProviderLogos';
 import { cn } from '@/lib/utils';
 import { type ModelRegistryEntry, STRENGTH_LABELS } from '@/config/modelRegistry';
 import type { ProxyApiCatalogModel, TestResult } from './types';
-import { STATUS_EXPLANATIONS } from './types';
+import { STATUS_EXPLANATIONS, detectModelType, MODEL_TYPE_LABELS } from './types';
 
 interface ProxyCatalogSectionProps {
   proxyModels: ModelRegistryEntry[];
@@ -93,6 +93,7 @@ export function ProxyCatalogSection({
               <div key={model.id} className="flex items-center gap-2 px-3 py-2 hover:bg-muted/50 cursor-pointer border-b border-border/30 last:border-0" onClick={() => onAddUserModel(model.id)}>
                 <ProxyApiLogo className="h-3.5 w-3.5 flex-shrink-0" />
                 <span className="text-sm truncate flex-1 font-mono">{model.id}</span>
+                <ModelTypeBadge modelId={model.id} />
                 <Badge variant="outline" className="text-[10px] px-1.5 py-0">{model.owned_by}</Badge>
                 <Plus className="h-3.5 w-3.5 text-primary flex-shrink-0" />
               </div>
@@ -139,6 +140,17 @@ export function ProxyCatalogSection({
 
 // ─── Sub-components ────────────────────────────────────
 
+function ModelTypeBadge({ modelId }: { modelId: string }) {
+  const type = detectModelType(modelId);
+  if (type === 'chat') return null; // Default, no badge needed
+  const info = MODEL_TYPE_LABELS[type];
+  return (
+    <Badge variant="outline" className={cn("text-[10px] px-1.5 py-0", info.color)}>
+      {info.label}
+    </Badge>
+  );
+}
+
 function UserModelRow({ model, testResult, isTesting, onTest }: {
   model: ProxyApiCatalogModel;
   testResult?: TestResult;
@@ -146,35 +158,59 @@ function UserModelRow({ model, testResult, isTesting, onTest }: {
   onTest: () => void;
 }) {
   const expl = testResult ? STATUS_EXPLANATIONS[testResult.status] : null;
+  const modelType = detectModelType(model.id);
+  const typeInfo = MODEL_TYPE_LABELS[modelType];
   return (
     <div className="flex items-center gap-3 p-3 rounded-lg border bg-card/50 hover:bg-card/80 transition-colors">
       <ProxyApiLogo className="h-4 w-4 flex-shrink-0" />
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-mono truncate">{model.id}</p>
+        <div className="flex items-center gap-1.5">
+          <p className="text-sm font-mono truncate">{model.id}</p>
+          {modelType !== 'chat' && (
+            <Badge variant="outline" className={cn("text-[9px] px-1 py-0 flex-shrink-0", typeInfo.color)}>
+              {typeInfo.label}
+            </Badge>
+          )}
+        </div>
         <p className="text-xs text-muted-foreground">{model.owned_by}</p>
       </div>
-      {testResult && (
-        <TooltipProvider delayDuration={200}>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div className="flex items-center gap-1 cursor-help text-xs">
-                {testResult.status === 'success' ? <CheckCircle className="h-3.5 w-3.5 text-emerald-400" />
-                  : testResult.status === 'gone' ? <WifiOff className="h-3.5 w-3.5 text-destructive" />
-                  : testResult.status === 'timeout' ? <Clock className="h-3.5 w-3.5 text-amber-500" />
-                  : <XCircle className="h-3.5 w-3.5 text-destructive" />}
-                <span>{testResult.latency_ms}ms</span>
-              </div>
-            </TooltipTrigger>
-            <TooltipContent side="top" className="max-w-[250px]">
-              <p className="text-xs">{expl?.description || testResult.error}</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      )}
+      {testResult && <TestStatusIcon testResult={testResult} />}
       <Button size="sm" variant="ghost" className="flex-shrink-0 h-8 w-8 p-0" onClick={onTest} disabled={isTesting} title="Тест модели">
         {isTesting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
       </Button>
     </div>
+  );
+}
+
+// Shared test status icon with tooltip
+function TestStatusIcon({ testResult }: { testResult: TestResult }) {
+  const expl = STATUS_EXPLANATIONS[testResult.status];
+  return (
+    <TooltipProvider delayDuration={200}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <div className="flex items-center gap-1 cursor-help text-xs">
+            {testResult.status === 'success' ? <CheckCircle className="h-3.5 w-3.5 text-emerald-400" />
+              : testResult.status === 'skipped' ? <SkipForward className="h-3.5 w-3.5 text-muted-foreground" />
+              : testResult.status === 'gone' ? <WifiOff className="h-3.5 w-3.5 text-destructive" />
+              : testResult.status === 'timeout' ? <Clock className="h-3.5 w-3.5 text-amber-500" />
+              : <XCircle className="h-3.5 w-3.5 text-destructive" />}
+            {testResult.status === 'skipped'
+              ? <span className="text-muted-foreground truncate max-w-[80px]">N/A</span>
+              : <span className={testResult.status === 'success' ? 'text-emerald-400' : testResult.status === 'timeout' ? 'text-amber-500' : 'text-destructive'}>
+                  {testResult.latency_ms > 0 ? `${testResult.latency_ms}ms` : testResult.error || testResult.status}
+                </span>}
+          </div>
+        </TooltipTrigger>
+        <TooltipContent side="top" className="max-w-[280px]">
+          <p className="text-xs">{testResult.message || expl?.description || testResult.error}</p>
+          {testResult.model_type && <p className="text-xs text-muted-foreground mt-1">Тип: {MODEL_TYPE_LABELS[testResult.model_type]?.label || testResult.model_type}</p>}
+          {testResult.tokens && (testResult.tokens.input > 0 || testResult.tokens.output > 0) && (
+            <p className="text-xs text-muted-foreground mt-1">Токены: {testResult.tokens.input}/{testResult.tokens.output}</p>
+          )}
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
 }
 
@@ -194,7 +230,6 @@ function ModelRow({ model, testResult, isTesting, onTest }: {
   const Logo = PROVIDER_LOGOS[creatorProvider];
   const color = PROVIDER_COLORS[creatorProvider];
   const pricing = typeof model.pricing === 'object' ? `${model.pricing.input}/${model.pricing.output}` : model.pricing;
-  const testStatusExpl = testResult ? STATUS_EXPLANATIONS[testResult.status] : null;
 
   return (
     <div className={cn("flex items-center gap-3 p-3 rounded-lg border bg-card/50 hover:bg-card/80 transition-colors", isDeprecated && "opacity-60")}>
@@ -214,64 +249,7 @@ function ModelRow({ model, testResult, isTesting, onTest }: {
         ))}
       </div>
 
-      {testResult && (
-        <TooltipProvider delayDuration={200}>
-          <div className="flex items-center gap-2 flex-shrink-0 text-xs">
-            {testResult.status === 'success' ? (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div className="flex items-center gap-1 cursor-help">
-                    <CheckCircle className="h-3.5 w-3.5 text-emerald-400" />
-                    <span className="text-emerald-400">{testResult.latency_ms}ms</span>
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent side="top" className="max-w-[220px]">
-                  <p className="text-xs">{testStatusExpl?.description}</p>
-                  {testResult.tokens && <p className="text-xs text-muted-foreground mt-1">Токены: {testResult.tokens.input}/{testResult.tokens.output}</p>}
-                </TooltipContent>
-              </Tooltip>
-            ) : testResult.status === 'gone' ? (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div className="flex items-center gap-1 cursor-help">
-                    <WifiOff className="h-3.5 w-3.5 text-destructive" />
-                    <span className="text-destructive">410 Gone</span>
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent side="top" className="max-w-[250px]">
-                  <p className="text-xs">{testStatusExpl?.description}</p>
-                </TooltipContent>
-              </Tooltip>
-            ) : testResult.status === 'timeout' ? (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div className="flex items-center gap-1 cursor-help">
-                    <Clock className="h-3.5 w-3.5 text-amber-500" />
-                    <span className="text-amber-500">Таймаут</span>
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent side="top" className="max-w-[250px]">
-                  <p className="text-xs">{testStatusExpl?.description}</p>
-                </TooltipContent>
-              </Tooltip>
-            ) : (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div className="flex items-center gap-1 cursor-help">
-                    <XCircle className="h-3.5 w-3.5 text-destructive" />
-                    <span className="text-destructive truncate max-w-[100px]">{testResult.error}</span>
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent side="top" className="max-w-[280px]">
-                  <p className="text-xs font-medium mb-1">Ошибка</p>
-                  <p className="text-xs text-muted-foreground">{testStatusExpl?.description}</p>
-                  {testResult.error && <p className="text-xs text-destructive mt-1">{testResult.error}</p>}
-                </TooltipContent>
-              </Tooltip>
-            )}
-          </div>
-        </TooltipProvider>
-      )}
+      {testResult && <TestStatusIcon testResult={testResult} />}
 
       <Button size="sm" variant="ghost" className="flex-shrink-0 h-8 w-8 p-0" onClick={onTest} disabled={isTesting} title="Тест модели">
         {isTesting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}

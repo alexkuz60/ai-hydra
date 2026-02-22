@@ -41,3 +41,60 @@ export const PROXYAPI_TO_LOVABLE_MAP: Record<string, string> = {
 export function resolveProxyApiModel(modelId: string): string {
   return PROXYAPI_MODEL_MAP[modelId] || modelId.replace("proxyapi/", "");
 }
+
+/** Model capability types for endpoint routing */
+export type ProxyModelType = "chat" | "embedding" | "tts" | "stt" | "image" | "image_edit" | "responses";
+
+/** Detect model type from its ID for correct endpoint routing */
+export function detectModelType(modelId: string): ProxyModelType {
+  const id = modelId.toLowerCase();
+  // TTS models
+  if (id.includes("tts") || (id.includes("speech") && !id.includes("speech-to"))) return "tts";
+  // STT / transcription models
+  if (id.includes("whisper") || id.includes("transcription") || id.includes("speech-to")) return "stt";
+  // Image generation models
+  if (id.includes("dall-e") || id.includes("dalle") || id.includes("gpt-image") ||
+      id.includes("image-generation") || id.includes("sdxl") || id.includes("stable-diffusion") ||
+      id.includes("midjourney")) return "image";
+  // Image edit
+  if (id.includes("image-edit")) return "image_edit";
+  // Embedding models
+  if (id.includes("embedding") || id.includes("embed") || id.includes("text-embedding")) return "embedding";
+  // Default to chat
+  return "chat";
+}
+
+/** Get the ProxyAPI endpoint path for a given model type */
+export function getEndpointForType(type: ProxyModelType): string {
+  switch (type) {
+    case "tts": return "/v1/audio/speech";
+    case "stt": return "/v1/audio/transcriptions";
+    case "image": return "/v1/images/generations";
+    case "image_edit": return "/v1/images/edits";
+    case "embedding": return "/v1/embeddings";
+    case "responses": return "/v1/responses";
+    default: return "/v1/chat/completions";
+  }
+}
+
+/** Build a minimal test payload for a model type (just enough for a 200 check) */
+export function buildTestPayload(realModel: string, type: ProxyModelType): Record<string, unknown> {
+  switch (type) {
+    case "tts":
+      return { model: realModel, input: "Hi", voice: "alloy", response_format: "mp3" };
+    case "embedding":
+      return { model: realModel, input: "test" };
+    case "image":
+      return { model: realModel, prompt: "white square", size: "256x256", n: 1 };
+    default: {
+      const isOpenAI = realModel.startsWith("openai/");
+      return {
+        model: realModel,
+        messages: [{ role: "user", content: "Say hi in 3 words." }],
+        max_tokens: isOpenAI ? undefined : 30,
+        ...(isOpenAI ? { max_completion_tokens: 30 } : {}),
+        stream: false,
+      };
+    }
+  }
+}
