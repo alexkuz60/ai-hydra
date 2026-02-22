@@ -64,17 +64,25 @@ export function detectModelType(modelId: string): ProxyModelType {
   return "chat";
 }
 
-/** Get the ProxyAPI endpoint path for a given model type */
-export function getEndpointForType(type: ProxyModelType): string {
+/** Get the full ProxyAPI URL for a given model type.
+ *  Non-chat endpoints use path-based routing (api.proxyapi.ru/openai/v1/...)
+ *  because the subdomain format (openai.api.proxyapi.ru) may not support them.
+ */
+export function getFullUrlForType(type: ProxyModelType): string {
   switch (type) {
-    case "tts": return "/v1/audio/speech";
-    case "stt": return "/v1/audio/transcriptions";
-    case "image": return "/v1/images/generations";
-    case "image_edit": return "/v1/images/edits";
-    case "embedding": return "/v1/embeddings";
-    case "responses": return "/v1/responses";
-    default: return "/v1/chat/completions";
+    case "tts": return "https://api.proxyapi.ru/openai/v1/audio/speech";
+    case "stt": return "https://api.proxyapi.ru/openai/v1/audio/transcriptions";
+    case "image": return "https://api.proxyapi.ru/openai/v1/images/generations";
+    case "image_edit": return "https://api.proxyapi.ru/openai/v1/images/edits";
+    case "embedding": return "https://api.proxyapi.ru/openai/v1/embeddings";
+    case "responses": return "https://openai.api.proxyapi.ru/v1/responses";
+    default: return "https://openai.api.proxyapi.ru/v1/chat/completions";
   }
+}
+
+/** Strip provider prefix (e.g. "openai/", "gemini/") to get bare model name for API calls */
+export function stripProviderPrefix(modelId: string): string {
+  return modelId.replace(/^[a-z]+\//, "");
 }
 
 /** Build a minimal test payload for a model type (just enough for a 200 check) */

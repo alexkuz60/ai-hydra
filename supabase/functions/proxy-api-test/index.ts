@@ -9,7 +9,7 @@ const CORS_HEADERS = {
 const PROXYAPI_URL = "https://openai.api.proxyapi.ru/v1/chat/completions";
 
 // ProxyAPI maps imported from shared module
-import { PROXYAPI_MODEL_MAP, resolveProxyApiModel, detectModelType, getEndpointForType, buildTestPayload, type ProxyModelType } from "../_shared/proxyapi.ts";
+import { PROXYAPI_MODEL_MAP, resolveProxyApiModel, detectModelType, getFullUrlForType, stripProviderPrefix, buildTestPayload, type ProxyModelType } from "../_shared/proxyapi.ts";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -121,10 +121,10 @@ Deno.serve(async (req) => {
         });
       }
 
-      const endpointPath = getEndpointForType(modelType);
-      const baseUrl = "https://openai.api.proxyapi.ru";
-      const testUrl = `${baseUrl}${endpointPath}`;
-      const payload = buildTestPayload(realModel, modelType);
+      const testUrl = getFullUrlForType(modelType);
+      // For non-chat endpoints, strip provider prefix (e.g. "openai/gpt-4o-mini-tts" → "gpt-4o-mini-tts")
+      const apiModel = modelType === "chat" ? realModel : stripProviderPrefix(realModel);
+      const payload = buildTestPayload(apiModel, modelType);
       const start = Date.now();
 
       try {
