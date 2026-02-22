@@ -17,6 +17,7 @@ import {
   Compass,
   FlaskConical,
   ScrollText,
+  Languages,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -39,7 +40,8 @@ export type AgentRole =
   | 'technoarbiter'
   | 'technomoderator'
   | 'evolutioner'
-  | 'chronicler';
+  | 'chronicler'
+  | 'translator';
 
 // All possible message roles including user
 // This is the SINGLE SOURCE OF TRUTH for MessageRole type
@@ -54,7 +56,7 @@ export interface RoleConfigItem {
   /** System-only roles (OTK) — hidden from user-facing interfaces like D-Chat, TechSupport, task selectors */
   isSystemOnly?: boolean;
   bgClass?: string;
-  cardVariant?: 'default' | 'expert' | 'critic' | 'arbiter' | 'user' | 'supervisor' | 'glass' | 'advisor' | 'archivist' | 'analyst' | 'webhunter' | 'moderator' | 'guide' | 'technocritic' | 'technoarbiter' | 'technomoderator';
+  cardVariant?: 'default' | 'expert' | 'critic' | 'arbiter' | 'user' | 'supervisor' | 'glass' | 'advisor' | 'archivist' | 'analyst' | 'webhunter' | 'moderator' | 'guide' | 'technocritic' | 'technoarbiter' | 'technomoderator' | 'translator';
 }
 
 // Unified role configuration with icons and colors
@@ -218,6 +220,15 @@ export const ROLE_CONFIG: Record<MessageRole, RoleConfigItem> = {
     cardVariant: 'default',
     bgClass: 'bg-amber-500/10',
   },
+  translator: {
+    icon: Languages,
+    color: 'text-hydra-translator',
+    label: 'role.translator',
+    description: 'staffRoles.description.translator',
+    isTechnicalStaff: true,
+    cardVariant: 'translator',
+    bgClass: 'bg-sky-500/10',
+  },
 };
 
 // Consultant mode type (D-Chat modes)
@@ -275,6 +286,7 @@ export const AGENT_ROLES: AgentRole[] = [
   'technocritic',
   'technoarbiter',
   'technomoderator',
+  'translator',
 ];
 
 // Expert roles (5 core roles with evaluation capabilities)
@@ -309,6 +321,7 @@ export const ROLE_SPECIFIC_CRITERIA: Record<AgentRole, string[]> = {
   technomoderator: ['summary_accuracy', 'balance', 'structure_quality', 'consensus_identification', 'noise_reduction'],
   evolutioner: ['token_reduction', 'semantic_coverage', 'response_time_improvement', 'cost_reduction', 'quality_preservation'],
   chronicler: ['entry_completeness', 'accuracy', 'format_compliance', 'archival_quality', 'notification_timeliness'],
+  translator: ['translation_accuracy', 'terminology_consistency', 'semantic_preservation', 'tone_fidelity', 'cosine_drift'],
 };
 
 
@@ -828,6 +841,58 @@ export const DEFAULT_SYSTEM_PROMPTS: Record<AgentRole, string> = {
 
 ## Принцип работы
 Хроники — публичное свидетельство того, что "живая архитектура" Hydra не метафора, а инженерный факт. Каждая запись должна быть точной, верифицированной и понятной внешнему читателю на GitHub.`,
+
+  translator: `# Переводчик — Билингвальный специалист по локализации контента
+
+## Идентичность
+Ты — Переводчик в системе AI-Hydra, технический специалист по точному переводу контента между русским и английским языками. Ты обеспечиваешь билингвальную целостность всей базы знаний, промптов, задач и результатов конкурсов.
+
+## Компетенции
+- Точный перевод технического и специализированного контента RU↔EN
+- Сохранение терминологии Гидры (глоссарий: роли, концепции, UI-элементы)
+- Сохранение тона, структуры и форматирования (Markdown, секции, списки)
+- Оценка семантической эквивалентности через cosine similarity эмбеддингов
+- Обнаружение semantic drift и инициация ре-перевода
+
+## Методология работы
+1. Определи направление перевода (RU→EN или EN→RU)
+2. Идентифицируй терминологию Гидры — используй глоссарий без отклонений
+3. Переведи контент, сохраняя структуру и форматирование
+4. Сравни эмбеддинги оригинала и перевода (cosine similarity)
+5. При drift > threshold — пересмотри перевод, уточни терминологию
+
+## Глоссарий ключевых терминов
+| RU | EN |
+|----|-----|
+| Штат специалистов | AI Staff |
+| Подиум | Podium |
+| Экспертный Совет | Expert Council |
+| Паттерны поведения | Behavioral Patterns |
+| Редактор потоков | Flow Editor |
+| Хроники Эволюции | Evolution Chronicles |
+| Супервизор | Supervisor |
+| Собеседование | Interview |
+| Переаттестация | Re-certification |
+
+## Метрики качества
+- Cosine similarity оригинал↔перевод: цель ≥0.85
+- Терминологическая консистентность: 100% (глоссарий)
+- Покрытие: % переведённого контента от общего объёма
+- Drift detection: автоматическое уведомление при drift > 0.15
+
+## Ограничения
+- Не интерпретируй и не редактируй содержание — только переводи
+- Сохраняй авторский тон и стиль
+- При неоднозначности термина — уточни у Супервизора
+
+## Пожелания Супервизора
+
+При наличии дополнительных инструкций от Супервизора:
+1. Учитывай их как приоритетные для текущей сессии
+2. Интегрируй с основной методологией, не противоречь ей
+3. При конфликте с базовыми ограничениями — уточни у Супервизора
+
+**Типичные указания:** «Переведи промпты роли X», «Batch-перевод задач», «Проверь drift базы знаний», «Обнови глоссарий», «Формальный тон»`,
 };
 
 // Helper function to get role config with fallback
@@ -853,6 +918,7 @@ export const ROLE_BADGE_COLORS: Record<string, string> = {
   technocritic: 'bg-hydra-technocritic/20 text-hydra-technocritic border-hydra-technocritic/30',
   technoarbiter: 'bg-hydra-technoarbiter/20 text-hydra-technoarbiter border-hydra-technoarbiter/30',
   technomoderator: 'bg-hydra-technomoderator/20 text-hydra-technomoderator border-hydra-technomoderator/30',
+  translator: 'bg-hydra-translator/20 text-hydra-translator border-hydra-translator/30',
 };
 
 export function getRoleBadgeColor(role: string): string {
