@@ -14,6 +14,7 @@ import {
   UserCheck, RefreshCw, Gavel, DollarSign, AlertTriangle,
 } from 'lucide-react';
 import { ModelNameWithIcon } from '@/components/ui/ModelNameWithIcon';
+import { getRatingsText } from './i18n';
 import { InterviewTimeline } from '@/components/staff/InterviewTimeline';
 import { StepCard, SideBySideCard } from '@/components/staff/InterviewStepCards';
 import { VerdictSection } from '@/components/staff/InterviewVerdictView';
@@ -223,12 +224,10 @@ export function ScreeningPanel({ role, selectedWinners, sourceContestId }: Scree
         <div className="text-center space-y-3 max-w-sm">
           <UserCheck className="h-10 w-10 text-muted-foreground/40 mx-auto" />
           <p className="text-lg font-medium">
-            {isRu ? 'Скрининг-интервью' : 'Screening Interview'}
+            {getRatingsText('screeningInterview', isRu)}
           </p>
           <p className="text-sm text-muted-foreground">
-            {isRu
-              ? 'Выберите победителей конкурса (👑) в таблице результатов, чтобы запустить пакетное тестирование'
-              : 'Select contest winners (👑) in the scores table to start batch screening'}
+            {getRatingsText('selectWinnersForScreening', isRu)}
           </p>
         </div>
       </div>
@@ -246,24 +245,24 @@ export function ScreeningPanel({ role, selectedWinners, sourceContestId }: Scree
           <div>
             <h2 className="text-lg font-semibold flex items-center gap-2">
               <UserCheck className="h-5 w-5 text-primary" />
-              {isRu ? 'Скрининг-интервью' : 'Screening Interview'}
+              {getRatingsText('screeningInterview', isRu)}
             </h2>
             <p className="text-xs text-muted-foreground mt-0.5">
               {isRu
-                ? `${totalCount} кандидат${totalCount > 1 ? 'ов' : ''} · Роль: ${role} · Параллельно: 2`
-                : `${totalCount} candidate${totalCount > 1 ? 's' : ''} · Role: ${role} · Concurrency: 2`}
+                ? `${totalCount} кандидат${totalCount > 1 ? 'ов' : ''} · ${getRatingsText('roleLabel', isRu)}: ${role} · ${getRatingsText('concurrency', isRu)}: 2`
+                : `${totalCount} candidate${totalCount > 1 ? 's' : ''} · ${getRatingsText('roleLabel', isRu)}: ${role} · ${getRatingsText('concurrency', isRu)}: 2`}
             </p>
           </div>
           {!screening.running && completedCount < totalCount && (
             <Button size="sm" className="gap-2" onClick={handleRunBatch}>
               <Play className="h-3.5 w-3.5" />
-              {isRu ? 'Запустить скрининг' : 'Run Screening'}
+              {getRatingsText('runScreening', isRu)}
             </Button>
           )}
           {screening.running && (
             <Button size="sm" variant="destructive" className="gap-2" onClick={screening.cancelBatch}>
               <XCircle className="h-3.5 w-3.5" />
-              {isRu ? 'Остановить' : 'Cancel'}
+              {getRatingsText('stop', isRu)}
             </Button>
           )}
         </div>
@@ -273,10 +272,10 @@ export function ScreeningPanel({ role, selectedWinners, sourceContestId }: Scree
           <div className="mt-3 space-y-1.5">
             <div className="flex items-center justify-between text-[10px] text-muted-foreground">
               <span>
-                {completedCount}/{totalCount} {isRu ? 'завершено' : 'done'}
+                {completedCount}/{totalCount} {getRatingsText('doneCount', isRu)}
                 {failedCount > 0 && (
                   <span className="text-hydra-critical ml-1">
-                    ({failedCount} {isRu ? 'ошибок' : 'failed'})
+                    ({failedCount} {getRatingsText('failedCount', isRu)})
                   </span>
                 )}
               </span>
@@ -354,10 +353,10 @@ export function ScreeningPanel({ role, selectedWinners, sourceContestId }: Scree
                   <div className="space-y-1">
                     <div className="flex items-center justify-between text-[10px] text-muted-foreground">
                       <span>
-                        {sessionCompletedCount}/{sessionTotalCount} {isRu ? 'шагов' : 'steps'}
+                        {sessionCompletedCount}/{sessionTotalCount} {getRatingsText('stepsCount', isRu)}
                         {screening.testing && liveRunning > 0 && (
                           <span className="text-primary ml-1">
-                            ({liveRunning} {isRu ? 'выполняется' : 'running'})
+                            ({liveRunning} {getRatingsText('runningCount', isRu)})
                           </span>
                         )}
                       </span>
@@ -387,33 +386,31 @@ export function ScreeningPanel({ role, selectedWinners, sourceContestId }: Scree
               <div className="px-4 py-3 border-b border-border shrink-0 space-y-2">
                 <div className="text-xs font-medium flex items-center gap-1.5">
                   <DollarSign className="h-3.5 w-3.5 text-amber-500" />
-                  {isRu ? 'Оценка бюджета' : 'Budget Estimate'}
+                  {getRatingsText('budgetEstimate', isRu)}
                 </div>
                 <div className="bg-muted/50 rounded-md p-2 text-[10px] space-y-1.5">
                   {preTestBudget.isHistorical ? (
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">
-                        {isRu ? `Прогноз (${preTestBudget.historicalCount} интервью)` : `Forecast (${preTestBudget.historicalCount} interviews)`}:
+                        {isRu ? `${getRatingsText('forecastLabel', isRu)} (${preTestBudget.historicalCount} интервью)` : `${getRatingsText('forecastLabel', isRu)} (${preTestBudget.historicalCount} interviews)`}:
                       </span>
                       <span className="font-mono">~{preTestBudget.baseTokens.toLocaleString()} tok</span>
                     </div>
                   ) : (
                     <div className="text-muted-foreground italic">
-                      {isRu ? 'Нет истории — используется базовая оценка' : 'No history — using base estimate'}
+                      {getRatingsText('noHistoryBaseEstimate', isRu)}
                     </div>
                   )}
                   {preTestBudget.isThinking && (
                     <div className="flex items-center gap-1.5 text-amber-500 bg-amber-500/10 rounded px-1.5 py-1">
                       <AlertTriangle className="h-3 w-3 shrink-0" />
                       <span>
-                        {isRu
-                          ? 'Модель с рассуждениями — рекомендуется 2x бюджет'
-                          : 'Thinking model — 2x budget recommended'}
+                        {getRatingsText('thinkingModelBudget', isRu)}
                       </span>
                     </div>
                   )}
                   <div className="flex items-center gap-2">
-                    <span className="text-muted-foreground">{isRu ? 'Множитель' : 'Multiplier'}:</span>
+                    <span className="text-muted-foreground">{getRatingsText('multiplier', isRu)}:</span>
                     <div className="flex gap-1">
                       {[1, 2, 3].map(m => (
                         <button
@@ -433,7 +430,7 @@ export function ScreeningPanel({ role, selectedWinners, sourceContestId }: Scree
                   </div>
                   {preTestBudget.cost && (
                     <div className="flex justify-between pt-1 border-t border-border font-medium">
-                      <span>{isRu ? 'Оценка стоимости' : 'Est. cost'}:</span>
+                      <span>{getRatingsText('estCost', isRu)}:</span>
                       <span className="font-mono text-amber-500">
                         ≤{formatCost(preTestBudget.cost.total)}
                       </span>
@@ -450,12 +447,12 @@ export function ScreeningPanel({ role, selectedWinners, sourceContestId }: Scree
                   {session.status === 'testing' ? (
                     <>
                       <RefreshCw className="h-3.5 w-3.5" />
-                      {isRu ? 'Возобновить тесты' : 'Resume Tests'}
+                      {getRatingsText('resumeTests', isRu)}
                     </>
                   ) : (
                     <>
                       <Play className="h-3.5 w-3.5" />
-                      {isRu ? 'Запустить тесты' : 'Run Tests'}
+                      {getRatingsText('runTests', isRu)}
                       {budgetMultiplier > 1 && (
                         <Badge variant="secondary" className="text-[10px] ml-1">
                           {budgetMultiplier}x
@@ -472,7 +469,7 @@ export function ScreeningPanel({ role, selectedWinners, sourceContestId }: Scree
               <div className="px-4 py-3 border-b border-border shrink-0">
                 <Button size="sm" className="w-full gap-2" onClick={handleRunVerdict}>
                   <Gavel className="h-3.5 w-3.5" />
-                  {isRu ? 'Вынести вердикт' : 'Run Verdict'}
+                  {getRatingsText('runVerdict', isRu)}
                 </Button>
               </div>
             )}
@@ -481,11 +478,11 @@ export function ScreeningPanel({ role, selectedWinners, sourceContestId }: Scree
               <div className="px-4 py-3 border-b border-border shrink-0 space-y-2">
                 <div className="flex items-center gap-2 text-xs">
                   <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
-                  <span>{isRu ? 'Фаза' : 'Phase'}: {verdictHook.currentPhase}</span>
+                  <span>{getRatingsText('phase', isRu)}: {verdictHook.currentPhase}</span>
                 </div>
                 <Button size="sm" variant="destructive" className="w-full gap-2" onClick={verdictHook.cancelVerdict}>
                   <XCircle className="h-3.5 w-3.5" />
-                  {isRu ? 'Остановить' : 'Cancel'}
+                   {getRatingsText('stop', isRu)}
                 </Button>
               </div>
             )}
@@ -494,7 +491,7 @@ export function ScreeningPanel({ role, selectedWinners, sourceContestId }: Scree
               <div className="px-4 py-3 border-b border-border shrink-0">
                 <Button size="sm" variant="destructive" className="w-full gap-2" onClick={screening.cancelTests}>
                   <XCircle className="h-3.5 w-3.5" />
-                  {isRu ? 'Остановить' : 'Cancel'}
+                  {getRatingsText('stop', isRu)}
                 </Button>
               </div>
             )}
@@ -506,7 +503,7 @@ export function ScreeningPanel({ role, selectedWinners, sourceContestId }: Scree
                 {candidate.status === 'pending' && (
                   <div className="flex items-center gap-2 text-sm text-muted-foreground py-8 justify-center">
                     <Clock className="h-4 w-4" />
-                    {isRu ? 'В очереди' : 'Queued'}
+                    {getRatingsText('queued', isRu)}
                   </div>
                 )}
 
@@ -514,7 +511,7 @@ export function ScreeningPanel({ role, selectedWinners, sourceContestId }: Scree
                 {candidate.status === 'briefing' && (
                   <div className="flex items-center gap-2 text-sm text-muted-foreground py-8 justify-center">
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    {isRu ? 'Сбор брифинга...' : 'Assembling briefing...'}
+                    {getRatingsText('assemblingBriefing', isRu)}
                   </div>
                 )}
 
@@ -568,7 +565,7 @@ export function ScreeningPanel({ role, selectedWinners, sourceContestId }: Scree
                     {/* Empty state for progress with no steps yet */}
                     {viewMode === 'progress' && steps.length === 0 && !screening.testing && session.status === 'briefed' && (
                       <p className="text-sm text-muted-foreground text-center py-8">
-                        {isRu ? 'Брифинг собран — запустите тесты' : 'Briefing ready — run tests to proceed'}
+                        {getRatingsText('briefingReady', isRu)}
                       </p>
                     )}
                   </>

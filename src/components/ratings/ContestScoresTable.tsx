@@ -9,7 +9,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { cn } from '@/lib/utils';
 import { getModelRegistryEntry } from '@/config/modelRegistry';
 import { PROVIDER_LOGOS, PROVIDER_COLORS } from '@/components/ui/ProviderLogos';
-import { getCriterionLabel } from './i18n';
+import { getCriterionLabel, getRatingsText } from './i18n';
 import { computeScores, collectCriteriaKeys, type ScoringScheme, type ScoredModel } from '@/lib/contestScoring';
 import type { ContestResult } from '@/hooks/useContestSession';
 
@@ -92,13 +92,13 @@ export function ContestScoresTable({ results, rounds, isRu, selectedWinners, onT
       <div className="px-3 py-2 border-b border-border/30 flex items-center gap-2">
         <BarChart3 className="h-3.5 w-3.5 text-muted-foreground" />
         <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          {isRu ? 'Таблица оценок' : 'Scores Table'}
+          {getRatingsText('scoresTable', isRu)}
         </span>
         <Badge variant="outline" className="text-[10px] ml-1">{schemeLabel}</Badge>
         {selectedWinners.size > 0 && (
           <Badge variant="secondary" className="ml-auto text-[10px] gap-1 bg-primary/10 text-primary">
             <Crown className="h-2.5 w-2.5" />
-            {selectedWinners.size} {isRu ? 'выбрано' : 'selected'}
+            {selectedWinners.size} {getRatingsText('selected', isRu)}
           </Badge>
         )}
       </div>
@@ -112,12 +112,12 @@ export function ContestScoresTable({ results, rounds, isRu, selectedWinners, onT
                     <Crown className="h-3 w-3 text-primary mx-auto cursor-help" />
                   </TooltipTrigger>
                   <TooltipContent side="bottom" align="start" className="text-[10px]">
-                    {isRu ? 'Выбрать победителей для отправки в Панель экспертов' : 'Select winners to send to Expert Panel'}
+                    {getRatingsText('selectWinnersToExpert', isRu)}
                   </TooltipContent>
                 </Tooltip>
               </TableHead>
               <TableHead className="w-8">#</TableHead>
-              <TableHead>{isRu ? 'Модель' : 'Model'}</TableHead>
+              <TableHead>{getRatingsText('model', isRu)}</TableHead>
               <TableHead className="text-center">👤</TableHead>
               <TableHead className="text-center">⚖️</TableHead>
               {isTournament && (
@@ -185,7 +185,7 @@ export function ContestScoresTable({ results, rounds, isRu, selectedWinners, onT
                       {isSelected && <Crown className="h-3 w-3 text-hydra-arbiter shrink-0" />}
                       {isEliminated && (
                         <Badge variant="destructive" className="text-[9px] px-1 py-0 h-4 shrink-0">
-                          {isRu ? 'снята' : 'out'}
+                          {getRatingsText('outBadge', isRu)}
                         </Badge>
                       )}
                       {isCandidateForElimination && (
@@ -206,7 +206,7 @@ export function ContestScoresTable({ results, rounds, isRu, selectedWinners, onT
                                 className="text-[9px] px-1.5 py-0 h-4 gap-0.5 animate-pulse border-destructive/50 text-destructive cursor-pointer hover:bg-destructive/10 transition-colors"
                               >
                                 <AlertTriangle className="h-2.5 w-2.5" />
-                                {isRu ? 'снять?' : 'drop?'}
+                                {getRatingsText('dropBadge', isRu)}
                               </Badge>
                             </button>
                           </TooltipTrigger>
@@ -269,11 +269,11 @@ export function ContestScoresTable({ results, rounds, isRu, selectedWinners, onT
                             )}
                           </TooltipTrigger>
                           <TooltipContent>
-                            {isEliminated
-                              ? (isRu ? 'Вернуть в конкурс' : 'Restore to contest')
+            {isEliminated
+                              ? getRatingsText('restoreToContest', isRu)
                               : activeModelCount <= 2
-                                ? (isRu ? 'Минимум 2 модели должны остаться' : 'At least 2 models must remain')
-                                : (isRu ? 'Снять с конкурса' : 'Eliminate from contest')
+                                ? getRatingsText('minTwoModels', isRu)
+                                : getRatingsText('eliminateFromContest', isRu)
                             }
                           </TooltipContent>
                         </Tooltip>
@@ -286,7 +286,7 @@ export function ContestScoresTable({ results, rounds, isRu, selectedWinners, onT
           {scored.length > 1 && (
             <TableFooter>
               <TableRow className="text-[10px]">
-                <TableCell colSpan={3} className="text-right font-medium">{isRu ? 'Среднее' : 'Average'}</TableCell>
+                <TableCell colSpan={3} className="text-right font-medium">{getRatingsText('average', isRu)}</TableCell>
                 <TableCell className="text-center">
                   {(() => { const s = scored.filter(r => r.avgUser != null).map(r => r.avgUser!); return s.length ? (s.reduce((a, b) => a + b, 0) / s.length).toFixed(1) : '—'; })()}
                 </TableCell>
@@ -322,7 +322,7 @@ export function ContestScoresTable({ results, rounds, isRu, selectedWinners, onT
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              {isRu ? 'Снять модель с конкурса?' : 'Eliminate model?'}
+              {getRatingsText('eliminateModel', isRu)}
             </AlertDialogTitle>
             <AlertDialogDescription>
               {(() => {
@@ -335,7 +335,7 @@ export function ContestScoresTable({ results, rounds, isRu, selectedWinners, onT
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>{isRu ? 'Отмена' : 'Cancel'}</AlertDialogCancel>
+            <AlertDialogCancel>{getRatingsText('cancel', isRu)}</AlertDialogCancel>
             <AlertDialogAction
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               onClick={() => {
@@ -345,7 +345,7 @@ export function ContestScoresTable({ results, rounds, isRu, selectedWinners, onT
                 setConfirmEliminate(null);
               }}
             >
-              {isRu ? 'Снять' : 'Eliminate'}
+              {getRatingsText('confirmEliminate', isRu)}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -8,6 +8,7 @@ import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/comp
 import { PROVIDER_LOGOS, PROVIDER_COLORS } from '@/components/ui/ProviderLogos';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { ChevronDown, ChevronRight } from 'lucide-react';
+import { getRatingsText } from './i18n';
 
 // ── Types ──
 
@@ -113,7 +114,8 @@ function ProviderHeader({ provider, hasKey, loading, language }: {
           <TooltipContent side="right" className="text-xs">
             {hasKey
               ? (language === 'ru' ? 'API-ключ настроен' : 'API key configured')
-              : (language === 'ru' ? 'API-ключ не найден' : 'No API key found')}
+              : (language === 'ru' ? 'API-ключ не найден' : 'No API key found')
+            }
           </TooltipContent>
         </Tooltip>
       )}
@@ -203,7 +205,7 @@ export function ModelListSidebar({ selectedModelId, onSelect, contestModels = {}
           <div className="relative">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder={isRu ? 'Поиск модели...' : 'Search model...'}
+              placeholder={getRatingsText('searchModel', isRu)}
               value={search}
               onChange={e => setSearch(e.target.value)}
               className="pl-9 h-9"
@@ -212,7 +214,7 @@ export function ModelListSidebar({ selectedModelId, onSelect, contestModels = {}
           {!loading && (
              <div className="flex items-center justify-between text-xs text-muted-foreground">
               <span>
-                {isRu ? `${filtered.length} из ${allModels.length}` : `${filtered.length} of ${allModels.length}`}
+                {`${filtered.length} ${getRatingsText('ofTotal', isRu)} ${allModels.length}`}
                 {veteranModelIds && veteranModelIds.size > 0 && (
                   <span className="ml-1.5 text-hydra-cyan">
                     <Activity className="inline h-3 w-3 mr-0.5 -mt-0.5" />
@@ -222,7 +224,7 @@ export function ModelListSidebar({ selectedModelId, onSelect, contestModels = {}
               </span>
               <div className="flex items-center gap-1.5">
                 <span className="text-hydra-cyan font-medium">
-                  {(isLovableAvailable ? LOVABLE_AI_MODELS.length : 0) + availablePersonalIds.size} {isRu ? 'доступно' : 'available'}
+                  {(isLovableAvailable ? LOVABLE_AI_MODELS.length : 0) + availablePersonalIds.size} {getRatingsText('availableCount', isRu)}
                 </span>
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -234,7 +236,7 @@ export function ModelListSidebar({ selectedModelId, onSelect, contestModels = {}
                     </button>
                   </TooltipTrigger>
                   <TooltipContent side="right" className="text-xs">
-                    {allExpanded ? (isRu ? 'Свернуть все' : 'Collapse all') : (isRu ? 'Развернуть все' : 'Expand all')}
+                    {allExpanded ? getRatingsText('collapseAll', isRu) : getRatingsText('expandAll', isRu)}
                   </TooltipContent>
                 </Tooltip>
               </div>
@@ -252,9 +254,9 @@ export function ModelListSidebar({ selectedModelId, onSelect, contestModels = {}
                     : "text-muted-foreground hover:bg-muted/40"
                 )}
               >
-                {f === 'all' ? (isRu ? 'Все' : 'All')
-                  : f === 'available' ? (isRu ? 'Доступные' : 'Available')
-                  : (isRu ? 'Недоступные' : 'Unavailable')}
+                {f === 'all' ? getRatingsText('filterAll', isRu)
+                  : f === 'available' ? getRatingsText('filterAvailable', isRu)
+                  : getRatingsText('filterUnavailable', isRu)}
               </button>
             ))}
           </div>

@@ -19,7 +19,7 @@ import { LikertSummaryCard } from './LikertSummaryCard';
 import { getModelInfo, type ModelOption } from '@/hooks/useAvailableModels';
 import { format } from 'date-fns';
 import { ru as ruLocale, enUS } from 'date-fns/locale';
-import { getCriterionLabel } from './i18n';
+import { getCriterionLabel, getRatingsText } from './i18n';
 
 interface ModelDossierProps {
   modelId: string;
@@ -82,30 +82,30 @@ export function ModelDossier({ modelId, contestModels = {}, duelModels = {}, onT
         <HydraCard variant="default">
           <HydraCardHeader className="py-3">
             <Trophy className="h-5 w-5 text-primary" />
-            <HydraCardTitle>{isRu ? 'Статистика участия' : 'Participation Stats'}</HydraCardTitle>
+            <HydraCardTitle>{getRatingsText('participationStats', isRu)}</HydraCardTitle>
           </HydraCardHeader>
           <HydraCardContent>
             <div className="flex flex-wrap items-center gap-2">
-              <StatBadge icon={MessageSquare} value={stats.totalResponses} label={isRu ? 'отв.' : 'resp.'} />
+              <StatBadge icon={MessageSquare} value={stats.totalResponses} label={getRatingsText('respShort', isRu)} />
               <StatBadge icon={Brain} value={stats.totalBrains} label="brains" color="text-primary" />
               {stats.totalDismissals > 0 && (
-                <StatBadge value={stats.totalDismissals} label={isRu ? 'откл.' : 'dism.'} />
+                <StatBadge value={stats.totalDismissals} label={getRatingsText('dismShort', isRu)} />
               )}
               {stats.arbiterEvalCount > 0 && (
                 <StatBadge icon={Scale} value={stats.arbiterEvalCount} label={`ø${stats.arbiterAvgScore.toFixed(1)}`} />
               )}
               {stats.contestCount > 0 && (
-                <StatBadge icon={Crown} value={stats.contestCount} label={isRu ? 'конк.' : 'cont.'} />
+                <StatBadge icon={Crown} value={stats.contestCount} label={getRatingsText('contShort', isRu)} />
               )}
               {stats.contestTotalScore > 0 && (
-                <StatBadge icon={Sparkles} value={stats.contestTotalScore} label={isRu ? 'баллы' : 'score'} />
+                <StatBadge icon={Sparkles} value={stats.contestTotalScore} label={getRatingsText('scoreLabel', isRu)} />
               )}
               {stats.totalHallucinations > 0 && (
-                <StatBadge icon={AlertTriangle} value={stats.totalHallucinations} label={isRu ? 'галл.' : 'hall.'} color="text-destructive" />
+                <StatBadge icon={AlertTriangle} value={stats.totalHallucinations} label={getRatingsText('hallShort', isRu)} color="text-destructive" />
               )}
               {stats.firstUsedAt && (
                 <span className="text-[10px] text-muted-foreground ml-auto">
-                  {isRu ? 'с ' : 'since '}
+                  {getRatingsText('sinceLabel', isRu)}
                   {format(new Date(stats.firstUsedAt), 'dd.MM.yy', { locale: isRu ? ruLocale : enUS })}
                 </span>
               )}
@@ -118,19 +118,17 @@ export function ModelDossier({ modelId, contestModels = {}, duelModels = {}, onT
           <HydraCard variant="default">
             <HydraCardHeader className="py-3">
               <Radar className="h-5 w-5 text-hydra-arbiter" />
-              <HydraCardTitle>{isRu ? 'Профиль по критериям' : 'Criteria Profile'}</HydraCardTitle>
+              <HydraCardTitle>{getRatingsText('criteriaProfile', isRu)}</HydraCardTitle>
             </HydraCardHeader>
             <HydraCardContent>
               {/* Filter chips */}
               <div className="flex flex-wrap gap-2 mb-4">
                 {['all', 'contest', 'duel_critic', 'duel_arbiter'].map(filter => {
-                  const labels = {
-                    all: { ru: 'Все', en: 'All' },
-                    contest: { ru: 'Конкурс', en: 'Contest' },
-                    duel_critic: { ru: 'Дуэль (Критик)', en: 'Duel (Critic)' },
-                    duel_arbiter: { ru: 'Дуэль (Арбитр)', en: 'Duel (Arbiter)' },
+                  const filterKeys: Record<string, string> = {
+                    all: 'filterAll', contest: 'filterContest',
+                    duel_critic: 'filterDuelCritic', duel_arbiter: 'filterDuelArbiter',
                   };
-                  const label = labels[filter as keyof typeof labels][isRu ? 'ru' : 'en'];
+                  const label = getRatingsText(filterKeys[filter] as any, isRu);
                   const isActive = criteriaFilter === filter;
                   return (
                     <button
@@ -192,7 +190,7 @@ export function ModelDossier({ modelId, contestModels = {}, duelModels = {}, onT
                   return key.startsWith(`${criteriaFilter}:`);
                 }).length === 0 && (
                   <p className="text-xs text-muted-foreground italic">
-                    {isRu ? 'Нет данных для этого фильтра' : 'No data for this filter'}
+                    {getRatingsText('noDataForFilter', isRu)}
                   </p>
                 )}
               </div>
@@ -208,7 +206,7 @@ export function ModelDossier({ modelId, contestModels = {}, duelModels = {}, onT
           <HydraCard variant="default">
             <HydraCardHeader className="py-3">
               <Sparkles className="h-5 w-5 text-hydra-cyan" />
-              <HydraCardTitle>{isRu ? 'Распределение ролей' : 'Role Distribution'}</HydraCardTitle>
+              <HydraCardTitle>{getRatingsText('roleDistribution', isRu)}</HydraCardTitle>
             </HydraCardHeader>
             <HydraCardContent>
               <div className="space-y-2.5">
@@ -248,7 +246,7 @@ export function ModelDossier({ modelId, contestModels = {}, duelModels = {}, onT
           <HydraCard variant="default">
             <HydraCardHeader className="py-3">
               <Swords className="h-5 w-5 text-hydra-arbiter" />
-              <HydraCardTitle>{isRu ? 'Диалоги в Д-чате' : 'D-Chat Dialogs'}</HydraCardTitle>
+              <HydraCardTitle>{getRatingsText('dChatDialogs', isRu)}</HydraCardTitle>
             </HydraCardHeader>
             <HydraCardContent>
               <DuelsByProvider duels={duels} isRu={isRu} />
@@ -261,7 +259,7 @@ export function ModelDossier({ modelId, contestModels = {}, duelModels = {}, onT
           <HydraCard variant="default">
             <HydraCardHeader className="py-3">
               <ClipboardList className="h-5 w-5 text-hydra-cyan" />
-              <HydraCardTitle>{isRu ? 'Послужной список' : 'Task History'}</HydraCardTitle>
+              <HydraCardTitle>{getRatingsText('taskHistory', isRu)}</HydraCardTitle>
             </HydraCardHeader>
             <HydraCardContent>
               <div className="space-y-2">
@@ -293,7 +291,7 @@ export function ModelDossier({ modelId, contestModels = {}, duelModels = {}, onT
           <div className="text-center py-8 text-muted-foreground">
             <Brain className="h-10 w-10 mx-auto mb-3 opacity-30" />
             <p className="text-sm">
-              {isRu ? 'Нет данных об участии этой модели в задачах' : 'No task participation data for this model'}
+              {getRatingsText('noModelData', isRu)}
             </p>
           </div>
         )}
@@ -318,7 +316,7 @@ function DuelsByProvider({ duels, isRu }: { duels: { opponentModelId: string; re
   const LABELS: Record<string, string> = {
     openai: 'OpenAI', anthropic: 'Anthropic', gemini: 'Google Gemini',
     xai: 'xAI', groq: 'Groq', deepseek: 'DeepSeek', mistral: 'Mistral',
-    openrouter: 'OpenRouter', other: isRu ? 'Прочие' : 'Other',
+    openrouter: 'OpenRouter', other: getRatingsText('other', isRu),
   };
 
   return (
@@ -362,9 +360,9 @@ function DuelsByProvider({ duels, isRu }: { duels: { opponentModelId: string; re
                         duel.result === 'draw' && 'bg-muted text-muted-foreground'
                       )}
                     >
-                      {duel.result === 'win' ? (isRu ? 'Победа' : 'Win') :
-                       duel.result === 'loss' ? (isRu ? 'Поражение' : 'Loss') :
-                       (isRu ? 'Ничья' : 'Draw')}
+                      {duel.result === 'win' ? getRatingsText('win', isRu) :
+                       duel.result === 'loss' ? getRatingsText('loss', isRu) :
+                       getRatingsText('draw', isRu)}
                     </Badge>
                   </div>
                 ))}
