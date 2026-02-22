@@ -42,7 +42,9 @@ Automatic experience consolidation: patterns from `role_memory` are distilled in
 
 ## 🎯 Key Features
 
-### 1. Expert Panel
+### 🧠 AI Core
+
+#### Expert Panel
 - **Parallel requests** to multiple AI models simultaneously
 - **Per-model personalization**: individual system prompts, temperature, max_tokens
 - **Tree-based chat history** navigation with participant display
@@ -52,7 +54,7 @@ Automatic experience consolidation: patterns from `role_memory` are distilled in
 - **Tool Calling**: custom tool integration into model context
 - **Attachments**: images and file support in messages
 
-### 2. AI Agent Role System (16 roles)
+#### AI Agent Role System (16 roles)
 
 | Category | Roles |
 |----------|-------|
@@ -60,23 +62,13 @@ Automatic experience consolidation: patterns from `role_memory` are distilled in
 | **Technical** | Prompt Engineer, Flow Regulator, Toolsmith |
 | **System** | Guide, Technocritic, Technoarbiter, Technomoderator |
 
-### 3. D-Chat (Consultant Panel)
+#### D-Chat (Consultant Panel)
 - Side panel for **single expert queries**
 - **Moderator mode**: aggregating session context into structured summaries
 - Transfer results to the main chat with chronology preserved
 - Independent model and role selection from the main panel
 
-### 4. Staff Roles (HR Department)
-- **Role hierarchy** with visual editor
-- **Behavioral Patterns** — communication style configuration
-- **Model Interviews** — automated candidate evaluation
-  - Briefing, test tasks, verdict with HR summary
-  - Assignment and conflict history
-- **Interview History Table** — grouping by brand, router column (ProxyAPI/OpenRouter/Direct), average score badge, session deletion
-- **Role Knowledge Base** (Role Knowledge) — RAG context with embeddings
-- **Certification** 🛡️ — ShieldCheck badge for roles that passed official interviews
-
-### 5. Model Contest (Beauty Contest / Podium)
+#### Model Contest (Beauty Contest / Podium)
 - Multi-round model competition by defined criteria
 - **Arbitration**: automated response scoring by AI arbiter
 - **Scoreboard and Podium** with visual results
@@ -85,28 +77,67 @@ Automatic experience consolidation: patterns from `role_memory` are distilled in
 - **Screening Interviews** for winners — batch pipeline (Briefing → Tests → Verdict) without official hiring; results isolated via `source_contest_id`
 - **Staff Synchronization** — "Hire" from screening verdict writes the model to `role_assignment_history` and instantly grants the certification badge
 
-### 6. Task Management
+### 🏢 Management & Tools
+
+#### Staff Roles (HR Department)
+- **Role hierarchy** with visual editor
+- **Behavioral Patterns** — communication style configuration
+- **Model Interviews** — automated candidate evaluation (Briefing, test tasks, verdict with HR summary, assignment and conflict history)
+- **Interview History Table** — grouping by brand, router column (ProxyAPI/OpenRouter/Direct), average score badge, session deletion
+- **Role Knowledge Base** (Role Knowledge) — RAG context with embeddings
+- **Certification** 🛡️ — ShieldCheck badge for roles that passed official interviews
+
+#### Task Management
 - Centralized hub for creating and configuring sessions
 - Model configuration via **Sheet interface**
 - **Task Files** — attaching documents to sessions
 - **Session Memory** — contextual chunks with embeddings
-- **Tutorial Examples** — pre-seeded system sessions (`is_system: true`) with 26 realistic multi-model conversations covering creative brainstorming, code review, product strategy, and Q&A. Serve as warm-start data for RAG memory, Evolution Chronicles, and model statistics. Clone-to-personal functionality included
+- **Tutorial Examples** — pre-seeded system sessions (`is_system: true`) with 26 realistic multi-model conversations. Serve as warm-start data for RAG memory, Evolution Chronicles, and model statistics. Clone-to-personal functionality included
 
-### 7. Prompt Library
+#### Prompt Library
 - CRUD for system prompts with tags and descriptions
 - Filtering by role, owner, language
 - Shared/personal prompts with usage counters
 - **Advanced editor** with sections and translation
 
-### 8. Custom Tools
+#### Custom Tools
 - **Prompt-Template**: parameterized templates with variables
-- **HTTP API**: integration with external services
-  - SSRF protection, 30s timeout, 100KB limit
-  - JSONPath for data extraction
-  - Built-in tester (HttpToolTester)
+- **HTTP API**: integration with external services (SSRF protection, 30s timeout, 100KB limit, JSONPath, built-in tester)
 - Tool usage statistics
 
-### 9. Flow Editor (Visual Pipeline Editor)
+### 🔮 Intelligence & Memory
+
+#### Hydra Memory Hub
+Central command center of Hydra's entire cognitive subsystem — 8 tabs in a single full-width interface:
+
+| Tab | Purpose |
+|-----|---------|
+| **Cognitive Arsenal** | Dashboard of Hydra's "subconscious" in 6 layers: Instincts (prompts), Patterns (behavior), Tool Arsenal (Prompt/HTTP), Thought Flows, Achievements (contests/interviews), Long-term Memory (3-level RAG) |
+| **Session Memory** | Inline chunk manager with type filters, duplicate detection, batch deletion, feedback 👍/👎 |
+| **Role Experience** | `role_memory` records with confidence scores, role grouping, localized content display |
+| **Knowledge Base** | `role_knowledge` (RAG) — duplicate scanning, outdated version deletion, filtering by role and category |
+| **Memory & Connections Graphs** | Two SVG graphs: Memory Graph (Hydra → roles → sessions) and Arsenal Connections Graph (hexagonal cognitive layer structure) |
+| **File Storage** | File browser with localized bucket labels and technical ID tooltips |
+| **RAG Analytics** | Monitoring dashboard: average relevance, total retrievals, feedback statistics, chunk type distribution |
+| **Evolution Chronicles** | Autonomous reflection log: AI revisions, Supervisor resolutions, locale-aware Calendar date filters, bilingual content |
+
+- **Hybrid Search** — three modes: Text / Semantic / Hybrid (BM25 + pgvector + RRF k=60)
+- **Reranking** — re-scoring via `gemini-3-flash-preview`, formula `final_score = rerank×0.7 + hybrid×0.3`
+- **HyDE** — hypothetical document generation before search, embedding blend `query×0.4 + hyde×0.6`
+
+#### Model Ratings & Portfolio
+- **Model dossier** — aggregated statistics across all sessions
+- **Portfolio** — visualization of strengths
+- **Charts and histograms** (Recharts) of performance
+
+#### Hydrapedia (Built-in Documentation)
+- Interactive knowledge base of the platform
+- Markdown rendering with section navigation
+- Documentation export and role playground
+
+### ⚙️ Builder Tools
+
+#### Flow Editor (Visual Pipeline Editor)
 - Visual AI pipeline builder (@xyflow/react)
 - **20+ node types**: Input, Output, Model, Prompt, API, Database, Condition, Loop, Split, Merge, Filter, Transform, Delay, Switch, Classifier, Embedding, Memory, Storage, Group, Tool
 - Export diagrams to PNG/SVG/JSON/PDF
@@ -114,23 +145,14 @@ Automatic experience consolidation: patterns from `role_memory` are distilled in
 - **Auto-layout** (dagre), checkpoints, change history
 - **Logistics panel** for flow parameter management
 
-### 10. Hydrapedia (Built-in Documentation)
-- Interactive knowledge base of the platform
-- Markdown rendering with section navigation
-- Documentation export
-- Role playground
-
-### 11. Model Ratings & Portfolio
-- **Model dossier** — aggregated statistics across all sessions
-- **Portfolio** — visualization of strengths
-- **Charts and histograms** (Recharts) of performance
-
-### 12. Guided Tours
+#### Guided Tours
 - Interactive onboarding tours through the interface
 - Tour editor for administrators
 - Step-by-step navigation with element highlighting
 
-### 13. API Routers (ProxyAPI / DotPoint / Lovable AI)
+### 🔌 Integrations & Profile
+
+#### API Routers (ProxyAPI / DotPoint / Lovable AI)
 - **ProxyAPI** & **DotPoint** — Russian AI gateways with ruble payments, VPN-free access
 - Live model catalog (400+) with search and user-added models
 - **Collapsible model lists** — independently foldable native and user sections
@@ -139,26 +161,7 @@ Automatic experience consolidation: patterns from `role_memory` are distilled in
 - Latency analytics, request logs, CSV export
 - **Lovable AI** tab for admins — built-in models without API key
 
-### 14. Hydra Memory Hub
-
-Central command center of Hydra's entire cognitive subsystem — 8 tabs in a single full-width interface:
-
-| Tab | Purpose |
-|-----|---------|
-| **Cognitive Arsenal** | Dashboard of Hydra's "subconscious" in 6 layers: Instincts (prompts), Patterns (behavior), Tool Arsenal (Prompt/HTTP), Thought Flows, Achievements (contests/interviews), Long-term Memory (3-level RAG) |
-| **Session Memory** | Inline chunk manager for `session_memory` with type filters (decision/context/instruction/evaluation/summary/message), duplicate detection, batch deletion, feedback 👍/👎 |
-| **Role Experience** | `role_memory` records with confidence scores, role grouping, inline deletion, expandable details |
-| **Knowledge Base** | `role_knowledge` (RAG) — cleanup tools: duplicate scanning, outdated version deletion by `source_url`, filtering by role and category |
-| **Memory & Connections Graphs** | Two SVG graphs in two-column layout (560px): Memory Graph (Hydra → roles → sessions, hover-glow, "hot roles" ⚡) and Arsenal Connections Graph (hexagonal cognitive layer structure) |
-| **File Storage** | File browser with localized bucket labels (Chat Archive / Task Files / Avatars) and technical ID tooltips |
-| **RAG Analytics** | Monitoring dashboard: average relevance, total retrievals, feedback statistics, chunk type distribution |
-| **Evolution Chronicles** | Autonomous reflection log: AI revisions from Evolutioner, Supervisor resolutions (✅/❌/💬/🔄), filters by role/date/status, Evolutioner prompt editor |
-
-- **Hybrid Search** — three modes: Text / Semantic / Hybrid (BM25 + pgvector + RRF k=60)
-- **Reranking** — re-scoring via `gemini-3-flash-preview`, formula `final_score = rerank×0.7 + hybrid×0.3`
-- **HyDE** — hypothetical document generation before search, embedding blend `query×0.4 + hyde×0.6`
-
-### 15. User Profile
+#### User Profile
 - **Two tab groups**: Personal (Profile, Preferences, Notifications, Finance) + API Management (Keys, Routers, Stats)
 - **Avatar** — photo upload with Canvas cropper (drag, scroll-zoom, 260×260 JPEG, 2MB limit)
 - Signed URL generated dynamically for 2 hours — avatars never "expire"
