@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { CONTEST_STORAGE_KEYS } from '@/hooks/useContestConfig';
+import { getRatingsText } from './i18n';
 
 interface ContestSummaryActionsProps {
   onImport: (data: Record<string, unknown>) => void;
@@ -40,7 +41,7 @@ export function ContestSummaryActions({
     a.click();
     URL.revokeObjectURL(url);
     toast({
-      description: isRu ? 'Настройки экспортированы' : 'Settings exported',
+      description: getRatingsText('actionsExported', isRu),
     });
   }, [isRu, toast]);
 
@@ -57,16 +58,12 @@ export function ContestSummaryActions({
           const data = JSON.parse(ev.target?.result as string);
           onImport(data);
           toast({
-            description: isRu
-              ? 'Настройки импортированы'
-              : 'Settings imported',
+            description: getRatingsText('actionsImported', isRu),
           });
         } catch {
           toast({
             variant: 'destructive',
-            description: isRu
-              ? 'Ошибка чтения файла'
-              : 'Failed to read file',
+            description: getRatingsText('actionsImportError', isRu),
           });
         }
       };
@@ -84,9 +81,7 @@ export function ContestSummaryActions({
     window.dispatchEvent(new Event('contest-config-changed'));
     onReset();
     toast({
-      description: isRu
-        ? 'Настройки конкурса сброшены'
-        : 'Contest settings reset',
+      description: getRatingsText('actionsResetDone', isRu),
     });
   }, [isRu, toast, onReset]);
 
@@ -99,7 +94,7 @@ export function ContestSummaryActions({
         onClick={handleImportClick}
       >
         <Upload className="h-3 w-3" />
-        {isRu ? 'Импорт' : 'Import'}
+        {getRatingsText('actionsImport', isRu)}
       </Button>
       <Button
         variant="ghost"
@@ -108,7 +103,7 @@ export function ContestSummaryActions({
         onClick={handleExport}
       >
         <Download className="h-3 w-3" />
-        {isRu ? 'Экспорт' : 'Export'}
+        {getRatingsText('actionsExport', isRu)}
       </Button>
 
       <AlertDialog>
@@ -119,29 +114,27 @@ export function ContestSummaryActions({
             className="h-7 text-[11px] gap-1.5 text-destructive hover:text-destructive hover:bg-destructive/10"
           >
             <RotateCcw className="h-3 w-3" />
-            {isRu ? 'Сбросить всё' : 'Reset All'}
+            {getRatingsText('actionsResetAll', isRu)}
           </Button>
         </AlertDialogTrigger>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>
-              {isRu ? 'Сбросить настройки конкурса?' : 'Reset contest settings?'}
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              {isRu
-                ? 'Все настройки конкурса (участники, правила, пайплайн, арбитраж, сохранённый план) будут удалены. Это действие нельзя отменить.'
-                : 'All contest settings (participants, rules, pipeline, arbitration, saved plan) will be cleared. This cannot be undone.'}
-            </AlertDialogDescription>
+             <AlertDialogTitle>
+               {getRatingsText('actionsResetTitle', isRu)}
+             </AlertDialogTitle>
+             <AlertDialogDescription>
+               {getRatingsText('actionsResetDesc', isRu)}
+             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>
-              {isRu ? 'Отмена' : 'Cancel'}
+              {getRatingsText('actionsCancel', isRu)}
             </AlertDialogCancel>
             <AlertDialogAction
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               onClick={handleReset}
             >
-              {isRu ? 'Сбросить' : 'Reset'}
+              {getRatingsText('actionsReset', isRu)}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -3,6 +3,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { FileText, Maximize2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
+import { getRatingsText } from './i18n';
 
 interface ContestPromptPreviewProps {
   prompt: string;
@@ -23,7 +24,7 @@ export function ContestPromptPreview({ prompt }: ContestPromptPreviewProps) {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wider">
                 <FileText className="h-3 w-3" />
-                {isRu ? 'Промпт тура 1' : 'Round 1 Prompt'}
+                 {getRatingsText('round1Prompt', isRu)}
               </div>
               <Maximize2 className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
             </div>
@@ -35,7 +36,7 @@ export function ContestPromptPreview({ prompt }: ContestPromptPreviewProps) {
         <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
           <div className="space-y-2">
             <h3 className="text-sm font-semibold">
-              {isRu ? 'Промпт тура 1' : 'Round 1 Prompt'}
+              {getRatingsText('round1Prompt', isRu)}
             </h3>
             <p className="text-sm text-foreground/90 whitespace-pre-wrap leading-relaxed">
               {prompt}

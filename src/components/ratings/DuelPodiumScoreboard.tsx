@@ -117,18 +117,18 @@ export function DuelPodiumScoreboard({
               {winnerId ? (
                 <>
                   <Crown className="h-4 w-4 text-[hsl(45_80%_55%)]" />
-                  <span>{isRu ? `Победитель: ${winnerName}` : `Winner: ${winnerName}`}</span>
+                  <span>{isRu ? `${getRatingsText('duelWinner', isRu)} ${winnerName}` : `${getRatingsText('duelWinner', isRu)} ${winnerName}`}</span>
                   <span className="text-muted-foreground font-normal ml-1">
-                    ({winsA}:{winsB}{draws > 0 ? `, ${isRu ? 'ничьих' : 'draws'}: ${draws}` : ''})
+                    ({winsA}:{winsB}{draws > 0 ? `, ${getRatingsText('duelDraws', isRu)}: ${draws}` : ''})
                   </span>
                   <Crown className="h-4 w-4 text-[hsl(45_80%_55%)]" />
                 </>
               ) : (
                 <>
                   <Swords className="h-4 w-4" />
-                  <span>{isRu ? 'Ничья!' : 'Draw!'}</span>
+                  <span>{getRatingsText('duelDrawResult', isRu)}</span>
                   <span className="text-muted-foreground font-normal ml-1">
-                    ({winsA}:{winsB}, {isRu ? 'ничьих' : 'draws'}: {draws})
+                    ({winsA}:{winsB}, {getRatingsText('duelDraws', isRu)}: {draws})
                   </span>
                 </>
               )}
@@ -174,7 +174,7 @@ export function DuelPodiumScoreboard({
             <div className="flex items-center gap-2 flex-shrink-0 flex-wrap">
               <div className="flex items-center gap-1.5">
                 <Badge variant="outline" className="text-[10px] border-primary/40 bg-primary/10 gap-1">
-                  {isRu ? `Раунд ${currentRound}/${totalRounds}` : `R${currentRound}/${totalRounds}`}
+                  {isRu ? `${getRatingsText('duelRoundProgress', isRu)} ${currentRound}/${totalRounds}` : `${getRatingsText('duelRoundProgress', isRu)}${currentRound}/${totalRounds}`}
                 </Badge>
                 <div className="w-16 h-1.5 rounded-full bg-muted/40 overflow-hidden">
                   <div
@@ -196,7 +196,7 @@ export function DuelPodiumScoreboard({
                   onClick={onFinishDuel}
                 >
                   <Square className="h-2.5 w-2.5" />
-                  {isRu ? 'Завершить' : 'Finish'}
+                  {getRatingsText('duelFinishButton', isRu)}
                 </Button>
               )}
               <Button size="sm" variant="outline" className="h-6 text-[10px] gap-1 px-2" onClick={onNewDuel}>

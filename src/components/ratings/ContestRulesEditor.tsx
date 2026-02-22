@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Settings2, ListOrdered, Info } from 'lucide-react';
+import { getRatingsText, getCriterionLabel } from './i18n';
 import { cn } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
 import { useContestConfigContext } from '@/contexts/ContestConfigContext';
@@ -115,13 +116,13 @@ export function ContestRulesEditor() {
       <HydraCardHeader>
         <div className="flex items-center gap-2 text-hydra-expert">
           <Settings2 className="h-4 w-4" />
-          <span className="text-xs font-bold uppercase tracking-wider opacity-60">
-            {isRu ? 'Шаг 2' : 'Step 2'}
-          </span>
-        </div>
-        <HydraCardTitle>
-          {isRu ? 'Правила конкурса' : 'Contest Rules'}
-        </HydraCardTitle>
+           <span className="text-xs font-bold uppercase tracking-wider opacity-60">
+             {getRatingsText('rulesStep2', isRu)}
+           </span>
+         </div>
+         <HydraCardTitle>
+           {getRatingsText('rulesContestRules', isRu)}
+         </HydraCardTitle>
       </HydraCardHeader>
 
       <HydraCardContent className="space-y-4">
@@ -129,7 +130,7 @@ export function ContestRulesEditor() {
         <div className="space-y-1.5">
           <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
             <ListOrdered className="h-3 w-3" />
-            {isRu ? 'Количество туров' : 'Number of Rounds'}
+            {getRatingsText('rulesRoundCount', isRu)}
           </label>
           <div className="flex gap-1.5">
             {[1, 2, 3].map(n => (
@@ -152,14 +153,14 @@ export function ContestRulesEditor() {
             {idx > 0 && <Separator className="opacity-30" />}
             <div className="flex items-center gap-2">
               <Badge variant="outline" className="text-[10px] px-1.5">
-                {isRu ? `Тур ${idx + 1}` : `Round ${idx + 1}`}
+                {getRatingsText('rulesRoundN', isRu)} {idx + 1}
               </Badge>
             </div>
 
             {/* Task type + inline role selector */}
             <div className="space-y-1.5">
               <label className="text-[11px] text-muted-foreground">
-                {isRu ? 'Тип задания' : 'Assignment Type'}
+                {getRatingsText('rulesAssignmentType', isRu)}
               </label>
               <div className="flex items-center gap-1.5">
                 {(['free', 'role'] as const).map(t => (
@@ -170,9 +171,9 @@ export function ContestRulesEditor() {
                     className="h-7 text-xs"
                     onClick={() => updateRound(idx, { type: t, ...(t === 'free' ? { roleForEvaluation: undefined } : {}) })}
                   >
-                    {t === 'free'
-                      ? (isRu ? 'Свободный промпт' : 'Free Prompt')
-                      : (isRu ? 'По роли' : 'Role-based')}
+                     {t === 'free'
+                       ? getRatingsText('rulesFreePrompt', isRu)
+                       : getRatingsText('rulesRoleBased', isRu)}
                   </Button>
                 ))}
 
@@ -184,7 +185,7 @@ export function ContestRulesEditor() {
                       onValueChange={v => updateRound(idx, { roleForEvaluation: v || undefined })}
                     >
                       <SelectTrigger className="h-7 text-xs w-[160px]">
-                        <SelectValue placeholder={isRu ? 'Роль...' : 'Role...'}>
+                        <SelectValue placeholder={getRatingsText('rulesRolePlaceholder', isRu)}>
                           {round.roleForEvaluation && (
                             <RoleDisplay role={round.roleForEvaluation as AgentRole} />
                           )}
@@ -193,7 +194,7 @@ export function ContestRulesEditor() {
                       <SelectContent>
                         {groupedRoles.experts.length > 0 && (
                           <SelectGroup>
-                            <SelectLabel className="text-[10px]">{isRu ? 'Эксперты' : 'Experts'}</SelectLabel>
+                            <SelectLabel className="text-[10px]">{getRatingsText('rulesExperts', isRu)}</SelectLabel>
                             {groupedRoles.experts.map(role => (
                               <RoleSelectItem key={role} value={role} />
                             ))}
@@ -201,7 +202,7 @@ export function ContestRulesEditor() {
                         )}
                         {groupedRoles.technical.length > 0 && (
                           <SelectGroup>
-                            <SelectLabel className="text-[10px]">{isRu ? 'Технический персонал' : 'Technical Staff'}</SelectLabel>
+                            <SelectLabel className="text-[10px]">{getRatingsText('rulesTechStaff', isRu)}</SelectLabel>
                             {groupedRoles.technical.map(role => (
                               <RoleSelectItem key={role} value={role} />
                             ))}
@@ -209,7 +210,7 @@ export function ContestRulesEditor() {
                         )}
                         {groupedRoles.otk.length > 0 && (
                           <SelectGroup>
-                            <SelectLabel className="text-[10px]">{isRu ? 'ОТК' : 'QC Dept'}</SelectLabel>
+                            <SelectLabel className="text-[10px]">{getRatingsText('rulesQC', isRu)}</SelectLabel>
                             {groupedRoles.otk.map(role => (
                               <RoleSelectItem key={role} value={role} />
                             ))}
@@ -223,11 +224,9 @@ export function ContestRulesEditor() {
                           <Info className="h-3 w-3 text-muted-foreground/50 cursor-help shrink-0" />
                         </TooltipTrigger>
                         <TooltipContent side="top" className="max-w-[220px]">
-                          <p className="text-[10px]">
-                            {isRu
-                              ? 'Ролевой промпт из Штатного расписания будет автоматически объединён с промптом тура. Ролевые критерии оценки добавятся к плану.'
-                              : 'Role system prompt from Staff will be merged with round prompt. Role-specific evaluation criteria will be added to the plan.'}
-                          </p>
+                           <p className="text-[10px]">
+                             {getRatingsText('rulesRoleTooltip', isRu)}
+                           </p>
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
@@ -239,7 +238,7 @@ export function ContestRulesEditor() {
               {round.type === 'role' && round.roleForEvaluation && (
                 <div className="p-2 rounded-md bg-muted/20 border border-border/20 space-y-1">
                   <p className="text-[10px] text-muted-foreground font-medium">
-                    {isRu ? 'Критерии роли (добавятся автоматически):' : 'Role criteria (auto-added):'}
+                    {getRatingsText('rulesRoleCriteria', isRu)}
                   </p>
                   <div className="flex flex-wrap gap-1">
                     {(ROLE_SPECIFIC_CRITERIA[round.roleForEvaluation as AgentRole] || []).map(c => (
@@ -255,12 +254,12 @@ export function ContestRulesEditor() {
             {/* Prompt */}
             <div className="space-y-1.5">
               <label className="text-[11px] text-muted-foreground">
-                {isRu ? 'Промпт тура' : 'Round Prompt'}
+                {getRatingsText('rulesRoundPrompt', isRu)}
               </label>
               <Textarea
                 value={round.prompt}
                 onChange={e => updateRound(idx, { prompt: e.target.value })}
-                placeholder={isRu ? 'Введите задание для моделей...' : 'Enter assignment for models...'}
+                placeholder={getRatingsText('rulesPromptPlaceholder', isRu)}
                 className="min-h-[60px] text-xs resize-none"
               />
             </div>
@@ -268,7 +267,7 @@ export function ContestRulesEditor() {
             {/* Criteria */}
             <div className="space-y-1.5">
               <label className="text-[11px] text-muted-foreground">
-                {isRu ? 'Критерии оценки' : 'Evaluation Criteria'}
+                {getRatingsText('rulesEvalCriteria', isRu)}
               </label>
               <div className="flex flex-wrap gap-x-4 gap-y-2">
                 {CRITERIA_OPTIONS.map(c => (
@@ -278,7 +277,7 @@ export function ContestRulesEditor() {
                       onCheckedChange={() => toggleCriterion(idx, c.id)}
                       className="h-3.5 w-3.5"
                     />
-                    <span className="text-xs">{isRu ? c.ru : c.en}</span>
+                    <span className="text-xs">{getCriterionLabel(c.id, isRu)}</span>
                   </label>
                 ))}
               </div>
@@ -292,7 +291,7 @@ export function ContestRulesEditor() {
             <Separator className="opacity-30" />
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                {isRu ? 'Правило прохождения' : 'Elimination Rule'}
+                {getRatingsText('rulesEliminationRule', isRu)}
               </label>
               <Select
                 value={localRules.elimination}
@@ -318,7 +317,7 @@ export function ContestRulesEditor() {
               {localRules.elimination === 'threshold' && (
                 <div className="flex items-center gap-2 mt-2">
                   <label className="text-[11px] text-muted-foreground shrink-0">
-                    {isRu ? 'Порог (из 10):' : 'Threshold (of 10):'}
+                    {getRatingsText('rulesThresholdLabel', isRu)}
                   </label>
                   <Input
                     type="number"
@@ -337,7 +336,7 @@ export function ContestRulesEditor() {
                     className="h-7 w-20 text-xs"
                   />
                   <span className="text-[10px] text-muted-foreground">
-                    {isRu ? 'Модели с баллом ниже будут автоматически отсеяны' : 'Models scoring below will be auto-eliminated'}
+                    {getRatingsText('rulesThresholdDesc', isRu)}
                   </span>
                 </div>
               )}

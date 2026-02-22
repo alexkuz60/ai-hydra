@@ -8,6 +8,7 @@ import { Separator } from '@/components/ui/separator';
 import { Slider } from '@/components/ui/slider';
 import { Scale, Users, BarChart3, Calculator, Weight } from 'lucide-react';
 import { useContestConfigContext } from '@/contexts/ContestConfigContext';
+import { getRatingsText, getCriterionLabel } from './i18n';
 
 interface ArbitrationConfig {
   juryMode: 'user' | 'arbiter' | 'both';
@@ -109,13 +110,13 @@ export function ContestArbitration() {
     <HydraCard variant="default" className="border-border/50">
       <HydraCardHeader>
         <div className="flex items-center gap-2 text-hydra-arbiter">
-          <Scale className="h-4 w-4" />
-          <span className="text-xs font-bold uppercase tracking-wider opacity-60">
-            {isRu ? 'Шаг 4' : 'Step 4'}
-          </span>
-        </div>
-        <HydraCardTitle>
-          {isRu ? 'Арбитраж конкурса' : 'Contest Arbitration'}
+           <Scale className="h-4 w-4" />
+           <span className="text-xs font-bold uppercase tracking-wider opacity-60">
+             {getRatingsText('step4', isRu)}
+           </span>
+         </div>
+         <HydraCardTitle>
+           {getRatingsText('contestArbitration', isRu)}
         </HydraCardTitle>
       </HydraCardHeader>
 
@@ -123,9 +124,9 @@ export function ContestArbitration() {
         {/* Jury composition */}
         <div className="space-y-1.5">
           <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-            <Users className="h-3 w-3" />
-            {isRu ? 'Состав жюри' : 'Jury Composition'}
-          </label>
+           <Users className="h-3 w-3" />
+             {getRatingsText('juryCompositionLabel', isRu)}
+           </label>
           <Select
             value={config.juryMode}
             onValueChange={updateJuryMode}
@@ -136,7 +137,7 @@ export function ContestArbitration() {
             <SelectContent>
               {JURY_OPTIONS.map(o => (
                 <SelectItem key={o.id} value={o.id} className="text-xs">
-                  {isRu ? o.ru : o.en}
+                   {isRu ? o.ru : o.en}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -148,12 +149,12 @@ export function ContestArbitration() {
           <>
             <div className="space-y-2 p-2.5 rounded-md bg-muted/20 border border-border/20">
               <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-                <Weight className="h-3 w-3" />
-                {isRu ? 'Вес оценки: Пользователь vs Арбитр' : 'Score Weight: User vs Arbiter'}
-              </label>
+               <Weight className="h-3 w-3" />
+                 {getRatingsText('scoreWeightLabel', isRu)}
+               </label>
               <div className="flex items-center gap-3">
                 <span className="text-xs text-muted-foreground w-20 text-right">
-                  {isRu ? 'Пользователь' : 'User'} {config.userWeight}%
+                  {getRatingsText('userLabel', isRu)} {config.userWeight}%
                 </span>
                 <Slider
                   value={[config.userWeight]}
@@ -164,7 +165,7 @@ export function ContestArbitration() {
                   className="flex-1"
                 />
                 <span className="text-xs text-muted-foreground w-16">
-                  {isRu ? 'Арбитр' : 'Arbiter'} {100 - config.userWeight}%
+                  {getRatingsText('arbiterLabel', isRu)} {100 - config.userWeight}%
                 </span>
               </div>
             </div>
@@ -176,8 +177,8 @@ export function ContestArbitration() {
         {/* Evaluation criteria */}
         <div className="space-y-1.5">
           <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-            <BarChart3 className="h-3 w-3" />
-            {isRu ? 'Категории оценки кандидатов' : 'Candidate Evaluation Categories'}
+             <BarChart3 className="h-3 w-3" />
+             {getRatingsText('candidateEvalCategories', isRu)}
             <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
               {config.criteria.length}
             </Badge>
@@ -190,7 +191,7 @@ export function ContestArbitration() {
                   onCheckedChange={() => toggleCriterion(c.id)}
                   className="h-3.5 w-3.5"
                 />
-                <span className="text-xs">{isRu ? c.ru : c.en}</span>
+                <span className="text-xs">{getCriterionLabel(c.id, isRu)}</span>
               </label>
             ))}
           </div>
@@ -200,10 +201,10 @@ export function ContestArbitration() {
         {config.scoringScheme === 'weighted-avg' && config.criteria.length > 0 && (
           <div className="space-y-2 p-2.5 rounded-md bg-muted/20 border border-border/20">
             <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-              <Weight className="h-3 w-3" />
-              {isRu ? 'Веса критериев' : 'Criteria Weights'}
-              <span className="text-[10px] opacity-50 normal-case font-normal">
-                ({isRu ? 'сумма' : 'total'}: {Object.entries(config.criteriaWeights)
+               <Weight className="h-3 w-3" />
+               {getRatingsText('criteriaWeightsLabel', isRu)}
+               <span className="text-[10px] opacity-50 normal-case font-normal">
+                 ({getRatingsText('sumLabel', isRu)}: {Object.entries(config.criteriaWeights)
                   .filter(([k]) => config.criteria.includes(k))
                   .reduce((s, [, v]) => s + v, 0)}%)
               </span>
@@ -215,7 +216,7 @@ export function ContestArbitration() {
                 return (
                   <div key={cId} className="flex items-center gap-2">
                     <span className="text-xs text-muted-foreground w-28 truncate">
-                      {opt ? (isRu ? opt.ru : opt.en) : cId}
+                      {opt ? getCriterionLabel(cId, isRu) : cId}
                     </span>
                     <Slider
                       value={[weight]}
@@ -238,8 +239,8 @@ export function ContestArbitration() {
         {/* Scoring scheme */}
         <div className="space-y-1.5">
           <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-            <Calculator className="h-3 w-3" />
-            {isRu ? 'Схема итоговой оценки' : 'Final Scoring Scheme'}
+             <Calculator className="h-3 w-3" />
+             {getRatingsText('finalScoringSchemeLabel', isRu)}
           </label>
           <Select
             value={config.scoringScheme}
@@ -251,17 +252,17 @@ export function ContestArbitration() {
             <SelectContent>
               {SCORING_OPTIONS.map(o => (
                 <SelectItem key={o.id} value={o.id} className="text-xs">
-                  {isRu ? o.ru : o.en}
+                   {isRu ? o.ru : o.en}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
           <p className="text-[10px] text-muted-foreground/60">
-            {config.scoringScheme === 'weighted-avg'
-              ? (isRu ? 'Итоговый балл = среднее взвешенное по выбранным критериям' : 'Final score = weighted average across selected criteria')
-              : config.scoringScheme === 'tournament'
-              ? (isRu ? 'Модели проходят через сетку попарных сравнений' : 'Models go through a bracket of pairwise comparisons')
-              : (isRu ? 'Динамический рейтинг по системе Эло на основе дуэлей' : 'Dynamic rating based on Elo system from duels')}
+             {config.scoringScheme === 'weighted-avg'
+               ? getRatingsText('weightedAverageDescription', isRu)
+               : config.scoringScheme === 'tournament'
+               ? getRatingsText('tournamentDescription', isRu)
+               : getRatingsText('eloDescription', isRu)}
           </p>
         </div>
       </HydraCardContent>
