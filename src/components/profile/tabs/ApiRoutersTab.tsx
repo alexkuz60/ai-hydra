@@ -5,7 +5,7 @@ import { OpenRouterLimitsDialog } from '@/components/profile/OpenRouterLimitsDia
 import { HydraCard, HydraCardHeader, HydraCardTitle, HydraCardContent } from '@/components/ui/hydra-card';
 import { ApiKeyField, type KeyMetadata } from '@/components/profile/ApiKeyField';
 import { Badge } from '@/components/ui/badge';
-import { Network, Globe, Zap } from 'lucide-react';
+import { Network, Globe, Zap, Sparkles } from 'lucide-react';
 
 interface ApiRoutersTabProps {
   apiKeys: Record<string, string>;
@@ -17,11 +17,12 @@ interface ApiRoutersTabProps {
   proxyapiPriority: boolean;
   onPriorityChange: (val: boolean) => void;
   userId?: string;
+  isAdmin?: boolean;
 }
 
 export function ApiRoutersTab({
   apiKeys, keyMetadata, language, t, onKeyChange, onExpirationChange,
-  proxyapiPriority, onPriorityChange, userId,
+  proxyapiPriority, onPriorityChange, userId, isAdmin,
 }: ApiRoutersTabProps) {
   const [activeRouter, setActiveRouter] = useState('openrouter');
 
@@ -34,6 +35,13 @@ export function ApiRoutersTab({
 
       <Tabs value={activeRouter} onValueChange={setActiveRouter}>
         <TabsList className="flex w-full h-auto flex-wrap gap-0.5">
+          {isAdmin && (
+            <TabsTrigger value="lovable" className="flex items-center gap-2 flex-1">
+              <Sparkles className="h-4 w-4 shrink-0" />
+              <span>Lovable AI</span>
+              <Badge variant="outline" className="ml-1 text-[10px] h-4 bg-primary/10 text-primary border-primary/30">ON</Badge>
+            </TabsTrigger>
+          )}
           <TabsTrigger value="openrouter" className="flex items-center gap-2 flex-1">
             <Globe className="h-4 w-4 shrink-0" />
             <span>OpenRouter</span>
@@ -50,6 +58,12 @@ export function ApiRoutersTab({
             {apiKeys['dotpoint'] && <Badge variant="outline" className="ml-1 text-[10px] h-4 bg-emerald-500/10 text-emerald-400 border-emerald-500/30">ON</Badge>}
           </TabsTrigger>
         </TabsList>
+
+        {isAdmin && (
+          <TabsContent value="lovable">
+            <LovableAIPanel language={language} />
+          </TabsContent>
+        )}
 
         <TabsContent value="openrouter">
           <OpenRouterPanel
@@ -84,6 +98,47 @@ export function ApiRoutersTab({
         </TabsContent>
       </Tabs>
     </div>
+  );
+}
+
+// ── Lovable AI Panel (Admin only) ─────────────────────────────────
+
+function LovableAIPanel({ language }: { language: string }) {
+  const models = [
+    'google/gemini-2.5-pro', 'google/gemini-2.5-flash', 'google/gemini-2.5-flash-lite',
+    'google/gemini-3-pro-preview', 'google/gemini-3-flash-preview',
+    'openai/gpt-5', 'openai/gpt-5-mini', 'openai/gpt-5-nano', 'openai/gpt-5.2',
+  ];
+
+  return (
+    <HydraCard variant="glass" className="p-6">
+      <HydraCardHeader>
+        <Sparkles className="h-5 w-5 text-primary" />
+        <HydraCardTitle>Lovable AI</HydraCardTitle>
+        <Badge variant="outline" className="ml-2 text-[10px] h-4 bg-primary/10 text-primary border-primary/30">
+          {language === 'ru' ? 'Встроенный' : 'Built-in'}
+        </Badge>
+      </HydraCardHeader>
+      <HydraCardContent className="space-y-4">
+        <p className="text-sm text-muted-foreground">
+          {language === 'ru'
+            ? 'Встроенный роутер Lovable Cloud. Доступ к моделям без собственного API-ключа. Доступен только администратору проекта.'
+            : 'Built-in Lovable Cloud router. Access models without your own API key. Available to project admin only.'}
+        </p>
+        <div className="space-y-1">
+          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+            {language === 'ru' ? 'Доступные модели' : 'Available Models'}
+          </p>
+          <div className="flex flex-wrap gap-1.5 mt-2">
+            {models.map(m => (
+              <Badge key={m} variant="secondary" className="text-xs font-mono">
+                {m}
+              </Badge>
+            ))}
+          </div>
+        </div>
+      </HydraCardContent>
+    </HydraCard>
   );
 }
 

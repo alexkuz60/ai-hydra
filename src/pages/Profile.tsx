@@ -442,6 +442,7 @@ export default function Profile() {
                   }
                 }}
                 userId={user?.id}
+                isAdmin={isAdmin}
               />
             </TabsContent>
 
