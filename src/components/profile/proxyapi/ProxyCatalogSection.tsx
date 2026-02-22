@@ -173,7 +173,6 @@ function UserModelRow({ model, testResult, isTesting, onTest, onRemove }: {
   onTest: () => void;
   onRemove: () => void;
 }) {
-  const expl = testResult ? STATUS_EXPLANATIONS[testResult.status] : null;
   const modelType = detectModelType(model.id);
   const typeInfo = MODEL_TYPE_LABELS[modelType];
   return (
