@@ -8,23 +8,25 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { User, Key, Settings, Loader2, Moon, Sun, Globe, Shield, BarChart3, Gauge, Bell } from 'lucide-react';
+import { User, Key, Settings, Loader2, Shield, BarChart3, Bell, Wallet, Network } from 'lucide-react';
 import { CloudSyncIndicator } from '@/components/ui/CloudSyncIndicator';
 import { useCloudSyncStatus } from '@/hooks/useCloudSettings';
 import { Link } from 'react-router-dom';
 import { UsageStats } from '@/components/profile/UsageStats';
-import { ProxyApiDashboard } from '@/components/profile/ProxyApiDashboard';
 import { AvatarCropDialog } from '@/components/profile/AvatarCropDialog';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useUserRoles } from '@/hooks/useUserRoles';
 import { useSupNotifications } from '@/hooks/useSupNotifications';
 import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
 import { type KeyMetadata } from '@/components/profile/ApiKeyField';
 
 import { ProfileTab } from '@/components/profile/tabs/ProfileTab';
 import { PreferencesTab } from '@/components/profile/tabs/PreferencesTab';
 import { ApiKeysTab } from '@/components/profile/tabs/ApiKeysTab';
 import { NotificationsTab } from '@/components/profile/tabs/NotificationsTab';
+import { FinanceTab } from '@/components/profile/tabs/FinanceTab';
+import { ApiRoutersTab } from '@/components/profile/tabs/ApiRoutersTab';
 
 interface ProfileData {
   id: string;
@@ -50,8 +52,10 @@ const RPC_KEY_MAP: Record<string, string> = {
   proxyapi_api_key: 'proxyapi',
 };
 
-const PROFILE_TAB_KEY = 'profile-active-tab';
-const VALID_PROFILE_TABS = ['profile', 'preferences', 'api-keys', 'proxyapi', 'stats', 'notifications'];
+const USER_TAB_KEY = 'profile-user-tab';
+const API_TAB_KEY = 'profile-api-tab';
+const VALID_USER_TABS = ['profile', 'preferences', 'notifications', 'finance'];
+const VALID_API_TABS = ['api-keys', 'api-routers', 'stats'];
 
 const ALL_PROVIDERS = [
   'openai', 'gemini', 'anthropic', 'xai', 'openrouter', 'groq', 'deepseek', 'mistral',
@@ -68,17 +72,30 @@ export default function Profile() {
   const { isSupervisor } = useUserRoles();
   const { notifications, loading: notifLoading, unreadCount, markRead, markAllRead, deleteNotification } = useSupNotifications();
 
-  const [activeTab, setActiveTab] = useState<string>(() => {
+  const [userTab, setUserTab] = useState<string>(() => {
     try {
-      const saved = localStorage.getItem(PROFILE_TAB_KEY);
-      if (saved && VALID_PROFILE_TABS.includes(saved)) return saved;
+      const saved = localStorage.getItem(USER_TAB_KEY);
+      if (saved && VALID_USER_TABS.includes(saved)) return saved;
     } catch {}
     return 'profile';
   });
 
-  const handleTabChange = useCallback((tab: string) => {
-    setActiveTab(tab);
-    try { localStorage.setItem(PROFILE_TAB_KEY, tab); } catch {}
+  const [apiTab, setApiTab] = useState<string>(() => {
+    try {
+      const saved = localStorage.getItem(API_TAB_KEY);
+      if (saved && VALID_API_TABS.includes(saved)) return saved;
+    } catch {}
+    return 'api-keys';
+  });
+
+  const handleUserTabChange = useCallback((tab: string) => {
+    setUserTab(tab);
+    try { localStorage.setItem(USER_TAB_KEY, tab); } catch {}
+  }, []);
+
+  const handleApiTabChange = useCallback((tab: string) => {
+    setApiTab(tab);
+    try { localStorage.setItem(API_TAB_KEY, tab); } catch {}
   }, []);
 
   const [profile, setProfile] = useState<ProfileData | null>(null);
@@ -268,8 +285,9 @@ export default function Profile() {
 
   return (
     <Layout>
-      <div className="container max-w-4xl px-4 py-8">
-        <div className="flex items-center justify-between mb-8">
+      <div className="container max-w-4xl px-4 py-8 space-y-10">
+        {/* Header */}
+        <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <h1 className="text-3xl font-bold">{t('profile.title')}</h1>
             <CloudSyncIndicator loaded={cloudSynced} />
@@ -284,94 +302,138 @@ export default function Profile() {
           )}
         </div>
 
-        <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
-          <TabsList className="flex w-full h-auto flex-wrap gap-0.5">
-            <TabsTrigger value="profile" className="flex items-center gap-2 flex-1">
-              <User className="h-4 w-4 shrink-0" />
-              <span>{t('nav.profile')}</span>
-            </TabsTrigger>
-            <TabsTrigger value="preferences" className="flex items-center gap-2 flex-1">
-              <Settings className="h-4 w-4 shrink-0" />
-              <span>{t('profile.preferences')}</span>
-            </TabsTrigger>
-            <TabsTrigger value="api-keys" className="flex items-center gap-2 flex-1">
-              <Key className="h-4 w-4 shrink-0" />
-              <span>{t('profile.apiKeys')}</span>
-            </TabsTrigger>
-            {language === 'ru' && (
-              <TabsTrigger value="proxyapi" className="flex items-center gap-2 flex-1">
-                <Gauge className="h-4 w-4 shrink-0" />
-                <span>ProxyAPI</span>
+        {/* ══════════ Section 1: User ══════════ */}
+        <section>
+          <div className="flex items-center gap-2 mb-4">
+            <User className="h-5 w-5 text-primary" />
+            <h2 className="text-xl font-semibold">{language === 'ru' ? 'Личный кабинет' : 'Personal'}</h2>
+          </div>
+          <Tabs value={userTab} onValueChange={handleUserTabChange} className="space-y-6">
+            <TabsList className="flex w-full h-auto flex-wrap gap-0.5">
+              <TabsTrigger value="profile" className="flex items-center gap-2 flex-1">
+                <User className="h-4 w-4 shrink-0" />
+                <span>{t('nav.profile')}</span>
               </TabsTrigger>
-            )}
-            <TabsTrigger value="stats" className="flex items-center gap-2 flex-1">
-              <BarChart3 className="h-4 w-4 shrink-0" />
-              <span>{t('profile.stats')}</span>
-            </TabsTrigger>
+              <TabsTrigger value="preferences" className="flex items-center gap-2 flex-1">
+                <Settings className="h-4 w-4 shrink-0" />
+                <span>{t('profile.preferences')}</span>
+              </TabsTrigger>
+              {isSupervisor && (
+                <TabsTrigger value="notifications" className="flex items-center gap-2 shrink-0 whitespace-nowrap">
+                  <Bell className="h-4 w-4 shrink-0" />
+                  <span>{language === 'ru' ? 'Уведомления' : 'Notifications'}</span>
+                  {unreadCount > 0 && (
+                    <Badge className="ml-1 h-5 min-w-5 px-1 text-[10px] bg-destructive text-destructive-foreground">
+                      {unreadCount > 9 ? '9+' : unreadCount}
+                    </Badge>
+                  )}
+                </TabsTrigger>
+              )}
+              <TabsTrigger value="finance" className="flex items-center gap-2 flex-1">
+                <Wallet className="h-4 w-4 shrink-0" />
+                <span>{language === 'ru' ? 'Финансы' : 'Finance'}</span>
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="profile">
+              <ProfileTab
+                email={user?.email || ''}
+                displayName={displayName}
+                username={username}
+                avatarUrl={avatarUrl}
+                avatarSaving={avatarSaving}
+                saving={saving}
+                language={language}
+                t={t}
+                onDisplayNameChange={setDisplayName}
+                onUsernameChange={setUsername}
+                onSave={handleSaveProfile}
+                onAvatarFileSelect={handleAvatarFileSelect}
+                onDeleteAvatar={handleDeleteAvatar}
+              />
+            </TabsContent>
+
+            <TabsContent value="preferences">
+              <PreferencesTab
+                theme={theme}
+                language={language}
+                fontSize={fontSize}
+                saving={saving}
+                availableLanguages={availableLanguages}
+                t={t}
+                onThemeChange={setTheme}
+                onLanguageChange={setLanguage}
+                onFontSizeChange={setFontSize}
+                onSave={handleSaveProfile}
+              />
+            </TabsContent>
+
             {isSupervisor && (
-              <TabsTrigger value="notifications" className="flex items-center gap-2 shrink-0 whitespace-nowrap">
-                <Bell className="h-4 w-4 shrink-0" />
-                <span>{language === 'ru' ? 'Уведомления' : 'Notifications'}</span>
-                {unreadCount > 0 && (
-                  <Badge className="ml-1 h-5 min-w-5 px-1 text-[10px] bg-destructive text-destructive-foreground">
-                    {unreadCount > 9 ? '9+' : unreadCount}
-                  </Badge>
-                )}
-              </TabsTrigger>
+              <TabsContent value="notifications">
+                <NotificationsTab
+                  notifications={notifications}
+                  loading={notifLoading}
+                  unreadCount={unreadCount}
+                  language={language}
+                  onMarkRead={markRead}
+                  onMarkAllRead={markAllRead}
+                  onDelete={deleteNotification}
+                />
+              </TabsContent>
             )}
-          </TabsList>
 
-          <TabsContent value="profile">
-            <ProfileTab
-              email={user?.email || ''}
-              displayName={displayName}
-              username={username}
-              avatarUrl={avatarUrl}
-              avatarSaving={avatarSaving}
-              saving={saving}
-              language={language}
-              t={t}
-              onDisplayNameChange={setDisplayName}
-              onUsernameChange={setUsername}
-              onSave={handleSaveProfile}
-              onAvatarFileSelect={handleAvatarFileSelect}
-              onDeleteAvatar={handleDeleteAvatar}
-            />
-          </TabsContent>
+            <TabsContent value="finance">
+              <FinanceTab />
+            </TabsContent>
+          </Tabs>
+        </section>
 
-          <TabsContent value="preferences">
-            <PreferencesTab
-              theme={theme}
-              language={language}
-              fontSize={fontSize}
-              saving={saving}
-              availableLanguages={availableLanguages}
-              t={t}
-              onThemeChange={setTheme}
-              onLanguageChange={setLanguage}
-              onFontSizeChange={setFontSize}
-              onSave={handleSaveProfile}
-            />
-          </TabsContent>
+        <Separator className="my-2" />
 
-          <TabsContent value="api-keys">
-            <ApiKeysTab
-              apiKeys={apiKeys}
-              keyMetadata={keyMetadata}
-              saving={saving}
-              language={language}
-              t={t}
-              onKeyChange={setKeyValue}
-              onExpirationChange={handleExpirationChange}
-              onSave={handleSaveApiKeys}
-            />
-          </TabsContent>
+        {/* ══════════ Section 2: API Management ══════════ */}
+        <section>
+          <div className="flex items-center gap-2 mb-4">
+            <Key className="h-5 w-5 text-primary" />
+            <h2 className="text-xl font-semibold">{language === 'ru' ? 'Управление API' : 'API Management'}</h2>
+          </div>
+          <Tabs value={apiTab} onValueChange={handleApiTabChange} className="space-y-6">
+            <TabsList className="flex w-full h-auto flex-wrap gap-0.5">
+              <TabsTrigger value="api-keys" className="flex items-center gap-2 flex-1">
+                <Key className="h-4 w-4 shrink-0" />
+                <span>{language === 'ru' ? 'API Ключи' : 'API Keys'}</span>
+              </TabsTrigger>
+              <TabsTrigger value="api-routers" className="flex items-center gap-2 flex-1">
+                <Network className="h-4 w-4 shrink-0" />
+                <span>{language === 'ru' ? 'API Роутеры' : 'API Routers'}</span>
+              </TabsTrigger>
+              <TabsTrigger value="stats" className="flex items-center gap-2 flex-1">
+                <BarChart3 className="h-4 w-4 shrink-0" />
+                <span>{t('profile.stats')}</span>
+              </TabsTrigger>
+            </TabsList>
 
-          {language === 'ru' && (
-            <TabsContent value="proxyapi">
-              <ProxyApiDashboard
-                hasKey={!!apiKeys['proxyapi']}
-                proxyapiPriority={proxyapiPriority && !!apiKeys['proxyapi']}
+            <TabsContent value="api-keys">
+              <ApiKeysTab
+                apiKeys={apiKeys}
+                keyMetadata={keyMetadata}
+                saving={saving}
+                language={language}
+                t={t}
+                onKeyChange={setKeyValue}
+                onExpirationChange={handleExpirationChange}
+                onSave={handleSaveApiKeys}
+              />
+            </TabsContent>
+
+            <TabsContent value="api-routers">
+              <ApiRoutersTab
+                apiKeys={apiKeys}
+                keyMetadata={keyMetadata}
+                language={language}
+                t={t}
+                onKeyChange={setKeyValue}
+                onExpirationChange={handleExpirationChange}
+                proxyapiPriority={proxyapiPriority}
                 onPriorityChange={async (val) => {
                   setProxyapiPriority(val);
                   if (user) {
@@ -379,32 +441,15 @@ export default function Profile() {
                       .update({ proxyapi_priority: val }).eq('user_id', user.id);
                   }
                 }}
-                apiKeyValue={apiKeys['proxyapi'] || ''}
-                onApiKeyChange={(v) => setKeyValue('proxyapi', v)}
-                keyMetadata={keyMetadata['proxyapi']}
-                onExpirationChange={(date) => handleExpirationChange('proxyapi', date)}
+                userId={user?.id}
               />
             </TabsContent>
-          )}
 
-          <TabsContent value="stats">
-            <UsageStats />
-          </TabsContent>
-
-          {isSupervisor && (
-            <TabsContent value="notifications">
-              <NotificationsTab
-                notifications={notifications}
-                loading={notifLoading}
-                unreadCount={unreadCount}
-                language={language}
-                onMarkRead={markRead}
-                onMarkAllRead={markAllRead}
-                onDelete={deleteNotification}
-              />
+            <TabsContent value="stats">
+              <UsageStats />
             </TabsContent>
-          )}
-        </Tabs>
+          </Tabs>
+        </section>
       </div>
 
       <AvatarCropDialog
