@@ -35,3 +35,6 @@ verify_jwt = false
 
 [functions.interview-verdict]
 verify_jwt = false
+
+[functions.translate-batch]
+verify_jwt = false

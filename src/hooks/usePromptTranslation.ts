@@ -60,7 +60,7 @@ export function usePromptTranslation(
     toast.success(t('staffRoles.originalRestored'));
   }, [originalContent, isRussianContent, onTitleChange, onSectionsChange, onRestoreOriginal, t]);
 
-  // Translate entire prompt (title + all sections) with caching
+  // Translate entire prompt (title + all sections) with caching + batch API
   const handleTranslateAll = useCallback(async () => {
     const isRussian = isRussianContent();
     const targetLang = isRussian ? 'English' : 'Russian';
@@ -85,49 +85,54 @@ export function usePromptTranslation(
     
     setIsTranslating(true);
     try {
-      // Translate only non-cached items
-      let translatedTitle = cachedResults.get(title);
-      if (!translatedTitle) {
-        const titleResult = await supabase.functions.invoke('translate-text', {
-          body: { text: title, targetLang },
-        });
-        if (titleResult.error) throw titleResult.error;
-        translatedTitle = titleResult.data?.translation;
-        if (translatedTitle) {
-          cacheTranslation(title, translatedTitle, targetLang);
-        }
+      // Collect non-cached items for batch translation
+      const itemsToTranslate: Array<{ id: string; text: string; isTitle?: boolean; sectionIdx?: number }> = [];
+      
+      if (!cachedResults.has(title)) {
+        itemsToTranslate.push({ id: 'title', text: title, isTitle: true });
       }
       
-      // Translate non-cached sections in parallel
-      const sectionsToTranslate = sections.filter(s => s.content.trim() && !cachedResults.has(s.content));
-      const translationPromises = sectionsToTranslate.map(section =>
-        supabase.functions.invoke('translate-text', {
-          body: { text: section.content, targetLang },
-        })
-      );
-      
-      const results = await Promise.all(translationPromises);
-      
-      // Check for errors
-      const hasErrors = results.some(r => r.error);
-      if (hasErrors) throw new Error('Some translations failed');
-      
-      // Cache new translations
-      const newTranslations: Array<{ original: string; translation: string }> = [];
-      sectionsToTranslate.forEach((section, idx) => {
-        if (results[idx].data?.translation) {
-          newTranslations.push({ original: section.content, translation: results[idx].data.translation });
-          // Add to cachedResults for immediate use
-          cachedResults.set(section.content, results[idx].data.translation);
+      sections.forEach((section, idx) => {
+        if (section.content.trim() && !cachedResults.has(section.content)) {
+          itemsToTranslate.push({ id: `section_${idx}`, text: section.content, sectionIdx: idx });
         }
       });
-      if (newTranslations.length > 0) {
-        cacheTranslations(newTranslations, targetLang);
-      }
-      
-      // Add title to cached results if translated
-      if (translatedTitle) {
-        cachedResults.set(title, translatedTitle);
+
+      if (itemsToTranslate.length > 0) {
+        // Use batch endpoint
+        const { data, error } = await supabase.functions.invoke('translate-batch', {
+          body: {
+            items: itemsToTranslate.map(it => ({ id: it.id, text: it.text })),
+            targetLang,
+            verifySemantic: true,
+          },
+        });
+
+        if (error) throw error;
+
+        const results: Array<{ id: string; translation: string; cosineSimilarity?: number }> = data?.results || [];
+        
+        // Cache and apply
+        const newTranslations: Array<{ original: string; translation: string }> = [];
+        for (const item of itemsToTranslate) {
+          const result = results.find(r => r.id === item.id);
+          if (result?.translation) {
+            cachedResults.set(item.text, result.translation);
+            newTranslations.push({ original: item.text, translation: result.translation });
+          }
+        }
+        if (newTranslations.length > 0) {
+          cacheTranslations(newTranslations, targetLang);
+        }
+
+        // Log semantic quality
+        if (data?.avgCosineSimilarity != null) {
+          console.log(`[Translator] Avg cosine similarity: ${data.avgCosineSimilarity.toFixed(4)}`);
+          const lowQuality = results.filter((r: { cosineSimilarity?: number }) => r.cosineSimilarity != null && r.cosineSimilarity < 0.85);
+          if (lowQuality.length > 0) {
+            console.warn(`[Translator] ${lowQuality.length} item(s) below 0.85 cosine threshold`);
+          }
+        }
       }
       
       applyTranslations(cachedResults, isRussian);
