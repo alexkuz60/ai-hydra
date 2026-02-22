@@ -171,6 +171,7 @@ export function DotPointDashboard({ hasKey, apiKeyValue, onApiKeyChange, keyMeta
             onTestModel={api.handleTestModel}
             onMassTest={api.handleMassTest}
             onAddUserModel={api.addUserModel}
+            onRemoveUserModel={api.removeUserModel}
             onRefreshCatalog={() => api.fetchCatalog(true)}
           />
 

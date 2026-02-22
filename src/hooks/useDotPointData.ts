@@ -209,6 +209,10 @@ export function useDotPointData(hasKey: boolean) {
     setCatalogSearch('');
   }, [updateCloudUserModels]);
 
+  const removeUserModel = useCallback((modelId: string) => {
+    updateCloudUserModels(prev => prev.filter(id => id !== modelId));
+  }, [updateCloudUserModels]);
+
   const deleteModelStats = useCallback(async (rawModelId: string, displayModel: string) => {
     if (user) {
       try {
@@ -259,7 +263,7 @@ export function useDotPointData(hasKey: boolean) {
     userModelIds,
     dotpointModels, userAddedModels, filteredCatalogModels, analyticsData,
     handlePing, handleTestModel, handleMassTest,
-    addUserModel, deleteModelStats,
+    addUserModel, removeUserModel, deleteModelStats,
     handleExportCSV,
     fetchCatalog, fetchLogs,
   };
