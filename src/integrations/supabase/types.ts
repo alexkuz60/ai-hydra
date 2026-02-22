@@ -1259,6 +1259,7 @@ export type Database = {
           anthropic_vault_id: string | null
           created_at: string
           deepseek_vault_id: string | null
+          dotpoint_vault_id: string | null
           firecrawl_vault_id: string | null
           gemini_vault_id: string | null
           groq_vault_id: string | null
@@ -1278,6 +1279,7 @@ export type Database = {
           anthropic_vault_id?: string | null
           created_at?: string
           deepseek_vault_id?: string | null
+          dotpoint_vault_id?: string | null
           firecrawl_vault_id?: string | null
           gemini_vault_id?: string | null
           groq_vault_id?: string | null
@@ -1297,6 +1299,7 @@ export type Database = {
           anthropic_vault_id?: string | null
           created_at?: string
           deepseek_vault_id?: string | null
+          dotpoint_vault_id?: string | null
           firecrawl_vault_id?: string | null
           gemini_vault_id?: string | null
           groq_vault_id?: string | null
