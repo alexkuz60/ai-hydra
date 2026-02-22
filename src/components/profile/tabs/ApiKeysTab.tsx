@@ -5,7 +5,7 @@ import { HydraCard, HydraCardHeader, HydraCardTitle, HydraCardContent } from '@/
 import { Key, Globe, Search, AlertTriangle, Loader2, Check } from 'lucide-react';
 import { ApiKeyField, type KeyMetadata } from '@/components/profile/ApiKeyField';
 import { GeminiLimitsDialog } from '@/components/profile/GeminiLimitsDialog';
-import { OpenRouterLimitsDialog } from '@/components/profile/OpenRouterLimitsDialog';
+
 import { MistralLimitsDialog } from '@/components/profile/MistralLimitsDialog';
 import { FirecrawlLimitsDialog } from '@/components/profile/FirecrawlLimitsDialog';
 
@@ -14,7 +14,7 @@ const LLM_PROVIDERS = [
   { provider: 'gemini', labelKey: 'profile.gemini', placeholder: 'AIza...' },
   { provider: 'anthropic', labelKey: 'profile.anthropic', placeholder: 'sk-ant-...' },
   { provider: 'xai', label: 'xAI (Grok)', placeholder: 'xai-...' },
-  { provider: 'openrouter', label: 'OpenRouter (Free Models)', placeholder: 'sk-or-...', hint: { ru: 'openrouter.ai/keys', en: 'openrouter.ai/keys', url: 'https://openrouter.ai/keys' } },
+  
   { provider: 'groq', label: 'Groq (Ultra-Fast Inference)', placeholder: 'gsk_...', hint: { ru: 'console.groq.com/keys', en: 'console.groq.com/keys', url: 'https://console.groq.com/keys' } },
   { provider: 'deepseek', label: 'DeepSeek AI', placeholder: 'sk-...', hint: { ru: 'platform.deepseek.com', en: 'platform.deepseek.com', url: 'https://platform.deepseek.com/api_keys' } },
   { provider: 'mistral', label: 'Mistral AI', placeholder: '...', hint: { ru: 'console.mistral.ai', en: 'console.mistral.ai', url: 'https://console.mistral.ai/api-keys' } },
@@ -93,9 +93,6 @@ export function ApiKeysTab({ apiKeys, keyMetadata, saving, language, t, onKeyCha
             />
             {p.provider === 'gemini' && apiKeys['gemini'] && (
               <div className="mt-1 mb-2"><GeminiLimitsDialog hasKey={!!apiKeys['gemini']} /></div>
-            )}
-            {p.provider === 'openrouter' && apiKeys['openrouter'] && (
-              <div className="mt-1 mb-2"><OpenRouterLimitsDialog hasKey={!!apiKeys['openrouter']} /></div>
             )}
             {p.provider === 'mistral' && apiKeys['mistral'] && (
               <div className="mt-1 mb-2"><MistralLimitsDialog hasKey={!!apiKeys['mistral']} /></div>
