@@ -21,6 +21,7 @@ export type Database = {
           entry_code: string
           entry_date: string
           hypothesis: string | null
+          hypothesis_en: string | null
           id: string
           initiator: string
           is_visible: boolean
@@ -29,9 +30,12 @@ export type Database = {
           role_object: string
           status: string
           summary: string | null
+          summary_en: string | null
           supervisor_comment: string | null
+          supervisor_comment_en: string | null
           supervisor_resolution: string
           title: string
+          title_en: string | null
           updated_at: string
         }
         Insert: {
@@ -40,6 +44,7 @@ export type Database = {
           entry_code: string
           entry_date?: string
           hypothesis?: string | null
+          hypothesis_en?: string | null
           id?: string
           initiator?: string
           is_visible?: boolean
@@ -48,9 +53,12 @@ export type Database = {
           role_object?: string
           status?: string
           summary?: string | null
+          summary_en?: string | null
           supervisor_comment?: string | null
+          supervisor_comment_en?: string | null
           supervisor_resolution?: string
           title: string
+          title_en?: string | null
           updated_at?: string
         }
         Update: {
@@ -59,6 +67,7 @@ export type Database = {
           entry_code?: string
           entry_date?: string
           hypothesis?: string | null
+          hypothesis_en?: string | null
           id?: string
           initiator?: string
           is_visible?: boolean
@@ -67,9 +76,12 @@ export type Database = {
           role_object?: string
           status?: string
           summary?: string | null
+          summary_en?: string | null
           supervisor_comment?: string | null
+          supervisor_comment_en?: string | null
           supervisor_resolution?: string
           title?: string
+          title_en?: string | null
           updated_at?: string
         }
         Relationships: []
