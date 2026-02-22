@@ -1393,6 +1393,7 @@ export type Database = {
         Returns: {
           has_anthropic: boolean
           has_deepseek: boolean
+          has_dotpoint: boolean
           has_firecrawl: boolean
           has_gemini: boolean
           has_groq: boolean
@@ -1410,6 +1411,7 @@ export type Database = {
         Returns: {
           anthropic_api_key: string
           deepseek_api_key: string
+          dotpoint_api_key: string
           firecrawl_api_key: string
           google_gemini_api_key: string
           groq_api_key: string
