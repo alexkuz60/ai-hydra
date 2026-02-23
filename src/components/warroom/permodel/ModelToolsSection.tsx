@@ -39,7 +39,7 @@ export function ModelToolsSection({ modelId, modelSettings, onUpdate }: ModelToo
 
       {(modelSettings.enableTools ?? true) && (
         <div className="ml-2 pl-3 border-l-2 border-border/50 space-y-2">
-          <Label className="text-xs text-muted-foreground">Доступные инструменты</Label>
+          <Label className="text-xs text-muted-foreground">{lang === 'ru' ? 'Доступные инструменты' : 'Available tools'}</Label>
           {AVAILABLE_TOOL_IDS.map(toolId => {
             const toolInfo = TOOL_INFO[toolId];
             const toolSettings = getToolSettingsForModel(modelSettings);
@@ -52,8 +52,8 @@ export function ModelToolsSection({ modelId, modelSettings, onUpdate }: ModelToo
                   <div className="flex items-center gap-2">
                     <span className="text-sm">{toolInfo.icon}</span>
                     <div>
-                      <span className="text-xs font-medium">{toolInfo.name}</span>
-                      <p className="text-[10px] text-muted-foreground">{toolInfo.description}</p>
+                      <span className="text-xs font-medium">{toolInfo.name[lang]}</span>
+                      <p className="text-[10px] text-muted-foreground">{toolInfo.description[lang]}</p>
                     </div>
                   </div>
                   <Switch
@@ -95,7 +95,7 @@ export function ModelToolsSection({ modelId, modelSettings, onUpdate }: ModelToo
 
                 {toolId === 'web_search' && isEnabled && (
                   <div className="ml-6 pl-3 border-l-2 border-primary/30 space-y-1.5">
-                    <Label className="text-[10px] text-muted-foreground">Провайдер поиска</Label>
+                    <Label className="text-[10px] text-muted-foreground">{lang === 'ru' ? 'Провайдер поиска' : 'Search provider'}</Label>
                     <div className="flex flex-wrap gap-1.5">
                       {(Object.keys(SEARCH_PROVIDER_INFO) as SearchProvider[]).map(provider => {
                         const info = SEARCH_PROVIDER_INFO[provider];
@@ -109,14 +109,14 @@ export function ModelToolsSection({ modelId, modelSettings, onUpdate }: ModelToo
                               "px-2 py-1 rounded text-[10px] border transition-all",
                               isSelected ? "bg-primary text-primary-foreground border-primary" : "bg-background/50 text-muted-foreground border-border/50 hover:border-primary/50"
                             )}
-                            title={info.description}
+                            title={info.description[lang]}
                           >
                             {info.name}
                           </button>
                         );
                       })}
                     </div>
-                    <p className="text-[9px] text-muted-foreground">{SEARCH_PROVIDER_INFO[modelSettings.searchProvider ?? 'tavily'].description}</p>
+                    <p className="text-[9px] text-muted-foreground">{SEARCH_PROVIDER_INFO[modelSettings.searchProvider ?? 'tavily'].description[lang]}</p>
                   </div>
                 )}
               </div>
@@ -127,7 +127,7 @@ export function ModelToolsSection({ modelId, modelSettings, onUpdate }: ModelToo
             <>
               <div className="flex items-center gap-2 mt-3 pt-2 border-t border-border/30">
                 <User className="h-3 w-3 text-muted-foreground" />
-                <Label className="text-xs text-muted-foreground">Пользовательские инструменты</Label>
+                <Label className="text-xs text-muted-foreground">{lang === 'ru' ? 'Пользовательские инструменты' : 'Custom tools'}</Label>
               </div>
               <div className="grid grid-cols-2 gap-2">
                 {customTools.map(tool => {
