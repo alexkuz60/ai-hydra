@@ -54,8 +54,9 @@ export function TaskDetailsPanel({
   saving = false,
   hasUnsavedChangesRef,
 }: TaskDetailsPanelProps) {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const navigate = useNavigate();
+  const displayTitle = task ? ((language === 'en' && task.title_en) ? task.title_en : task.title) : '';
 
   // Editing title state
   const [editingTitle, setEditingTitle] = useState(false);
@@ -218,7 +219,7 @@ export function TaskDetailsPanel({
                  </div>
                ) : (
                   <div className="flex items-center gap-2">
-                    <h2 className="text-xl font-semibold truncate">{task.title}</h2>
+                    <h2 className="text-xl font-semibold truncate">{displayTitle}</h2>
                     {task.is_system && (
                       <Lock className="h-4 w-4 text-muted-foreground shrink-0" />
                     )}
