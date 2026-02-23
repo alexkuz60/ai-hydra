@@ -117,8 +117,12 @@ const StaffRoles = () => {
   }, []);
 
   // Seed actions
+  const allSeedableRoles = useMemo(
+    () => [...expertRoles, ...technicalRoles, ...otkRoles],
+    [expertRoles, technicalRoles, otkRoles]
+  );
   const { isBulkSeeding, isForceSyncing, handleBulkSeed, handleForceSeed } = useStaffSeedActions({
-    technicalRoles,
+    technicalRoles: allSeedableRoles,
     language,
   });
 

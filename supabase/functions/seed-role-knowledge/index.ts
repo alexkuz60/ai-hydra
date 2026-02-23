@@ -818,14 +818,14 @@ serve(async (req) => {
         .select('id', { count: 'exact', head: true })
         .eq('user_id', user.id)
         .eq('role', role)
-        .eq('category', 'documentation');
+        .in('category', ['documentation', 'standard', 'procedure', 'system_prompt']);
       
       if (count && count > 0) {
         return new Response(
           JSON.stringify({ 
             success: true, 
             skipped: true, 
-            message: `Role "${role}" already has ${count} documentation entries. Use force=true to re-seed.`,
+            message: `Role "${role}" already has ${count} seeded entries. Use force=true to re-seed.`,
             existing_count: count,
           }),
           { headers: { ...CORS_HEADERS, "Content-Type": "application/json" } }
