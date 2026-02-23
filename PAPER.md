@@ -126,6 +126,7 @@ Hydra defines **17 specialized agent roles** across three categories, each with 
 | **Expert** | Assistant, Critic, Arbiter, Consultant, Moderator, Advisor, Archivist, Analyst, Webhunter | Domain expertise and analysis |
 | **Technical** | Prompt Engineer, Flow Regulator, Toolsmith | System optimization and tool creation |
 | **System** | Guide, Techno-Critic, Techno-Arbiter, Techno-Moderator, Translator, Evolutioner, Chronicler | Quality control, evolution, documentation |
+| **Legal** *(Phase 3)* | Patent Attorney | Patent search, prior art analysis, application drafting (see §10) |
 
 Each role is defined by a **role contract** consisting of:
 - **System prompt** (natural language instructions with version control)
