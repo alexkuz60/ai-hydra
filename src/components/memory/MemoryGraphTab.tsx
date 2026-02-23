@@ -122,8 +122,8 @@ export function MemoryGraphTab({ stats }: { stats: ReturnType<typeof useHydraMem
 
     allNodes.push({ id: 'center', label: tm('graph.hydra'), type: 'center', x: cx, y: cy, r: 60 });
 
-    const roleRadius = Math.min(cx, cy) * 0.58 * 1.8;
-    const sessionRadius = roleRadius * 1.58;
+    const roleRadius = Math.min(cx, cy) * 0.58 * 1.2;
+    const sessionRadius = roleRadius * 1.4;
 
     stats.roleMemory.forEach((rm, i) => {
       const angle = (2 * Math.PI * i) / stats.roleMemory.length - Math.PI / 2;
