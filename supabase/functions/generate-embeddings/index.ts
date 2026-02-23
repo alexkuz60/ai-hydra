@@ -3,14 +3,20 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 
 // ============================================
 // Embedding Generation Edge Function
-// Primary: Lovable AI Gateway (google/text-embedding-004)
-// Fallback: OpenAI (if user has key configured)
+// Primary: OpenRouter (user's key) — supports many embedding models
+// Fallback: OpenAI (user's key), Lovable AI Gateway
 // ============================================
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
+
+const OPENROUTER_EMBEDDINGS_URL = "https://openrouter.ai/api/v1/embeddings";
+const OPENAI_EMBEDDINGS_URL = "https://api.openai.com/v1/embeddings";
+
+// Default embedding model on OpenRouter (cheap, fast, good quality)
+const DEFAULT_OPENROUTER_MODEL = "openai/text-embedding-3-small";
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -59,26 +65,50 @@ serve(async (req) => {
       );
     }
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    const embeddingModel = model || "google/text-embedding-004";
+    // Fetch user's API keys
+    const userSupabase = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, {
+      global: { headers: { Authorization: authHeader } }
+    });
+    const { data: apiKeys } = await userSupabase.rpc("get_my_api_keys");
+    const keyData = Array.isArray(apiKeys) ? apiKeys[0] : apiKeys;
+    const openrouterKey = keyData?.openrouter_api_key as string | undefined;
+    const openaiKey = keyData?.openai_api_key as string | undefined;
+
+    if (!openrouterKey && !openaiKey) {
+      console.log("[generate-embeddings] No API keys available for embeddings");
+      return new Response(
+        JSON.stringify({
+          embeddings: texts.map(() => null),
+          model: null,
+          usage: null,
+          skipped: true,
+          reason: "no_api_key"
+        }),
+        { status: 200, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } }
+      );
+    }
+
+    const embeddingModel = model || DEFAULT_OPENROUTER_MODEL;
     const BATCH_SIZE = 20;
     const allEmbeddings: (number[] | null)[] = [];
     let usedModel = embeddingModel;
 
-    console.log(`[generate-embeddings] ${texts.length} text(s), model=${embeddingModel}, hasLovableKey=${!!LOVABLE_API_KEY}`);
+    console.log(`[generate-embeddings] ${texts.length} text(s), model=${embeddingModel}, hasOR=${!!openrouterKey}, hasOAI=${!!openaiKey}`);
 
     for (let i = 0; i < texts.length; i += BATCH_SIZE) {
       const batch = texts.slice(i, i + BATCH_SIZE);
       let embeddings: (number[] | null)[] | null = null;
 
-      // 1. Try Lovable AI Gateway
-      if (LOVABLE_API_KEY) {
+      // 1. Try OpenRouter (primary)
+      if (openrouterKey && !embeddings) {
         try {
-          const resp = await fetch("https://ai.gateway.lovable.dev/v1/embeddings", {
+          const resp = await fetch(OPENROUTER_EMBEDDINGS_URL, {
             method: "POST",
             headers: {
-              "Authorization": `Bearer ${LOVABLE_API_KEY}`,
+              "Authorization": `Bearer ${openrouterKey}`,
               "Content-Type": "application/json",
+              "HTTP-Referer": "https://ai-hydra.lovable.app",
+              "X-Title": "Hydra Knowledge Base",
             },
             body: JSON.stringify({ model: embeddingModel, input: batch }),
           });
@@ -87,39 +117,34 @@ serve(async (req) => {
             const data = await resp.json();
             embeddings = data.data.map((item: { embedding: number[] }) => item.embedding);
             usedModel = data.model || embeddingModel;
+            console.log(`[generate-embeddings] OpenRouter batch ${i / BATCH_SIZE + 1}: OK, dims=${embeddings![0]?.length || 0}`);
           } else {
-            console.warn(`[generate-embeddings] Lovable gateway ${resp.status}, trying fallback`);
+            const errText = await resp.text();
+            console.warn(`[generate-embeddings] OpenRouter ${resp.status}: ${errText.slice(0, 200)}`);
           }
         } catch (e) {
-          console.warn("[generate-embeddings] Lovable gateway error:", e);
+          console.warn("[generate-embeddings] OpenRouter error:", e);
         }
       }
 
-      // 2. Fallback: OpenAI via user's key
-      if (!embeddings) {
+      // 2. Fallback: OpenAI
+      if (!embeddings && openaiKey) {
         try {
-          const userSupabase = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, {
-            global: { headers: { Authorization: authHeader } }
+          const resp = await fetch(OPENAI_EMBEDDINGS_URL, {
+            method: "POST",
+            headers: {
+              "Authorization": `Bearer ${openaiKey}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ model: "text-embedding-3-small", input: batch }),
           });
-          const { data: apiKeys } = await userSupabase.rpc("get_my_api_keys");
-          const keyData = Array.isArray(apiKeys) ? apiKeys[0] : apiKeys;
-          const openaiKey = keyData?.openai_api_key as string | undefined;
 
-          if (openaiKey) {
-            const resp = await fetch("https://api.openai.com/v1/embeddings", {
-              method: "POST",
-              headers: {
-                "Authorization": `Bearer ${openaiKey}`,
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({ model: "text-embedding-3-small", input: batch }),
-            });
-
-            if (resp.ok) {
-              const data = await resp.json();
-              embeddings = data.data.map((item: { embedding: number[] }) => item.embedding);
-              usedModel = data.model || "text-embedding-3-small";
-            }
+          if (resp.ok) {
+            const data = await resp.json();
+            embeddings = data.data.map((item: { embedding: number[] }) => item.embedding);
+            usedModel = data.model || "text-embedding-3-small";
+          } else {
+            console.warn(`[generate-embeddings] OpenAI fallback ${resp.status}`);
           }
         } catch (e) {
           console.warn("[generate-embeddings] OpenAI fallback error:", e);
@@ -135,7 +160,7 @@ serve(async (req) => {
     }
 
     const successCount = allEmbeddings.filter(e => e !== null).length;
-    console.log(`[generate-embeddings] Done: ${successCount}/${texts.length}, dims=${allEmbeddings.find(e => e)?.length || 0}`);
+    console.log(`[generate-embeddings] Done: ${successCount}/${texts.length}, dims=${allEmbeddings.find(e => e)?.length || 0}, model=${usedModel}`);
 
     return new Response(
       JSON.stringify({
