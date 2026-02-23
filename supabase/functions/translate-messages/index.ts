@@ -9,6 +9,8 @@ const corsHeaders = {
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 const LOVABLE_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
 const TRANSLATION_MODEL = "google/gemini-2.5-flash";
+const SEMANTIC_MODEL = "google/gemini-2.5-flash-lite";
+const SEMANTIC_THRESHOLD = 0.70;
 
 const SYSTEM_PROMPT = `You are a professional translator specializing in AI/ML and software development terminology.
 Translate the following text from Russian to English.
@@ -16,66 +18,107 @@ Preserve all markdown formatting, code blocks, technical terms, and structure.
 Glossary: Техно-Арбитр → Techno-Arbiter, ОТК → QCD (Quality Control Department), Логистик → Logistician, Архивариус → Archivist, Штаб → HQ (War Room), Конкурс → Contest, Дуэль → Duel, Гидрапедия → Hydrapedia.
 Output ONLY the translation, nothing else.`;
 
-async function translateWithOpenRouter(text: string, apiKey: string): Promise<string | null> {
-  try {
-    const resp = await fetch(OPENROUTER_URL, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-        "HTTP-Referer": "https://ai-hydra.lovable.app",
-        "X-Title": "Hydra Translator",
-      },
-      body: JSON.stringify({
-        model: TRANSLATION_MODEL,
-        messages: [
-          { role: "system", content: SYSTEM_PROMPT },
-          { role: "user", content: text },
-        ],
-        temperature: 0.1,
-        max_tokens: 4096,
-      }),
-    });
-    if (!resp.ok) {
-      console.warn(`[translate-messages] OpenRouter ${resp.status}`);
-      return null;
+/** Call LLM with OpenRouter-first, Lovable AI fallback */
+async function callLLM(
+  messages: { role: string; content: string }[],
+  maxTokens: number,
+  openrouterKey: string | null,
+  lovableKey: string | null,
+  model?: string
+): Promise<string | null> {
+  if (openrouterKey) {
+    try {
+      const resp = await fetch(OPENROUTER_URL, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${openrouterKey}`,
+          "Content-Type": "application/json",
+          "HTTP-Referer": "https://ai-hydra.lovable.app",
+          "X-Title": "Hydra Translator",
+        },
+        body: JSON.stringify({
+          model: model || TRANSLATION_MODEL,
+          messages,
+          max_tokens: maxTokens,
+          temperature: 0.1,
+        }),
+      });
+      if (resp.ok) {
+        const data = await resp.json();
+        const content = data.choices?.[0]?.message?.content;
+        if (content) return content;
+      } else {
+        console.warn(`[translate-messages] LLM OpenRouter ${resp.status}`);
+      }
+    } catch (e) {
+      console.warn("[translate-messages] LLM OpenRouter error:", e);
     }
-    const data = await resp.json();
-    return data.choices?.[0]?.message?.content || null;
-  } catch (e) {
-    console.warn("[translate-messages] OpenRouter error:", e);
-    return null;
   }
+  if (lovableKey) {
+    try {
+      const resp = await fetch(LOVABLE_URL, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${lovableKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: model || SEMANTIC_MODEL,
+          messages,
+          max_completion_tokens: maxTokens,
+        }),
+      });
+      if (resp.ok) {
+        const data = await resp.json();
+        const content = data.choices?.[0]?.message?.content;
+        if (content) return content;
+      } else {
+        console.warn(`[translate-messages] LLM Lovable ${resp.status}`);
+      }
+    } catch (e) {
+      console.warn("[translate-messages] LLM Lovable error:", e);
+    }
+  }
+  return null;
 }
 
-async function translateWithLovable(text: string, apiKey: string): Promise<string | null> {
-  try {
-    const resp = await fetch(LOVABLE_URL, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
+/** Assess semantic similarity for a batch of original→translation pairs */
+async function assessSemanticSimilarity(
+  pairs: Array<{ original: string; translation: string }>,
+  openrouterKey: string | null,
+  lovableKey: string | null
+): Promise<number[]> {
+  const numbered = pairs.map((p, i) =>
+    `[${i}] ORIGINAL: ${p.original.slice(0, 500)}\nTRANSLATION: ${p.translation.slice(0, 500)}`
+  ).join("\n---\n");
+
+  const result = await callLLM(
+    [
+      {
+        role: "system",
+        content: `You are a semantic similarity judge. For each numbered pair of ORIGINAL and TRANSLATION, rate how well the translation preserves the meaning on a scale from 0.0 to 1.0 (1.0 = perfect, 0.85 = good, below 0.7 = significant loss).
+Return ONLY a JSON array of numbers in the same order. No explanations.`,
       },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash-lite",
-        messages: [
-          { role: "system", content: SYSTEM_PROMPT },
-          { role: "user", content: text },
-        ],
-        temperature: 0.1,
-        max_tokens: 4096,
-      }),
-    });
-    if (!resp.ok) {
-      console.warn(`[translate-messages] Lovable AI ${resp.status}`);
-      return null;
+      { role: "user", content: numbered },
+    ],
+    1024,
+    openrouterKey,
+    lovableKey,
+    SEMANTIC_MODEL
+  );
+
+  if (!result) return pairs.map(() => -1);
+
+  try {
+    const jsonMatch = result.match(/\[[\s\S]*?\]/);
+    if (jsonMatch) {
+      const parsed = JSON.parse(jsonMatch[0]);
+      if (Array.isArray(parsed)) return parsed.map((v: number) => Math.round(v * 10000) / 10000);
     }
-    const data = await resp.json();
-    return data.choices?.[0]?.message?.content || null;
   } catch (e) {
-    console.warn("[translate-messages] Lovable AI error:", e);
-    return null;
+    console.warn("[translate-messages] Failed to parse similarity scores:", e);
   }
+  return pairs.map(() => -1);
 }
 
 serve(async (req) => {
@@ -87,7 +130,7 @@ serve(async (req) => {
     const authHeader = req.headers.get("Authorization");
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseKey = Deno.env.get("SUPABASE_ANON_KEY")!;
-    const lovableKey = Deno.env.get("LOVABLE_API_KEY");
+    const lovableKey = Deno.env.get("LOVABLE_API_KEY") || null;
 
     const supabase = createClient(supabaseUrl, supabaseKey, {
       global: { headers: { Authorization: authHeader || "" } },
@@ -113,7 +156,7 @@ serve(async (req) => {
     // Get user's OpenRouter key
     const { data: apiKeys } = await supabase.rpc("get_my_api_keys");
     const keyData = Array.isArray(apiKeys) ? apiKeys[0] : apiKeys;
-    const openrouterKey = keyData?.openrouter_api_key as string | undefined;
+    const openrouterKey = (keyData?.openrouter_api_key as string) || null;
 
     const gateway = openrouterKey ? "openrouter" : "lovable_ai";
     console.log(`[translate-messages] Gateway: ${gateway}, batch: ${messages.length}`);
@@ -124,13 +167,18 @@ serve(async (req) => {
     for (const msg of messages) {
       const text = msg.content.length > 4000 ? msg.content.slice(0, 4000) : msg.content;
       
-      // Try OpenRouter first, fallback to Lovable AI
       let translation: string | null = null;
       if (openrouterKey) {
-        translation = await translateWithOpenRouter(text, openrouterKey);
+        translation = await callLLM(
+          [{ role: "system", content: SYSTEM_PROMPT }, { role: "user", content: text }],
+          4096, openrouterKey, null, TRANSLATION_MODEL
+        );
       }
       if (!translation && lovableKey) {
-        translation = await translateWithLovable(text, lovableKey);
+        translation = await callLLM(
+          [{ role: "system", content: SYSTEM_PROMPT }, { role: "user", content: text }],
+          4096, null, lovableKey, "google/gemini-2.5-flash-lite"
+        );
       }
 
       if (translation) {
@@ -138,9 +186,44 @@ serve(async (req) => {
       }
     }
 
-    // Save translations
+    // Semantic verification
+    let semanticScores: number[] = [];
+    if (results.length > 0) {
+      try {
+        const pairs = results.map(r => {
+          const orig = messages.find(m => m.id === r.id);
+          return { original: orig?.content || "", translation: r.content_en };
+        });
+        semanticScores = await assessSemanticSimilarity(pairs, openrouterKey, lovableKey);
+        
+        const avgScore = semanticScores.filter(s => s >= 0).reduce((a, b) => a + b, 0) / Math.max(semanticScores.filter(s => s >= 0).length, 1);
+        console.log(`[translate-messages] Semantic avg: ${avgScore.toFixed(4)}`);
+
+        // Flag low-quality translations
+        const lowQuality = semanticScores.filter(s => s >= 0 && s < SEMANTIC_THRESHOLD);
+        if (lowQuality.length > 0) {
+          console.warn(`[translate-messages] ${lowQuality.length} translation(s) below ${SEMANTIC_THRESHOLD} threshold`);
+        }
+      } catch (semErr) {
+        console.error("[translate-messages] Semantic verification failed (non-fatal):", semErr);
+        semanticScores = results.map(() => -1);
+      }
+    }
+
+    // Save translations (skip those below threshold)
     let savedCount = 0;
-    for (const r of results) {
+    let skippedCount = 0;
+    for (let i = 0; i < results.length; i++) {
+      const r = results[i];
+      const score = semanticScores[i] ?? -1;
+
+      // Skip saving if score is known and below threshold
+      if (score >= 0 && score < SEMANTIC_THRESHOLD) {
+        console.warn(`[translate-messages] Skipping ${r.id}: semantic score ${score} < ${SEMANTIC_THRESHOLD}`);
+        skippedCount++;
+        continue;
+      }
+
       const { error: updateErr } = await supabase
         .from("messages")
         .update({ content_en: r.content_en })
@@ -158,9 +241,16 @@ serve(async (req) => {
 
     return new Response(JSON.stringify({
       translated: savedCount,
+      skipped: skippedCount,
       remaining: count || 0,
       gateway,
-      details: results.map(r => ({ id: r.id, role: r.role, preview: r.content_en.slice(0, 100) })),
+      semanticScores: results.map((r, i) => ({ id: r.id, score: semanticScores[i] ?? -1 })),
+      avgSimilarity: semanticScores.filter(s => s >= 0).length > 0
+        ? semanticScores.filter(s => s >= 0).reduce((a, b) => a + b, 0) / semanticScores.filter(s => s >= 0).length
+        : null,
+      details: results
+        .filter((_, i) => (semanticScores[i] ?? -1) < 0 || (semanticScores[i] ?? 0) >= SEMANTIC_THRESHOLD)
+        .map(r => ({ id: r.id, role: r.role, preview: r.content_en.slice(0, 100) })),
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

@@ -91,6 +91,12 @@ export function usePromptContentTranslation(promptContent: string, roleKey: stri
       if (error) throw error;
 
       const translation = data?.translation;
+      if (data?.cosineSimilarity != null) {
+        console.log(`[PromptContentTranslation] Semantic score: ${data.cosineSimilarity.toFixed(4)} for ${roleKey}`);
+        if (data.cosineSimilarity < 0.85) {
+          console.warn(`[PromptContentTranslation] Low semantic score (${data.cosineSimilarity.toFixed(4)}) for ${roleKey}`);
+        }
+      }
       if (translation) {
         setTranslatedContent(translation);
         // Cache
