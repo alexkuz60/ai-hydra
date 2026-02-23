@@ -13,7 +13,9 @@
 export interface Task {
   id: string;
   title: string;
+  title_en: string | null;
   description: string | null;
+  description_en: string | null;
   is_active: boolean;
   is_system: boolean;
   is_shared: boolean;
@@ -58,7 +60,8 @@ export function TaskRow({
   onDelete,
   onDuplicate,
 }: TaskRowProps) {
-   const { t } = useLanguage();
+   const { t, language } = useLanguage();
+   const displayTitle = (language === 'en' && task.title_en) ? task.title_en : task.title;
  
    const modelCount = validModels.length;
  
@@ -85,7 +88,7 @@ export function TaskRow({
          <div className="flex items-center justify-between gap-2">
            <div className="flex flex-col gap-1 flex-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
-                 <span className="font-medium truncate">{task.title}</span>
+                 <span className="font-medium truncate">{displayTitle}</span>
                  {task.is_system && (
                    <Tooltip>
                      <TooltipTrigger asChild>

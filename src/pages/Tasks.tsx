@@ -48,7 +48,7 @@ import { cn } from '@/lib/utils';
 
 export default function Tasks() {
   const { user, loading: authLoading } = useAuth();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const navigate = useNavigate();
 
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -111,14 +111,18 @@ export default function Tasks() {
 
    // Filter and split tasks into groups
    const { systemTasks, userTasks } = useMemo(() => {
-     const filtered = searchQuery.trim()
-       ? tasks.filter(task => task.title.toLowerCase().includes(searchQuery.toLowerCase()))
+     const q = searchQuery.trim().toLowerCase();
+     const filtered = q
+       ? tasks.filter(task => {
+           const title = (language === 'en' && task.title_en) ? task.title_en : task.title;
+           return title.toLowerCase().includes(q);
+         })
        : tasks;
      return {
        systemTasks: filtered.filter(t => t.is_system),
        userTasks: filtered.filter(t => !t.is_system),
      };
-   }, [tasks, searchQuery]);
+   }, [tasks, searchQuery, language]);
 
    const filteredTasks = useMemo(() => [...systemTasks, ...userTasks], [systemTasks, userTasks]);
  
@@ -417,7 +421,7 @@ export default function Tasks() {
                          </TooltipTrigger>
                          <TooltipContent side="right" className="max-w-[220px]">
                            <div className="space-y-1">
-                             <span className="font-medium text-sm">{task.title}</span>
+                             <span className="font-medium text-sm">{(language === 'en' && task.title_en) ? task.title_en : task.title}</span>
                              <ul className="text-xs text-muted-foreground space-y-0.5">
                                <li>• {(task.session_config?.selectedModels?.length || 0)} моделей</li>
                              </ul>
