@@ -735,6 +735,7 @@ export type Database = {
       prompt_library: {
         Row: {
           content: string
+          content_en: string | null
           created_at: string
           description: string | null
           embedding: string | null
@@ -751,6 +752,7 @@ export type Database = {
         }
         Insert: {
           content: string
+          content_en?: string | null
           created_at?: string
           description?: string | null
           embedding?: string | null
@@ -767,6 +769,7 @@ export type Database = {
         }
         Update: {
           content?: string
+          content_en?: string | null
           created_at?: string
           description?: string | null
           embedding?: string | null
