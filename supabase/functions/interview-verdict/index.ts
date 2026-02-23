@@ -27,6 +27,9 @@ const ROLE_CRITERIA: Record<string, string[]> = {
   moderator: ['mediation_skill', 'synthesis_quality', 'neutrality'],
   advisor: ['strategic_thinking', 'risk_awareness', 'actionability'],
   consultant: ['expertise_depth', 'practical_value', 'clarity'],
+  // Legal roles
+  patent_attorney: ['novelty_assessment', 'claim_structure', 'prior_art_search', 'legal_accuracy', 'risk_assessment'],
+  translator: ['accuracy', 'fluency', 'terminology_consistency'],
 };
 
 serve(async (req) => {
@@ -211,25 +214,50 @@ serve(async (req) => {
         const selectedArbiterModel = arbiter_model || "google/gemini-3-flash-preview";
 
         let arbiterResult: any = null;
-        try {
+
+        const ARBITER_MODELS = [selectedArbiterModel, "google/gemini-2.5-flash", "google/gemini-2.5-pro"];
+        
+        const callArbiter = async (model: string) => {
+          const body: Record<string, unknown> = {
+            model,
+            messages: [
+              { role: "system", content: arbiterSystemPrompt },
+              { role: "user", content: arbiterUserPrompt },
+            ],
+            tools: [arbiterToolSchema],
+            tool_choice: { type: "function", function: { name: "submit_verdict" } },
+          };
+
+          console.log(`[interview-verdict] Calling arbiter model=${model}`);
           const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
             method: "POST",
             headers: {
               Authorization: `Bearer ${LOVABLE_API_KEY}`,
               "Content-Type": "application/json",
             },
-            body: JSON.stringify({
-              model: selectedArbiterModel,
-              messages: [
-                { role: "system", content: arbiterSystemPrompt },
-                { role: "user", content: arbiterUserPrompt },
-              ],
-              tools: [arbiterToolSchema],
-              tool_choice: { type: "function", function: { name: "submit_verdict" } },
-            }),
+            body: JSON.stringify(body),
           });
 
-          if (!aiResp.ok) throw new Error(`Arbiter API error: ${aiResp.status}`);
+          if (!aiResp.ok) {
+            const errBody = await aiResp.text();
+            console.error(`[interview-verdict] Arbiter ${model} returned ${aiResp.status}: ${errBody.slice(0, 500)}`);
+            throw new Error(`Arbiter ${model} error ${aiResp.status}: ${errBody.slice(0, 200)}`);
+          }
+          return aiResp;
+        };
+
+        try {
+          let aiResp: Response | null = null;
+          for (const model of ARBITER_MODELS) {
+            try {
+              aiResp = await callArbiter(model);
+              break; // success
+            } catch (e: any) {
+              console.warn(`[interview-verdict] Arbiter fallback: ${model} failed, trying next...`, e.message);
+              if (model === ARBITER_MODELS[ARBITER_MODELS.length - 1]) throw e; // last model
+            }
+          }
+          if (!aiResp) throw new Error('All arbiter models failed');
 
           const aiData = await aiResp.json();
           const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
