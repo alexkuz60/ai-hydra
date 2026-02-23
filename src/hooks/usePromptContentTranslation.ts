@@ -25,19 +25,24 @@ function simpleHash(s: string): number {
  * Hook to translate prompt content on-demand and cache in localStorage.
  * Used by PromptSectionsViewer to display EN versions of Russian prompts.
  */
-export function usePromptContentTranslation(promptContent: string, roleKey: string) {
+export function usePromptContentTranslation(promptContent: string, roleKey: string, contentEn?: string | null) {
   const { language } = useLanguage();
   const [translatedContent, setTranslatedContent] = useState<string | null>(null);
   const [isTranslating, setIsTranslating] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
 
   const isRu = language === 'ru';
-  const needsTranslation = !isRu && !!promptContent;
+  const hasDbTranslation = !isRu && !!contentEn;
+  const needsTranslation = !isRu && !!promptContent && !hasDbTranslation;
   const contentHash = promptContent ? simpleHash(promptContent) : 0;
   const cacheKey = `${CACHE_PREFIX}${roleKey}`;
 
-  // Check cache on mount or when content changes
+  // Use DB translation if available
   useEffect(() => {
+    if (hasDbTranslation) {
+      setTranslatedContent(contentEn!);
+      return;
+    }
     if (!needsTranslation) {
       setTranslatedContent(null);
       return;
@@ -55,7 +60,7 @@ export function usePromptContentTranslation(promptContent: string, roleKey: stri
     } catch { /* ignore parse errors */ }
 
     setTranslatedContent(null);
-  }, [needsTranslation, cacheKey, contentHash]);
+  }, [hasDbTranslation, contentEn, needsTranslation, cacheKey, contentHash]);
 
   const translate = useCallback(async () => {
     if (!promptContent || isRu) return;
@@ -130,6 +135,6 @@ export function usePromptContentTranslation(promptContent: string, roleKey: stri
     /** Manually trigger translation */
     translate,
     /** Whether we should show EN content */
-    showTranslated: needsTranslation && !!translatedContent,
+    showTranslated: (needsTranslation || hasDbTranslation) && !!translatedContent,
   };
 }
