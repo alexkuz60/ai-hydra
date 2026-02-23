@@ -8,7 +8,7 @@
   ![License](https://img.shields.io/badge/license-MIT-blue?style=flat-square)
   ![Stack](https://img.shields.io/badge/stack-React%2018%20%2B%20TypeScript%20%2B%20Supabase-8b5cf6?style=flat-square)
   ![Models](https://img.shields.io/badge/providers-10+-cyan?style=flat-square)
-  ![Roles](https://img.shields.io/badge/agent--roles-16-orange?style=flat-square)
+  ![Roles](https://img.shields.io/badge/agent--roles-17-orange?style=flat-square)
 </div>
 
 ---
@@ -57,7 +57,7 @@ Automatic experience consolidation: patterns from `role_memory` are distilled in
 |----------|-------|
 | **Expert** | Assistant, Critic, Arbiter, Consultant, Moderator, Advisor, Archivist, Analyst, Webhunter |
 | **Technical** | Prompt Engineer, Flow Regulator, Toolsmith |
-| **System** | Guide, Technocritic, Technoarbiter, Technomoderator |
+| **System** | Guide, Technocritic, Technoarbiter, Technomoderator, Translator |
 
 **D-Chat (Consultant Panel)** — Side panel for single expert queries with Moderator mode, result transfer to main chat, independent model/role selection
 
