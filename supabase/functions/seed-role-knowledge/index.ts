@@ -50,6 +50,7 @@ function chunkText(text: string, maxChars = 1500, overlap = 200): string[] {
 // Role-specific knowledge content (curated documentation)
 const ROLE_KNOWLEDGE: Record<string, Array<{
   source_title: string;
+  source_title_en?: string;
   category: string;
   content: string;
   tags: string[];
@@ -57,6 +58,7 @@ const ROLE_KNOWLEDGE: Record<string, Array<{
   archivist: [
     {
       source_title: "Архитектура памяти Hydra",
+      source_title_en: "Hydra Memory Architecture",
       category: "documentation",
       tags: ["память", "архитектура", "векторный поиск"],
       content: `# Система памяти AI-Hydra
@@ -81,6 +83,7 @@ RPC-функции: search_session_memory, search_role_memory, search_role_knowl
     },
     {
       source_title: "Библиотека промптов",
+      source_title_en: "Prompt Library",
       category: "procedure",
       tags: ["промпты", "библиотека", "управление"],
       content: `# Управление Библиотекой промптов
@@ -108,6 +111,7 @@ RPC-функции: search_session_memory, search_role_memory, search_role_knowl
   analyst: [
     {
       source_title: "Статистика моделей",
+      source_title_en: "Model Statistics",
       category: "documentation",
       tags: ["статистика", "модели", "метрики"],
       content: `# Система статистики моделей
@@ -129,6 +133,7 @@ RPC-функции: search_session_memory, search_role_memory, search_role_knowl
     },
     {
       source_title: "Поведенческие паттерны",
+      source_title_en: "Behavioral Patterns",
       category: "documentation",
       tags: ["паттерны", "поведение", "анализ"],
       content: `# Система поведенческих паттернов
@@ -153,6 +158,7 @@ RPC-функции: search_session_memory, search_role_memory, search_role_knowl
   promptengineer: [
     {
       source_title: "Техники промпт-инженерии",
+      source_title_en: "Prompt Engineering Techniques",
       category: "standard",
       tags: ["промпт-инженерия", "техники", "оптимизация"],
       content: `# Техники промпт-инженерии в Hydra
@@ -180,6 +186,7 @@ RPC-функции: search_session_memory, search_role_memory, search_role_knowl
     },
     {
       source_title: "Секции промптов",
+      source_title_en: "Prompt Sections",
       category: "procedure",
       tags: ["секции", "парсинг", "структура"],
       content: `# Система секций промптов
@@ -210,6 +217,7 @@ AdvancedPromptEditor позволяет:
   flowregulator: [
     {
       source_title: "Архитектура Flow Editor",
+      source_title_en: "Flow Editor Architecture",
       category: "documentation",
       tags: ["flow", "редактор", "узлы", "архитектура"],
       content: `# Flow Editor — Архитектура
@@ -244,6 +252,7 @@ AdvancedPromptEditor позволяет:
     },
     {
       source_title: "Flow Runtime",
+      source_title_en: "Flow Runtime",
       category: "documentation",
       tags: ["runtime", "выполнение", "пайплайн"],
       content: `# Flow Runtime — Движок выполнения
@@ -277,6 +286,7 @@ AdvancedPromptEditor позволяет:
   toolsmith: [
     {
       source_title: "Система инструментов Hydra",
+      source_title_en: "Hydra Tools System",
       category: "documentation",
       tags: ["инструменты", "tools", "интеграции"],
       content: `# Система пользовательских инструментов
@@ -318,6 +328,7 @@ AdvancedPromptEditor позволяет:
   webhunter: [
     {
       source_title: "Провайдеры поиска",
+      source_title_en: "Search Providers",
       category: "documentation",
       tags: ["поиск", "tavily", "perplexity", "web"],
       content: `# Провайдеры веб-поиска в Hydra
@@ -353,6 +364,7 @@ AdvancedPromptEditor позволяет:
   assistant: [
     {
       source_title: "Мультиагентная дискуссия",
+      source_title_en: "Multi-Agent Discussion",
       category: "documentation",
       tags: ["мультиагент", "дискуссия", "пайплайн"],
       content: `# Мультиагентная дискуссия в AI-Hydra
@@ -386,6 +398,7 @@ AdvancedPromptEditor позволяет:
   critic: [
     {
       source_title: "Методология критического анализа",
+      source_title_en: "Critical Analysis Methodology",
       category: "documentation",
       tags: ["критика", "логика", "когнитивные искажения"],
       content: `# Методология критического анализа
@@ -415,6 +428,7 @@ AdvancedPromptEditor позволяет:
   arbiter: [
     {
       source_title: "Синтез и оценка в конкурсах",
+      source_title_en: "Synthesis and Evaluation in Contests",
       category: "documentation",
       tags: ["синтез", "конкурс", "оценка", "критерии"],
       content: `# Арбитр — Синтез и судейство
@@ -448,6 +462,7 @@ AdvancedPromptEditor позволяет:
   consultant: [
     {
       source_title: "D-Chat и режимы консультирования",
+      source_title_en: "D-Chat and Consultation Modes",
       category: "documentation",
       tags: ["d-chat", "консультант", "режимы"],
       content: `# Консультант — D-Chat и веб-поиск
@@ -479,6 +494,7 @@ AdvancedPromptEditor позволяет:
   moderator: [
     {
       source_title: "Модерация и обобщение",
+      source_title_en: "Moderation and Summarization",
       category: "documentation",
       tags: ["модерация", "обобщение", "сессия"],
       content: `# Модератор — Управление дискуссией
@@ -509,6 +525,7 @@ AdvancedPromptEditor позволяет:
   advisor: [
     {
       source_title: "Стратегическое консультирование",
+      source_title_en: "Strategic Consulting",
       category: "documentation",
       tags: ["стратегия", "планирование", "риски"],
       content: `# Советник — Стратегический консультант
@@ -548,6 +565,7 @@ AdvancedPromptEditor позволяет:
   technocritic: [
     {
       source_title: "Техно-Критик: методология аудита",
+      source_title_en: "Techno-Critic: Audit Methodology",
       category: "documentation",
       tags: ["ОТК", "аудит", "тестирование", "качество"],
       content: `# Техно-Критик — Автоматический аудитор качества
@@ -578,6 +596,7 @@ Edge-функция interview-test-runner использует Техно-Кри
   technoarbiter: [
     {
       source_title: "Техно-Арбитр: судейство и оценка",
+      source_title_en: "Techno-Arbiter: Judging and Evaluation",
       category: "documentation",
       tags: ["ОТК", "судейство", "конкурс", "оценка"],
       content: `# Техно-Арбитр — Главный судья платформы
@@ -611,6 +630,7 @@ Edge-функция contest-discrepancy-trigger проверяет:
   technomoderator: [
     {
       source_title: "Техно-Модератор: управление качеством",
+      source_title_en: "Techno-Moderator: Quality Management",
       category: "documentation",
       tags: ["ОТК", "модерация", "отчётность"],
       content: `# Техно-Модератор — Контроль качества дискуссий
@@ -648,6 +668,7 @@ Edge-функция contest-discrepancy-trigger проверяет:
   evolutioner: [
     {
       source_title: "Эволюционер: само-совершенствование",
+      source_title_en: "Evolutioner: Self-Improvement",
       category: "documentation",
       tags: ["эволюция", "оптимизация", "метрики"],
       content: `# Эволюционер — Движок само-совершенствования
@@ -681,6 +702,7 @@ Edge-функция contest-discrepancy-trigger проверяет:
   chronicler: [
     {
       source_title: "Хроникёр: документирование эволюции",
+      source_title_en: "Chronicler: Evolution Documentation",
       category: "documentation",
       tags: ["хроники", "документирование", "история"],
       content: `# Хроникёр — Летописец системы
@@ -716,6 +738,7 @@ Edge-функция contest-discrepancy-trigger проверяет:
   translator: [
     {
       source_title: "Переводчик: локализация контента",
+      source_title_en: "Translator: Content Localization",
       category: "documentation",
       tags: ["перевод", "локализация", "мультиязычность"],
       content: `# Переводчик — Мультиязычная поддержка
@@ -829,6 +852,7 @@ serve(async (req) => {
       role: string;
       content: string;
       source_title: string;
+      source_title_en: string | null;
       category: string;
       chunk_index: number;
       chunk_total: number;
@@ -845,6 +869,7 @@ serve(async (req) => {
         role,
         content: systemPromptContent,
         source_title: "Системный промпт роли",
+        source_title_en: "Role System Prompt",
         category: "system_prompt",
         chunk_index: 0,
         chunk_total: 1,
@@ -864,6 +889,7 @@ serve(async (req) => {
             role,
             content: chunks[i],
             source_title: item.source_title,
+            source_title_en: item.source_title_en || null,
             category: item.category,
             chunk_index: i,
             chunk_total: chunks.length,
