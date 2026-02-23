@@ -20,6 +20,7 @@ import {
   ValidateFlowDiagramArgs,
   SaveRoleExperienceArgs,
   SearchRoleKnowledgeArgs,
+  PatentSearchArgs,
   ToolExecutionContext,
   KnowledgeChunkCandidate,
   RankedKnowledgeChunk,
@@ -281,7 +282,36 @@ export const AVAILABLE_TOOLS: ToolDefinition[] = [
         required: ["query"]
       }
     }
-  }
+  },
+  // ============================================
+  // Legal Staff Tools (Patent Attorney)
+  // ============================================
+  {
+    type: "function",
+    function: {
+      name: "patent_search",
+      description: "Выполняет поиск патентных аналогов (prior art) через Google Patents. Возвращает список найденных патентов с номерами, заявителями, датами и аннотациями. Используй для анализа патентоспособности и поиска уровня техники.",
+      parameters: {
+        type: "object",
+        properties: {
+          query: {
+            type: "string",
+            description: "Поисковый запрос для патентной базы (описание технического решения, ключевые термины)"
+          },
+          jurisdiction: {
+            type: "string",
+            description: "Юрисдикция поиска: RU (Россия), US (США), EP (Европа), WO (международный). По умолчанию WO.",
+            enum: ["RU", "US", "EP", "WO"]
+          },
+          date_from: {
+            type: "string",
+            description: "Год начала поиска в формате YYYY, например '2020'"
+          }
+        },
+        required: ["query"]
+      }
+    }
+  },
 ];
 
 // ============================================
@@ -1735,7 +1765,7 @@ async function rerankChunks(
 // ============================================
 
 /** Technical roles that support domain knowledge */
-const TECHNICAL_ROLES = ['analyst', 'promptengineer', 'flowregulator', 'archivist', 'webhunter', 'toolsmith'];
+const TECHNICAL_ROLES = ['analyst', 'promptengineer', 'flowregulator', 'archivist', 'webhunter', 'toolsmith', 'patent_attorney'];
 
 // ============================================
 // HyDE: Hypothetical Document Embeddings
@@ -1983,6 +2013,59 @@ export async function fetchRoleKnowledgeContext(
   }
 }
 
+// ============================================
+// Patent Search Execution
+// ============================================
+
+async function executePatentSearch(args: PatentSearchArgs): Promise<string> {
+  const ctx = executionContext;
+  if (!ctx) {
+    return JSON.stringify({ success: false, error: "Контекст выполнения недоступен" });
+  }
+
+  try {
+    const supabaseUrl = ctx.supabaseUrl;
+    const response = await fetch(`${supabaseUrl}/functions/v1/patent-search`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${ctx.supabaseKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        query: args.query,
+        jurisdiction: args.jurisdiction || 'WO',
+        date_from: args.date_from,
+        limit: 10,
+      }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok || !data.success) {
+      return JSON.stringify({
+        success: false,
+        error: data.error || `Patent search failed: ${response.status}`,
+        search_url: data.search_url,
+      });
+    }
+
+    return JSON.stringify({
+      success: true,
+      query: data.query,
+      jurisdiction: data.jurisdiction,
+      search_url: data.search_url,
+      results_count: data.results_count,
+      results: data.results,
+      raw_excerpt: data.raw_excerpt,
+    });
+  } catch (error) {
+    return JSON.stringify({
+      success: false,
+      error: error instanceof Error ? error.message : 'Patent search error',
+    });
+  }
+}
+
 //
 // Prompt Tool Execution
 // ============================================
@@ -2087,6 +2170,9 @@ export async function executeToolCall(toolCall: ToolCall): Promise<ToolResult> {
         break;
       case "search_role_knowledge":
         result = await executeSearchRoleKnowledge(args as unknown as SearchRoleKnowledgeArgs);
+        break;
+      case "patent_search":
+        result = await executePatentSearch(args as unknown as PatentSearchArgs);
         break;
       default:
         result = JSON.stringify({ success: false, error: `Unknown tool: ${funcName}` });

@@ -225,11 +225,11 @@ POST /patent-search
 - [x] Системный промпт (два режима)
 - [x] Критерии собеседования + плагин `patentAttorneyPlugin`
 
-### Этап 2: Инструменты (2-3 дня)
-- [ ] Edge-функция `patent-search` (Firecrawl → Google Patents)
-- [ ] Custom tool `patent_search` в tools registry
-- [ ] Custom tool `draft_claims` (prompt-based)
-- [ ] Интеграция в orchestrator
+### Этап 2: Инструменты ✅
+- [x] Edge-функция `patent-search` (Firecrawl → Google Patents)
+- [x] Built-in tool `patent_search` в orchestrator (tool definition + executor)
+- [x] `patent_attorney` добавлен в TECHNICAL_ROLES для auto-RAG
+- [x] Тип `PatentSearchArgs` в types.ts
 
 ### Этап 3: База знаний (1-2 дня)
 - [ ] Импорт базовых знаний (патентное право РФ, PCT)
