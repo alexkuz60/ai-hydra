@@ -497,7 +497,7 @@ export default function RoleKnowledgeTab({ role }: RoleKnowledgeTabProps) {
                 </div>
                 {/* Preview first chunk */}
                 <p className="text-xs text-muted-foreground line-clamp-2">
-                  {items[0]?.content}
+                  {isEn && items[0]?.content_en ? items[0].content_en : items[0]?.content}
                 </p>
               </div>
               );

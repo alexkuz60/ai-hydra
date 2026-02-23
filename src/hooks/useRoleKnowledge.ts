@@ -8,6 +8,7 @@ export interface RoleKnowledgeEntry {
   id: string;
   role: string;
   content: string;
+  content_en: string | null;
   source_title: string | null;
   source_title_en: string | null;
   source_url: string | null;
