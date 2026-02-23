@@ -22,10 +22,15 @@ const FREE_OPENROUTER_MODELS = PERSONAL_KEY_MODELS.filter(
   m => m.provider === 'openrouter' && m.id.includes(':free')
 );
 
+// Get paid OpenRouter models
+const PAID_OPENROUTER_MODELS = PERSONAL_KEY_MODELS.filter(
+  m => m.provider === 'openrouter' && !m.id.includes(':free')
+);
+
 // Get Groq models
 const GROQ_MODELS = PERSONAL_KEY_MODELS.filter(m => m.provider === 'groq');
 
-// Get paid models (excluding free OpenRouter and Groq)
+// Get paid models (excluding all OpenRouter and Groq)
 const PAID_MODELS = PERSONAL_KEY_MODELS.filter(
   m => m.provider !== 'openrouter' && m.provider !== 'groq'
 );
@@ -64,6 +69,9 @@ export function MultiModelSelector({ value, onChange, className }: MultiModelSel
 
   // Get available models by category, filtering out unavailable ones
   const availableFreeModels = FREE_OPENROUTER_MODELS
+    .filter(m => personalModels.some(p => p.id === m.id))
+    .filter(m => !unavailableModelIds.includes(m.id));
+  const availablePaidOpenRouterModels = PAID_OPENROUTER_MODELS
     .filter(m => personalModels.some(p => p.id === m.id))
     .filter(m => !unavailableModelIds.includes(m.id));
   const availableGroqModels = GROQ_MODELS
@@ -239,6 +247,17 @@ export function MultiModelSelector({ value, onChange, className }: MultiModelSel
               'text-hydra-warning',
               <Badge variant="outline" className="text-[10px] bg-hydra-warning/10 text-hydra-warning border-hydra-warning/30">
                 ⚡ Fast
+              </Badge>,
+            )}
+
+            {/* Paid OpenRouter Models */}
+            {availablePaidOpenRouterModels.length > 0 && renderProviderGroup(
+              <OpenRouterLogo className={cn('h-4 w-4', PROVIDER_COLORS.openrouter)} />,
+              'OpenRouter (Paid)',
+              availablePaidOpenRouterModels,
+              'text-violet-400',
+              <Badge variant="outline" className="text-[10px] bg-violet-500/10 text-violet-400 border-violet-500/30">
+                💎 Premium
               </Badge>,
             )}
 

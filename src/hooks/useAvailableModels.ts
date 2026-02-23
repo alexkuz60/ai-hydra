@@ -49,10 +49,22 @@ export const PERSONAL_KEY_MODELS: ModelOption[] = [
   { id: 'grok-3-mini', name: 'Grok 3 Mini', provider: 'xai', requiresApiKey: true },
   { id: 'grok-3-mini-fast', name: 'Grok 3 Mini Fast', provider: 'xai', requiresApiKey: true },
   
-  // OpenRouter models (free tier) - verified January 2025
+  // OpenRouter models (free tier)
   { id: 'qwen/qwen3-0.6b-04-28:free', name: 'Qwen3 0.6B (Free)', provider: 'openrouter', requiresApiKey: true },
   { id: 'z-ai/glm-4.5-air:free', name: 'GLM 4.5 Air (Free)', provider: 'openrouter', requiresApiKey: true },
   { id: 'tngtech/tng-r1t-chimera:free', name: 'R1T Chimera (Free)', provider: 'openrouter', requiresApiKey: true },
+  
+  // OpenRouter models (paid tier) - premium models via OpenRouter key
+  { id: 'anthropic/claude-sonnet-4', name: 'Claude Sonnet 4', provider: 'openrouter', requiresApiKey: true },
+  { id: 'anthropic/claude-3.5-haiku', name: 'Claude 3.5 Haiku', provider: 'openrouter', requiresApiKey: true },
+  { id: 'google/gemini-2.5-pro-preview', name: 'Gemini 2.5 Pro', provider: 'openrouter', requiresApiKey: true },
+  { id: 'google/gemini-2.5-flash-preview', name: 'Gemini 2.5 Flash', provider: 'openrouter', requiresApiKey: true },
+  { id: 'google/gemini-2.5-flash-lite-preview', name: 'Gemini 2.5 Flash Lite', provider: 'openrouter', requiresApiKey: true },
+  { id: 'openai/gpt-4o', name: 'GPT-4o', provider: 'openrouter', requiresApiKey: true },
+  { id: 'openai/o3-mini', name: 'o3 Mini', provider: 'openrouter', requiresApiKey: true },
+  { id: 'deepseek/deepseek-chat-v3-0324', name: 'DeepSeek V3', provider: 'openrouter', requiresApiKey: true },
+  { id: 'deepseek/deepseek-r1', name: 'DeepSeek R1', provider: 'openrouter', requiresApiKey: true },
+  { id: 'meta-llama/llama-4-maverick', name: 'Llama 4 Maverick', provider: 'openrouter', requiresApiKey: true },
   
   // Groq models (ultra-fast inference)
   { id: 'llama-3.3-70b-versatile', name: 'Llama 3.3 70B Versatile', provider: 'groq', requiresApiKey: true },
