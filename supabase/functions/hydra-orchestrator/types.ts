@@ -323,6 +323,16 @@ export interface SearchRoleKnowledgeArgs {
   limit?: number;
 }
 
+/** Args for patent_search tool (Patent Attorney) */
+export interface PatentSearchArgs {
+  /** Search query for patent databases */
+  query: string;
+  /** Jurisdiction: RU, US, EP, WO */
+  jurisdiction?: string;
+  /** Start year in YYYY format */
+  date_from?: string;
+}
+
 // ============================================
 // Tool Execution Context
 // ============================================
