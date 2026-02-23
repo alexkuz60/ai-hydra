@@ -723,15 +723,7 @@ serve(async (req) => {
 
           testResults.push(stepResult);
 
-          send('step_complete', {
-            step_index: stepIndex,
-            status: stepResult.status,
-            elapsed_ms: elapsedMs,
-            token_count: tokenCount,
-            error: error,
-          });
-
-          // Incremental save after each step to survive timeouts
+          // Incremental save FIRST (before SSE) to survive edge function timeouts
           const completedSoFar = testResults.filter((r: any) => r.status === 'completed').length;
           await supabase
             .from('interview_sessions')
@@ -750,6 +742,17 @@ serve(async (req) => {
               },
             })
             .eq('id', session_id);
+
+          // SSE notify (may fail if stream closed due to timeout — safe to ignore)
+          try {
+            send('step_complete', {
+              step_index: stepIndex,
+              status: stepResult.status,
+              elapsed_ms: elapsedMs,
+              token_count: tokenCount,
+              error: error,
+            });
+          } catch { /* stream already closed */ }
         }
 
         // Save all results to the session
