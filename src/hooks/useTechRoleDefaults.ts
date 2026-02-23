@@ -13,20 +13,20 @@ const BUILTIN_DEFAULTS: Record<string, string> = {
   critic: 'anthropic/claude-sonnet-4',                 // best at critical analysis
   arbiter: 'anthropic/claude-sonnet-4',                // strong synthesis & fairness
   consultant: 'google/gemini-2.5-pro-preview',         // deep domain expertise
-  moderator: 'google/gemini-2.5-flash-preview',        // fast summarization
+  moderator: 'anthropic/claude-3.5-haiku',             // fast summarization
   advisor: 'google/gemini-2.5-pro-preview',            // strategic thinking
   // Technical staff
-  archivist: 'google/gemini-2.5-flash-preview',        // fast document processing
+  archivist: 'anthropic/claude-3.5-haiku',             // fast document processing
   analyst: 'google/gemini-2.5-pro-preview',            // data analysis precision
   promptengineer: 'anthropic/claude-sonnet-4',         // excellent at prompt craft
-  flowregulator: 'google/gemini-2.5-flash-preview',    // fast pipeline decisions
+  flowregulator: 'anthropic/claude-3.5-haiku',         // fast pipeline decisions
   toolsmith: 'anthropic/claude-3.5-haiku',             // fast code generation
-  guide: 'google/gemini-2.5-flash-lite-preview',       // lightweight, cheap
-  webhunter: 'google/gemini-2.5-flash-preview',        // fast web content parsing
+  guide: 'deepseek/deepseek-chat-v3-0324',             // ultra-cheap, good quality
+  webhunter: 'anthropic/claude-3.5-haiku',             // fast web content parsing
   // Technical staff judges (OTK) — need strong reasoning
   technocritic: 'anthropic/claude-sonnet-4',           // rigorous analysis
   technoarbiter: 'google/gemini-2.5-pro-preview',      // balanced judgment
-  technomoderator: 'google/gemini-2.5-flash-preview',  // fast consensus building
+  technomoderator: 'anthropic/claude-3.5-haiku',       // fast consensus building
 };
 
 interface TechRoleDefaults {

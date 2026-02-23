@@ -7,6 +7,7 @@ import {
   GEMINI_MODELS,
   isOpenRouterModel,
   isProxyApiModel,
+  isLovableAIModel,
   DEFAULT_PROMPTS,
   buildMemoryContext,
   type StreamRequest,
@@ -86,6 +87,12 @@ serve(async (req) => {
       return streamOpenRouter(params);
     }
 
+    // Lovable AI gateway (admin-only models)
+    if (isLovableAIModel(model_id)) {
+      return streamLovableAI(params);
+    }
+
+    // Unknown model — try Lovable AI as fallback
     return streamLovableAI(params);
   } catch (error) {
     console.error("[hydra-stream] Error:", error);

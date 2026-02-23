@@ -93,14 +93,31 @@ export const GEMINI_MODELS = [
   "gemini-2.0-flash",
 ];
 
-const LOVABLE_PREFIXES = ["openai/", "google/"];
+// Lovable AI models — explicit allowlist (admin-only gateway)
+const LOVABLE_AI_MODELS = new Set([
+  "openai/gpt-5",
+  "openai/gpt-5-mini",
+  "openai/gpt-5-nano",
+  "openai/gpt-5.2",
+  "google/gemini-2.5-pro",
+  "google/gemini-2.5-flash",
+  "google/gemini-2.5-flash-lite",
+  "google/gemini-2.5-flash-image",
+  "google/gemini-3-pro-preview",
+  "google/gemini-3-flash-preview",
+  "google/gemini-3-pro-image-preview",
+]);
+
+export function isLovableAIModel(modelId: string): boolean {
+  return LOVABLE_AI_MODELS.has(modelId);
+}
 
 export function isProxyApiModel(modelId: string): boolean {
   return modelId.startsWith("proxyapi/");
 }
 
 export function isOpenRouterModel(modelId: string): boolean {
-  return modelId.includes("/") && !LOVABLE_PREFIXES.some((p) => modelId.startsWith(p)) && !isProxyApiModel(modelId);
+  return modelId.includes("/") && !isLovableAIModel(modelId) && !isProxyApiModel(modelId);
 }
 
 // Default prompts by role
