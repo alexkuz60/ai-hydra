@@ -13,7 +13,7 @@
 
 ## Abstract
 
-Recent research demonstrates that hybrid human-AI teams consistently outperform both purely human and purely AI groups in creative tasks — yet most such teams fail in practice due to poor delegation, validation asymmetry, uncalibrated trust, and competence degradation. We present **AI-Hydra**, an open-source multi-model AI platform that addresses these systemic failures through six architectural pillars: formalized role contracts, multi-level verification, calibrated trust signals, cognitive diversity, self-correcting evolution, and anthropomorphic organizational metaphor. Built over 25 days of continuous human-AI co-creation, Hydra implements 16 specialized agent roles, a three-layer RAG memory system with hybrid search, a ReAct-based self-evolution mechanism, and a unique organizational isomorphism that maps AI infrastructure onto familiar social structures — departments, staffing, interviews, quality control. We report empirical observations from the development process itself as evidence that the symbiotic co-creation paradigm, when properly scaffolded, produces emergent capabilities exceeding the sum of its parts. The paper contributes: (1) a taxonomy mapping documented failure modes to implemented countermeasures; (2) the first open-source platform realizing all six pillars simultaneously; (3) a self-evolution architecture with verifiable reasoning trajectories; (4) the anthropomorphic organizational metaphor as a cognitive bridge reducing adoption barriers.
+Recent research demonstrates that hybrid human-AI teams consistently outperform both purely human and purely AI groups in creative tasks — yet most such teams fail in practice due to poor delegation, validation asymmetry, uncalibrated trust, and competence degradation. We present **AI-Hydra**, an open-source multi-model AI platform that addresses these systemic failures through six architectural pillars: formalized role contracts, multi-level verification, calibrated trust signals, cognitive diversity, self-correcting evolution, and anthropomorphic organizational metaphor. Built over 25 days of continuous human-AI co-creation, Hydra implements 17 specialized agent roles, a three-layer RAG memory system with hybrid search, a ReAct-based self-evolution mechanism, and a unique organizational isomorphism that maps AI infrastructure onto familiar social structures — departments, staffing, interviews, quality control. We report empirical observations from the development process itself as evidence that the symbiotic co-creation paradigm, when properly scaffolded, produces emergent capabilities exceeding the sum of its parts. The paper contributes: (1) a taxonomy mapping documented failure modes to implemented countermeasures; (2) the first open-source platform realizing all six pillars simultaneously; (3) a self-evolution architecture with verifiable reasoning trajectories; (4) the anthropomorphic organizational metaphor as a cognitive bridge reducing adoption barriers.
 
 **Keywords:** human-AI symbiosis, multi-agent systems, creative collaboration, self-evolving AI, RAG architecture, organizational isomorphism, open-source
 
@@ -119,13 +119,13 @@ graph TD
 
 **Addresses:** F1 (Poor Delegation), F2 (Accountability Gap), F7 (Socio-Emotional Gap)
 
-Hydra defines **16 specialized agent roles** across three categories, each with explicit responsibilities, behavioral patterns, and hierarchical relationships:
+Hydra defines **17 specialized agent roles** across three categories, each with explicit responsibilities, behavioral patterns, and hierarchical relationships:
 
 | Category | Roles | Purpose |
 |----------|-------|---------|
 | **Expert** | Assistant, Critic, Arbiter, Consultant, Moderator, Advisor, Archivist, Analyst, Webhunter | Domain expertise and analysis |
 | **Technical** | Prompt Engineer, Flow Regulator, Toolsmith | System optimization and tool creation |
-| **System** | Guide, Techno-Critic, Techno-Arbiter, Techno-Moderator, Evolutioner, Chronicler | Quality control, evolution, documentation |
+| **System** | Guide, Techno-Critic, Techno-Arbiter, Techno-Moderator, Translator, Evolutioner, Chronicler | Quality control, evolution, documentation |
 
 Each role is defined by a **role contract** consisting of:
 - **System prompt** (natural language instructions with version control)
@@ -340,7 +340,7 @@ This is Hydra's most distinctive architectural choice and, we argue, its most im
 | Organizational Concept | Hydra Implementation | Technical Substrate |
 |----------------------|---------------------|-------------------|
 | 🏢 Organization & Mission | Tasks with context and objectives | `sessions` table with `session_config` |
-| 👥 Staff & HR Department | 16 roles with hierarchy, certification, rotation | `role_assignment_history`, `interview_sessions` |
+| 👥 Staff & HR Department | 17 roles with hierarchy, certification, rotation | `role_assignment_history`, `interview_sessions` |
 | 📋 Job Descriptions | System prompts with behavioral patterns | `prompt_library`, `role_behaviors` |
 | 🎓 Interviews & Hiring | Automated model assessment (Briefing → Test → Verdict) | `interview-briefing`, `interview-test-runner`, `interview-verdict` |
 | 📊 Performance Reviews | Model dossier, contest scores, brain counts | `model_statistics`, `contest_results` |
@@ -652,7 +652,7 @@ AI-Hydra addresses this gap through six pillars that directly counter documented
 5. **Self-correcting evolution** maintains and improves system quality over time
 6. **Anthropomorphic organizational metaphor** makes the entire system intuitive to non-technical users
 
-The development of Hydra itself — 25 days of continuous human-AI co-creation resulting in a platform with 16 roles, 16 backend functions, three-layer RAG memory, and a self-evolution mechanism — is evidence that the symbiotic paradigm works when properly scaffolded.
+The development of Hydra itself — 25 days of continuous human-AI co-creation resulting in a platform with 17 roles, 16 backend functions, three-layer RAG memory, and a self-evolution mechanism — is evidence that the symbiotic paradigm works when properly scaffolded.
 
 We release Hydra as open-source software under the MIT license, inviting the research community and practitioners to build upon, criticize, and extend this work.
 
