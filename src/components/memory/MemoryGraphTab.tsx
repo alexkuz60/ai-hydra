@@ -55,16 +55,16 @@ export function MemoryGraphTab({ stats }: { stats: ReturnType<typeof useHydraMem
     if (!el) return;
     const obs = new ResizeObserver(entries => {
       const e = entries[0];
-      if (e && e.contentRect.width > 0) setSvgSize({ w: Math.round(e.contentRect.width), h: 900 });
+      if (e && e.contentRect.width > 0) setSvgSize({ w: Math.round(e.contentRect.width), h: 700 });
     });
     obs.observe(el);
     const { width } = el.getBoundingClientRect();
-    if (width > 0) setSvgSize({ w: Math.round(width), h: 900 });
+    if (width > 0) setSvgSize({ w: Math.round(width), h: 700 });
 
     const mo = new MutationObserver(() => {
       const rect = el.getBoundingClientRect();
         if (rect.width > 0 && Math.abs(rect.width - svgSize.w) > 10)
-        setSvgSize({ w: Math.round(rect.width), h: 900 });
+        setSvgSize({ w: Math.round(rect.width), h: 700 });
     });
     if (el.parentElement) mo.observe(el.parentElement, { attributes: true, attributeFilter: ['hidden', 'data-state'] });
     return () => { obs.disconnect(); mo.disconnect(); };
@@ -249,7 +249,7 @@ export function MemoryGraphTab({ stats }: { stats: ReturnType<typeof useHydraMem
           ))}
         </div>
       </CardHeader>
-      <div ref={containerRef} className="relative w-full" style={{ height: 900 }}>
+      <div ref={containerRef} className="relative w-full" style={{ height: 700 }}>
         <svg ref={svgRef} viewBox={`0 0 ${svgSize.w} ${svgSize.h}`} className="w-full h-full" style={{ background: 'transparent' }}>
           <defs>
             <pattern id="grid" width="30" height="30" patternUnits="userSpaceOnUse">
