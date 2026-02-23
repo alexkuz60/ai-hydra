@@ -851,6 +851,7 @@ serve(async (req) => {
       user_id: string;
       role: string;
       content: string;
+      content_en: string | null;
       source_title: string;
       source_title_en: string | null;
       category: string;
@@ -868,6 +869,7 @@ serve(async (req) => {
         user_id: user.id,
         role,
         content: systemPromptContent,
+        content_en: null,
         source_title: "Системный промпт роли",
         source_title_en: "Role System Prompt",
         category: "system_prompt",
@@ -888,6 +890,7 @@ serve(async (req) => {
             user_id: user.id,
             role,
             content: chunks[i],
+            content_en: null,
             source_title: item.source_title,
             source_title_en: item.source_title_en || null,
             category: item.category,
@@ -943,6 +946,51 @@ serve(async (req) => {
       }
     } catch (embError) {
       console.warn('[seed] Embedding generation failed:', embError);
+    }
+
+    // Translate content to English via Lovable AI
+    const lovableKey = Deno.env.get("LOVABLE_API_KEY") || null;
+    if (lovableKey) {
+      console.log(`[seed] Translating ${entries.length} entries to English...`);
+      const TRANSLATE_BATCH = 3;
+      for (let i = 0; i < entries.length; i += TRANSLATE_BATCH) {
+        const batch = entries.slice(i, i + TRANSLATE_BATCH);
+        const translationPromises = batch.map(async (entry, batchIdx) => {
+          try {
+            const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+              method: "POST",
+              headers: {
+                "Authorization": `Bearer ${lovableKey}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                model: "google/gemini-2.5-flash",
+                messages: [
+                  {
+                    role: "system",
+                    content: `You are a professional translator specializing in AI/ML technical documentation. Translate the following Russian text to English. Preserve all markdown formatting, code blocks, and technical terms. Use this Hydra-specific glossary: Гидра→Hydra, Супервизор→Supervisor, Техно-Арбитр→Techno-Arbiter, Промпт-Инженер→Prompt Engineer, Архивариус→Archivist, Аналитик→Analyst, Модератор→Moderator, Критик→Critic, Регулятор потоков→Flow Regulator, Кузнец инструментов→Toolsmith, Веб-Охотник→Web Hunter, Консультант→Consultant, Эволюционер→Evolutioner, Хроникёр→Chronicler, Советник→Advisor, ОТК→QCD. Return ONLY the translation.`,
+                  },
+                  { role: "user", content: entry.content },
+                ],
+                temperature: 0.1,
+                max_tokens: 4096,
+              }),
+            });
+            if (resp.ok) {
+              const data = await resp.json();
+              const translated = data?.choices?.[0]?.message?.content;
+              if (translated) {
+                entries[i + batchIdx].content_en = translated;
+              }
+            }
+          } catch (err) {
+            console.warn(`[seed] Translation failed for entry ${i + batchIdx}:`, err);
+          }
+        });
+        await Promise.all(translationPromises);
+      }
+      const translatedCount = entries.filter(e => e.content_en).length;
+      console.log(`[seed] Translated ${translatedCount}/${entries.length} entries`);
     }
 
     // Insert all entries

@@ -1,0 +1,1 @@
+ALTER TABLE public.role_knowledge ADD COLUMN IF NOT EXISTS content_en text;
