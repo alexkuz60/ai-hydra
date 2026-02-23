@@ -10,6 +10,15 @@ import { getRoleBadgeColor } from '@/config/roles';
 import type { RolePrompt } from '@/hooks/usePromptsCRUD';
 import { parsePromptNickname } from '@/hooks/usePromptsCRUD';
 
+function getPromptDisplayName(prompt: RolePrompt, t: (key: string) => string): string {
+  if (prompt.is_default) {
+    // For system prompts, show localized role name + "System"
+    const roleLabel = t(`role.${prompt.role}`);
+    return `${roleLabel} — System`;
+  }
+  return parsePromptNickname(prompt.name);
+}
+
 interface PromptRowProps {
   prompt: RolePrompt;
   isSelected: boolean;
@@ -55,7 +64,7 @@ interface PromptRowProps {
         <TableCell>
           <div className="flex flex-col gap-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="font-medium truncate">{parsePromptNickname(prompt.name)}</span>
+              <span className="font-medium truncate">{getPromptDisplayName(prompt, t)}</span>
               {hasUnsavedChanges && (
                 <span className="w-2 h-2 rounded-full bg-hydra-warning animate-pulse-glow shrink-0" title="Unsaved changes" />
               )}
