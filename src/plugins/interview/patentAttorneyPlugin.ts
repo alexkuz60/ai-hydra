@@ -20,6 +20,8 @@ export const COMPETENCY_LABELS: Record<string, { ru: string; en: string }> = {
   standards_knowledge: { ru: 'Знание стандартов', en: 'Standards Knowledge' },
   claim_structure: { ru: 'Структура формулы', en: 'Claim Structure' },
   prior_art_search: { ru: 'Поиск аналогов', en: 'Prior Art Search' },
+  risk_assessment: { ru: 'Оценка рисков', en: 'Risk Assessment' },
+  plain_language: { ru: 'Доступное изложение', en: 'Plain Language' },
 };
 
 // ── Plugin Implementation ──
@@ -82,6 +84,26 @@ export const patentAttorneyPlugin: RoleTestPlugin = {
       baseline_source: { type: 'none' },
     });
 
+    // ── Task 6: Risk Assessment — evaluate analog risks (Mode 3: Legal Consultation) ──
+    tasks.push({
+      task_type: 'risk_assessment',
+      competency: 'risk_assessment',
+      task_prompt: isRu
+        ? `Ты — патентный юрист-консульт. Заявитель планирует подать патентную заявку на изобретение:\n\n"Способ автоматической ротации ИИ-моделей на штатных ролях через конкурсное собеседование с многокритериальной оценкой и наследованием опыта предшественника."\n\nВ ходе патентного поиска найден следующий аналог:\n\nUS2023/0012345 — "System for automated assignment of machine learning models to processing roles based on performance benchmarking"\nЗаявитель: TechCorp Inc., дата приоритета: 2022-03-15\nАбстракт: "A system that automatically assigns ML models to predefined processing roles based on periodic benchmark evaluations. Models are ranked by accuracy and latency metrics, and the top-performing model is assigned to each role."\n\nТребования:\n1. Оцени степень угрозы этого аналога для нашей заявки (высокая/средняя/низкая)\n2. Выдели совпадающие и отличающиеся признаки\n3. Объясни риски на понятном заявителю языке (без избыточной юридической терминологии)\n4. Предложи стратегию обхода — как переформулировать заявку для преодоления этого аналога\n5. Рекомендуй дальнейшие действия (продолжить подачу / доработать / отказаться)`
+        : `You are a patent legal consultant. The applicant plans to file a patent for:\n\n"A method for automatic rotation of AI models in staff roles through competitive interviews with multi-criteria evaluation and predecessor experience inheritance."\n\nDuring the patent search, the following analog was found:\n\nUS2023/0012345 — "System for automated assignment of machine learning models to processing roles based on performance benchmarking"\nApplicant: TechCorp Inc., priority date: 2022-03-15\nAbstract: "A system that automatically assigns ML models to predefined processing roles based on periodic benchmark evaluations. Models are ranked by accuracy and latency metrics, and the top-performing model is assigned to each role."\n\nRequirements:\n1. Assess the threat level of this analog to our application (high/medium/low)\n2. Identify overlapping and distinguishing features\n3. Explain the risks in plain language the applicant can understand (avoid excessive legal jargon)\n4. Propose a workaround strategy — how to reformulate the application to overcome this analog\n5. Recommend next steps (proceed with filing / revise / abandon)`,
+      baseline_source: { type: 'none' },
+    });
+
+    // ── Task 7: Plain Language — explain claims and recommend filing strategy (Mode 3) ──
+    tasks.push({
+      task_type: 'plain_language',
+      competency: 'plain_language',
+      task_prompt: isRu
+        ? `Ты — патентный юрист-консульт. Заявитель (не юрист, технический специалист) просит объяснить следующую формулу изобретения и дать рекомендации:\n\nНезависимый пункт формулы:\n"1. Способ семантической верификации качества перевода, включающий получение исходного текста и текста перевода, генерацию векторных представлений (эмбеддингов) исходного текста и перевода с помощью мультиязычной модели, вычисление косинусного расстояния между полученными эмбеддингами, сравнение вычисленного расстояния с предварительно установленным пороговым значением, и при превышении порогового значения — инициацию повторного перевода с использованием альтернативной модели перевода, отличающийся тем, что пороговое значение динамически корректируется на основе статистики предыдущих верификаций для данной языковой пары."\n\nТребования:\n1. Объясни суть формулы простым языком (как если бы объяснял коллеге-разработчику)\n2. Укажи, что именно защищается и что НЕ защищается этой формулой\n3. Приведи примеры того, что конкурент может делать без нарушения этого патента\n4. Рекомендуй стратегию подачи: только РФ, PCT, или прямая подача в конкретные юрисдикции — с обоснованием\n5. Оцени примерные сроки и стоимость процедуры для каждого варианта`
+        : `You are a patent legal consultant. The applicant (not a lawyer, a technical specialist) asks you to explain the following patent claim and provide recommendations:\n\nIndependent claim:\n"1. A method for semantic verification of translation quality, comprising receiving a source text and a translation text, generating vector representations (embeddings) of the source text and translation using a multilingual model, computing the cosine distance between the obtained embeddings, comparing the computed distance with a pre-established threshold value, and upon exceeding the threshold — initiating re-translation using an alternative translation model, characterized in that the threshold value is dynamically adjusted based on statistics of previous verifications for a given language pair."\n\nRequirements:\n1. Explain the essence of the claim in plain language (as if explaining to a fellow developer)\n2. Specify what exactly is protected and what is NOT protected by this claim\n3. Provide examples of what a competitor can do without infringing this patent\n4. Recommend a filing strategy: Russia-only, PCT, or direct filing in specific jurisdictions — with justification\n5. Estimate approximate timelines and costs for each option`,
+      baseline_source: { type: 'none' },
+    });
+
     return tasks;
   },
 
@@ -92,6 +114,8 @@ export const patentAttorneyPlugin: RoleTestPlugin = {
       standards_knowledge: 'Evaluate: correct PCT/FIPS format, proper prior art references, technical problem formulation, standard compliance. Penalize: format violations, missing sections, generic descriptions.',
       claim_structure: 'Evaluate: broad independent claim, proper dependent claims, IPC classification, standard patent language. Penalize: overly narrow independent claim, missing dependent claims, informal language.',
       prior_art_search: 'Evaluate: query diversity, IPC/CPC class accuracy, keyword coverage, jurisdiction strategy, relevance criteria. Penalize: generic queries, missing classifications, no search strategy.',
+      risk_assessment: 'Evaluate: accurate threat level assessment, clear identification of overlapping/distinguishing features, plain-language explanation, actionable workaround strategy, practical recommendations. Penalize: overly technical jargon, missing risk factors, vague recommendations.',
+      plain_language: 'Evaluate: clarity of explanation for non-lawyers, accurate scope description (protected vs not), realistic competitor scenarios, justified filing strategy with cost/timeline estimates. Penalize: excessive jargon, missing filing options, unrealistic estimates.',
     };
     return hints[competency] || 'Evaluate legal accuracy, analytical depth, and standards compliance.';
   },
