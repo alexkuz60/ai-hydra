@@ -2,7 +2,7 @@ import React, { useState, useMemo, useCallback } from 'react';
 import {
   BookOpen, Database, Layers, Trash2, Loader2,
   Copy, Wrench, BarChart2, ScanSearch, Clock,
-  CheckCircle2, AlertTriangle,
+  CheckCircle2, AlertTriangle, Sparkles,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -40,6 +40,10 @@ export function KnowledgeTab({ stats, loading }: { stats: ReturnType<typeof useH
   const [qualityStats, setQualityStats] = useState<{ avgWords: number; noEmbedding: number; total: number } | null>(null);
   const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set());
   const [scanDone, setScanDone] = useState(false);
+  const [generatingEmbeddings, setGeneratingEmbeddings] = useState(false);
+  const [embeddingProgress, setEmbeddingProgress] = useState<{ done: number; total: number } | null>(null);
+  // Keep raw rows for embedding generation
+  const [rawRows, setRawRows] = useState<KnowledgeEntryRaw[]>([]);
 
   const roleGroups = stats.knowledge.reduce<Record<string, { category: string; count: number }[]>>((acc, k) => {
     if (!acc[k.role]) acc[k.role] = [];
@@ -58,6 +62,7 @@ export function KnowledgeTab({ stats, loading }: { stats: ReturnType<typeof useH
         .eq('user_id', user.id);
       if (error) throw error;
       const rows = (data || []) as KnowledgeEntryRaw[];
+      setRawRows(rows);
 
       const wordCounts = rows.map(r => r.content.trim().split(/\s+/).length);
       const avgWords = rows.length ? wordCounts.reduce((a, b) => a + b, 0) / rows.length : 0;
@@ -125,6 +130,60 @@ export function KnowledgeTab({ stats, loading }: { stats: ReturnType<typeof useH
     similarGroups.flatMap(g => g.slice(1).map(r => r.id)), [similarGroups]);
   const allOutdatedToDelete = useMemo(() =>
     outdatedGroups.flatMap(g => g.map(r => r.id)), [outdatedGroups]);
+
+  const generateEmbeddings = useCallback(async () => {
+    if (!user?.id) return;
+    const noEmbRows = rawRows.filter(r => !r.embedding);
+    if (noEmbRows.length === 0) return;
+
+    setGeneratingEmbeddings(true);
+    setEmbeddingProgress({ done: 0, total: noEmbRows.length });
+    const BATCH = 10;
+    let done = 0;
+
+    try {
+      for (let i = 0; i < noEmbRows.length; i += BATCH) {
+        const batch = noEmbRows.slice(i, i + BATCH);
+        const texts = batch.map(r => r.content);
+
+        const resp = await supabase.functions.invoke('generate-embeddings', {
+          body: { texts },
+        });
+
+        if (resp.error) {
+          console.error('[KnowledgeTab] Embedding batch error:', resp.error);
+          continue;
+        }
+
+        const embeddings = resp.data?.embeddings as (number[] | null)[];
+        if (!embeddings) continue;
+
+        // Save embeddings to DB
+        for (let j = 0; j < batch.length; j++) {
+          if (embeddings[j]) {
+            await supabase
+              .from('role_knowledge')
+              .update({ embedding: JSON.stringify(embeddings[j]) } as any)
+              .eq('id', batch[j].id)
+              .eq('user_id', user.id);
+          }
+        }
+
+        done += batch.length;
+        setEmbeddingProgress({ done, total: noEmbRows.length });
+      }
+
+      toast.success(`${t('memory.hub.embeddingsGenerated')}: ${done}/${noEmbRows.length}`);
+      await runScan();
+      stats.refresh();
+    } catch (e) {
+      console.error('[KnowledgeTab] embedding error', e);
+      toast.error(t('memory.hub.embeddingsError'));
+    } finally {
+      setGeneratingEmbeddings(false);
+      setEmbeddingProgress(null);
+    }
+  }, [user?.id, rawRows, runScan, stats, t]);
 
   const isRu = language === 'ru';
 
@@ -197,9 +256,23 @@ export function KnowledgeTab({ stats, loading }: { stats: ReturnType<typeof useH
                 )}
 
                 {scanDone && qualityStats && qualityStats.noEmbedding > 0 && (
-                  <div className="flex items-center gap-2 text-xs text-amber-500 bg-amber-500/10 rounded-lg px-3 py-2 border border-amber-500/20">
-                    <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
-                    <span>{qualityStats.noEmbedding} {t('memory.hub.noEmbeddingWarning')}</span>
+                  <div className="flex items-center justify-between gap-2 text-xs text-amber-500 bg-amber-500/10 rounded-lg px-3 py-2 border border-amber-500/20">
+                    <div className="flex items-center gap-2">
+                      <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+                      <span>
+                        {qualityStats.noEmbedding} {t('memory.hub.noEmbeddingWarning')}
+                        {embeddingProgress && ` (${embeddingProgress.done}/${embeddingProgress.total})`}
+                      </span>
+                    </div>
+                    <Button
+                      size="sm" variant="outline"
+                      className="h-6 text-[10px] border-hydra-expert/40 text-hydra-expert hover:bg-hydra-expert/10 shrink-0"
+                      disabled={generatingEmbeddings}
+                      onClick={generateEmbeddings}
+                    >
+                      {generatingEmbeddings ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Sparkles className="h-3 w-3 mr-1" />}
+                      {generatingEmbeddings ? t('memory.hub.generatingEmbeddings') : t('memory.hub.generateEmbeddings')}
+                    </Button>
                   </div>
                 )}
 
