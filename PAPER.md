@@ -7,13 +7,13 @@
 
 **Repository:** [github.com/alexkuz60/ai-hydra](https://github.com/alexkuz60/ai-hydra)  
 **License:** MIT  
-**Version:** 0.2.18 (February 2026)  
+**Version:** 0.2.19 (February 2026)  
 
 ---
 
 ## Abstract
 
-Recent research demonstrates that hybrid human-AI teams consistently outperform both purely human and purely AI groups in creative tasks — yet most such teams fail in practice due to poor delegation, validation asymmetry, uncalibrated trust, and competence degradation. We present **AI-Hydra**, an open-source multi-model AI platform that addresses these systemic failures through six architectural pillars: formalized role contracts, multi-level verification, calibrated trust signals, cognitive diversity, self-correcting evolution, and anthropomorphic organizational metaphor. Built over 25 days of continuous human-AI co-creation, Hydra implements 17 specialized agent roles across Expert, Technical, and System categories — with a planned expansion into a **Legal category** (Patent Attorney role for prior-art search and application drafting) — a three-layer RAG memory system with hybrid search, a ReAct-based self-evolution mechanism, and a unique organizational isomorphism that maps AI infrastructure onto familiar social structures — departments, staffing, interviews, quality control. We report empirical observations from the development process itself as evidence that the symbiotic co-creation paradigm, when properly scaffolded, produces emergent capabilities exceeding the sum of its parts. The paper contributes: (1) a taxonomy mapping documented failure modes to implemented countermeasures; (2) the first open-source platform realizing all six pillars simultaneously; (3) a self-evolution architecture with verifiable reasoning trajectories; (4) the anthropomorphic organizational metaphor as a cognitive bridge reducing adoption barriers.
+Recent research demonstrates that hybrid human-AI teams consistently outperform both purely human and purely AI groups in creative tasks — yet most such teams fail in practice due to poor delegation, validation asymmetry, uncalibrated trust, and competence degradation. We present **AI-Hydra**, an open-source multi-model AI platform that addresses these systemic failures through six architectural pillars: formalized role contracts, multi-level verification, calibrated trust signals, cognitive diversity, self-correcting evolution, and anthropomorphic organizational metaphor. Built over 25 days of continuous human-AI co-creation, Hydra implements 18 specialized agent roles across Expert, Technical, Legal, and System categories — including a fully operational **Legal category** with a Patent Attorney role featuring multi-pass adversarial analysis and Devil's Advocate verification — a three-layer RAG memory system with hybrid search, a ReAct-based self-evolution mechanism, and a unique organizational isomorphism that maps AI infrastructure onto familiar social structures — departments, staffing, interviews, quality control. We report empirical observations from the development process itself as evidence that the symbiotic co-creation paradigm, when properly scaffolded, produces emergent capabilities exceeding the sum of its parts. The paper contributes: (1) a taxonomy mapping documented failure modes to implemented countermeasures; (2) the first open-source platform realizing all six pillars simultaneously; (3) a self-evolution architecture with verifiable reasoning trajectories; (4) the anthropomorphic organizational metaphor as a cognitive bridge reducing adoption barriers.
 
 **Keywords:** human-AI symbiosis, multi-agent systems, creative collaboration, self-evolving AI, RAG architecture, organizational isomorphism, open-source
 
@@ -119,14 +119,14 @@ graph TD
 
 **Addresses:** F1 (Poor Delegation), F2 (Accountability Gap), F7 (Socio-Emotional Gap)
 
-Hydra defines **17 specialized agent roles** across three categories, each with explicit responsibilities, behavioral patterns, and hierarchical relationships:
+Hydra defines **18 specialized agent roles** across four categories, each with explicit responsibilities, behavioral patterns, and hierarchical relationships:
 
 | Category | Roles | Purpose |
 |----------|-------|---------|
 | **Expert** | Assistant, Critic, Arbiter, Consultant, Moderator, Advisor, Archivist, Analyst, Webhunter | Domain expertise and analysis |
 | **Technical** | Prompt Engineer, Flow Regulator, Toolsmith | System optimization and tool creation |
 | **System** | Guide, Techno-Critic, Techno-Arbiter, Techno-Moderator, Translator, Evolutioner, Chronicler | Quality control, evolution, documentation |
-| **Legal** *(Phase 3)* | Patent Attorney | Patent search, prior art analysis, application drafting (see §10) |
+| **Legal** | Patent Attorney | Patent search, prior art analysis, application drafting, adversarial verification (see §10) |
 
 Each role is defined by a **role contract** consisting of:
 - **System prompt** (natural language instructions with version control)
@@ -640,40 +640,54 @@ Despite these limitations, we argue that Hydra demonstrates a **viable architect
 
 ---
 
-## 10. Future Directions: Legal Role Category and AI-Patenting Vision
+## 10. The Legal Department: Patent Attorney in Production
 
-### 10.1 The Legal Department
+### 10.1 Implementation
 
-Hydra's organizational metaphor naturally extends to domains beyond engineering and analysis. Phase 3 of the roadmap introduces a new **Legal** role category — the first role being the **Patent Attorney** (`patent_attorney`).
-
-The Patent Attorney operates in two complementary modes:
+Hydra's organizational metaphor has been extended to the legal domain with a fully operational **Legal** role category. The first role — **Patent Attorney** (`patent_attorney`) — operates in three modes:
 
 | Mode | Function | Integration |
 |------|----------|-------------|
-| **Patent Search** | Analyze task outcomes to identify novel elements; formulate prior art search queries for USPTO, EPO, Google Patents, ФИПС | Webhunter / Firecrawl tools |
-| **Application Drafting** | Generate claims (формула изобретения) and structure descriptions according to PCT / national standards | Role knowledge base (patent law corpus) |
+| **Patent Search** | Analyze task outcomes to identify novel elements; formulate prior art queries for USPTO, EPO, Google Patents, ФИПС | Webhunter / Firecrawl tools |
+| **Application Drafting** | Generate claims (формула изобретения) and structure descriptions per PCT / national standards | Role knowledge base (patent law corpus) |
+| **Legal Consultation** | Explain risks, patentability assessment, and strategy in plain language | Devil's Advocate adversarial pass |
 
 ```mermaid
 graph LR
     T["📋 Task Solution<br/>User's creative output"]
     PA["⚖️ Patent Attorney<br/>Novelty analysis"]
     S["🔍 Patent Search<br/>Prior art via<br/>Webhunter/Firecrawl"]
+    DA["🔴 Devil's Advocate<br/>Counter-arguments<br/>rejection reasons"]
+    SY["🧬 Synthesis<br/>Multi-pass best<br/>formulations"]
     D["📝 Application Draft<br/>Claims + Description<br/>PCT format"]
     
     T --> PA
     PA --> S
-    PA --> D
-    S -->|"Prior art report"| D
+    PA --> DA
+    S -->|"Prior art report"| SY
+    DA -->|"Rejection risks"| SY
+    SY --> D
     
     style T fill:#64748b,color:#fff
     style PA fill:#d97706,color:#fff
     style S fill:#3b82f6,color:#fff
+    style DA fill:#ef4444,color:#fff
+    style SY fill:#8b5cf6,color:#fff
     style D fill:#10b981,color:#fff
 ```
 
-The Legal category is designed as an extensible framework: future roles may include Compliance Officer (regulatory analysis), IP Strategist (portfolio management), and License Auditor (open-source license compatibility).
+### 10.2 Adversarial Verification: The "Presumption of Non-Novelty"
 
-### 10.2 AI as Co-Inventor: A Paradigm Shift
+To prevent hallucination of patent potential — a critical risk in legal AI applications — the Patent Attorney implements a **"Presumption of Non-Novelty"** strategy:
+
+1. **Multi-pass analysis** (`patent-deep-analysis` edge function): Each task is analyzed with 4 parameter configurations (precise, balanced, creative, and Devil's Advocate), with adaptive retry on failures
+2. **Devil's Advocate pass**: A dedicated adversarial analysis specifically searches for ALL reasons to reject — obvious combinations, lack of technical effect, abstract formulations, computer programs as such, business methods
+3. **Synthesis with honesty constraint**: The final synthesis pass is required to account for counter-arguments; if arguments "against" outweigh arguments "for", the system honestly states: no patent potential
+4. **Specialized evaluation criteria**: Interview process uses domain-specific metrics (`novelty_assessment`, `claim_structure`, `prior_art_search`, `legal_accuracy`, `risk_assessment`) instead of generic criteria
+
+The candidate model `openai/gpt-5.2` passed the 7-task interview with a score of **9.4/10** and was hired for the role.
+
+### 10.3 AI as Co-Inventor: A Paradigm Shift
 
 The current legal landscape is often cited as a barrier to AI-assisted patenting: USPTO, EPO, and Australian courts have rejected DABUS applications naming AI as the sole inventor. However, this framing misses the deeper trajectory:
 
@@ -681,16 +695,14 @@ The current legal landscape is often cited as a barrier to AI-assisted patenting
 
 2. **Hydra's architecture is uniquely positioned.** Because every AI contribution in Hydra is:
    - **Traceable** (role contracts, session logs, model dossiers)
-   - **Verified** (four-tier verification, arbiter evaluations)
+   - **Verified** (four-tier verification, arbiter evaluations, adversarial passes)
    - **Human-governed** (supervisor approval, hierarchy, evolution chronicles)
    
-   The system naturally produces the **audit trail** that emerging patent frameworks will likely require — demonstrating that a human inventor directed, evaluated, and selected the AI-generated contributions.
+   The system naturally produces the **audit trail** that emerging patent frameworks will likely require.
 
-3. **The symbiotic paradigm reframes the question.** Rather than asking "Can AI be an inventor?", Hydra demonstrates a more productive framing: **"How can we document and verify the human-AI collaborative process that produces inventions?"** The answer is: through exactly the kind of formalized role contracts, multi-level verification, and calibrated trust signals that Hydra already implements.
+3. **The symbiotic paradigm reframes the question.** Rather than asking "Can AI be an inventor?", Hydra demonstrates a more productive framing: **"How can we document and verify the human-AI collaborative process that produces inventions?"**
 
 > **Prediction:** Within 3–5 years, patent offices will require structured documentation of AI involvement in the inventive process. Systems like Hydra — with their built-in audit trails, role accountability, and verification chains — will become not just useful but **legally necessary** infrastructure for innovation teams.
-
-The Patent Attorney role in Hydra is therefore not merely a convenience feature — it is an early implementation of what we believe will become a standard component of AI-augmented creative and engineering workflows.
 
 ---
 
@@ -707,7 +719,7 @@ AI-Hydra addresses this gap through six pillars that directly counter documented
 5. **Self-correcting evolution** maintains and improves system quality over time
 6. **Anthropomorphic organizational metaphor** makes the entire system intuitive to non-technical users
 
-The development of Hydra itself — 25 days of continuous human-AI co-creation resulting in a platform with 17 roles, 16 backend functions, three-layer RAG memory, and a self-evolution mechanism — is evidence that the symbiotic paradigm works when properly scaffolded.
+The development of Hydra itself — 25 days of continuous human-AI co-creation resulting in a platform with 18 roles, 20 backend functions, three-layer RAG memory, and a self-evolution mechanism — is evidence that the symbiotic paradigm works when properly scaffolded.
 
 We release Hydra as open-source software under the MIT license, inviting the research community and practitioners to build upon, criticize, and extend this work.
 
@@ -759,6 +771,9 @@ AI:        11 providers via gateway + direct API integration
 | HYDRA-EVO-003 | 2026-02-19 | Architecture | Create Evolution Department (Evolutioner + Chronicler roles) | ✅ Approved |
 | HYDRA-EVO-004 | 2026-02-20 | Memory Hub | Modularize monolithic page: 4225 → 115 lines (11 modules) | ✅ Approved |
 | HYDRA-EVO-005 | 2026-02-23 | Translator pipeline | Granular semantic verification: sentence-level scoring + auto-refinement of weak phrases (0.65 → 1.0); Translator role added to QC Tier 3 | ✅ Implemented |
+| EVO-006 | 2026-02-23 | Interview pipeline | Accuracy vs Speed strategy: reasoning models for patent analysis, multi-level verification, adaptive retry | ✅ Implemented |
+| EVO-007 | 2026-02-23 | Patent Attorney | Presumption of Non-Novelty: adversarial Devil's Advocate pass, strict rejection thresholds, real rejection examples in knowledge base | ✅ Implemented |
+| EVO-008 | 2026-02-23 | Legal Department | Full Patent Attorney infrastructure: 7-task interview plugin, patent-deep-analysis (4 modules), arbiter fallback chain, specialized criteria. GPT-5.2 hired at 9.4/10 | ✅ Implemented |
 
 ---
 

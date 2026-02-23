@@ -8,7 +8,7 @@
   ![License](https://img.shields.io/badge/license-MIT-blue?style=flat-square)
   ![Stack](https://img.shields.io/badge/stack-React%2018%20%2B%20TypeScript%20%2B%20Supabase-8b5cf6?style=flat-square)
   ![Models](https://img.shields.io/badge/providers-10+-cyan?style=flat-square)
-  ![Roles](https://img.shields.io/badge/agent--roles-17-orange?style=flat-square)
+  ![Roles](https://img.shields.io/badge/agent--roles-18-orange?style=flat-square)
 </div>
 
 ---
@@ -36,7 +36,7 @@ Automatic experience consolidation: patterns from `role_memory` are distilled in
 
 ## 📋 Overview
 
-**Hydra** is a multi-model AI platform for collegial analysis, combining 16 specialized roles (expert, technical, and system) to solve complex tasks through parallel operation of multiple language models in a unified workspace.
+**Hydra** is a multi-model AI platform for collegial analysis, combining 18 specialized roles (expert, technical, legal, and system) to solve complex tasks through parallel operation of multiple language models in a unified workspace.
 
 ---
 
@@ -51,12 +51,13 @@ Automatic experience consolidation: patterns from `role_memory` are distilled in
 - Rich-text rendering: Markdown, LaTeX (KaTeX), syntax highlighting, Mermaid diagrams
 - Thinking blocks, streaming responses, Tool Calling, attachments
 
-**AI Agent Role System (16 roles)**
+**AI Agent Role System (18 roles)**
 
 | Category | Roles |
 |----------|-------|
 | **Expert** | Assistant, Critic, Arbiter, Consultant, Moderator, Advisor, Archivist, Analyst, Webhunter |
 | **Technical** | Prompt Engineer, Flow Regulator, Toolsmith |
+| **Legal** | Patent Attorney (patent search, application drafting, legal consultation) |
 | **System** | Guide, Technocritic, Technoarbiter, Technomoderator, Translator |
 
 **D-Chat (Consultant Panel)** — Side panel for single expert queries with Moderator mode, result transfer to main chat, independent model/role selection
@@ -132,7 +133,7 @@ React 18 + TypeScript + Vite
 Lovable Cloud (Supabase)
 ├── Auth: Email/password authentication
 ├── Database: PostgreSQL with RLS
-├── Edge Functions: Deno runtime (17 functions)
+├── Edge Functions: Deno runtime (20 functions)
 ├── Vault: Secure API key storage
 ├── Storage: File attachments & avatars
 ├── Vector Search: pgvector for embeddings
@@ -158,6 +159,8 @@ Lovable Cloud (Supabase)
 | `generate-embeddings` | Vector embedding generation |
 | `seed-role-knowledge` | Role knowledge base seeding |
 | `sync-guide-knowledge` | Guide knowledge synchronization |
+| `patent-search` | Patent prior art search |
+| `patent-deep-analysis` | Multi-pass patent analysis with Devil's Advocate |
 | `firecrawl-scrape` | Web scraping via Firecrawl |
 | `proxy-api-test` | ProxyAPI testing |
 | `dotpoint-api-test` | DotPoint testing |
@@ -282,11 +285,11 @@ src/
 ├── hooks/              # 60+ custom hooks
 ├── lib/                # Utilities (scoring, templates, parsers, cache)
 ├── pages/              # 13 route pages (lazy loaded)
-├── plugins/interview/  # Interview plugins (7 specialists)
+├── plugins/interview/  # Interview plugins (8 specialists incl. Patent Attorney)
 ├── styles/             # Design system docs
 └── types/              # TypeScript definitions
 
-supabase/functions/     # 17 Edge Functions
+supabase/functions/     # 20 Edge Functions
 ```
 
 ---
@@ -311,4 +314,4 @@ supabase/functions/     # 17 Edge Functions
 
 ---
 
-*Last updated: February 22, 2026*
+*Last updated: February 23, 2026*

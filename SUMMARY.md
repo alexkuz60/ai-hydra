@@ -2,7 +2,7 @@
 
 ## 📋 Обзор проекта
 
-**Hydra** — многомодельная AI-платформа для коллегиального анализа, объединяющая 17 специализированных ролей (экспертных, технических и системных) для решения сложных задач через параллельную работу нескольких языковых моделей в едином рабочем пространстве.
+**Hydra** — многомодельная AI-платформа для коллегиального анализа, объединяющая 18 специализированных ролей (экспертных, технических, юридических и системных) для решения сложных задач через параллельную работу нескольких языковых моделей в едином рабочем пространстве.
 
 ---
 
@@ -18,12 +18,13 @@
 - **Tool Calling**: интеграция кастомных инструментов в контекст моделей
 - **Вложения**: поддержка изображений и файлов в сообщениях
 
-### 2. Ролевая система AI-агентов (17 ролей)
+### 2. Ролевая система AI-агентов (18 ролей)
 
 | Категория | Роли |
 |-----------|------|
 | **Экспертные** | Assistant, Critic, Arbiter, Consultant, Moderator, Advisor, Archivist, Analyst, Webhunter |
 | **Технические** | Prompt Engineer, Flow Regulator, Toolsmith |
+| **Юридические** | Patent Attorney (патентный поиск, составление заявок, юридическая консультация, Адвокат дьявола) |
 | **Системные** | Guide, Technocritic, Technoarbiter, Technomoderator, Translator |
 
 ### 3. D-Chat (Консультант-панель)
@@ -108,15 +109,15 @@ React 18 + TypeScript + Vite
 Lovable Cloud (Supabase)
 ├── Auth: Email/password authentication
 ├── Database: PostgreSQL с RLS
-├── Edge Functions: Deno runtime (17 функций)
+├── Edge Functions: Deno runtime (20 функций)
 ├── Vault: Secure API key storage
 ├── Storage: File attachments & avatars
 ├── Vector Search: pgvector для эмбеддингов
 └── Realtime: Live updates
 ```
 
-### 17 Edge Functions
-`hydra-stream` · `hydra-orchestrator` · `contest-arbiter` · `contest-discrepancy-trigger` · `evolution-trigger` · `interview-briefing` · `interview-test-runner` · `interview-verdict` · `flow-runtime` · `flow-logistics` · `translate-text` · `refine-translation` · `generate-embeddings` · `seed-role-knowledge` · `sync-guide-knowledge` · `firecrawl-scrape` · `proxy-api-test`
+### 20 Edge Functions
+`hydra-stream` · `hydra-orchestrator` · `contest-arbiter` · `contest-discrepancy-trigger` · `evolution-trigger` · `interview-briefing` · `interview-test-runner` · `interview-verdict` · `flow-runtime` · `flow-logistics` · `translate-text` · `refine-translation` · `generate-embeddings` · `seed-role-knowledge` · `sync-guide-knowledge` · `firecrawl-scrape` · `proxy-api-test` · `dotpoint-api-test` · `patent-search` · `patent-deep-analysis`
 
 ---
 
@@ -135,4 +136,4 @@ RLS-политики · Vault для API-ключей · SSRF-защита · Р
 
 ---
 
-*Последнее обновление: 20 Февраля 2026*
+*Последнее обновление: 23 Февраля 2026*
