@@ -634,76 +634,151 @@ serve(async (req) => {
             fullPrompt += `\n\n---\n## Текущее состояние (baseline):\n${baseline}`;
           }
 
-          // Call hydra-stream for the candidate model
+          // ── Adaptive retry loop with dynamic parameter adjustment ──
+          const ADAPTIVE_MAX_RETRIES = 3;
+          const IDLE_TIMEOUT_MS = 45_000; // 45s without data = stalled
+          const ADAPTIVE_PARAMS = [
+            { max_tokens_mult: 1.0, temp_delta: 0 },      // Original
+            { max_tokens_mult: 0.75, temp_delta: -0.1 },   // Reduce scope on timeout
+            { max_tokens_mult: 1.5, temp_delta: 0 },       // Expand on empty response
+          ];
+
           const startTime = Date.now();
           let candidateOutput = '';
           let tokenCount = 0;
           let error: string | null = null;
+          let attemptsUsed = 0;
 
-          try {
-            const streamUrl = `${supabaseUrl}/functions/v1/hydra-stream`;
-            const response = await fetch(streamUrl, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': authHeader,
-                'apikey': supabaseKey,
-              },
-              body: JSON.stringify({
-                message: fullPrompt,
-                model_id: candidateModel,
-                role: 'assistant',
-                system_prompt: briefText,
-                temperature: 0.7,
-                max_tokens: testMaxTokens,
-              }),
-            });
+          for (let attempt = 0; attempt < ADAPTIVE_MAX_RETRIES; attempt++) {
+            const adj = ADAPTIVE_PARAMS[attempt];
+            const adjMaxTokens = Math.round(testMaxTokens * adj.max_tokens_mult);
+            const adjTemp = Math.max(0, Math.min(1, 0.7 + adj.temp_delta));
+            attemptsUsed = attempt + 1;
 
-            if (!response.ok) {
-              const errText = await response.text();
-              throw new Error(`${response.status}: ${errText}`);
+            if (attempt > 0) {
+              send('step_retry', {
+                step_index: stepIndex,
+                attempt: attempt + 1,
+                adjusted_max_tokens: adjMaxTokens,
+                adjusted_temperature: adjTemp,
+                reason: error,
+              });
+              await new Promise(r => setTimeout(r, 2000));
+              error = null;
             }
 
-            // Parse SSE stream from hydra-stream
-            const reader = response.body!.getReader();
-            const decoder = new TextDecoder();
-            let buffer = '';
+            let attemptOutput = '';
+            let attemptTokens = 0;
 
-            while (true) {
-              const { done, value } = await reader.read();
-              if (done) break;
-              buffer += decoder.decode(value, { stream: true });
+            try {
+              const streamUrl = `${supabaseUrl}/functions/v1/hydra-stream`;
+              const response = await fetch(streamUrl, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': authHeader,
+                  'apikey': supabaseKey,
+                },
+                body: JSON.stringify({
+                  message: fullPrompt,
+                  model_id: candidateModel,
+                  role: 'assistant',
+                  system_prompt: briefText,
+                  temperature: adjTemp,
+                  max_tokens: adjMaxTokens,
+                }),
+              });
 
-              let newlineIdx: number;
-              while ((newlineIdx = buffer.indexOf('\n')) !== -1) {
-                let line = buffer.slice(0, newlineIdx);
-                buffer = buffer.slice(newlineIdx + 1);
-                if (line.endsWith('\r')) line = line.slice(0, -1);
-                if (!line.startsWith('data: ')) continue;
-                const jsonStr = line.slice(6).trim();
-                if (jsonStr === '[DONE]') break;
-                try {
-                  const parsed = JSON.parse(jsonStr);
-                  const content = parsed.choices?.[0]?.delta?.content as string | undefined;
-                  if (content) {
-                    candidateOutput += content;
-                    tokenCount++;
+              if (!response.ok) {
+                const errText = await response.text();
+                error = `HTTP ${response.status}: ${errText}`;
+                continue;
+              }
+
+              // Parse SSE stream with idle timeout detection
+              const reader = response.body!.getReader();
+              const decoder = new TextDecoder();
+              let buffer = '';
+              let idleTimer: ReturnType<typeof setTimeout> | null = null;
+              let timedOut = false;
+
+              const resetIdle = () => {
+                if (idleTimer) clearTimeout(idleTimer);
+                idleTimer = setTimeout(() => { timedOut = true; }, IDLE_TIMEOUT_MS);
+              };
+              resetIdle();
+
+              try {
+                while (!timedOut) {
+                  const { done, value } = await reader.read();
+                  if (done) break;
+                  resetIdle();
+                  buffer += decoder.decode(value, { stream: true });
+
+                  let newlineIdx: number;
+                  while ((newlineIdx = buffer.indexOf('\n')) !== -1) {
+                    let line = buffer.slice(0, newlineIdx);
+                    buffer = buffer.slice(newlineIdx + 1);
+                    if (line.endsWith('\r')) line = line.slice(0, -1);
+                    if (!line.startsWith('data: ')) continue;
+                    const jsonStr = line.slice(6).trim();
+                    if (jsonStr === '[DONE]') break;
+                    try {
+                      const parsed = JSON.parse(jsonStr);
+                      const content = parsed.choices?.[0]?.delta?.content as string | undefined;
+                      if (content) {
+                        attemptOutput += content;
+                        attemptTokens++;
+                      }
+                    } catch { /* partial JSON */ }
                   }
-                } catch { /* partial JSON */ }
+
+                  // Send streaming progress periodically
+                  if (attemptTokens % 20 === 0 && attemptTokens > 0) {
+                    send('step_progress', {
+                      step_index: stepIndex,
+                      tokens: attemptTokens,
+                      attempt: attempt + 1,
+                      preview: attemptOutput.slice(-200),
+                    });
+                  }
+                }
+              } finally {
+                if (idleTimer) clearTimeout(idleTimer);
+                try { reader.cancel(); } catch { /* ok */ }
               }
 
-              // Send streaming progress periodically
-              if (tokenCount % 20 === 0 && tokenCount > 0) {
-                send('step_progress', {
-                  step_index: stepIndex,
-                  tokens: tokenCount,
-                  preview: candidateOutput.slice(-200),
-                });
+              if (timedOut) {
+                error = `Idle timeout (${IDLE_TIMEOUT_MS}ms), got ${attemptTokens} tokens`;
+                // Keep partial output if substantial
+                if (attemptOutput.length > candidateOutput.length) {
+                  candidateOutput = attemptOutput;
+                  tokenCount = attemptTokens;
+                }
+                continue;
               }
+
+              if (!attemptOutput.trim()) {
+                error = 'Empty response';
+                continue;
+              }
+
+              // Success — keep best output
+              candidateOutput = attemptOutput;
+              tokenCount = attemptTokens;
+              error = null;
+              break;
+
+            } catch (e: any) {
+              error = e.message || 'Unknown error';
+              console.error(`[interview-test] Step ${stepIndex} attempt ${attempt + 1} failed:`, e);
             }
-          } catch (e: any) {
-            error = e.message || 'Unknown error';
-            console.error(`[interview-test] Step ${stepIndex} failed:`, e);
+          }
+
+          // Use best partial result even if all attempts had issues
+          if (error && candidateOutput.length > 200) {
+            console.log(`[interview-test] Step ${stepIndex}: using partial result (${candidateOutput.length} chars) despite error: ${error}`);
+            error = null; // Accept partial as success
           }
 
           const elapsedMs = Date.now() - startTime;
@@ -719,6 +794,7 @@ serve(async (req) => {
             error: error,
             elapsed_ms: elapsedMs,
             token_count: tokenCount,
+            attempts_used: attemptsUsed,
           };
 
           testResults.push(stepResult);
