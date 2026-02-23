@@ -55,16 +55,16 @@ export function MemoryGraphTab({ stats }: { stats: ReturnType<typeof useHydraMem
     if (!el) return;
     const obs = new ResizeObserver(entries => {
       const e = entries[0];
-      if (e && e.contentRect.width > 0) setSvgSize({ w: Math.round(e.contentRect.width), h: 560 });
+      if (e && e.contentRect.width > 0) setSvgSize({ w: Math.round(e.contentRect.width), h: 900 });
     });
     obs.observe(el);
     const { width } = el.getBoundingClientRect();
-    if (width > 0) setSvgSize({ w: Math.round(width), h: 560 });
+    if (width > 0) setSvgSize({ w: Math.round(width), h: 900 });
 
     const mo = new MutationObserver(() => {
       const rect = el.getBoundingClientRect();
-      if (rect.width > 0 && Math.abs(rect.width - svgSize.w) > 10)
-        setSvgSize({ w: Math.round(rect.width), h: 560 });
+        if (rect.width > 0 && Math.abs(rect.width - svgSize.w) > 10)
+        setSvgSize({ w: Math.round(rect.width), h: 900 });
     });
     if (el.parentElement) mo.observe(el.parentElement, { attributes: true, attributeFilter: ['hidden', 'data-state'] });
     return () => { obs.disconnect(); mo.disconnect(); };
@@ -120,14 +120,14 @@ export function MemoryGraphTab({ stats }: { stats: ReturnType<typeof useHydraMem
     const sessionIds = new Set<string>();
     const maxCount = Math.max(...stats.roleMemory.map(r => r.count), 1);
 
-    allNodes.push({ id: 'center', label: tm('graph.hydra'), type: 'center', x: cx, y: cy, r: 20 });
+    allNodes.push({ id: 'center', label: tm('graph.hydra'), type: 'center', x: cx, y: cy, r: 60 });
 
-    const roleRadius = Math.min(cx, cy) * 0.58;
+    const roleRadius = Math.min(cx, cy) * 0.58 * 1.8;
     const sessionRadius = roleRadius * 1.58;
 
     stats.roleMemory.forEach((rm, i) => {
       const angle = (2 * Math.PI * i) / stats.roleMemory.length - Math.PI / 2;
-      const nodeSize = 11 + (rm.count / maxCount) * 13;
+      const nodeSize = (11 + (rm.count / maxCount) * 13) * 2;
       const roleConfig = ROLE_CONFIG[rm.role as keyof typeof ROLE_CONFIG];
       const roleLabel = roleConfig ? t(roleConfig.label) : rm.role;
       const roleNode: GraphNode = {
@@ -144,8 +144,8 @@ export function MemoryGraphTab({ stats }: { stats: ReturnType<typeof useHydraMem
         const kNode: GraphNode = {
           id: `know_${rm.role}`, label: `${knowledgePerRole[rm.role]}`, roleId: rm.role, type: 'knowledge',
           knowledgeCount: knowledgePerRole[rm.role],
-          x: roleNode.x + Math.cos(angle - Math.PI * 0.35) * (nodeSize + 14),
-          y: roleNode.y + Math.sin(angle - Math.PI * 0.35) * (nodeSize + 14), r: 7,
+          x: roleNode.x + Math.cos(angle - Math.PI * 0.35) * (nodeSize + 20),
+          y: roleNode.y + Math.sin(angle - Math.PI * 0.35) * (nodeSize + 20), r: 14,
         };
         allNodes.push(kNode);
         allEdges.push({ source: roleNode.id, target: kNode.id, kind: 'knowledge' });
@@ -154,14 +154,14 @@ export function MemoryGraphTab({ stats }: { stats: ReturnType<typeof useHydraMem
       const detail = roleMemoryDetails[rm.role];
       if (activeLayers.has('session') && detail && detail.usageCount > 0) {
         detail.sessions.slice(0, 2).forEach((sid, si) => {
-          const sa = angle + ((si - 0.5) * 0.45);
+      const sa = angle + ((si - 0.5) * 0.45);
           if (!sessionIds.has(sid)) {
             sessionIds.add(sid);
             allNodes.push({
               id: `sess_${sid}`, label: sid.slice(0, 8) + '…', type: 'session',
               sessionChunks: sessionChunks[sid] || 0,
               x: cx + sessionRadius * Math.cos(sa), y: cy + sessionRadius * Math.sin(sa),
-              r: 6 + Math.min((sessionChunks[sid] || 0) / 10, 4),
+              r: (6 + Math.min((sessionChunks[sid] || 0) / 10, 4)) * 2,
             });
           }
           allEdges.push({ source: roleNode.id, target: `sess_${sid}`, kind: 'session' });
@@ -249,7 +249,7 @@ export function MemoryGraphTab({ stats }: { stats: ReturnType<typeof useHydraMem
           ))}
         </div>
       </CardHeader>
-      <div ref={containerRef} className="relative w-full" style={{ height: 560 }}>
+      <div ref={containerRef} className="relative w-full" style={{ height: 900 }}>
         <svg ref={svgRef} viewBox={`0 0 ${svgSize.w} ${svgSize.h}`} className="w-full h-full" style={{ background: 'transparent' }}>
           <defs>
             <pattern id="grid" width="30" height="30" patternUnits="userSpaceOnUse">
