@@ -58,6 +58,11 @@ const ROLE_INTERACTIONS: Record<string, string[]> = {
   flowregulator: ['promptengineer', 'toolsmith', 'analyst'],
   toolsmith: ['promptengineer', 'flowregulator', 'webhunter'],
   guide: ['archivist', 'analyst', 'promptengineer'],
+  technocritic: ['technoarbiter', 'techномодератор', 'analyst'],
+  technoarbiter: ['technocritic', 'techномодератор', 'analyst'],
+  technomoderator: ['technocritic', 'technoarbiter', 'moderator'],
+  translator: ['promptengineer', 'archivist', 'moderator'],
+  patent_attorney: ['analyst', 'webhunter', 'archivist'],
 };
 
 serve(async (req) => {
