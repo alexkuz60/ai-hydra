@@ -59,9 +59,19 @@ import {
    const { prompts, loading, saving, createPrompt, updatePrompt, deletePrompt } = usePromptsCRUD();
  
    // Filters
-   const [searchQuery, setSearchQuery] = useState('');
-   const [roleFilter, setRoleFilter] = useState<string>('all');
-   const [ownerFilter, setOwnerFilter] = useState<OwnerFilter>('all');
+    const [searchQuery, setSearchQuery] = useState('');
+    const [roleFilter, setRoleFilter] = useState<string>('all');
+    const [ownerFilter, setOwnerFilter] = useState<OwnerFilter>('all');
+
+    // Persistent collapse state
+    const [systemOpen, setSystemOpen] = useState(() => {
+      const stored = localStorage.getItem('rl-system-open');
+      return stored !== null ? stored === 'true' : true;
+    });
+    const [userOpen, setUserOpen] = useState(() => {
+      const stored = localStorage.getItem('rl-user-open');
+      return stored !== null ? stored === 'true' : true;
+    });
  
    // Selected prompt
    const [selectedPrompt, setSelectedPrompt] = useState<RolePrompt | null>(null);
@@ -397,8 +407,8 @@ import {
                        const userPrompts = filteredPrompts.filter(p => !p.is_default);
                        return (
                          <div className="space-y-0">
-                           {systemPrompts.length > 0 && (
-                             <Collapsible defaultOpen>
+                            {systemPrompts.length > 0 && (
+                              <Collapsible open={systemOpen} onOpenChange={(v) => { setSystemOpen(v); localStorage.setItem('rl-system-open', String(v)); }}>
                                <CollapsibleTrigger className="w-full">
                                  <PromptGroupHeader label={t('roleLibrary.filterSystem')} icon={Shield} count={systemPrompts.length} />
                                </CollapsibleTrigger>
@@ -419,8 +429,8 @@ import {
                                </CollapsibleContent>
                              </Collapsible>
                            )}
-                           {userPrompts.length > 0 && (
-                             <Collapsible defaultOpen>
+                            {userPrompts.length > 0 && (
+                              <Collapsible open={userOpen} onOpenChange={(v) => { setUserOpen(v); localStorage.setItem('rl-user-open', String(v)); }}>
                                <CollapsibleTrigger className="w-full">
                                  <PromptGroupHeader label={t('roleLibrary.filterOwn')} icon={User} count={userPrompts.length} />
                                </CollapsibleTrigger>
