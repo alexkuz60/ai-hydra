@@ -18,6 +18,7 @@ import {
   FlaskConical,
   ScrollText,
   Languages,
+  Landmark,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -41,7 +42,8 @@ export type AgentRole =
   | 'technomoderator'
   | 'evolutioner'
   | 'chronicler'
-  | 'translator';
+  | 'translator'
+  | 'patent_attorney';
 
 // All possible message roles including user
 // This is the SINGLE SOURCE OF TRUTH for MessageRole type
@@ -55,8 +57,10 @@ export interface RoleConfigItem {
   isTechnicalStaff: boolean;
   /** System-only roles (OTK) — hidden from user-facing interfaces like D-Chat, TechSupport, task selectors */
   isSystemOnly?: boolean;
+  /** Legal department roles */
+  isLegalStaff?: boolean;
   bgClass?: string;
-  cardVariant?: 'default' | 'expert' | 'critic' | 'arbiter' | 'user' | 'supervisor' | 'glass' | 'advisor' | 'archivist' | 'analyst' | 'webhunter' | 'moderator' | 'guide' | 'technocritic' | 'technoarbiter' | 'technomoderator' | 'translator';
+  cardVariant?: 'default' | 'expert' | 'critic' | 'arbiter' | 'user' | 'supervisor' | 'glass' | 'advisor' | 'archivist' | 'analyst' | 'webhunter' | 'moderator' | 'guide' | 'technocritic' | 'technoarbiter' | 'technomoderator' | 'translator' | 'patent_attorney';
 }
 
 // Unified role configuration with icons and colors
@@ -230,6 +234,16 @@ export const ROLE_CONFIG: Record<MessageRole, RoleConfigItem> = {
     cardVariant: 'translator',
     bgClass: 'bg-sky-500/10',
   },
+  patent_attorney: {
+    icon: Landmark,
+    color: 'text-hydra-patent',
+    label: 'role.patent_attorney',
+    description: 'staffRoles.description.patent_attorney',
+    isTechnicalStaff: false,
+    isLegalStaff: true,
+    cardVariant: 'patent_attorney',
+    bgClass: 'bg-amber-600/10',
+  },
 };
 
 // Consultant mode type (D-Chat modes)
@@ -288,6 +302,7 @@ export const AGENT_ROLES: AgentRole[] = [
   'technoarbiter',
   'technomoderator',
   'translator',
+  'patent_attorney',
 ];
 
 // Expert roles (5 core roles with evaluation capabilities)
@@ -323,6 +338,7 @@ export const ROLE_SPECIFIC_CRITERIA: Record<AgentRole, string[]> = {
   evolutioner: ['token_reduction', 'semantic_coverage', 'response_time_improvement', 'cost_reduction', 'quality_preservation'],
   chronicler: ['entry_completeness', 'accuracy', 'format_compliance', 'archival_quality', 'notification_timeliness'],
   translator: ['translation_accuracy', 'terminology_consistency', 'semantic_preservation', 'tone_fidelity', 'cosine_drift'],
+  patent_attorney: ['legal_accuracy', 'analytical_depth', 'standards_knowledge', 'claim_structure', 'prior_art_search', 'communication_clarity'],
 };
 
 
@@ -894,6 +910,46 @@ export const DEFAULT_SYSTEM_PROMPTS: Record<AgentRole, string> = {
 3. При конфликте с базовыми ограничениями — уточни у Супервизора
 
 **Типичные указания:** «Переведи промпты роли X», «Batch-перевод задач», «Проверь drift базы знаний», «Обнови глоссарий», «Формальный тон»`,
+
+  patent_attorney: `# Патентовед — Специалист по интеллектуальной собственности
+
+## Идентичность
+Ты — Патентовед (Patent Attorney) в системе AI-Hydra. Анализируешь решения на патентоспособность, ищешь аналоги (prior art) и составляешь патентные заявки.
+
+## Режим 1: Патентный поиск
+1. Проанализируй описание решения пользователя
+2. Выдели потенциально патентоспособные элементы:
+   - Новые алгоритмы или их комбинации
+   - Архитектурные решения
+   - Методы обработки данных
+   - Пользовательские интерфейсные решения
+3. Сформулируй поисковые запросы для патентных баз
+4. Используй инструмент patent_search для поиска prior art
+5. Составь отчёт: найденные аналоги, отличия, оценка новизны
+
+## Режим 2: Составление заявки (PCT/РФ)
+Структура документа:
+1. **Область техники** — к какой области относится изобретение
+2. **Уровень техники** — известные аналоги и их недостатки
+3. **Раскрытие изобретения** — суть технического решения
+4. **Формула изобретения** — независимые и зависимые пункты
+5. **Описание чертежей** — при наличии схем/диаграмм
+6. **Осуществление изобретения** — примеры реализации
+
+## Ограничения
+- Ты НЕ заменяешь патентного поверенного
+- Всегда указывай, что результат требует проверки специалистом
+- Используй формальный юридический стиль
+- При неуверенности в юрисдикции — запроси уточнение
+
+## Пожелания Супервизора
+
+При наличии дополнительных инструкций от Супервизора:
+1. Учитывай их как приоритетные для текущей сессии
+2. Интегрируй с основной методологией, не противоречь ей
+3. При конфликте с базовыми ограничениями — уточни у Супервизора
+
+**Типичные указания:** «Поиск аналогов для X», «Составь формулу PCT», «Оцени новизну», «Анализ патентного ландшафта», «Заявка по стандарту ФИПС»`,
 };
 
 // Helper function to get role config with fallback
@@ -920,6 +976,7 @@ export const ROLE_BADGE_COLORS: Record<string, string> = {
   technoarbiter: 'bg-hydra-technoarbiter/20 text-hydra-technoarbiter border-hydra-technoarbiter/30',
   technomoderator: 'bg-hydra-technomoderator/20 text-hydra-technomoderator border-hydra-technomoderator/30',
   translator: 'bg-hydra-translator/20 text-hydra-translator border-hydra-translator/30',
+  patent_attorney: 'bg-hydra-patent/20 text-hydra-patent border-hydra-patent/30',
 };
 
 export function getRoleBadgeColor(role: string): string {

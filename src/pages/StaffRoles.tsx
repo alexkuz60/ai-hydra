@@ -8,7 +8,7 @@ import {
   ResizablePanelGroup, ResizablePanel, ResizableHandle,
 } from '@/components/ui/resizable';
 import { Button } from '@/components/ui/button';
-import { Users, Settings, Sparkles, Loader2, ShieldAlert, RefreshCw } from 'lucide-react';
+import { Users, Settings, Sparkles, Loader2, ShieldAlert, RefreshCw, Landmark } from 'lucide-react';
 import { CloudSyncIndicator } from '@/components/ui/CloudSyncIndicator';
 import { useCloudSyncStatus } from '@/hooks/useCloudSettings';
 import { ROLE_CONFIG, AGENT_ROLES, type AgentRole } from '@/config/roles';
@@ -51,6 +51,7 @@ const StaffRoles = () => {
   const [expertsExpanded, setExpertsExpanded] = useState(true);
   const [technicalExpanded, setTechnicalExpanded] = useState(true);
   const [otkExpanded, setOtkExpanded] = useState(true);
+  const [legalExpanded, setLegalExpanded] = useState(true);
   const [interviewRole, setInterviewRole] = useState<AgentRole | null>(interviewRoleInit);
   const [recertRole, setRecertRole] = useState<AgentRole | null>(null);
 
@@ -103,23 +104,25 @@ const StaffRoles = () => {
   });
 
   // Group roles
-  const { expertRoles, technicalRoles, otkRoles } = useMemo(() => {
+  const { expertRoles, technicalRoles, otkRoles, legalRoles } = useMemo(() => {
     const experts: AgentRole[] = [];
     const technical: AgentRole[] = [];
     const otk: AgentRole[] = [];
+    const legal: AgentRole[] = [];
     AGENT_ROLES.forEach((role) => {
       const config = ROLE_CONFIG[role];
-      if (config.isSystemOnly) otk.push(role);
+      if (config.isLegalStaff) legal.push(role);
+      else if (config.isSystemOnly) otk.push(role);
       else if (config.isTechnicalStaff) technical.push(role);
       else experts.push(role);
     });
-    return { expertRoles: experts, technicalRoles: technical, otkRoles: otk };
+    return { expertRoles: experts, technicalRoles: technical, otkRoles: otk, legalRoles: legal };
   }, []);
 
   // Seed actions
   const allSeedableRoles = useMemo(
-    () => [...expertRoles, ...technicalRoles, ...otkRoles],
-    [expertRoles, technicalRoles, otkRoles]
+    () => [...expertRoles, ...technicalRoles, ...otkRoles, ...legalRoles],
+    [expertRoles, technicalRoles, otkRoles, legalRoles]
   );
   const { isBulkSeeding, isForceSyncing, handleBulkSeed, handleForceSeed } = useStaffSeedActions({
     technicalRoles: allSeedableRoles,
@@ -206,7 +209,7 @@ const StaffRoles = () => {
                 {nav.isMinimized ? (
                   <TooltipProvider delayDuration={200}>
                     <div className="p-1 space-y-1">
-                      {[...expertRoles, ...technicalRoles, ...otkRoles].map((role) => {
+                      {[...expertRoles, ...technicalRoles, ...otkRoles, ...legalRoles].map((role) => {
                         const config = ROLE_CONFIG[role];
                         const IconComponent = config.icon;
                         const isSelected = selectedRole === role;
@@ -275,6 +278,16 @@ const StaffRoles = () => {
 
                       {technicalExpanded && <StaffGroupHeader expanded={otkExpanded} onToggle={() => setOtkExpanded(!otkExpanded)} icon={<ShieldAlert className="h-4 w-4" />} label={t('staffRoles.otkGroup')} count={otkRoles.length} guideId="staff-otk-group" nested />}
                       {technicalExpanded && otkExpanded && otkRoles.map(role => (
+                        <StaffRoleRow
+                          key={role} role={role} isSelected={selectedRole === role}
+                          hasUnsavedChanges={unsavedChanges.hasUnsavedChanges}
+                          assignment={activeAssignments?.[role]} language={language}
+                          onSelect={handleRoleSelect} onRecertify={handleOpenRecert} t={t}
+                        />
+                      ))}
+
+                      <StaffGroupHeader expanded={legalExpanded} onToggle={() => setLegalExpanded(!legalExpanded)} icon={<Landmark className="h-4 w-4" />} label={t('staffRoles.legalGroup')} count={legalRoles.length} guideId="staff-legal-group" />
+                      {legalExpanded && legalRoles.map(role => (
                         <StaffRoleRow
                           key={role} role={role} isSelected={selectedRole === role}
                           hasUnsavedChanges={unsavedChanges.hasUnsavedChanges}

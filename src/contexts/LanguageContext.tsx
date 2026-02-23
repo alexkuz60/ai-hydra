@@ -1400,6 +1400,11 @@ const translations: Translations = {
    'staffRoles.seedAll': { ru: 'Обучить всех техников', en: 'Seed All Tech Roles' },
    'staffRoles.forceRefresh': { ru: 'Обновить брифинг', en: 'Force Refresh' },
    'staffRoles.otkGroup': { ru: 'Отдел ТехКонтроля (ОТК)', en: 'Quality Control Dept.' },
+   'staffRoles.legalGroup': { ru: 'Юридический отдел', en: 'Legal Department' },
+
+   // Role labels & descriptions - Patent Attorney
+   'role.patent_attorney': { ru: 'Патентовед', en: 'Patent Attorney' },
+   'staffRoles.description.patent_attorney': { ru: 'Патентовед. Анализирует решения на патентоспособность, ищет prior art, составляет формулу изобретения и описание по стандартам PCT/РФ.', en: 'Patent Attorney. Analyzes solutions for patentability, searches prior art, drafts patent claims and descriptions per PCT/RF standards.' },
 };
 
 interface LanguageContextType {
