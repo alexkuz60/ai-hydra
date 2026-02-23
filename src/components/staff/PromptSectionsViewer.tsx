@@ -18,6 +18,8 @@ interface PromptSectionsViewerProps {
   roleKey?: string;
   /** Full prompt text (needed for translation) */
   fullPromptText?: string;
+  /** Pre-existing EN translation from DB */
+  contentEn?: string | null;
 }
 
 /** Map standard section keys to EN titles */
@@ -37,6 +39,7 @@ const PromptSectionsViewer: React.FC<PromptSectionsViewerProps> = ({
   className,
   roleKey,
   fullPromptText,
+  contentEn,
 }) => {
   const { language } = useLanguage();
   const [activeTab, setActiveTab] = useState(sections[0]?.key || '');
@@ -45,7 +48,8 @@ const PromptSectionsViewer: React.FC<PromptSectionsViewerProps> = ({
   // Translation of the full prompt
   const { translatedContent, isTranslating, showTranslated } = usePromptContentTranslation(
     fullPromptText || '',
-    roleKey || 'unknown'
+    roleKey || 'unknown',
+    contentEn
   );
 
   // Parse translated content into sections
