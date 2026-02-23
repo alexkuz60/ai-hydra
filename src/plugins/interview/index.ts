@@ -15,6 +15,7 @@ import { technocriticPlugin, COMPETENCY_LABELS as TC_LABELS } from './technocrit
 import { technoarbiterPlugin, COMPETENCY_LABELS as TA_LABELS } from './technoarbiterPlugin';
 import { technomoderatorPlugin, COMPETENCY_LABELS as TM_LABELS } from './technomoderatorPlugin';
 import { translatorPlugin, COMPETENCY_LABELS as TR_LABELS } from './translatorPlugin';
+import { patentAttorneyPlugin, COMPETENCY_LABELS as PA_LABELS } from './patentAttorneyPlugin';
 
 // ── Registry ──
 
@@ -36,6 +37,8 @@ register(technocriticPlugin, TC_LABELS);
 register(technoarbiterPlugin, TA_LABELS);
 register(technomoderatorPlugin, TM_LABELS);
 register(translatorPlugin, TR_LABELS);
+// Legal department plugins
+register(patentAttorneyPlugin, PA_LABELS);
 
 // ── Public API ──
 

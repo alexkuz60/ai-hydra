@@ -67,6 +67,7 @@
     --hydra-technoarbiter: 55 80% 45%; /* gold-olive for techno-arbiter */
     --hydra-technomoderator: 215 75% 50%; /* steel blue for techno-moderator */
     --hydra-translator: 195 85% 45%; /* sky blue for translator */
+    --hydra-patent: 42 80% 48%; /* golden/amber for patent attorney */
     --hydra-memory: 260 70% 60%; /* violet for memory/embedding features */
     --hydra-cyan: 190 95% 50%; /* cyan for streaming/tech */
     /* Flow editor nodes */
@@ -148,6 +149,7 @@
     --hydra-technoarbiter: 55 85% 50%; /* gold-olive for techno-arbiter */
     --hydra-technomoderator: 215 80% 55%; /* steel blue for techno-moderator */
     --hydra-translator: 195 90% 50%; /* sky blue for translator */
+    --hydra-patent: 42 85% 53%; /* golden/amber for patent attorney */
     --hydra-memory: 260 75% 65%; /* violet for memory/embedding features */
     --hydra-cyan: 190 100% 55%; /* cyan for streaming/tech */
     /* Flow editor nodes - Dark */
