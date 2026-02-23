@@ -66,6 +66,10 @@ const MODEL_CHOICE_RATIONALE: Record<string, { ru: string; en: string }> = {
     ru: 'Gemini 3 Flash Preview — быстрая мультимодальная обработка веб-контента. Хорошо извлекает данные из разнородных страниц при минимальных затратах.',
     en: 'Gemini 3 Flash Preview — fast multimodal web content processing. Efficiently extracts data from diverse pages at minimal cost.',
   },
+  patent_attorney: {
+    ru: 'Gemini 2.5 Pro — глубокий аналитический потенциал и встроенный веб-поиск (Grounding). Идеален для патентного анализа, где важны точность, большой контекст и доступ к актуальным источникам.',
+    en: 'Gemini 2.5 Pro — deep analytical capabilities with built-in web search (Grounding). Ideal for patent analysis where accuracy, large context, and access to current sources matter.',
+  },
 };
 
 interface RoleSettingsSectionProps {

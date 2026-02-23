@@ -23,6 +23,8 @@ const BUILTIN_DEFAULTS: Record<string, string> = {
   toolsmith: 'anthropic/claude-3.5-haiku',             // fast code generation
   guide: 'deepseek/deepseek-chat-v3-0324',             // ultra-cheap, good quality
   webhunter: 'anthropic/claude-3.5-haiku',             // fast web content parsing
+  // Legal staff
+  patent_attorney: 'google/gemini-2.5-pro-preview',    // deep analysis + grounding/search
   // Technical staff judges (OTK) — need strong reasoning
   technocritic: 'anthropic/claude-sonnet-4',           // rigorous analysis
   technoarbiter: 'google/gemini-2.5-pro-preview',      // balanced judgment
