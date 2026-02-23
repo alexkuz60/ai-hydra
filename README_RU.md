@@ -8,7 +8,7 @@
   ![License](https://img.shields.io/badge/license-MIT-blue?style=flat-square)
   ![Stack](https://img.shields.io/badge/stack-React%2018%20%2B%20TypeScript%20%2B%20Supabase-8b5cf6?style=flat-square)
   ![Models](https://img.shields.io/badge/providers-10+-cyan?style=flat-square)
-  ![Roles](https://img.shields.io/badge/agent--roles-16-orange?style=flat-square)
+  ![Roles](https://img.shields.io/badge/agent--roles-17-orange?style=flat-square)
 </div>
 
 ---
@@ -57,7 +57,7 @@ Hydra строится по принципу **живой архитектуры
 |-----------|------|
 | **Экспертные** | Assistant, Critic, Arbiter, Consultant, Moderator, Advisor, Archivist, Analyst, Webhunter |
 | **Технические** | Prompt Engineer, Flow Regulator, Toolsmith |
-| **Системные** | Guide, Technocritic, Technoarbiter, Technomoderator |
+| **Системные** | Guide, Technocritic, Technoarbiter, Technomoderator, Translator |
 
 **D-Chat (Консультант-панель)** — Боковая панель для одиночных экспертных запросов с режимом Moderator, перенос результатов в основной чат, независимый выбор модели/роли
 
