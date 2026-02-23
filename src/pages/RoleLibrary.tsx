@@ -6,7 +6,7 @@
  import { Button } from '@/components/ui/button';
  import { Input } from '@/components/ui/input';
  import { Table, TableBody } from '@/components/ui/table';
- import { Loader2, Search, Plus, Library, ChevronDown, ChevronRight, FileText } from 'lucide-react';
+ import { Loader2, Search, Plus, Library, FileText } from 'lucide-react';
  import {
    Select,
    SelectContent,
@@ -44,14 +44,10 @@
  
  type OwnerFilter = 'all' | 'own' | 'shared' | 'system';
  
- // Group prompts by language
- type LanguageGroup = 'ru' | 'en' | 'auto';
- 
- const LANGUAGE_ORDER: LanguageGroup[] = ['ru', 'en', 'auto'];
  
  export default function RoleLibrary() {
    const { user, loading: authLoading } = useAuth();
-   const { t } = useLanguage();
+   const { t, language } = useLanguage();
    const navigate = useNavigate();
  
    // CRUD hook
@@ -73,8 +69,6 @@
    // Delete dialog
    const [promptToDelete, setPromptToDelete] = useState<RolePrompt | null>(null);
  
-   // Collapsed groups
-   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
  
    // Unsaved changes protection
    const unsavedChanges = useUnsavedChanges();
@@ -89,59 +83,32 @@
      }
    }, [user, authLoading, navigate]);
  
-   // Filter prompts
-   const filteredPrompts = useMemo(() => {
-     return prompts.filter((prompt) => {
-       const matchesSearch =
-         prompt.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-         prompt.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
-         (prompt.description?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false);
+    // Filter prompts — show only prompts matching the user's selected language
+    const filteredPrompts = useMemo(() => {
+      return prompts.filter((prompt) => {
+        const matchesSearch =
+          prompt.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          prompt.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          (prompt.description?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false);
+
+        if (!matchesSearch) return false;
+
+        // Language filter: show prompts matching user's language (+ auto)
+        const promptLang = prompt.language || 'auto';
+        if (promptLang !== 'auto' && promptLang !== language) return false;
+
+        // Role filter
+        if (roleFilter !== 'all' && prompt.role !== roleFilter) return false;
+
+        // Owner filter
+        if (ownerFilter === 'own' && !prompt.is_owner) return false;
+        if (ownerFilter === 'shared' && !prompt.is_shared) return false;
+        if (ownerFilter === 'system' && !prompt.is_default) return false;
+
+        return true;
+      });
+    }, [prompts, searchQuery, roleFilter, ownerFilter, language]);
  
-       if (!matchesSearch) return false;
- 
-       // Role filter
-       if (roleFilter !== 'all' && prompt.role !== roleFilter) return false;
- 
-       // Owner filter
-       if (ownerFilter === 'own' && !prompt.is_owner) return false;
-       if (ownerFilter === 'shared' && !prompt.is_shared) return false;
-       if (ownerFilter === 'system' && !prompt.is_default) return false;
- 
-       return true;
-     });
-   }, [prompts, searchQuery, roleFilter, ownerFilter]);
- 
-   // Group by language
-   const groupedPrompts = useMemo(() => {
-     const groups: Record<LanguageGroup, RolePrompt[]> = { ru: [], en: [], auto: [] };
-     
-     for (const prompt of filteredPrompts) {
-       const lang = (prompt.language as LanguageGroup) || 'auto';
-       groups[lang].push(prompt);
-     }
-     
-     return groups;
-   }, [filteredPrompts]);
- 
-   const toggleGroup = (group: string) => {
-     setCollapsedGroups(prev => {
-       const next = new Set(prev);
-       if (next.has(group)) {
-         next.delete(group);
-       } else {
-         next.add(group);
-       }
-       return next;
-     });
-   };
- 
-   const getLanguageLabel = (lang: LanguageGroup) => {
-     switch (lang) {
-       case 'ru': return t('roleLibrary.languageRu');
-       case 'en': return t('roleLibrary.languageEn');
-       default: return t('roleLibrary.languageAuto');
-     }
-   };
  
    // Handlers
    const handleSelectPrompt = (prompt: RolePrompt) => {
@@ -419,50 +386,21 @@
                        </p>
                      </div>
                    </div>
-                 ) : (
-                   <div className="divide-y">
-                     {LANGUAGE_ORDER
-                       .filter(lang => groupedPrompts[lang].length > 0)
-                       .map((lang) => {
-                         const promptsInGroup = groupedPrompts[lang];
-                         const isCollapsed = collapsedGroups.has(lang);
- 
-                         return (
-                           <div key={lang}>
-                             <button
-                               onClick={() => toggleGroup(lang)}
-                               className="w-full flex items-center gap-2 px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-muted/50 transition-colors"
-                             >
-                               {isCollapsed ? (
-                                 <ChevronRight className="h-4 w-4" />
-                               ) : (
-                                 <ChevronDown className="h-4 w-4" />
-                               )}
-                               <span>{getLanguageLabel(lang)}</span>
-                               <span className="ml-auto text-xs bg-muted px-1.5 py-0.5 rounded">
-                                 {promptsInGroup.length}
-                               </span>
-                             </button>
-                             {!isCollapsed && (
-                               <Table>
-                                 <TableBody>
-                                   {promptsInGroup.map((prompt) => (
-                                      <PromptRow
-                                        key={prompt.id}
-                                        prompt={prompt}
-                                        isSelected={selectedPrompt?.id === prompt.id}
-                                        hasUnsavedChanges={selectedPrompt?.id === prompt.id && unsavedChanges.hasUnsavedChanges}
-                                        onSelect={handleSelectPrompt}
-                                      />
-                                   ))}
-                                 </TableBody>
-                               </Table>
-                             )}
-                           </div>
-                         );
-                       })}
-                   </div>
-                 )}
+                  ) : (
+                    <Table>
+                      <TableBody>
+                        {filteredPrompts.map((prompt) => (
+                          <PromptRow
+                            key={prompt.id}
+                            prompt={prompt}
+                            isSelected={selectedPrompt?.id === prompt.id}
+                            hasUnsavedChanges={selectedPrompt?.id === prompt.id && unsavedChanges.hasUnsavedChanges}
+                            onSelect={handleSelectPrompt}
+                          />
+                        ))}
+                      </TableBody>
+                    </Table>
+                  )}
                </div>
               </div>
               )}
