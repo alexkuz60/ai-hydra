@@ -639,7 +639,61 @@ Despite these limitations, we argue that Hydra demonstrates a **viable architect
 
 ---
 
-## 10. Conclusion
+## 10. Future Directions: Legal Role Category and AI-Patenting Vision
+
+### 10.1 The Legal Department
+
+Hydra's organizational metaphor naturally extends to domains beyond engineering and analysis. Phase 3 of the roadmap introduces a new **Legal** role category — the first role being the **Patent Attorney** (`patent_attorney`).
+
+The Patent Attorney operates in two complementary modes:
+
+| Mode | Function | Integration |
+|------|----------|-------------|
+| **Patent Search** | Analyze task outcomes to identify novel elements; formulate prior art search queries for USPTO, EPO, Google Patents, ФИПС | Webhunter / Firecrawl tools |
+| **Application Drafting** | Generate claims (формула изобретения) and structure descriptions according to PCT / national standards | Role knowledge base (patent law corpus) |
+
+```mermaid
+graph LR
+    T["📋 Task Solution<br/>User's creative output"]
+    PA["⚖️ Patent Attorney<br/>Novelty analysis"]
+    S["🔍 Patent Search<br/>Prior art via<br/>Webhunter/Firecrawl"]
+    D["📝 Application Draft<br/>Claims + Description<br/>PCT format"]
+    
+    T --> PA
+    PA --> S
+    PA --> D
+    S -->|"Prior art report"| D
+    
+    style T fill:#64748b,color:#fff
+    style PA fill:#d97706,color:#fff
+    style S fill:#3b82f6,color:#fff
+    style D fill:#10b981,color:#fff
+```
+
+The Legal category is designed as an extensible framework: future roles may include Compliance Officer (regulatory analysis), IP Strategist (portfolio management), and License Auditor (open-source license compatibility).
+
+### 10.2 AI as Co-Inventor: A Paradigm Shift
+
+The current legal landscape is often cited as a barrier to AI-assisted patenting: USPTO, EPO, and Australian courts have rejected DABUS applications naming AI as the sole inventor. However, this framing misses the deeper trajectory:
+
+1. **The legal frontier is rapidly evolving.** The EU AI Act (2024), USPTO's February 2024 guidance on AI-assisted inventions, and the UK's ongoing consultations all signal a shift toward recognizing AI contributions within human-directed inventive processes.
+
+2. **Hydra's architecture is uniquely positioned.** Because every AI contribution in Hydra is:
+   - **Traceable** (role contracts, session logs, model dossiers)
+   - **Verified** (four-tier verification, arbiter evaluations)
+   - **Human-governed** (supervisor approval, hierarchy, evolution chronicles)
+   
+   The system naturally produces the **audit trail** that emerging patent frameworks will likely require — demonstrating that a human inventor directed, evaluated, and selected the AI-generated contributions.
+
+3. **The symbiotic paradigm reframes the question.** Rather than asking "Can AI be an inventor?", Hydra demonstrates a more productive framing: **"How can we document and verify the human-AI collaborative process that produces inventions?"** The answer is: through exactly the kind of formalized role contracts, multi-level verification, and calibrated trust signals that Hydra already implements.
+
+> **Prediction:** Within 3–5 years, patent offices will require structured documentation of AI involvement in the inventive process. Systems like Hydra — with their built-in audit trails, role accountability, and verification chains — will become not just useful but **legally necessary** infrastructure for innovation teams.
+
+The Patent Attorney role in Hydra is therefore not merely a convenience feature — it is an early implementation of what we believe will become a standard component of AI-augmented creative and engineering workflows.
+
+---
+
+## 11. Conclusion
 
 The gap between the proven potential and the actual practice of human-AI collaboration is not a technology problem — it is an **architecture and organization design problem.** Models are powerful enough; what's missing is the scaffolding that enables productive partnership.
 
