@@ -154,6 +154,7 @@ Lovable Cloud (Supabase)
 | `flow-runtime` | Flow diagram execution |
 | `flow-logistics` | Flow logistics management |
 | `translate-text` | Reasoning block translation |
+| `refine-translation` | Granular translation refinement (Tier 4) |
 | `generate-embeddings` | Vector embedding generation |
 | `seed-role-knowledge` | Role knowledge base seeding |
 | `sync-guide-knowledge` | Guide knowledge synchronization |
@@ -285,7 +286,7 @@ src/
 ├── styles/             # Design system docs
 └── types/              # TypeScript definitions
 
-supabase/functions/     # 16 Edge Functions
+supabase/functions/     # 17 Edge Functions
 ```
 
 ---
