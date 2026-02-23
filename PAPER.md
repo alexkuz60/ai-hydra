@@ -167,10 +167,11 @@ Multiple models respond to the same prompt simultaneously. An AI Arbiter evaluat
 Two models are presented with the same task and their responses are compared head-to-head. The Arbiter provides meta-criticism of both responses. This mechanic exploits the principle that **it is easier to compare two solutions than to evaluate one in isolation**.
 
 **Tier 3 — Technical Quality Control (OTK System):**
-Three specialized system roles form an internal quality control department:
+Four specialized system roles form an internal quality control department:
 - **Techno-Critic**: identifies logical inconsistencies, factual errors, and missing context
 - **Techno-Arbiter**: resolves disagreements between expert roles using formal criteria
 - **Techno-Moderator**: ensures communication protocols are followed, removes noise from outputs
+- **Translator**: ensures bilingual (RU↔EN) translation accuracy, enforces glossary consistency, and verifies semantic preservation (cosine similarity ≥ 0.85) across all system outputs
 
 **Tier 4 — Translation Semantic Verification:**
 Hydra's bilingual architecture (RU/EN) processes every translation — chat messages, prompts, knowledge base entries — through a dedicated **semantic similarity assessment** pipeline. After an LLM produces a translation, a second LLM (acting as a semantic judge) rates meaning preservation on a 0.0–1.0 scale. Translations falling below configurable quality thresholds are automatically rejected:
