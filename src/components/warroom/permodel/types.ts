@@ -78,16 +78,16 @@ export interface ToolSettings {
 
 export type SearchProvider = 'tavily' | 'perplexity' | 'both';
 
-export const TOOL_INFO: Record<ToolId, { name: string; description: string; icon: string }> = {
-  calculator: { name: 'Калькулятор', description: 'Математические вычисления', icon: '🧮' },
-  current_datetime: { name: 'Дата/Время', description: 'Текущая дата и время', icon: '🕐' },
-  web_search: { name: 'Веб-поиск', description: 'Поиск в интернете', icon: '🔍' },
+export const TOOL_INFO: Record<ToolId, { name: { ru: string; en: string }; description: { ru: string; en: string }; icon: string }> = {
+  calculator: { name: { ru: 'Калькулятор', en: 'Calculator' }, description: { ru: 'Математические вычисления', en: 'Math calculations' }, icon: '🧮' },
+  current_datetime: { name: { ru: 'Дата/Время', en: 'Date/Time' }, description: { ru: 'Текущая дата и время', en: 'Current date and time' }, icon: '🕐' },
+  web_search: { name: { ru: 'Веб-поиск', en: 'Web Search' }, description: { ru: 'Поиск в интернете', en: 'Search the internet' }, icon: '🔍' },
 };
 
-export const SEARCH_PROVIDER_INFO: Record<SearchProvider, { name: string; description: string }> = {
-  tavily: { name: 'Tavily', description: 'Бесплатный (1000 запросов/мес)' },
-  perplexity: { name: 'Perplexity', description: 'Требуется API-ключ' },
-  both: { name: 'Оба', description: 'Два результата в одном ответе' },
+export const SEARCH_PROVIDER_INFO: Record<SearchProvider, { name: string; description: { ru: string; en: string } }> = {
+  tavily: { name: 'Tavily', description: { ru: 'Бесплатный (1000 запросов/мес)', en: 'Free (1000 requests/month)' } },
+  perplexity: { name: 'Perplexity', description: { ru: 'Требуется API-ключ', en: 'API key required' } },
+  both: { name: 'Оба', description: { ru: 'Два результата в одном ответе', en: 'Two results in one response' } },
 };
 
 export interface SingleModelSettings {
