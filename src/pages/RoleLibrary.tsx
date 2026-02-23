@@ -6,7 +6,7 @@
  import { Button } from '@/components/ui/button';
  import { Input } from '@/components/ui/input';
  import { Table, TableBody } from '@/components/ui/table';
- import { Loader2, Search, Plus, Library, FileText } from 'lucide-react';
+ import { Loader2, Search, Plus, Library, FileText, Shield, User } from 'lucide-react';
  import {
    Select,
    SelectContent,
@@ -32,7 +32,7 @@
  import { UnsavedChangesDialog } from '@/components/ui/unsaved-changes-dialog';
  import { usePromptsCRUD, RolePrompt, PromptFormData, getEmptyPromptFormData, promptToFormData, generatePromptName } from '@/hooks/usePromptsCRUD';
  import { useUnsavedChanges } from '@/hooks/useUnsavedChanges';
- import { PromptRow } from '@/components/prompts/PromptRow';
+ import { PromptRow, PromptGroupHeader } from '@/components/prompts/PromptRow';
  import { PromptDetailsPanel } from '@/components/prompts/PromptDetailsPanel';
  import { AdvancedPromptEditor } from '@/components/prompts/AdvancedPromptEditor';
  import { RoleSelectOptions } from '@/components/ui/RoleSelectItem';
@@ -386,21 +386,48 @@
                        </p>
                      </div>
                    </div>
-                  ) : (
-                    <Table>
-                      <TableBody>
-                        {filteredPrompts.map((prompt) => (
-                          <PromptRow
-                            key={prompt.id}
-                            prompt={prompt}
-                            isSelected={selectedPrompt?.id === prompt.id}
-                            hasUnsavedChanges={selectedPrompt?.id === prompt.id && unsavedChanges.hasUnsavedChanges}
-                            onSelect={handleSelectPrompt}
-                          />
-                        ))}
-                      </TableBody>
-                    </Table>
-                  )}
+                   ) : (
+                     <Table>
+                       <TableBody>
+                         {(() => {
+                           const systemPrompts = filteredPrompts.filter(p => p.is_default);
+                           const userPrompts = filteredPrompts.filter(p => !p.is_default);
+                           return (
+                             <>
+                               {systemPrompts.length > 0 && (
+                                 <>
+                                   <PromptGroupHeader label={t('roleLibrary.filterSystem')} icon={Shield} />
+                                   {systemPrompts.map((prompt) => (
+                                     <PromptRow
+                                       key={prompt.id}
+                                       prompt={prompt}
+                                       isSelected={selectedPrompt?.id === prompt.id}
+                                       hasUnsavedChanges={selectedPrompt?.id === prompt.id && unsavedChanges.hasUnsavedChanges}
+                                       onSelect={handleSelectPrompt}
+                                     />
+                                   ))}
+                                 </>
+                               )}
+                               {userPrompts.length > 0 && (
+                                 <>
+                                   <PromptGroupHeader label={t('roleLibrary.filterOwn')} icon={User} />
+                                   {userPrompts.map((prompt) => (
+                                     <PromptRow
+                                       key={prompt.id}
+                                       prompt={prompt}
+                                       isSelected={selectedPrompt?.id === prompt.id}
+                                       hasUnsavedChanges={selectedPrompt?.id === prompt.id && unsavedChanges.hasUnsavedChanges}
+                                       onSelect={handleSelectPrompt}
+                                     />
+                                   ))}
+                                 </>
+                               )}
+                             </>
+                           );
+                         })()}
+                       </TableBody>
+                     </Table>
+                   )}
                </div>
               </div>
               )}
