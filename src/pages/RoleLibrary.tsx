@@ -24,11 +24,16 @@
    AlertDialogHeader,
    AlertDialogTitle,
  } from '@/components/ui/alert-dialog';
- import {
-   ResizablePanelGroup,
-   ResizablePanel,
-   ResizableHandle,
- } from '@/components/ui/resizable';
+import {
+    Collapsible,
+    CollapsibleContent,
+    CollapsibleTrigger,
+  } from '@/components/ui/collapsible';
+  import {
+    ResizablePanelGroup,
+    ResizablePanel,
+    ResizableHandle,
+  } from '@/components/ui/resizable';
  import { UnsavedChangesDialog } from '@/components/ui/unsaved-changes-dialog';
  import { usePromptsCRUD, RolePrompt, PromptFormData, getEmptyPromptFormData, promptToFormData, generatePromptName } from '@/hooks/usePromptsCRUD';
  import { useUnsavedChanges } from '@/hooks/useUnsavedChanges';
@@ -387,46 +392,58 @@
                      </div>
                    </div>
                    ) : (
-                     <Table>
-                       <TableBody>
-                         {(() => {
-                           const systemPrompts = filteredPrompts.filter(p => p.is_default);
-                           const userPrompts = filteredPrompts.filter(p => !p.is_default);
-                           return (
-                             <>
-                               {systemPrompts.length > 0 && (
-                                 <>
-                                   <PromptGroupHeader label={t('roleLibrary.filterSystem')} icon={Shield} />
-                                   {systemPrompts.map((prompt) => (
-                                     <PromptRow
-                                       key={prompt.id}
-                                       prompt={prompt}
-                                       isSelected={selectedPrompt?.id === prompt.id}
-                                       hasUnsavedChanges={selectedPrompt?.id === prompt.id && unsavedChanges.hasUnsavedChanges}
-                                       onSelect={handleSelectPrompt}
-                                     />
-                                   ))}
-                                 </>
-                               )}
-                               {userPrompts.length > 0 && (
-                                 <>
-                                   <PromptGroupHeader label={t('roleLibrary.filterOwn')} icon={User} />
-                                   {userPrompts.map((prompt) => (
-                                     <PromptRow
-                                       key={prompt.id}
-                                       prompt={prompt}
-                                       isSelected={selectedPrompt?.id === prompt.id}
-                                       hasUnsavedChanges={selectedPrompt?.id === prompt.id && unsavedChanges.hasUnsavedChanges}
-                                       onSelect={handleSelectPrompt}
-                                     />
-                                   ))}
-                                 </>
-                               )}
-                             </>
-                           );
-                         })()}
-                       </TableBody>
-                     </Table>
+                     (() => {
+                       const systemPrompts = filteredPrompts.filter(p => p.is_default);
+                       const userPrompts = filteredPrompts.filter(p => !p.is_default);
+                       return (
+                         <div className="space-y-0">
+                           {systemPrompts.length > 0 && (
+                             <Collapsible defaultOpen>
+                               <CollapsibleTrigger className="w-full">
+                                 <PromptGroupHeader label={t('roleLibrary.filterSystem')} icon={Shield} count={systemPrompts.length} />
+                               </CollapsibleTrigger>
+                               <CollapsibleContent>
+                                 <Table>
+                                   <TableBody>
+                                     {systemPrompts.map((prompt) => (
+                                       <PromptRow
+                                         key={prompt.id}
+                                         prompt={prompt}
+                                         isSelected={selectedPrompt?.id === prompt.id}
+                                         hasUnsavedChanges={selectedPrompt?.id === prompt.id && unsavedChanges.hasUnsavedChanges}
+                                         onSelect={handleSelectPrompt}
+                                       />
+                                     ))}
+                                   </TableBody>
+                                 </Table>
+                               </CollapsibleContent>
+                             </Collapsible>
+                           )}
+                           {userPrompts.length > 0 && (
+                             <Collapsible defaultOpen>
+                               <CollapsibleTrigger className="w-full">
+                                 <PromptGroupHeader label={t('roleLibrary.filterOwn')} icon={User} count={userPrompts.length} />
+                               </CollapsibleTrigger>
+                               <CollapsibleContent>
+                                 <Table>
+                                   <TableBody>
+                                     {userPrompts.map((prompt) => (
+                                       <PromptRow
+                                         key={prompt.id}
+                                         prompt={prompt}
+                                         isSelected={selectedPrompt?.id === prompt.id}
+                                         hasUnsavedChanges={selectedPrompt?.id === prompt.id && unsavedChanges.hasUnsavedChanges}
+                                         onSelect={handleSelectPrompt}
+                                       />
+                                     ))}
+                                   </TableBody>
+                                 </Table>
+                               </CollapsibleContent>
+                             </Collapsible>
+                           )}
+                         </div>
+                       );
+                     })()
                    )}
                </div>
               </div>
