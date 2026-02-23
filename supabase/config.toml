@@ -44,3 +44,6 @@ verify_jwt = false
 
 [functions.patent-search]
 verify_jwt = false
+
+[functions.patent-deep-analysis]
+verify_jwt = false
