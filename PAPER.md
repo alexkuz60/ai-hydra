@@ -758,6 +758,7 @@ AI:        11 providers via gateway + direct API integration
 | HYDRA-EVO-002 | 2026-02-19 | Consultant model | Switch to Flash-tier by default with auto-escalation → -57% latency, -74% cost | ⏳ Awaiting test |
 | HYDRA-EVO-003 | 2026-02-19 | Architecture | Create Evolution Department (Evolutioner + Chronicler roles) | ✅ Approved |
 | HYDRA-EVO-004 | 2026-02-20 | Memory Hub | Modularize monolithic page: 4225 → 115 lines (11 modules) | ✅ Approved |
+| HYDRA-EVO-005 | 2026-02-23 | Translator pipeline | Granular semantic verification: sentence-level scoring + auto-refinement of weak phrases (0.65 → 1.0); Translator role added to QC Tier 3 | ✅ Implemented |
 
 ---
 
