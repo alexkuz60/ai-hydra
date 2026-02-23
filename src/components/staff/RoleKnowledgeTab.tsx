@@ -163,15 +163,16 @@ export default function RoleKnowledgeTab({ role }: RoleKnowledgeTabProps) {
   }, [role, language, fetchEntries]);
 
   // Group entries by source
+  const isEn = language !== 'ru';
   const groupedEntries = entries.reduce((acc, entry) => {
     const key = entry.source_title || (language === 'ru' ? '(без источника)' : '(no source)');
-    if (!acc[key]) acc[key] = [];
-    acc[key].push(entry);
+    if (!acc[key]) acc[key] = { items: [], titleEn: entry.source_title_en || null };
+    acc[key].items.push(entry);
     return acc;
-  }, {} as Record<string, RoleKnowledgeEntry[]>);
+  }, {} as Record<string, { items: RoleKnowledgeEntry[]; titleEn: string | null }>);
 
   // Filter
-  const filteredGroups = Object.entries(groupedEntries).filter(([title, items]) => {
+  const filteredGroups = Object.entries(groupedEntries).filter(([title, { items }]) => {
     const matchesSearch = !searchQuery ||
       title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       items.some(i => i.content.toLowerCase().includes(searchQuery.toLowerCase()));
@@ -449,12 +450,14 @@ export default function RoleKnowledgeTab({ role }: RoleKnowledgeTabProps) {
       ) : (
         <ScrollArea className="max-h-[400px]">
           <div className="space-y-3">
-            {filteredGroups.map(([sourceTitle, items]) => (
+            {filteredGroups.map(([sourceTitle, { items, titleEn }]) => {
+              const displayTitle = isEn && titleEn ? titleEn : sourceTitle;
+              return (
               <div key={sourceTitle} className="rounded-lg border border-border p-3 space-y-2">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2 min-w-0">
                     <FileText className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                    <span className="text-sm font-medium truncate">{sourceTitle}</span>
+                    <span className="text-sm font-medium truncate">{displayTitle}</span>
                     <Badge variant="outline" className="text-[10px] shrink-0">
                       {items.length} {language === 'ru' ? 'чанк.' : 'ch.'}
                     </Badge>
@@ -485,7 +488,7 @@ export default function RoleKnowledgeTab({ role }: RoleKnowledgeTabProps) {
                       onClick={() => setDeleteConfirm({
                         type: 'source',
                         id: items[0]?.source_title || '',
-                        label: sourceTitle,
+                        label: displayTitle,
                       })}
                     >
                       <Trash2 className="h-3 w-3" />
@@ -497,7 +500,8 @@ export default function RoleKnowledgeTab({ role }: RoleKnowledgeTabProps) {
                   {items[0]?.content}
                 </p>
               </div>
-            ))}
+              );
+            })}
           </div>
         </ScrollArea>
       )}

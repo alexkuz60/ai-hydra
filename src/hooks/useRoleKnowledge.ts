@@ -9,6 +9,7 @@ export interface RoleKnowledgeEntry {
   role: string;
   content: string;
   source_title: string | null;
+  source_title_en: string | null;
   source_url: string | null;
   category: string;
   version: string | null;
