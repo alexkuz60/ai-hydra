@@ -3,7 +3,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { TableRow, TableCell } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { Users, Lock, FileText } from 'lucide-react';
+import { Users, Lock, FileText, Shield, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { getRoleBadgeColor } from '@/config/roles';
@@ -100,3 +100,16 @@ interface PromptRowProps {
       </TableRow>
     );
   }
+
+export function PromptGroupHeader({ label, icon: Icon }: { label: string; icon: React.ElementType }) {
+  return (
+    <TableRow className="hover:bg-transparent pointer-events-none">
+      <TableCell colSpan={2} className="py-2 px-6">
+        <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          <Icon className="h-3.5 w-3.5" />
+          <span>{label}</span>
+        </div>
+      </TableCell>
+    </TableRow>
+  );
+}
