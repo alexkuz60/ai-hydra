@@ -20,9 +20,18 @@ export function useStaffSeedActions({ technicalRoles, language }: UseStaffSeedAc
     let skipped = 0;
 
     try {
+      // Check which roles need force re-seed (missing source_title_en)
+      const { data: missingEn } = await supabase
+        .from('role_knowledge')
+        .select('role')
+        .is('source_title_en', null)
+        .in('category', ['documentation', 'standard', 'procedure', 'system_prompt']);
+      const rolesNeedingForce = new Set(missingEn?.map(r => r.role) || []);
+
       for (const role of technicalRoles) {
+        const needsForce = rolesNeedingForce.has(role);
         const { data, error } = await supabase.functions.invoke('seed-role-knowledge', {
-          body: { role, include_system_prompt: true, force: false },
+          body: { role, include_system_prompt: true, force: needsForce },
         });
         if (error) { console.error(`[BulkSeed] Error for ${role}:`, error); continue; }
         if (data?.skipped) { skipped++; }
