@@ -101,15 +101,12 @@ interface PromptRowProps {
     );
   }
 
-export function PromptGroupHeader({ label, icon: Icon }: { label: string; icon: React.ElementType }) {
+export function PromptGroupHeader({ label, icon: Icon, count }: { label: string; icon: React.ElementType; count: number }) {
   return (
-    <TableRow className="hover:bg-transparent pointer-events-none">
-      <TableCell colSpan={2} className="py-2 px-6">
-        <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          <Icon className="h-3.5 w-3.5" />
-          <span>{label}</span>
-        </div>
-      </TableCell>
-    </TableRow>
+    <div className="flex items-center gap-2 px-6 py-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground cursor-pointer hover:text-foreground transition-colors">
+      <Icon className="h-3.5 w-3.5" />
+      <span>{label}</span>
+      <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 ml-auto">{count}</Badge>
+    </div>
   );
 }
