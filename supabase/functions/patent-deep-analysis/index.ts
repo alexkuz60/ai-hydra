@@ -273,13 +273,20 @@ async function synthesizeBestResponse(
     return { text: successfulVariants[0].text, token_count: successfulVariants[0].token_count, elapsed_ms: 0 };
   }
 
-  const variantsBlock = successfulVariants.map((v, i) =>
+  const advocateVariant = successfulVariants.find(v => v.config_label === 'devils_advocate');
+  const regularVariants = successfulVariants.filter(v => v.config_label !== 'devils_advocate');
+
+  const variantsBlock = regularVariants.map((v, i) =>
     `### Вариант ${i + 1} (${v.config_label}, ${v.token_count} токенов, temp=${v.config.temperature})\n${v.text}`
   ).join('\n\n---\n\n');
 
+  const advocateBlock = advocateVariant
+    ? `\n\n---\n\n### 🔴 АДВОКАТ ДЬЯВОЛА (контраргументы и причины для отказа):\n${advocateVariant.text}`
+    : '';
+
   const synthesisPrompt = isRu
-    ? `Ты — экспертный синтезатор для патентного анализа. Тебе предоставлены несколько вариантов ответа на одну и ту же задачу, сгенерированных с разными параметрами.\n\n## Исходная задача:\n${taskPrompt}\n\n## Варианты ответов:\n${variantsBlock}\n\n## Твоя задача:\n1. Проанализируй все варианты\n2. Выбери ЛУЧШИЕ формулировки, аргументы и структуры из каждого варианта\n3. Составь единый ОПТИМАЛЬНЫЙ ответ, объединяя сильные стороны всех вариантов\n4. Убери повторы, противоречия и слабые места\n5. Результат должен быть ПОЛНЕЕ и ТОЧНЕЕ любого отдельного варианта\n\nВерни только финальный синтезированный ответ, без метакомментариев.`
-    : `You are an expert synthesizer for patent analysis. You are given multiple response variants for the same task, generated with different parameters.\n\n## Original task:\n${taskPrompt}\n\n## Response variants:\n${variantsBlock}\n\n## Your task:\n1. Analyze all variants\n2. Select the BEST formulations, arguments, and structures from each\n3. Compose a single OPTIMAL response combining strengths of all variants\n4. Remove duplicates, contradictions, and weak points\n5. The result should be MORE COMPLETE and PRECISE than any single variant\n\nReturn only the final synthesized response, no meta-commentary.`;
+    ? `Ты — экспертный синтезатор для патентного анализа. Тебе предоставлены несколько вариантов ответа на одну задачу И контраргументы от «Адвоката дьявола».\n\n## Исходная задача:\n${taskPrompt}\n\n## Варианты ответов:\n${variantsBlock}${advocateBlock}\n\n## Твоя задача:\n1. Проанализируй все варианты И аргументы Адвоката дьявола\n2. ОБЯЗАТЕЛЬНО учти контраргументы — если Адвокат дьявола нашёл обоснованные причины для отказа, они ДОЛЖНЫ быть отражены в финальном заключении\n3. Объедини сильные стороны аналитических вариантов\n4. Если аргументы «за» не перевешивают аргументы «против» — ЧЕСТНО скажи: патентный потенциал отсутствует\n5. Не «натягивай сову на глобус» — честный отказ лучше ложного одобрения\n\nВерни только финальный синтезированный ответ.`
+    : `You are an expert synthesizer for patent analysis. You are given multiple response variants AND counter-arguments from the "Devil's Advocate."\n\n## Original task:\n${taskPrompt}\n\n## Response variants:\n${variantsBlock}${advocateBlock}\n\n## Your task:\n1. Analyze all variants AND Devil's Advocate arguments\n2. MANDATORY: account for counter-arguments — if the Devil's Advocate found substantiated reasons for rejection, they MUST be reflected in the final conclusion\n3. Combine strengths of analytical variants\n4. If arguments "for" don't outweigh arguments "against" — HONESTLY state: no patent potential\n5. An honest rejection is better than a false approval\n\nReturn only the final synthesized response.`;
 
   const startTime = Date.now();
   try {
@@ -349,6 +356,7 @@ const DEFAULT_CONFIGS: AnalysisConfig[] = [
   { label: 'precise', max_tokens: 4096, temperature: 0.3, idle_timeout_ms: 60_000 },
   { label: 'balanced', max_tokens: 6144, temperature: 0.5, idle_timeout_ms: 60_000 },
   { label: 'creative', max_tokens: 4096, temperature: 0.8, idle_timeout_ms: 60_000 },
+  { label: 'devils_advocate', max_tokens: 6144, temperature: 0.4, idle_timeout_ms: 90_000 },
 ];
 
 // ──────────────────────────────────────────────
@@ -425,6 +433,11 @@ serve(async (req) => {
     const baseline = targetStep.baseline?.current_value || '';
     const briefText = (session.briefing_data as any)?.brief_text || '';
 
+    // ── Adversarial system prompt for devil's advocate pass ──
+    const DEVILS_ADVOCATE_SYSTEM = language === 'ru'
+      ? 'Ты — эксперт патентного ведомства с высоким процентом отклонений заявок. Твоя задача — найти ВСЕ причины для отказа. Не одобряй без глубочайшего анализа. Каждый одобренный без анализа элемент — профессиональная ошибка. Ищи: очевидные комбинации, отсутствие технического эффекта, абстрактные формулировки, программы для ЭВМ как таковые, бизнес-методы.'
+      : 'You are a patent office expert known for a high rejection rate. Your task is to find ALL reasons for rejection. Do not approve without deepest analysis. Every element approved without analysis is a professional error. Look for: obvious combinations, lack of technical effect, abstract formulations, computer programs as such, business methods.';
+
     let fullPrompt = taskPrompt;
     if (baseline) {
       fullPrompt += `\n\n---\n## Текущее состояние (baseline):\n${baseline}`;
@@ -453,9 +466,14 @@ serve(async (req) => {
           const config = configs[i];
           send('config_start', { config_index: i, label: config.label });
 
+          // Use adversarial system prompt for devil's advocate pass
+          const systemPromptForConfig = config.label === 'devils_advocate'
+            ? DEVILS_ADVOCATE_SYSTEM
+            : briefText;
+
           const variant = await streamWithAdaptiveRetry(
             supabaseUrl, supabaseKey, authHeader,
-            fullPrompt, briefText, model_id, config, send,
+            fullPrompt, systemPromptForConfig, model_id, config, send,
           );
 
           variants.push(variant);
