@@ -13,6 +13,17 @@ interface PromptSectionsViewerProps {
   className?: string;
 }
 
+/** Map standard section keys to EN titles */
+const SECTION_TITLES_EN: Record<string, string> = {
+  identity: 'Identity',
+  competencies: 'Competencies',
+  methodology: 'Methodology',
+  format: 'Response Format',
+  teamwork: 'Collaboration',
+  limitations: 'Limitations',
+  supervisor: 'Supervisor Wishes',
+};
+
 const PromptSectionsViewer: React.FC<PromptSectionsViewerProps> = ({
   title,
   sections,
@@ -21,6 +32,14 @@ const PromptSectionsViewer: React.FC<PromptSectionsViewerProps> = ({
   const { t, language } = useLanguage();
   const [activeTab, setActiveTab] = useState(sections[0]?.key || '');
   const lang = (language === 'ru' || language === 'en') ? language : 'ru';
+
+  /** Get localized section title */
+  const getSectionTitle = (section: PromptSection) => {
+    if (lang === 'en' && !section.isCustom && SECTION_TITLES_EN[section.key]) {
+      return SECTION_TITLES_EN[section.key];
+    }
+    return section.title;
+  };
 
   if (sections.length === 0) {
     return (
@@ -63,7 +82,7 @@ const PromptSectionsViewer: React.FC<PromptSectionsViewerProps> = ({
                 )}
               >
                 <Icon className="h-4 w-4 shrink-0" />
-                <span className="text-xs truncate flex-1">{section.title}</span>
+                <span className="text-xs truncate flex-1">{getSectionTitle(section)}</span>
                 {isEmpty && (
                   <Badge variant="outline" className="text-[10px] px-1 py-0 h-4">
                     —

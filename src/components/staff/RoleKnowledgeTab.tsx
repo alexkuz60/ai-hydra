@@ -41,16 +41,16 @@ import { Plus, Trash2, Search, BookOpen, FileText, Loader2, ExternalLink, Sparkl
 import { cn } from '@/lib/utils';
 
 const CATEGORIES = [
-  { value: 'general', labelKey: 'Общее' },
-  { value: 'documentation', labelKey: 'Документация' },
-  { value: 'standard', labelKey: 'Стандарты' },
-  { value: 'procedure', labelKey: 'Процедуры' },
-  { value: 'system_prompt', labelKey: 'Системный промпт' },
-  { value: 'best-practices', labelKey: 'Лучшие практики' },
-  { value: 'architecture', labelKey: 'Архитектура' },
-  { value: 'api-reference', labelKey: 'API Reference' },
-  { value: 'tutorial', labelKey: 'Туториал' },
-  { value: 'hydra-internals', labelKey: 'Hydra Internals' },
+  { value: 'general', label: { ru: 'Общее', en: 'General' } },
+  { value: 'documentation', label: { ru: 'Документация', en: 'Documentation' } },
+  { value: 'standard', label: { ru: 'Стандарты', en: 'Standards' } },
+  { value: 'procedure', label: { ru: 'Процедуры', en: 'Procedures' } },
+  { value: 'system_prompt', label: { ru: 'Системный промпт', en: 'System Prompt' } },
+  { value: 'best-practices', label: { ru: 'Лучшие практики', en: 'Best Practices' } },
+  { value: 'architecture', label: { ru: 'Архитектура', en: 'Architecture' } },
+  { value: 'api-reference', label: { ru: 'API Reference', en: 'API Reference' } },
+  { value: 'tutorial', label: { ru: 'Туториал', en: 'Tutorial' } },
+  { value: 'hydra-internals', label: { ru: 'Hydra Internals', en: 'Hydra Internals' } },
 ];
 
 interface RoleKnowledgeTabProps {
@@ -164,7 +164,7 @@ export default function RoleKnowledgeTab({ role }: RoleKnowledgeTabProps) {
 
   // Group entries by source
   const groupedEntries = entries.reduce((acc, entry) => {
-    const key = entry.source_title || '(без источника)';
+    const key = entry.source_title || (language === 'ru' ? '(без источника)' : '(no source)');
     if (!acc[key]) acc[key] = [];
     acc[key].push(entry);
     return acc;
@@ -395,7 +395,7 @@ export default function RoleKnowledgeTab({ role }: RoleKnowledgeTabProps) {
           <SelectContent>
             <SelectItem value="all">{language === 'ru' ? 'Все' : 'All'}</SelectItem>
             {CATEGORIES.map(c => (
-              <SelectItem key={c.value} value={c.value}>{c.labelKey}</SelectItem>
+              <SelectItem key={c.value} value={c.value}>{language === 'ru' ? c.label.ru : c.label.en}</SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -549,7 +549,7 @@ export default function RoleKnowledgeTab({ role }: RoleKnowledgeTabProps) {
                   </SelectTrigger>
                   <SelectContent>
                     {CATEGORIES.map(c => (
-                      <SelectItem key={c.value} value={c.value}>{c.labelKey}</SelectItem>
+                      <SelectItem key={c.value} value={c.value}>{language === 'ru' ? c.label.ru : c.label.en}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -693,7 +693,7 @@ export default function RoleKnowledgeTab({ role }: RoleKnowledgeTabProps) {
                   </SelectTrigger>
                   <SelectContent>
                     {CATEGORIES.map(c => (
-                      <SelectItem key={c.value} value={c.value}>{c.labelKey}</SelectItem>
+                      <SelectItem key={c.value} value={c.value}>{language === 'ru' ? c.label.ru : c.label.en}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
