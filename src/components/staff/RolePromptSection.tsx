@@ -198,7 +198,12 @@ export function RolePromptSection(props: RolePromptSectionProps) {
         </div>
         <CollapsibleContent className="pt-3">
           <div className="rounded-lg border border-border bg-muted/30 p-4">
-            <PromptSectionsViewer title={parsedSystemPrompt.title} sections={parsedSystemPrompt.sections} />
+            <PromptSectionsViewer
+              title={parsedSystemPrompt.title}
+              sections={parsedSystemPrompt.sections}
+              roleKey={selectedRole}
+              fullPromptText={systemPrompt}
+            />
           </div>
         </CollapsibleContent>
       </Collapsible>

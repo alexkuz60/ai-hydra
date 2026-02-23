@@ -1,16 +1,23 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { MarkdownRenderer } from '@/components/warroom/MarkdownRenderer';
+import { parsePromptSections } from '@/lib/promptSectionParser';
 import type { PromptSection } from '@/lib/promptSectionParser';
+import { usePromptContentTranslation } from '@/hooks/usePromptContentTranslation';
 
 interface PromptSectionsViewerProps {
   title: string;
   sections: PromptSection[];
   className?: string;
+  /** Role key for caching translations */
+  roleKey?: string;
+  /** Full prompt text (needed for translation) */
+  fullPromptText?: string;
 }
 
 /** Map standard section keys to EN titles */
@@ -28,10 +35,35 @@ const PromptSectionsViewer: React.FC<PromptSectionsViewerProps> = ({
   title,
   sections,
   className,
+  roleKey,
+  fullPromptText,
 }) => {
-  const { t, language } = useLanguage();
+  const { language } = useLanguage();
   const [activeTab, setActiveTab] = useState(sections[0]?.key || '');
   const lang = (language === 'ru' || language === 'en') ? language : 'ru';
+
+  // Translation of the full prompt
+  const { translatedContent, isTranslating, showTranslated } = usePromptContentTranslation(
+    fullPromptText || '',
+    roleKey || 'unknown'
+  );
+
+  // Parse translated content into sections
+  const displaySections = useMemo(() => {
+    if (showTranslated && translatedContent) {
+      const parsed = parsePromptSections(translatedContent);
+      if (parsed.sections.length > 0) return parsed.sections;
+    }
+    return sections;
+  }, [showTranslated, translatedContent, sections]);
+
+  const displayTitle = useMemo(() => {
+    if (showTranslated && translatedContent) {
+      const parsed = parsePromptSections(translatedContent);
+      if (parsed.title) return parsed.title;
+    }
+    return title;
+  }, [showTranslated, translatedContent, title]);
 
   /** Get localized section title */
   const getSectionTitle = (section: PromptSection) => {
@@ -52,9 +84,12 @@ const PromptSectionsViewer: React.FC<PromptSectionsViewerProps> = ({
   return (
     <div className={cn("flex flex-col", className)}>
       {/* Title display */}
-      {title && (
-        <div className="mb-3 pb-2 border-b border-border">
-          <h4 className="text-sm font-semibold text-foreground">{title}</h4>
+      {displayTitle && (
+        <div className="mb-3 pb-2 border-b border-border flex items-center gap-2">
+          <h4 className="text-sm font-semibold text-foreground">{displayTitle}</h4>
+          {isTranslating && (
+            <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
+          )}
         </div>
       )}
 
@@ -66,7 +101,7 @@ const PromptSectionsViewer: React.FC<PromptSectionsViewerProps> = ({
       >
         {/* Vertical tabs list */}
         <TabsList className="flex flex-col h-auto bg-transparent p-0 gap-1 shrink-0 w-40">
-          {sections.map((section) => {
+          {displaySections.map((section) => {
             const Icon = section.icon;
             const isEmpty = !section.content.trim();
             
@@ -98,9 +133,9 @@ const PromptSectionsViewer: React.FC<PromptSectionsViewerProps> = ({
           })}
         </TabsList>
 
-        {/* Content area - synced height with navigation */}
+        {/* Content area */}
         <div className="flex-1 min-w-0 border-l border-border pl-4 flex flex-col">
-          {sections.map((section) => (
+          {displaySections.map((section) => (
             <TabsContent
               key={section.key}
               value={section.key}

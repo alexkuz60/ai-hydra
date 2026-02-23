@@ -153,7 +153,7 @@ export function useRolePromptEditor(selectedRole: AgentRole | null, userId: stri
     setIsSavingPrompt(true);
     try {
       const detectedLanguage = detectContentLanguage(editedPrompt);
-      const { error } = await supabase.from('prompt_library').insert([{
+      const { data: inserted, error } = await supabase.from('prompt_library').insert([{
         user_id: userId,
         name: promptName.trim(),
         description: t(ROLE_CONFIG[selectedRole].description),
@@ -161,9 +161,25 @@ export function useRolePromptEditor(selectedRole: AgentRole | null, userId: stri
         role: selectedRole,
         is_shared: isShared,
         language: detectedLanguage,
-      }]);
+      }]).select('id').single();
       if (error) throw error;
       toast.success(t('staffRoles.promptSaved'));
+
+      // Background translation to EN if content is Russian
+      if (detectedLanguage === 'ru' && inserted?.id) {
+        supabase.functions.invoke('translate-text', {
+          body: { text: editedPrompt.trim(), targetLang: 'en' },
+        }).then(({ data }) => {
+          if (data?.translation) {
+            supabase.from('prompt_library')
+              .update({ content_en: data.translation })
+              .eq('id', inserted.id)
+              .then(({ error: updateErr }) => {
+                if (updateErr) console.error('[PromptEditor] Failed to save EN translation:', updateErr);
+              });
+          }
+        }).catch(e => console.warn('[PromptEditor] Translation failed:', e));
+      }
 
       const { data } = await supabase
         .from('prompt_library')
