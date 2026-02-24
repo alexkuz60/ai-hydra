@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody } from '@/components/ui/table';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Plus, Loader2, MessageSquare, Search, ListTodo, Flame, BookOpen, FolderOpen } from 'lucide-react';
+import { Plus, Loader2, MessageSquare, Search, ListTodo, Flame, BookOpen, FolderOpen, Target, ChevronRight, ChevronDown, CornerDownRight } from 'lucide-react';
 import {
   ResizablePanelGroup,
   ResizablePanel,
@@ -28,6 +28,8 @@ import { useNavigatorResize } from '@/hooks/useNavigatorResize';
 import { NavigatorHeader } from '@/components/layout/NavigatorHeader';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
+import { useStrategicPlans, StrategicPlan } from '@/hooks/useStrategicPlans';
+import { Badge } from '@/components/ui/badge';
  
  // Filter out deprecated/unavailable model IDs
  const filterValidModels = (modelIds: string[]): string[] => {
@@ -74,9 +76,17 @@ export default function Tasks() {
   const nav = useNavigatorResize({ storageKey: 'tasks', defaultMaxSize: 40 });
 
   // Model configuration state for new task
-  const [selectedModels, setSelectedModels] = useState<string[]>([]);
-  const [perModelSettings, setPerModelSettings] = useState<PerModelSettingsData>({});
-  const [useHybridStreaming, setUseHybridStreaming] = useState(true);
+   const [selectedModels, setSelectedModels] = useState<string[]>([]);
+   const [perModelSettings, setPerModelSettings] = useState<PerModelSettingsData>({});
+   const [useHybridStreaming, setUseHybridStreaming] = useState(true);
+
+   // Strategic Plans
+   const { plans, createPlan, deletePlan, refetch: refetchPlans } = useStrategicPlans(user?.id);
+   const [showNewPlan, setShowNewPlan] = useState(false);
+   const [newPlanTitle, setNewPlanTitle] = useState('');
+   const [creatingPlan, setCreatingPlan] = useState(false);
+   const [expandedPlans, setExpandedPlans] = useState<Set<string>>(new Set());
+   const [expandedAspects, setExpandedAspects] = useState<Set<string>>(new Set());
 
   // Task deletion hook
   const { deleteTask, deleteAllTasks, deleting } = useTaskDeletion({
@@ -110,7 +120,7 @@ export default function Tasks() {
    const [showUserTasks, setShowUserTasks] = useState(true);
 
    // Filter and split tasks into groups
-   const { systemTasks, userTasks } = useMemo(() => {
+   const { systemTasks, userTasks, planTasks, standaloneTasks } = useMemo(() => {
      const q = searchQuery.trim().toLowerCase();
      const filtered = q
        ? tasks.filter(task => {
@@ -121,10 +131,34 @@ export default function Tasks() {
      return {
        systemTasks: filtered.filter(t => t.is_system),
        userTasks: filtered.filter(t => !t.is_system),
+       planTasks: filtered.filter(t => !t.is_system && t.plan_id),
+       standaloneTasks: filtered.filter(t => !t.is_system && !t.plan_id),
      };
    }, [tasks, searchQuery, language]);
 
    const filteredTasks = useMemo(() => [...systemTasks, ...userTasks], [systemTasks, userTasks]);
+
+   // Build tree for a plan
+   const getAspectsForPlan = (planId: string) => 
+     planTasks.filter(t => t.plan_id === planId && !t.parent_id);
+   const getSubtasksForAspect = (aspectId: string) =>
+     planTasks.filter(t => t.parent_id === aspectId);
+
+   const togglePlanExpanded = (planId: string) => {
+     setExpandedPlans(prev => {
+       const next = new Set(prev);
+       next.has(planId) ? next.delete(planId) : next.add(planId);
+       return next;
+     });
+   };
+
+   const toggleAspectExpanded = (aspectId: string) => {
+     setExpandedAspects(prev => {
+       const next = new Set(prev);
+       next.has(aspectId) ? next.delete(aspectId) : next.add(aspectId);
+       return next;
+     });
+   };
  
   const fetchTasks = async () => {
     if (!user) return;
@@ -166,52 +200,104 @@ export default function Tasks() {
     }
   };
 
-  const handleCreateTask = async () => {
-    if (!user || !newTaskTitle.trim()) return;
-    setCreating(true);
+   const handleCreatePlan = async () => {
+     if (!newPlanTitle.trim()) return;
+     setCreatingPlan(true);
+     try {
+       const plan = await createPlan(newPlanTitle.trim());
+       if (plan) {
+         setNewPlanTitle('');
+         setShowNewPlan(false);
+         setExpandedPlans(prev => new Set(prev).add(plan.id));
+       }
+     } finally {
+       setCreatingPlan(false);
+     }
+   };
 
-    try {
-      const sessionConfig = {
-        selectedModels,
-        perModelSettings,
-        useHybridStreaming,
-      };
+   const handleCreateTaskInPlan = async (planId: string, parentId?: string) => {
+     if (!user) return;
+     const title = parentId ? t('plans.subtask') : t('plans.aspect');
+     try {
+       const { data, error } = await supabase
+         .from('sessions')
+         .insert([{
+           user_id: user.id,
+           title: `${title} ${new Date().toLocaleTimeString().slice(0, 5)}`,
+           plan_id: planId,
+           parent_id: parentId || null,
+           session_config: JSON.parse(JSON.stringify({ selectedModels: [], perModelSettings: {}, useHybridStreaming: true })),
+         }])
+         .select()
+         .single();
 
-      const { data, error } = await supabase
-        .from('sessions')
-        .insert([{
-          user_id: user.id,
-          title: newTaskTitle.trim(),
-          session_config: JSON.parse(JSON.stringify(sessionConfig)),
-        }])
-        .select()
-        .single();
+       if (error) throw error;
 
-      if (error) throw error;
+       const newTask: Task = {
+         ...data,
+         plan_id: data.plan_id,
+         parent_id: data.parent_id,
+         sort_order: data.sort_order,
+         session_config: data.session_config as Task['session_config'],
+       };
+       setTasks(prev => [newTask, ...prev]);
+       setSelectedTask(newTask);
+       if (parentId) setExpandedAspects(prev => new Set(prev).add(parentId));
+       toast.success(t('common.success'));
+     } catch (err: any) {
+       toast.error(err.message);
+     }
+   };
 
-      const newTask = {
-        ...data,
-        session_config: data.session_config as Task['session_config']
-      };
+   const handleCreateTask = async () => {
+     if (!user || !newTaskTitle.trim()) return;
+     setCreating(true);
 
-      setTasks([newTask, ...tasks]);
-      setNewTaskTitle('');
-      toast.success(t('common.success'));
-      
-      // Navigate to expert panel with new task and model settings
-      navigate(`/expert-panel?task=${data.id}`, {
-        state: {
-          selectedModels,
-          perModelSettings,
-          useHybridStreaming,
-        }
-      });
-    } catch (error: any) {
-      toast.error(error.message);
-    } finally {
-      setCreating(false);
-    }
-  };
+     try {
+       const sessionConfig = {
+         selectedModels,
+         perModelSettings,
+         useHybridStreaming,
+       };
+
+       const { data, error } = await supabase
+         .from('sessions')
+         .insert([{
+           user_id: user.id,
+           title: newTaskTitle.trim(),
+           session_config: JSON.parse(JSON.stringify(sessionConfig)),
+         }])
+         .select()
+         .single();
+
+       if (error) throw error;
+
+       const newTask = {
+         ...data,
+         plan_id: data.plan_id,
+         parent_id: data.parent_id,
+         sort_order: data.sort_order,
+         session_config: data.session_config as Task['session_config']
+       };
+
+       setTasks([newTask, ...tasks]);
+       setNewTaskTitle('');
+       toast.success(t('common.success'));
+       
+       // Navigate to expert panel with new task and model settings
+       navigate(`/expert-panel?task=${data.id}`, {
+         state: {
+           selectedModels,
+           perModelSettings,
+           useHybridStreaming,
+         }
+       });
+     } catch (error: any) {
+       toast.error(error.message);
+     } finally {
+       setCreating(false);
+     }
+   };
 
 
 
@@ -444,71 +530,99 @@ export default function Tasks() {
                       className="pl-9"
                     />
                  </div>
-                 
-                 {/* Create new task inline */}
-                 <div className="space-y-2">
-                   <div className="flex gap-2">
-                      <Input
-                        value={newTaskTitle}
-                        onChange={(e) => setNewTaskTitle(e.target.value)}
-                        placeholder={t('tasks.newPlaceholder')}
-                        className="flex-1"
-                        onKeyDown={(e) => e.key === 'Enter' && handleCreateTask()}
-                        data-guide="tasks-title-input"
-                      />
-                      <Button 
-                        onClick={handleCreateTask} 
-                        disabled={creating || !newTaskTitle.trim() || selectedModels.length === 0}
-                        size="icon"
-                        data-guide="tasks-create-btn"
-                      >
-                       {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
-                     </Button>
-                   </div>
-                    <div data-guide="tasks-model-chips">
-                    <MultiModelSelector 
-                      value={selectedModels} 
-                      onChange={setSelectedModels}
-                      className="w-full"
-                    />
+                  
+                  {/* Create new task inline */}
+                  <div className="space-y-2">
+                    <div className="flex gap-2">
+                       <Input
+                         value={newTaskTitle}
+                         onChange={(e) => setNewTaskTitle(e.target.value)}
+                         placeholder={t('tasks.newPlaceholder')}
+                         className="flex-1"
+                         onKeyDown={(e) => e.key === 'Enter' && handleCreateTask()}
+                         data-guide="tasks-title-input"
+                       />
+                       <Button 
+                         onClick={handleCreateTask} 
+                         disabled={creating || !newTaskTitle.trim() || selectedModels.length === 0}
+                         size="icon"
+                         data-guide="tasks-create-btn"
+                       >
+                        {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+                      </Button>
                     </div>
-                   {selectedModels.length === 0 && (
-                     <p className="text-xs text-muted-foreground">
-                       {t('tasks.selectModelsFirst')}
-                     </p>
-                   )}
-                   {selectedModels.length > 0 && (
-                     <div className="flex flex-wrap gap-1">
-                       {selectedModels.slice(0, 3).map((modelId) => (
-                         <div 
-                           key={modelId}
-                           className="flex items-center gap-1 text-[10px] py-0.5 px-1.5 rounded bg-muted/50"
-                         >
-                           {getModelIcon(modelId)}
-                           <span className="truncate max-w-[80px]">{getModelDisplayName(modelId)}</span>
-                         </div>
-                       ))}
-                       {selectedModels.length > 3 && (
-                         <span className="text-[10px] text-muted-foreground py-0.5 px-1.5">
-                           +{selectedModels.length - 3}
-                         </span>
-                       )}
+                     <div data-guide="tasks-model-chips">
+                     <MultiModelSelector 
+                       value={selectedModels} 
+                       onChange={setSelectedModels}
+                       className="w-full"
+                     />
                      </div>
-                   )}
-                 </div>
-               </div>
+                    {selectedModels.length === 0 && (
+                      <p className="text-xs text-muted-foreground">
+                        {t('tasks.selectModelsFirst')}
+                      </p>
+                    )}
+                    {selectedModels.length > 0 && (
+                      <div className="flex flex-wrap gap-1">
+                        {selectedModels.slice(0, 3).map((modelId) => (
+                          <div 
+                            key={modelId}
+                            className="flex items-center gap-1 text-[10px] py-0.5 px-1.5 rounded bg-muted/50"
+                          >
+                            {getModelIcon(modelId)}
+                            <span className="truncate max-w-[80px]">{getModelDisplayName(modelId)}</span>
+                          </div>
+                        ))}
+                        {selectedModels.length > 3 && (
+                          <span className="text-[10px] text-muted-foreground py-0.5 px-1.5">
+                            +{selectedModels.length - 3}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Create new plan */}
+                  <div className="pt-1 border-t">
+                    {showNewPlan ? (
+                      <div className="flex gap-2">
+                        <Input
+                          value={newPlanTitle}
+                          onChange={(e) => setNewPlanTitle(e.target.value)}
+                          placeholder={t('plans.newPlaceholder')}
+                          className="flex-1 text-sm"
+                          autoFocus
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') handleCreatePlan();
+                            if (e.key === 'Escape') { setShowNewPlan(false); setNewPlanTitle(''); }
+                          }}
+                        />
+                        <Button size="icon" onClick={handleCreatePlan} disabled={creatingPlan || !newPlanTitle.trim()}>
+                          {creatingPlan ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+                        </Button>
+                      </div>
+                    ) : (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="w-full justify-start gap-2 text-muted-foreground hover:text-foreground"
+                        onClick={() => setShowNewPlan(true)}
+                      >
+                        <Target className="h-4 w-4" />
+                        {t('plans.new')}
+                      </Button>
+                    )}
+                  </div>
+                </div>
  
                {/* Tasks list */}
                <div className="flex-1 overflow-auto">
-                 {filteredTasks.length === 0 ? (
+                 {filteredTasks.length === 0 && plans.length === 0 ? (
                    <div className="h-full flex items-center justify-center text-muted-foreground p-8">
                      <div className="text-center">
                        <MessageSquare className="h-12 w-12 mx-auto mb-4 opacity-30" />
-                       <p>
-                         {tasks.length === 0
-                           ? t('tasks.empty')
-                           : t('tasks.noResults')}
-                       </p>
+                       <p>{tasks.length === 0 ? t('tasks.empty') : t('tasks.noResults')}</p>
                      </div>
                    </div>
                  ) : (
@@ -538,26 +652,142 @@ export default function Tasks() {
                             ))}
                           </>
                         )}
-                        {/* User tasks group */}
-                        <StaffGroupHeader
-                          expanded={showUserTasks}
-                          onToggle={() => setShowUserTasks(v => !v)}
-                          icon={<FolderOpen className="h-4 w-4 text-primary" />}
-                          label={t('tasks.myTasks')}
-                          count={userTasks.length}
-                          guideId="tasks-user-group"
-                        />
-                        {showUserTasks && userTasks.map((task) => (
-                          <TaskRow
-                            key={task.id}
-                            task={task}
-                            isSelected={selectedTask?.id === task.id}
-                            validModels={filterValidModels(task.session_config?.selectedModels || [])}
-                            hasUnsavedChanges={selectedTask?.id === task.id && hasUnsavedChangesRef.current}
-                            onSelect={handleSelectTask}
-                            onDelete={handleDeleteClick}
-                          />
-                        ))}
+
+                        {/* Strategic Plans */}
+                        {plans.map((plan) => {
+                          const aspects = getAspectsForPlan(plan.id);
+                          const isPlanExpanded = expandedPlans.has(plan.id);
+                          return (
+                            <React.Fragment key={`plan-${plan.id}`}>
+                              <StaffGroupHeader
+                                expanded={isPlanExpanded}
+                                onToggle={() => togglePlanExpanded(plan.id)}
+                                icon={<Target className="h-4 w-4 text-primary" />}
+                                label={(language === 'en' && plan.title_en) ? plan.title_en : plan.title}
+                                count={aspects.length}
+                                guideId={`plan-${plan.id}`}
+                                actions={
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-6 w-6"
+                                        onClick={(e) => { e.stopPropagation(); handleCreateTaskInPlan(plan.id); }}
+                                      >
+                                        <Plus className="h-3.5 w-3.5" />
+                                      </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>{t('plans.addAspect')}</TooltipContent>
+                                  </Tooltip>
+                                }
+                              />
+                              {isPlanExpanded && aspects.map((aspect) => {
+                                const subtasks = getSubtasksForAspect(aspect.id);
+                                const isAspectExpanded = expandedAspects.has(aspect.id);
+                                return (
+                                  <React.Fragment key={aspect.id}>
+                                    {/* Aspect row with indent */}
+                                    <tr
+                                      className={cn(
+                                        'cursor-pointer transition-colors group border-b',
+                                        selectedTask?.id === aspect.id ? 'bg-primary/10 hover:bg-primary/15' : 'hover:bg-muted/30'
+                                      )}
+                                      onClick={() => handleSelectTask(aspect)}
+                                    >
+                                      <td colSpan={2} className="py-2">
+                                        <div className="flex items-center gap-2 pl-8">
+                                          {subtasks.length > 0 && (
+                                            <button
+                                              className="p-0.5 rounded hover:bg-muted/50"
+                                              onClick={(e) => { e.stopPropagation(); toggleAspectExpanded(aspect.id); }}
+                                            >
+                                              {isAspectExpanded
+                                                ? <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+                                                : <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />}
+                                            </button>
+                                          )}
+                                          <MessageSquare className={cn("h-4 w-4 shrink-0", aspect.is_active ? "text-primary" : "text-muted-foreground")} />
+                                          <span className="font-medium text-sm truncate flex-1">
+                                            {(language === 'en' && aspect.title_en) ? aspect.title_en : aspect.title}
+                                          </span>
+                                          {subtasks.length > 0 && (
+                                            <Badge variant="secondary" className="text-[10px]">{subtasks.length}</Badge>
+                                          )}
+                                          <Tooltip>
+                                            <TooltipTrigger asChild>
+                                              <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-6 w-6 opacity-0 group-hover:opacity-100"
+                                                onClick={(e) => { e.stopPropagation(); handleCreateTaskInPlan(plan.id, aspect.id); }}
+                                              >
+                                                <Plus className="h-3 w-3" />
+                                              </Button>
+                                            </TooltipTrigger>
+                                            <TooltipContent>{t('plans.addSubtask')}</TooltipContent>
+                                          </Tooltip>
+                                        </div>
+                                      </td>
+                                    </tr>
+                                    {/* Subtasks */}
+                                    {isAspectExpanded && subtasks.map((sub) => (
+                                      <tr
+                                        key={sub.id}
+                                        className={cn(
+                                          'cursor-pointer transition-colors border-b',
+                                          selectedTask?.id === sub.id ? 'bg-primary/10 hover:bg-primary/15' : 'hover:bg-muted/30'
+                                        )}
+                                        onClick={() => handleSelectTask(sub)}
+                                      >
+                                        <td colSpan={2} className="py-2">
+                                          <div className="flex items-center gap-2 pl-14">
+                                            <CornerDownRight className="h-3 w-3 text-muted-foreground/50 shrink-0" />
+                                            <span className="text-sm truncate">
+                                              {(language === 'en' && sub.title_en) ? sub.title_en : sub.title}
+                                            </span>
+                                          </div>
+                                        </td>
+                                      </tr>
+                                    ))}
+                                  </React.Fragment>
+                                );
+                              })}
+                              {isPlanExpanded && aspects.length === 0 && (
+                                <tr>
+                                  <td colSpan={2} className="py-3">
+                                    <p className="text-xs text-muted-foreground text-center">{t('plans.emptyPlan')}</p>
+                                  </td>
+                                </tr>
+                              )}
+                            </React.Fragment>
+                          );
+                        })}
+
+                        {/* Standalone user tasks (not in any plan) */}
+                        {standaloneTasks.length > 0 && (
+                          <>
+                            <StaffGroupHeader
+                              expanded={showUserTasks}
+                              onToggle={() => setShowUserTasks(v => !v)}
+                              icon={<FolderOpen className="h-4 w-4 text-primary" />}
+                              label={plans.length > 0 ? t('plans.standaloneTasks') : t('tasks.myTasks')}
+                              count={standaloneTasks.length}
+                              guideId="tasks-user-group"
+                            />
+                            {showUserTasks && standaloneTasks.map((task) => (
+                              <TaskRow
+                                key={task.id}
+                                task={task}
+                                isSelected={selectedTask?.id === task.id}
+                                validModels={filterValidModels(task.session_config?.selectedModels || [])}
+                                hasUnsavedChanges={selectedTask?.id === task.id && hasUnsavedChangesRef.current}
+                                onSelect={handleSelectTask}
+                                onDelete={handleDeleteClick}
+                              />
+                            ))}
+                          </>
+                        )}
                       </TableBody>
                     </Table>
                  )}

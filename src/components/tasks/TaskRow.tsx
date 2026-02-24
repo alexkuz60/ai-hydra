@@ -19,6 +19,9 @@ export interface Task {
   is_active: boolean;
   is_system: boolean;
   is_shared: boolean;
+  plan_id: string | null;
+  parent_id: string | null;
+  sort_order: number;
   created_at: string;
   updated_at: string;
   session_config: {
