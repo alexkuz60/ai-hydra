@@ -740,7 +740,7 @@ const translations: Translations = {
   'models.resetCache': { ru: 'Сбросить кэш недоступных', en: 'Reset unavailable cache' },
   
   // Tasks (formerly Sessions)
-  'tasks.title': { ru: 'Задачи', en: 'Tasks' },
+  'tasks.title': { ru: 'Стратегические планы решений задач', en: 'Strategic Problem Solving Plans' },
   'tasks.new': { ru: 'Новая задача', en: 'New Task' },
   'tasks.empty': { ru: 'Нет активных задач', en: 'No active tasks' },
   'tasks.delete': { ru: 'Удалить', en: 'Delete' },
