@@ -448,22 +448,33 @@ export default function Tasks() {
              </div>
               <p className="text-sm text-muted-foreground mt-1">{t('tasks.pageDescription')}</p>
             </div>
-            {userTasks.length > 0 && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="gap-2 text-destructive border-destructive/30 hover:bg-destructive/10"
-                    onClick={() => setShowBulkDelete(true)}
-                  >
-                    <Flame className="h-4 w-4" />
-                    <span className="hidden sm:inline">{t('tasks.startFresh')}</span>
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>{t('tasks.deleteAllDescription')}</TooltipContent>
-              </Tooltip>
-            )}
+            <div className="flex items-center gap-2">
+              <div className="relative" data-guide="tasks-search">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder={t('tasks.search')}
+                  className="pl-9 w-48 lg:w-64"
+                />
+              </div>
+              {userTasks.length > 0 && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="gap-2 text-destructive border-destructive/30 hover:bg-destructive/10"
+                      onClick={() => setShowBulkDelete(true)}
+                    >
+                      <Flame className="h-4 w-4" />
+                      <span className="hidden sm:inline">{t('tasks.startFresh')}</span>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>{t('tasks.deleteAllDescription')}</TooltipContent>
+                </Tooltip>
+              )}
+            </div>
           </div>
 
          {/* Main content */}
@@ -520,100 +531,35 @@ export default function Tasks() {
                ) : (
                <div className="flex-1 flex flex-col">
                {/* Search and Create */}
-               <div className="p-4 border-b space-y-3" data-guide="tasks-create-form">
-                <div className="relative" data-guide="tasks-search">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      placeholder={t('tasks.search')}
-                      className="pl-9"
-                    />
-                 </div>
-                  
-                  {/* Create new task inline */}
-                  <div className="space-y-2">
-                    <div className="flex gap-2">
-                       <Input
-                         value={newTaskTitle}
-                         onChange={(e) => setNewTaskTitle(e.target.value)}
-                         placeholder={t('tasks.newPlaceholder')}
-                         className="flex-1"
-                         onKeyDown={(e) => e.key === 'Enter' && handleCreateTask()}
-                         data-guide="tasks-title-input"
-                       />
-                       <Button 
-                         onClick={handleCreateTask} 
-                         disabled={creating || !newTaskTitle.trim() || selectedModels.length === 0}
-                         size="icon"
-                         data-guide="tasks-create-btn"
+                <div className="p-3 border-b" data-guide="tasks-create-form">
+                     {showNewPlan ? (
+                       <div className="flex gap-2">
+                         <Input
+                           value={newPlanTitle}
+                           onChange={(e) => setNewPlanTitle(e.target.value)}
+                           placeholder={t('plans.newPlaceholder')}
+                           className="flex-1 text-sm"
+                           autoFocus
+                           onKeyDown={(e) => {
+                             if (e.key === 'Enter') handleCreatePlan();
+                             if (e.key === 'Escape') { setShowNewPlan(false); setNewPlanTitle(''); }
+                           }}
+                         />
+                         <Button size="icon" onClick={handleCreatePlan} disabled={creatingPlan || !newPlanTitle.trim()}>
+                           {creatingPlan ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+                         </Button>
+                       </div>
+                     ) : (
+                       <Button
+                         variant="ghost"
+                         size="sm"
+                         className="w-full justify-start gap-2 text-muted-foreground hover:text-foreground"
+                         onClick={() => setShowNewPlan(true)}
                        >
-                        {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
-                      </Button>
-                    </div>
-                     <div data-guide="tasks-model-chips">
-                     <MultiModelSelector 
-                       value={selectedModels} 
-                       onChange={setSelectedModels}
-                       className="w-full"
-                     />
-                     </div>
-                    {selectedModels.length === 0 && (
-                      <p className="text-xs text-muted-foreground">
-                        {t('tasks.selectModelsFirst')}
-                      </p>
-                    )}
-                    {selectedModels.length > 0 && (
-                      <div className="flex flex-wrap gap-1">
-                        {selectedModels.slice(0, 3).map((modelId) => (
-                          <div 
-                            key={modelId}
-                            className="flex items-center gap-1 text-[10px] py-0.5 px-1.5 rounded bg-muted/50"
-                          >
-                            {getModelIcon(modelId)}
-                            <span className="truncate max-w-[80px]">{getModelDisplayName(modelId)}</span>
-                          </div>
-                        ))}
-                        {selectedModels.length > 3 && (
-                          <span className="text-[10px] text-muted-foreground py-0.5 px-1.5">
-                            +{selectedModels.length - 3}
-                          </span>
-                        )}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Create new plan */}
-                  <div className="pt-1 border-t">
-                    {showNewPlan ? (
-                      <div className="flex gap-2">
-                        <Input
-                          value={newPlanTitle}
-                          onChange={(e) => setNewPlanTitle(e.target.value)}
-                          placeholder={t('plans.newPlaceholder')}
-                          className="flex-1 text-sm"
-                          autoFocus
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') handleCreatePlan();
-                            if (e.key === 'Escape') { setShowNewPlan(false); setNewPlanTitle(''); }
-                          }}
-                        />
-                        <Button size="icon" onClick={handleCreatePlan} disabled={creatingPlan || !newPlanTitle.trim()}>
-                          {creatingPlan ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
-                        </Button>
-                      </div>
-                    ) : (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="w-full justify-start gap-2 text-muted-foreground hover:text-foreground"
-                        onClick={() => setShowNewPlan(true)}
-                      >
-                        <Target className="h-4 w-4" />
-                        {t('plans.new')}
-                      </Button>
-                    )}
-                  </div>
+                         <Target className="h-4 w-4" />
+                         {t('plans.new')}
+                       </Button>
+                     )}
                 </div>
  
                {/* Tasks list */}
