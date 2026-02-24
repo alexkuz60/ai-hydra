@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { SidebarTrigger } from '@/components/ui/sidebar';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Layout } from '@/components/layout/Layout';
@@ -437,8 +438,8 @@ export default function Tasks() {
   }
 
   return (
-    <Layout>
-       <div className="h-[calc(100vh-4rem)] flex flex-col">
+    <Layout hideHeader>
+       <div className="h-screen flex flex-col">
          {/* Header */}
           <div className="px-6 py-4 border-b flex items-center justify-between shrink-0">
             <div>
@@ -493,7 +494,9 @@ export default function Tasks() {
                  title={t('tasks.title')}
                  isMinimized={nav.isMinimized}
                  onToggle={nav.toggle}
-               />
+               >
+                 <SidebarTrigger className="text-muted-foreground hover:text-primary h-7 w-7 shrink-0" />
+               </NavigatorHeader>
                {nav.isMinimized ? (
                  <TooltipProvider delayDuration={200}>
                    <div className="flex-1 overflow-auto p-1 space-y-1">

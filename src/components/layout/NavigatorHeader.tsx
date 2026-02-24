@@ -27,10 +27,10 @@ export function NavigatorHeader({
       isMinimized ? "justify-center" : "justify-between",
       className,
     )}>
+      {!isMinimized && children}
       {!isMinimized && title && (
         <span className="text-sm font-medium truncate flex-1">{title}</span>
       )}
-      {!isMinimized && children}
       <IconButtonWithTooltip
         icon={isMinimized ? PanelLeftOpen : PanelLeftClose}
         tooltip={isMinimized 
