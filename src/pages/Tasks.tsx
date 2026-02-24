@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody } from '@/components/ui/table';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Plus, Loader2, MessageSquare, Search, ListTodo, Flame, BookOpen, FolderOpen, Target, ChevronRight, ChevronDown, CornerDownRight, FolderPlus, FilePlus } from 'lucide-react';
+import { Plus, Loader2, MessageSquare, Search, ListTodo, Flame, BookOpen, FolderOpen, Target, ChevronRight, ChevronDown, CornerDownRight, FolderPlus, FilePlus, Pencil, Scale } from 'lucide-react';
 import {
   ResizablePanelGroup,
   ResizablePanel,
@@ -86,8 +86,10 @@ export default function Tasks() {
    const [showNewPlan, setShowNewPlan] = useState(false);
    const [newPlanTitle, setNewPlanTitle] = useState('');
    const [creatingPlan, setCreatingPlan] = useState(false);
-   const [expandedPlans, setExpandedPlans] = useState<Set<string>>(new Set());
-   const [expandedAspects, setExpandedAspects] = useState<Set<string>>(new Set());
+    const [expandedPlans, setExpandedPlans] = useState<Set<string>>(new Set());
+    const [expandedAspects, setExpandedAspects] = useState<Set<string>>(new Set());
+    const [editingPlanId, setEditingPlanId] = useState<string | null>(null);
+    const [editingPlanTitle, setEditingPlanTitle] = useState('');
 
   // Task deletion hook
   const { deleteTask, deleteAllTasks, deleting } = useTaskDeletion({
@@ -332,6 +334,82 @@ export default function Tasks() {
       }
     };
 
+    const handleStartEditPlan = (plan: StrategicPlan, e: React.MouseEvent) => {
+      e.stopPropagation();
+      setEditingPlanId(plan.id);
+      setEditingPlanTitle((language === 'en' && plan.title_en) ? plan.title_en : plan.title);
+    };
+
+    const handleSavePlanTitle = async () => {
+      if (!editingPlanId || !editingPlanTitle.trim()) return;
+      const { updatePlan } = { updatePlan: async (id: string, u: any) => {
+        const { error } = await supabase.from('strategic_plans').update(u).eq('id', id);
+        if (error) throw error;
+      }};
+      try {
+        await updatePlan(editingPlanId, { title: editingPlanTitle.trim() });
+        await refetchPlans();
+        toast.success(t('tasks.titleSaved'));
+      } catch (err: any) {
+        toast.error(err.message);
+      }
+      setEditingPlanId(null);
+      setEditingPlanTitle('');
+    };
+
+    const handlePatentSearch = (plan: StrategicPlan, e: React.MouseEvent) => {
+      e.stopPropagation();
+      // Navigate to expert panel with patent attorney context and full plan content
+      const planTitle = (language === 'en' && plan.title_en) ? plan.title_en : plan.title;
+      const planGoal = (language === 'en' && plan.goal_en) ? plan.goal_en : plan.goal;
+      // Collect all plan session IDs for context
+      const planSessionIds = planTasks.filter(t => t.plan_id === plan.id).map(t => t.id);
+      navigate('/expert-panel', {
+        state: {
+          prefillMessage: `Проведи патентный поиск по стратегическому плану "${planTitle}"${planGoal ? `. Цель: ${planGoal}` : ''}`,
+          selectedModels: [],
+          patentSearchContext: {
+            planId: plan.id,
+            planTitle,
+            planGoal,
+            sessionIds: planSessionIds,
+          },
+        },
+      });
+    };
+
+    const handleCreateLeafTaskInAspect = async (planId: string, parentId: string) => {
+      if (!user) return;
+      try {
+        const { data, error } = await supabase
+          .from('sessions')
+          .insert([{
+            user_id: user.id,
+            title: `${t('plans.task')} ${new Date().toLocaleTimeString().slice(0, 5)}`,
+            plan_id: planId,
+            parent_id: parentId,
+            session_config: JSON.parse(JSON.stringify({ selectedModels: [], perModelSettings: {}, useHybridStreaming: true })),
+          }])
+          .select()
+          .single();
+
+        if (error) throw error;
+
+        const newTask: Task = {
+          ...data,
+          plan_id: data.plan_id,
+          parent_id: data.parent_id,
+          sort_order: data.sort_order,
+          session_config: data.session_config as Task['session_config'],
+        };
+        setTasks(prev => [newTask, ...prev]);
+        setSelectedTask(newTask);
+        setExpandedAspects(prev => new Set(prev).add(parentId));
+        toast.success(t('common.success'));
+      } catch (err: any) {
+        toast.error(err.message);
+      }
+    };
 
 
    const handleUpdateTitle = async (taskId: string, newTitle: string) => {
@@ -640,6 +718,26 @@ export default function Tasks() {
                           const isPlanExpanded = expandedPlans.has(plan.id);
                           return (
                             <React.Fragment key={`plan-${plan.id}`}>
+                              {editingPlanId === plan.id ? (
+                                <tr className="border-b">
+                                  <td colSpan={2} className="py-2 px-3">
+                                    <div className="flex items-center gap-2">
+                                      <Target className="h-4 w-4 text-primary shrink-0" />
+                                      <Input
+                                        value={editingPlanTitle}
+                                        onChange={(e) => setEditingPlanTitle(e.target.value)}
+                                        className="h-7 text-sm flex-1"
+                                        autoFocus
+                                        onKeyDown={(e) => {
+                                          if (e.key === 'Enter') handleSavePlanTitle();
+                                          if (e.key === 'Escape') { setEditingPlanId(null); setEditingPlanTitle(''); }
+                                        }}
+                                        onBlur={handleSavePlanTitle}
+                                      />
+                                    </div>
+                                  </td>
+                                </tr>
+                              ) : (
                               <StaffGroupHeader
                                 expanded={isPlanExpanded}
                                 onToggle={() => togglePlanExpanded(plan.id)}
@@ -649,35 +747,62 @@ export default function Tasks() {
                                 guideId={`plan-${plan.id}`}
                                  actions={
                                    <div className="flex items-center gap-0.5">
-                                     <Tooltip>
-                                       <TooltipTrigger asChild>
-                                         <Button
-                                           variant="ghost"
-                                           size="icon"
-                                           className="h-6 w-6"
-                                           onClick={(e) => { e.stopPropagation(); handleCreateTaskInPlan(plan.id); }}
-                                         >
-                                           <FolderPlus className="h-3.5 w-3.5" />
-                                         </Button>
-                                       </TooltipTrigger>
-                                       <TooltipContent>{t('plans.addAspect')}</TooltipContent>
-                                     </Tooltip>
-                                     <Tooltip>
-                                       <TooltipTrigger asChild>
-                                         <Button
-                                           variant="ghost"
-                                           size="icon"
-                                           className="h-6 w-6"
-                                           onClick={(e) => { e.stopPropagation(); handleCreateLeafTask(plan.id); }}
-                                         >
-                                           <FilePlus className="h-3.5 w-3.5" />
-                                         </Button>
-                                       </TooltipTrigger>
-                                       <TooltipContent>{t('plans.addTask')}</TooltipContent>
-                                     </Tooltip>
-                                   </div>
-                                 }
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-6 w-6"
+                                            onClick={(e) => handleStartEditPlan(plan, e)}
+                                          >
+                                            <Pencil className="h-3.5 w-3.5" />
+                                          </Button>
+                                        </TooltipTrigger>
+                                        <TooltipContent>{t('plans.editTitle')}</TooltipContent>
+                                      </Tooltip>
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-6 w-6"
+                                            onClick={(e) => handlePatentSearch(plan, e)}
+                                          >
+                                            <Scale className="h-3.5 w-3.5" />
+                                          </Button>
+                                        </TooltipTrigger>
+                                        <TooltipContent>{t('plans.patentSearch')}</TooltipContent>
+                                      </Tooltip>
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-6 w-6"
+                                            onClick={(e) => { e.stopPropagation(); handleCreateTaskInPlan(plan.id); }}
+                                          >
+                                            <FolderPlus className="h-3.5 w-3.5" />
+                                          </Button>
+                                        </TooltipTrigger>
+                                        <TooltipContent>{t('plans.addAspect')}</TooltipContent>
+                                      </Tooltip>
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-6 w-6"
+                                            onClick={(e) => { e.stopPropagation(); handleCreateLeafTask(plan.id); }}
+                                          >
+                                            <FilePlus className="h-3.5 w-3.5" />
+                                          </Button>
+                                        </TooltipTrigger>
+                                        <TooltipContent>{t('plans.addTask')}</TooltipContent>
+                                      </Tooltip>
+                                    </div>
+                                  }
                               />
+                              )}
                               {isPlanExpanded && aspects.map((aspect) => {
                                 const subtasks = getSubtasksForAspect(aspect.id);
                                 const isAspectExpanded = expandedAspects.has(aspect.id);
@@ -718,10 +843,23 @@ export default function Tasks() {
                                                 className="h-6 w-6 opacity-0 group-hover:opacity-100"
                                                 onClick={(e) => { e.stopPropagation(); handleCreateTaskInPlan(plan.id, aspect.id); }}
                                               >
-                                                <Plus className="h-3 w-3" />
+                                                <FolderPlus className="h-3 w-3" />
                                               </Button>
                                             </TooltipTrigger>
-                                            <TooltipContent>{t('plans.addSubtask')}</TooltipContent>
+                                            <TooltipContent>{t('plans.addAspect')}</TooltipContent>
+                                          </Tooltip>
+                                          <Tooltip>
+                                            <TooltipTrigger asChild>
+                                              <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-6 w-6 opacity-0 group-hover:opacity-100"
+                                                onClick={(e) => { e.stopPropagation(); handleCreateLeafTaskInAspect(plan.id, aspect.id); }}
+                                              >
+                                                <FilePlus className="h-3 w-3" />
+                                              </Button>
+                                            </TooltipTrigger>
+                                            <TooltipContent>{t('plans.addTask')}</TooltipContent>
                                           </Tooltip>
                                         </div>
                                       </td>
