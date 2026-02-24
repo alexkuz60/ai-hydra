@@ -3,9 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
-import { MessageSquare, Play, Trash2, Pencil, Check, X, Bot, Sparkles, Cpu, Loader2, Save, Lock, Copy } from 'lucide-react';
+import { MessageSquare, Play, Trash2, Pencil, Check, X, Bot, Sparkles, Cpu, Loader2, Save, Lock, Copy, FileText } from 'lucide-react';
 import { TaskFilesPanel } from './TaskFilesPanel';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
@@ -36,7 +37,7 @@ const filterValidModels = (modelIds: string[]): string[] => {
 interface TaskDetailsPanelProps {
   task: Task | null;
   onUpdateTitle: (taskId: string, title: string) => Promise<void>;
-  onUpdateConfig: (taskId: string, config: Task['session_config']) => Promise<void>;
+  onUpdateConfig: (taskId: string, config: Task['session_config'], description?: string) => Promise<void>;
   onDelete: () => void;
   onDuplicate?: (task: Task) => void;
   onRequestTaskChange?: (task: Task) => void;
@@ -66,6 +67,7 @@ export function TaskDetailsPanel({
   const [selectedModels, setSelectedModels] = useState<string[]>([]);
   const [perModelSettings, setPerModelSettings] = useState<PerModelSettingsData>({});
   const [useHybridStreaming, setUseHybridStreaming] = useState(true);
+  const [taskDescription, setTaskDescription] = useState('');
   const [hasChanges, setHasChanges] = useState(false);
 
   // Unsaved changes protection
@@ -98,6 +100,7 @@ export function TaskDetailsPanel({
       setSelectedModels(filterValidModels(task.session_config?.selectedModels || []));
       setPerModelSettings(task.session_config?.perModelSettings || {});
       setUseHybridStreaming(task.session_config?.useHybridStreaming ?? true);
+      setTaskDescription(task.description || '');
       setHasChanges(false);
     }
   }, [task?.id, configKey]);
@@ -146,12 +149,18 @@ export function TaskDetailsPanel({
        setHasChanges(true);
      };
  
+   const handleDescriptionChange = (value: string) => {
+     setTaskDescription(value);
+     userInteractedRef.current = true;
+     setHasChanges(true);
+   };
+
    const handleSaveConfig = async () => {
      await onUpdateConfig(task.id, {
        selectedModels,
        perModelSettings,
        useHybridStreaming,
-     });
+     }, taskDescription);
      setHasChanges(false);
    };
  
@@ -259,7 +268,7 @@ export function TaskDetailsPanel({
                    disabled={saving}
                  >
                    {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
-                   {t('tasks.saveConfig')}
+                   {t('tasks.saveTask')}
                  </Button>
                )}
                {task.is_system && onDuplicate && (
@@ -306,6 +315,21 @@ export function TaskDetailsPanel({
  
        <ScrollArea className="flex-1">
          <div className="p-4 space-y-6">
+           {/* Task Formulation */}
+           <section>
+             <h3 className="text-sm font-medium text-muted-foreground mb-3 flex items-center gap-2">
+               <FileText className="h-4 w-4" />
+               {t('tasks.formulation')}
+             </h3>
+             <Textarea
+               value={taskDescription}
+               onChange={(e) => handleDescriptionChange(e.target.value)}
+               placeholder={t('tasks.formulationPlaceholder')}
+               className="min-h-[80px] resize-y text-sm"
+               disabled={task.is_system}
+             />
+           </section>
+
            {/* Model Selector */}
             <section data-guide="tasks-detail-models">
               <h3 className="text-sm font-medium text-muted-foreground mb-3">{t('tasks.selectModels')}</h3>

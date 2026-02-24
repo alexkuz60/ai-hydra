@@ -783,6 +783,10 @@ const translations: Translations = {
    'tasks.duplicateToOwn': { ru: 'Копировать себе', en: 'Copy to my tasks' },
    'tasks.duplicated': { ru: 'Задача скопирована в ваш список', en: 'Task copied to your list' },
    'tasks.files': { ru: 'Файлы', en: 'Files' },
+   'tasks.formulation': { ru: 'Формулировка задачи', en: 'Task Formulation' },
+   'tasks.formulationPlaceholder': { ru: 'Опишите суть задачи, цели, контекст...', en: 'Describe the task essence, goals, context...' },
+   'tasks.descriptionSaved': { ru: 'Задача сохранена', en: 'Task saved' },
+   'tasks.saveTask': { ru: 'Сохранить задачу', en: 'Save task' },
    
    // Strategic Plans (СПРЗ)
    'plans.title': { ru: 'Стратегические планы', en: 'Strategic Plans' },
