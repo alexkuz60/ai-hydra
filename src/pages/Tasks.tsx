@@ -466,29 +466,34 @@ export default function Tasks() {
     }
   };
 
-   const handleUpdateConfig = async (taskId: string, config: Task['session_config']) => {
+   const handleUpdateConfig = async (taskId: string, config: Task['session_config'], description?: string) => {
      setSaving(true);
     try {
+      const updateData: Record<string, unknown> = { 
+        session_config: JSON.parse(JSON.stringify(config)),
+        updated_at: new Date().toISOString()
+      };
+      if (description !== undefined) {
+        updateData.description = description;
+      }
       const { error } = await supabase
         .from('sessions')
-        .update({ 
-           session_config: JSON.parse(JSON.stringify(config)),
-          updated_at: new Date().toISOString()
-        })
+        .update(updateData)
          .eq('id', taskId);
 
       if (error) throw error;
 
+      const now = new Date().toISOString();
       setTasks(tasks.map(t => 
          t.id === taskId 
-           ? { ...t, session_config: config, updated_at: new Date().toISOString() } 
+           ? { ...t, session_config: config, updated_at: now, ...(description !== undefined ? { description } : {}) } 
           : t
       ));
        if (selectedTask?.id === taskId) {
-         setSelectedTask({ ...selectedTask, session_config: config, updated_at: new Date().toISOString() });
+         setSelectedTask({ ...selectedTask, session_config: config, updated_at: now, ...(description !== undefined ? { description } : {}) });
        }
       
-      toast.success(t('tasks.configSaved'));
+      toast.success(t('tasks.descriptionSaved'));
     } catch (error: any) {
       toast.error(error.message);
      } finally {
