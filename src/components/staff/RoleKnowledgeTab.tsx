@@ -461,6 +461,19 @@ export default function RoleKnowledgeTab({ role }: RoleKnowledgeTabProps) {
                     <Badge variant="outline" className="text-[10px] shrink-0">
                       {items.length} {language === 'ru' ? 'чанк.' : 'ch.'}
                     </Badge>
+                    {items[0]?.visibility_level && (
+                      <Badge
+                        variant="outline"
+                        className={cn(
+                          "text-[10px] shrink-0 font-bold",
+                          items[0].visibility_level === 'global' && "border-emerald-500/50 text-emerald-400 bg-emerald-500/10",
+                          items[0].visibility_level === 'organizational' && "border-sky-500/50 text-sky-400 bg-sky-500/10",
+                          items[0].visibility_level === 'role_specific' && "border-amber-500/50 text-amber-400 bg-amber-500/10",
+                        )}
+                      >
+                        {items[0].visibility_level === 'global' ? 'A' : items[0].visibility_level === 'organizational' ? 'B' : 'C'}
+                      </Badge>
+                    )}
                     <Badge variant="secondary" className="text-[10px] shrink-0">
                       {items[0]?.category}
                     </Badge>
