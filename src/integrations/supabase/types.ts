@@ -1001,6 +1001,7 @@ export type Database = {
           updated_at: string
           user_id: string
           version: string | null
+          visibility_level: string
         }
         Insert: {
           category?: string
@@ -1020,6 +1021,7 @@ export type Database = {
           updated_at?: string
           user_id: string
           version?: string | null
+          visibility_level?: string
         }
         Update: {
           category?: string
@@ -1039,6 +1041,7 @@ export type Database = {
           updated_at?: string
           user_id?: string
           version?: string | null
+          visibility_level?: string
         }
         Relationships: []
       }
@@ -1610,28 +1613,52 @@ export type Database = {
         }
         Returns: boolean
       }
-      hybrid_search_role_knowledge: {
-        Args: {
-          p_categories?: string[]
-          p_limit?: number
-          p_query_embedding: string
-          p_query_text: string
-          p_role: string
-        }
-        Returns: {
-          category: string
-          content: string
-          hybrid_score: number
-          id: string
-          metadata: Json
-          similarity: number
-          source_title: string
-          source_url: string
-          tags: string[]
-          text_rank: number
-          version: string
-        }[]
-      }
+      hybrid_search_role_knowledge:
+        | {
+            Args: {
+              p_categories?: string[]
+              p_limit?: number
+              p_query_embedding: string
+              p_query_text: string
+              p_role: string
+            }
+            Returns: {
+              category: string
+              content: string
+              hybrid_score: number
+              id: string
+              metadata: Json
+              similarity: number
+              source_title: string
+              source_url: string
+              tags: string[]
+              text_rank: number
+              version: string
+            }[]
+          }
+        | {
+            Args: {
+              p_categories?: string[]
+              p_limit?: number
+              p_query_embedding: string
+              p_query_text: string
+              p_role: string
+              p_visibility_levels?: string[]
+            }
+            Returns: {
+              category: string
+              content: string
+              hybrid_score: number
+              id: string
+              metadata: Json
+              similarity: number
+              source_title: string
+              source_url: string
+              tags: string[]
+              text_rank: number
+              version: string
+            }[]
+          }
       hybrid_search_session_memory: {
         Args: {
           p_chunk_types?: string[]
@@ -1663,25 +1690,46 @@ export type Database = {
         Args: { p_api_key: string; p_provider: string }
         Returns: undefined
       }
-      search_role_knowledge: {
-        Args: {
-          p_categories?: string[]
-          p_limit?: number
-          p_query_embedding: string
-          p_role: string
-        }
-        Returns: {
-          category: string
-          content: string
-          id: string
-          metadata: Json
-          similarity: number
-          source_title: string
-          source_url: string
-          tags: string[]
-          version: string
-        }[]
-      }
+      search_role_knowledge:
+        | {
+            Args: {
+              p_categories?: string[]
+              p_limit?: number
+              p_query_embedding: string
+              p_role: string
+            }
+            Returns: {
+              category: string
+              content: string
+              id: string
+              metadata: Json
+              similarity: number
+              source_title: string
+              source_url: string
+              tags: string[]
+              version: string
+            }[]
+          }
+        | {
+            Args: {
+              p_categories?: string[]
+              p_limit?: number
+              p_query_embedding: string
+              p_role: string
+              p_visibility_levels?: string[]
+            }
+            Returns: {
+              category: string
+              content: string
+              id: string
+              metadata: Json
+              similarity: number
+              source_title: string
+              source_url: string
+              tags: string[]
+              version: string
+            }[]
+          }
       search_role_memory: {
         Args: {
           p_limit?: number

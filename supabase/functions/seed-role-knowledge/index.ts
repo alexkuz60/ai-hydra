@@ -1171,6 +1171,7 @@ serve(async (req) => {
       chunk_total: number;
       tags: string[];
       metadata: Record<string, unknown>;
+      visibility_level: string;
     }> = [];
 
     // 1. Seed system prompt as knowledge
@@ -1189,6 +1190,7 @@ serve(async (req) => {
         chunk_total: 1,
         tags: ["системный промпт", "идентичность", role],
         metadata: { seeded: true, source: "system" },
+        visibility_level: "role_specific",
       });
     }
 
@@ -1210,6 +1212,7 @@ serve(async (req) => {
             chunk_total: chunks.length,
             tags: item.tags,
             metadata: { seeded: true, source: "hydrapedia" },
+            visibility_level: "role_specific",
           });
         }
       }
