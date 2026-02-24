@@ -12,10 +12,11 @@ interface StaffGroupHeaderProps {
   count: number;
   guideId: string;
   nested?: boolean;
+  actions?: React.ReactNode;
 }
 
 export function StaffGroupHeader({
-  expanded, onToggle, icon, label, count, guideId, nested,
+  expanded, onToggle, icon, label, count, guideId, nested, actions,
 }: StaffGroupHeaderProps) {
   return (
     <TableRow
@@ -27,8 +28,9 @@ export function StaffGroupHeader({
         <div className={cn("flex items-center gap-2 text-sm font-medium text-muted-foreground", nested && "pl-4")}>
           {expanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
           {icon}
-          {label}
-          <Badge variant="outline" className="ml-auto text-xs">{count}</Badge>
+          <span className="flex-1 truncate">{label}</span>
+          {actions}
+          <Badge variant="outline" className="text-xs">{count}</Badge>
         </div>
       </TableCell>
     </TableRow>

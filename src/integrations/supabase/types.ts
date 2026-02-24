@@ -693,6 +693,53 @@ export type Database = {
           },
         ]
       }
+      plan_conclusions: {
+        Row: {
+          content: string
+          content_en: string | null
+          created_at: string
+          embedding: string | null
+          id: string
+          is_pinned: boolean
+          metadata: Json | null
+          session_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          content_en?: string | null
+          created_at?: string
+          embedding?: string | null
+          id?: string
+          is_pinned?: boolean
+          metadata?: Json | null
+          session_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          content_en?: string | null
+          created_at?: string
+          embedding?: string | null
+          id?: string
+          is_pinned?: boolean
+          metadata?: Json | null
+          session_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plan_conclusions_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -1132,7 +1179,10 @@ export type Database = {
           is_active: boolean
           is_shared: boolean
           is_system: boolean
+          parent_id: string | null
+          plan_id: string | null
           session_config: Json | null
+          sort_order: number
           title: string
           title_en: string | null
           updated_at: string
@@ -1146,7 +1196,10 @@ export type Database = {
           is_active?: boolean
           is_shared?: boolean
           is_system?: boolean
+          parent_id?: string | null
+          plan_id?: string | null
           session_config?: Json | null
+          sort_order?: number
           title?: string
           title_en?: string | null
           updated_at?: string
@@ -1160,7 +1213,67 @@ export type Database = {
           is_active?: boolean
           is_shared?: boolean
           is_system?: boolean
+          parent_id?: string | null
+          plan_id?: string | null
           session_config?: Json | null
+          sort_order?: number
+          title?: string
+          title_en?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sessions_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sessions_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "strategic_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      strategic_plans: {
+        Row: {
+          created_at: string
+          goal: string | null
+          goal_en: string | null
+          id: string
+          metadata: Json | null
+          progress: number
+          status: string
+          title: string
+          title_en: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          goal?: string | null
+          goal_en?: string | null
+          id?: string
+          metadata?: Json | null
+          progress?: number
+          status?: string
+          title: string
+          title_en?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          goal?: string | null
+          goal_en?: string | null
+          id?: string
+          metadata?: Json | null
+          progress?: number
+          status?: string
           title?: string
           title_en?: string | null
           updated_at?: string
