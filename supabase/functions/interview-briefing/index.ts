@@ -115,11 +115,8 @@ serve(async (req) => {
         .select('content, source_title, category, tags, updated_at, visibility_level')
         .eq('user_id', user.id)
         .eq('visibility_level', visibilityLevel)
+        .eq('role', role)
         .order('chunk_index', { ascending: true });
-
-      if (visibilityLevel === 'role_specific') {
-        q = q.eq('role', role);
-      }
 
       if (isRecert && delta?.snapshotted_at) {
         q = q.gt('updated_at', delta.snapshotted_at);
