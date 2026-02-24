@@ -1440,6 +1440,13 @@ const translations: Translations = {
    // Role labels & descriptions - Patent Attorney
    'role.patent_attorney': { ru: 'Патентовед', en: 'Patent Attorney' },
    'staffRoles.description.patent_attorney': { ru: 'Патентовед. Анализирует решения на патентоспособность, ищет prior art, составляет формулу изобретения и описание по стандартам PCT/РФ.', en: 'Patent Attorney. Analyzes solutions for patentability, searches prior art, drafts patent claims and descriptions per PCT/RF standards.' },
+
+   // Role labels & descriptions - SPRZ Department
+   'role.visionary': { ru: 'Визионер', en: 'Visionary' },
+   'role.strategist': { ru: 'Стратег', en: 'Strategist' },
+   'staffRoles.description.visionary': { ru: 'Визионер. Формулирует миссию, видение и долгосрочные цели. Отвечает за концептуальное мышление и стратегическое целеполагание проектов.', en: 'Visionary. Formulates mission, vision, and long-term goals. Responsible for conceptual thinking and strategic goal-setting.' },
+   'staffRoles.description.strategist': { ru: 'Стратег. Декомпозирует цели Визионера в иерархию задач (План → Аспект → Задача). Приоритизирует, оценивает ресурсы и определяет критерии успеха.', en: 'Strategist. Decomposes Visionary goals into task hierarchies (Plan → Aspect → Task). Prioritizes, estimates resources, and defines success criteria.' },
+   'staffRoles.sprzGroup': { ru: 'Отдел СПРЗ', en: 'SPRZ Department' },
 };
 
 interface LanguageContextType {

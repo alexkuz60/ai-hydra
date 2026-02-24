@@ -1800,6 +1800,8 @@ export type Database = {
         | "technocritic"
         | "technoarbiter"
         | "technomoderator"
+        | "visionary"
+        | "strategist"
       pattern_category: "planning" | "creative" | "analysis" | "technical"
       verbosity_level: "concise" | "detailed" | "adaptive"
     }
@@ -1949,6 +1951,8 @@ export const Constants = {
         "technocritic",
         "technoarbiter",
         "technomoderator",
+        "visionary",
+        "strategist",
       ],
       pattern_category: ["planning", "creative", "analysis", "technical"],
       verbosity_level: ["concise", "detailed", "adaptive"],

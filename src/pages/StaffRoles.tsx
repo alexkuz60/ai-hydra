@@ -8,7 +8,7 @@ import {
   ResizablePanelGroup, ResizablePanel, ResizableHandle,
 } from '@/components/ui/resizable';
 import { Button } from '@/components/ui/button';
-import { Users, Settings, Sparkles, Loader2, ShieldAlert, RefreshCw, Landmark } from 'lucide-react';
+import { Users, Settings, Sparkles, Loader2, ShieldAlert, RefreshCw, Landmark, Target } from 'lucide-react';
 import { CloudSyncIndicator } from '@/components/ui/CloudSyncIndicator';
 import { useCloudSyncStatus } from '@/hooks/useCloudSettings';
 import { ROLE_CONFIG, AGENT_ROLES, type AgentRole } from '@/config/roles';
@@ -52,6 +52,7 @@ const StaffRoles = () => {
   const [technicalExpanded, setTechnicalExpanded] = useState(true);
   const [otkExpanded, setOtkExpanded] = useState(true);
   const [legalExpanded, setLegalExpanded] = useState(true);
+  const [sprzExpanded, setSprzExpanded] = useState(true);
   const [interviewRole, setInterviewRole] = useState<AgentRole | null>(interviewRoleInit);
   const [recertRole, setRecertRole] = useState<AgentRole | null>(null);
 
@@ -104,25 +105,27 @@ const StaffRoles = () => {
   });
 
   // Group roles
-  const { expertRoles, technicalRoles, otkRoles, legalRoles } = useMemo(() => {
+  const { expertRoles, technicalRoles, otkRoles, legalRoles, sprzRoles } = useMemo(() => {
     const experts: AgentRole[] = [];
     const technical: AgentRole[] = [];
     const otk: AgentRole[] = [];
     const legal: AgentRole[] = [];
+    const sprz: AgentRole[] = [];
     AGENT_ROLES.forEach((role) => {
       const config = ROLE_CONFIG[role];
-      if (config.isLegalStaff) legal.push(role);
+      if (config.isSprzStaff) sprz.push(role);
+      else if (config.isLegalStaff) legal.push(role);
       else if (config.isSystemOnly) otk.push(role);
       else if (config.isTechnicalStaff) technical.push(role);
       else experts.push(role);
     });
-    return { expertRoles: experts, technicalRoles: technical, otkRoles: otk, legalRoles: legal };
+    return { expertRoles: experts, technicalRoles: technical, otkRoles: otk, legalRoles: legal, sprzRoles: sprz };
   }, []);
 
   // Seed actions
   const allSeedableRoles = useMemo(
-    () => [...expertRoles, ...technicalRoles, ...otkRoles, ...legalRoles],
-    [expertRoles, technicalRoles, otkRoles, legalRoles]
+    () => [...expertRoles, ...technicalRoles, ...otkRoles, ...legalRoles, ...sprzRoles],
+    [expertRoles, technicalRoles, otkRoles, legalRoles, sprzRoles]
   );
   const { isBulkSeeding, isForceSyncing, handleBulkSeed, handleForceSeed } = useStaffSeedActions({
     technicalRoles: allSeedableRoles,
@@ -209,7 +212,7 @@ const StaffRoles = () => {
                 {nav.isMinimized ? (
                   <TooltipProvider delayDuration={200}>
                     <div className="p-1 space-y-1">
-                      {[...expertRoles, ...technicalRoles, ...otkRoles, ...legalRoles].map((role) => {
+                      {[...expertRoles, ...technicalRoles, ...otkRoles, ...legalRoles, ...sprzRoles].map((role) => {
                         const config = ROLE_CONFIG[role];
                         const IconComponent = config.icon;
                         const isSelected = selectedRole === role;
@@ -288,6 +291,16 @@ const StaffRoles = () => {
 
                       <StaffGroupHeader expanded={legalExpanded} onToggle={() => setLegalExpanded(!legalExpanded)} icon={<Landmark className="h-4 w-4" />} label={t('staffRoles.legalGroup')} count={legalRoles.length} guideId="staff-legal-group" />
                       {legalExpanded && legalRoles.map(role => (
+                        <StaffRoleRow
+                          key={role} role={role} isSelected={selectedRole === role}
+                          hasUnsavedChanges={unsavedChanges.hasUnsavedChanges}
+                          assignment={activeAssignments?.[role]} language={language}
+                          onSelect={handleRoleSelect} onRecertify={handleOpenRecert} t={t}
+                        />
+                      ))}
+
+                      <StaffGroupHeader expanded={sprzExpanded} onToggle={() => setSprzExpanded(!sprzExpanded)} icon={<Target className="h-4 w-4" />} label={t('staffRoles.sprzGroup')} count={sprzRoles.length} guideId="staff-sprz-group" />
+                      {sprzExpanded && sprzRoles.map(role => (
                         <StaffRoleRow
                           key={role} role={role} isSelected={selectedRole === role}
                           hasUnsavedChanges={unsavedChanges.hasUnsavedChanges}

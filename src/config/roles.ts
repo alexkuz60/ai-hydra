@@ -19,6 +19,8 @@ import {
   ScrollText,
   Languages,
   Landmark,
+  Eye,
+  Target,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -43,7 +45,9 @@ export type AgentRole =
   | 'evolutioner'
   | 'chronicler'
   | 'translator'
-  | 'patent_attorney';
+  | 'patent_attorney'
+  | 'visionary'
+  | 'strategist';
 
 // All possible message roles including user
 // This is the SINGLE SOURCE OF TRUTH for MessageRole type
@@ -59,8 +63,10 @@ export interface RoleConfigItem {
   isSystemOnly?: boolean;
   /** Legal department roles */
   isLegalStaff?: boolean;
+  /** SPRZ department roles (Visionary, Strategist) */
+  isSprzStaff?: boolean;
   bgClass?: string;
-  cardVariant?: 'default' | 'expert' | 'critic' | 'arbiter' | 'user' | 'supervisor' | 'glass' | 'advisor' | 'archivist' | 'analyst' | 'webhunter' | 'moderator' | 'guide' | 'technocritic' | 'technoarbiter' | 'technomoderator' | 'translator' | 'patent_attorney';
+  cardVariant?: 'default' | 'expert' | 'critic' | 'arbiter' | 'user' | 'supervisor' | 'glass' | 'advisor' | 'archivist' | 'analyst' | 'webhunter' | 'moderator' | 'guide' | 'technocritic' | 'technoarbiter' | 'technomoderator' | 'translator' | 'patent_attorney' | 'visionary' | 'strategist';
 }
 
 // Unified role configuration with icons and colors
@@ -244,6 +250,26 @@ export const ROLE_CONFIG: Record<MessageRole, RoleConfigItem> = {
     cardVariant: 'patent_attorney',
     bgClass: 'bg-amber-600/10',
   },
+  visionary: {
+    icon: Eye,
+    color: 'text-hydra-visionary',
+    label: 'role.visionary',
+    description: 'staffRoles.description.visionary',
+    isTechnicalStaff: true,
+    isSprzStaff: true,
+    cardVariant: 'visionary',
+    bgClass: 'bg-purple-500/10',
+  },
+  strategist: {
+    icon: Target,
+    color: 'text-hydra-strategist',
+    label: 'role.strategist',
+    description: 'staffRoles.description.strategist',
+    isTechnicalStaff: true,
+    isSprzStaff: true,
+    cardVariant: 'strategist',
+    bgClass: 'bg-blue-500/10',
+  },
 };
 
 // Consultant mode type (D-Chat modes)
@@ -303,6 +329,8 @@ export const AGENT_ROLES: AgentRole[] = [
   'technomoderator',
   'translator',
   'patent_attorney',
+  'visionary',
+  'strategist',
 ];
 
 // Expert roles (5 core roles with evaluation capabilities)
@@ -339,6 +367,8 @@ export const ROLE_SPECIFIC_CRITERIA: Record<AgentRole, string[]> = {
   chronicler: ['entry_completeness', 'accuracy', 'format_compliance', 'archival_quality', 'notification_timeliness'],
   translator: ['translation_accuracy', 'terminology_consistency', 'semantic_preservation', 'tone_fidelity', 'cosine_drift'],
   patent_attorney: ['legal_accuracy', 'analytical_depth', 'standards_knowledge', 'claim_structure', 'prior_art_search', 'communication_clarity'],
+  visionary: ['conceptual_clarity', 'mission_alignment', 'innovation_depth', 'strategic_coherence', 'inspiration_quality'],
+  strategist: ['decomposition_quality', 'actionability', 'resource_awareness', 'priority_ranking', 'milestone_clarity'],
 };
 
 
@@ -978,6 +1008,76 @@ export const DEFAULT_SYSTEM_PROMPTS: Record<AgentRole, string> = {
 3. При конфликте с базовыми ограничениями — уточни у Супервизора
 
 **Типичные указания:** «Поиск аналогов для X», «Составь формулу PCT», «Оцени новизну», «Анализ патентного ландшафта», «Заявка по стандарту ФИПС», «Объясни формулу простым языком», «Какие риски у этого аналога?», «Стратегия подачи в US и РФ»`,
+
+  visionary: `# Визионер — Стратегическое видение и концептуальное мышление
+
+## Идентичность
+Ты — Визионер в системе AI-Hydra, мета-роль отдела СПРЗ (Стратегическое Планирование Решения Задач). Ты отвечаешь за широкое концептуальное мышление, формулирование миссии, видения и долгосрочных целей проектов.
+
+## Компетенции
+- Формулирование миссии, видения и стратегических целей
+- Выявление скрытых возможностей и нераскрытого потенциала
+- Системное мышление: связи между разрозненными идеями
+- Построение нарративов и вдохновляющих описаний
+- Анализ трендов и прогнозирование развития
+
+## Методология работы
+1. Проанализируй текущее состояние проекта/задачи
+2. Определи «большую картину» — к чему мы стремимся
+3. Сформулируй видение, вдохновляющее команду
+4. Выяви ключевые стратегические возможности
+5. Предложи высокоуровневые направления развития
+
+## Формат ответов
+- Начинай с видения (Vision Statement)
+- Используй метафоры и аналогии для сложных концепций
+- Структурируй через «горизонты»: краткосрочный, среднесрочный, долгосрочный
+- Завершай вдохновляющим резюме и конкретными следующими шагами
+
+## Взаимодействие
+- Работай в паре со Стратегом: ты формулируешь «Что и Зачем», Стратег — «Как и Когда»
+- Передавай Стратегу чёткие формулировки целей для декомпозиции
+- Учитывай обратную связь от Стратега о реализуемости видения
+
+## Ограничения
+- Не углубляйся в тактические детали — это зона Стратега
+- Не давай технических спецификаций — фокус на стратегии
+- Обозначай степень уверенности в прогнозах`,
+
+  strategist: `# Стратег — Декомпозиция и планирование реализации
+
+## Идентичность
+Ты — Стратег в системе AI-Hydra, мета-роль отдела СПРЗ (Стратегическое Планирование Решения Задач). Ты декомпозируешь высокоуровневые цели Визионера в конкретные, измеримые, реализуемые подзадачи и аспекты.
+
+## Компетенции
+- Декомпозиция сложных целей в иерархию задач (План → Аспект → Задача)
+- Приоритизация: Impact vs Effort, MoSCoW, RICE
+- Определение зависимостей и критического пути
+- Оценка ресурсов, сроков и рисков
+- Формулирование критериев успеха (Definition of Done)
+
+## Методология работы
+1. Получи стратегическое видение от Визионера
+2. Разбей на ключевые направления (Аспекты/Фазы)
+3. Для каждого аспекта определи конкретные задачи
+4. Установи приоритеты, зависимости и милестоуны
+5. Предложи метрики прогресса для каждого уровня
+
+## Формат ответов
+- Используй иерархическую структуру: Фаза → Аспект → Задача
+- Каждая задача: название, описание, критерий готовности, приоритет
+- Указывай зависимости между задачами
+- Добавляй оценки сложности (S/M/L/XL)
+
+## Взаимодействие
+- Работай в паре с Визионером: он задаёт «Что и Зачем», ты — «Как и Когда»
+- Давай обратную связь о реализуемости стратегических целей
+- Координируй с другими ролями для оценки сложности
+
+## Ограничения
+- Не подменяй Визионера в стратегическом целеполагании
+- Не выполняй задачи — только планируй и структурируй
+- Указывай неопределённости и риски, а не скрывай их`,
 };
 
 // Helper function to get role config with fallback
@@ -1005,6 +1105,8 @@ export const ROLE_BADGE_COLORS: Record<string, string> = {
   technomoderator: 'bg-hydra-technomoderator/20 text-hydra-technomoderator border-hydra-technomoderator/30',
   translator: 'bg-hydra-translator/20 text-hydra-translator border-hydra-translator/30',
   patent_attorney: 'bg-hydra-patent/20 text-hydra-patent border-hydra-patent/30',
+  visionary: 'bg-hydra-visionary/20 text-hydra-visionary border-hydra-visionary/30',
+  strategist: 'bg-hydra-strategist/20 text-hydra-strategist border-hydra-strategist/30',
 };
 
 export function getRoleBadgeColor(role: string): string {

@@ -68,6 +68,8 @@
     --hydra-technomoderator: 215 75% 50%; /* steel blue for techno-moderator */
     --hydra-translator: 195 85% 45%; /* sky blue for translator */
     --hydra-patent: 42 80% 48%; /* golden/amber for patent attorney */
+    --hydra-visionary: 280 70% 55%; /* purple for visionary */
+    --hydra-strategist: 200 80% 50%; /* ocean blue for strategist */
     --hydra-memory: 260 70% 60%; /* violet for memory/embedding features */
     --hydra-cyan: 190 95% 50%; /* cyan for streaming/tech */
     /* Flow editor nodes */
@@ -150,6 +152,8 @@
     --hydra-technomoderator: 215 80% 55%; /* steel blue for techno-moderator */
     --hydra-translator: 195 90% 50%; /* sky blue for translator */
     --hydra-patent: 42 85% 53%; /* golden/amber for patent attorney */
+    --hydra-visionary: 280 75% 60%; /* purple for visionary */
+    --hydra-strategist: 200 85% 55%; /* ocean blue for strategist */
     --hydra-memory: 260 75% 65%; /* violet for memory/embedding features */
     --hydra-cyan: 190 100% 55%; /* cyan for streaming/tech */
     /* Flow editor nodes - Dark */
@@ -333,6 +337,16 @@
   .hydra-card-translator {
     border-left: 3px solid hsl(var(--hydra-translator));
     background: linear-gradient(90deg, hsl(var(--hydra-translator) / 0.08), transparent);
+  }
+
+  .hydra-card-visionary {
+    border-left: 3px solid hsl(var(--hydra-visionary));
+    background: linear-gradient(90deg, hsl(var(--hydra-visionary) / 0.08), transparent);
+  }
+
+  .hydra-card-strategist {
+    border-left: 3px solid hsl(var(--hydra-strategist));
+    background: linear-gradient(90deg, hsl(var(--hydra-strategist) / 0.08), transparent);
   }
 
   /* Scrollbar styling */

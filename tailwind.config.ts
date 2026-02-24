@@ -118,6 +118,8 @@ export default {
 				technomoderator: 'hsl(var(--hydra-technomoderator))',
 				translator: 'hsl(var(--hydra-translator))',
 				patent: 'hsl(var(--hydra-patent))',
+				visionary: 'hsl(var(--hydra-visionary))',
+				strategist: 'hsl(var(--hydra-strategist))',
 				memory: 'hsl(var(--hydra-memory))',
 				cyan: 'hsl(var(--hydra-cyan))',
 				info: 'hsl(var(--hydra-info))',
