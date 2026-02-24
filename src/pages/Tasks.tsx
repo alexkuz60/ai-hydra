@@ -144,7 +144,9 @@ export default function Tasks() {
   }, [user, authLoading, navigate]);
 
    // Group expand states
-   const [showSystemTasks, setShowSystemTasks] = useState(true);
+   const [showSystemTasks, setShowSystemTasks] = useState(() => {
+     try { const v = localStorage.getItem('hydra-sprz-show-system'); return v !== null ? v === 'true' : true; } catch { return true; }
+   });
    const [showUserTasks, setShowUserTasks] = useState(true);
 
    // Filter and split tasks into groups
@@ -722,7 +724,7 @@ export default function Tasks() {
                           <>
                             <StaffGroupHeader
                               expanded={showSystemTasks}
-                              onToggle={() => setShowSystemTasks(v => !v)}
+                              onToggle={() => setShowSystemTasks(v => { const next = !v; try { localStorage.setItem('hydra-sprz-show-system', String(next)); } catch {} return next; })}
                               icon={<BookOpen className="h-4 w-4 text-hydra-info" />}
                               label={t('tasks.tutorialExamples')}
                               count={systemTasks.length}
