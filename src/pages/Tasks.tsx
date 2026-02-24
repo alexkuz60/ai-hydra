@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody } from '@/components/ui/table';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Plus, Loader2, MessageSquare, Search, ListTodo, Flame, BookOpen, FolderOpen, Target, ChevronRight, ChevronDown, CornerDownRight, FolderPlus, FilePlus, Pencil, Scale } from 'lucide-react';
+import { Plus, Loader2, MessageSquare, Search, ListTodo, Flame, BookOpen, FolderOpen, Target, ChevronRight, ChevronDown, CornerDownRight, FolderPlus, FilePlus, Pencil, Landmark } from 'lucide-react';
 import {
   ResizablePanelGroup,
   ResizablePanel,
@@ -768,7 +768,7 @@ export default function Tasks() {
                                             className="h-6 w-6"
                                             onClick={(e) => handlePatentSearch(plan, e)}
                                           >
-                                            <Scale className="h-3.5 w-3.5" />
+                                            <Landmark className="h-3.5 w-3.5" />
                                           </Button>
                                         </TooltipTrigger>
                                         <TooltipContent>{t('plans.patentSearch')}</TooltipContent>
@@ -835,19 +835,6 @@ export default function Tasks() {
                                           {subtasks.length > 0 && (
                                             <Badge variant="secondary" className="text-[10px]">{subtasks.length}</Badge>
                                           )}
-                                          <Tooltip>
-                                            <TooltipTrigger asChild>
-                                              <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                className="h-6 w-6 opacity-0 group-hover:opacity-100"
-                                                onClick={(e) => { e.stopPropagation(); handleCreateTaskInPlan(plan.id, aspect.id); }}
-                                              >
-                                                <FolderPlus className="h-3 w-3" />
-                                              </Button>
-                                            </TooltipTrigger>
-                                            <TooltipContent>{t('plans.addAspect')}</TooltipContent>
-                                          </Tooltip>
                                           <Tooltip>
                                             <TooltipTrigger asChild>
                                               <Button
