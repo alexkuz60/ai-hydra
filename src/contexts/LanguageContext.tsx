@@ -797,6 +797,8 @@ const translations: Translations = {
    'plans.status.completed': { ru: 'Завершён', en: 'Completed' },
    'plans.status.paused': { ru: 'Приостановлен', en: 'Paused' },
    'plans.addAspect': { ru: 'Добавить аспект', en: 'Add aspect' },
+   'plans.addTask': { ru: 'Добавить задачу', en: 'Add task' },
+   'plans.task': { ru: 'Задача', en: 'Task' },
    'plans.addSubtask': { ru: 'Добавить подзадачу', en: 'Add subtask' },
    'plans.aspect': { ru: 'Аспект', en: 'Aspect' },
    'plans.subtask': { ru: 'Подзадача', en: 'Subtask' },
