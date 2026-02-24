@@ -32,6 +32,26 @@ import { cn } from '@/lib/utils';
 import { useStrategicPlans, StrategicPlan } from '@/hooks/useStrategicPlans';
 import { Badge } from '@/components/ui/badge';
  
+ // Task status helpers
+ const STATUS_CONFIG = {
+   done: { emoji: '✅', label: { ru: 'Реализовано', en: 'Done' }, className: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30' },
+   in_progress: { emoji: '⏳', label: { ru: 'В работе', en: 'In Progress' }, className: 'bg-amber-500/15 text-amber-400 border-amber-500/30' },
+   planned: { emoji: '📋', label: { ru: 'Планируется', en: 'Planned' }, className: 'bg-blue-500/15 text-blue-400 border-blue-500/30' },
+ } as const;
+
+ type TaskStatus = keyof typeof STATUS_CONFIG;
+
+ const getTaskStatusBadge = (task: Task, lang: string) => {
+   const status = (task.session_config as any)?.status as TaskStatus | undefined;
+   if (!status || !STATUS_CONFIG[status]) return null;
+   const cfg = STATUS_CONFIG[status];
+   return (
+     <span className={cn("inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full border", cfg.className)}>
+       {cfg.emoji} {lang === 'ru' ? cfg.label.ru : cfg.label.en}
+     </span>
+   );
+ };
+
  // Filter out deprecated/unavailable model IDs
  const filterValidModels = (modelIds: string[]): string[] => {
    return modelIds.filter(id => ALL_VALID_MODEL_IDS.includes(id));
@@ -864,9 +884,10 @@ export default function Tasks() {
                                         <td colSpan={2} className="py-2">
                                           <div className="flex items-center gap-2 pl-14">
                                             <CornerDownRight className="h-3 w-3 text-muted-foreground/50 shrink-0" />
-                                            <span className="text-sm truncate">
+                                            <span className="text-sm truncate flex-1">
                                               {(language === 'en' && sub.title_en) ? sub.title_en : sub.title}
                                             </span>
+                                            {getTaskStatusBadge(sub, language)}
                                           </div>
                                         </td>
                                       </tr>
