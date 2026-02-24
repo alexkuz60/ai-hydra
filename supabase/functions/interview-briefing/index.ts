@@ -105,20 +105,40 @@ serve(async (req) => {
     const isRecert = session_type === 'recert';
     console.log(`[interview-briefing] Assembling brief for role=${role}, model=${candidate_model}, type=${isRecert ? 'recert' : 'full'}`);
 
-    // ── 1. Fetch role knowledge ──
-    let knowledgeQuery = supabase
-      .from('role_knowledge')
-      .select('content, source_title, category, tags, updated_at')
-      .eq('role', role)
-      .eq('user_id', user.id)
-      .order('chunk_index', { ascending: true });
+    // ── 1. Fetch role knowledge by visibility level ──
+    // Level A (global) + Level B (organizational) — all roles see these
+    // Level C (role_specific) — only the target role sees these
+    
+    const buildKnowledgeQuery = (visibilityLevel: string) => {
+      let q = supabase
+        .from('role_knowledge')
+        .select('content, source_title, category, tags, updated_at, visibility_level')
+        .eq('user_id', user.id)
+        .eq('visibility_level', visibilityLevel)
+        .order('chunk_index', { ascending: true });
 
-    // In recert mode, only fetch entries changed since snapshot
-    if (isRecert && delta?.snapshotted_at) {
-      knowledgeQuery = knowledgeQuery.gt('updated_at', delta.snapshotted_at);
-    }
+      if (visibilityLevel === 'role_specific') {
+        q = q.eq('role', role);
+      }
 
-    const { data: knowledgeEntries } = await knowledgeQuery;
+      if (isRecert && delta?.snapshotted_at) {
+        q = q.gt('updated_at', delta.snapshotted_at);
+      }
+
+      return q;
+    };
+
+    const [
+      { data: globalEntries },
+      { data: orgEntries },
+      { data: roleEntries },
+    ] = await Promise.all([
+      buildKnowledgeQuery('global'),
+      buildKnowledgeQuery('organizational'),
+      buildKnowledgeQuery('role_specific'),
+    ]);
+
+    const knowledgeEntries = roleEntries || [];
 
     // ── 2. Fetch predecessor experience from role_memory ──
     const { data: memoryEntries } = await supabase
@@ -184,10 +204,29 @@ serve(async (req) => {
         }
       }
     } else {
-      // Full briefing (original)
-      sections.push(HYDRA_ANATOMY);
-      sections.push(`\n# Должностная инструкция: ${role}\n`);
-      sections.push(`Ниже приводится полная должностная инструкция для позиции, на которую вы проходите собеседование.\n`);
+      // Full briefing: 3-level knowledge pyramid
+
+      // ── Level A: Mission (global) ──
+      if (globalEntries && globalEntries.length > 0) {
+        sections.push(`\n# Уровень А: Миссия и философия\n`);
+        for (const entry of globalEntries) {
+          const title = entry.source_title ? `## ${entry.source_title}` : `## [${entry.category}]`;
+          sections.push(`${title}\n${entry.content}\n`);
+        }
+      } else {
+        // Fallback: use hardcoded HYDRA_ANATOMY if no global entries seeded yet
+        sections.push(HYDRA_ANATOMY);
+      }
+
+      // ── Level B: Organization (organizational) ──
+      if (orgEntries && orgEntries.length > 0) {
+        sections.push(`\n# Уровень Б: Штатная структура\n`);
+        sections.push(`Краткая справка о коллегах. Вы знаете *что* они делают, но НЕ *как* они это делают.\n`);
+        for (const entry of orgEntries) {
+          const title = entry.source_title ? `## ${entry.source_title}` : `## [${entry.category}]`;
+          sections.push(`${title}\n${entry.content}\n`);
+        }
+      }
 
       const neighbors = ROLE_INTERACTIONS[role] || [];
       if (neighbors.length > 0) {
@@ -196,13 +235,17 @@ serve(async (req) => {
         sections.push(`Эффективная координация с ними — часть вашей работы.\n`);
       }
 
+      // ── Level C: Role-specific expertise ──
+      sections.push(`\n# Уровень В: Должностная инструкция — ${role}\n`);
+      sections.push(`Ниже — специализированные знания, доступные ТОЛЬКО вашей роли:\n`);
+
       if (knowledgeEntries && knowledgeEntries.length > 0) {
-        sections.push(`\n## Профильная база знаний`);
-        sections.push(`Ниже — специализированные знания, накопленные для этой роли:\n`);
         for (const entry of knowledgeEntries) {
           const title = entry.source_title ? `### ${entry.source_title}` : `### [${entry.category}]`;
           sections.push(`${title}\n${entry.content}\n`);
         }
+      } else {
+        sections.push(`_Профильная база знаний пока пуста._\n`);
       }
     }
 
@@ -265,7 +308,7 @@ serve(async (req) => {
     const fullBrief = sections.join('\n');
     const estimatedTokens = Math.ceil(fullBrief.length / 4);
 
-    console.log(`[interview-briefing] Brief assembled: ~${estimatedTokens} tokens, ${knowledgeEntries?.length || 0} knowledge entries, type=${isRecert ? 'recert' : 'full'}`);
+    console.log(`[interview-briefing] Brief assembled: ~${estimatedTokens} tokens, global=${globalEntries?.length || 0}, org=${orgEntries?.length || 0}, role=${knowledgeEntries?.length || 0}, type=${isRecert ? 'recert' : 'full'}`);
 
     // ── 7. Create interview session ──
     const { data: session, error: insertError } = await supabase

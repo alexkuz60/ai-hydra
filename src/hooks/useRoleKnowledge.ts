@@ -4,6 +4,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import type { AgentRole } from '@/config/roles';
 
+export type KnowledgeVisibilityLevel = 'global' | 'organizational' | 'role_specific';
+
 export interface RoleKnowledgeEntry {
   id: string;
   role: string;
@@ -18,6 +20,7 @@ export interface RoleKnowledgeEntry {
   chunk_total: number;
   tags: string[];
   metadata: Record<string, unknown>;
+  visibility_level: KnowledgeVisibilityLevel;
   created_at: string;
   updated_at: string;
 }

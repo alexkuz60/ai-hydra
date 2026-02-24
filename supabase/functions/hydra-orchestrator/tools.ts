@@ -1851,12 +1851,13 @@ export async function fetchRoleKnowledgeContext(
   try {
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Check if user has any knowledge entries for this role
+    // Check if user has any role_specific knowledge entries for this role
     const { count, error: countError } = await supabase
       .from('role_knowledge')
       .select('id', { count: 'exact', head: true })
       .eq('user_id', userId)
-      .eq('role', role);
+      .eq('role', role)
+      .eq('visibility_level', 'role_specific');
 
     if (countError || !count || count === 0) {
       return null;
@@ -1935,6 +1936,7 @@ export async function fetchRoleKnowledgeContext(
         p_query_text: userMessage,
         p_query_embedding: `[${queryEmbedding.join(',')}]`,
         p_limit: candidateLimit,
+        p_visibility_levels: ['role_specific'],
       });
 
       if (!hybridError && hybridData && hybridData.length > 0) {
@@ -1961,6 +1963,7 @@ export async function fetchRoleKnowledgeContext(
         p_role: role,
         p_query_embedding: `[${queryEmbedding.join(',')}]`,
         p_limit: candidateLimit,
+        p_visibility_levels: ['role_specific'],
       });
 
       if (error || !data || data.length === 0) {
