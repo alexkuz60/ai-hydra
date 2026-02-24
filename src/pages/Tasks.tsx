@@ -106,7 +106,12 @@ export default function Tasks() {
    const [showNewPlan, setShowNewPlan] = useState(false);
    const [newPlanTitle, setNewPlanTitle] = useState('');
    const [creatingPlan, setCreatingPlan] = useState(false);
-    const [expandedPlans, setExpandedPlans] = useState<Set<string>>(new Set());
+    const [expandedPlans, setExpandedPlans] = useState<Set<string>>(() => {
+      try {
+        const stored = localStorage.getItem('hydra-sprz-expanded-plans');
+        return stored ? new Set(JSON.parse(stored)) : new Set();
+      } catch { return new Set(); }
+    });
     const [expandedAspects, setExpandedAspects] = useState<Set<string>>(new Set());
     const [editingPlanId, setEditingPlanId] = useState<string | null>(null);
     const [editingPlanTitle, setEditingPlanTitle] = useState('');
@@ -171,9 +176,10 @@ export default function Tasks() {
      setExpandedPlans(prev => {
        const next = new Set(prev);
        next.has(planId) ? next.delete(planId) : next.add(planId);
-       return next;
-     });
-   };
+      try { localStorage.setItem('hydra-sprz-expanded-plans', JSON.stringify([...next])); } catch { /* ignore */ }
+      return next;
+    });
+  };
 
    const toggleAspectExpanded = (aspectId: string) => {
      setExpandedAspects(prev => {
@@ -231,7 +237,11 @@ export default function Tasks() {
        if (plan) {
          setNewPlanTitle('');
          setShowNewPlan(false);
-         setExpandedPlans(prev => new Set(prev).add(plan.id));
+          setExpandedPlans(prev => {
+            const next = new Set(prev).add(plan.id);
+            try { localStorage.setItem('hydra-sprz-expanded-plans', JSON.stringify([...next])); } catch { /* ignore */ }
+            return next;
+          });
        }
      } finally {
        setCreatingPlan(false);
