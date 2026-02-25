@@ -6,15 +6,19 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Eye, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { CollapsedResponse } from './ConceptResponsesPreview';
+import type { ConceptResponse } from '@/hooks/useConceptResponses';
 
 interface ConceptVisionaryCallProps {
   planId: string;
   planTitle: string;
   planGoal: string;
   className?: string;
+  response?: ConceptResponse | null;
+  onExpand?: () => void;
 }
 
-export function ConceptVisionaryCall({ planId, planTitle, planGoal, className }: ConceptVisionaryCallProps) {
+export function ConceptVisionaryCall({ planId, planTitle, planGoal, className, response, onExpand }: ConceptVisionaryCallProps) {
   const { t, language } = useLanguage();
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -29,7 +33,6 @@ export function ConceptVisionaryCall({ planId, planTitle, planGoal, className }:
 
     setLoading(true);
     try {
-      // Find the "Цели и концепция" session under this plan
       const { data: conceptSession } = await supabase
         .from('sessions')
         .select('id, title')
@@ -47,7 +50,6 @@ export function ConceptVisionaryCall({ planId, planTitle, planGoal, className }:
           },
         });
       } else {
-        // Fallback: find any first child session of this plan
         const { data: firstSession } = await supabase
           .from('sessions')
           .select('id')
@@ -97,6 +99,14 @@ export function ConceptVisionaryCall({ planId, planTitle, planGoal, className }:
         <p className="text-xs text-muted-foreground/50 italic">
           {t('concept.visionary.needGoal')}
         </p>
+      )}
+      {response && (
+        <CollapsedResponse
+          content={response.content}
+          contentEn={response.content_en}
+          accentClass="hydra-visionary"
+          onExpand={() => onExpand?.()}
+        />
       )}
     </section>
   );

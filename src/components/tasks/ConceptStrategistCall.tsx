@@ -6,15 +6,19 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Target, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { CollapsedResponse } from './ConceptResponsesPreview';
+import type { ConceptResponse } from '@/hooks/useConceptResponses';
 
 interface ConceptStrategistCallProps {
   planId: string;
   planTitle: string;
   planGoal: string;
   className?: string;
+  response?: ConceptResponse | null;
+  onExpand?: () => void;
 }
 
-export function ConceptStrategistCall({ planId, planTitle, planGoal, className }: ConceptStrategistCallProps) {
+export function ConceptStrategistCall({ planId, planTitle, planGoal, className, response, onExpand }: ConceptStrategistCallProps) {
   const { t, language } = useLanguage();
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -95,6 +99,14 @@ export function ConceptStrategistCall({ planId, planTitle, planGoal, className }
         <p className="text-xs text-muted-foreground/50 italic">
           {t('concept.strategist.needGoal')}
         </p>
+      )}
+      {response && (
+        <CollapsedResponse
+          content={response.content}
+          contentEn={response.content_en}
+          accentClass="hydra-strategist"
+          onExpand={() => onExpand?.()}
+        />
       )}
     </section>
   );

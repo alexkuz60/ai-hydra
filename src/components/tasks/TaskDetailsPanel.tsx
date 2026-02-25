@@ -12,6 +12,8 @@ import { ConceptTrendResearch } from './ConceptTrendResearch';
 import { ConceptPatentSearch } from './ConceptPatentSearch';
 import { ConceptVisionaryCall } from './ConceptVisionaryCall';
 import { ConceptStrategistCall } from './ConceptStrategistCall';
+import { ConceptResponsesPreview } from './ConceptResponsesPreview';
+import { useConceptResponses } from '@/hooks/useConceptResponses';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { MultiModelSelector } from '@/components/warroom/MultiModelSelector';
@@ -73,6 +75,13 @@ export function TaskDetailsPanel({
   const [useHybridStreaming, setUseHybridStreaming] = useState(true);
   const [taskDescription, setTaskDescription] = useState('');
   const [hasChanges, setHasChanges] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewTab, setPreviewTab] = useState<'visionary' | 'strategist' | 'patent'>('visionary');
+
+  // Concept responses for plan-level tasks
+  const currentIsPlan = !!(task?.session_config as any)?.__isPlan;
+  const conceptPlanId = currentIsPlan ? ((task?.session_config as any)?.__planId || task?.plan_id || task?.id || null) : null;
+  const { responses: conceptResponses } = useConceptResponses(conceptPlanId);
 
   // Unsaved changes protection
   const unsavedChanges = useUnsavedChanges(false);
@@ -349,6 +358,8 @@ export function TaskDetailsPanel({
                  planTitle={displayTitle}
                  planGoal={taskDescription}
                  className="border-t pt-4"
+                 response={conceptResponses.visionary}
+                 onExpand={() => { setPreviewTab('visionary'); setPreviewOpen(true); }}
                />
              )}
 
@@ -359,6 +370,8 @@ export function TaskDetailsPanel({
                  planTitle={displayTitle}
                  planGoal={taskDescription}
                  className="border-t pt-4"
+                 response={conceptResponses.strategist}
+                 onExpand={() => { setPreviewTab('strategist'); setPreviewOpen(true); }}
                />
              )}
 
@@ -369,6 +382,18 @@ export function TaskDetailsPanel({
                   planTitle={displayTitle}
                   planGoal={taskDescription}
                   className="border-t pt-4"
+                  response={conceptResponses.patent}
+                  onExpand={() => { setPreviewTab('patent'); setPreviewOpen(true); }}
+                />
+              )}
+
+              {/* Expert Responses Preview Dialog */}
+              {isPlanLevel && (
+                <ConceptResponsesPreview
+                  responses={conceptResponses}
+                  defaultTab={previewTab}
+                  open={previewOpen}
+                  onOpenChange={setPreviewOpen}
                 />
               )}
 
