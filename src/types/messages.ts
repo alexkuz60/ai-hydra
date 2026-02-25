@@ -57,4 +57,35 @@ export interface Message {
   created_at: string;
   content_en?: string | null;
   metadata?: MessageMetadata | unknown;
+  // Decision Graph fields (Phase 1)
+  parent_message_id?: string | null;
+  request_group_id?: string | null;
+}
+
+// Link types for the decision graph
+export type MessageLinkType =
+  | 'reply'
+  | 'critique'
+  | 'evaluation'
+  | 'forward_to_dchat'
+  | 'return_from_dchat'
+  | 'summary_of';
+
+export interface MessageLink {
+  id: string;
+  source_message_id: string;
+  target_message_id: string;
+  link_type: MessageLinkType;
+  weight: number | null;
+  metadata?: Record<string, unknown>;
+  created_at: string;
+}
+
+// Graph node for Navigator tree rendering
+export interface MessageGraphNode {
+  message: Message;
+  children: MessageGraphNode[];
+  links: MessageLink[];
+  depth: number;
+  pathScore: number | null;
 }
