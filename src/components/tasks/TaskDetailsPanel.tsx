@@ -342,16 +342,6 @@ export function TaskDetailsPanel({
               />
             )}
 
-             {/* Patent Attorney — only for plan-level concept */}
-             {isPlanLevel && (
-               <ConceptPatentSearch
-                 planId={(task.session_config as any)?.__planId || task.plan_id || task.id}
-                 planTitle={displayTitle}
-                 planGoal={taskDescription}
-                 className="border-t pt-4"
-               />
-             )}
-
              {/* Visionary Call — only for plan-level concept */}
              {isPlanLevel && (
                <ConceptVisionaryCall
@@ -371,6 +361,16 @@ export function TaskDetailsPanel({
                  className="border-t pt-4"
                />
              )}
+
+              {/* Patent Attorney — only for plan-level concept */}
+              {isPlanLevel && (
+                <ConceptPatentSearch
+                  planId={(task.session_config as any)?.__planId || task.plan_id || task.id}
+                  planTitle={displayTitle}
+                  planGoal={taskDescription}
+                  className="border-t pt-4"
+                />
+              )}
 
             {/* Model selector & settings — only for non-plan tasks */}
             {!isPlanLevel && (
