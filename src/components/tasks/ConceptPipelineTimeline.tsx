@@ -15,6 +15,8 @@ interface ConceptPipelineTimelineProps {
   phaseStatuses: Record<ConceptPhase, 'idle' | 'running' | 'done' | 'failed'>;
   /** Whether concept/goal field is filled */
   hasConceptFilled?: boolean;
+  /** Whether patent step is included */
+  includePatent?: boolean;
   /** Click handler for individual phase */
   onPhaseClick?: (phase: ConceptPhase) => void;
   /** Restart handler */
@@ -42,9 +44,10 @@ const PHASES: { key: ConceptPhase; icon: React.ElementType; labelRu: string; lab
   { key: 'patent', icon: Landmark, labelRu: 'Патентовед', labelEn: 'Patent', colorVar: 'hydra-patent' },
 ];
 
-export function ConceptPipelineTimeline({ activePhase, phaseStatuses, hasConceptFilled = false, onPhaseClick, onRestart }: ConceptPipelineTimelineProps) {
+export function ConceptPipelineTimeline({ activePhase, phaseStatuses, hasConceptFilled = false, includePatent = true, onPhaseClick, onRestart }: ConceptPipelineTimelineProps) {
   const { language } = useLanguage();
   const isRu = language === 'ru';
+  const visiblePhases = includePatent ? PHASES : PHASES.filter(p => p.key !== 'patent');
 
   return (
     <TooltipProvider delayDuration={300}>
@@ -88,7 +91,7 @@ export function ConceptPipelineTimeline({ activePhase, phaseStatuses, hasConcept
           colorVar="primary"
         />
 
-        {PHASES.map((phase, i) => {
+        {visiblePhases.map((phase, i) => {
           const status = phaseStatuses[phase.key];
           const isCompleted = status === 'done';
           const isActive = status === 'running';
@@ -160,7 +163,7 @@ export function ConceptPipelineTimeline({ activePhase, phaseStatuses, hasConcept
             <React.Fragment key={phase.key}>
               {i > 0 && (
                 <PipelineConnector
-                  completed={isCompleted || (PHASES.findIndex(p => p.key === activePhase) > i - 1 && phaseStatuses[PHASES[i - 1].key] === 'done')}
+                  completed={isCompleted || (visiblePhases.findIndex(p => p.key === activePhase) > i - 1 && phaseStatuses[visiblePhases[i - 1].key] === 'done')}
                   animating={isActive}
                   failed={isFailed}
                   colorVar={phase.colorVar}

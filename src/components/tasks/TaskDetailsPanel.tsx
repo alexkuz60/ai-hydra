@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { MessageSquare, Play, Trash2, Pencil, Check, X, Bot, Sparkles, Cpu, Loader2, Save, Lock, Copy, FileText, Target, Zap, StopCircle } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
 import { TaskFilesPanel } from './TaskFilesPanel';
 
 import { ConceptPatentSearch } from './ConceptPatentSearch';
@@ -78,6 +79,7 @@ export function TaskDetailsPanel({
   const [useHybridStreaming, setUseHybridStreaming] = useState(true);
   const [taskDescription, setTaskDescription] = useState('');
   const [hasChanges, setHasChanges] = useState(false);
+  const [includePatent, setIncludePatent] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewTab, setPreviewTab] = useState<'visionary' | 'strategist' | 'patent'>('visionary');
 
@@ -91,6 +93,7 @@ export function TaskDetailsPanel({
     planId: conceptPlanId || '',
     planTitle: displayTitle,
     planGoal: taskDescription,
+    includePatent,
     onStepComplete: refetchResponses,
   });
 
@@ -138,6 +141,7 @@ export function TaskDetailsPanel({
       setPerModelSettings(task.session_config?.perModelSettings || {});
       setUseHybridStreaming(task.session_config?.useHybridStreaming ?? true);
       setTaskDescription(task.description || '');
+      setIncludePatent(!!(task.session_config as any)?.includePatent);
       setHasChanges(false);
     }
   }, [task?.id, configKey]);
@@ -197,6 +201,7 @@ export function TaskDetailsPanel({
        selectedModels,
        perModelSettings,
        useHybridStreaming,
+       ...(isPlanLevel ? { includePatent } : {}),
      }, taskDescription);
      setHasChanges(false);
    };
@@ -364,7 +369,25 @@ export function TaskDetailsPanel({
                className={cn("resize-y text-sm", isPlanLevel ? "min-h-[160px]" : "min-h-[80px]")}
                disabled={task.is_system}
              />
-           </section>
+            </section>
+
+            {/* Patent toggle — only for plan-level */}
+            {isPlanLevel && (
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="include-patent"
+                  checked={includePatent}
+                  onCheckedChange={(checked) => {
+                    setIncludePatent(!!checked);
+                    userInteractedRef.current = true;
+                    setHasChanges(true);
+                  }}
+                />
+                <label htmlFor="include-patent" className="text-sm text-muted-foreground cursor-pointer select-none">
+                  {language === 'ru' ? 'Включить патентный прогноз' : 'Include patent forecast'}
+                </label>
+              </div>
+            )}
 
               {/* Concept Pipeline — only for plan-level */}
               {isPlanLevel && (
@@ -376,6 +399,7 @@ export function TaskDetailsPanel({
                         activePhase={pipeline.state.activePhase}
                         phaseStatuses={pipeline.state.phaseStatuses}
                         hasConceptFilled={!!taskDescription?.trim()}
+                        includePatent={includePatent}
                         onPhaseClick={(phase) => {
                           if (pipeline.state.phaseStatuses[phase] === 'done') {
                             setPreviewTab(phase);
@@ -440,15 +464,17 @@ export function TaskDetailsPanel({
                     invoking={pipeline.state.phaseStatuses.strategist === 'running' || expertLoading === 'strategist'}
                   />
 
-                  <ConceptPatentSearch
-                    planId={(task.session_config as any)?.__planId || task.plan_id || task.id}
-                    planTitle={displayTitle}
-                    planGoal={taskDescription}
-                    response={conceptResponses.patent}
-                    onExpand={() => { setPreviewTab('patent'); setPreviewOpen(true); }}
-                    onInvoke={() => pipeline.runStep('patent')}
-                    invoking={pipeline.state.phaseStatuses.patent === 'running' || expertLoading === 'patent'}
-                  />
+                  {includePatent && (
+                    <ConceptPatentSearch
+                      planId={(task.session_config as any)?.__planId || task.plan_id || task.id}
+                      planTitle={displayTitle}
+                      planGoal={taskDescription}
+                      response={conceptResponses.patent}
+                      onExpand={() => { setPreviewTab('patent'); setPreviewOpen(true); }}
+                      onInvoke={() => pipeline.runStep('patent')}
+                      invoking={pipeline.state.phaseStatuses.patent === 'running' || expertLoading === 'patent'}
+                    />
+                  )}
                 </section>
               )}
 
