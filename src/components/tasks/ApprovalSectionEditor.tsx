@@ -27,13 +27,13 @@ export function ApprovalSectionEditor({ sections, onSectionsChange, readOnly }: 
   return (
     <div className="flex flex-col h-full">
       {/* Summary bar */}
-      <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-muted/30 text-xs text-muted-foreground mb-3 shrink-0">
-        <ListChecks className="h-3.5 w-3.5" />
+      <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-muted/30 text-sm text-muted-foreground mb-3 shrink-0">
+        <ListChecks className="h-4 w-4" />
         <span>{language === 'ru' ? 'Всего' : 'Total'}: {diff.total}</span>
-        {diff.approved > 0 && <Badge variant="outline" className="text-[10px] border-emerald-500/50 text-emerald-500">✓ {diff.approved}</Badge>}
-        {diff.rejected > 0 && <Badge variant="outline" className="text-[10px] border-destructive/50 text-destructive">✗ {diff.rejected}</Badge>}
-        {diff.rework > 0 && <Badge variant="outline" className="text-[10px] border-hydra-warning/50 text-hydra-warning">↻ {diff.rework}</Badge>}
-        {diff.edited > 0 && <Badge variant="outline" className="text-[10px] border-primary/50 text-primary">✎ {diff.edited}</Badge>}
+        {diff.approved > 0 && <Badge variant="outline" className="text-xs border-emerald-500/50 text-emerald-500">✓ {diff.approved}</Badge>}
+        {diff.rejected > 0 && <Badge variant="outline" className="text-xs border-destructive/50 text-destructive">✗ {diff.rejected}</Badge>}
+        {diff.rework > 0 && <Badge variant="outline" className="text-xs border-hydra-warning/50 text-hydra-warning">↻ {diff.rework}</Badge>}
+        {diff.edited > 0 && <Badge variant="outline" className="text-xs border-primary/50 text-primary">✎ {diff.edited}</Badge>}
       </div>
 
       <ScrollArea className="flex-1">
@@ -137,7 +137,7 @@ function SectionNode({ section, readOnly, onChange }: SectionNodeProps) {
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               <span className={cn(
-                'text-sm font-medium',
+                'text-base font-medium',
                 section.status === 'rejected' && 'line-through text-muted-foreground',
               )}>
                 {section.title}
@@ -146,7 +146,7 @@ function SectionNode({ section, readOnly, onChange }: SectionNodeProps) {
                 <StatusBadge status={section.status} />
               )}
               {section.body !== section.originalBody && section.status === 'approved' && (
-                <Badge variant="outline" className="text-[9px] border-primary/40 text-primary">
+                <Badge variant="outline" className="text-[10px] border-primary/40 text-primary">
                   {language === 'ru' ? 'изменено' : 'edited'}
                 </Badge>
               )}
@@ -159,7 +159,7 @@ function SectionNode({ section, readOnly, onChange }: SectionNodeProps) {
                   <Textarea
                     value={bodyDraft}
                     onChange={(e) => setBodyDraft(e.target.value)}
-                    className="text-xs min-h-[60px] resize-y"
+                    className="text-sm min-h-[60px] resize-y"
                     autoFocus
                   />
                   <div className="flex items-center gap-1">
@@ -191,7 +191,7 @@ function SectionNode({ section, readOnly, onChange }: SectionNodeProps) {
                 </div>
               ) : (
                 <p className={cn(
-                  'text-xs text-muted-foreground mt-1 whitespace-pre-wrap cursor-pointer hover:text-foreground transition-colors',
+                  'text-sm text-muted-foreground mt-1 whitespace-pre-wrap cursor-pointer hover:text-foreground transition-colors',
                   section.status === 'rejected' && 'line-through',
                 )}
                   onClick={() => !readOnly && setIsEditing(true)}
@@ -209,7 +209,7 @@ function SectionNode({ section, readOnly, onChange }: SectionNodeProps) {
                   value={commentDraft}
                   onChange={(e) => setCommentDraft(e.target.value)}
                   placeholder={language === 'ru' ? 'Комментарий (причина отклонения / уточнение)...' : 'Comment (rejection reason / clarification)...'}
-                  className="text-xs min-h-[40px] resize-y border-hydra-warning/30"
+                  className="text-sm min-h-[40px] resize-y border-hydra-warning/30"
                   autoFocus
                 />
                 <div className="flex items-center gap-1">
@@ -356,7 +356,7 @@ function StatusBadge({ status }: { status: ApprovalStatus }) {
   const { language } = useLanguage();
   const cfg = labels[status];
   return (
-    <Badge variant="outline" className={cn('text-[9px] px-1 py-0', cfg.cls)}>
+    <Badge variant="outline" className={cn('text-[10px] px-1 py-0', cfg.cls)}>
       {language === 'ru' ? cfg.ru : cfg.en}
     </Badge>
   );
