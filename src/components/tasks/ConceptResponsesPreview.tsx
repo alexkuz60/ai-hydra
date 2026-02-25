@@ -264,8 +264,8 @@ export function ConceptResponsesPreview({
             <TabsList className="w-full justify-start">
               {tabs.map(tab => (
                 <TabsTrigger key={tab.id} value={tab.id} className="gap-1.5">
-                  <tab.icon className={cn('h-3.5 w-3.5', tab.color)} />
-                  <span className="text-xs">{tab.label}</span>
+                  <tab.icon className={cn('h-4 w-4', tab.color)} />
+                  <span className="text-sm">{tab.label}</span>
                   {tab.response && <span className="w-1.5 h-1.5 rounded-full bg-primary" />}
                 </TabsTrigger>
               ))}
@@ -274,7 +274,7 @@ export function ConceptResponsesPreview({
               <TabsContent key={tab.id} value={tab.id} className="flex-1 min-h-0">
                 <ScrollArea className="flex-1 h-full">
                   {tab.response ? (
-                    <div className="prose prose-sm dark:prose-invert max-w-none p-4">
+                    <div className="prose prose-base dark:prose-invert max-w-none p-4">
                       <ReactMarkdown>{getContent(tab.response) || ''}</ReactMarkdown>
                     </div>
                   ) : (
@@ -294,9 +294,9 @@ export function ConceptResponsesPreview({
                 const sectionCount = approvalSections.filter(s => s.source === tab.id).length;
                 return (
                   <TabsTrigger key={tab.id} value={tab.id} className="gap-1.5">
-                    <tab.icon className={cn('h-3.5 w-3.5', tab.color)} />
-                    <span className="text-xs">{tab.label}</span>
-                    {sectionCount > 0 && <span className="text-[10px] text-muted-foreground">({sectionCount})</span>}
+                    <tab.icon className={cn('h-4 w-4', tab.color)} />
+                    <span className="text-sm">{tab.label}</span>
+                    {sectionCount > 0 && <span className="text-xs text-muted-foreground">({sectionCount})</span>}
                   </TabsTrigger>
                 );
               })}
