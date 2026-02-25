@@ -242,24 +242,15 @@ export function ConceptResponsesPreview({
                 : (language === 'ru' ? 'Утверждение стратегии' : 'Strategy Approval')
               }
             </DialogTitle>
-            {hasAnyResponse && planId && (
+            {hasAnyResponse && planId && viewMode === 'preview' && (
               <Button
-                variant={viewMode === 'approval' ? 'default' : 'outline'}
+                variant="outline"
                 size="sm"
                 className="gap-1.5 shrink-0"
-                onClick={() => setViewMode(viewMode === 'preview' ? 'approval' : 'preview')}
+                onClick={() => setViewMode('approval')}
               >
-                {viewMode === 'preview' ? (
-                  <>
-                    <FileEdit className="h-3.5 w-3.5" />
-                    {language === 'ru' ? 'Режим утверждения' : 'Approval Mode'}
-                  </>
-                ) : (
-                  <>
-                    <Eye className="h-3.5 w-3.5" />
-                    {language === 'ru' ? 'Просмотр' : 'Preview'}
-                  </>
-                )}
+                <FileEdit className="h-3.5 w-3.5" />
+                {language === 'ru' ? 'Режим утверждения' : 'Approval Mode'}
               </Button>
             )}
           </div>
