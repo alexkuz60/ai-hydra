@@ -6,16 +6,19 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Landmark, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { toast } from 'sonner';
+import { CollapsedResponse } from './ConceptResponsesPreview';
+import type { ConceptResponse } from '@/hooks/useConceptResponses';
 
 interface ConceptPatentSearchProps {
   planId: string;
   planTitle: string;
   planGoal: string;
   className?: string;
+  response?: ConceptResponse | null;
+  onExpand?: () => void;
 }
 
-export function ConceptPatentSearch({ planId, planTitle, planGoal, className }: ConceptPatentSearchProps) {
+export function ConceptPatentSearch({ planId, planTitle, planGoal, className, response, onExpand }: ConceptPatentSearchProps) {
   const { t, language } = useLanguage();
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -30,8 +33,6 @@ export function ConceptPatentSearch({ planId, planTitle, planGoal, className }: 
 
     setLoading(true);
     try {
-      // Find the "Цели и концепция" session under this plan
-      // It's the first child session of the first aspect (sorted by sort_order)
       const { data: conceptSession } = await supabase
         .from('sessions')
         .select('id, title')
@@ -49,7 +50,6 @@ export function ConceptPatentSearch({ planId, planTitle, planGoal, className }: 
           },
         });
       } else {
-        // Fallback: find any first child session of this plan
         const { data: firstSession } = await supabase
           .from('sessions')
           .select('id')
@@ -68,7 +68,6 @@ export function ConceptPatentSearch({ planId, planTitle, planGoal, className }: 
       }
     } catch (err) {
       console.error('Failed to find concept session:', err);
-      // Fallback: navigate without task param
       navigate('/expert-panel', {
         state: { prefillMessage },
       });
@@ -100,6 +99,14 @@ export function ConceptPatentSearch({ planId, planTitle, planGoal, className }: 
         <p className="text-xs text-muted-foreground/50 italic">
           {t('concept.patentSearch.needGoal')}
         </p>
+      )}
+      {response && (
+        <CollapsedResponse
+          content={response.content}
+          contentEn={response.content_en}
+          accentClass="hydra-patent"
+          onExpand={() => onExpand?.()}
+        />
       )}
     </section>
   );
