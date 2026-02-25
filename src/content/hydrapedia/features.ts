@@ -1228,6 +1228,62 @@ SVG-граф с гексагональной структурой показыв
   → top-5 → system prompt injection
 \`\`\`
 
+## Хроники Эволюции
+
+Механизм автономной рефлексии системы — Эволюционер анализирует работу ролей и предлагает улучшения, а Супервизор утверждает или отклоняет их.
+
+### Архитектура Эволюционера
+
+Эволюционер — ReAct-агент (Think → Act → Verify → Observe → Revise), работающий по циклу:
+
+\`\`\`
+Триггер (расхождение оценок / ручной запуск)
+   ↓
+🤔 Think — анализ role_memory, статистики моделей
+   ↓
+🔬 Act — формирование гипотезы улучшения
+   ↓
+✅ Verify — семантическая проверка гипотезы
+   ↓
+👁 Observe — оценка результата
+   ↓
+📝 Revise — создание записи в Хрониках (chronicles)
+   ↓
+🔔 Уведомление Супервизору (🟢/🟡/🔴)
+\`\`\`
+
+### Триггеры эволюции
+
+| Триггер | Условие | Действие |
+|---------|---------|----------|
+| **Расхождение оценок** | \|user_score − arbiter_score\| ≥ 2.5 в Конкурсе | Автоматический fire-and-forget вызов Эволюционера |
+| **Ручной запуск** | Редактор промпта Эволюционера в ChroniclesTab | Пользователь формулирует задачу рефлексии |
+
+### Резолюции Супервизора
+
+Каждая запись Хроник ожидает решения Супервизора:
+
+| Резолюция | Иконка | Значение |
+|-----------|--------|----------|
+| **Принято** | ✅ | Гипотеза утверждена, изменения применены |
+| **Отклонено** | ❌ | Гипотеза признана нерелевантной |
+| **Комментарий** | 💬 | Требуется доработка с комментарием |
+| **Повторный анализ** | 🔄 | Запрос переосмысления с новыми данными |
+
+### Структура записи
+
+Каждая запись содержит двуязычный контент:
+- **title / title_en** — заголовок ревизии
+- **hypothesis / hypothesis_en** — гипотеза улучшения
+- **summary / summary_en** — краткое резюме от AI
+- **supervisor_comment / supervisor_comment_en** — комментарий Супервизора
+- **metrics_before / metrics_after** — метрики до и после (JSON)
+- **entry_code** — уникальный код (EVO-001, EVO-002...)
+
+### Интерфейс
+
+Фильтрация по роли, дате (locale-aware Calendar) и статусу. Риск-индикаторы (🟢/🟡/🔴) в уведомлениях. Дублирование уведомлений исключено фильтрацией по статусу \`revised\`.
+
 ## Модульная архитектура (v0.2.18)
 
 Начиная с версии 0.2.18, Memory Hub реализован как набор из 11 независимых модулей в \`src/components/memory/\`. Монолитный файл (4225 строк) декомпозирован на атомарные компоненты:
@@ -1387,6 +1443,62 @@ Query → generate-embeddings + HyDE generation [parallel]
   → rerank [gemini-3-flash-preview] — final_score = rerank×0.7 + hybrid×0.3
   → top-5 → system prompt injection
 \`\`\`
+
+## Evolution Chronicles
+
+Autonomous system reflection mechanism — the Evolutioner analyzes role performance and proposes improvements, while the Supervisor approves or rejects them.
+
+### Evolutioner Architecture
+
+The Evolutioner is a ReAct agent (Think → Act → Verify → Observe → Revise) operating in cycles:
+
+\`\`\`
+Trigger (score discrepancy / manual launch)
+   ↓
+🤔 Think — analyze role_memory, model statistics
+   ↓
+🔬 Act — formulate improvement hypothesis
+   ↓
+✅ Verify — semantic hypothesis verification
+   ↓
+👁 Observe — evaluate outcome
+   ↓
+📝 Revise — create chronicles entry
+   ↓
+🔔 Notify Supervisor (🟢/🟡/🔴)
+\`\`\`
+
+### Evolution Triggers
+
+| Trigger | Condition | Action |
+|---------|-----------|--------|
+| **Score discrepancy** | \|user_score − arbiter_score\| ≥ 2.5 in Contest | Automatic fire-and-forget Evolutioner call |
+| **Manual launch** | Evolutioner prompt editor in ChroniclesTab | User formulates a reflection task |
+
+### Supervisor Resolutions
+
+Each Chronicles entry awaits a Supervisor decision:
+
+| Resolution | Icon | Meaning |
+|------------|------|---------|
+| **Approved** | ✅ | Hypothesis confirmed, changes applied |
+| **Rejected** | ❌ | Hypothesis deemed irrelevant |
+| **Comment** | 💬 | Requires revision with feedback |
+| **Re-analyze** | 🔄 | Request re-evaluation with new data |
+
+### Entry Structure
+
+Each entry contains bilingual content:
+- **title / title_en** — revision title
+- **hypothesis / hypothesis_en** — improvement hypothesis
+- **summary / summary_en** — AI-generated summary
+- **supervisor_comment / supervisor_comment_en** — Supervisor's comment
+- **metrics_before / metrics_after** — before/after metrics (JSON)
+- **entry_code** — unique code (EVO-001, EVO-002...)
+
+### Interface
+
+Filtering by role, date (locale-aware Calendar), and status. Risk indicators (🟢/🟡/🔴) in notifications. Duplicate notifications prevented by \`revised\` status filtering.
 
 ## Modular Architecture (v0.2.18)
 
