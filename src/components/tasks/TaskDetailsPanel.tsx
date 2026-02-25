@@ -376,12 +376,19 @@ export function TaskDetailsPanel({
                         activePhase={pipeline.state.activePhase}
                         phaseStatuses={pipeline.state.phaseStatuses}
                         onPhaseClick={(phase) => {
-                          // Click on phase: show response if done, or invoke if idle
                           if (pipeline.state.phaseStatuses[phase] === 'done') {
                             setPreviewTab(phase);
                             setPreviewOpen(true);
                           } else if (!pipeline.state.isRunning && pipeline.state.phaseStatuses[phase] === 'idle') {
-                            pipeline.runStep(phase);
+                            // Validate dependencies
+                            const deps: Record<string, boolean> = {
+                              visionary: true,
+                              strategist: pipeline.state.phaseStatuses.visionary === 'done',
+                              patent: pipeline.state.phaseStatuses.visionary === 'done' && pipeline.state.phaseStatuses.strategist === 'done',
+                            };
+                            if (deps[phase]) {
+                              pipeline.runStep(phase);
+                            }
                           }
                         }}
                         onRestart={() => pipeline.runFullPipeline()}

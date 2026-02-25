@@ -18,6 +18,14 @@ interface ConceptPipelineTimelineProps {
   onRestart?: () => void;
 }
 
+/** Check if a phase's prerequisites are met */
+function isPhaseUnlocked(phase: ConceptPhase, statuses: Record<ConceptPhase, 'idle' | 'running' | 'done' | 'failed'>): boolean {
+  if (phase === 'visionary') return true;
+  if (phase === 'strategist') return statuses.visionary === 'done';
+  if (phase === 'patent') return statuses.visionary === 'done' && statuses.strategist === 'done';
+  return false;
+}
+
 const PHASES: { key: ConceptPhase; icon: React.ElementType; labelRu: string; labelEn: string; colorVar: string }[] = [
   { key: 'visionary', icon: Eye, labelRu: 'Визионер', labelEn: 'Visionary', colorVar: 'hydra-visionary' },
   { key: 'strategist', icon: Target, labelRu: 'Стратег', labelEn: 'Strategist', colorVar: 'hydra-strategist' },
@@ -35,6 +43,7 @@ export function ConceptPipelineTimeline({ activePhase, phaseStatuses, onPhaseCli
         const isCompleted = status === 'done';
         const isActive = status === 'running';
         const isFailed = status === 'failed';
+        const isLocked = !isPhaseUnlocked(phase.key, phaseStatuses);
 
         return (
           <React.Fragment key={phase.key}>
@@ -50,10 +59,12 @@ export function ConceptPipelineTimeline({ activePhase, phaseStatuses, onPhaseCli
             <div className="flex flex-col items-center gap-0.5 shrink-0">
               <button
                 type="button"
-                onClick={() => onPhaseClick?.(phase.key)}
+                onClick={() => !isLocked && onPhaseClick?.(phase.key)}
+                disabled={isLocked}
                 className={cn(
-                  "relative flex items-center justify-center w-8 h-8 rounded-full border-2 transition-all duration-300 cursor-pointer",
-                  "hover:scale-110 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1",
+                  "relative flex items-center justify-center w-8 h-8 rounded-full border-2 transition-all duration-300",
+                  isLocked ? "cursor-not-allowed opacity-40" : "cursor-pointer hover:scale-110 hover:shadow-sm",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1",
                   activePhase === phase.key && "ring-2 ring-offset-1 ring-offset-background",
                   isFailed
                     ? "border-destructive bg-destructive/15 text-destructive"
