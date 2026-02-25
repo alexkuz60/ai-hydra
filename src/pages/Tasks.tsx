@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody } from '@/components/ui/table';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Plus, Loader2, MessageSquare, Search, ListTodo, Flame, BookOpen, FolderOpen, Target, ChevronRight, ChevronDown, CornerDownRight, FolderPlus, FilePlus, FileText, Pencil, Landmark, Eye } from 'lucide-react';
+import { Plus, Loader2, MessageSquare, Search, ListTodo, Flame, BookOpen, FolderOpen, Target, ChevronRight, ChevronDown, CornerDownRight, FolderPlus, FilePlus, Landmark, Eye } from 'lucide-react';
 import {
   ResizablePanelGroup,
   ResizablePanel,
@@ -85,8 +85,18 @@ export default function Tasks() {
    // Search
    const [searchQuery, setSearchQuery] = useState('');
   
-   // Selected task
-   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+    // Selected task - restore from localStorage
+    const [selectedTask, setSelectedTaskRaw] = useState<Task | null>(null);
+    const setSelectedTask = (task: Task | null) => {
+      setSelectedTaskRaw(task);
+      try {
+        if (task) {
+          localStorage.setItem('hydra-sprz-selected-task', task.id);
+        } else {
+          localStorage.removeItem('hydra-sprz-selected-task');
+        }
+      } catch { /* ignore */ }
+    };
    
   // Unsaved changes protection
    const hasUnsavedChangesRef = useRef(false);
@@ -130,9 +140,14 @@ export default function Tasks() {
         return stored ? new Set(JSON.parse(stored)) : new Set();
       } catch { return new Set(); }
     });
-    const [expandedAspects, setExpandedAspects] = useState<Set<string>>(new Set());
-    const [editingPlanId, setEditingPlanId] = useState<string | null>(null);
-    const [editingPlanTitle, setEditingPlanTitle] = useState('');
+     const [expandedAspects, setExpandedAspects] = useState<Set<string>>(() => {
+       try {
+         const stored = localStorage.getItem('hydra-sprz-expanded-aspects');
+         return stored ? new Set(JSON.parse(stored)) : new Set();
+       } catch { return new Set(); }
+     });
+     const [editingPlanId, setEditingPlanId] = useState<string | null>(null);
+     const [editingPlanTitle, setEditingPlanTitle] = useState('');
 
   // Task deletion hook
   const { deleteTask, deleteAllTasks, deleting } = useTaskDeletion({
@@ -161,11 +176,32 @@ export default function Tasks() {
     }
   }, [user, authLoading, navigate]);
 
+  // Restore selected task from localStorage after data loads
+  useEffect(() => {
+    if (loading || !tasks.length && !plans.length) return;
+    if (selectedTask) return; // already selected
+    try {
+      const storedId = localStorage.getItem('hydra-sprz-selected-task');
+      if (!storedId) return;
+      // Check if it's a plan virtual task
+      if (storedId.startsWith('__plan__')) {
+        const planId = storedId.replace('__plan__', '');
+        const plan = plans.find(p => p.id === planId);
+        if (plan) setSelectedTaskRaw(planToTask(plan));
+      } else {
+        const task = tasks.find(t => t.id === storedId);
+        if (task) setSelectedTaskRaw(task);
+      }
+    } catch { /* ignore */ }
+  }, [loading, tasks, plans]);
+
    // Group expand states
    const [showSystemTasks, setShowSystemTasks] = useState(() => {
      try { const v = localStorage.getItem('hydra-sprz-show-system'); return v !== null ? v === 'true' : true; } catch { return true; }
    });
-   const [showUserTasks, setShowUserTasks] = useState(true);
+    const [showUserTasks, setShowUserTasks] = useState(() => {
+      try { const v = localStorage.getItem('hydra-sprz-show-user'); return v !== null ? v === 'true' : true; } catch { return true; }
+    });
 
    // Filter and split tasks into groups
    const { systemTasks, userTasks, planTasks, standaloneTasks } = useMemo(() => {
@@ -201,13 +237,14 @@ export default function Tasks() {
     });
   };
 
-   const toggleAspectExpanded = (aspectId: string) => {
-     setExpandedAspects(prev => {
-       const next = new Set(prev);
-       next.has(aspectId) ? next.delete(aspectId) : next.add(aspectId);
-       return next;
-     });
-   };
+    const toggleAspectExpanded = (aspectId: string) => {
+      setExpandedAspects(prev => {
+        const next = new Set(prev);
+        next.has(aspectId) ? next.delete(aspectId) : next.add(aspectId);
+        try { localStorage.setItem('hydra-sprz-expanded-aspects', JSON.stringify([...next])); } catch { /* ignore */ }
+        return next;
+      });
+    };
  
   const fetchTasks = async () => {
     if (!user) return;
@@ -873,9 +910,9 @@ export default function Tasks() {
                                   </td>
                                 </tr>
                               ) : (
-                              <StaffGroupHeader
-                                expanded={isPlanExpanded}
-                                onToggle={() => togglePlanExpanded(plan.id)}
+                               <StaffGroupHeader
+                                 expanded={isPlanExpanded}
+                                 onToggle={() => { togglePlanExpanded(plan.id); handleSelectTask(planToTask(plan)); }}
                                 icon={<Target className={cn("h-4 w-4", selectedTask?.id === `__plan__${plan.id}` ? "text-primary" : "text-primary")} />}
                                 label={(language === 'en' && plan.title_en) ? plan.title_en : plan.title}
                                 count={aspects.length}
@@ -883,33 +920,7 @@ export default function Tasks() {
                                 selected={selectedTask?.id === `__plan__${plan.id}`}
                                  actions={
                                    <div className="flex items-center gap-0.5">
-                                      <Tooltip>
-                                        <TooltipTrigger asChild>
-                                          <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className={cn("h-6 w-6", selectedTask?.id === `__plan__${plan.id}` && "text-primary")}
-                                            onClick={(e) => { e.stopPropagation(); handleSelectTask(planToTask(plan)); }}
-                                          >
-                                            <FileText className="h-3.5 w-3.5" />
-                                          </Button>
-                                        </TooltipTrigger>
-                                        <TooltipContent>{t('plans.concept')}</TooltipContent>
-                                      </Tooltip>
-                                      <Tooltip>
-                                        <TooltipTrigger asChild>
-                                          <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="h-6 w-6"
-                                            onClick={(e) => handleStartEditPlan(plan, e)}
-                                          >
-                                            <Pencil className="h-3.5 w-3.5" />
-                                          </Button>
-                                        </TooltipTrigger>
-                                        <TooltipContent>{t('plans.editTitle')}</TooltipContent>
-                                      </Tooltip>
-                                      <Tooltip>
+                                       <Tooltip>
                                         <TooltipTrigger asChild>
                                           <Button
                                             variant="ghost"
@@ -1066,7 +1077,7 @@ export default function Tasks() {
                           <>
                             <StaffGroupHeader
                               expanded={showUserTasks}
-                              onToggle={() => setShowUserTasks(v => !v)}
+                              onToggle={() => setShowUserTasks(v => { const next = !v; try { localStorage.setItem('hydra-sprz-show-user', String(next)); } catch {} return next; })}
                               icon={<FolderOpen className="h-4 w-4 text-primary" />}
                               label={plans.length > 0 ? t('plans.standaloneTasks') : t('tasks.myTasks')}
                               count={standaloneTasks.length}
