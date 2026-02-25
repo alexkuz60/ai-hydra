@@ -84,10 +84,7 @@ export function useTaskFiles(sessionId: string | null) {
     }
   }, []);
 
-  const getFileUrl = useCallback((filePath: string) => {
-    const { data } = supabase.storage.from('task-files').getPublicUrl(filePath);
-    return data.publicUrl;
-  }, []);
+  
 
   const getSignedUrl = useCallback(async (filePath: string) => {
     const { data, error } = await supabase.storage
