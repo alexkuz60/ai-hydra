@@ -592,6 +592,18 @@ The indicator is consolidated in one place (page header) instead of being duplic
 - **Полный анализ** — последовательный запуск всех трёх экспертов (Визионер → Стратег → Патентовед)
 - **Поштучный** — ручной запуск каждого эксперта отдельно
 
+### Инструменты экспертов
+
+Каждый эксперт автоматически использует встроенные инструменты для обогащения анализа:
+
+| Инструмент | Эксперты | Описание |
+|------------|----------|----------|
+| **web_search** | Визионер, Стратег, Патентовед | Поиск актуальных данных в интернете: тренды, методологии, конкурентный ландшафт. Поддерживает провайдеры Tavily и Perplexity (BYOK) |
+| **patent_search** | Патентовед | Специализированный поиск патентных аналогов и уровня техники. Анализирует существующие патенты по тематике проекта |
+| **current_datetime** | Все | Текущая дата для контекстуализации запросов и фильтрации по актуальности |
+
+> **Провайдер поиска** определяется автоматически: если у пользователя настроен API-ключ Perplexity — используется он, иначе — системный ключ Tavily.
+
 ### 🎯 Назначение
 - **RAG warm-start** — сегменты decision/evaluation/context/instruction для немедленной работы поиска по памяти
 - **Хроники Эволюции** — стратегические решения для механизма Эволюционера
@@ -649,6 +661,18 @@ A 4-step pipeline built into the task panel for deep project concept analysis:
 ### Launch Modes
 - **Full Analysis** — sequential launch of all three experts (Visionary → Strategist → Patent Attorney)
 - **Individual** — manual launch of each expert separately
+
+### Expert Tools
+
+Each expert automatically uses built-in tools to enrich the analysis:
+
+| Tool | Experts | Description |
+|------|---------|-------------|
+| **web_search** | Visionary, Strategist, Patent Attorney | Real-time web search: trends, methodologies, competitive landscape. Supports Tavily and Perplexity (BYOK) providers |
+| **patent_search** | Patent Attorney | Specialized patent prior art search. Analyzes existing patents related to the project topic |
+| **current_datetime** | All | Current date for request contextualization and recency filtering |
+
+> **Search provider** is detected automatically: if the user has a Perplexity API key configured, it is used; otherwise, the system Tavily key is used.
 
 ### 🎯 Purpose
 - **RAG warm-start** — decision/evaluation/context/instruction segments for immediate memory search
