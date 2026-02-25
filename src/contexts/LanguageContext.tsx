@@ -822,9 +822,18 @@ const translations: Translations = {
    'plans.conclusionDeleted': { ru: 'Итог удалён', en: 'Conclusion deleted' },
    'plans.noConclusions': { ru: 'Пока нет зафиксированных итогов', en: 'No recorded conclusions yet' },
    'plans.deleteConfirm': { ru: 'Удалить план и все вложенные задачи?', en: 'Delete plan and all nested tasks?' },
-   'plans.emptyPlan': { ru: 'Добавьте аспекты или подзадачи', en: 'Add aspects or subtasks' },
-   
-   // Models
+    'plans.emptyPlan': { ru: 'Добавьте аспекты или подзадачи', en: 'Add aspects or subtasks' },
+    
+    // Trend Research
+    'trends.title': { ru: 'Исследование трендов и потребностей', en: 'Trend & Needs Research' },
+    'trends.description': { ru: 'Веб-поиск актуальных трендов, рыночных потребностей и конкурентного ландшафта по теме плана.', en: 'Web search for current trends, market needs and competitive landscape related to the plan topic.' },
+    'trends.placeholder': { ru: 'Поисковый запрос по трендам...', en: 'Search query for trends...' },
+    'trends.autoQuery': { ru: 'Сгенерировать запрос из названия плана', en: 'Generate query from plan title' },
+    'trends.search': { ru: 'Искать', en: 'Search' },
+    'trends.noResults': { ru: 'Результатов не найдено', en: 'No results found' },
+    'trends.error': { ru: 'Ошибка поиска трендов', en: 'Trend search error' },
+
+    // Models
   'model.gemini': { ru: 'Gemini Pro', en: 'Gemini Pro' },
   'model.gpt': { ru: 'GPT-4', en: 'GPT-4' },
   'model.claude': { ru: 'Claude', en: 'Claude' },

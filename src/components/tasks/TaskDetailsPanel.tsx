@@ -8,6 +8,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { MessageSquare, Play, Trash2, Pencil, Check, X, Bot, Sparkles, Cpu, Loader2, Save, Lock, Copy, FileText, Target } from 'lucide-react';
 import { TaskFilesPanel } from './TaskFilesPanel';
+import { ConceptTrendResearch } from './ConceptTrendResearch';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { MultiModelSelector } from '@/components/warroom/MultiModelSelector';
@@ -329,8 +330,17 @@ export function TaskDetailsPanel({
              />
            </section>
 
-           {/* Model selector & settings — only for non-plan tasks */}
-           {!isPlanLevel && (
+            {/* Trend Research — only for plan-level concept */}
+            {isPlanLevel && (
+              <ConceptTrendResearch
+                planTitle={displayTitle}
+                planGoal={taskDescription}
+                className="border-t pt-4"
+              />
+            )}
+
+            {/* Model selector & settings — only for non-plan tasks */}
+            {!isPlanLevel && (
              <>
                <section data-guide="tasks-detail-models">
                  <h3 className="text-sm font-medium text-muted-foreground mb-3">{t('tasks.selectModels')}</h3>
