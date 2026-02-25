@@ -233,7 +233,7 @@ export function ConceptResponsesPreview({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[85vh] flex flex-col">
+      <DialogContent className="max-w-[calc(100vw-4rem)] w-full max-h-[calc(100vh-2rem)] h-full flex flex-col">
         <DialogHeader>
           <div className="flex items-center justify-between gap-4">
             <DialogTitle>
@@ -279,7 +279,7 @@ export function ConceptResponsesPreview({
             </TabsList>
             {tabs.map(tab => (
               <TabsContent key={tab.id} value={tab.id} className="flex-1 min-h-0">
-                <ScrollArea className="h-[60vh]">
+                <ScrollArea className="flex-1 h-full">
                   {tab.response ? (
                     <div className="prose prose-sm dark:prose-invert max-w-none p-4">
                       <ReactMarkdown>{getContent(tab.response) || ''}</ReactMarkdown>
@@ -313,7 +313,7 @@ export function ConceptResponsesPreview({
               return (
                 <TabsContent key={tab.id} value={tab.id} className="flex-1 min-h-0">
                   {tabSections.length > 0 ? (
-                    <div className="p-4 h-[60vh]">
+                    <div className="p-4 flex-1 h-full">
                       <ApprovalSectionEditor
                         sections={tabSections}
                         onSectionsChange={(updated) => {
