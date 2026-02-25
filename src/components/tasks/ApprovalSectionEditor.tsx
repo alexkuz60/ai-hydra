@@ -66,6 +66,7 @@ function SectionNode({ section, readOnly, onChange }: SectionNodeProps) {
   const { language } = useLanguage();
   const [isOpen, setIsOpen] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
+  const [bodyDraft, setBodyDraft] = useState(section.body);
   const [showComment, setShowComment] = useState(false);
   const [commentDraft, setCommentDraft] = useState(section.userComment);
   const isAspect = section.depth === 0;
@@ -154,13 +155,40 @@ function SectionNode({ section, readOnly, onChange }: SectionNodeProps) {
             {/* Body text */}
             {section.body && (
               isEditing ? (
-                <Textarea
-                  value={section.body}
-                  onChange={(e) => handleBodyChange(e.target.value)}
-                  className="mt-2 text-xs min-h-[60px] resize-y"
-                  autoFocus
-                  onBlur={() => setIsEditing(false)}
-                />
+                <div className="mt-2 space-y-1.5">
+                  <Textarea
+                    value={bodyDraft}
+                    onChange={(e) => setBodyDraft(e.target.value)}
+                    className="text-xs min-h-[60px] resize-y"
+                    autoFocus
+                  />
+                  <div className="flex items-center gap-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 text-[10px] gap-1 text-emerald-500"
+                      onClick={() => {
+                        handleBodyChange(bodyDraft);
+                        setIsEditing(false);
+                      }}
+                    >
+                      <Save className="h-3 w-3" />
+                      {language === 'ru' ? 'Сохранить' : 'Save'}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 text-[10px] gap-1 text-muted-foreground"
+                      onClick={() => {
+                        setBodyDraft(section.body);
+                        setIsEditing(false);
+                      }}
+                    >
+                      <XCircle className="h-3 w-3" />
+                      {language === 'ru' ? 'Отмена' : 'Cancel'}
+                    </Button>
+                  </div>
+                </div>
               ) : (
                 <p className={cn(
                   'text-xs text-muted-foreground mt-1 whitespace-pre-wrap cursor-pointer hover:text-foreground transition-colors',
