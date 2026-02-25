@@ -845,6 +845,12 @@ const translations: Translations = {
     'concept.visionary.invoke': { ru: 'Вызвать Визионера', en: 'Invoke Visionary' },
     'concept.visionary.needGoal': { ru: 'Заполните описание концепции для вызова Визионера.', en: 'Fill in the concept description to invoke Visionary.' },
 
+    // Concept Strategist Call
+    'concept.strategist.title': { ru: 'Вызов Стратега', en: 'Strategist Call' },
+    'concept.strategist.description': { ru: 'Вызов Стратега для декомпозиции целей в иерархию аспектов и задач — определение «Как» и «Когда».', en: 'Invoke Strategist to decompose goals into aspects and tasks — defining the "How" and "When".' },
+    'concept.strategist.invoke': { ru: 'Вызвать Стратега', en: 'Invoke Strategist' },
+    'concept.strategist.needGoal': { ru: 'Заполните описание концепции для вызова Стратега.', en: 'Fill in the concept description to invoke Strategist.' },
+
     // Models
   'model.gemini': { ru: 'Gemini Pro', en: 'Gemini Pro' },
   'model.gpt': { ru: 'GPT-4', en: 'GPT-4' },
