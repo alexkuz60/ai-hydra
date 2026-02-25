@@ -527,6 +527,51 @@ export type Database = {
         }
         Relationships: []
       }
+      message_links: {
+        Row: {
+          created_at: string
+          id: string
+          link_type: string
+          metadata: Json | null
+          source_message_id: string
+          target_message_id: string
+          weight: number | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          link_type?: string
+          metadata?: Json | null
+          source_message_id: string
+          target_message_id: string
+          weight?: number | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          link_type?: string
+          metadata?: Json | null
+          source_message_id?: string
+          target_message_id?: string
+          weight?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "message_links_source_message_id_fkey"
+            columns: ["source_message_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "message_links_target_message_id_fkey"
+            columns: ["target_message_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       messages: {
         Row: {
           confidence_score: number | null
@@ -536,8 +581,10 @@ export type Database = {
           id: string
           metadata: Json | null
           model_name: string | null
+          parent_message_id: string | null
           reasoning_path: string | null
           reasoning_translated: string | null
+          request_group_id: string | null
           role: Database["public"]["Enums"]["message_role"]
           session_id: string
           user_id: string
@@ -550,8 +597,10 @@ export type Database = {
           id?: string
           metadata?: Json | null
           model_name?: string | null
+          parent_message_id?: string | null
           reasoning_path?: string | null
           reasoning_translated?: string | null
+          request_group_id?: string | null
           role: Database["public"]["Enums"]["message_role"]
           session_id: string
           user_id: string
@@ -564,13 +613,22 @@ export type Database = {
           id?: string
           metadata?: Json | null
           model_name?: string | null
+          parent_message_id?: string | null
           reasoning_path?: string | null
           reasoning_translated?: string | null
+          request_group_id?: string | null
           role?: Database["public"]["Enums"]["message_role"]
           session_id?: string
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "messages_parent_message_id_fkey"
+            columns: ["parent_message_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "messages_session_id_fkey"
             columns: ["session_id"]
