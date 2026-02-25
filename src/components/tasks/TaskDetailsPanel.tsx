@@ -459,6 +459,8 @@ export function TaskDetailsPanel({
                   defaultTab={previewTab}
                   open={previewOpen}
                   onOpenChange={setPreviewOpen}
+                  planId={conceptPlanId}
+                  onApprovalComplete={refetchResponses}
                 />
               )}
 
