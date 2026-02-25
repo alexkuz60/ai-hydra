@@ -1,6 +1,6 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
-import { Eye, Target, Landmark, RotateCcw } from 'lucide-react';
+import { Eye, Target, Landmark, RotateCcw, Lightbulb } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { motion } from 'framer-motion';
 
@@ -12,6 +12,8 @@ interface ConceptPipelineTimelineProps {
   activePhase: ConceptPhase | null;
   /** Status of each phase */
   phaseStatuses: Record<ConceptPhase, 'idle' | 'running' | 'done' | 'failed'>;
+  /** Whether concept/goal field is filled */
+  hasConceptFilled?: boolean;
   /** Click handler for individual phase */
   onPhaseClick?: (phase: ConceptPhase) => void;
   /** Restart handler */
@@ -32,12 +34,42 @@ const PHASES: { key: ConceptPhase; icon: React.ElementType; labelRu: string; lab
   { key: 'patent', icon: Landmark, labelRu: 'Патентовед', labelEn: 'Patent', colorVar: 'hydra-patent' },
 ];
 
-export function ConceptPipelineTimeline({ activePhase, phaseStatuses, onPhaseClick, onRestart }: ConceptPipelineTimelineProps) {
+export function ConceptPipelineTimeline({ activePhase, phaseStatuses, hasConceptFilled = false, onPhaseClick, onRestart }: ConceptPipelineTimelineProps) {
   const { language } = useLanguage();
   const isRu = language === 'ru';
 
   return (
     <div className="flex items-center w-full px-1 py-2">
+      {/* Step 0: Concept indicator */}
+      <div className="flex flex-col items-center gap-0.5 shrink-0">
+        <div
+          className={cn(
+            "flex items-center justify-center w-8 h-8 rounded-full border-2 transition-all duration-300",
+            hasConceptFilled
+              ? "border-primary bg-primary/15 text-primary"
+              : "border-muted-foreground/30 bg-muted/30 text-muted-foreground/50"
+          )}
+        >
+          <Lightbulb className="h-3.5 w-3.5" />
+        </div>
+        <span
+          className={cn(
+            "text-[9px] font-medium leading-none",
+            hasConceptFilled ? "text-primary" : "text-muted-foreground/50"
+          )}
+        >
+          {isRu ? 'Концепт' : 'Concept'}
+        </span>
+      </div>
+
+      {/* Connector from concept to first expert */}
+      <PipelineConnector
+        completed={hasConceptFilled}
+        animating={false}
+        failed={false}
+        colorVar="primary"
+      />
+
       {PHASES.map((phase, i) => {
         const status = phaseStatuses[phase.key];
         const isCompleted = status === 'done';
