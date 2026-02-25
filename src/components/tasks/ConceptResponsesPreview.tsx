@@ -295,14 +295,44 @@ export function ConceptResponsesPreview({
           </Tabs>
         ) : (
           /* ---------- APPROVAL MODE ---------- */
-          <ScrollArea className="flex-1 min-h-0 h-[60vh]">
-            <div className="p-4">
-              <ApprovalSectionEditor
-                sections={approvalSections}
-                onSectionsChange={setApprovalSections}
-              />
-            </div>
-          </ScrollArea>
+          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="flex-1 flex flex-col min-h-0">
+            <TabsList className="w-full justify-start">
+              {tabs.map(tab => {
+                const sectionCount = approvalSections.filter(s => s.source === tab.id).length;
+                return (
+                  <TabsTrigger key={tab.id} value={tab.id} className="gap-1.5">
+                    <tab.icon className={cn('h-3.5 w-3.5', tab.color)} />
+                    <span className="text-xs">{tab.label}</span>
+                    {sectionCount > 0 && <span className="text-[10px] text-muted-foreground">({sectionCount})</span>}
+                  </TabsTrigger>
+                );
+              })}
+            </TabsList>
+            {tabs.map(tab => {
+              const tabSections = approvalSections.filter(s => s.source === tab.id);
+              return (
+                <TabsContent key={tab.id} value={tab.id} className="flex-1 min-h-0">
+                  {tabSections.length > 0 ? (
+                    <div className="p-4 h-[60vh]">
+                      <ApprovalSectionEditor
+                        sections={tabSections}
+                        onSectionsChange={(updated) => {
+                          setApprovalSections(prev => {
+                            const others = prev.filter(s => s.source !== tab.id);
+                            return [...others, ...updated];
+                          });
+                        }}
+                      />
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-center h-32 text-muted-foreground text-sm">
+                      {language === 'ru' ? 'Ответ ещё не получен' : 'No response yet'}
+                    </div>
+                  )}
+                </TabsContent>
+              );
+            })}
+          </Tabs>
         )}
 
         {/* Footer with approve button */}
