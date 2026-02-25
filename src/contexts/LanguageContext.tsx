@@ -839,6 +839,12 @@ const translations: Translations = {
     'concept.patentSearch.invoke': { ru: 'Вызвать Патентоведа', en: 'Invoke Patent Attorney' },
     'concept.patentSearch.needGoal': { ru: 'Заполните описание концепции, чтобы запустить анализ.', en: 'Fill in the concept description to start analysis.' },
 
+    // Concept Visionary Call
+    'concept.visionary.title': { ru: 'Вызов Визионера', en: 'Visionary Call' },
+    'concept.visionary.description': { ru: 'Вызов Визионера для формулировки миссии, видения и стратегической цели проекта — определение «Что» и «Зачем».', en: 'Invoke Visionary to formulate mission, vision, and strategic goal — defining the "What" and "Why".' },
+    'concept.visionary.invoke': { ru: 'Вызвать Визионера', en: 'Invoke Visionary' },
+    'concept.visionary.needGoal': { ru: 'Заполните описание концепции для вызова Визионера.', en: 'Fill in the concept description to invoke Visionary.' },
+
     // Models
   'model.gemini': { ru: 'Gemini Pro', en: 'Gemini Pro' },
   'model.gpt': { ru: 'GPT-4', en: 'GPT-4' },
