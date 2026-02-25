@@ -486,6 +486,7 @@ export function TaskDetailsPanel({
                   open={previewOpen}
                   onOpenChange={setPreviewOpen}
                   planId={conceptPlanId}
+                  includePatent={includePatent}
                   onApprovalComplete={refetchResponses}
                 />
               )}
