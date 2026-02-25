@@ -14,11 +14,39 @@ const ROLE_MAP: Record<ConceptExpertType, string> = {
   patent: 'assistant',
 };
 
+/** Tools enabled per expert type */
+const TOOLS_MAP: Record<ConceptExpertType, string[]> = {
+  visionary: ['web_search', 'current_datetime'],
+  strategist: ['web_search', 'current_datetime'],
+  patent: ['web_search', 'current_datetime', 'patent_search'],
+};
+
 interface UseConceptInvokeOptions {
   planId: string;
   planTitle: string;
   planGoal: string;
   onComplete?: () => void;
+}
+
+/** Detect which search provider the user has configured */
+async function detectSearchProvider(): Promise<'tavily' | 'perplexity' | 'both'> {
+  try {
+    const { data } = await supabase.rpc('get_my_api_key_status');
+    if (data && data.length > 0) {
+      const status = data[0] as { has_perplexity?: boolean; has_tavily?: boolean };
+      const hasPplx = status.has_perplexity || false;
+      const hasTavily = status.has_tavily || false;
+      if (hasPplx && hasTavily) return 'both';
+      if (hasPplx) return 'perplexity';
+    }
+  } catch (e) {
+    console.warn('[concept-invoke] Could not detect search provider:', e);
+  }
+  return 'tavily'; // system key fallback
+}
+
+function currentDateString(): string {
+  return new Date().toISOString().split('T')[0]; // YYYY-MM-DD
 }
 
 export function useConceptInvoke({ planId, planTitle, planGoal, onComplete }: UseConceptInvokeOptions) {
@@ -45,7 +73,6 @@ export function useConceptInvoke({ planId, planTitle, planGoal, onComplete }: Us
       let sessionId = conceptSession?.id;
 
       if (!sessionId) {
-        // Fallback to first session
         const { data: firstSession } = await supabase
           .from('sessions')
           .select('id')
@@ -63,19 +90,23 @@ export function useConceptInvoke({ planId, planTitle, planGoal, onComplete }: Us
         return;
       }
 
-      // 2. Build user message
+      // 2. Detect search provider in parallel with building message
+      const searchProviderPromise = detectSearchProvider();
+      const today = currentDateString();
+
+      // 3. Build user message with date context
       const messages: Record<ConceptExpertType, Record<string, string>> = {
         visionary: {
-          ru: `[Видение Визионера] Сформулируй визионерскую концепцию проекта "${planTitle}". Рассмотри созвучность актуальным трендам, рыночным потребностям и конкурентный ландшафт по теме плана. Концепция: ${planGoal}`,
-          en: `[Visionary Vision] Formulate a visionary concept for the project "${planTitle}". Consider alignment with current trends, market needs, and the competitive landscape for this plan's topic. Concept: ${planGoal}`,
+          ru: `[Видение Визионера] Дата запроса: ${today}. Сформулируй визионерскую концепцию проекта "${planTitle}". Рассмотри созвучность актуальным трендам, рыночным потребностям и конкурентный ландшафт по теме плана. Используй web_search для поиска самых свежих данных о трендах и рынке. Концепция: ${planGoal}`,
+          en: `[Visionary Vision] Request date: ${today}. Formulate a visionary concept for the project "${planTitle}". Consider alignment with current trends, market needs, and the competitive landscape for this plan's topic. Use web_search to find the latest data on trends and market. Concept: ${planGoal}`,
         },
         strategist: {
-          ru: `[Стратегическая структура] Декомпозируй цели проекта "${planTitle}" в иерархию аспектов и задач. Концепция: ${planGoal}`,
-          en: `[Strategic Structure] Decompose the goals of project "${planTitle}" into a hierarchy of aspects and tasks. Concept: ${planGoal}`,
+          ru: `[Стратегическая структура] Дата запроса: ${today}. Декомпозируй цели проекта "${planTitle}" в иерархию аспектов и задач. Используй web_search для поиска актуальных методологий и лучших практик. Концепция: ${planGoal}`,
+          en: `[Strategic Structure] Request date: ${today}. Decompose the goals of project "${planTitle}" into a hierarchy of aspects and tasks. Use web_search to find current methodologies and best practices. Concept: ${planGoal}`,
         },
         patent: {
-          ru: `[Патентный прогноз] Проведи патентный анализ концепции "${planTitle}". Описание: ${planGoal}`,
-          en: `[Patent Forecast] Conduct a patent analysis for the concept "${planTitle}". Description: ${planGoal}`,
+          ru: `[Патентный прогноз] Дата запроса: ${today}. Проведи патентный анализ концепции "${planTitle}". Используй patent_search и web_search для поиска актуальных патентных аналогов и уровня техники. Описание: ${planGoal}`,
+          en: `[Patent Forecast] Request date: ${today}. Conduct a patent analysis for the concept "${planTitle}". Use patent_search and web_search to find current patent analogues and prior art. Description: ${planGoal}`,
         },
       };
 
@@ -83,7 +114,7 @@ export function useConceptInvoke({ planId, planTitle, planGoal, onComplete }: Us
       const requestGroupId = crypto.randomUUID();
       const invokeTimestamp = new Date().toISOString();
 
-      // 3. Insert user message with concept_type metadata
+      // 4. Insert user message with concept_type metadata
       const { error: insertError } = await supabase
         .from('messages')
         .insert([{
@@ -97,13 +128,15 @@ export function useConceptInvoke({ planId, planTitle, planGoal, onComplete }: Us
 
       if (insertError) throw insertError;
 
-      // 4. Determine model to use (from session config or default)
+      // 5. Determine model and search provider
       const config = conceptSession?.session_config as any;
       const selectedModels: string[] = config?.selectedModels || [];
       const modelId = selectedModels[0] || DEFAULT_MODEL;
+      const searchProvider = await searchProviderPromise;
 
-      // 5. Call hydra-orchestrator
+      // 6. Call hydra-orchestrator with tools enabled
       const role = ROLE_MAP[expertType];
+      const enabledTools = TOOLS_MAP[expertType];
 
       const { data: fnData, error: fnError } = await supabase.functions.invoke('hydra-orchestrator', {
         body: {
@@ -116,9 +149,10 @@ export function useConceptInvoke({ planId, planTitle, planGoal, onComplete }: Us
             temperature: 0.7,
             max_tokens: 4096,
             role,
-            enable_tools: false,
-            enabled_tools: [],
+            enable_tools: true,
+            enabled_tools: enabledTools,
             enabled_custom_tools: [],
+            search_provider: searchProvider,
           }],
           request_group_id: requestGroupId,
           history: [],
@@ -129,9 +163,7 @@ export function useConceptInvoke({ planId, planTitle, planGoal, onComplete }: Us
         throw new Error(fnError.message || 'Failed to get AI response');
       }
 
-      // 6. Tag the AI response with concept_type metadata
-      // Poll for the AI response — search by session + time, not request_group_id
-      // (orchestrator may not propagate request_group_id to the response)
+      // 7. Tag the AI response with concept_type metadata
       let tagged = false;
       for (let attempt = 0; attempt < 10; attempt++) {
         await new Promise(resolve => setTimeout(resolve, 1500));
@@ -145,7 +177,6 @@ export function useConceptInvoke({ planId, planTitle, planGoal, onComplete }: Us
           .order('created_at', { ascending: false })
           .limit(5);
 
-        // Find the response that doesn't already have a concept_type or matches ours
         const target = aiResponses?.find(m => {
           const meta = (m.metadata as Record<string, unknown>) || {};
           return !meta.concept_type || meta.concept_type === expertType;
