@@ -834,21 +834,21 @@ const translations: Translations = {
     'trends.error': { ru: 'Ошибка поиска трендов', en: 'Trend search error' },
 
     // Concept Patent Search
-    'concept.patentSearch.title': { ru: 'Патентный анализ концепции', en: 'Concept Patent Analysis' },
+    'concept.patentSearch.title': { ru: 'Патентный прогноз', en: 'Patent Forecast' },
     'concept.patentSearch.description': { ru: 'Вызов Патентоведа для анализа новизны идеи, поиска аналогов (prior art) и оценки патентоспособности концепции.', en: 'Invoke Patent Attorney to analyze idea novelty, search for prior art, and assess concept patentability.' },
-    'concept.patentSearch.invoke': { ru: 'Вызвать Патентоведа', en: 'Invoke Patent Attorney' },
+    'concept.patentSearch.invoke': { ru: 'Запросить Прогноз', en: 'Request Forecast' },
     'concept.patentSearch.needGoal': { ru: 'Заполните описание концепции, чтобы запустить анализ.', en: 'Fill in the concept description to start analysis.' },
 
     // Concept Visionary Call
-    'concept.visionary.title': { ru: 'Вызов Визионера', en: 'Visionary Call' },
+    'concept.visionary.title': { ru: 'Видение Визионера', en: 'Visionary Vision' },
     'concept.visionary.description': { ru: 'Вызов Визионера для формулировки миссии, видения и стратегической цели проекта — определение «Что» и «Зачем».', en: 'Invoke Visionary to formulate mission, vision, and strategic goal — defining the "What" and "Why".' },
-    'concept.visionary.invoke': { ru: 'Вызвать Визионера', en: 'Invoke Visionary' },
+    'concept.visionary.invoke': { ru: 'Запросить Видение', en: 'Request Vision' },
     'concept.visionary.needGoal': { ru: 'Заполните описание концепции для вызова Визионера.', en: 'Fill in the concept description to invoke Visionary.' },
 
     // Concept Strategist Call
-    'concept.strategist.title': { ru: 'Вызов Стратега', en: 'Strategist Call' },
+    'concept.strategist.title': { ru: 'Стратегическая структура', en: 'Strategic Structure' },
     'concept.strategist.description': { ru: 'Вызов Стратега для декомпозиции целей в иерархию аспектов и задач — определение «Как» и «Когда».', en: 'Invoke Strategist to decompose goals into aspects and tasks — defining the "How" and "When".' },
-    'concept.strategist.invoke': { ru: 'Вызвать Стратега', en: 'Invoke Strategist' },
+    'concept.strategist.invoke': { ru: 'Запросить Структуру', en: 'Request Structure' },
     'concept.strategist.needGoal': { ru: 'Заполните описание концепции для вызова Стратега.', en: 'Fill in the concept description to invoke Strategist.' },
 
     // Models
