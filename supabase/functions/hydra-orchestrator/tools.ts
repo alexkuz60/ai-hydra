@@ -1989,8 +1989,8 @@ export async function fetchRoleKnowledgeContext(
     }
 
     // Rerank candidates using LLM scoring
-    const apiKey = lovableApiKey ?? Deno.env.get("LOVABLE_API_KEY") ?? null;
-    const reranked = await rerankChunks(preFiltered, userMessage, apiKey, maxResults);
+    const rerankApiKey = lovableApiKey ?? Deno.env.get("LOVABLE_API_KEY") ?? null;
+    const reranked = await rerankChunks(preFiltered, userMessage, rerankApiKey, maxResults);
 
     if (reranked.length === 0) {
       return null;
