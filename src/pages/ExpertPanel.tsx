@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useCallback, useState, useMemo } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Layout } from '@/components/layout/Layout';
@@ -40,6 +41,7 @@ import { GraphNavigator } from '@/components/warroom/GraphNavigator';
 
 export default function ExpertPanel() {
   const { user, loading: authLoading } = useAuth();
+  const location = useLocation();
   const { t } = useLanguage();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { lovableModels, personalModels } = useAvailableModels();
@@ -204,6 +206,18 @@ export default function ExpertPanel() {
 
   // Pick up contest migration data
   useContestMigration(setInput);
+
+  // Pick up prefillMessage from navigation state (e.g. Patent Search invocation)
+  const prefillAppliedRef = useRef(false);
+  useEffect(() => {
+    const navState = location.state as { prefillMessage?: string } | null;
+    if (navState?.prefillMessage && !prefillAppliedRef.current) {
+      prefillAppliedRef.current = true;
+      setInput(navState.prefillMessage);
+      // Clear navigation state to prevent re-applying on re-render
+      window.history.replaceState({}, '');
+    }
+  }, [location.state, setInput]);
 
   // All available models — memoised to prevent unnecessary re-renders of children
   const allAvailableModels: ModelOption[] = useMemo(
