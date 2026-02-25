@@ -32,10 +32,14 @@ export function ConceptTrendResearch({ planTitle, planGoal, className }: Concept
   const [hasSearched, setHasSearched] = useState(false);
 
   const generateQuery = () => {
-    // Use only the plan title (trimmed), not the full goal text — keeps query short and effective
+    // Use the concept/goal text as the primary source for search queries
+    const goal = (planGoal || '').trim();
     const title = (planTitle || '').replace(/^ПСРЗ\s*«|»$/g, '').trim();
+    const base = goal || title;
+    // Take first ~80 chars of concept text to keep query focused
+    const trimmed = base.length > 80 ? base.substring(0, 80).replace(/\s\S*$/, '') : base;
     const suffix = language === 'ru' ? ' тренды рынок 2025' : ' trends market 2025';
-    setQuery((title + suffix).substring(0, 120).trim());
+    setQuery((trimmed + suffix).substring(0, 140).trim());
   };
 
   const handleSearch = async () => {
