@@ -833,6 +833,12 @@ const translations: Translations = {
     'trends.noResults': { ru: 'Результатов не найдено', en: 'No results found' },
     'trends.error': { ru: 'Ошибка поиска трендов', en: 'Trend search error' },
 
+    // Concept Patent Search
+    'concept.patentSearch.title': { ru: 'Патентный анализ концепции', en: 'Concept Patent Analysis' },
+    'concept.patentSearch.description': { ru: 'Вызов Патентоведа для анализа новизны идеи, поиска аналогов (prior art) и оценки патентоспособности концепции.', en: 'Invoke Patent Attorney to analyze idea novelty, search for prior art, and assess concept patentability.' },
+    'concept.patentSearch.invoke': { ru: 'Вызвать Патентоведа', en: 'Invoke Patent Attorney' },
+    'concept.patentSearch.needGoal': { ru: 'Заполните описание концепции, чтобы запустить анализ.', en: 'Fill in the concept description to start analysis.' },
+
     // Models
   'model.gemini': { ru: 'Gemini Pro', en: 'Gemini Pro' },
   'model.gpt': { ru: 'GPT-4', en: 'GPT-4' },

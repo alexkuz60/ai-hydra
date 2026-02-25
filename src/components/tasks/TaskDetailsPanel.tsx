@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { MessageSquare, Play, Trash2, Pencil, Check, X, Bot, Sparkles, Cpu, Loader2, Save, Lock, Copy, FileText, Target } from 'lucide-react';
 import { TaskFilesPanel } from './TaskFilesPanel';
 import { ConceptTrendResearch } from './ConceptTrendResearch';
+import { ConceptPatentSearch } from './ConceptPatentSearch';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { MultiModelSelector } from '@/components/warroom/MultiModelSelector';
@@ -333,6 +334,16 @@ export function TaskDetailsPanel({
             {/* Trend Research — only for plan-level concept */}
             {isPlanLevel && (
               <ConceptTrendResearch
+                planTitle={displayTitle}
+                planGoal={taskDescription}
+                className="border-t pt-4"
+              />
+            )}
+
+            {/* Patent Attorney — only for plan-level concept */}
+            {isPlanLevel && task.plan_id && (
+              <ConceptPatentSearch
+                planId={task.plan_id}
                 planTitle={displayTitle}
                 planGoal={taskDescription}
                 className="border-t pt-4"
