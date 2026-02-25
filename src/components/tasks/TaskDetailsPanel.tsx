@@ -11,6 +11,7 @@ import { TaskFilesPanel } from './TaskFilesPanel';
 import { ConceptTrendResearch } from './ConceptTrendResearch';
 import { ConceptPatentSearch } from './ConceptPatentSearch';
 import { ConceptVisionaryCall } from './ConceptVisionaryCall';
+import { ConceptStrategistCall } from './ConceptStrategistCall';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { MultiModelSelector } from '@/components/warroom/MultiModelSelector';
@@ -354,6 +355,16 @@ export function TaskDetailsPanel({
              {/* Visionary Call — only for plan-level concept */}
              {isPlanLevel && (
                <ConceptVisionaryCall
+                 planId={(task.session_config as any)?.__planId || task.plan_id || task.id}
+                 planTitle={displayTitle}
+                 planGoal={taskDescription}
+                 className="border-t pt-4"
+               />
+             )}
+
+             {/* Strategist Call — only for plan-level concept */}
+             {isPlanLevel && (
+               <ConceptStrategistCall
                  planId={(task.session_config as any)?.__planId || task.plan_id || task.id}
                  planTitle={displayTitle}
                  planGoal={taskDescription}
