@@ -66,12 +66,13 @@ interface ConceptResponsesPreviewProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   planId?: string | null;
+  includePatent?: boolean;
   onApprovalComplete?: () => void;
 }
 
 export function ConceptResponsesPreview({ 
   responses, defaultTab = 'visionary', open, onOpenChange,
-  planId, onApprovalComplete,
+  planId, includePatent = true, onApprovalComplete,
 }: ConceptResponsesPreviewProps) {
   const { t, language } = useLanguage();
   const { user } = useAuth();
@@ -222,11 +223,12 @@ export function ConceptResponsesPreview({
     }
   };
 
-  const tabs = [
+  const allTabs = [
     { id: 'visionary' as const, label: t('concept.visionary.title'), icon: Eye, color: 'text-hydra-visionary', response: responses.visionary },
     { id: 'strategist' as const, label: t('concept.strategist.title'), icon: Target, color: 'text-hydra-strategist', response: responses.strategist },
     { id: 'patent' as const, label: t('concept.patentSearch.title'), icon: Landmark, color: 'text-hydra-patent', response: responses.patent },
   ];
+  const tabs = includePatent ? allTabs : allTabs.filter(t => t.id !== 'patent');
 
   const hasAnyResponse = !!(responses.visionary || responses.strategist || responses.patent);
   const approvalDiff = approvalSections.length > 0 ? computeApprovalDiff(approvalSections) : null;
