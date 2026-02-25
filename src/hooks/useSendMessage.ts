@@ -12,6 +12,11 @@ import type { Json } from '@/integrations/supabase/types';
 import { markModelUnavailable, parseModelError } from '@/lib/modelAvailabilityCache';
 import type { RequestStartInfo } from '@/types/pending';
 
+// Generate a UUID v4 for request_group_id
+function generateUUID(): string {
+  return crypto.randomUUID();
+}
+
 // Helper function to build model configuration - centralized to avoid duplication
 function buildModelConfig(
   modelId: string, 
@@ -56,10 +61,10 @@ interface UseSendMessageProps {
   perModelSettings: PerModelSettingsData;
   onRequestStart?: (models: RequestStartInfo[]) => void;
   onRequestError?: (modelIds: string[]) => void;
-  // Reference to current selectedModels for filtering errors from dismissed models
   selectedModelsRef?: React.MutableRefObject<string[]>;
-  // Messages for building conversation history
-  messages?: Array<{ role: string; content: string; isStreaming?: boolean }>;
+  messages?: Array<{ id?: string; role: string; content: string; isStreaming?: boolean }>;
+  /** Latest message ID to use as parent_message_id for the next user message */
+  lastMessageId?: string | null;
 }
 
 interface UseSendMessageReturn {
@@ -83,6 +88,7 @@ export function useSendMessage({
   onRequestError,
   selectedModelsRef,
   messages: externalMessages,
+  lastMessageId,
 }: UseSendMessageProps): UseSendMessageReturn {
   const { t } = useLanguage();
   const [sending, setSending] = useState(false);
@@ -165,7 +171,8 @@ export function useSendMessage({
   const callOrchestrator = useCallback(async (
     messageContent: string,
     attachmentUrls: AttachmentUrl[],
-    models: ReturnType<typeof buildModelConfig>[]
+    models: ReturnType<typeof buildModelConfig>[],
+    requestGroupId?: string
   ) => {
     const session = await supabase.auth.getSession();
     const response = await fetch(
@@ -181,6 +188,7 @@ export function useSendMessage({
           message: messageContent,
           attachments: attachmentUrls,
           models,
+          request_group_id: requestGroupId || null,
           history: (messagesRef.current || [])
             .filter(m => !m.isStreaming && (m.role === 'user' || m.role === 'assistant'))
             .slice(-10)
@@ -242,7 +250,10 @@ export function useSendMessage({
     try {
       const attachmentUrls = await uploadFiles(filesToUpload);
 
-      // Insert user message
+      // Generate request_group_id for grouping parallel expert responses
+      const requestGroupId = generateUUID();
+
+      // Insert user message with parent_message_id and request_group_id
       const messageMetadata: Json | undefined = (attachmentUrls.length > 0 || extraMetadata)
         ? { 
             ...(attachmentUrls.length > 0 ? { attachments: attachmentUrls } : {}),
@@ -256,6 +267,8 @@ export function useSendMessage({
         role: 'user' as const,
         content: messageContent,
         metadata: messageMetadata,
+        parent_message_id: lastMessageId || null,
+        request_group_id: requestGroupId,
       };
 
       const { error } = await supabase
@@ -264,13 +277,12 @@ export function useSendMessage({
 
       if (error) throw error;
 
-      // Prepare models with their settings using centralized helper
+      // Prepare models with their settings
       const modelsToCall = selectedModels.map(modelId => buildModelConfig(modelId, perModelSettings));
 
       // Notify about request start for skeleton indicators
       if (onRequestStart) {
         const requestInfo: RequestStartInfo[] = modelsToCall.map(m => {
-          // Extract short model name from full ID
           const modelName = m.model_id.split('/').pop() || m.model_id;
           return {
             modelId: m.model_id,
@@ -281,13 +293,13 @@ export function useSendMessage({
         onRequestStart(requestInfo);
       }
 
-      await callOrchestrator(messageContent, attachmentUrls, modelsToCall);
+      await callOrchestrator(messageContent, attachmentUrls, modelsToCall, requestGroupId);
     } catch (error) {
       if (error instanceof Error) toast.error(error.message);
     } finally {
       setSending(false);
     }
-  }, [userId, sessionId, selectedModels, perModelSettings, attachedFiles, uploadFiles, callOrchestrator, onRequestStart]);
+  }, [userId, sessionId, selectedModels, perModelSettings, attachedFiles, uploadFiles, callOrchestrator, onRequestStart, lastMessageId]);
 
   // Send ONLY user message to DB (for hybrid streaming - AI responses handled by streaming hook)
   const sendUserMessageOnly = useCallback(async (messageContent: string, extraMetadata?: Record<string, unknown>) => {
@@ -319,6 +331,8 @@ export function useSendMessage({
           role: 'user' as const,
           content: messageContent,
           metadata: messageMetadata,
+          parent_message_id: lastMessageId || null,
+          request_group_id: generateUUID(),
         }]);
 
       if (error) throw error;
@@ -327,7 +341,7 @@ export function useSendMessage({
     } finally {
       setSending(false);
     }
-  }, [userId, sessionId, attachedFiles, uploadFiles]);
+  }, [userId, sessionId, attachedFiles, uploadFiles, lastMessageId]);
 
   // Send message to a specific consultant
   const sendToConsultant = useCallback(async (messageContent: string, consultantId: string) => {
@@ -349,12 +363,15 @@ export function useSendMessage({
         ? { attachments: attachmentUrls as unknown as Json } 
         : undefined;
 
+      const requestGroupId = generateUUID();
       const insertData = {
         session_id: currentSessionId,
         user_id: currentUserId,
         role: 'user' as const,
         content: messageContent,
         metadata: messageMetadata,
+        parent_message_id: lastMessageId || null,
+        request_group_id: requestGroupId,
       };
 
       const { error } = await supabase
@@ -376,13 +393,13 @@ export function useSendMessage({
         }]);
       }
 
-      await callOrchestrator(messageContent, attachmentUrls, [consultantModel]);
+      await callOrchestrator(messageContent, attachmentUrls, [consultantModel], requestGroupId);
     } catch (error) {
       if (error instanceof Error) toast.error(error.message);
     } finally {
       setSending(false);
     }
-  }, [userId, sessionId, perModelSettings, attachedFiles, uploadFiles, callOrchestrator]);
+  }, [userId, sessionId, perModelSettings, attachedFiles, uploadFiles, callOrchestrator, lastMessageId]);
 
   // Copy consultant response to main chat - always append at the end
   const copyConsultantResponse = useCallback(async (
