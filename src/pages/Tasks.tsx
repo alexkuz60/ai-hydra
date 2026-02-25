@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody } from '@/components/ui/table';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Plus, Loader2, MessageSquare, Search, ListTodo, Flame, BookOpen, FolderOpen, Target, ChevronRight, ChevronDown, CornerDownRight, FolderPlus, FilePlus, FileText, Pencil, Landmark } from 'lucide-react';
+import { Plus, Loader2, MessageSquare, Search, ListTodo, Flame, BookOpen, FolderOpen, Target, ChevronRight, ChevronDown, CornerDownRight, FolderPlus, FilePlus, FileText, Pencil, Landmark, Eye } from 'lucide-react';
 import {
   ResizablePanelGroup,
   ResizablePanel,
@@ -407,24 +407,66 @@ export default function Tasks() {
       setEditingPlanTitle('');
     };
 
-    const handlePatentSearch = (plan: StrategicPlan, e: React.MouseEvent) => {
+    // Helper: find "Goals and Concept" session for a plan
+    const findConceptSession = async (planId: string) => {
+      if (!user) return null;
+      const { data: conceptSession } = await supabase
+        .from('sessions')
+        .select('id')
+        .eq('plan_id', planId)
+        .eq('user_id', user.id)
+        .or('title.ilike.%цели и концепция%,title.ilike.%goals and concept%')
+        .limit(1)
+        .maybeSingle();
+      if (conceptSession) return conceptSession.id;
+      // Fallback: first session in plan
+      const { data: first } = await supabase
+        .from('sessions')
+        .select('id')
+        .eq('plan_id', planId)
+        .eq('user_id', user.id)
+        .order('sort_order', { ascending: true })
+        .limit(1)
+        .maybeSingle();
+      return first?.id || null;
+    };
+
+    const handlePatentSearch = async (plan: StrategicPlan, e: React.MouseEvent) => {
       e.stopPropagation();
-      // Navigate to expert panel with patent attorney context and full plan content
       const planTitle = (language === 'en' && plan.title_en) ? plan.title_en : plan.title;
       const planGoal = (language === 'en' && plan.goal_en) ? plan.goal_en : plan.goal;
-      // Collect all plan session IDs for context
-      const planSessionIds = planTasks.filter(t => t.plan_id === plan.id).map(t => t.id);
-      navigate('/expert-panel', {
-        state: {
-          prefillMessage: `Проведи патентный поиск по стратегическому плану "${planTitle}"${planGoal ? `. Цель: ${planGoal}` : ''}`,
-          selectedModels: [],
-          patentSearchContext: {
-            planId: plan.id,
-            planTitle,
-            planGoal,
-            sessionIds: planSessionIds,
-          },
-        },
+      const sessionId = await findConceptSession(plan.id);
+      const prefillMessage = language === 'ru'
+        ? `Проведи патентный поиск по стратегическому плану "${planTitle}"${planGoal ? `. Цель: ${planGoal}` : ''}`
+        : `Conduct a patent search for the plan "${planTitle}"${planGoal ? `. Goal: ${planGoal}` : ''}`;
+      navigate(sessionId ? `/expert-panel?task=${sessionId}` : '/expert-panel', {
+        state: { prefillMessage, patentSearchContext: { planId: plan.id, planTitle, planGoal } },
+      });
+    };
+
+    const handleVisionaryCall = async (plan: StrategicPlan, e: React.MouseEvent) => {
+      e.stopPropagation();
+      const planTitle = (language === 'en' && plan.title_en) ? plan.title_en : plan.title;
+      const planGoal = (language === 'en' && plan.goal_en) ? plan.goal_en : plan.goal;
+      const sessionId = await findConceptSession(plan.id);
+      const prefillMessage = language === 'ru'
+        ? `Сформулируй визионерскую концепцию проекта "${planTitle}"${planGoal ? `. Текущее описание: ${planGoal}` : ''}`
+        : `Formulate a visionary concept for "${planTitle}"${planGoal ? `. Description: ${planGoal}` : ''}`;
+      navigate(sessionId ? `/expert-panel?task=${sessionId}` : '/expert-panel', {
+        state: { prefillMessage, visionaryContext: { planId: plan.id, planTitle, planGoal } },
+      });
+    };
+
+    const handleStrategistCall = async (plan: StrategicPlan, e: React.MouseEvent) => {
+      e.stopPropagation();
+      const planTitle = (language === 'en' && plan.title_en) ? plan.title_en : plan.title;
+      const planGoal = (language === 'en' && plan.goal_en) ? plan.goal_en : plan.goal;
+      const sessionId = await findConceptSession(plan.id);
+      const prefillMessage = language === 'ru'
+        ? `Декомпозируй цели проекта "${planTitle}" в иерархию аспектов и задач${planGoal ? `. Концепция: ${planGoal}` : ''}`
+        : `Decompose the goals of "${planTitle}" into aspects and tasks${planGoal ? `. Concept: ${planGoal}` : ''}`;
+      navigate(sessionId ? `/expert-panel?task=${sessionId}` : '/expert-panel', {
+        state: { prefillMessage, strategistContext: { planId: plan.id, planTitle, planGoal } },
       });
     };
 
@@ -879,6 +921,32 @@ export default function Tasks() {
                                           </Button>
                                         </TooltipTrigger>
                                         <TooltipContent>{t('plans.patentSearch')}</TooltipContent>
+                                      </Tooltip>
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-6 w-6 text-hydra-visionary/70 hover:text-hydra-visionary"
+                                            onClick={(e) => handleVisionaryCall(plan, e)}
+                                          >
+                                            <Eye className="h-3.5 w-3.5" />
+                                          </Button>
+                                        </TooltipTrigger>
+                                        <TooltipContent>{t('concept.visionary.invoke')}</TooltipContent>
+                                      </Tooltip>
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-6 w-6 text-hydra-strategist/70 hover:text-hydra-strategist"
+                                            onClick={(e) => handleStrategistCall(plan, e)}
+                                          >
+                                            <Target className="h-3.5 w-3.5" />
+                                          </Button>
+                                        </TooltipTrigger>
+                                        <TooltipContent>{t('concept.strategist.invoke')}</TooltipContent>
                                       </Tooltip>
                                       <Tooltip>
                                         <TooltipTrigger asChild>
