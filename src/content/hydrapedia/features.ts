@@ -1249,7 +1249,58 @@ SVG-граф с гексагональной структурой показыв
 Страница HydraMemory.tsx (~115 строк) — тонкая оболочка, управляющая табами. Активная вкладка сохраняется в localStorage.
 
 > [!TIP] Преимущество модульности
-> Каждый таб можно модифицировать независимо — без риска регрессий в других модулях.`,
+> Каждый таб можно модифицировать независимо — без риска регрессий в других модулях.
+
+## Гибридный поиск
+
+Поисковый стек Хаба Памяти объединяет несколько алгоритмов для максимальной точности:
+
+### Базовый гибрид: BM25 + pgvector + RRF
+
+\`\`\`
+Запрос пользователя
+   ↓
+┌──────────────┐    ┌──────────────────┐
+│  BM25        │    │  pgvector        │
+│  (текстовый) │    │  (семантический) │
+└──────┬───────┘    └────────┬─────────┘
+       │    RRF (k=60)       │
+       └────────┬────────────┘
+                ↓
+        Объединённый рейтинг
+\`\`\`
+
+- **BM25** — классический полнотекстовый поиск по ключевым словам (PostgreSQL \`ts_rank\`)
+- **pgvector** — косинусное сходство 1536-мерных эмбеддингов (\`text-embedding-3-small\`)
+- **RRF (Reciprocal Rank Fusion, k=60)** — слияние двух ранжирований: \`score = Σ 1/(k + rank)\`
+
+### HyDE (Hypothetical Document Embedding)
+
+Генерация «гипотетического ответа» для улучшения семантического поиска:
+
+- LLM генерирует воображаемый ответ на запрос пользователя
+- Эмбеддинг запроса смешивается с эмбеддингом гипотезы: \`query × 0.4 + hyde × 0.6\`
+- Это приближает вектор поиска к пространству реальных документов
+
+### Переранжирование (Reranking)
+
+Финальная переоценка релевантности через LLM (Gemini):
+
+- Каждый кандидат из гибридного поиска оценивается моделью по шкале 0–1
+- Итоговый скор: \`final = rerank × 0.7 + hybrid × 0.3\`
+- Устраняет ложные срабатывания, когда текстовое совпадение высокое, но смысловая релевантность низкая
+
+\`\`\`
+Гибридный результат (BM25 + pgvector)
+   ↓
+HyDE-обогащение вектора запроса
+   ↓
+LLM Reranking (Gemini)
+   ↓
+Финальный рейтинг: rerank × 0.7 + hybrid × 0.3
+\`\`\`
+
+> Все три механизма работают совместно через 8 функциональных зон памяти: Контекст сессий, Опыт ролей, База знаний и др.`,
       en: `# Hydra Memory
 
 Central command center of Hydra's entire cognitive subsystem — 8 functional areas in a single full-width interface. Accessible via the 🧠 icon in the sidebar (\`/hydra-memory\`).
@@ -1358,7 +1409,58 @@ Since v0.2.18, Memory Hub is implemented as 11 independent modules in \`src/comp
 HydraMemory.tsx (~115 lines) is a thin shell managing tabs. Active tab persisted in localStorage.
 
 > [!TIP] Modularity Advantage
-> Each tab can be modified independently — no regression risk in other modules.`,
+> Each tab can be modified independently — no regression risk in other modules.
+
+## Hybrid Search
+
+Memory Hub's search stack combines multiple algorithms for maximum accuracy:
+
+### Base Hybrid: BM25 + pgvector + RRF
+
+\`\`\`
+User query
+   ↓
+┌──────────────┐    ┌──────────────────┐
+│  BM25        │    │  pgvector        │
+│  (keyword)   │    │  (semantic)      │
+└──────┬───────┘    └────────┬─────────┘
+       │    RRF (k=60)       │
+       └────────┬────────────┘
+                ↓
+        Merged ranking
+\`\`\`
+
+- **BM25** — classic full-text keyword search (PostgreSQL \`ts_rank\`)
+- **pgvector** — cosine similarity of 1536-dimensional embeddings (\`text-embedding-3-small\`)
+- **RRF (Reciprocal Rank Fusion, k=60)** — merges two rankings: \`score = Σ 1/(k + rank)\`
+
+### HyDE (Hypothetical Document Embedding)
+
+Generates a "hypothetical answer" to improve semantic search:
+
+- LLM generates an imagined response to the user's query
+- Query embedding is blended with hypothesis embedding: \`query × 0.4 + hyde × 0.6\`
+- This moves the search vector closer to the space of actual documents
+
+### Reranking
+
+Final relevance re-evaluation via LLM (Gemini):
+
+- Each hybrid search candidate is scored by the model on a 0–1 scale
+- Final score: \`final = rerank × 0.7 + hybrid × 0.3\`
+- Eliminates false positives where keyword match is high but semantic relevance is low
+
+\`\`\`
+Hybrid result (BM25 + pgvector)
+   ↓
+HyDE-enriched query vector
+   ↓
+LLM Reranking (Gemini)
+   ↓
+Final ranking: rerank × 0.7 + hybrid × 0.3
+\`\`\`
+
+> All three mechanisms work together across 8 functional memory zones: Session Context, Role Experience, Knowledge Base, and more.`,
     },
   },
   {
