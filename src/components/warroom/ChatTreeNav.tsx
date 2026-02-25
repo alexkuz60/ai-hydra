@@ -28,7 +28,8 @@ import {
   Filter,
   X,
   Trash2,
-  Lightbulb
+  Lightbulb,
+  GitBranch
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { ROLE_CONFIG, getRoleConfig } from '@/config/roles';
@@ -75,6 +76,10 @@ interface ChatTreeNavProps {
   onCollapseAllToggle?: () => void;
   supervisorDisplayName?: string | null;
   isMinimized?: boolean;
+  // Graph Navigator props (Phase 3)
+  graphNavigator?: React.ReactNode;
+  graphViewEnabled?: boolean;
+  onToggleGraphView?: () => void;
 }
 
 // ==================== Constants ====================
@@ -123,9 +128,11 @@ function formatForModerator(sourceMessages: SourceMessage[], supervisorName?: st
 interface TreeHeaderProps {
   allCollapsed?: boolean;
   onCollapseAllToggle?: () => void;
+  graphViewEnabled?: boolean;
+  onToggleGraphView?: () => void;
 }
 
-const TreeHeader = memo(function TreeHeader({ allCollapsed, onCollapseAllToggle }: TreeHeaderProps) {
+const TreeHeader = memo(function TreeHeader({ allCollapsed, onCollapseAllToggle, graphViewEnabled, onToggleGraphView }: TreeHeaderProps) {
   const { t } = useLanguage();
   
   return (
@@ -134,28 +141,49 @@ const TreeHeader = memo(function TreeHeader({ allCollapsed, onCollapseAllToggle 
         <Users className="h-4 w-4" />
         {t('chat.participants')}
       </h3>
-      
-      {onCollapseAllToggle && (
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-6 w-6"
-              onClick={onCollapseAllToggle}
-            >
-              {allCollapsed ? (
-                <ChevronDown className="h-4 w-4" />
-              ) : (
-                <ChevronsUpDown className="h-4 w-4" />
-              )}
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>
-            {allCollapsed ? t('chat.expandAll') : t('chat.collapseAll')}
-          </TooltipContent>
-        </Tooltip>
-      )}
+
+      <div className="flex items-center gap-1">
+        {/* Graph view toggle */}
+        {onToggleGraphView && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant={graphViewEnabled ? 'secondary' : 'ghost'}
+                size="icon"
+                className="h-6 w-6"
+                onClick={onToggleGraphView}
+              >
+                <GitBranch className={cn("h-4 w-4", graphViewEnabled && "text-primary")} />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              {graphViewEnabled ? 'Классический вид' : 'Граф решений'}
+            </TooltipContent>
+          </Tooltip>
+        )}
+
+        {onCollapseAllToggle && !graphViewEnabled && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6"
+                onClick={onCollapseAllToggle}
+              >
+                {allCollapsed ? (
+                  <ChevronDown className="h-4 w-4" />
+                ) : (
+                  <ChevronsUpDown className="h-4 w-4" />
+                )}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              {allCollapsed ? t('chat.expandAll') : t('chat.collapseAll')}
+            </TooltipContent>
+          </Tooltip>
+        )}
+      </div>
     </div>
   );
 });
@@ -518,6 +546,9 @@ export const ChatTreeNav = memo(function ChatTreeNav({
   onCollapseAllToggle,
   supervisorDisplayName,
   isMinimized,
+  graphNavigator,
+  graphViewEnabled,
+  onToggleGraphView,
 }: ChatTreeNavProps) {
   const { t } = useLanguage();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -732,53 +763,64 @@ export const ChatTreeNav = memo(function ChatTreeNav({
     <div className="flex flex-col h-full bg-sidebar">
       <TreeHeader 
         allCollapsed={allCollapsed} 
-        onCollapseAllToggle={onCollapseAllToggle} 
+        onCollapseAllToggle={onCollapseAllToggle}
+        graphViewEnabled={graphViewEnabled}
+        onToggleGraphView={onToggleGraphView}
       />
 
-      {filteredParticipant && (
-        <FilterIndicator 
-          filteredParticipant={filteredParticipant} 
-          onClear={handleClearFilter} 
-        />
-      )}
-
-      <ScrollArea className="flex-1">
-        <div className="p-2 space-y-0.5">
-          {dialogBlocks.map((block) => {
-            if (block.type === 'supervisor-block') {
-              return (
-                <SupervisorNode
-                  key={block.id}
-                  block={block}
-                  index={supervisorIndices.get(block.id) || 0}
-                  activeParticipant={activeParticipant}
-                  filteredParticipant={filteredParticipant || null}
-                  onMessageClick={onMessageClick}
-                  onMessageDoubleClick={onMessageDoubleClick}
-                  onDeleteClick={handleDeleteClick}
-                  onSendToDChat={onSendToDChat}
-                  canDelete={!!onDeleteMessageGroup}
-                  messages={messages}
-                  isTreeCollapsed={isTreeBlockCollapsed(block.id)}
-                  onToggleTreeCollapse={toggleTreeCollapse}
-                  supervisorDisplayName={supervisorDisplayName}
-                />
-              );
-            } else {
-              return (
-                <StandaloneAINode
-                  key={block.id}
-                  block={block}
-                  activeParticipant={activeParticipant}
-                  filteredParticipant={filteredParticipant || null}
-                  onMessageClick={onMessageClick}
-                  onMessageDoubleClick={onMessageDoubleClick}
-                />
-              );
-            }
-          })}
+      {/* Graph view mode */}
+      {graphViewEnabled && graphNavigator ? (
+        <div className="flex-1 overflow-hidden">
+          {graphNavigator}
         </div>
-      </ScrollArea>
+      ) : (
+        <>
+          {filteredParticipant && (
+            <FilterIndicator 
+              filteredParticipant={filteredParticipant} 
+              onClear={handleClearFilter} 
+            />
+          )}
+
+          <ScrollArea className="flex-1">
+            <div className="p-2 space-y-0.5">
+              {dialogBlocks.map((block) => {
+                if (block.type === 'supervisor-block') {
+                  return (
+                    <SupervisorNode
+                      key={block.id}
+                      block={block}
+                      index={supervisorIndices.get(block.id) || 0}
+                      activeParticipant={activeParticipant}
+                      filteredParticipant={filteredParticipant || null}
+                      onMessageClick={onMessageClick}
+                      onMessageDoubleClick={onMessageDoubleClick}
+                      onDeleteClick={handleDeleteClick}
+                      onSendToDChat={onSendToDChat}
+                      canDelete={!!onDeleteMessageGroup}
+                      messages={messages}
+                      isTreeCollapsed={isTreeBlockCollapsed(block.id)}
+                      onToggleTreeCollapse={toggleTreeCollapse}
+                      supervisorDisplayName={supervisorDisplayName}
+                    />
+                  );
+                } else {
+                  return (
+                    <StandaloneAINode
+                      key={block.id}
+                      block={block}
+                      activeParticipant={activeParticipant}
+                      filteredParticipant={filteredParticipant || null}
+                      onMessageClick={onMessageClick}
+                      onMessageDoubleClick={onMessageDoubleClick}
+                    />
+                  );
+                }
+              })}
+            </div>
+          </ScrollArea>
+        </>
+      )}
 
       <DeleteDialog
         open={deleteDialogOpen}

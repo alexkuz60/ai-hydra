@@ -34,6 +34,9 @@ import { useInputAreaSize } from '@/hooks/useInputAreaSize';
 import { useNavigatorResize } from '@/hooks/useNavigatorResize';
 import { NavigatorHeader } from '@/components/layout/NavigatorHeader';
 import { useContestMigration } from '@/hooks/useContestMigration';
+import { useMessageGraph } from '@/hooks/useMessageGraph';
+import { useMessageLinks } from '@/hooks/useMessageLinks';
+import { GraphNavigator } from '@/components/warroom/GraphNavigator';
 
 export default function ExpertPanel() {
   const { user, loading: authLoading } = useAuth();
@@ -54,6 +57,7 @@ export default function ExpertPanel() {
   } | null>(null);
   const [timeoutSeconds, setTimeoutSeconds] = useState(120);
   const [interactiveChecklists, setInteractiveChecklists] = useState(false);
+  const [graphViewEnabled, setGraphViewEnabled] = useState(false);
 
   // Panel sizing
   const { width: consultantPanelWidth, saveWidth: saveConsultantPanelWidth, isCollapsed: isDChatCollapsed } = useConsultantPanelWidth();
@@ -95,7 +99,6 @@ export default function ExpertPanel() {
   } = useSessionMemory(currentTask?.id || null);
   const [memoryDialogOpen, setMemoryDialogOpen] = useState(false);
 
-
   // Messages
   const {
     messages, displayedMessages, filteredParticipant, setFilteredParticipant,
@@ -107,6 +110,12 @@ export default function ExpertPanel() {
     sessionId: currentTask?.id || null,
     onBeforeDeleteMessage: deleteByMessageId,
   });
+
+  // Decision Graph (Phase 2-3)
+  const { links, getCrossChatLinks } = useMessageLinks({
+    sessionId: currentTask?.id || null,
+  });
+  const { requestGroups } = useMessageGraph(messages, links);
 
   // Memory integration
   const {
@@ -343,6 +352,18 @@ export default function ExpertPanel() {
                   onCollapseAllToggle={handleCollapseAllToggle}
                   supervisorDisplayName={profile?.displayName}
                   isMinimized={nav.isMinimized}
+                  graphViewEnabled={graphViewEnabled}
+                  onToggleGraphView={() => setGraphViewEnabled(v => !v)}
+                  graphNavigator={
+                    <GraphNavigator
+                      requestGroups={requestGroups}
+                      crossChatLinks={getCrossChatLinks()}
+                      activeParticipant={activeParticipant}
+                      onMessageClick={handleMessageClick}
+                      supervisorDisplayName={profile?.displayName}
+                      isMinimized={nav.isMinimized}
+                    />
+                  }
                 />
               </div>
             </div>
