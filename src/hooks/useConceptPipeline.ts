@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { useConceptInvoke, ConceptExpertType, PipelineContext } from './useConceptInvoke';
 import { useConceptResponses, ConceptResponses } from './useConceptResponses';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -23,7 +23,7 @@ interface UseConceptPipelineOptions {
 
 export function useConceptPipeline({ planId, planTitle, planGoal, onStepComplete }: UseConceptPipelineOptions) {
   const { language } = useLanguage();
-  const { responses, refetch } = useConceptResponses(planId || null);
+  const { responses, loading: responsesLoading, refetch } = useConceptResponses(planId || null);
   const abortRef = useRef(false);
 
   const [state, setState] = useState<ConceptPipelineState>({
@@ -44,6 +44,20 @@ export function useConceptPipeline({ planId, planTitle, planGoal, onStepComplete
       patent: responses.patent ? 'done' : 'idle',
     };
   }, [responses]);
+
+  // Auto-sync timeline from loaded responses on mount / when responses change
+  useEffect(() => {
+    if (!state.isRunning && !responsesLoading) {
+      setState(prev => ({
+        ...prev,
+        phaseStatuses: {
+          visionary: responses.visionary ? 'done' : prev.phaseStatuses.visionary === 'failed' ? 'failed' : 'idle',
+          strategist: responses.strategist ? 'done' : prev.phaseStatuses.strategist === 'failed' ? 'failed' : 'idle',
+          patent: responses.patent ? 'done' : prev.phaseStatuses.patent === 'failed' ? 'failed' : 'idle',
+        },
+      }));
+    }
+  }, [responses, responsesLoading, state.isRunning]);
 
   const { invoke, loading: singleLoading } = useConceptInvoke({
     planId,
