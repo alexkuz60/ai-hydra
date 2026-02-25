@@ -375,6 +375,7 @@ export function TaskDetailsPanel({
                       <ConceptPipelineTimeline
                         activePhase={pipeline.state.activePhase}
                         phaseStatuses={pipeline.state.phaseStatuses}
+                        hasConceptFilled={!!taskDescription?.trim()}
                         onPhaseClick={(phase) => {
                           if (pipeline.state.phaseStatuses[phase] === 'done') {
                             setPreviewTab(phase);
