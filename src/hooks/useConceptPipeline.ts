@@ -12,16 +12,18 @@ export interface ConceptPipelineState {
   isRunning: boolean;
 }
 
-const PIPELINE_ORDER: ConceptExpertType[] = ['visionary', 'strategist', 'patent'];
+const PIPELINE_ORDER_FULL: ConceptExpertType[] = ['visionary', 'strategist', 'patent'];
+const PIPELINE_ORDER_NO_PATENT: ConceptExpertType[] = ['visionary', 'strategist'];
 
 interface UseConceptPipelineOptions {
   planId: string;
   planTitle: string;
   planGoal: string;
+  includePatent?: boolean;
   onStepComplete?: () => void;
 }
 
-export function useConceptPipeline({ planId, planTitle, planGoal, onStepComplete }: UseConceptPipelineOptions) {
+export function useConceptPipeline({ planId, planTitle, planGoal, includePatent = false, onStepComplete }: UseConceptPipelineOptions) {
   const { language } = useLanguage();
   const { responses, loading: responsesLoading, refetch } = useConceptResponses(planId || null);
   const abortRef = useRef(false);
@@ -135,7 +137,7 @@ export function useConceptPipeline({ planId, planTitle, planGoal, onStepComplete
       isRunning: true,
     });
 
-    for (const step of PIPELINE_ORDER) {
+    for (const step of (includePatent ? PIPELINE_ORDER_FULL : PIPELINE_ORDER_NO_PATENT)) {
       if (abortRef.current) break;
 
       setState(prev => ({
@@ -197,7 +199,7 @@ export function useConceptPipeline({ planId, planTitle, planGoal, onStepComplete
         ? 'Полный анализ завершён'
         : 'Full analysis completed'
     );
-  }, [planGoal, language, invoke, refetch, responses]);
+  }, [planGoal, language, invoke, refetch, responses, includePatent]);
 
   /** Abort the pipeline */
   const abort = useCallback(() => {
