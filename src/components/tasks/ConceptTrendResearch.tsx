@@ -32,11 +32,10 @@ export function ConceptTrendResearch({ planTitle, planGoal, className }: Concept
   const [hasSearched, setHasSearched] = useState(false);
 
   const generateQuery = () => {
-    const base = planTitle || '';
-    const goal = planGoal || '';
-    const parts = [base, goal].filter(Boolean).join(' ');
-    const suffix = language === 'ru' ? ' тренды рынок потребности 2025' : ' trends market needs 2025';
-    setQuery((parts + suffix).trim());
+    // Use only the plan title (trimmed), not the full goal text — keeps query short and effective
+    const title = (planTitle || '').replace(/^ПСРЗ\s*«|»$/g, '').trim();
+    const suffix = language === 'ru' ? ' тренды рынок 2025' : ' trends market 2025';
+    setQuery((title + suffix).substring(0, 120).trim());
   };
 
   const handleSearch = async () => {
@@ -51,8 +50,7 @@ export function ConceptTrendResearch({ planTitle, planGoal, className }: Concept
           options: {
             limit: 8,
             lang: language === 'ru' ? 'ru' : 'en',
-            tbs: 'qdr:y', // last year
-            scrapeOptions: { formats: ['markdown'] },
+            tbs: 'qdr:y',
           },
         },
       });
