@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
@@ -6,13 +6,15 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
-import { MessageSquare, Play, Trash2, Pencil, Check, X, Bot, Sparkles, Cpu, Loader2, Save, Lock, Copy, FileText, Target } from 'lucide-react';
+import { MessageSquare, Play, Trash2, Pencil, Check, X, Bot, Sparkles, Cpu, Loader2, Save, Lock, Copy, FileText, Target, Zap, StopCircle } from 'lucide-react';
 import { TaskFilesPanel } from './TaskFilesPanel';
 
 import { ConceptPatentSearch } from './ConceptPatentSearch';
 import { ConceptVisionaryCall } from './ConceptVisionaryCall';
 import { ConceptStrategistCall } from './ConceptStrategistCall';
 import { ConceptResponsesPreview } from './ConceptResponsesPreview';
+import { ConceptPipelineTimeline, ConceptPhase } from './ConceptPipelineTimeline';
+import { useConceptPipeline } from '@/hooks/useConceptPipeline';
 import { useConceptResponses } from '@/hooks/useConceptResponses';
 import { useConceptInvoke } from '@/hooks/useConceptInvoke';
 import { cn } from '@/lib/utils';
@@ -84,13 +86,26 @@ export function TaskDetailsPanel({
   const conceptPlanId = currentIsPlan ? ((task?.session_config as any)?.__planId || task?.plan_id || task?.id || null) : null;
   const { responses: conceptResponses, refetch: refetchResponses } = useConceptResponses(conceptPlanId);
 
-  // Inline concept invocation
+  // Pipeline for concept analysis
+  const pipeline = useConceptPipeline({
+    planId: conceptPlanId || '',
+    planTitle: displayTitle,
+    planGoal: taskDescription,
+    onStepComplete: refetchResponses,
+  });
+
+  // Inline concept invocation (kept for individual step calls)
   const { invoke: invokeExpert, loading: expertLoading } = useConceptInvoke({
     planId: conceptPlanId || '',
     planTitle: displayTitle,
     planGoal: taskDescription,
     onComplete: refetchResponses,
   });
+
+  // Sync pipeline statuses from existing responses
+  useEffect(() => {
+    pipeline.syncFromResponses();
+  }, [conceptResponses]);
 
   // Unsaved changes protection
   const unsavedChanges = useUnsavedChanges(false);
@@ -351,46 +366,82 @@ export function TaskDetailsPanel({
              />
            </section>
 
-             {/* Visionary Call — only for plan-level concept */}
-             {isPlanLevel && (
-               <ConceptVisionaryCall
-                 planId={(task.session_config as any)?.__planId || task.plan_id || task.id}
-                 planTitle={displayTitle}
-                 planGoal={taskDescription}
-                 className="border-t pt-4"
-                 response={conceptResponses.visionary}
-                 onExpand={() => { setPreviewTab('visionary'); setPreviewOpen(true); }}
-                 onInvoke={() => invokeExpert('visionary')}
-                 invoking={expertLoading === 'visionary'}
-               />
-             )}
-
-             {/* Strategist Call — only for plan-level concept */}
-             {isPlanLevel && (
-               <ConceptStrategistCall
-                 planId={(task.session_config as any)?.__planId || task.plan_id || task.id}
-                 planTitle={displayTitle}
-                 planGoal={taskDescription}
-                 className="border-t pt-4"
-                 response={conceptResponses.strategist}
-                 onExpand={() => { setPreviewTab('strategist'); setPreviewOpen(true); }}
-                 onInvoke={() => invokeExpert('strategist')}
-                 invoking={expertLoading === 'strategist'}
-               />
-             )}
-
-              {/* Patent Attorney — only for plan-level concept */}
+              {/* Concept Pipeline — only for plan-level */}
               {isPlanLevel && (
-                <ConceptPatentSearch
-                  planId={(task.session_config as any)?.__planId || task.plan_id || task.id}
-                  planTitle={displayTitle}
-                  planGoal={taskDescription}
-                  className="border-t pt-4"
-                  response={conceptResponses.patent}
-                  onExpand={() => { setPreviewTab('patent'); setPreviewOpen(true); }}
-                  onInvoke={() => invokeExpert('patent')}
-                  invoking={expertLoading === 'patent'}
-                />
+                <section className="border-t pt-4 space-y-4">
+                  {/* Pipeline Timeline */}
+                  <div className="flex items-center gap-3">
+                    <div className="flex-1">
+                      <ConceptPipelineTimeline
+                        activePhase={pipeline.state.activePhase}
+                        phaseStatuses={pipeline.state.phaseStatuses}
+                        onPhaseClick={(phase) => {
+                          // Click on phase: show response if done, or invoke if idle
+                          if (pipeline.state.phaseStatuses[phase] === 'done') {
+                            setPreviewTab(phase);
+                            setPreviewOpen(true);
+                          } else if (!pipeline.state.isRunning && pipeline.state.phaseStatuses[phase] === 'idle') {
+                            pipeline.runStep(phase);
+                          }
+                        }}
+                        onRestart={() => pipeline.runFullPipeline()}
+                      />
+                    </div>
+                    {/* Auto-run button */}
+                    {!pipeline.state.isRunning ? (
+                      <Button
+                        onClick={() => pipeline.runFullPipeline()}
+                        size="sm"
+                        className="gap-2 shrink-0"
+                        disabled={!taskDescription?.trim() || pipeline.state.isRunning}
+                      >
+                        <Zap className="h-4 w-4" />
+                        {language === 'ru' ? 'Полный анализ' : 'Full Analysis'}
+                      </Button>
+                    ) : (
+                      <Button
+                        onClick={() => pipeline.abort()}
+                        variant="outline"
+                        size="sm"
+                        className="gap-2 shrink-0 border-destructive/30 text-destructive"
+                      >
+                        <StopCircle className="h-4 w-4" />
+                        {language === 'ru' ? 'Остановить' : 'Stop'}
+                      </Button>
+                    )}
+                  </div>
+
+                  {/* Individual expert sections */}
+                  <ConceptVisionaryCall
+                    planId={(task.session_config as any)?.__planId || task.plan_id || task.id}
+                    planTitle={displayTitle}
+                    planGoal={taskDescription}
+                    response={conceptResponses.visionary}
+                    onExpand={() => { setPreviewTab('visionary'); setPreviewOpen(true); }}
+                    onInvoke={() => pipeline.runStep('visionary')}
+                    invoking={pipeline.state.phaseStatuses.visionary === 'running' || expertLoading === 'visionary'}
+                  />
+
+                  <ConceptStrategistCall
+                    planId={(task.session_config as any)?.__planId || task.plan_id || task.id}
+                    planTitle={displayTitle}
+                    planGoal={taskDescription}
+                    response={conceptResponses.strategist}
+                    onExpand={() => { setPreviewTab('strategist'); setPreviewOpen(true); }}
+                    onInvoke={() => pipeline.runStep('strategist')}
+                    invoking={pipeline.state.phaseStatuses.strategist === 'running' || expertLoading === 'strategist'}
+                  />
+
+                  <ConceptPatentSearch
+                    planId={(task.session_config as any)?.__planId || task.plan_id || task.id}
+                    planTitle={displayTitle}
+                    planGoal={taskDescription}
+                    response={conceptResponses.patent}
+                    onExpand={() => { setPreviewTab('patent'); setPreviewOpen(true); }}
+                    onInvoke={() => pipeline.runStep('patent')}
+                    invoking={pipeline.state.phaseStatuses.patent === 'running' || expertLoading === 'patent'}
+                  />
+                </section>
               )}
 
               {/* Expert Responses Preview Dialog */}
