@@ -129,25 +129,33 @@ export function useConceptInvoke({ planId, planTitle, planGoal, onComplete }: Us
       }
 
       // 6. Tag the AI response with concept_type metadata
-      // Wait a moment for the orchestrator to save the response
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Find the AI response by request_group_id and tag it
-      const { data: aiResponses } = await supabase
-        .from('messages')
-        .select('id, metadata')
-        .eq('session_id', sessionId)
-        .eq('request_group_id', requestGroupId)
-        .neq('role', 'user')
-        .order('created_at', { ascending: false })
-        .limit(1);
+      // Poll for the AI response (orchestrator may still be saving)
+      let tagged = false;
+      for (let attempt = 0; attempt < 10; attempt++) {
+        await new Promise(resolve => setTimeout(resolve, 1500));
 
-      if (aiResponses && aiResponses.length > 0) {
-        const existing = (aiResponses[0].metadata as Record<string, unknown>) || {};
-        await supabase
+        const { data: aiResponses } = await supabase
           .from('messages')
-          .update({ metadata: { ...existing, concept_type: expertType } })
-          .eq('id', aiResponses[0].id);
+          .select('id, metadata')
+          .eq('session_id', sessionId)
+          .eq('request_group_id', requestGroupId)
+          .neq('role', 'user')
+          .order('created_at', { ascending: false })
+          .limit(1);
+
+        if (aiResponses && aiResponses.length > 0) {
+          const existing = (aiResponses[0].metadata as Record<string, unknown>) || {};
+          await supabase
+            .from('messages')
+            .update({ metadata: { ...existing, concept_type: expertType } })
+            .eq('id', aiResponses[0].id);
+          tagged = true;
+          break;
+        }
+      }
+
+      if (!tagged) {
+        console.warn(`[concept-invoke] Could not find AI response to tag for ${expertType}`);
       }
 
       toast.success(
