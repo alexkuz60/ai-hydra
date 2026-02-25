@@ -637,6 +637,27 @@ The indicator is consolidated in one place (page header) instead of being duplic
 
 > Такая логика обеспечивает обратную совместимость с ответами, созданными до внедрения метаданных \`concept_type\`.
 
+### Фиксация выводов и RAG-поиск
+
+Механизм \`plan_conclusions\` обеспечивает передачу знаний между подзадачами одного стратегического плана:
+
+**Фиксация вывода:**
+- В любой подзадаче пользователь может нажать «Зафиксировать вывод» — итоговый вердикт сохраняется в таблице \`plan_conclusions\`
+- Для вывода генерируется 1536-мерный векторный эмбеддинг (модель \`text-embedding-3-small\` через OpenRouter)
+- Зафиксированные выводы получают приоритет в поиске и отмечаются иконкой 📌
+
+**RAG-поиск между задачами:**
+- Все подзадачи внутри плана автоматически имеют доступ к выводам «соседей» через \`plan_id\`
+- При запросе в чате система выполняет векторный поиск по \`plan_conclusions\`, находя семантически релевантные выводы из других аспектов
+- Это создаёт «память стратегического процесса» — каждая подзадача знает о результатах остальных
+
+\`\`\`
+План СПРЗ
+├── Аспект A → вывод A (embedding) ─┐
+├── Аспект B → вывод B (embedding) ─┤── RAG-поиск
+└── Аспект C → запрос → находит A, B ─┘
+\`\`\`
+
 ### 🎯 Назначение
 - **RAG warm-start** — сегменты decision/evaluation/context/instruction для немедленной работы поиска по памяти
 - **Хроники Эволюции** — стратегические решения для механизма Эволюционера
@@ -739,6 +760,27 @@ Each expert response is tagged with \`concept_type\` metadata for precise identi
    - **Priority 3**: For patent attorney (\`role=assistant\`) — finds the response following a user message containing \`[Patent Forecast]\` or \`[Патентный прогноз]\` marker
 
 > This logic ensures backward compatibility with responses created before \`concept_type\` metadata was introduced.
+
+### Conclusion Fixation & RAG Search
+
+The \`plan_conclusions\` mechanism enables knowledge sharing between subtasks within a strategic plan:
+
+**Fixating a conclusion:**
+- In any subtask, the user can click "Fixate Conclusion" — the final verdict is saved to the \`plan_conclusions\` table
+- A 1536-dimensional vector embedding is generated (\`text-embedding-3-small\` model via OpenRouter)
+- Fixated conclusions receive search priority and are marked with a 📌 icon
+
+**Cross-task RAG search:**
+- All subtasks within a plan automatically access sibling conclusions via \`plan_id\`
+- When querying in chat, the system performs vector search across \`plan_conclusions\`, finding semantically relevant conclusions from other aspects
+- This creates a "strategic process memory" — each subtask is aware of the results from the others
+
+\`\`\`
+SPSP Plan
+├── Aspect A → conclusion A (embedding) ─┐
+├── Aspect B → conclusion B (embedding) ─┤── RAG search
+└── Aspect C → query → finds A, B ────────┘
+\`\`\`
 
 ### 🎯 Purpose
 - **RAG warm-start** — decision/evaluation/context/instruction segments for immediate memory search
