@@ -66,8 +66,8 @@ export function useConceptInvoke({ planId, planTitle, planGoal, onComplete }: Us
       // 2. Build user message
       const messages: Record<ConceptExpertType, Record<string, string>> = {
         visionary: {
-          ru: `[Видение Визионера] Сформулируй визионерскую концепцию проекта "${planTitle}". Концепция: ${planGoal}`,
-          en: `[Visionary Vision] Formulate a visionary concept for the project "${planTitle}". Concept: ${planGoal}`,
+          ru: `[Видение Визионера] Сформулируй визионерскую концепцию проекта "${planTitle}". Рассмотри созвучность актуальным трендам, рыночным потребностям и конкурентный ландшафт по теме плана. Концепция: ${planGoal}`,
+          en: `[Visionary Vision] Formulate a visionary concept for the project "${planTitle}". Consider alignment with current trends, market needs, and the competitive landscape for this plan's topic. Concept: ${planGoal}`,
         },
         strategist: {
           ru: `[Стратегическая структура] Декомпозируй цели проекта "${planTitle}" в иерархию аспектов и задач. Концепция: ${planGoal}`,
