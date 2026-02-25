@@ -604,6 +604,26 @@ The indicator is consolidated in one place (page header) instead of being duplic
 
 > **Провайдер поиска** определяется автоматически: если у пользователя настроен API-ключ Perplexity — используется он, иначе — системный ключ Tavily.
 
+### Каскадный контекст
+
+Ответы экспертов передаются по цепочке, обогащая каждый следующий этап:
+
+\`\`\`
+💡 Концепция (ввод пользователя)
+   ↓
+🔮 Визионер — получает только концепцию
+   ↓ ответ Визионера
+🎯 Стратег — получает концепцию + ответ Визионера
+   ↓ ответ Стратега
+📋 Патентовед — получает концепцию + ответ Визионера + ответ Стратега
+\`\`\`
+
+- **Визионер** работает «с чистого листа» — анализирует только исходную концепцию проекта
+- **Стратег** получает контекст \`--- Видение Визионера ---\` для декомпозиции целей с учётом стратегического видения
+- **Патентовед** получает оба предыдущих контекста (\`--- Видение Визионера ---\` и \`--- Стратегическая структура ---\`) для максимально точного патентного анализа
+
+> При **Полном анализе** каскадный контекст формируется автоматически. При **поштучном** запуске контекст берётся из уже сохранённых ответов.
+
 ### 🎯 Назначение
 - **RAG warm-start** — сегменты decision/evaluation/context/instruction для немедленной работы поиска по памяти
 - **Хроники Эволюции** — стратегические решения для механизма Эволюционера
@@ -673,6 +693,26 @@ Each expert automatically uses built-in tools to enrich the analysis:
 | **current_datetime** | All | Current date for request contextualization and recency filtering |
 
 > **Search provider** is detected automatically: if the user has a Perplexity API key configured, it is used; otherwise, the system Tavily key is used.
+
+### Cascading Context
+
+Expert responses are passed down the chain, enriching each subsequent stage:
+
+\`\`\`
+💡 Concept (user input)
+   ↓
+🔮 Visionary — receives only the concept
+   ↓ Visionary's response
+🎯 Strategist — receives concept + Visionary's response
+   ↓ Strategist's response
+📋 Patent Attorney — receives concept + Visionary's response + Strategist's response
+\`\`\`
+
+- **Visionary** works from scratch — analyzes only the original project concept
+- **Strategist** receives \`--- Visionary's Vision ---\` context for goal decomposition aligned with strategic vision
+- **Patent Attorney** receives both previous contexts (\`--- Visionary's Vision ---\` and \`--- Strategic Structure ---\`) for the most accurate patent analysis
+
+> In **Full Analysis** mode, cascading context is built automatically. In **Individual** mode, context is taken from previously saved responses.
 
 ### 🎯 Purpose
 - **RAG warm-start** — decision/evaluation/context/instruction segments for immediate memory search
