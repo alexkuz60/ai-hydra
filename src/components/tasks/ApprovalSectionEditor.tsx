@@ -8,8 +8,9 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { cn } from '@/lib/utils';
 import {
   Check, X, RotateCcw, ChevronRight, Pencil, FolderOpen,
-  ListChecks, MessageSquare,
+  ListChecks, MessageSquare, Save, XCircle,
 } from 'lucide-react';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import type { ApprovalSection, ApprovalStatus } from '@/lib/strategySectionParser';
 import { computeApprovalDiff } from '@/lib/strategySectionParser';
 
@@ -24,9 +25,9 @@ export function ApprovalSectionEditor({ sections, onSectionsChange, readOnly }: 
   const diff = computeApprovalDiff(sections);
 
   return (
-    <div className="space-y-1">
+    <div className="flex flex-col h-full">
       {/* Summary bar */}
-      <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-muted/30 text-xs text-muted-foreground mb-3">
+      <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-muted/30 text-xs text-muted-foreground mb-3 shrink-0">
         <ListChecks className="h-3.5 w-3.5" />
         <span>{language === 'ru' ? 'Всего' : 'Total'}: {diff.total}</span>
         {diff.approved > 0 && <Badge variant="outline" className="text-[10px] border-emerald-500/50 text-emerald-500">✓ {diff.approved}</Badge>}
@@ -35,18 +36,22 @@ export function ApprovalSectionEditor({ sections, onSectionsChange, readOnly }: 
         {diff.edited > 0 && <Badge variant="outline" className="text-[10px] border-primary/50 text-primary">✎ {diff.edited}</Badge>}
       </div>
 
-      {sections.map((section, idx) => (
-        <SectionNode
-          key={section.id}
-          section={section}
-          readOnly={readOnly}
-          onChange={(updated) => {
-            const next = [...sections];
-            next[idx] = updated;
-            onSectionsChange(next);
-          }}
-        />
-      ))}
+      <ScrollArea className="flex-1">
+        <div className="space-y-1 pr-3">
+          {sections.map((section, idx) => (
+            <SectionNode
+              key={section.id}
+              section={section}
+              readOnly={readOnly}
+              onChange={(updated) => {
+                const next = [...sections];
+                next[idx] = updated;
+                onSectionsChange(next);
+              }}
+            />
+          ))}
+        </div>
+      </ScrollArea>
     </div>
   );
 }
@@ -62,6 +67,7 @@ function SectionNode({ section, readOnly, onChange }: SectionNodeProps) {
   const [isOpen, setIsOpen] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [showComment, setShowComment] = useState(false);
+  const [commentDraft, setCommentDraft] = useState(section.userComment);
   const isAspect = section.depth === 0;
 
   const statusColors: Record<ApprovalStatus, string> = {
@@ -170,12 +176,41 @@ function SectionNode({ section, readOnly, onChange }: SectionNodeProps) {
 
             {/* User comment for reject/rework */}
             {showComment && (
-              <Textarea
-                value={section.userComment}
-                onChange={(e) => handleCommentChange(e.target.value)}
-                placeholder={language === 'ru' ? 'Комментарий (причина отклонения / уточнение)...' : 'Comment (rejection reason / clarification)...'}
-                className="mt-2 text-xs min-h-[40px] resize-y border-hydra-warning/30"
-              />
+              <div className="mt-2 space-y-1.5">
+                <Textarea
+                  value={commentDraft}
+                  onChange={(e) => setCommentDraft(e.target.value)}
+                  placeholder={language === 'ru' ? 'Комментарий (причина отклонения / уточнение)...' : 'Comment (rejection reason / clarification)...'}
+                  className="text-xs min-h-[40px] resize-y border-hydra-warning/30"
+                  autoFocus
+                />
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 text-[10px] gap-1 text-emerald-500"
+                    onClick={() => {
+                      handleCommentChange(commentDraft);
+                      setShowComment(false);
+                    }}
+                  >
+                    <Save className="h-3 w-3" />
+                    {language === 'ru' ? 'Сохранить' : 'Save'}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 text-[10px] gap-1 text-muted-foreground"
+                    onClick={() => {
+                      setCommentDraft(section.userComment);
+                      setShowComment(false);
+                    }}
+                  >
+                    <XCircle className="h-3 w-3" />
+                    {language === 'ru' ? 'Отмена' : 'Cancel'}
+                  </Button>
+                </div>
+              </div>
             )}
           </div>
 
