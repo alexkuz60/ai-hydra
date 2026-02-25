@@ -47,36 +47,52 @@ export function useConceptResponses(planId: string | null) {
         return;
       }
 
-      // Fetch latest messages with visionary/strategist roles
-      const { data: roleMessages } = await supabase
+      // Fetch all non-user messages ordered by recency
+      const { data: allMessages } = await supabase
         .from('messages')
-        .select('id, role, content, content_en, model_name, created_at')
+        .select('id, role, content, content_en, model_name, created_at, metadata')
         .eq('session_id', conceptSession.id)
         .eq('user_id', user.id)
-        .in('role', ['visionary', 'strategist'])
+        .neq('role', 'user')
         .order('created_at', { ascending: false })
-        .limit(20);
+        .limit(50);
 
-      // Fetch latest non-user, non-visionary, non-strategist messages (patent attorney responses)
-      const { data: otherMessages } = await supabase
-        .from('messages')
-        .select('id, role, content, content_en, model_name, created_at')
-        .eq('session_id', conceptSession.id)
-        .eq('user_id', user.id)
-        .not('role', 'eq', 'user')
-        .not('role', 'in', '("visionary","strategist")')
-        .order('created_at', { ascending: false })
-        .limit(10);
+      if (!allMessages || allMessages.length === 0) {
+        setResponses({ visionary: null, strategist: null, patent: null });
+        setLoading(false);
+        return;
+      }
 
-      const latestVisionary = roleMessages?.find(m => m.role === 'visionary') || null;
-      const latestStrategist = roleMessages?.find(m => m.role === 'strategist') || null;
-      // Patent attorney — latest non-user response that's not visionary/strategist
-      const latestPatent = otherMessages?.[0] || null;
+      // Priority 1: Match by metadata concept_type
+      let latestVisionary: ConceptResponse | null = null;
+      let latestStrategist: ConceptResponse | null = null;
+      let latestPatent: ConceptResponse | null = null;
+
+      for (const msg of allMessages) {
+        const meta = msg.metadata as Record<string, unknown> | null;
+        const conceptType = meta?.concept_type as string | undefined;
+
+        if (conceptType === 'visionary' && !latestVisionary) {
+          latestVisionary = msg as unknown as ConceptResponse;
+        } else if (conceptType === 'strategist' && !latestStrategist) {
+          latestStrategist = msg as unknown as ConceptResponse;
+        } else if (conceptType === 'patent' && !latestPatent) {
+          latestPatent = msg as unknown as ConceptResponse;
+        }
+      }
+
+      // Priority 2: Fallback to role-based matching (for legacy messages)
+      if (!latestVisionary) {
+        latestVisionary = (allMessages.find(m => m.role === 'visionary') as unknown as ConceptResponse) || null;
+      }
+      if (!latestStrategist) {
+        latestStrategist = (allMessages.find(m => m.role === 'strategist') as unknown as ConceptResponse) || null;
+      }
 
       setResponses({
-        visionary: latestVisionary as ConceptResponse | null,
-        strategist: latestStrategist as ConceptResponse | null,
-        patent: latestPatent as ConceptResponse | null,
+        visionary: latestVisionary,
+        strategist: latestStrategist,
+        patent: latestPatent,
       });
     } catch (err) {
       console.error('Failed to fetch concept responses:', err);

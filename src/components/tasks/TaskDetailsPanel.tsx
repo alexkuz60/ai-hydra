@@ -14,6 +14,7 @@ import { ConceptVisionaryCall } from './ConceptVisionaryCall';
 import { ConceptStrategistCall } from './ConceptStrategistCall';
 import { ConceptResponsesPreview } from './ConceptResponsesPreview';
 import { useConceptResponses } from '@/hooks/useConceptResponses';
+import { useConceptInvoke } from '@/hooks/useConceptInvoke';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { MultiModelSelector } from '@/components/warroom/MultiModelSelector';
@@ -81,7 +82,15 @@ export function TaskDetailsPanel({
   // Concept responses for plan-level tasks
   const currentIsPlan = !!(task?.session_config as any)?.__isPlan;
   const conceptPlanId = currentIsPlan ? ((task?.session_config as any)?.__planId || task?.plan_id || task?.id || null) : null;
-  const { responses: conceptResponses } = useConceptResponses(conceptPlanId);
+  const { responses: conceptResponses, refetch: refetchResponses } = useConceptResponses(conceptPlanId);
+
+  // Inline concept invocation
+  const { invoke: invokeExpert, loading: expertLoading } = useConceptInvoke({
+    planId: conceptPlanId || '',
+    planTitle: displayTitle,
+    planGoal: taskDescription,
+    onComplete: refetchResponses,
+  });
 
   // Unsaved changes protection
   const unsavedChanges = useUnsavedChanges(false);
@@ -360,6 +369,8 @@ export function TaskDetailsPanel({
                  className="border-t pt-4"
                  response={conceptResponses.visionary}
                  onExpand={() => { setPreviewTab('visionary'); setPreviewOpen(true); }}
+                 onInvoke={() => invokeExpert('visionary')}
+                 invoking={expertLoading === 'visionary'}
                />
              )}
 
@@ -372,6 +383,8 @@ export function TaskDetailsPanel({
                  className="border-t pt-4"
                  response={conceptResponses.strategist}
                  onExpand={() => { setPreviewTab('strategist'); setPreviewOpen(true); }}
+                 onInvoke={() => invokeExpert('strategist')}
+                 invoking={expertLoading === 'strategist'}
                />
              )}
 
@@ -384,6 +397,8 @@ export function TaskDetailsPanel({
                   className="border-t pt-4"
                   response={conceptResponses.patent}
                   onExpand={() => { setPreviewTab('patent'); setPreviewOpen(true); }}
+                  onInvoke={() => invokeExpert('patent')}
+                  invoking={expertLoading === 'patent'}
                 />
               )}
 
