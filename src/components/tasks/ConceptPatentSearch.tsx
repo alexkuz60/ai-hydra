@@ -22,11 +22,11 @@ export function ConceptPatentSearch({ planId, planTitle, planGoal, className, re
 
   return (
     <section className={cn('space-y-3', className)}>
-      <h3 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+      <h3 className="text-base font-medium text-muted-foreground flex items-center gap-2">
         <Landmark className="h-4 w-4 text-hydra-patent" />
         {t('concept.patentSearch.title')}
       </h3>
-      <p className="text-xs text-muted-foreground/70">
+      <p className="text-sm text-muted-foreground/70">
         {t('concept.patentSearch.description')}
       </p>
       <Button
@@ -40,7 +40,7 @@ export function ConceptPatentSearch({ planId, planTitle, planGoal, className, re
         {t('concept.patentSearch.invoke')}
       </Button>
       {!planGoal?.trim() && (
-        <p className="text-xs text-muted-foreground/50 italic">
+        <p className="text-sm text-muted-foreground/50 italic">
           {t('concept.patentSearch.needGoal')}
         </p>
       )}

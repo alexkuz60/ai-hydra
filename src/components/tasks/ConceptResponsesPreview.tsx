@@ -31,7 +31,7 @@ function CollapsedResponse({ content, contentEn, className, onExpand, accentClas
 
   return (
     <div className={cn('relative mt-2 group', className)}>
-      <div className="text-xs text-muted-foreground line-clamp-5 whitespace-pre-wrap border-l-2 pl-3 py-1" style={{ borderColor: `hsl(var(--${accentClass}))` }}>
+      <div className="text-sm text-muted-foreground line-clamp-5 whitespace-pre-wrap border-l-2 pl-3 py-1" style={{ borderColor: `hsl(var(--${accentClass}))` }}>
         <ReactMarkdown
           components={{
             p: ({ children }) => <p className="mb-1">{children}</p>,
@@ -48,7 +48,7 @@ function CollapsedResponse({ content, contentEn, className, onExpand, accentClas
       <Button
         variant="ghost"
         size="sm"
-        className={cn('h-6 px-2 text-xs mt-1 gap-1 opacity-70 hover:opacity-100')}
+        className={cn('h-6 px-2 text-sm mt-1 gap-1 opacity-70 hover:opacity-100')}
         onClick={onExpand}
       >
         <Maximize2 className="h-3 w-3" />

@@ -22,11 +22,11 @@ export function ConceptStrategistCall({ planId, planTitle, planGoal, className, 
 
   return (
     <section className={cn('space-y-3', className)}>
-      <h3 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+      <h3 className="text-base font-medium text-muted-foreground flex items-center gap-2">
         <Target className="h-4 w-4 text-hydra-strategist" />
         {t('concept.strategist.title')}
       </h3>
-      <p className="text-xs text-muted-foreground/70">
+      <p className="text-sm text-muted-foreground/70">
         {t('concept.strategist.description')}
       </p>
       <Button
@@ -40,7 +40,7 @@ export function ConceptStrategistCall({ planId, planTitle, planGoal, className, 
         {t('concept.strategist.invoke')}
       </Button>
       {!planGoal?.trim() && (
-        <p className="text-xs text-muted-foreground/50 italic">
+        <p className="text-sm text-muted-foreground/50 italic">
           {t('concept.strategist.needGoal')}
         </p>
       )}
