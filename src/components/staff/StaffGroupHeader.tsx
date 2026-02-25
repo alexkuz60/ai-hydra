@@ -13,14 +13,15 @@ interface StaffGroupHeaderProps {
   guideId: string;
   nested?: boolean;
   actions?: React.ReactNode;
+  selected?: boolean;
 }
 
 export function StaffGroupHeader({
-  expanded, onToggle, icon, label, count, guideId, nested, actions,
+  expanded, onToggle, icon, label, count, guideId, nested, actions, selected,
 }: StaffGroupHeaderProps) {
   return (
     <TableRow
-      className={cn("hover:bg-muted/40 cursor-pointer", nested ? "bg-muted/15" : "bg-muted/30")}
+      className={cn("hover:bg-muted/40 cursor-pointer", nested ? "bg-muted/15" : "bg-muted/30", selected && "bg-primary/10 hover:bg-primary/15")}
       onClick={onToggle}
       data-guide={guideId}
     >

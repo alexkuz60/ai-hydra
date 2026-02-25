@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
-import { MessageSquare, Play, Trash2, Pencil, Check, X, Bot, Sparkles, Cpu, Loader2, Save, Lock, Copy, FileText } from 'lucide-react';
+import { MessageSquare, Play, Trash2, Pencil, Check, X, Bot, Sparkles, Cpu, Loader2, Save, Lock, Copy, FileText, Target } from 'lucide-react';
 import { TaskFilesPanel } from './TaskFilesPanel';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
@@ -180,6 +180,8 @@ export function TaskDetailsPanel({
      return t(`role.${role}`);
    };
  
+   const isPlanLevel = !!(task.session_config as any)?.__isPlan;
+
    return (
      <div className="h-full flex flex-col">
        {/* Header */}
@@ -188,12 +190,12 @@ export function TaskDetailsPanel({
            <div className="flex items-start gap-4">
              <div className={cn(
                "w-12 h-12 rounded-lg flex items-center justify-center shrink-0",
-               task.is_active ? "bg-primary/10" : "bg-muted/50"
+               isPlanLevel ? "bg-primary/15" : task.is_active ? "bg-primary/10" : "bg-muted/50"
              )}>
-               <MessageSquare className={cn(
-                 "h-6 w-6",
-                 task.is_active ? "text-primary" : "text-muted-foreground"
-               )} />
+               {isPlanLevel 
+                 ? <Target className="h-6 w-6 text-primary" />
+                 : <MessageSquare className={cn("h-6 w-6", task.is_active ? "text-primary" : "text-muted-foreground")} />
+               }
              </div>
              <div className="flex-1 min-w-0">
                {editingTitle ? (
@@ -209,26 +211,21 @@ export function TaskDetailsPanel({
                        if (e.key === 'Escape') handleCancelEditTitle();
                      }}
                    />
-                   <Button
-                     variant="ghost"
-                     size="icon"
-                     className="h-8 w-8"
-                     onClick={handleSaveTitle}
-                   >
+                   <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleSaveTitle}>
                      <Check className="h-4 w-4" />
                    </Button>
-                   <Button
-                     variant="ghost"
-                     size="icon"
-                     className="h-8 w-8"
-                     onClick={handleCancelEditTitle}
-                   >
+                   <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleCancelEditTitle}>
                      <X className="h-4 w-4" />
                    </Button>
                  </div>
                ) : (
                   <div className="flex items-center gap-2">
                     <h2 className="text-xl font-semibold truncate">{displayTitle}</h2>
+                    {isPlanLevel && (
+                      <Badge variant="outline" className="text-xs text-primary border-primary/30">
+                        {t('plans.concept')}
+                      </Badge>
+                    )}
                     {task.is_system && (
                       <Lock className="h-4 w-4 text-muted-foreground shrink-0" />
                     )}
@@ -246,7 +243,7 @@ export function TaskDetailsPanel({
                )}
                <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
                  <span>{format(new Date(task.updated_at), 'dd.MM.yyyy HH:mm')}</span>
-                 {selectedModels.length > 0 && (
+                 {!isPlanLevel && selectedModels.length > 0 && (
                    <>
                      <span>•</span>
                      <Badge variant="secondary" className="text-xs">
@@ -268,7 +265,7 @@ export function TaskDetailsPanel({
                    disabled={saving}
                  >
                    {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
-                   {t('tasks.saveTask')}
+                   {isPlanLevel ? t('plans.save') : t('tasks.saveTask')}
                  </Button>
                )}
                {task.is_system && onDuplicate && (
@@ -282,7 +279,7 @@ export function TaskDetailsPanel({
                    {t('tasks.duplicateToOwn')}
                  </Button>
                )}
-               {!task.is_system && (
+               {!task.is_system && !isPlanLevel && (
                 <Button
                   variant="destructive"
                   size="icon"
@@ -293,15 +290,17 @@ export function TaskDetailsPanel({
                  <Trash2 className="h-4 w-4" />
                </Button>
                )}
-               <Button
-                 onClick={handleOpenTask}
-                 disabled={selectedModels.length === 0}
-                 className="hydra-glow-sm"
-                 data-guide="tasks-open-btn"
-               >
-                 <Play className="h-4 w-4 mr-2" />
-                 {t('tasks.open')}
-               </Button>
+               {!isPlanLevel && (
+                 <Button
+                   onClick={handleOpenTask}
+                   disabled={selectedModels.length === 0}
+                   className="hydra-glow-sm"
+                   data-guide="tasks-open-btn"
+                 >
+                   <Play className="h-4 w-4 mr-2" />
+                   {t('tasks.open')}
+                 </Button>
+               )}
              </div>
           </div>
         </div>
@@ -315,75 +314,74 @@ export function TaskDetailsPanel({
  
        <ScrollArea className="flex-1">
          <div className="p-4 space-y-6">
-           {/* Task Formulation */}
+           {/* Task / Plan Formulation */}
            <section>
              <h3 className="text-sm font-medium text-muted-foreground mb-3 flex items-center gap-2">
                <FileText className="h-4 w-4" />
-               {t('tasks.formulation')}
+               {isPlanLevel ? t('plans.goalFormulation') : t('tasks.formulation')}
              </h3>
              <Textarea
                value={taskDescription}
                onChange={(e) => handleDescriptionChange(e.target.value)}
-               placeholder={t('tasks.formulationPlaceholder')}
-               className="min-h-[80px] resize-y text-sm"
+               placeholder={isPlanLevel ? t('plans.goalPlaceholder') : t('tasks.formulationPlaceholder')}
+               className={cn("resize-y text-sm", isPlanLevel ? "min-h-[160px]" : "min-h-[80px]")}
                disabled={task.is_system}
              />
            </section>
 
-           {/* Model Selector */}
-            <section data-guide="tasks-detail-models">
-              <h3 className="text-sm font-medium text-muted-foreground mb-3">{t('tasks.selectModels')}</h3>
-              <MultiModelSelector 
-                value={selectedModels} 
-                onChange={handleModelsChange}
-                className="w-full"
-              />
-            </section>
+           {/* Model selector & settings — only for non-plan tasks */}
+           {!isPlanLevel && (
+             <>
+               <section data-guide="tasks-detail-models">
+                 <h3 className="text-sm font-medium text-muted-foreground mb-3">{t('tasks.selectModels')}</h3>
+                 <MultiModelSelector 
+                   value={selectedModels} 
+                   onChange={handleModelsChange}
+                   className="w-full"
+                 />
+               </section>
  
-           {/* Selected models preview */}
-           {selectedModels.length > 0 && (
-             <section className="space-y-2">
-               <h3 className="text-sm font-medium text-muted-foreground">{t('tasks.selectedModels')}</h3>
-               <div className="space-y-2">
-                 {selectedModels.map((modelId) => (
-                   <div 
-                     key={modelId}
-                     className="flex items-center gap-3 text-sm py-2 px-3 rounded-md bg-muted/30"
-                   >
-                     {getModelIcon(modelId)}
-                     <span className="font-medium flex-1 truncate">{getModelDisplayName(modelId)}</span>
-                     <span className="text-xs text-muted-foreground px-2 py-0.5 rounded bg-background/50">
-                       {getModelRole(modelId)}
-                     </span>
+               {selectedModels.length > 0 && (
+                 <section className="space-y-2">
+                   <h3 className="text-sm font-medium text-muted-foreground">{t('tasks.selectedModels')}</h3>
+                   <div className="space-y-2">
+                     {selectedModels.map((modelId) => (
+                       <div 
+                         key={modelId}
+                         className="flex items-center gap-3 text-sm py-2 px-3 rounded-md bg-muted/30"
+                       >
+                         {getModelIcon(modelId)}
+                         <span className="font-medium flex-1 truncate">{getModelDisplayName(modelId)}</span>
+                         <span className="text-xs text-muted-foreground px-2 py-0.5 rounded bg-background/50">
+                           {getModelRole(modelId)}
+                         </span>
+                       </div>
+                     ))}
                    </div>
-                 ))}
-               </div>
-             </section>
-            )}
+                 </section>
+               )}
 
-            {/* Task Files */}
-            <div data-guide="tasks-files-tab">
-            <TaskFilesPanel sessionId={task.id} className="border-t pt-4" />
-            </div>
- 
- 
-           {/* Session settings */}
-            <div data-guide="tasks-hybrid-toggle">
-            <SessionSettings
-              useHybridStreaming={useHybridStreaming}
-              onHybridStreamingChange={handleHybridChange}
-              className="border-t pt-4"
-            />
-            </div>
- 
-           {/* Per-model settings */}
-           {selectedModels.length > 0 && (
-             <PerModelSettings
-               selectedModels={selectedModels}
-               settings={perModelSettings}
-               onChange={handleSettingsChange}
-               className="border-t"
-             />
+               <div data-guide="tasks-files-tab">
+                 <TaskFilesPanel sessionId={task.id} className="border-t pt-4" />
+               </div>
+
+               <div data-guide="tasks-hybrid-toggle">
+                 <SessionSettings
+                   useHybridStreaming={useHybridStreaming}
+                   onHybridStreamingChange={handleHybridChange}
+                   className="border-t pt-4"
+                 />
+               </div>
+
+               {selectedModels.length > 0 && (
+                 <PerModelSettings
+                   selectedModels={selectedModels}
+                   settings={perModelSettings}
+                   onChange={handleSettingsChange}
+                   className="border-t"
+                 />
+               )}
+             </>
            )}
  
           </div>

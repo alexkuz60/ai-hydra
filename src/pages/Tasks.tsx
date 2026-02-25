@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody } from '@/components/ui/table';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Plus, Loader2, MessageSquare, Search, ListTodo, Flame, BookOpen, FolderOpen, Target, ChevronRight, ChevronDown, CornerDownRight, FolderPlus, FilePlus, Pencil, Landmark } from 'lucide-react';
+import { Plus, Loader2, MessageSquare, Search, ListTodo, Flame, BookOpen, FolderOpen, Target, ChevronRight, ChevronDown, CornerDownRight, FolderPlus, FilePlus, FileText, Pencil, Landmark } from 'lucide-react';
 import {
   ResizablePanelGroup,
   ResizablePanel,
@@ -102,7 +102,25 @@ export default function Tasks() {
    const [useHybridStreaming, setUseHybridStreaming] = useState(true);
 
    // Strategic Plans
-   const { plans, createPlan, deletePlan, refetch: refetchPlans } = useStrategicPlans(user?.id);
+   const { plans, createPlan, updatePlan, deletePlan, refetch: refetchPlans } = useStrategicPlans(user?.id);
+
+   // Convert StrategicPlan to virtual Task for the details panel
+   const planToTask = (plan: StrategicPlan): Task => ({
+     id: `__plan__${plan.id}`,
+     title: plan.title,
+     title_en: plan.title_en,
+     description: plan.goal,
+     description_en: plan.goal_en,
+     is_active: true,
+     is_system: false,
+     is_shared: false,
+     plan_id: null,
+     parent_id: null,
+     sort_order: 0,
+     created_at: plan.created_at,
+     updated_at: plan.updated_at,
+     session_config: { __isPlan: true, __planId: plan.id, status: plan.status } as any,
+   });
    const [showNewPlan, setShowNewPlan] = useState(false);
    const [newPlanTitle, setNewPlanTitle] = useState('');
    const [creatingPlan, setCreatingPlan] = useState(false);
@@ -445,6 +463,21 @@ export default function Tasks() {
 
 
    const handleUpdateTitle = async (taskId: string, newTitle: string) => {
+     // Handle plan-level task
+     if (taskId.startsWith('__plan__')) {
+       const planId = taskId.replace('__plan__', '');
+       setSaving(true);
+       try {
+         await updatePlan(planId, { title: newTitle.slice(0, 100) });
+         if (selectedTask?.id === taskId) {
+           setSelectedTask({ ...selectedTask, title: newTitle });
+         }
+       } finally {
+         setSaving(false);
+       }
+       return;
+     }
+
      setSaving(true);
     try {
       const { error } = await supabase
@@ -467,6 +500,29 @@ export default function Tasks() {
   };
 
    const handleUpdateConfig = async (taskId: string, config: Task['session_config'], description?: string) => {
+     // Handle plan-level task — save goal to strategic_plans
+     if (taskId.startsWith('__plan__')) {
+       const planId = taskId.replace('__plan__', '');
+       setSaving(true);
+       try {
+         const updates: Record<string, unknown> = {};
+         if (description !== undefined) updates.goal = description;
+         if ((config as any)?.status) updates.status = (config as any).status;
+         await updatePlan(planId, updates as any);
+         if (selectedTask?.id === taskId) {
+           setSelectedTask({ 
+             ...selectedTask, 
+             description: description ?? selectedTask.description,
+             session_config: config,
+             updated_at: new Date().toISOString(),
+           });
+         }
+       } finally {
+         setSaving(false);
+       }
+       return;
+     }
+
      setSaving(true);
     try {
       const updateData: Record<string, unknown> = { 
@@ -778,12 +834,26 @@ export default function Tasks() {
                               <StaffGroupHeader
                                 expanded={isPlanExpanded}
                                 onToggle={() => togglePlanExpanded(plan.id)}
-                                icon={<Target className="h-4 w-4 text-primary" />}
+                                icon={<Target className={cn("h-4 w-4", selectedTask?.id === `__plan__${plan.id}` ? "text-primary" : "text-primary")} />}
                                 label={(language === 'en' && plan.title_en) ? plan.title_en : plan.title}
                                 count={aspects.length}
                                 guideId={`plan-${plan.id}`}
+                                selected={selectedTask?.id === `__plan__${plan.id}`}
                                  actions={
                                    <div className="flex items-center gap-0.5">
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className={cn("h-6 w-6", selectedTask?.id === `__plan__${plan.id}` && "text-primary")}
+                                            onClick={(e) => { e.stopPropagation(); handleSelectTask(planToTask(plan)); }}
+                                          >
+                                            <FileText className="h-3.5 w-3.5" />
+                                          </Button>
+                                        </TooltipTrigger>
+                                        <TooltipContent>{t('plans.concept')}</TooltipContent>
+                                      </Tooltip>
                                       <Tooltip>
                                         <TooltipTrigger asChild>
                                           <Button
