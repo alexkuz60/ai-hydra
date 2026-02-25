@@ -103,39 +103,29 @@ export function useConceptInvoke({ planId, planTitle, planGoal, onComplete }: Us
 
       // 5. Call hydra-orchestrator
       const role = ROLE_MAP[expertType];
-      const session = await supabase.auth.getSession();
 
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/hydra-orchestrator`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${session.data.session?.access_token}`,
-          },
-          body: JSON.stringify({
-            session_id: sessionId,
-            message: messageContent,
-            attachments: [],
-            models: [{
-              model_id: modelId,
-              use_lovable_ai: true,
-              temperature: 0.7,
-              max_tokens: 4096,
-              role,
-              enable_tools: false,
-              enabled_tools: [],
-              enabled_custom_tools: [],
-            }],
-            request_group_id: requestGroupId,
-            history: [],
-          }),
-        }
-      );
+      const { data: fnData, error: fnError } = await supabase.functions.invoke('hydra-orchestrator', {
+        body: {
+          session_id: sessionId,
+          message: messageContent,
+          attachments: [],
+          models: [{
+            model_id: modelId,
+            use_lovable_ai: true,
+            temperature: 0.7,
+            max_tokens: 4096,
+            role,
+            enable_tools: false,
+            enabled_tools: [],
+            enabled_custom_tools: [],
+          }],
+          request_group_id: requestGroupId,
+          history: [],
+        },
+      });
 
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || 'Failed to get AI response');
+      if (fnError) {
+        throw new Error(fnError.message || 'Failed to get AI response');
       }
 
       // 6. Tag the AI response with concept_type metadata
