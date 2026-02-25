@@ -3,6 +3,7 @@ import { cn } from '@/lib/utils';
 import { Eye, Target, Landmark, RotateCcw, Lightbulb } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { motion } from 'framer-motion';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 export type ConceptPhase = 'visionary' | 'strategist' | 'patent';
 export type PipelineStatus = 'idle' | 'running' | 'completed' | 'failed';
@@ -28,6 +29,13 @@ function isPhaseUnlocked(phase: ConceptPhase, statuses: Record<ConceptPhase, 'id
   return false;
 }
 
+/** Get tooltip text for locked phases */
+function getLockedTooltip(phase: ConceptPhase, isRu: boolean): string {
+  if (phase === 'strategist') return isRu ? 'Сначала выполните анализ Визионера' : 'Complete Visionary analysis first';
+  if (phase === 'patent') return isRu ? 'Сначала выполните анализ Стратега' : 'Complete Strategist analysis first';
+  return '';
+}
+
 const PHASES: { key: ConceptPhase; icon: React.ElementType; labelRu: string; labelEn: string; colorVar: string }[] = [
   { key: 'visionary', icon: Eye, labelRu: 'Визионер', labelEn: 'Visionary', colorVar: 'hydra-visionary' },
   { key: 'strategist', icon: Target, labelRu: 'Стратег', labelEn: 'Strategist', colorVar: 'hydra-strategist' },
@@ -39,55 +47,56 @@ export function ConceptPipelineTimeline({ activePhase, phaseStatuses, hasConcept
   const isRu = language === 'ru';
 
   return (
-    <div className="flex items-center w-full px-1 py-2">
-      {/* Step 0: Concept indicator */}
-      <div className="flex flex-col items-center gap-0.5 shrink-0">
-        <div
-          className={cn(
-            "flex items-center justify-center w-8 h-8 rounded-full border-2 transition-all duration-300",
-            hasConceptFilled
-              ? "border-primary bg-primary/15 text-primary"
-              : "border-muted-foreground/30 bg-muted/30 text-muted-foreground/50"
-          )}
-        >
-          <Lightbulb className="h-3.5 w-3.5" />
-        </div>
-        <span
-          className={cn(
-            "text-[9px] font-medium leading-none",
-            hasConceptFilled ? "text-primary" : "text-muted-foreground/50"
-          )}
-        >
-          {isRu ? 'Концепт' : 'Concept'}
-        </span>
-      </div>
+    <TooltipProvider delayDuration={300}>
+      <div className="flex items-center w-full px-1 py-2">
+        {/* Step 0: Concept indicator */}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div className="flex flex-col items-center gap-0.5 shrink-0">
+              <div
+                className={cn(
+                  "flex items-center justify-center w-8 h-8 rounded-full border-2 transition-all duration-300",
+                  hasConceptFilled
+                    ? "border-primary bg-primary/15 text-primary"
+                    : "border-muted-foreground/30 bg-muted/30 text-muted-foreground/50"
+                )}
+              >
+                <Lightbulb className="h-3.5 w-3.5" />
+              </div>
+              <span
+                className={cn(
+                  "text-[9px] font-medium leading-none",
+                  hasConceptFilled ? "text-primary" : "text-muted-foreground/50"
+                )}
+              >
+                {isRu ? 'Концепт' : 'Concept'}
+              </span>
+            </div>
+          </TooltipTrigger>
+          <TooltipContent side="bottom" className="text-xs">
+            {hasConceptFilled
+              ? (isRu ? 'Концепция заполнена' : 'Concept filled')
+              : (isRu ? 'Заполните поле концепции для запуска анализа' : 'Fill in the concept field to start analysis')}
+          </TooltipContent>
+        </Tooltip>
 
-      {/* Connector from concept to first expert */}
-      <PipelineConnector
-        completed={hasConceptFilled}
-        animating={false}
-        failed={false}
-        colorVar="primary"
-      />
+        {/* Connector from concept to first expert */}
+        <PipelineConnector
+          completed={hasConceptFilled}
+          animating={false}
+          failed={false}
+          colorVar="primary"
+        />
 
-      {PHASES.map((phase, i) => {
-        const status = phaseStatuses[phase.key];
-        const isCompleted = status === 'done';
-        const isActive = status === 'running';
-        const isFailed = status === 'failed';
-        const isLocked = !isPhaseUnlocked(phase.key, phaseStatuses);
+        {PHASES.map((phase, i) => {
+          const status = phaseStatuses[phase.key];
+          const isCompleted = status === 'done';
+          const isActive = status === 'running';
+          const isFailed = status === 'failed';
+          const isLocked = !isPhaseUnlocked(phase.key, phaseStatuses);
+          const lockedTip = isLocked ? getLockedTooltip(phase.key, isRu) : '';
 
-        return (
-          <React.Fragment key={phase.key}>
-            {i > 0 && (
-              <PipelineConnector
-                completed={isCompleted || (PHASES.findIndex(p => p.key === activePhase) > i - 1 && phaseStatuses[PHASES[i - 1].key] === 'done')}
-                animating={isActive}
-                failed={isFailed}
-                colorVar={phase.colorVar}
-              />
-            )}
-
+          const phaseNode = (
             <div className="flex flex-col items-center gap-0.5 shrink-0">
               <button
                 type="button"
@@ -145,10 +154,30 @@ export function ConceptPipelineTimeline({ activePhase, phaseStatuses, hasConcept
                 </span>
               )}
             </div>
-          </React.Fragment>
-        );
-      })}
-    </div>
+          );
+
+          return (
+            <React.Fragment key={phase.key}>
+              {i > 0 && (
+                <PipelineConnector
+                  completed={isCompleted || (PHASES.findIndex(p => p.key === activePhase) > i - 1 && phaseStatuses[PHASES[i - 1].key] === 'done')}
+                  animating={isActive}
+                  failed={isFailed}
+                  colorVar={phase.colorVar}
+                />
+              )}
+
+              {isLocked ? (
+                <Tooltip>
+                  <TooltipTrigger asChild>{phaseNode}</TooltipTrigger>
+                  <TooltipContent side="bottom" className="text-xs">{lockedTip}</TooltipContent>
+                </Tooltip>
+              ) : phaseNode}
+            </React.Fragment>
+          );
+        })}
+      </div>
+    </TooltipProvider>
   );
 }
 
