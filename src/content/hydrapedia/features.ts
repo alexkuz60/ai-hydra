@@ -572,6 +572,26 @@ The indicator is consolidated in one place (page header) instead of being duplic
 
 Каждый кейс содержит 5–8 реалистичных мультимодельных сообщений с ролями Аналитика, Консультанта и Критика.
 
+## Конвейер концептуального анализа (Concept Pipeline)
+
+Встроенный в панель задач пайплайн из 4 шагов для глубокого анализа концепции проекта:
+
+| Шаг | Иконка | Назначение | Зависимость |
+|-----|--------|------------|-------------|
+| **Концепт** | 💡 | Индикатор заполненности поля «Концепция и цель» | — |
+| **Визионер** | 🔮 | Визионерская концепция: тренды, рыночные потребности | Концепт заполнен |
+| **Стратег** | 🎯 | Декомпозиция целей в иерархию задач | Визионер завершён |
+| **Патентовед** | 📋 | Патентный анализ, поиск аналогов | Стратег завершён |
+
+### Валидация последовательности
+- Каждый шаг блокируется до завершения предыдущего
+- Заблокированные кнопки отображаются полупрозрачными с тултипом-подсказкой
+- Шаг «Концепт» — пассивный индикатор (зелёный/серый), не кликабельный
+
+### Режимы запуска
+- **Полный анализ** — последовательный запуск всех трёх экспертов (Визионер → Стратег → Патентовед)
+- **Поштучный** — ручной запуск каждого эксперта отдельно
+
 ### 🎯 Назначение
 - **RAG warm-start** — сегменты decision/evaluation/context/instruction для немедленной работы поиска по памяти
 - **Хроники Эволюции** — стратегические решения для механизма Эволюционера
@@ -609,6 +629,26 @@ System tasks (\`is_system: true\`) — public read-only templates protected from
 | **Quick Q&A** | GPT-5, GPT-5-mini | RAG architecture comparison, Technoarbiter prompt |
 
 Each case contains 5–8 realistic multi-model messages with Analyst, Consultant, and Critic roles.
+
+## Concept Analysis Pipeline
+
+A 4-step pipeline built into the task panel for deep project concept analysis:
+
+| Step | Icon | Purpose | Dependency |
+|------|------|---------|------------|
+| **Concept** | 💡 | Indicator for "Concept & Goal" field completion | — |
+| **Visionary** | 🔮 | Visionary concept: trends, market needs | Concept filled |
+| **Strategist** | 🎯 | Goal decomposition into task hierarchy | Visionary completed |
+| **Patent Attorney** | 📋 | Patent analysis, prior art search | Strategist completed |
+
+### Sequence Validation
+- Each step is locked until the previous one completes
+- Locked buttons appear semi-transparent with an explanatory tooltip
+- The "Concept" step is a passive indicator (green/gray), not clickable
+
+### Launch Modes
+- **Full Analysis** — sequential launch of all three experts (Visionary → Strategist → Patent Attorney)
+- **Individual** — manual launch of each expert separately
 
 ### 🎯 Purpose
 - **RAG warm-start** — decision/evaluation/context/instruction segments for immediate memory search
