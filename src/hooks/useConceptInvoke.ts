@@ -81,6 +81,7 @@ export function useConceptInvoke({ planId, planTitle, planGoal, onComplete }: Us
 
       const messageContent = messages[expertType][language === 'ru' ? 'ru' : 'en'];
       const requestGroupId = crypto.randomUUID();
+      const invokeTimestamp = new Date().toISOString();
 
       // 3. Insert user message with concept_type metadata
       const { error: insertError } = await supabase
@@ -129,7 +130,8 @@ export function useConceptInvoke({ planId, planTitle, planGoal, onComplete }: Us
       }
 
       // 6. Tag the AI response with concept_type metadata
-      // Poll for the AI response (orchestrator may still be saving)
+      // Poll for the AI response — search by session + time, not request_group_id
+      // (orchestrator may not propagate request_group_id to the response)
       let tagged = false;
       for (let attempt = 0; attempt < 10; attempt++) {
         await new Promise(resolve => setTimeout(resolve, 1500));
@@ -138,17 +140,23 @@ export function useConceptInvoke({ planId, planTitle, planGoal, onComplete }: Us
           .from('messages')
           .select('id, metadata')
           .eq('session_id', sessionId)
-          .eq('request_group_id', requestGroupId)
           .neq('role', 'user')
+          .gt('created_at', invokeTimestamp)
           .order('created_at', { ascending: false })
-          .limit(1);
+          .limit(5);
 
-        if (aiResponses && aiResponses.length > 0) {
-          const existing = (aiResponses[0].metadata as Record<string, unknown>) || {};
+        // Find the response that doesn't already have a concept_type or matches ours
+        const target = aiResponses?.find(m => {
+          const meta = (m.metadata as Record<string, unknown>) || {};
+          return !meta.concept_type || meta.concept_type === expertType;
+        });
+
+        if (target) {
+          const existing = (target.metadata as Record<string, unknown>) || {};
           await supabase
             .from('messages')
             .update({ metadata: { ...existing, concept_type: expertType } })
-            .eq('id', aiResponses[0].id);
+            .eq('id', target.id);
           tagged = true;
           break;
         }
