@@ -624,6 +624,19 @@ The indicator is consolidated in one place (page header) instead of being duplic
 
 > При **Полном анализе** каскадный контекст формируется автоматически. При **поштучном** запуске контекст берётся из уже сохранённых ответов.
 
+### Тегирование и поиск ответов
+
+Каждый ответ эксперта помечается метаданными \`concept_type\` для точной идентификации:
+
+1. **Тегирование** — после вызова \`hydra-orchestrator\` система выполняет polling (до 10 попыток × 1.5 сек), ища AI-ответ по \`session_id\` и \`created_at > invokeTimestamp\`. Найденному сообщению присваивается \`metadata.concept_type = "visionary" | "strategist" | "patent"\`
+
+2. **Поиск ответов** использует трёхуровневый приоритет:
+   - **Приоритет 1**: \`metadata.concept_type\` — прямое совпадение по тегу
+   - **Приоритет 2**: \`role\` — роль сообщения (\`visionary\`, \`strategist\`)
+   - **Приоритет 3**: Для патентоведа (\`role=assistant\`) — поиск ответа, следующего за user-сообщением с маркером \`[Патентный прогноз]\` или \`[Patent Forecast]\`
+
+> Такая логика обеспечивает обратную совместимость с ответами, созданными до внедрения метаданных \`concept_type\`.
+
 ### 🎯 Назначение
 - **RAG warm-start** — сегменты decision/evaluation/context/instruction для немедленной работы поиска по памяти
 - **Хроники Эволюции** — стратегические решения для механизма Эволюционера
@@ -713,6 +726,19 @@ Expert responses are passed down the chain, enriching each subsequent stage:
 - **Patent Attorney** receives both previous contexts (\`--- Visionary's Vision ---\` and \`--- Strategic Structure ---\`) for the most accurate patent analysis
 
 > In **Full Analysis** mode, cascading context is built automatically. In **Individual** mode, context is taken from previously saved responses.
+
+### Response Tagging & Retrieval
+
+Each expert response is tagged with \`concept_type\` metadata for precise identification:
+
+1. **Tagging** — after calling \`hydra-orchestrator\`, the system polls (up to 10 attempts × 1.5s) for an AI response matching \`session_id\` and \`created_at > invokeTimestamp\`. The found message is tagged with \`metadata.concept_type = "visionary" | "strategist" | "patent"\`
+
+2. **Response retrieval** uses a three-level priority:
+   - **Priority 1**: \`metadata.concept_type\` — direct tag match
+   - **Priority 2**: \`role\` — message role (\`visionary\`, \`strategist\`)
+   - **Priority 3**: For patent attorney (\`role=assistant\`) — finds the response following a user message containing \`[Patent Forecast]\` or \`[Патентный прогноз]\` marker
+
+> This logic ensures backward compatibility with responses created before \`concept_type\` metadata was introduced.
 
 ### 🎯 Purpose
 - **RAG warm-start** — decision/evaluation/context/instruction segments for immediate memory search
