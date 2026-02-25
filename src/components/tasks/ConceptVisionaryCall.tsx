@@ -22,11 +22,11 @@ export function ConceptVisionaryCall({ planId, planTitle, planGoal, className, r
 
   return (
     <section className={cn('space-y-3', className)}>
-      <h3 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+      <h3 className="text-base font-medium text-muted-foreground flex items-center gap-2">
         <Eye className="h-4 w-4 text-hydra-visionary" />
         {t('concept.visionary.title')}
       </h3>
-      <p className="text-xs text-muted-foreground/70">
+      <p className="text-sm text-muted-foreground/70">
         {t('concept.visionary.description')}
       </p>
       <Button
@@ -40,7 +40,7 @@ export function ConceptVisionaryCall({ planId, planTitle, planGoal, className, r
         {t('concept.visionary.invoke')}
       </Button>
       {!planGoal?.trim() && (
-        <p className="text-xs text-muted-foreground/50 italic">
+        <p className="text-sm text-muted-foreground/50 italic">
           {t('concept.visionary.needGoal')}
         </p>
       )}
