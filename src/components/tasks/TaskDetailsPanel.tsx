@@ -264,7 +264,7 @@ export function TaskDetailsPanel({
                   <div className="flex items-center gap-2">
                     <h2 className="text-xl font-semibold truncate">{displayTitle}</h2>
                     {isPlanLevel && (
-                      <Badge variant="outline" className="text-xs text-primary border-primary/30">
+                      <Badge variant="outline" className="text-sm text-primary border-primary/30">
                         {t('plans.concept')}
                       </Badge>
                     )}
@@ -283,12 +283,12 @@ export function TaskDetailsPanel({
                     )}
                   </div>
                )}
-               <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
+               <div className="flex items-center gap-2 mt-1 text-base text-muted-foreground">
                  <span>{format(new Date(task.updated_at), 'dd.MM.yyyy HH:mm')}</span>
                  {!isPlanLevel && selectedModels.length > 0 && (
                    <>
                      <span>•</span>
-                     <Badge variant="secondary" className="text-xs">
+                     <Badge variant="secondary" className="text-sm">
                        {selectedModels.length} {selectedModels.length === 1 ? t('tasks.model') : t('tasks.models')}
                      </Badge>
                    </>
@@ -358,7 +358,7 @@ export function TaskDetailsPanel({
          <div className="p-4 space-y-6">
            {/* Task / Plan Formulation */}
            <section>
-             <h3 className="text-sm font-medium text-muted-foreground mb-3 flex items-center gap-2">
+             <h3 className="text-base font-medium text-muted-foreground mb-3 flex items-center gap-2">
                <FileText className="h-4 w-4" />
                {isPlanLevel ? t('plans.goalFormulation') : t('tasks.formulation')}
              </h3>
@@ -366,7 +366,7 @@ export function TaskDetailsPanel({
                value={taskDescription}
                onChange={(e) => handleDescriptionChange(e.target.value)}
                placeholder={isPlanLevel ? t('plans.goalPlaceholder') : t('tasks.formulationPlaceholder')}
-               className={cn("resize-y text-sm", isPlanLevel ? "min-h-[160px]" : "min-h-[80px]")}
+               className={cn("resize-y text-base", isPlanLevel ? "min-h-[160px]" : "min-h-[80px]")}
                disabled={task.is_system}
              />
             </section>
@@ -383,7 +383,7 @@ export function TaskDetailsPanel({
                     setHasChanges(true);
                   }}
                 />
-                <label htmlFor="include-patent" className="text-sm text-muted-foreground cursor-pointer select-none">
+                <label htmlFor="include-patent" className="text-base text-muted-foreground cursor-pointer select-none">
                   {language === 'ru' ? 'Включить патентный прогноз' : 'Include patent forecast'}
                 </label>
               </div>
@@ -495,7 +495,7 @@ export function TaskDetailsPanel({
             {!isPlanLevel && (
              <>
                <section data-guide="tasks-detail-models">
-                 <h3 className="text-sm font-medium text-muted-foreground mb-3">{t('tasks.selectModels')}</h3>
+                 <h3 className="text-base font-medium text-muted-foreground mb-3">{t('tasks.selectModels')}</h3>
                  <MultiModelSelector 
                    value={selectedModels} 
                    onChange={handleModelsChange}
@@ -505,16 +505,16 @@ export function TaskDetailsPanel({
  
                {selectedModels.length > 0 && (
                  <section className="space-y-2">
-                   <h3 className="text-sm font-medium text-muted-foreground">{t('tasks.selectedModels')}</h3>
+                   <h3 className="text-base font-medium text-muted-foreground">{t('tasks.selectedModels')}</h3>
                    <div className="space-y-2">
                      {selectedModels.map((modelId) => (
                        <div 
                          key={modelId}
-                         className="flex items-center gap-3 text-sm py-2 px-3 rounded-md bg-muted/30"
+                         className="flex items-center gap-3 text-base py-2 px-3 rounded-md bg-muted/30"
                        >
                          {getModelIcon(modelId)}
                          <span className="font-medium flex-1 truncate">{getModelDisplayName(modelId)}</span>
-                         <span className="text-xs text-muted-foreground px-2 py-0.5 rounded bg-background/50">
+                         <span className="text-sm text-muted-foreground px-2 py-0.5 rounded bg-background/50">
                            {getModelRole(modelId)}
                          </span>
                        </div>
