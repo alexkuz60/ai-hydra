@@ -8,7 +8,8 @@ import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { AlertCircle, ChevronDown, Users, RefreshCw, Star } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { AlertCircle, ChevronDown, ChevronRight, Users, RefreshCw, Star } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getUnavailableModelIds, clearModelCache } from '@/lib/modelAvailabilityCache';
 import { PROVIDER_LOGOS, PROVIDER_COLORS, LovableLogo, GroqLogo, OpenRouterLogo, DotPointLogo } from '@/components/ui/ProviderLogos';
@@ -180,13 +181,20 @@ export function MultiModelSelector({ value, onChange, className }: MultiModelSel
               const color = PROVIDER_COLORS[provider] || 'text-muted-foreground';
               const badge = PROVIDER_BADGES[provider];
 
+              const hasSelected = models.some(m => value.includes(m.id));
+              const selectedInGroup = models.filter(m => value.includes(m.id)).length;
+
               return (
-                <div key={provider} className="mb-3">
-                  <div className="flex items-center justify-between px-2 py-1.5">
-                    <div className={cn('flex items-center gap-2 text-sm font-medium', color)}>
+                <Collapsible key={provider} defaultOpen={hasSelected || models.length <= 3} className="mb-1">
+                  <div className="flex items-center justify-between px-2 py-1">
+                    <CollapsibleTrigger className={cn('flex items-center gap-2 text-sm font-medium hover:opacity-80 transition-opacity group', color)}>
+                      <ChevronRight className="h-3.5 w-3.5 transition-transform group-data-[state=open]:rotate-90" />
                       {Logo && <Logo className="h-4 w-4" />}
                       {label}
-                    </div>
+                      {selectedInGroup > 0 && (
+                        <Badge variant="secondary" className="text-[10px] h-4 px-1">{selectedInGroup}</Badge>
+                      )}
+                    </CollapsibleTrigger>
                     <Button
                       variant="ghost"
                       size="sm"
@@ -196,45 +204,46 @@ export function MultiModelSelector({ value, onChange, className }: MultiModelSel
                       {models.every(m => value.includes(m.id)) ? t('common.deselectAll') : t('common.selectAll')}
                     </Button>
                   </div>
-                  <div className="space-y-1">
-                    {models.map((model) => {
-                      // For openrouter, use per-model badge (free vs premium)
-                      const modelBadge = provider === 'openrouter' 
-                        ? getOpenRouterBadge(model.id) 
-                        : badge;
-                      const isRecommended = recommendedModelIds.has(model.id);
+                  <CollapsibleContent>
+                    <div className="space-y-0.5 ml-2">
+                      {models.map((model) => {
+                        const modelBadge = provider === 'openrouter' 
+                          ? getOpenRouterBadge(model.id) 
+                          : badge;
+                        const isRecommended = recommendedModelIds.has(model.id);
 
-                      return (
-                        <label
-                          key={model.id}
-                          className={cn(
-                            "flex items-center gap-3 px-2 py-1.5 rounded-md hover:bg-accent cursor-pointer",
-                            isRecommended && "ring-1 ring-amber-500/30 bg-amber-500/5"
-                          )}
-                        >
-                          <Checkbox
-                            checked={value.includes(model.id)}
-                            onCheckedChange={() => toggleModel(model.id)}
-                          />
-                          <span className="text-sm truncate flex-1">
-                            {isRecommended && <Star className="inline h-3 w-3 mr-1 text-amber-400" />}
-                            {model.name}
-                          </span>
-                          {isRecommended && (
-                            <Badge variant="outline" className="text-[10px] bg-amber-500/10 text-amber-400 border-amber-500/30">
-                              ★ Rec
-                            </Badge>
-                          )}
-                          {modelBadge && (
-                            <Badge variant="outline" className={cn('text-[10px]', modelBadge.className)}>
-                              {modelBadge.label}
-                            </Badge>
-                          )}
-                        </label>
-                      );
-                    })}
-                  </div>
-                </div>
+                        return (
+                          <label
+                            key={model.id}
+                            className={cn(
+                              "flex items-center gap-3 px-2 py-1.5 rounded-md hover:bg-accent cursor-pointer",
+                              isRecommended && "ring-1 ring-amber-500/30 bg-amber-500/5"
+                            )}
+                          >
+                            <Checkbox
+                              checked={value.includes(model.id)}
+                              onCheckedChange={() => toggleModel(model.id)}
+                            />
+                            <span className="text-sm truncate flex-1">
+                              {isRecommended && <Star className="inline h-3 w-3 mr-1 text-amber-400" />}
+                              {model.name}
+                            </span>
+                            {isRecommended && (
+                              <Badge variant="outline" className="text-[10px] bg-amber-500/10 text-amber-400 border-amber-500/30">
+                                ★ Rec
+                              </Badge>
+                            )}
+                            {modelBadge && (
+                              <Badge variant="outline" className={cn('text-[10px]', modelBadge.className)}>
+                                {modelBadge.label}
+                              </Badge>
+                            )}
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </CollapsibleContent>
+                </Collapsible>
               );
             })}
           </div>

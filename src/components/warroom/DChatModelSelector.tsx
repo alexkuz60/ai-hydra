@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { PROVIDER_LOGOS, PROVIDER_COLORS } from '@/components/ui/ProviderLogos';
 import { ModelOption, getProviderOrder } from '@/hooks/useAvailableModels';
 import { cn } from '@/lib/utils';
+import { ChevronRight } from 'lucide-react';
 
 const PROVIDER_LABELS: Record<string, string> = {
   lovable: 'Lovable AI',
@@ -28,6 +29,7 @@ interface DChatModelSelectorProps {
 
 export function DChatModelSelector({ selectedModel, onSelectModel, availableModels, proxyapiPriority = false }: DChatModelSelectorProps) {
   const { t } = useLanguage();
+  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
 
   const grouped = new Map<string, ModelOption[]>();
   availableModels.forEach(m => {
@@ -38,6 +40,12 @@ export function DChatModelSelector({ selectedModel, onSelectModel, availableMode
 
   const providerOrder = getProviderOrder(proxyapiPriority);
   const sel = availableModels.find(m => m.id === selectedModel);
+
+  const toggleGroup = (provider: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setCollapsed(prev => ({ ...prev, [provider]: !prev[provider] }));
+  };
 
   return (
     <div className="p-2 border-b border-border">
@@ -60,13 +68,19 @@ export function DChatModelSelector({ selectedModel, onSelectModel, availableMode
             const models = grouped.get(provider)!;
             const Logo = PROVIDER_LOGOS[provider];
             const color = PROVIDER_COLORS[provider] || 'text-muted-foreground';
+            const isCollapsed = collapsed[provider] ?? (models.length > 4 && !models.some(m => m.id === selectedModel));
             return (
               <SelectGroup key={provider}>
-                <SelectLabel className="flex items-center gap-1.5 text-xs text-muted-foreground bg-muted/50 rounded-sm mx-1 px-2 py-1">
+                <SelectLabel
+                  className="flex items-center gap-1.5 text-xs text-muted-foreground bg-muted/50 rounded-sm mx-1 px-2 py-1 cursor-pointer hover:bg-muted transition-colors"
+                  onMouseDown={(e) => toggleGroup(provider, e)}
+                >
+                  <ChevronRight className={cn('h-3 w-3 transition-transform', !isCollapsed && 'rotate-90')} />
                   {Logo && <Logo className={cn('h-3.5 w-3.5', color)} />}
                   {PROVIDER_LABELS[provider] || provider}
+                  <span className="ml-auto text-[10px] opacity-60">{models.length}</span>
                 </SelectLabel>
-                {models.map(model => (
+                {!isCollapsed && models.map(model => (
                   <SelectItem key={model.id} value={model.id} className="text-xs">
                     {model.name}
                   </SelectItem>
