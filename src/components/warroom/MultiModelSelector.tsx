@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAvailableModels, ModelOption, PERSONAL_KEY_MODELS, LOVABLE_AI_MODELS, ALL_VALID_MODEL_IDS, getProviderOrder } from '@/hooks/useAvailableModels';
 import { useEnsureRecommendedModels } from '@/hooks/useEnsureRecommendedModels';
+import { useCollapsedProviders } from '@/hooks/useCollapsedProviders';
 import { ROLE_RECOMMENDED_MODELS } from '@/config/roles';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -53,6 +54,7 @@ function getOpenRouterBadge(modelId: string) {
 export function MultiModelSelector({ value, onChange, className }: MultiModelSelectorProps) {
   const { t } = useLanguage();
   const { isAdmin, proxyapiPriority, lovableModels, personalModels, hasAnyModels, loading } = useAvailableModels();
+  const { isCollapsed: getCollapsed, toggle: toggleProvider } = useCollapsedProviders('multi-model-collapsed');
   
   // Auto-ensure recommended OpenRouter models are in user list
   const hasOpenRouter = personalModels.some(m => m.provider === 'openrouter');
@@ -183,9 +185,11 @@ export function MultiModelSelector({ value, onChange, className }: MultiModelSel
 
               const hasSelected = models.some(m => value.includes(m.id));
               const selectedInGroup = models.filter(m => value.includes(m.id)).length;
+              const defaultClosed = !hasSelected && models.length > 3;
+              const collapsed = getCollapsed(provider, defaultClosed);
 
               return (
-                <Collapsible key={provider} defaultOpen={hasSelected || models.length <= 3} className="mb-1">
+                <Collapsible key={provider} open={!collapsed} onOpenChange={() => toggleProvider(provider)} className="mb-1">
                   <div className="flex items-center justify-between px-2 py-1">
                     <CollapsibleTrigger className={cn('flex items-center gap-2 text-sm font-medium hover:opacity-80 transition-opacity group', color)}>
                       <ChevronRight className="h-3.5 w-3.5 transition-transform group-data-[state=open]:rotate-90" />
