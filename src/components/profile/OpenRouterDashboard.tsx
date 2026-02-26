@@ -5,14 +5,15 @@ import { Badge } from '@/components/ui/badge';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import {
   Loader2, Wifi, Zap, AlertTriangle, Key, Globe, Save,
-  CheckCircle2, XCircle, CreditCard, Info, RefreshCw, Wallet,
+  RefreshCw, Wallet,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 import { ApiKeyField, type KeyMetadata } from '@/components/profile/ApiKeyField';
-import { useOpenRouterData, ALL_OPENROUTER_MODELS, type OpenRouterTestResult } from '@/hooks/useOpenRouterData';
+import { useOpenRouterData } from '@/hooks/useOpenRouterData';
 import { ProxyLogsTable } from './proxyapi/ProxyLogsTable';
 import { ProxyAnalyticsSection } from './proxyapi/ProxyAnalyticsSection';
+import { OpenRouterCatalogSection } from './openrouter/OpenRouterCatalogSection';
 
 interface OpenRouterDashboardProps {
   hasKey: boolean;
@@ -81,7 +82,6 @@ export function OpenRouterDashboard({
     </div>
   );
 
-  // No key state
   if (!hasKey) {
     return (
       <HydraCard variant="glass" className="p-6">
@@ -125,7 +125,7 @@ export function OpenRouterDashboard({
         {renderInfoBlock()}
         {renderKeySection()}
 
-        <Accordion type="multiple" defaultValue={['status', 'test']} className="space-y-2">
+        <Accordion type="multiple" defaultValue={['status', 'catalog']} className="space-y-2">
           {/* Connection Status */}
           <AccordionItem value="status" className="border rounded-lg px-4">
             <AccordionTrigger className="hover:no-underline">
@@ -151,7 +151,6 @@ export function OpenRouterDashboard({
                 )}
               </div>
 
-              {/* Key info inline */}
               {api.keyInfo && (
                 <div className="rounded-lg border bg-muted/30 p-3 space-y-2">
                   <div className="flex items-center justify-between">
@@ -191,74 +190,28 @@ export function OpenRouterDashboard({
             </AccordionContent>
           </AccordionItem>
 
-          {/* Model Availability Test */}
-          <AccordionItem value="test" className="border rounded-lg px-4">
-            <AccordionTrigger className="hover:no-underline">
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="h-4 w-4 text-primary" />
-                <span className="font-semibold">{isRu ? 'Тест доступности моделей' : 'Model Availability Test'}</span>
-                {api.testing && <Badge variant="outline" className="ml-1 text-[10px] h-4 animate-pulse">{isRu ? 'Тестирование...' : 'Testing...'}</Badge>}
-              </div>
-            </AccordionTrigger>
-            <AccordionContent className="space-y-4 pb-4">
-              <p className="text-xs text-muted-foreground">
-                {isRu
-                  ? 'Отправляет мини-запрос к бесплатным и популярным платным моделям для проверки доступности ключа.'
-                  : 'Sends a minimal request to free and popular paid models to check key availability.'}
-              </p>
-
-              <Button onClick={api.testModels} disabled={api.testing} size="sm" className="gap-2 hydra-glow-sm">
-                {api.testing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Zap className="h-4 w-4" />}
-                {isRu ? 'Проверить все модели' : 'Test All Models'}
-              </Button>
-
-              <div className="rounded-lg border overflow-hidden">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b bg-muted/30">
-                      <th className="text-left p-3 font-medium">{isRu ? 'Модель' : 'Model'}</th>
-                      <th className="text-left p-3 font-medium">{isRu ? 'Статус' : 'Status'}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {api.testResults.map((r, idx) => {
-                      const modelMeta = ALL_OPENROUTER_MODELS[idx];
-                      return (
-                        <tr key={r.model} className={cn(
-                          "border-b last:border-0",
-                          r.status === 'quota' && "bg-amber-500/5",
-                          r.status === 'not_found' && "bg-muted/20"
-                        )}>
-                          <td className="p-3">
-                            <span className="font-medium text-xs">{r.name}</span>
-                            <div className="flex items-center gap-1.5">
-                              <span className="text-xs text-muted-foreground font-mono truncate max-w-[200px]">{r.model}</span>
-                              <Badge variant={modelMeta?.free ? 'secondary' : 'outline'} className="text-[10px] px-1 py-0 h-4">
-                                {modelMeta?.free ? 'free' : '💎 paid'}
-                              </Badge>
-                            </div>
-                          </td>
-                          <td className="p-3 flex items-center gap-2">
-                            <TestStatusIcon status={r.status} />
-                            <TestStatusLabel result={r} isRu={isRu} />
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-
-              <div className="flex items-start gap-2 p-3 rounded-lg bg-muted/30 border">
-                <Info className="h-4 w-4 mt-0.5 text-muted-foreground flex-shrink-0" />
-                <p className="text-xs text-muted-foreground">
-                  {isRu
-                    ? 'Бесплатные модели (с суффиксом :free) имеют общий лимит. Точные лимиты зависят от нагрузки на модель.'
-                    : 'Free models (with :free suffix) share a common limit. Exact limits depend on model load.'}
-                </p>
-              </div>
-            </AccordionContent>
-          </AccordionItem>
+          {/* Catalog Section */}
+          <OpenRouterCatalogSection
+            registryModels={api.registryModels}
+            userAddedModels={api.userAddedModels}
+            filteredCatalogModels={api.filteredCatalogModels}
+            userModelIds={api.userModelIds}
+            catalogSearch={api.catalogSearch}
+            onCatalogSearchChange={api.setCatalogSearch}
+            catalogLoading={api.catalogLoading}
+            catalogLoaded={api.catalogLoaded}
+            catalogCount={api.catalog.length}
+            testResults={api.testResults}
+            testingModel={api.testingModel}
+            massTestRunning={api.massTestRunning}
+            massTestProgress={api.massTestProgress}
+            onTestModel={api.handleTestModel}
+            onMassTest={api.handleMassTest}
+            onAddUserModel={api.addUserModel}
+            onRemoveUserModel={api.removeUserModel}
+            onRefreshCatalog={() => api.fetchCatalog(true)}
+            language={language}
+          />
 
           {/* Logs */}
           <ProxyLogsTable
@@ -290,29 +243,4 @@ function StatusBadge({ status, isRu }: { status: string; isRu: boolean }) {
   if (status === 'online') return <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30">{isRu ? 'Онлайн' : 'Online'}</Badge>;
   if (status === 'timeout') return <Badge variant="destructive">{isRu ? 'Таймаут' : 'Timeout'}</Badge>;
   return <Badge variant="destructive">{isRu ? 'Ошибка' : 'Error'}</Badge>;
-}
-
-function TestStatusIcon({ status }: { status: OpenRouterTestResult['status'] }) {
-  switch (status) {
-    case 'testing': return <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />;
-    case 'ok': return <CheckCircle2 className="h-4 w-4 text-emerald-500" />;
-    case 'quota': return <AlertTriangle className="h-4 w-4 text-amber-500" />;
-    case 'no_credits': return <CreditCard className="h-4 w-4 text-amber-500" />;
-    case 'not_found': return <XCircle className="h-4 w-4 text-muted-foreground" />;
-    case 'error': return <XCircle className="h-4 w-4 text-destructive" />;
-    default: return <span className="h-4 w-4" />;
-  }
-}
-
-function TestStatusLabel({ result: r, isRu }: { result: OpenRouterTestResult; isRu: boolean }) {
-  switch (r.status) {
-    case 'idle': return <span className="text-muted-foreground">—</span>;
-    case 'testing': return <span className="text-muted-foreground">{isRu ? 'Проверка...' : 'Testing...'}</span>;
-    case 'ok': return <span className="text-emerald-500 font-medium">{isRu ? 'Доступна' : 'Available'} ({r.latency}ms)</span>;
-    case 'quota': return <span className="text-amber-500 font-medium">429 — {isRu ? 'Лимит исчерпан' : 'Rate limited'}</span>;
-    case 'no_credits': return <span className="text-amber-500 font-medium">402 — {isRu ? 'Нет кредитов' : 'No credits'}</span>;
-    case 'not_found': return <span className="text-muted-foreground font-medium">404 — {isRu ? 'Не найдена' : 'Not found'}</span>;
-    case 'error': return <span className="text-destructive font-medium" title={r.error}>{isRu ? 'Ошибка' : 'Error'}: {r.error?.slice(0, 60)}</span>;
-    default: return null;
-  }
 }
