@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import { Layout } from '@/components/layout/Layout';
+import { SidebarTrigger } from '@/components/ui/sidebar';
 import { useLanguage } from '@/contexts/LanguageContext';
 import {
   Table, TableBody, TableHead, TableHeader, TableRow,
@@ -166,12 +167,15 @@ const StaffRoles = () => {
   }, [unsavedChanges]);
 
   return (
-    <Layout>
-      <div className="h-[calc(100vh-4rem)] flex flex-col">
-        <div className="px-4 py-4 border-b border-border flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold">{t('nav.staffRoles')}</h1>
-            <p className="text-sm text-muted-foreground">{t('staffRoles.description')}</p>
+    <Layout hideHeader>
+      <div className="h-screen flex flex-col">
+        <div className="px-4 py-3 border-b border-border flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <SidebarTrigger className="text-muted-foreground hover:text-primary" />
+            <div>
+              <h1 className="text-2xl font-bold">{t('nav.staffRoles')}</h1>
+              <p className="text-sm text-muted-foreground">{t('staffRoles.description')}</p>
+            </div>
           </div>
           <div className="flex items-center gap-2">
             <CloudSyncIndicator loaded={cloudSynced} />
