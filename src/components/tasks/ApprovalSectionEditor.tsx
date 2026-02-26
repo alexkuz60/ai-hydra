@@ -9,7 +9,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { cn } from '@/lib/utils';
 import {
   Check, X, RotateCcw, ChevronRight, Pencil, FolderOpen,
-  ListChecks, MessageSquare, Save, XCircle, Plus, FolderPlus, Type,
+  ListChecks, MessageSquare, Save, XCircle, Plus, FolderPlus, Type, Trash2,
 } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import type { ApprovalSection, ApprovalStatus } from '@/lib/strategySectionParser';
@@ -113,6 +113,21 @@ export function ApprovalSectionEditor({ sections, onSectionsChange, readOnly, sh
     setToolbarSignal({ action, tick: Date.now() });
   };
 
+  const deleteSelected = () => {
+    if (!selected || selected.section.status !== 'rejected') return;
+    const next = [...sections];
+    if (selected.path.length === 1) {
+      next.splice(selected.path[0], 1);
+    } else {
+      const [pi, ci] = selected.path as [number, number];
+      const parent = { ...next[pi], children: [...next[pi].children] };
+      parent.children.splice(ci, 1);
+      next[pi] = parent;
+    }
+    setSelectedId(null);
+    onSectionsChange(next);
+  };
+
   const addSection = () => {
     if (!addLabels) return;
     const num = sections.filter(s => s.depth === 0).length + 1;
@@ -199,6 +214,16 @@ export function ApprovalSectionEditor({ sections, onSectionsChange, readOnly, sh
                 <MessageSquare className="h-3.5 w-3.5" />
               </Button>
             </TooltipTrigger><TooltipContent>{language === 'ru' ? 'Комментарий' : 'Comment'}</TooltipContent></Tooltip>
+
+            <div className="w-px h-4 bg-border/50 mx-0.5" />
+
+            <Tooltip><TooltipTrigger asChild>
+              <Button variant="ghost" size="icon"
+                className={cn('h-7 w-7', (!selected || selected.section.status !== 'rejected') && 'opacity-30 pointer-events-none', 'hover:text-destructive')}
+                onClick={deleteSelected}>
+                <Trash2 className="h-3.5 w-3.5" />
+              </Button>
+            </TooltipTrigger><TooltipContent>{language === 'ru' ? 'Удалить отклонённое' : 'Delete rejected'}</TooltipContent></Tooltip>
           </div>
         )}
       </div>
