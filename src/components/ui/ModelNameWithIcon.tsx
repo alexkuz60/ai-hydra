@@ -30,6 +30,9 @@ export function getProviderFromModelId(modelId: string): string | null {
   if (lower.startsWith('deepseek')) return 'deepseek';
   if (lower.startsWith('mistral') || lower.startsWith('pixtral') || lower.startsWith('codestral')) return 'mistral';
 
+  // Perplexity models (via OpenRouter)
+  if (lower.startsWith('perplexity/')) return 'perplexity';
+
   // OpenRouter free models
   if (lower.includes(':free')) return 'openrouter';
 

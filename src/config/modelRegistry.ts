@@ -60,6 +60,11 @@ const registry: ModelRegistryEntry[] = [
   { id: 'qwen/qwen3-0.6b-04-28:free', displayName: 'Qwen3 0.6B', provider: 'openrouter', creator: 'Alibaba Cloud', releaseDate: '2025-04', parameterCount: '0.6B', strengths: ['efficiency', 'multilingual'], pricing: 'free' },
   { id: 'z-ai/glm-4.5-air:free', displayName: 'GLM 4.5 Air', provider: 'openrouter', creator: 'Zhipu AI', releaseDate: '2025-01', parameterCount: 'unknown', strengths: ['multilingual', 'general'], pricing: 'free' },
   { id: 'tngtech/tng-r1t-chimera:free', displayName: 'R1T Chimera', provider: 'openrouter', creator: 'TNG Technology', releaseDate: '2025-03', parameterCount: 'unknown', strengths: ['reasoning'], pricing: 'free' },
+  // Perplexity Sonar (via OpenRouter)
+  { id: 'perplexity/sonar-pro-search', displayName: 'Sonar Pro Search', provider: 'openrouter', creator: 'Perplexity AI', releaseDate: '2025-02', parameterCount: 'unknown', strengths: ['web-search', 'citations', 'reasoning'], pricing: { input: '$3.00', output: '$15.00' } },
+  { id: 'perplexity/sonar-reasoning-pro', displayName: 'Sonar Reasoning Pro', provider: 'openrouter', creator: 'Perplexity AI', releaseDate: '2025-02', parameterCount: 'unknown', strengths: ['deep-reasoning', 'web-search', 'citations'], pricing: { input: '$3.00', output: '$15.00' } },
+  { id: 'perplexity/sonar-deep-research', displayName: 'Sonar Deep Research', provider: 'openrouter', creator: 'Perplexity AI', releaseDate: '2025-02', parameterCount: 'unknown', strengths: ['deep-reasoning', 'web-search', 'analysis'], pricing: { input: '$3.00', output: '$15.00' } },
+  { id: 'perplexity/sonar-pro', displayName: 'Sonar Pro', provider: 'openrouter', creator: 'Perplexity AI', releaseDate: '2025-01', parameterCount: 'unknown', strengths: ['web-search', 'citations', 'speed'], pricing: { input: '$3.00', output: '$15.00' } },
 
   // ─── Groq ───
   { id: 'llama-3.3-70b-versatile', displayName: 'Llama 3.3 70B Versatile', provider: 'groq', creator: 'Meta AI', releaseDate: '2024-12', parameterCount: '70B', strengths: ['coding', 'reasoning', 'multilingual'], pricing: { input: '$0.59', output: '$0.79' } },
@@ -159,4 +164,6 @@ export const STRENGTH_LABELS: Record<string, { ru: string; en: string }> = {
   'long-context': { ru: 'Длинный контекст', en: 'Long Context' },
   'analysis': { ru: 'Анализ', en: 'Analysis' },
   'general': { ru: 'Общее', en: 'General' },
+  'web-search': { ru: 'Веб-поиск', en: 'Web Search' },
+  'citations': { ru: 'Цитирование', en: 'Citations' },
 };

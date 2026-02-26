@@ -371,6 +371,25 @@ export const ROLE_SPECIFIC_CRITERIA: Record<AgentRole, string[]> = {
   strategist: ['decomposition_quality', 'actionability', 'resource_awareness', 'priority_ranking', 'milestone_clarity'],
 };
 
+/**
+ * Recommended models for specific roles.
+ * These are OpenRouter model IDs (Perplexity Sonar family) best suited for each role's tasks.
+ */
+export const ROLE_RECOMMENDED_MODELS: Partial<Record<AgentRole, { modelId: string; reason_ru: string; reason_en: string }[]>> = {
+  webhunter: [
+    { modelId: 'perplexity/sonar-pro-search', reason_ru: 'Поиск с цитированием источников, быстрый', reason_en: 'Search with source citations, fast' },
+    { modelId: 'perplexity/sonar-pro', reason_ru: 'Универсальный поиск с мульти-шаговым рассуждением', reason_en: 'General search with multi-step reasoning' },
+  ],
+  visionary: [
+    { modelId: 'perplexity/sonar-reasoning-pro', reason_ru: 'Глубокий анализ трендов с цепочкой рассуждений', reason_en: 'Deep trend analysis with chain-of-thought reasoning' },
+    { modelId: 'perplexity/sonar-deep-research', reason_ru: 'Мульти-запросное исследование для стратегического видения', reason_en: 'Multi-query research for strategic vision' },
+  ],
+  patent_attorney: [
+    { modelId: 'perplexity/sonar-deep-research', reason_ru: 'Глубокий поиск prior art по патентным базам', reason_en: 'Deep prior art search across patent databases' },
+    { modelId: 'perplexity/sonar-pro-search', reason_ru: 'Точный поиск с цитатами для анализа аналогов', reason_en: 'Precise search with citations for prior art analysis' },
+  ],
+};
+
 
 // Default system prompts for each agent role
 // These are synchronized with prompt_library entries marked as is_default=true
