@@ -5,6 +5,7 @@ import { PROVIDER_LOGOS, PROVIDER_COLORS } from '@/components/ui/ProviderLogos';
 import { ModelOption, getProviderOrder } from '@/hooks/useAvailableModels';
 import { useCollapsedProviders } from '@/hooks/useCollapsedProviders';
 import { cn } from '@/lib/utils';
+import { getCompactPriceLabel } from '@/lib/modelPricing';
 import { ChevronRight, Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 
@@ -73,7 +74,7 @@ export function DChatModelSelector({ selectedModel, onSelectModel, availableMode
             );
           })()}
         </SelectTrigger>
-        <SelectContent>
+        <SelectContent className="min-w-[320px]">
           <div className="px-2 pb-1.5 pt-1">
             <div className="relative">
               <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground" />
@@ -102,11 +103,17 @@ export function DChatModelSelector({ selectedModel, onSelectModel, availableMode
                   {PROVIDER_LABELS[provider] || provider}
                   <span className="ml-auto text-[10px] opacity-60">{models.length}</span>
                 </SelectLabel>
-                {!collapsedState && models.map(model => (
-                  <SelectItem key={model.id} value={model.id} className="text-xs">
-                    {model.name}
-                  </SelectItem>
-                ))}
+                {!collapsedState && models.map(model => {
+                  const price = getCompactPriceLabel(model.id, provider);
+                  return (
+                    <SelectItem key={model.id} value={model.id} className="text-xs">
+                      <span className="flex items-center justify-between w-full gap-2">
+                        <span className="truncate">{model.name}</span>
+                        {price && <span className="text-[10px] text-muted-foreground shrink-0">{price}</span>}
+                      </span>
+                    </SelectItem>
+                  );
+                })}
               </SelectGroup>
             );
           })}

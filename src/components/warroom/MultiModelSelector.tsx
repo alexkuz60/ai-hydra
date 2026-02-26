@@ -13,6 +13,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { AlertCircle, ChevronDown, ChevronRight, Users, RefreshCw, Star, Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
+import { getCompactPriceLabel } from '@/lib/modelPricing';
 import { getUnavailableModelIds, clearModelCache } from '@/lib/modelAvailabilityCache';
 import { PROVIDER_LOGOS, PROVIDER_COLORS, LovableLogo, GroqLogo, OpenRouterLogo, DotPointLogo } from '@/components/ui/ProviderLogos';
 
@@ -179,7 +180,7 @@ export function MultiModelSelector({ value, onChange, className }: MultiModelSel
           <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[340px] p-0" align="end">
+      <PopoverContent className="w-[420px] p-0" align="end">
         <div className="p-2 border-b border-border">
           <div className="relative">
             <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
@@ -252,6 +253,13 @@ export function MultiModelSelector({ value, onChange, className }: MultiModelSel
                                 ★ Rec
                               </Badge>
                             )}
+                            {(() => {
+                              const price = getCompactPriceLabel(model.id, provider);
+                              if (price) return (
+                                <span className="text-[10px] text-muted-foreground whitespace-nowrap shrink-0">{price}</span>
+                              );
+                              return null;
+                            })()}
                             {modelBadge && (
                               <Badge variant="outline" className={cn('text-[10px]', modelBadge.className)}>
                                 {modelBadge.label}
