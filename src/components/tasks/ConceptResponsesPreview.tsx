@@ -316,8 +316,6 @@ export function ConceptResponsesPreview({
                           });
                         }}
                         showAddButtons={tab.id === 'strategist'}
-                        onSave={tab.id === 'strategist' ? handleSaveApproval : undefined}
-                        saving={saving}
                       />
                     </div>
                   ) : (
