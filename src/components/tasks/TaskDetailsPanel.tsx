@@ -383,7 +383,7 @@ export function TaskDetailsPanel({
                     setHasChanges(true);
                   }}
                 />
-                <label htmlFor="include-patent" className="text-base text-muted-foreground cursor-pointer select-none">
+                <label htmlFor="include-patent" className="text-sm text-muted-foreground cursor-pointer select-none">
                   {language === 'ru' ? 'Включить патентный прогноз' : 'Include patent forecast'}
                 </label>
               </div>
