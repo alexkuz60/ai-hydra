@@ -237,13 +237,14 @@ function SectionNode({ section, readOnly, onChange }: SectionNodeProps) {
             </div>
 
             {/* Body text */}
-            {section.body && (
+            {(section.body || isEditing) && (
               isEditing ? (
                 <div className="mt-2 space-y-1.5">
                   <Textarea
                     value={bodyDraft}
                     onChange={(e) => setBodyDraft(e.target.value)}
                     className="text-sm min-h-[60px] resize-y"
+                    placeholder={language === 'ru' ? 'Описание задачи...' : 'Task description...'}
                     autoFocus
                   />
                   <div className="flex items-center gap-1">
@@ -281,7 +282,7 @@ function SectionNode({ section, readOnly, onChange }: SectionNodeProps) {
                   onClick={() => !readOnly && setIsEditing(true)}
                   title={language === 'ru' ? 'Нажмите для редактирования' : 'Click to edit'}
                 >
-                  {section.body.length > 200 ? section.body.substring(0, 200) + '...' : section.body}
+                  {section.body!.length > 200 ? section.body!.substring(0, 200) + '...' : section.body}
                 </p>
               )
             )}
@@ -391,21 +392,19 @@ function SectionNode({ section, readOnly, onChange }: SectionNodeProps) {
                 <TooltipContent>{language === 'ru' ? 'Переименовать' : 'Rename'}</TooltipContent>
               </Tooltip>
 
-              {section.body && (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-7 w-7"
-                      onClick={() => setIsEditing(!isEditing)}
-                    >
-                      <Pencil className="h-3.5 w-3.5" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>{language === 'ru' ? 'Редактировать' : 'Edit'}</TooltipContent>
-                </Tooltip>
-              )}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className={cn('h-7 w-7', isEditing && 'text-primary')}
+                    onClick={() => setIsEditing(!isEditing)}
+                  >
+                    <Pencil className="h-3.5 w-3.5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>{language === 'ru' ? 'Редактировать' : 'Edit'}</TooltipContent>
+              </Tooltip>
 
               <Tooltip>
                 <TooltipTrigger asChild>
