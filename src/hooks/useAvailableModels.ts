@@ -81,6 +81,11 @@ export const PERSONAL_KEY_MODELS: ModelOption[] = [
   { id: 'deepseek/deepseek-chat-v3-0324', name: 'DeepSeek V3', provider: 'openrouter', requiresApiKey: true },
   { id: 'deepseek/deepseek-r1', name: 'DeepSeek R1', provider: 'openrouter', requiresApiKey: true },
   { id: 'meta-llama/llama-4-maverick', name: 'Llama 4 Maverick', provider: 'openrouter', requiresApiKey: true },
+  // Perplexity Sonar (via OpenRouter)
+  { id: 'perplexity/sonar-pro-search', name: 'Sonar Pro Search', provider: 'openrouter', requiresApiKey: true },
+  { id: 'perplexity/sonar-reasoning-pro', name: 'Sonar Reasoning Pro', provider: 'openrouter', requiresApiKey: true },
+  { id: 'perplexity/sonar-deep-research', name: 'Sonar Deep Research', provider: 'openrouter', requiresApiKey: true },
+  { id: 'perplexity/sonar-pro', name: 'Sonar Pro', provider: 'openrouter', requiresApiKey: true },
 
   // ─── ProxyAPI (Priority 3/4 based on proxyapi_priority) ───
   { id: 'proxyapi/gpt-4o', name: 'GPT-4o (ProxyAPI)', provider: 'proxyapi', requiresApiKey: true },
