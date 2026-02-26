@@ -929,7 +929,8 @@ const translations: Translations = {
   'common.copied': { ru: 'Скопировано', en: 'Copied' },
   'common.updated': { ru: 'Обновлено', en: 'Updated' },
   'common.yes': { ru: 'Да', en: 'Yes' },
-  'common.no': { ru: 'Нет', en: 'No' },
+   'common.no': { ru: 'Нет', en: 'No' },
+   'common.search': { ru: 'Поиск', en: 'Search' },
   
   // Messages
   'messages.deleteTitle': { ru: 'Удалить сообщение?', en: 'Delete message?' },
