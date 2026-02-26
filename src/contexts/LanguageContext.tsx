@@ -767,6 +767,7 @@ const translations: Translations = {
   'tasks.titleSaved': { ru: 'Название сохранено', en: 'Title saved' },
   'tasks.configSaved': { ru: 'Настройки сохранены', en: 'Settings saved' },
    'tasks.pageDescription': { ru: 'Управляйте задачами и настройками экспертных моделей', en: 'Manage tasks and expert model settings' },
+   'tasks.discussingTask': { ru: 'Обсуждение задачи', en: 'Discussing task' },
    'tasks.selectTask': { ru: 'Выберите задачу для просмотра', en: 'Select a task to view' },
    'tasks.selectModels': { ru: 'Выберите модели', en: 'Select models' },
    'tasks.selectedModels': { ru: 'Выбранные модели', en: 'Selected models' },

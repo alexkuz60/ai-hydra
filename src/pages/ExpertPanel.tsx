@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Layout } from '@/components/layout/Layout';
+import { SidebarTrigger } from '@/components/ui/sidebar';
 import { TaskIndicator } from '@/components/layout/TaskIndicator';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 import type { ImperativePanelHandle } from 'react-resizable-panels';
@@ -310,20 +311,8 @@ export default function ExpertPanel() {
     );
   }
 
-  const headerActions = (
-    <div className="flex items-center gap-2">
-      <MemoryControls
-        memoryStats={memoryStats}
-        isLoading={memoryLoading}
-        onRefresh={() => {}}
-        onOpenDialog={() => setMemoryDialogOpen(true)}
-      />
-      <TaskIndicator taskId={currentTask?.id || null} taskTitle={currentTask?.title || null} loading={loading} />
-    </div>
-  );
-
   return (
-    <Layout headerActions={headerActions}>
+    <Layout hideHeader>
       <SessionMemoryDialog
         open={memoryDialogOpen}
         onOpenChange={setMemoryDialogOpen}
@@ -338,7 +327,26 @@ export default function ExpertPanel() {
         isSearching={isMemorySearching}
         onFeedback={submitMemoryFeedback}
       />
-      <div className="h-[calc(100vh-4rem)] flex overflow-hidden">
+      <div className="h-screen flex flex-col overflow-hidden">
+        {/* Page header */}
+        <div className="px-4 py-2 border-b border-border flex items-center justify-between shrink-0">
+          <div className="flex items-center gap-2 min-w-0">
+            <SidebarTrigger className="text-muted-foreground hover:text-primary shrink-0" />
+            <span className="text-sm font-medium text-muted-foreground shrink-0">{t('nav.expertPanel')}.</span>
+            <span className="text-sm text-muted-foreground shrink-0">{t('tasks.discussingTask')}:</span>
+            <TaskIndicator taskId={currentTask?.id || null} taskTitle={currentTask?.title || null} loading={loading} />
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <MemoryControls
+              memoryStats={memoryStats}
+              isLoading={memoryLoading}
+              onRefresh={() => {}}
+              onOpenDialog={() => setMemoryDialogOpen(true)}
+            />
+          </div>
+        </div>
+
+        <div className="flex-1 flex overflow-hidden">
         <ResizablePanelGroup direction="horizontal">
           {/* Navigation Panel */}
           <ResizablePanel
@@ -492,6 +500,7 @@ export default function ExpertPanel() {
             </div>
           </ResizablePanel>
         </ResizablePanelGroup>
+        </div>
       </div>
     </Layout>
   );
