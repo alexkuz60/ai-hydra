@@ -51,11 +51,19 @@ export function ApprovalSectionEditor({ sections, onSectionsChange, readOnly, sh
       originalBody: '',
       status: 'pending',
       userComment: '',
-      depth: 0,
+      depth: 1,
       children: [],
       source: 'strategist',
     };
-    onSectionsChange([...sections, newAspect]);
+    // Add as child of last phase if exists, otherwise add at root
+    if (sections.length > 0) {
+      const next = [...sections];
+      const lastPhase = next[next.length - 1];
+      next[next.length - 1] = { ...lastPhase, children: [...lastPhase.children, newAspect] };
+      onSectionsChange(next);
+    } else {
+      onSectionsChange([{ ...newAspect, depth: 0 }]);
+    }
   };
 
   return (
