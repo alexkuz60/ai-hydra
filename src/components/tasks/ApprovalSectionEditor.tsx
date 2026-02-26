@@ -21,9 +21,12 @@ interface ApprovalSectionEditorProps {
   readOnly?: boolean;
   /** Show "Add phase / Add aspect" buttons */
   showAddButtons?: boolean;
+  /** Called when user clicks "Save changes" */
+  onSave?: () => void;
+  saving?: boolean;
 }
 
-export function ApprovalSectionEditor({ sections, onSectionsChange, readOnly, showAddButtons }: ApprovalSectionEditorProps) {
+export function ApprovalSectionEditor({ sections, onSectionsChange, readOnly, showAddButtons, onSave, saving }: ApprovalSectionEditorProps) {
   const { language } = useLanguage();
   const diff = computeApprovalDiff(sections);
 
@@ -106,6 +109,14 @@ export function ApprovalSectionEditor({ sections, onSectionsChange, readOnly, sh
             <Plus className="h-3.5 w-3.5" />
             {language === 'ru' ? 'Добавить аспект' : 'Add aspect'}
           </Button>
+          {onSave && (
+            <Button variant="default" size="sm" className="gap-1.5 text-xs ml-auto" onClick={onSave} disabled={saving}>
+              <Save className="h-3.5 w-3.5" />
+              {saving
+                ? (language === 'ru' ? 'Сохранение...' : 'Saving...')
+                : (language === 'ru' ? 'Сохранить изменения' : 'Save changes')}
+            </Button>
+          )}
         </div>
       )}
     </div>
