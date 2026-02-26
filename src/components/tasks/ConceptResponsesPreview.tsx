@@ -355,7 +355,7 @@ export function ConceptResponsesPreview({
               <CheckCircle2 className="h-4 w-4" />
               {saving 
                 ? (language === 'ru' ? 'Сохранение...' : 'Saving...')
-                : (language === 'ru' ? 'Утвердить план' : 'Approve Plan')
+                : (language === 'ru' ? 'Принять стратегию' : 'Accept Strategy')
               }
             </Button>
           </DialogFooter>
