@@ -3,12 +3,12 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Eye, Target, Landmark, Maximize2, CheckCircle2, FileEdit } from 'lucide-react';
+import { Eye, Target, Landmark, Maximize2, CheckCircle2, FileEdit, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import type { ConceptResponses } from '@/hooks/useConceptResponses';
 import ReactMarkdown from 'react-markdown';
-import { ApprovalSectionEditor } from './ApprovalSectionEditor';
+import { ApprovalSectionEditor, STRATEGY_LABELS, VISION_LABELS } from './ApprovalSectionEditor';
 import { parseStrategyMarkdown, computeApprovalDiff, sectionsToJson, sectionsFromJson } from '@/lib/strategySectionParser';
 import type { ApprovalSection } from '@/lib/strategySectionParser';
 import { supabase } from '@/integrations/supabase/client';
@@ -129,11 +129,13 @@ export function ConceptResponsesPreview({
     return (language === 'en' && r.content_en) ? r.content_en : r.content;
   };
 
-  const handleSaveApproval = async () => {
+  const handleSaveTab = async (tabSource: 'visionary' | 'strategist' | 'patent') => {
     if (!planId || !user?.id) return;
     setSaving(true);
-    
+
     try {
+      const tabSections = approvalSections.filter(s => s.source === tabSource);
+      
       // Save approval sections to plan metadata
       const { data: plan } = await supabase
         .from('strategic_plans')
@@ -142,13 +144,17 @@ export function ConceptResponsesPreview({
         .single();
 
       const existingMeta = (plan?.metadata as Record<string, unknown>) || {};
-      const diff = computeApprovalDiff(approvalSections);
+      const allSectionsJson = sectionsToJson(approvalSections);
+      const tabDiff = computeApprovalDiff(tabSections);
       
+      const metaKey = `approval_${tabSource}`;
       const updatedMeta = {
         ...existingMeta,
-        approval_sections: sectionsToJson(approvalSections),
-        approval_diff: diff,
-        approval_updated_at: new Date().toISOString(),
+        approval_sections: allSectionsJson,
+        [metaKey]: {
+          diff: tabDiff,
+          updated_at: new Date().toISOString(),
+        },
       };
 
       const { error: updateError } = await supabase
@@ -158,62 +164,66 @@ export function ConceptResponsesPreview({
 
       if (updateError) throw updateError;
 
-      // Create sessions/aspects from approved top-level sections
-      const approvedAspects = approvalSections.filter(
-        s => s.depth === 0 && s.status === 'approved'
-      );
+      // Only create sessions/aspects for strategist tab
+      if (tabSource === 'strategist') {
+        const approvedAspects = tabSections.filter(
+          s => s.depth === 0 && s.status === 'approved'
+        );
 
-      if (approvedAspects.length > 0) {
-        // Check which aspects already exist
-        const { data: existingSessions } = await supabase
-          .from('sessions')
-          .select('id, title')
-          .eq('plan_id', planId)
-          .eq('user_id', user.id)
-          .is('parent_id', null);
-
-        const existingTitles = new Set((existingSessions || []).map(s => s.title));
-
-        for (let i = 0; i < approvedAspects.length; i++) {
-          const aspect = approvedAspects[i];
-          if (existingTitles.has(aspect.title)) continue;
-
-          // Create aspect session
-          const { data: aspectSession, error: aspectErr } = await supabase
+        if (approvedAspects.length > 0) {
+          const { data: existingSessions } = await supabase
             .from('sessions')
-            .insert({
-              user_id: user.id,
-              plan_id: planId,
-              title: aspect.title,
-              description: aspect.body || null,
-              is_active: true,
-              sort_order: (existingSessions?.length || 0) + i,
-            })
-            .select('id')
-            .single();
+            .select('id, title')
+            .eq('plan_id', planId)
+            .eq('user_id', user.id)
+            .is('parent_id', null);
 
-          if (aspectErr || !aspectSession) continue;
+          const existingTitles = new Set((existingSessions || []).map(s => s.title));
 
-          // Create child task sessions
-          const approvedTasks = aspect.children.filter(c => c.status === 'approved');
-          for (let j = 0; j < approvedTasks.length; j++) {
-            const task = approvedTasks[j];
-            await supabase
+          for (let i = 0; i < approvedAspects.length; i++) {
+            const aspect = approvedAspects[i];
+            if (existingTitles.has(aspect.title)) continue;
+
+            const { data: aspectSession, error: aspectErr } = await supabase
               .from('sessions')
               .insert({
                 user_id: user.id,
                 plan_id: planId,
-                parent_id: aspectSession.id,
-                title: task.title,
-                description: task.body || null,
+                title: aspect.title,
+                description: aspect.body || null,
                 is_active: true,
-                sort_order: j,
-              });
+                sort_order: (existingSessions?.length || 0) + i,
+              })
+              .select('id')
+              .single();
+
+            if (aspectErr || !aspectSession) continue;
+
+            const approvedTasks = aspect.children.filter(c => c.status === 'approved');
+            for (let j = 0; j < approvedTasks.length; j++) {
+              const task = approvedTasks[j];
+              await supabase
+                .from('sessions')
+                .insert({
+                  user_id: user.id,
+                  plan_id: planId,
+                  parent_id: aspectSession.id,
+                  title: task.title,
+                  description: task.body || null,
+                  is_active: true,
+                  sort_order: j,
+                });
+            }
           }
         }
       }
 
-      toast.success(language === 'ru' ? 'План утверждён' : 'Plan approved');
+      const labels = {
+        visionary: { ru: 'Видение принято', en: 'Vision accepted' },
+        strategist: { ru: 'Стратегия принята', en: 'Strategy accepted' },
+        patent: { ru: 'Патентный анализ принят', en: 'Patent analysis accepted' },
+      };
+      toast.success(language === 'ru' ? labels[tabSource].ru : labels[tabSource].en);
       onApprovalComplete?.();
     } catch (err: any) {
       console.error('Approval save error:', err);
@@ -315,7 +325,11 @@ export function ConceptResponsesPreview({
                             return [...others, ...updated];
                           });
                         }}
-                        showAddButtons={tab.id === 'strategist'}
+                        showAddButtons={
+                          tab.id === 'strategist' ? STRATEGY_LABELS
+                          : tab.id === 'visionary' ? VISION_LABELS
+                          : false
+                        }
                       />
                     </div>
                   ) : (
@@ -329,38 +343,50 @@ export function ConceptResponsesPreview({
           </Tabs>
         )}
 
-        {/* Footer with approve button */}
-        {viewMode === 'approval' && (
-          <DialogFooter className="border-t pt-3 gap-2">
-            {approvalDiff && (
-              <span className="text-xs text-muted-foreground mr-auto">
-                {language === 'ru' 
-                  ? `Утверждено: ${approvalDiff.approved}/${approvalDiff.total}`
-                  : `Approved: ${approvalDiff.approved}/${approvalDiff.total}`
+        {/* Footer with per-tab approve buttons */}
+        {viewMode === 'approval' && (() => {
+          const tabSections = approvalSections.filter(s => s.source === activeTab);
+          const tabDiff = tabSections.length > 0 ? computeApprovalDiff(tabSections) : null;
+          
+          const buttonLabels: Record<string, { ru: string; en: string; icon: React.ReactNode }> = {
+            visionary: { ru: 'Принять видение', en: 'Accept Vision', icon: <Sparkles className="h-4 w-4" /> },
+            strategist: { ru: 'Принять стратегию', en: 'Accept Strategy', icon: <CheckCircle2 className="h-4 w-4" /> },
+            patent: { ru: 'Принять патентный анализ', en: 'Accept Patent', icon: <CheckCircle2 className="h-4 w-4" /> },
+          };
+          const label = buttonLabels[activeTab] || buttonLabels.strategist;
+
+          return (
+            <DialogFooter className="border-t pt-3 gap-2">
+              {tabDiff && (
+                <span className="text-xs text-muted-foreground mr-auto">
+                  {language === 'ru'
+                    ? `Утверждено: ${tabDiff.approved}/${tabDiff.total}`
+                    : `Approved: ${tabDiff.approved}/${tabDiff.total}`
+                  }
+                </span>
+              )}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setViewMode('preview')}
+              >
+                {language === 'ru' ? 'Назад' : 'Back'}
+              </Button>
+              <Button
+                size="sm"
+                className="gap-1.5"
+                onClick={() => handleSaveTab(activeTab)}
+                disabled={saving || (tabDiff?.approved === 0)}
+              >
+                {label.icon}
+                {saving
+                  ? (language === 'ru' ? 'Сохранение...' : 'Saving...')
+                  : (language === 'ru' ? label.ru : label.en)
                 }
-              </span>
-            )}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setViewMode('preview')}
-            >
-              {language === 'ru' ? 'Назад' : 'Back'}
-            </Button>
-            <Button
-              size="sm"
-              className="gap-1.5"
-              onClick={handleSaveApproval}
-              disabled={saving || (approvalDiff?.approved === 0)}
-            >
-              <CheckCircle2 className="h-4 w-4" />
-              {saving 
-                ? (language === 'ru' ? 'Сохранение...' : 'Saving...')
-                : (language === 'ru' ? 'Принять стратегию' : 'Accept Strategy')
-              }
-            </Button>
-          </DialogFooter>
-        )}
+              </Button>
+            </DialogFooter>
+          );
+        })()}
       </DialogContent>
     </Dialog>
   );

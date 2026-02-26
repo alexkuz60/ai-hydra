@@ -15,12 +15,38 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import type { ApprovalSection, ApprovalStatus } from '@/lib/strategySectionParser';
 import { computeApprovalDiff } from '@/lib/strategySectionParser';
 
+interface AddLabels {
+  section: { ru: string; en: string };
+  item: { ru: string; en: string };
+  newSectionTitle: (num: number, lang: string) => string;
+  newItemTitle: (lang: string) => string;
+  source: ApprovalSection['source'];
+}
+
+const STRATEGY_LABELS: AddLabels = {
+  section: { ru: 'Добавить фазу', en: 'Add phase' },
+  item: { ru: 'Добавить аспект', en: 'Add aspect' },
+  newSectionTitle: (num, lang) => lang === 'ru' ? `Фаза ${num}: Новая фаза` : `Phase ${num}: New phase`,
+  newItemTitle: (lang) => lang === 'ru' ? 'Новый аспект' : 'New aspect',
+  source: 'strategist',
+};
+
+const VISION_LABELS: AddLabels = {
+  section: { ru: 'Добавить раздел', en: 'Add section' },
+  item: { ru: 'Добавить пункт', en: 'Add item' },
+  newSectionTitle: (num, lang) => lang === 'ru' ? `Раздел ${num}` : `Section ${num}`,
+  newItemTitle: (lang) => lang === 'ru' ? 'Новый пункт' : 'New item',
+  source: 'visionary',
+};
+
+export { STRATEGY_LABELS, VISION_LABELS };
+
 interface ApprovalSectionEditorProps {
   sections: ApprovalSection[];
   onSectionsChange: (sections: ApprovalSection[]) => void;
   readOnly?: boolean;
-  /** Show "Add phase / Add aspect" buttons */
-  showAddButtons?: boolean;
+  /** Show add buttons; pass label config or true for strategy defaults */
+  showAddButtons?: boolean | AddLabels;
 }
 
 export function ApprovalSectionEditor({ sections, onSectionsChange, readOnly, showAddButtons }: ApprovalSectionEditorProps) {
@@ -28,55 +54,59 @@ export function ApprovalSectionEditor({ sections, onSectionsChange, readOnly, sh
   const diff = computeApprovalDiff(sections);
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
+  // Resolve add labels
+  const addLabels: AddLabels | null = showAddButtons
+    ? (typeof showAddButtons === 'object' ? showAddButtons : STRATEGY_LABELS)
+    : null;
+
   // Find selected phase index (or -1)
   const selectedPhaseIdx = sections.findIndex(s => s.id === selectedId);
-  // Check if selected is a child — find parent phase
   const selectedParentIdx = selectedPhaseIdx >= 0 ? selectedPhaseIdx : sections.findIndex(s => s.children.some(c => c.id === selectedId));
 
-  const addPhase = () => {
-    const phaseNum = sections.filter(s => s.depth === 0).length + 1;
-    const newPhase: ApprovalSection = {
-      id: `new_phase_${Date.now()}`,
-      title: language === 'ru' ? `Фаза ${phaseNum}: Новая фаза` : `Phase ${phaseNum}: New phase`,
+  const addSection = () => {
+    if (!addLabels) return;
+    const num = sections.filter(s => s.depth === 0).length + 1;
+    const newSection: ApprovalSection = {
+      id: `new_section_${Date.now()}`,
+      title: addLabels.newSectionTitle(num, language),
       body: '',
       originalBody: '',
       status: 'pending',
       userComment: '',
       depth: 0,
       children: [],
-      source: 'strategist',
+      source: addLabels.source,
     };
     const next = [...sections];
-    // Insert after selected phase, or append
     const insertIdx = selectedParentIdx >= 0 ? selectedParentIdx + 1 : next.length;
-    next.splice(insertIdx, 0, newPhase);
+    next.splice(insertIdx, 0, newSection);
     onSectionsChange(next);
-    setSelectedId(newPhase.id);
+    setSelectedId(newSection.id);
   };
 
-  const addAspect = () => {
-    const newAspect: ApprovalSection = {
-      id: `new_aspect_${Date.now()}`,
-      title: language === 'ru' ? 'Новый аспект' : 'New aspect',
+  const addItem = () => {
+    if (!addLabels) return;
+    const newItem: ApprovalSection = {
+      id: `new_item_${Date.now()}`,
+      title: addLabels.newItemTitle(language),
       body: '',
       originalBody: '',
       status: 'pending',
       userComment: '',
       depth: 1,
       children: [],
-      source: 'strategist',
+      source: addLabels.source,
     };
-    // Add as child of the selected phase (or its parent), or last phase
     const targetIdx = selectedParentIdx >= 0 ? selectedParentIdx : sections.length - 1;
     if (targetIdx >= 0) {
       const next = [...sections];
       const phase = next[targetIdx];
-      next[targetIdx] = { ...phase, children: [...phase.children, newAspect] };
+      next[targetIdx] = { ...phase, children: [...phase.children, newItem] };
       onSectionsChange(next);
-      setSelectedId(newAspect.id);
+      setSelectedId(newItem.id);
     } else {
-      onSectionsChange([{ ...newAspect, depth: 0 }]);
-      setSelectedId(newAspect.id);
+      onSectionsChange([{ ...newItem, depth: 0 }]);
+      setSelectedId(newItem.id);
     }
   };
 
@@ -112,7 +142,7 @@ export function ApprovalSectionEditor({ sections, onSectionsChange, readOnly, sh
       </ScrollArea>
 
       {/* Add buttons */}
-      {!readOnly && showAddButtons && (
+      {!readOnly && addLabels && (
         <div className="flex items-center gap-2 pt-3 shrink-0 border-t border-border/40 mt-2">
           {selectedId && (
             <Badge variant="outline" className="text-[10px] text-muted-foreground mr-1">
@@ -128,13 +158,13 @@ export function ApprovalSectionEditor({ sections, onSectionsChange, readOnly, sh
               })()}
             </Badge>
           )}
-          <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={addPhase}>
+          <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={addSection}>
             <FolderPlus className="h-3.5 w-3.5" />
-            {language === 'ru' ? 'Добавить фазу' : 'Add phase'}
+            {language === 'ru' ? addLabels.section.ru : addLabels.section.en}
           </Button>
-          <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={addAspect}>
+          <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={addItem}>
             <Plus className="h-3.5 w-3.5" />
-            {language === 'ru' ? 'Добавить аспект' : 'Add aspect'}
+            {language === 'ru' ? addLabels.item.ru : addLabels.item.en}
           </Button>
         </div>
       )}
