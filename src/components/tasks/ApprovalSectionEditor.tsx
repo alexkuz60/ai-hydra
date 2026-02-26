@@ -2,13 +2,14 @@ import React, { useState } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { cn } from '@/lib/utils';
 import {
   Check, X, RotateCcw, ChevronRight, Pencil, FolderOpen,
-  ListChecks, MessageSquare, Save, XCircle, Plus, FolderPlus,
+  ListChecks, MessageSquare, Save, XCircle, Plus, FolderPlus, Type,
 } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import type { ApprovalSection, ApprovalStatus } from '@/lib/strategySectionParser';
@@ -18,9 +19,11 @@ interface ApprovalSectionEditorProps {
   sections: ApprovalSection[];
   onSectionsChange: (sections: ApprovalSection[]) => void;
   readOnly?: boolean;
+  /** Show "Add phase / Add aspect" buttons */
+  showAddButtons?: boolean;
 }
 
-export function ApprovalSectionEditor({ sections, onSectionsChange, readOnly }: ApprovalSectionEditorProps) {
+export function ApprovalSectionEditor({ sections, onSectionsChange, readOnly, showAddButtons }: ApprovalSectionEditorProps) {
   const { language } = useLanguage();
   const diff = computeApprovalDiff(sections);
 
@@ -85,7 +88,7 @@ export function ApprovalSectionEditor({ sections, onSectionsChange, readOnly }: 
       </ScrollArea>
 
       {/* Add buttons */}
-      {!readOnly && (
+      {!readOnly && showAddButtons && (
         <div className="flex items-center gap-2 pt-3 shrink-0 border-t border-border/40 mt-2">
           <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={addPhase}>
             <FolderPlus className="h-3.5 w-3.5" />
@@ -114,6 +117,8 @@ function SectionNode({ section, readOnly, onChange }: SectionNodeProps) {
   const [bodyDraft, setBodyDraft] = useState(section.body);
   const [showComment, setShowComment] = useState(false);
   const [commentDraft, setCommentDraft] = useState(section.userComment);
+  const [isRenaming, setIsRenaming] = useState(false);
+  const [titleDraft, setTitleDraft] = useState(section.title);
   const isAspect = section.depth === 0;
 
   const statusColors: Record<ApprovalStatus, string> = {
@@ -181,16 +186,42 @@ function SectionNode({ section, readOnly, onChange }: SectionNodeProps) {
           {/* Title + body */}
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className={cn(
-                'text-base font-medium',
-                section.status === 'rejected' && 'line-through text-muted-foreground',
-              )}>
-                {section.title}
-              </span>
-              {section.status !== 'pending' && (
+              {isRenaming ? (
+                <div className="flex items-center gap-1 flex-1 min-w-0">
+                  <Input
+                    value={titleDraft}
+                    onChange={(e) => setTitleDraft(e.target.value)}
+                    className="h-7 text-sm flex-1"
+                    autoFocus
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        onChange({ ...section, title: titleDraft });
+                        setIsRenaming(false);
+                      } else if (e.key === 'Escape') {
+                        setTitleDraft(section.title);
+                        setIsRenaming(false);
+                      }
+                    }}
+                  />
+                  <Button variant="ghost" size="icon" className="h-6 w-6 text-emerald-500" onClick={() => { onChange({ ...section, title: titleDraft }); setIsRenaming(false); }}>
+                    <Save className="h-3 w-3" />
+                  </Button>
+                  <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground" onClick={() => { setTitleDraft(section.title); setIsRenaming(false); }}>
+                    <XCircle className="h-3 w-3" />
+                  </Button>
+                </div>
+              ) : (
+                <span className={cn(
+                  'text-base font-medium',
+                  section.status === 'rejected' && 'line-through text-muted-foreground',
+                )}>
+                  {section.title}
+                </span>
+              )}
+              {!isRenaming && section.status !== 'pending' && (
                 <StatusBadge status={section.status} />
               )}
-              {section.body !== section.originalBody && section.status === 'approved' && (
+              {!isRenaming && section.body !== section.originalBody && section.status === 'approved' && (
                 <Badge variant="outline" className="text-[10px] border-primary/40 text-primary">
                   {language === 'ru' ? 'изменено' : 'edited'}
                 </Badge>
@@ -336,6 +367,20 @@ function SectionNode({ section, readOnly, onChange }: SectionNodeProps) {
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>{language === 'ru' ? 'На доработку' : 'Rework'}</TooltipContent>
+              </Tooltip>
+
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className={cn('h-7 w-7', isRenaming && 'text-primary')}
+                    onClick={() => { setIsRenaming(!isRenaming); setTitleDraft(section.title); }}
+                  >
+                    <Type className="h-3.5 w-3.5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>{language === 'ru' ? 'Переименовать' : 'Rename'}</TooltipContent>
               </Tooltip>
 
               {section.body && (

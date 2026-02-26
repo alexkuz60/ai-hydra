@@ -315,6 +315,7 @@ export function ConceptResponsesPreview({
                             return [...others, ...updated];
                           });
                         }}
+                        showAddButtons={tab.id === 'strategist'}
                       />
                     </div>
                   ) : (
