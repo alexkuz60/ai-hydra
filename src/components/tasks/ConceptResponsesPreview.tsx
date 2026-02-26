@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Eye, Target, Landmark, Maximize2, CheckCircle2, FileEdit, Sparkles } from 'lucide-react';
+import { Eye, Target, Landmark, Maximize2, CheckCircle2, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import type { ConceptResponses } from '@/hooks/useConceptResponses';
@@ -14,6 +14,7 @@ import type { ApprovalSection } from '@/lib/strategySectionParser';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { UnsavedChangesDialog } from '@/components/ui/unsaved-changes-dialog';
 
 interface CollapsedResponseProps {
   content: string | null;
@@ -58,8 +59,6 @@ function CollapsedResponse({ content, contentEn, className, onExpand, accentClas
   );
 }
 
-type ViewMode = 'preview' | 'approval';
-
 interface ConceptResponsesPreviewProps {
   responses: ConceptResponses;
   defaultTab?: 'visionary' | 'strategist' | 'patent';
@@ -77,21 +76,29 @@ export function ConceptResponsesPreview({
   const { t, language } = useLanguage();
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState(defaultTab);
-  const [viewMode, setViewMode] = useState<ViewMode>('preview');
   const [approvalSections, setApprovalSections] = useState<ApprovalSection[]>([]);
   const [saving, setSaving] = useState(false);
+  const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
   
+  // Track initial state for dirty detection
+  const initialSectionsRef = useRef<string>('');
+  
+  const isDirty = () => {
+    if (approvalSections.length === 0) return false;
+    return JSON.stringify(sectionsToJson(approvalSections)) !== initialSectionsRef.current;
+  };
+
   // Sync when parent changes the default tab
   useEffect(() => {
     if (open) setActiveTab(defaultTab);
   }, [defaultTab, open]);
 
-  // Parse sections when switching to approval mode
+  // Parse sections when dialog opens
   useEffect(() => {
-    if (viewMode === 'approval' && open) {
+    if (open) {
       loadOrParseApprovalSections();
     }
-  }, [viewMode, open]);
+  }, [open]);
 
   const loadOrParseApprovalSections = useCallback(async () => {
     if (!planId) return;
@@ -106,7 +113,9 @@ export function ConceptResponsesPreview({
       
       const meta = data?.metadata as Record<string, unknown> | null;
       if (meta?.approval_sections) {
-        setApprovalSections(sectionsFromJson(meta.approval_sections));
+        const loaded = sectionsFromJson(meta.approval_sections);
+        setApprovalSections(loaded);
+        initialSectionsRef.current = JSON.stringify(meta.approval_sections);
         return;
       }
     } catch { /* fall through to parsing */ }
@@ -121,12 +130,22 @@ export function ConceptResponsesPreview({
     const sSections = parseStrategyMarkdown(getContent(responses.strategist), 'strategist');
     const pSections = parseStrategyMarkdown(getContent(responses.patent), 'patent');
 
-    setApprovalSections([...vSections, ...sSections, ...pSections]);
+    const all = [...vSections, ...sSections, ...pSections];
+    setApprovalSections(all);
+    initialSectionsRef.current = JSON.stringify(sectionsToJson(all));
   }, [planId, responses, language]);
 
-  const getContent = (r: { content: string; content_en: string | null } | null) => {
-    if (!r) return null;
-    return (language === 'en' && r.content_en) ? r.content_en : r.content;
+  const handleClose = (openState: boolean) => {
+    if (!openState && isDirty()) {
+      setShowUnsavedDialog(true);
+      return;
+    }
+    onOpenChange(openState);
+  };
+
+  const handleDiscardAndClose = () => {
+    setShowUnsavedDialog(false);
+    onOpenChange(false);
   };
 
   const handleSaveTab = async (tabSource: 'visionary' | 'strategist' | 'patent') => {
@@ -218,6 +237,9 @@ export function ConceptResponsesPreview({
         }
       }
 
+      // Update initial ref so dialog is no longer dirty for this tab
+      initialSectionsRef.current = JSON.stringify(sectionsToJson(approvalSections));
+
       const labels = {
         visionary: { ru: 'Видение принято', en: 'Vision accepted' },
         strategist: { ru: 'Стратегия принята', en: 'Strategy accepted' },
@@ -240,64 +262,16 @@ export function ConceptResponsesPreview({
   ];
   const tabs = includePatent ? allTabs : allTabs.filter(t => t.id !== 'patent');
 
-  const hasAnyResponse = !!(responses.visionary || responses.strategist || responses.patent);
-  const approvalDiff = approvalSections.length > 0 ? computeApprovalDiff(approvalSections) : null;
-
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[calc(100vw-4rem)] w-full max-h-[calc(100vh-2rem)] h-full flex flex-col">
-        <DialogHeader>
-          <div className="flex items-center justify-between gap-4">
+    <>
+      <Dialog open={open} onOpenChange={handleClose}>
+        <DialogContent className="max-w-[calc(100vw-4rem)] w-full max-h-[calc(100vh-2rem)] h-full flex flex-col">
+          <DialogHeader>
             <DialogTitle>
-              {viewMode === 'preview'
-                ? (language === 'ru' ? 'Мнения экспертов' : 'Expert Opinions')
-                : (language === 'ru' ? 'Утверждение стратегии' : 'Strategy Approval')
-              }
+              {language === 'ru' ? 'Утверждение стратегии' : 'Strategy Approval'}
             </DialogTitle>
-            {hasAnyResponse && planId && viewMode === 'preview' && (
-              <Button
-                variant="outline"
-                size="sm"
-                className="gap-1.5 shrink-0"
-                onClick={() => setViewMode('approval')}
-              >
-                <FileEdit className="h-3.5 w-3.5" />
-                {language === 'ru' ? 'Режим утверждения' : 'Approval Mode'}
-              </Button>
-            )}
-          </div>
-        </DialogHeader>
+          </DialogHeader>
 
-        {viewMode === 'preview' ? (
-          /* ---------- PREVIEW MODE ---------- */
-          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="flex-1 flex flex-col min-h-0">
-            <TabsList className="w-full justify-start">
-              {tabs.map(tab => (
-                <TabsTrigger key={tab.id} value={tab.id} className="gap-1.5">
-                  <tab.icon className={cn('h-4 w-4', tab.color)} />
-                  <span className="text-sm">{tab.label}</span>
-                  {tab.response && <span className="w-1.5 h-1.5 rounded-full bg-primary" />}
-                </TabsTrigger>
-              ))}
-            </TabsList>
-            {tabs.map(tab => (
-              <TabsContent key={tab.id} value={tab.id} className="flex-1 min-h-0">
-                <ScrollArea className="flex-1 h-full">
-                  {tab.response ? (
-                    <div className="prose prose-base dark:prose-invert max-w-none p-4">
-                      <ReactMarkdown>{getContent(tab.response) || ''}</ReactMarkdown>
-                    </div>
-                  ) : (
-                    <div className="flex items-center justify-center h-32 text-muted-foreground text-sm">
-                      {language === 'ru' ? 'Ответ ещё не получен' : 'No response yet'}
-                    </div>
-                  )}
-                </ScrollArea>
-              </TabsContent>
-            ))}
-          </Tabs>
-        ) : (
-          /* ---------- APPROVAL MODE ---------- */
           <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="flex-1 flex flex-col min-h-0">
             <TabsList className="w-full justify-start">
               {tabs.map(tab => {
@@ -341,54 +315,60 @@ export function ConceptResponsesPreview({
               );
             })}
           </Tabs>
-        )}
 
-        {/* Footer with per-tab approve buttons */}
-        {viewMode === 'approval' && (() => {
-          const tabSections = approvalSections.filter(s => s.source === activeTab);
-          const tabDiff = tabSections.length > 0 ? computeApprovalDiff(tabSections) : null;
-          
-          const buttonLabels: Record<string, { ru: string; en: string; icon: React.ReactNode }> = {
-            visionary: { ru: 'Принять видение', en: 'Accept Vision', icon: <Sparkles className="h-4 w-4" /> },
-            strategist: { ru: 'Принять стратегию', en: 'Accept Strategy', icon: <CheckCircle2 className="h-4 w-4" /> },
-            patent: { ru: 'Принять патентный анализ', en: 'Accept Patent', icon: <CheckCircle2 className="h-4 w-4" /> },
-          };
-          const label = buttonLabels[activeTab] || buttonLabels.strategist;
+          {/* Footer with per-tab approve buttons */}
+          {(() => {
+            const tabSections = approvalSections.filter(s => s.source === activeTab);
+            const tabDiff = tabSections.length > 0 ? computeApprovalDiff(tabSections) : null;
+            
+            const buttonLabels: Record<string, { ru: string; en: string; icon: React.ReactNode }> = {
+              visionary: { ru: 'Принять видение', en: 'Accept Vision', icon: <Sparkles className="h-4 w-4" /> },
+              strategist: { ru: 'Принять стратегию', en: 'Accept Strategy', icon: <CheckCircle2 className="h-4 w-4" /> },
+              patent: { ru: 'Принять патентный анализ', en: 'Accept Patent', icon: <CheckCircle2 className="h-4 w-4" /> },
+            };
+            const label = buttonLabels[activeTab] || buttonLabels.strategist;
 
-          return (
-            <DialogFooter className="border-t pt-3 gap-2">
-              {tabDiff && (
-                <span className="text-xs text-muted-foreground mr-auto">
-                  {language === 'ru'
-                    ? `Утверждено: ${tabDiff.approved}/${tabDiff.total}`
-                    : `Approved: ${tabDiff.approved}/${tabDiff.total}`
+            return (
+              <DialogFooter className="border-t pt-3 gap-2">
+                {tabDiff && (
+                  <span className="text-xs text-muted-foreground mr-auto">
+                    {language === 'ru'
+                      ? `Утверждено: ${tabDiff.approved}/${tabDiff.total}`
+                      : `Approved: ${tabDiff.approved}/${tabDiff.total}`
+                    }
+                  </span>
+                )}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleClose(false)}
+                >
+                  {language === 'ru' ? 'Назад' : 'Back'}
+                </Button>
+                <Button
+                  size="sm"
+                  className="gap-1.5"
+                  onClick={() => handleSaveTab(activeTab)}
+                  disabled={saving || (tabDiff?.approved === 0)}
+                >
+                  {label.icon}
+                  {saving
+                    ? (language === 'ru' ? 'Сохранение...' : 'Saving...')
+                    : (language === 'ru' ? label.ru : label.en)
                   }
-                </span>
-              )}
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setViewMode('preview')}
-              >
-                {language === 'ru' ? 'Назад' : 'Back'}
-              </Button>
-              <Button
-                size="sm"
-                className="gap-1.5"
-                onClick={() => handleSaveTab(activeTab)}
-                disabled={saving || (tabDiff?.approved === 0)}
-              >
-                {label.icon}
-                {saving
-                  ? (language === 'ru' ? 'Сохранение...' : 'Saving...')
-                  : (language === 'ru' ? label.ru : label.en)
-                }
-              </Button>
-            </DialogFooter>
-          );
-        })()}
-      </DialogContent>
-    </Dialog>
+                </Button>
+              </DialogFooter>
+            );
+          })()}
+        </DialogContent>
+      </Dialog>
+
+      <UnsavedChangesDialog
+        open={showUnsavedDialog}
+        onConfirm={handleDiscardAndClose}
+        onCancel={() => setShowUnsavedDialog(false)}
+      />
+    </>
   );
 }
 
