@@ -1,15 +1,15 @@
 import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { useAvailableModels, ModelOption, PERSONAL_KEY_MODELS, LOVABLE_AI_MODELS, ALL_VALID_MODEL_IDS } from '@/hooks/useAvailableModels';
+import { useAvailableModels, ModelOption, PERSONAL_KEY_MODELS, LOVABLE_AI_MODELS, ALL_VALID_MODEL_IDS, getProviderOrder } from '@/hooks/useAvailableModels';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { AlertCircle, ChevronDown, Users, Gift, Zap, RefreshCw } from 'lucide-react';
+import { AlertCircle, ChevronDown, Users, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getUnavailableModelIds, clearModelCache } from '@/lib/modelAvailabilityCache';
-import { PROVIDER_LOGOS, PROVIDER_COLORS, LovableLogo, GroqLogo, OpenRouterLogo } from '@/components/ui/ProviderLogos';
+import { PROVIDER_LOGOS, PROVIDER_COLORS, LovableLogo, GroqLogo, OpenRouterLogo, DotPointLogo } from '@/components/ui/ProviderLogos';
 
 interface MultiModelSelectorProps {
   value: string[];
@@ -17,91 +17,74 @@ interface MultiModelSelectorProps {
   className?: string;
 }
 
-// Get free OpenRouter models
-const FREE_OPENROUTER_MODELS = PERSONAL_KEY_MODELS.filter(
-  m => m.provider === 'openrouter' && m.id.includes(':free')
-);
-
-// Get paid OpenRouter models
-const PAID_OPENROUTER_MODELS = PERSONAL_KEY_MODELS.filter(
-  m => m.provider === 'openrouter' && !m.id.includes(':free')
-);
-
-// Get Groq models
-const GROQ_MODELS = PERSONAL_KEY_MODELS.filter(m => m.provider === 'groq');
-
-// Get paid models (excluding all OpenRouter and Groq)
-const PAID_MODELS = PERSONAL_KEY_MODELS.filter(
-  m => m.provider !== 'openrouter' && m.provider !== 'groq'
-);
-
-// Provider display config for paid model subgroups
+// Provider display labels
 const PROVIDER_LABELS: Record<string, string> = {
+  lovable: 'Lovable AI',
   openai: 'OpenAI',
   anthropic: 'Anthropic',
   gemini: 'Google Gemini',
   xai: 'xAI (Grok)',
+  groq: 'Groq (Fast)',
   deepseek: 'DeepSeek',
   mistral: 'Mistral AI',
+  openrouter: 'OpenRouter',
   proxyapi: 'ProxyAPI',
+  dotpoint: 'DotPoint',
 };
 
-// Order of provider subgroups
-const PROVIDER_ORDER = ['openai', 'anthropic', 'gemini', 'xai', 'deepseek', 'mistral', 'proxyapi'];
+// Badge config per provider
+const PROVIDER_BADGES: Record<string, { label: string; className: string } | undefined> = {
+  groq: { label: '⚡ Fast', className: 'bg-hydra-warning/10 text-hydra-warning border-hydra-warning/30' },
+  proxyapi: { label: '🇷🇺 Gateway', className: 'bg-blue-500/10 text-blue-400 border-blue-500/30' },
+  dotpoint: { label: '🇷🇺 Gateway', className: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' },
+};
 
-interface ProviderGroup {
-  provider: string;
-  label: string;
-  models: ModelOption[];
+// OpenRouter sub-badges
+function getOpenRouterBadge(modelId: string) {
+  if (modelId.includes(':free')) {
+    return { label: 'FREE', className: 'bg-hydra-success/10 text-hydra-success border-hydra-success/30' };
+  }
+  return { label: '💎 Premium', className: 'bg-violet-500/10 text-violet-400 border-violet-500/30' };
 }
 
 export function MultiModelSelector({ value, onChange, className }: MultiModelSelectorProps) {
   const { t } = useLanguage();
-  const { isAdmin, lovableModels, personalModels, hasAnyModels, loading } = useAvailableModels();
+  const { isAdmin, proxyapiPriority, lovableModels, personalModels, hasAnyModels, loading } = useAvailableModels();
   
-  // Track cache version to trigger re-computation of unavailable models
   const [cacheVersion, setCacheVersion] = useState(0);
-  
-  // Get list of temporarily unavailable models (cached from errors) - recompute on cache change
   const unavailableModelIds = useMemo(() => getUnavailableModelIds(), [cacheVersion]);
 
   const allModels = [...lovableModels, ...personalModels];
 
-  // Get available models by category, filtering out unavailable ones
-  const availableFreeModels = FREE_OPENROUTER_MODELS
-    .filter(m => personalModels.some(p => p.id === m.id))
-    .filter(m => !unavailableModelIds.includes(m.id));
-  const availablePaidOpenRouterModels = PAID_OPENROUTER_MODELS
-    .filter(m => personalModels.some(p => p.id === m.id))
-    .filter(m => !unavailableModelIds.includes(m.id));
-  const availableGroqModels = GROQ_MODELS
-    .filter(m => personalModels.some(p => p.id === m.id))
-    .filter(m => !unavailableModelIds.includes(m.id));
-  const availablePaidModels = PAID_MODELS
-    .filter(m => personalModels.some(p => p.id === m.id))
-    .filter(m => !unavailableModelIds.includes(m.id));
+  // Build provider groups in priority order, filtering out unavailable models
+  const providerGroups = useMemo(() => {
+    const order = getProviderOrder(proxyapiPriority);
+    const availableModels = [
+      ...(isAdmin ? lovableModels : []),
+      ...personalModels,
+    ].filter(m => !unavailableModelIds.includes(m.id));
 
-  // Group paid models by provider
-  const paidProviderGroups = useMemo<ProviderGroup[]>(() => {
-    const groups: ProviderGroup[] = [];
-    for (const provider of PROVIDER_ORDER) {
-      const models = availablePaidModels.filter(m => m.provider === provider);
-      if (models.length > 0) {
-        groups.push({
-          provider,
-          label: PROVIDER_LABELS[provider] || provider,
-          models,
-        });
-      }
-    }
-    return groups;
-  }, [availablePaidModels]);
+    // Group by provider
+    const grouped = new Map<string, ModelOption[]>();
+    availableModels.forEach(m => {
+      const list = grouped.get(m.provider) || [];
+      list.push(m);
+      grouped.set(m.provider, list);
+    });
+
+    // Return ordered groups
+    return order
+      .filter(p => grouped.has(p))
+      .map(provider => ({
+        provider,
+        label: PROVIDER_LABELS[provider] || provider,
+        models: grouped.get(provider)!,
+      }));
+  }, [isAdmin, lovableModels, personalModels, unavailableModelIds, proxyapiPriority]);
 
   // Auto-cleanup deprecated/unavailable model IDs from value
   useEffect(() => {
     if (value.length === 0) return;
-    
-    // Filter out both deprecated AND temporarily unavailable models
     const validValues = value.filter(id => 
       ALL_VALID_MODEL_IDS.includes(id) && !unavailableModelIds.includes(id)
     );
@@ -110,11 +93,9 @@ export function MultiModelSelector({ value, onChange, className }: MultiModelSel
     }
   }, [unavailableModelIds]);
   
-  // Handler to clear the cache and refresh - uses state update instead of page reload
   const handleClearCache = useCallback(() => {
     clearModelCache();
     setCacheVersion(v => v + 1);
-    // Force re-render by updating with same value
     onChange([...value]);
   }, [onChange, value]);
 
@@ -156,47 +137,6 @@ export function MultiModelSelector({ value, onChange, className }: MultiModelSel
   const selectedCount = value.length;
   const selectedModels = allModels.filter(m => value.includes(m.id));
 
-  // Render a provider group section
-  const renderProviderGroup = (
-    icon: React.ReactNode,
-    label: string,
-    models: ModelOption[],
-    colorClass: string,
-    badgeContent?: React.ReactNode,
-  ) => (
-    <div className="mb-3">
-      <div className="flex items-center justify-between px-2 py-1.5">
-        <div className={cn('flex items-center gap-2 text-sm font-medium', colorClass)}>
-          {icon}
-          {label}
-        </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-6 text-xs"
-          onClick={() => selectAll(models)}
-        >
-          {models.every(m => value.includes(m.id)) ? t('common.deselectAll') : t('common.selectAll')}
-        </Button>
-      </div>
-      <div className="space-y-1">
-        {models.map((model) => (
-          <label
-            key={model.id}
-            className="flex items-center gap-3 px-2 py-1.5 rounded-md hover:bg-accent cursor-pointer"
-          >
-            <Checkbox
-              checked={value.includes(model.id)}
-              onCheckedChange={() => toggleModel(model.id)}
-            />
-            <span className="text-sm truncate flex-1">{model.name}</span>
-            {badgeContent}
-          </label>
-        ))}
-      </div>
-    </div>
-  );
-
   return (
     <Popover>
       <PopoverTrigger asChild>
@@ -220,68 +160,61 @@ export function MultiModelSelector({ value, onChange, className }: MultiModelSel
       <PopoverContent className="w-[340px] p-0" align="end">
         <ScrollArea className="h-[60vh] max-h-[500px]">
           <div className="p-2">
-            {/* Lovable AI Models (Admin only) */}
-            {lovableModels.length > 0 && renderProviderGroup(
-              <LovableLogo className="h-4 w-4" />,
-              'Lovable AI',
-              lovableModels,
-              'text-primary',
-            )}
+            {providerGroups.map(({ provider, label, models }) => {
+              const Logo = PROVIDER_LOGOS[provider];
+              const color = PROVIDER_COLORS[provider] || 'text-muted-foreground';
+              const badge = PROVIDER_BADGES[provider];
 
-            {/* Free OpenRouter Models */}
-            {availableFreeModels.length > 0 && renderProviderGroup(
-              <OpenRouterLogo className={cn('h-4 w-4', PROVIDER_COLORS.openrouter)} />,
-              'Free Models',
-              availableFreeModels,
-              'text-hydra-success',
-              <Badge variant="outline" className="text-[10px] bg-hydra-success/10 text-hydra-success border-hydra-success/30">
-                FREE
-              </Badge>,
-            )}
-
-            {/* Groq Models - Ultra Fast */}
-            {availableGroqModels.length > 0 && renderProviderGroup(
-              <GroqLogo className={cn('h-4 w-4', PROVIDER_COLORS.groq)} />,
-              'Groq (Fast)',
-              availableGroqModels,
-              'text-hydra-warning',
-              <Badge variant="outline" className="text-[10px] bg-hydra-warning/10 text-hydra-warning border-hydra-warning/30">
-                ⚡ Fast
-              </Badge>,
-            )}
-
-            {/* Paid OpenRouter Models */}
-            {availablePaidOpenRouterModels.length > 0 && renderProviderGroup(
-              <OpenRouterLogo className={cn('h-4 w-4', PROVIDER_COLORS.openrouter)} />,
-              'OpenRouter (Paid)',
-              availablePaidOpenRouterModels,
-              'text-violet-400',
-              <Badge variant="outline" className="text-[10px] bg-violet-500/10 text-violet-400 border-violet-500/30">
-                💎 Premium
-              </Badge>,
-            )}
-
-            {/* Paid Personal API Key Models - grouped by provider */}
-            {paidProviderGroups.map((group) => {
-              const Logo = PROVIDER_LOGOS[group.provider];
-              const color = PROVIDER_COLORS[group.provider] || 'text-muted-foreground';
               return (
-                <React.Fragment key={group.provider}>
-                  {renderProviderGroup(
-                    Logo ? <Logo className={cn('h-4 w-4', color)} /> : null,
-                    group.label,
-                    group.models,
-                    color,
-                  )}
-                </React.Fragment>
+                <div key={provider} className="mb-3">
+                  <div className="flex items-center justify-between px-2 py-1.5">
+                    <div className={cn('flex items-center gap-2 text-sm font-medium', color)}>
+                      {Logo && <Logo className="h-4 w-4" />}
+                      {label}
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 text-xs"
+                      onClick={() => selectAll(models)}
+                    >
+                      {models.every(m => value.includes(m.id)) ? t('common.deselectAll') : t('common.selectAll')}
+                    </Button>
+                  </div>
+                  <div className="space-y-1">
+                    {models.map((model) => {
+                      // For openrouter, use per-model badge (free vs premium)
+                      const modelBadge = provider === 'openrouter' 
+                        ? getOpenRouterBadge(model.id) 
+                        : badge;
+
+                      return (
+                        <label
+                          key={model.id}
+                          className="flex items-center gap-3 px-2 py-1.5 rounded-md hover:bg-accent cursor-pointer"
+                        >
+                          <Checkbox
+                            checked={value.includes(model.id)}
+                            onCheckedChange={() => toggleModel(model.id)}
+                          />
+                          <span className="text-sm truncate flex-1">{model.name}</span>
+                          {modelBadge && (
+                            <Badge variant="outline" className={cn('text-[10px]', modelBadge.className)}>
+                              {modelBadge.label}
+                            </Badge>
+                          )}
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
               );
             })}
           </div>
         </ScrollArea>
 
-        {/* Footer with cache reset and selected models summary */}
+        {/* Footer */}
         <div className="border-t p-2 space-y-2">
-          {/* Reset cache button if there are unavailable models */}
           {unavailableModelIds.length > 0 && (
             <Button
               variant="ghost"
@@ -294,7 +227,6 @@ export function MultiModelSelector({ value, onChange, className }: MultiModelSel
             </Button>
           )}
           
-          {/* Selected Models Summary */}
           {selectedCount > 0 && (
             <div className="flex flex-wrap gap-1">
               {selectedModels.slice(0, 3).map(model => (

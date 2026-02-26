@@ -5,7 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 export interface ModelOption {
   id: string;
   name: string;
-  provider: 'lovable' | 'openai' | 'gemini' | 'anthropic' | 'xai' | 'openrouter' | 'groq' | 'deepseek' | 'mistral' | 'proxyapi';
+  provider: 'lovable' | 'openai' | 'gemini' | 'anthropic' | 'xai' | 'openrouter' | 'groq' | 'deepseek' | 'mistral' | 'proxyapi' | 'dotpoint';
   requiresApiKey: boolean;
 }
 
@@ -24,6 +24,7 @@ export const LOVABLE_AI_MODELS: ModelOption[] = [
 
 // Models requiring personal API keys - expanded list
 export const PERSONAL_KEY_MODELS: ModelOption[] = [
+  // ─── Direct Provider Keys (Priority 1) ───
   // OpenAI models
   { id: 'gpt-4o', name: 'GPT-4o', provider: 'openai', requiresApiKey: true },
   { id: 'gpt-4o-mini', name: 'GPT-4o Mini', provider: 'openai', requiresApiKey: true },
@@ -48,29 +49,7 @@ export const PERSONAL_KEY_MODELS: ModelOption[] = [
   { id: 'grok-3-fast', name: 'Grok 3 Fast', provider: 'xai', requiresApiKey: true },
   { id: 'grok-3-mini', name: 'Grok 3 Mini', provider: 'xai', requiresApiKey: true },
   { id: 'grok-3-mini-fast', name: 'Grok 3 Mini Fast', provider: 'xai', requiresApiKey: true },
-  
-  // OpenRouter models (free tier)
-  { id: 'qwen/qwen3-0.6b-04-28:free', name: 'Qwen3 0.6B (Free)', provider: 'openrouter', requiresApiKey: true },
-  { id: 'z-ai/glm-4.5-air:free', name: 'GLM 4.5 Air (Free)', provider: 'openrouter', requiresApiKey: true },
-  { id: 'tngtech/tng-r1t-chimera:free', name: 'R1T Chimera (Free)', provider: 'openrouter', requiresApiKey: true },
-  
-  // OpenRouter models (paid tier) - premium models via OpenRouter key
-  { id: 'anthropic/claude-sonnet-4', name: 'Claude Sonnet 4', provider: 'openrouter', requiresApiKey: true },
-  { id: 'anthropic/claude-3.5-haiku', name: 'Claude 3.5 Haiku', provider: 'openrouter', requiresApiKey: true },
-  { id: 'google/gemini-2.5-pro-preview', name: 'Gemini 2.5 Pro (OR)', provider: 'openrouter', requiresApiKey: true },
-  { id: 'openai/gpt-4o', name: 'GPT-4o (OR)', provider: 'openrouter', requiresApiKey: true },
-  { id: 'openai/o3-mini', name: 'o3 Mini (OR)', provider: 'openrouter', requiresApiKey: true },
-  { id: 'deepseek/deepseek-chat-v3-0324', name: 'DeepSeek V3', provider: 'openrouter', requiresApiKey: true },
-  { id: 'deepseek/deepseek-r1', name: 'DeepSeek R1', provider: 'openrouter', requiresApiKey: true },
-  { id: 'meta-llama/llama-4-maverick', name: 'Llama 4 Maverick', provider: 'openrouter', requiresApiKey: true },
-  
-  // Groq models (ultra-fast inference)
-  { id: 'llama-3.3-70b-versatile', name: 'Llama 3.3 70B Versatile', provider: 'groq', requiresApiKey: true },
-  { id: 'llama-3.1-8b-instant', name: 'Llama 3.1 8B Instant', provider: 'groq', requiresApiKey: true },
-  { id: 'llama-3.2-90b-vision-preview', name: 'Llama 3.2 90B Vision', provider: 'groq', requiresApiKey: true },
-  { id: 'mixtral-8x7b-32768', name: 'Mixtral 8x7B', provider: 'groq', requiresApiKey: true },
-  { id: 'gemma2-9b-it', name: 'Gemma 2 9B', provider: 'groq', requiresApiKey: true },
-  
+
   // DeepSeek models
   { id: 'deepseek-chat', name: 'DeepSeek-V3', provider: 'deepseek', requiresApiKey: true },
   { id: 'deepseek-reasoner', name: 'DeepSeek-R1 (Reasoning)', provider: 'deepseek', requiresApiKey: true },
@@ -80,8 +59,30 @@ export const PERSONAL_KEY_MODELS: ModelOption[] = [
   { id: 'mistral-small-latest', name: 'Mistral Small', provider: 'mistral', requiresApiKey: true },
   { id: 'codestral-latest', name: 'Codestral', provider: 'mistral', requiresApiKey: true },
   { id: 'mistral-medium-latest', name: 'Mistral Medium', provider: 'mistral', requiresApiKey: true },
-  
-  // ProxyAPI models (Russian gateway — universal OpenAI-compatible API)
+
+  // Groq models (ultra-fast inference)
+  { id: 'llama-3.3-70b-versatile', name: 'Llama 3.3 70B Versatile', provider: 'groq', requiresApiKey: true },
+  { id: 'llama-3.1-8b-instant', name: 'Llama 3.1 8B Instant', provider: 'groq', requiresApiKey: true },
+  { id: 'llama-3.2-90b-vision-preview', name: 'Llama 3.2 90B Vision', provider: 'groq', requiresApiKey: true },
+  { id: 'mixtral-8x7b-32768', name: 'Mixtral 8x7B', provider: 'groq', requiresApiKey: true },
+  { id: 'gemma2-9b-it', name: 'Gemma 2 9B', provider: 'groq', requiresApiKey: true },
+
+  // ─── OpenRouter (Priority 2) ───
+  // Free tier
+  { id: 'qwen/qwen3-0.6b-04-28:free', name: 'Qwen3 0.6B (Free)', provider: 'openrouter', requiresApiKey: true },
+  { id: 'z-ai/glm-4.5-air:free', name: 'GLM 4.5 Air (Free)', provider: 'openrouter', requiresApiKey: true },
+  { id: 'tngtech/tng-r1t-chimera:free', name: 'R1T Chimera (Free)', provider: 'openrouter', requiresApiKey: true },
+  // Paid tier
+  { id: 'anthropic/claude-sonnet-4', name: 'Claude Sonnet 4', provider: 'openrouter', requiresApiKey: true },
+  { id: 'anthropic/claude-3.5-haiku', name: 'Claude 3.5 Haiku', provider: 'openrouter', requiresApiKey: true },
+  { id: 'google/gemini-2.5-pro-preview', name: 'Gemini 2.5 Pro (OR)', provider: 'openrouter', requiresApiKey: true },
+  { id: 'openai/gpt-4o', name: 'GPT-4o (OR)', provider: 'openrouter', requiresApiKey: true },
+  { id: 'openai/o3-mini', name: 'o3 Mini (OR)', provider: 'openrouter', requiresApiKey: true },
+  { id: 'deepseek/deepseek-chat-v3-0324', name: 'DeepSeek V3', provider: 'openrouter', requiresApiKey: true },
+  { id: 'deepseek/deepseek-r1', name: 'DeepSeek R1', provider: 'openrouter', requiresApiKey: true },
+  { id: 'meta-llama/llama-4-maverick', name: 'Llama 4 Maverick', provider: 'openrouter', requiresApiKey: true },
+
+  // ─── ProxyAPI (Priority 3/4 based on proxyapi_priority) ───
   { id: 'proxyapi/gpt-4o', name: 'GPT-4o (ProxyAPI)', provider: 'proxyapi', requiresApiKey: true },
   { id: 'proxyapi/gpt-4o-mini', name: 'GPT-4o Mini (ProxyAPI)', provider: 'proxyapi', requiresApiKey: true },
   { id: 'proxyapi/o3-mini', name: 'o3 Mini (ProxyAPI)', provider: 'proxyapi', requiresApiKey: true },
@@ -99,6 +100,22 @@ export const PERSONAL_KEY_MODELS: ModelOption[] = [
   { id: 'proxyapi/gemini-2.5-pro', name: 'Gemini 2.5 Pro (ProxyAPI)', provider: 'proxyapi', requiresApiKey: true },
   { id: 'proxyapi/gemini-2.5-flash', name: 'Gemini 2.5 Flash (ProxyAPI)', provider: 'proxyapi', requiresApiKey: true },
   { id: 'proxyapi/gemini-2.0-flash', name: 'Gemini 2.0 Flash (ProxyAPI)', provider: 'proxyapi', requiresApiKey: true },
+
+  // ─── DotPoint (Priority 3/4 based on proxyapi_priority) ───
+  { id: 'dotpoint/deepseek-chat', name: 'DeepSeek-V3 (DotPoint)', provider: 'dotpoint', requiresApiKey: true },
+  { id: 'dotpoint/deepseek-reasoner', name: 'DeepSeek-R1 (DotPoint)', provider: 'dotpoint', requiresApiKey: true },
+  { id: 'dotpoint/deepseek-coder', name: 'DeepSeek Coder (DotPoint)', provider: 'dotpoint', requiresApiKey: true },
+  { id: 'dotpoint/gpt-4.1', name: 'GPT-4.1 (DotPoint)', provider: 'dotpoint', requiresApiKey: true },
+  { id: 'dotpoint/gpt-4.1-mini', name: 'GPT-4.1 Mini (DotPoint)', provider: 'dotpoint', requiresApiKey: true },
+  { id: 'dotpoint/gpt-4.1-nano', name: 'GPT-4.1 Nano (DotPoint)', provider: 'dotpoint', requiresApiKey: true },
+  { id: 'dotpoint/gpt-4o-mini', name: 'GPT-4o Mini (DotPoint)', provider: 'dotpoint', requiresApiKey: true },
+  { id: 'dotpoint/gemini/gemini-2.5-flash', name: 'Gemini 2.5 Flash (DotPoint)', provider: 'dotpoint', requiresApiKey: true },
+  { id: 'dotpoint/gemini/gemini-2.5-flash-lite', name: 'Gemini 2.5 Flash Lite (DotPoint)', provider: 'dotpoint', requiresApiKey: true },
+  { id: 'dotpoint/mistral/mistral-large-latest', name: 'Mistral Large (DotPoint)', provider: 'dotpoint', requiresApiKey: true },
+  { id: 'dotpoint/mistral/codestral-latest', name: 'Codestral (DotPoint)', provider: 'dotpoint', requiresApiKey: true },
+  { id: 'dotpoint/groq/llama-3.3-70b-versatile', name: 'Llama 3.3 70B (DotPoint)', provider: 'dotpoint', requiresApiKey: true },
+  { id: 'dotpoint/groq/llama-3.1-8b-instant', name: 'Llama 3.1 8B (DotPoint)', provider: 'dotpoint', requiresApiKey: true },
+  { id: 'dotpoint/groq/qwen/qwen3-32b', name: 'Qwen3 32B (DotPoint)', provider: 'dotpoint', requiresApiKey: true },
 ];
 
 // All valid model IDs for filtering deprecated models (centralized)
@@ -129,6 +146,31 @@ export function getModelDisplayName(modelId: string): string {
   return model?.name || modelId;
 }
 
+// ─── Priority ordering helpers ───
+
+/** Direct provider keys (BYOK) — Priority 1 */
+export const DIRECT_PROVIDERS = ['openai', 'anthropic', 'gemini', 'xai', 'deepseek', 'mistral', 'groq'] as const;
+
+/**
+ * Returns the provider display order based on priority logic:
+ * 0. Lovable AI (admin)
+ * 1. Direct keys (OpenAI, Anthropic, Gemini, xAI, DeepSeek, Mistral, Groq)
+ * 2. OpenRouter
+ * 3/4. ProxyAPI / DotPoint (order depends on proxyapi_priority flag)
+ */
+export function getProviderOrder(proxyapiPriority: boolean): string[] {
+  const gatewayOrder = proxyapiPriority
+    ? ['proxyapi', 'dotpoint']
+    : ['dotpoint', 'proxyapi'];
+  
+  return [
+    'lovable',
+    ...DIRECT_PROVIDERS,
+    'openrouter',
+    ...gatewayOrder,
+  ];
+}
+
 interface UserApiKeys {
   openai: boolean;
   gemini: boolean;
@@ -141,11 +183,13 @@ interface UserApiKeys {
   deepseek: boolean;
   mistral: boolean;
   proxyapi: boolean;
+  dotpoint: boolean;
 }
 
 export function useAvailableModels() {
   const { user } = useAuth();
   const [isAdmin, setIsAdmin] = useState(false);
+  const [proxyapiPriority, setProxyapiPriority] = useState(false);
   const [userApiKeys, setUserApiKeys] = useState<UserApiKeys>({
     openai: false,
     gemini: false,
@@ -158,6 +202,7 @@ export function useAvailableModels() {
     deepseek: false,
     mistral: false,
     proxyapi: false,
+    dotpoint: false,
   });
   const [loading, setLoading] = useState(true);
 
@@ -169,15 +214,16 @@ export function useAvailableModels() {
 
     const fetchData = async () => {
       try {
-        // Check if user is admin (AlexKuz) from profiles
+        // Check if user is admin (AlexKuz) from profiles + get proxyapi_priority
         const { data: profile } = await supabase
           .from('profiles')
-          .select('username')
+          .select('username, proxyapi_priority')
           .eq('user_id', user.id)
           .single();
 
         if (profile) {
           setIsAdmin(profile.username === 'AlexKuz');
+          setProxyapiPriority(profile.proxyapi_priority || false);
         }
 
         // Fetch API key status using Vault-backed function
@@ -197,6 +243,7 @@ export function useAvailableModels() {
             has_deepseek?: boolean;
             has_mistral?: boolean;
             has_proxyapi?: boolean;
+            has_dotpoint?: boolean;
           };
           setUserApiKeys({
             openai: status.has_openai || false,
@@ -210,6 +257,7 @@ export function useAvailableModels() {
             deepseek: status.has_deepseek || false,
             mistral: status.has_mistral || false,
             proxyapi: status.has_proxyapi || false,
+            dotpoint: status.has_dotpoint || false,
           });
         }
       } catch (error) {
@@ -224,16 +272,8 @@ export function useAvailableModels() {
 
   // Get available personal key models based on configured keys
   const availablePersonalModels = PERSONAL_KEY_MODELS.filter(model => {
-    if (model.provider === 'openai') return userApiKeys.openai;
-    if (model.provider === 'gemini') return userApiKeys.gemini;
-    if (model.provider === 'anthropic') return userApiKeys.anthropic;
-    if (model.provider === 'xai') return userApiKeys.xai;
-    if (model.provider === 'openrouter') return userApiKeys.openrouter;
-    if (model.provider === 'groq') return userApiKeys.groq;
-    if (model.provider === 'deepseek') return userApiKeys.deepseek;
-    if (model.provider === 'mistral') return userApiKeys.mistral;
-    if (model.provider === 'proxyapi') return userApiKeys.proxyapi;
-    return false;
+    const key = model.provider as keyof UserApiKeys;
+    return userApiKeys[key] || false;
   });
 
   // For admin: Lovable AI models + personal key models
@@ -242,6 +282,7 @@ export function useAvailableModels() {
   
   return {
     isAdmin,
+    proxyapiPriority,
     lovableModels,
     personalModels: availablePersonalModels,
     hasAnyModels: lovableModels.length > 0 || availablePersonalModels.length > 0,

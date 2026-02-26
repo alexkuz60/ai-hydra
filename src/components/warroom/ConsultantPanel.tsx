@@ -33,6 +33,7 @@ interface SourceMessage {
 interface ConsultantPanelProps {
   sessionId: string | null;
   availableModels: ModelOption[];
+  proxyapiPriority?: boolean;
   isCollapsed: boolean;
   onExpand: () => void;
   onCollapse: () => void;
@@ -60,7 +61,7 @@ const MODES: ModeConfig[] = [
 ];
 
 export function ConsultantPanel({
-  sessionId, availableModels, isCollapsed, onExpand, onCollapse,
+  sessionId, availableModels, proxyapiPriority = false, isCollapsed, onExpand, onCollapse,
   initialQuery, onClearInitialQuery, onCopyToMainChat, onResponseComplete,
 }: ConsultantPanelProps) {
   const { t } = useLanguage();
@@ -249,6 +250,7 @@ export function ConsultantPanel({
         selectedModel={selectedModel}
         onSelectModel={setSelectedModel}
         availableModels={availableModels}
+        proxyapiPriority={proxyapiPriority}
       />
       </div>
 

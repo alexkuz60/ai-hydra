@@ -2,7 +2,7 @@ import React from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { PROVIDER_LOGOS, PROVIDER_COLORS } from '@/components/ui/ProviderLogos';
-import { ModelOption } from '@/hooks/useAvailableModels';
+import { ModelOption, getProviderOrder } from '@/hooks/useAvailableModels';
 import { cn } from '@/lib/utils';
 
 const PROVIDER_LABELS: Record<string, string> = {
@@ -11,22 +11,22 @@ const PROVIDER_LABELS: Record<string, string> = {
   anthropic: 'Anthropic',
   gemini: 'Google Gemini',
   xai: 'xAI (Grok)',
-  openrouter: 'OpenRouter (Free)',
   groq: 'Groq (Fast)',
   deepseek: 'DeepSeek',
   mistral: 'Mistral AI',
+  openrouter: 'OpenRouter',
   proxyapi: 'ProxyAPI',
+  dotpoint: 'DotPoint',
 };
-
-const PROVIDER_ORDER = ['lovable', 'openai', 'anthropic', 'gemini', 'xai', 'groq', 'deepseek', 'mistral', 'proxyapi', 'openrouter'];
 
 interface DChatModelSelectorProps {
   selectedModel: string;
   onSelectModel: (modelId: string) => void;
   availableModels: ModelOption[];
+  proxyapiPriority?: boolean;
 }
 
-export function DChatModelSelector({ selectedModel, onSelectModel, availableModels }: DChatModelSelectorProps) {
+export function DChatModelSelector({ selectedModel, onSelectModel, availableModels, proxyapiPriority = false }: DChatModelSelectorProps) {
   const { t } = useLanguage();
 
   const grouped = new Map<string, ModelOption[]>();
@@ -36,6 +36,7 @@ export function DChatModelSelector({ selectedModel, onSelectModel, availableMode
     grouped.set(m.provider, list);
   });
 
+  const providerOrder = getProviderOrder(proxyapiPriority);
   const sel = availableModels.find(m => m.id === selectedModel);
 
   return (
@@ -55,7 +56,7 @@ export function DChatModelSelector({ selectedModel, onSelectModel, availableMode
           })()}
         </SelectTrigger>
         <SelectContent>
-          {PROVIDER_ORDER.filter(p => grouped.has(p)).map(provider => {
+          {providerOrder.filter(p => grouped.has(p)).map(provider => {
             const models = grouped.get(provider)!;
             const Logo = PROVIDER_LOGOS[provider];
             const color = PROVIDER_COLORS[provider] || 'text-muted-foreground';
