@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useUserRoles } from '@/hooks/useUserRoles';
 import { Layout } from '@/components/layout/Layout';
+import { SidebarTrigger } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -239,18 +240,21 @@ export default function GuideToursEditor() {
   }
 
   return (
-    <Layout>
-      <div className="h-[calc(100vh-4rem)] flex flex-col">
+    <Layout hideHeader>
+      <div className="h-screen flex flex-col">
         {/* Header */}
-        <div className="px-6 py-4 border-b flex items-center justify-between shrink-0">
-          <div>
-            <h1 className="text-2xl font-bold flex items-center gap-2">
-              <Compass className="h-6 w-6 text-hydra-guide" />
-              {lang === 'ru' ? 'Редактор экскурсий' : 'Tour Editor'}
-            </h1>
-            <p className="text-sm text-muted-foreground">
-              {lang === 'ru' ? 'Управление турами, шагами и элементами панели' : 'Manage tours, steps and panel elements'}
-            </p>
+        <div className="px-6 py-3 border-b flex items-center justify-between shrink-0">
+          <div className="flex items-center gap-2">
+            <SidebarTrigger className="text-muted-foreground hover:text-primary" />
+            <div>
+              <h1 className="text-2xl font-bold flex items-center gap-2">
+                <Compass className="h-6 w-6 text-hydra-guide" />
+                {lang === 'ru' ? 'Редактор экскурсий' : 'Tour Editor'}
+              </h1>
+              <p className="text-sm text-muted-foreground">
+                {lang === 'ru' ? 'Управление турами, шагами и элементами панели' : 'Manage tours, steps and panel elements'}
+              </p>
+            </div>
           </div>
           <Button onClick={() => openTourDialog()} className="hydra-glow-sm">
             <Plus className="h-4 w-4 mr-2" />
