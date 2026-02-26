@@ -76,8 +76,8 @@ export async function computeSyncPlan(
     }
   }
 
-  // Only process approved strategist sections
-  const approvedAspects = sections.filter(s => s.depth === 0 && s.status === 'approved');
+  // Process non-rejected sections (approved + pending are treated as "include")
+  const includedAspects = sections.filter(s => s.depth === 0 && s.status !== 'rejected');
   const rejectedAspects = sections.filter(s => s.depth === 0 && s.status === 'rejected');
 
   const stats = { create: 0, rename: 0, archive: 0, keep: 0 };
@@ -85,7 +85,7 @@ export async function computeSyncPlan(
   const usedSessionIds = new Set<string>();
 
   // Match approved aspects to existing sessions
-  for (const aspect of approvedAspects) {
+  for (const aspect of includedAspects) {
     const match = findBestMatch(aspect.title, topLevel, usedSessionIds);
     
     if (match) {
@@ -108,7 +108,7 @@ export async function computeSyncPlan(
       // New aspect
       stats.create++;
       const childItems = aspect.children
-        .filter(c => c.status === 'approved')
+        .filter(c => c.status !== 'rejected')
         .map(c => {
           stats.create++;
           return { action: 'create' as SyncAction, section: c, children: [] };
@@ -151,7 +151,7 @@ function computeChildSync(
   const childItems: SyncItem[] = [];
   const usedChildIds = new Set<string>();
 
-  const approvedTasks = aspect.children.filter(c => c.status === 'approved');
+  const approvedTasks = aspect.children.filter(c => c.status !== 'rejected');
   const rejectedTasks = aspect.children.filter(c => c.status === 'rejected');
 
   for (const task of approvedTasks) {
