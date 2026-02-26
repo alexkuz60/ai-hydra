@@ -332,7 +332,7 @@ export default function ExpertPanel() {
         <div className="px-4 py-2 border-b border-border flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2 min-w-0">
             <SidebarTrigger className="text-muted-foreground hover:text-primary shrink-0" />
-            <h1 className="text-2xl font-bold shrink-0">{t('nav.expertPanel')}.</h1>
+            <h1 className="text-2xl font-bold shrink-0">{t('nav.expertPanel')}</h1>
             <span className="text-sm text-muted-foreground shrink-0">{t('tasks.discussingTask')}:</span>
             <TaskIndicator taskId={currentTask?.id || null} taskTitle={currentTask?.title || null} loading={loading} />
           </div>
