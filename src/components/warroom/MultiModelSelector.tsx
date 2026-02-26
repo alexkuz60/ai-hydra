@@ -1,12 +1,14 @@
 import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAvailableModels, ModelOption, PERSONAL_KEY_MODELS, LOVABLE_AI_MODELS, ALL_VALID_MODEL_IDS, getProviderOrder } from '@/hooks/useAvailableModels';
+import { useEnsureRecommendedModels } from '@/hooks/useEnsureRecommendedModels';
+import { ROLE_RECOMMENDED_MODELS } from '@/config/roles';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { AlertCircle, ChevronDown, Users, RefreshCw } from 'lucide-react';
+import { AlertCircle, ChevronDown, Users, RefreshCw, Star } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getUnavailableModelIds, clearModelCache } from '@/lib/modelAvailabilityCache';
 import { PROVIDER_LOGOS, PROVIDER_COLORS, LovableLogo, GroqLogo, OpenRouterLogo, DotPointLogo } from '@/components/ui/ProviderLogos';
@@ -50,6 +52,19 @@ function getOpenRouterBadge(modelId: string) {
 export function MultiModelSelector({ value, onChange, className }: MultiModelSelectorProps) {
   const { t } = useLanguage();
   const { isAdmin, proxyapiPriority, lovableModels, personalModels, hasAnyModels, loading } = useAvailableModels();
+  
+  // Auto-ensure recommended OpenRouter models are in user list
+  const hasOpenRouter = personalModels.some(m => m.provider === 'openrouter');
+  useEnsureRecommendedModels(hasOpenRouter);
+
+  // Build set of recommended model IDs for badge display
+  const recommendedModelIds = useMemo(() => {
+    const ids = new Set<string>();
+    for (const models of Object.values(ROLE_RECOMMENDED_MODELS)) {
+      if (models) models.forEach(m => ids.add(m.modelId));
+    }
+    return ids;
+  }, []);
   
   const [cacheVersion, setCacheVersion] = useState(0);
   const unavailableModelIds = useMemo(() => getUnavailableModelIds(), [cacheVersion]);
@@ -187,17 +202,29 @@ export function MultiModelSelector({ value, onChange, className }: MultiModelSel
                       const modelBadge = provider === 'openrouter' 
                         ? getOpenRouterBadge(model.id) 
                         : badge;
+                      const isRecommended = recommendedModelIds.has(model.id);
 
                       return (
                         <label
                           key={model.id}
-                          className="flex items-center gap-3 px-2 py-1.5 rounded-md hover:bg-accent cursor-pointer"
+                          className={cn(
+                            "flex items-center gap-3 px-2 py-1.5 rounded-md hover:bg-accent cursor-pointer",
+                            isRecommended && "ring-1 ring-amber-500/30 bg-amber-500/5"
+                          )}
                         >
                           <Checkbox
                             checked={value.includes(model.id)}
                             onCheckedChange={() => toggleModel(model.id)}
                           />
-                          <span className="text-sm truncate flex-1">{model.name}</span>
+                          <span className="text-sm truncate flex-1">
+                            {isRecommended && <Star className="inline h-3 w-3 mr-1 text-amber-400" />}
+                            {model.name}
+                          </span>
+                          {isRecommended && (
+                            <Badge variant="outline" className="text-[10px] bg-amber-500/10 text-amber-400 border-amber-500/30">
+                              ★ Rec
+                            </Badge>
+                          )}
                           {modelBadge && (
                             <Badge variant="outline" className={cn('text-[10px]', modelBadge.className)}>
                               {modelBadge.label}

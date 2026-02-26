@@ -22,13 +22,16 @@ const BUILTIN_DEFAULTS: Record<string, string> = {
   flowregulator: 'anthropic/claude-3.5-haiku',         // fast pipeline decisions
   toolsmith: 'anthropic/claude-3.5-haiku',             // fast code generation
   guide: 'deepseek/deepseek-chat-v3-0324',             // ultra-cheap, good quality
-  webhunter: 'anthropic/claude-3.5-haiku',             // fast web content parsing
+  webhunter: 'perplexity/sonar-pro-search',             // web search with citations
   // Legal staff
-  patent_attorney: 'google/gemini-2.5-pro-preview',    // deep analysis + grounding/search
+  patent_attorney: 'perplexity/sonar-deep-research',    // deep prior art search
   // Technical staff judges (OTK) — need strong reasoning
   technocritic: 'anthropic/claude-sonnet-4',           // rigorous analysis
   technoarbiter: 'google/gemini-2.5-pro-preview',      // balanced judgment
   technomoderator: 'anthropic/claude-3.5-haiku',       // fast consensus building
+  // SPRZ department
+  visionary: 'perplexity/sonar-reasoning-pro',          // deep trend analysis with chain-of-thought
+  strategist: 'google/gemini-2.5-pro-preview',          // strategic decomposition
 };
 
 interface TechRoleDefaults {
