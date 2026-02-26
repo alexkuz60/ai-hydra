@@ -129,7 +129,7 @@ export async function computeSyncPlan(
         stats.archive++;
         archiveItems.push({
           action: 'archive',
-          section: { id: s.id, title: s.title, body: '', originalBody: '', status: 'rejected', userComment: '', depth: 0, children: [], source: 'strategist' },
+          section: { id: s.id, title: s.title, originalTitle: s.title, body: '', originalBody: '', status: 'rejected', userComment: '', depth: 0, children: [], source: 'strategist' },
           existingSessionId: s.id,
           existingTitle: s.title,
           children: [],

@@ -12,6 +12,8 @@ export interface ApprovalSection {
   id: string;
   /** Section title (e.g. "Фаза 1: Инфраструктура данных") */
   title: string;
+  /** Original AI-generated title (for rename detection) */
+  originalTitle: string;
   /** Editable body text */
   body: string;
   /** Original AI-generated body (for diff/self-learning) */
@@ -85,9 +87,11 @@ export function parseStrategyMarkdown(
     if (currentTask && currentAspect) {
       const taskText = currentTask.lines.join('\n').trim();
       if (taskText) {
+        const taskTitle = extractTaskTitle(taskText);
         currentAspect.children.push({
           id: nextId('task'),
-          title: extractTaskTitle(taskText),
+          title: taskTitle,
+          originalTitle: taskTitle,
           body: taskText,
           originalBody: taskText,
           status: 'pending',
@@ -270,6 +274,7 @@ function createAspect(title: string, source: ApprovalSection['source']): Approva
   return {
     id: nextId('aspect'),
     title,
+    originalTitle: title,
     body: '',
     originalBody: '',
     status: 'pending',
@@ -307,24 +312,25 @@ export function computeApprovalDiff(sections: ApprovalSection[]): {
   rejected: number;
   rework: number;
   edited: number;
+  renamed: number;
   total: number;
 } {
-  let approved = 0, rejected = 0, rework = 0, edited = 0, total = 0;
+  let approved = 0, rejected = 0, rework = 0, edited = 0, renamed = 0, total = 0;
 
   function walk(items: ApprovalSection[]) {
     for (const s of items) {
       total++;
-      if (s.status === 'approved') {
-        approved++;
-        if (s.body !== s.originalBody) edited++;
-      } else if (s.status === 'rejected') rejected++;
+      if (s.status === 'approved') approved++;
+      else if (s.status === 'rejected') rejected++;
       else if (s.status === 'rework') rework++;
+      if (s.body !== s.originalBody) edited++;
+      if (s.title !== s.originalTitle) renamed++;
       walk(s.children);
     }
   }
 
   walk(sections);
-  return { approved, rejected, rework, edited, total };
+  return { approved, rejected, rework, edited, renamed, total };
 }
 
 /**
@@ -334,6 +340,7 @@ export function sectionsToJson(sections: ApprovalSection[]): unknown {
   return sections.map(s => ({
     id: s.id,
     title: s.title,
+    originalTitle: s.originalTitle,
     body: s.body,
     originalBody: s.originalBody,
     status: s.status,
@@ -352,6 +359,7 @@ export function sectionsFromJson(json: unknown): ApprovalSection[] {
   return json.map((item: any) => ({
     id: item.id || nextId('restored'),
     title: item.title || '',
+    originalTitle: item.originalTitle || item.title || '',
     body: item.body || '',
     originalBody: item.originalBody || '',
     status: item.status || 'pending',

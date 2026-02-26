@@ -131,8 +131,9 @@ export function ApprovalSectionEditor({ sections, onSectionsChange, readOnly, sh
   const addSection = () => {
     if (!addLabels) return;
     const num = sections.filter(s => s.depth === 0).length + 1;
+    const title = addLabels.newSectionTitle(num, language);
     const newSection: ApprovalSection = {
-      id: `new_section_${Date.now()}`, title: addLabels.newSectionTitle(num, language),
+      id: `new_section_${Date.now()}`, title, originalTitle: title,
       body: '', originalBody: '', status: 'pending', userComment: '', depth: 0, children: [], source: addLabels.source,
     };
     const next = [...sections];
@@ -144,8 +145,9 @@ export function ApprovalSectionEditor({ sections, onSectionsChange, readOnly, sh
 
   const addItem = () => {
     if (!addLabels) return;
+    const itemTitle = addLabels.newItemTitle(language);
     const newItem: ApprovalSection = {
-      id: `new_item_${Date.now()}`, title: addLabels.newItemTitle(language),
+      id: `new_item_${Date.now()}`, title: itemTitle, originalTitle: itemTitle,
       body: '', originalBody: '', status: 'pending', userComment: '', depth: 1, children: [], source: addLabels.source,
     };
     const targetIdx = selectedParentIdx >= 0 ? selectedParentIdx : sections.length - 1;
