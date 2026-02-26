@@ -14,6 +14,10 @@ import {
 import { ScrollArea } from '@/components/ui/scroll-area';
 import type { ApprovalSection, ApprovalStatus } from '@/lib/strategySectionParser';
 import { computeApprovalDiff } from '@/lib/strategySectionParser';
+import {
+  containsMarkdownTable, splitBodyAroundTable, parseMarkdownTable,
+  serializeMarkdownTable, MarkdownTableEditor,
+} from './MarkdownTableEditor';
 
 interface AddLabels {
   section: { ru: string; en: string };
@@ -349,26 +353,58 @@ function SectionNode({ section, selectedId, onSelect, toolbarSignal, onChange }:
             </div>
 
             {/* Body */}
-            {(section.body || isEditing) && (
-              isEditing ? (
-                <div className="mt-2 space-y-1.5">
-                  <Textarea value={bodyDraft} onChange={(e) => setBodyDraft(e.target.value)} className="text-sm min-h-[60px] resize-y"
-                    placeholder={language === 'ru' ? 'Описание задачи...' : 'Task description...'} autoFocus />
-                  <div className="flex items-center gap-1">
-                    <Button variant="ghost" size="sm" className="h-6 text-[10px] gap-1 text-emerald-500" onClick={() => { onChange({ ...section, body: bodyDraft }); setIsEditing(false); }}>
-                      <Save className="h-3 w-3" />{language === 'ru' ? 'Сохранить' : 'Save'}
-                    </Button>
-                    <Button variant="ghost" size="sm" className="h-6 text-[10px] gap-1 text-muted-foreground" onClick={() => { setBodyDraft(section.body); setIsEditing(false); }}>
-                      <XCircle className="h-3 w-3" />{language === 'ru' ? 'Отмена' : 'Cancel'}
-                    </Button>
+            {(section.body || isEditing) && (() => {
+              const hasTable = containsMarkdownTable(section.body);
+              if (isEditing && hasTable) {
+                const { before, tableMarkdown, after } = splitBodyAroundTable(bodyDraft);
+                const parsed = parseMarkdownTable(tableMarkdown);
+                if (parsed) {
+                  return (
+                    <div className="mt-2">
+                      {before.trim() && (
+                        <p className="text-sm text-muted-foreground mb-2 whitespace-pre-wrap">{before.trim()}</p>
+                      )}
+                      <MarkdownTableEditor
+                        tableData={parsed}
+                        onSave={(data) => {
+                          const newTable = serializeMarkdownTable(data);
+                          const parts = [before.trim(), newTable, after.trim()].filter(Boolean);
+                          onChange({ ...section, body: parts.join('\n\n') });
+                          setIsEditing(false);
+                        }}
+                        onCancel={() => { setBodyDraft(section.body); setIsEditing(false); }}
+                      />
+                      {after.trim() && (
+                        <p className="text-sm text-muted-foreground mt-2 whitespace-pre-wrap">{after.trim()}</p>
+                      )}
+                    </div>
+                  );
+                }
+              }
+
+              if (isEditing) {
+                return (
+                  <div className="mt-2 space-y-1.5">
+                    <Textarea value={bodyDraft} onChange={(e) => setBodyDraft(e.target.value)} className="text-sm min-h-[60px] resize-y"
+                      placeholder={language === 'ru' ? 'Описание задачи...' : 'Task description...'} autoFocus />
+                    <div className="flex items-center gap-1">
+                      <Button variant="ghost" size="sm" className="h-6 text-[10px] gap-1 text-emerald-500" onClick={() => { onChange({ ...section, body: bodyDraft }); setIsEditing(false); }}>
+                        <Save className="h-3 w-3" />{language === 'ru' ? 'Сохранить' : 'Save'}
+                      </Button>
+                      <Button variant="ghost" size="sm" className="h-6 text-[10px] gap-1 text-muted-foreground" onClick={() => { setBodyDraft(section.body); setIsEditing(false); }}>
+                        <XCircle className="h-3 w-3" />{language === 'ru' ? 'Отмена' : 'Cancel'}
+                      </Button>
+                    </div>
                   </div>
-                </div>
-              ) : (
+                );
+              }
+
+              return (
                 <p className={cn('text-sm text-muted-foreground mt-1 whitespace-pre-wrap', section.status === 'rejected' && 'line-through')}>
                   {section.body!.length > 200 ? section.body!.substring(0, 200) + '...' : section.body}
                 </p>
-              )
-            )}
+              );
+            })()}
 
             {/* Comment */}
             {showComment && (
