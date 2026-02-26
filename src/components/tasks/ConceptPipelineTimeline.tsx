@@ -58,17 +58,17 @@ export function ConceptPipelineTimeline({ activePhase, phaseStatuses, hasConcept
             <div className="flex flex-col items-center gap-0.5 shrink-0">
               <div
                 className={cn(
-                  "flex items-center justify-center w-8 h-8 rounded-full border-2 transition-all duration-300",
+                  "flex items-center justify-center w-9 h-9 rounded-full border-2 transition-all duration-300",
                   hasConceptFilled
                     ? "border-primary bg-primary/15 text-primary"
                     : "border-muted-foreground/30 bg-muted/30 text-muted-foreground/50"
                 )}
               >
-                <Lightbulb className="h-3.5 w-3.5" />
+                <Lightbulb className="h-4 w-4" />
               </div>
               <span
                 className={cn(
-                  "text-[9px] font-medium leading-none",
+                  "text-[11px] font-medium leading-none",
                   hasConceptFilled ? "text-primary" : "text-muted-foreground/50"
                 )}
               >
@@ -106,7 +106,7 @@ export function ConceptPipelineTimeline({ activePhase, phaseStatuses, hasConcept
                 onClick={() => !isLocked && onPhaseClick?.(phase.key)}
                 disabled={isLocked}
                 className={cn(
-                  "relative flex items-center justify-center w-8 h-8 rounded-full border-2 transition-all duration-300",
+                  "relative flex items-center justify-center w-9 h-9 rounded-full border-2 transition-all duration-300",
                   isLocked ? "cursor-not-allowed opacity-40" : "cursor-pointer hover:scale-110 hover:shadow-sm",
                   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1",
                   activePhase === phase.key && "ring-2 ring-offset-1 ring-offset-background",
@@ -134,13 +134,13 @@ export function ConceptPipelineTimeline({ activePhase, phaseStatuses, hasConcept
                     transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
                   />
                 )}
-                {isFailed ? <RotateCcw className="h-3.5 w-3.5" /> : <phase.icon className="h-3.5 w-3.5" />}
+                {isFailed ? <RotateCcw className="h-4 w-4" /> : <phase.icon className="h-4 w-4" />}
               </button>
               {isFailed && onRestart && (
                 <button
                   type="button"
                   onClick={(e) => { e.stopPropagation(); onRestart(); }}
-                  className="text-[8px] text-destructive hover:text-destructive/80 font-medium leading-none mt-0.5 transition-colors"
+                  className="text-[10px] text-destructive hover:text-destructive/80 font-medium leading-none mt-0.5 transition-colors"
                 >
                   {isRu ? 'Повтор' : 'Retry'}
                 </button>
@@ -148,7 +148,7 @@ export function ConceptPipelineTimeline({ activePhase, phaseStatuses, hasConcept
               {!isFailed && (
                 <span
                   className={cn(
-                    "text-[9px] font-medium leading-none",
+                    "text-[11px] font-medium leading-none",
                     isCompleted || isActive ? '' : 'text-muted-foreground/50'
                   )}
                   style={(isCompleted || isActive) ? { color: `hsl(var(--${phase.colorVar}))` } : undefined}
