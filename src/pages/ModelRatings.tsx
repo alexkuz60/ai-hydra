@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Layout } from '@/components/layout/Layout';
+import { SidebarTrigger } from '@/components/ui/sidebar';
 import { Loader2, Briefcase, Crown, BarChart3, ScrollText, UserCheck } from 'lucide-react';
 import { ScreeningPanel } from '@/components/ratings/ScreeningPanel';
 import { CloudSyncIndicator } from '@/components/ui/CloudSyncIndicator';
@@ -105,16 +106,19 @@ export default function ModelRatings() {
   }
 
   return (
-    <Layout>
-      <div className="h-[calc(100vh-4rem)] flex flex-col">
-        <div className="px-4 py-4 border-b border-border flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold">
-              {t('page.podium.title')}
-            </h1>
-            <p className="text-sm text-muted-foreground">
-              {t('page.podium.subtitle')}
-            </p>
+    <Layout hideHeader>
+      <div className="h-screen flex flex-col">
+        <div className="px-4 py-3 border-b border-border flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <SidebarTrigger className="text-muted-foreground hover:text-primary" />
+            <div>
+              <h1 className="text-2xl font-bold">
+                {t('page.podium.title')}
+              </h1>
+              <p className="text-sm text-muted-foreground">
+                {t('page.podium.subtitle')}
+              </p>
+            </div>
           </div>
           <CloudSyncIndicator loaded={cloudSynced} />
         </div>

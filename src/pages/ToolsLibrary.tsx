@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Layout } from '@/components/layout/Layout';
+import { SidebarTrigger } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody } from '@/components/ui/table';
@@ -383,13 +384,16 @@ export default function ToolsLibrary() {
     : false;
 
   return (
-    <Layout>
-      <div className="h-[calc(100vh-4rem)] flex flex-col">
+    <Layout hideHeader>
+      <div className="h-screen flex flex-col">
         {/* Header */}
-        <div className="px-6 py-4 border-b flex items-center justify-between shrink-0">
-          <div>
-            <h1 className="text-2xl font-bold">{t('tools.title')}</h1>
-            <p className="text-sm text-muted-foreground">{t('tools.description')}</p>
+        <div className="px-6 py-3 border-b flex items-center justify-between shrink-0">
+          <div className="flex items-center gap-2">
+            <SidebarTrigger className="text-muted-foreground hover:text-primary" />
+            <div>
+              <h1 className="text-2xl font-bold">{t('tools.title')}</h1>
+              <p className="text-sm text-muted-foreground">{t('tools.description')}</p>
+            </div>
           </div>
           <div className="flex items-center gap-2">
             <Button variant="outline" onClick={handleStartCreate} data-guide="tools-create-btn">

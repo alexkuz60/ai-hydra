@@ -1,6 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { BrainCircuit, Database, Layers, BookOpen, HardDrive, GitBranch, TrendingUp, ScrollText, RefreshCw } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
+import { SidebarTrigger } from '@/components/ui/sidebar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -40,11 +41,12 @@ export default function HydraMemory() {
   }, []);
 
   return (
-    <Layout>
-      <div className="flex flex-col gap-6 p-6 lg:p-8 w-full h-full min-h-0">
+    <Layout hideHeader>
+      <div className="flex flex-col gap-6 p-6 lg:p-8 w-full h-screen min-h-0">
         {/* Header */}
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-center gap-3">
+            <SidebarTrigger className="text-muted-foreground hover:text-primary" />
             <div className="rounded-xl p-2.5 bg-hydra-memory/12 border border-hydra-memory/30">
               <BrainCircuit className="h-6 w-6 text-hydra-memory" />
             </div>
