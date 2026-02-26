@@ -115,22 +115,27 @@ export default function Tasks() {
    const { plans, createPlan, updatePlan, deletePlan, refetch: refetchPlans } = useStrategicPlans(user?.id);
 
    // Convert StrategicPlan to virtual Task for the details panel
-   const planToTask = (plan: StrategicPlan): Task => ({
-     id: `__plan__${plan.id}`,
-     title: plan.title,
-     title_en: plan.title_en,
-     description: plan.goal,
-     description_en: plan.goal_en,
-     is_active: true,
-     is_system: false,
-     is_shared: false,
-     plan_id: null,
-     parent_id: null,
-     sort_order: 0,
-     created_at: plan.created_at,
-     updated_at: plan.updated_at,
-     session_config: { __isPlan: true, __planId: plan.id, status: plan.status } as any,
-   });
+    const planToTask = (plan: StrategicPlan): Task => ({
+      id: `__plan__${plan.id}`,
+      title: plan.title,
+      title_en: plan.title_en,
+      description: plan.goal,
+      description_en: plan.goal_en,
+      is_active: true,
+      is_system: false,
+      is_shared: false,
+      plan_id: null,
+      parent_id: null,
+      sort_order: 0,
+      created_at: plan.created_at,
+      updated_at: plan.updated_at,
+      session_config: {
+        __isPlan: true,
+        __planId: plan.id,
+        status: plan.status,
+        includePatent: !!(plan.metadata as any)?.includePatent,
+      } as any,
+    });
    const [showNewPlan, setShowNewPlan] = useState(false);
    const [newPlanTitle, setNewPlanTitle] = useState('');
    const [creatingPlan, setCreatingPlan] = useState(false);
@@ -583,19 +588,25 @@ export default function Tasks() {
      if (taskId.startsWith('__plan__')) {
        const planId = taskId.replace('__plan__', '');
        setSaving(true);
-       try {
-         const updates: Record<string, unknown> = {};
-         if (description !== undefined) updates.goal = description;
-         if ((config as any)?.status) updates.status = (config as any).status;
-         await updatePlan(planId, updates as any);
-         if (selectedTask?.id === taskId) {
-           setSelectedTask({ 
-             ...selectedTask, 
-             description: description ?? selectedTask.description,
-             session_config: config,
-             updated_at: new Date().toISOString(),
-           });
-         }
+        try {
+          const updates: Record<string, unknown> = {};
+          if (description !== undefined) updates.goal = description;
+          if ((config as any)?.status) updates.status = (config as any).status;
+          // Persist includePatent in plan metadata
+          const existingPlan = plans.find(p => p.id === planId);
+          const existingMeta = (existingPlan?.metadata as Record<string, unknown>) || {};
+          if ((config as any)?.includePatent !== undefined) {
+            updates.metadata = { ...existingMeta, includePatent: !!(config as any).includePatent };
+          }
+          await updatePlan(planId, updates as any);
+          if (selectedTask?.id === taskId) {
+            setSelectedTask({ 
+              ...selectedTask, 
+              description: description ?? selectedTask.description,
+              session_config: config,
+              updated_at: new Date().toISOString(),
+            });
+          }
        } finally {
          setSaving(false);
        }
