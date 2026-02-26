@@ -251,7 +251,7 @@ export default function Tasks() {
       });
     };
  
-  const fetchTasks = async () => {
+  const fetchTasks = async (retryCount = 0) => {
     if (!user) return;
 
     try {
@@ -285,7 +285,16 @@ export default function Tasks() {
       
       setTasks(allTasks);
     } catch (error: any) {
-      toast.error(error.message);
+      const isNetworkError = error?.message?.includes('NetworkError') || error?.message?.includes('Failed to fetch') || error?.name === 'TypeError';
+      if (isNetworkError && retryCount < 2) {
+        console.warn(`[Tasks] Network error, retrying (${retryCount + 1}/2)...`);
+        await new Promise(r => setTimeout(r, 1500 * (retryCount + 1)));
+        return fetchTasks(retryCount + 1);
+      }
+      toast.error(isNetworkError
+        ? (language === 'ru' ? 'Ошибка сети. Проверьте подключение.' : 'Network error. Check your connection.')
+        : error.message
+      );
     } finally {
       setLoading(false);
     }
