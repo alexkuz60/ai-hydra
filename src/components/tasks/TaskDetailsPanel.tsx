@@ -487,7 +487,11 @@ export function TaskDetailsPanel({
                   onOpenChange={setPreviewOpen}
                   planId={conceptPlanId}
                   includePatent={includePatent}
-                  onApprovalComplete={refetchResponses}
+                  onApprovalComplete={() => {
+                    refetchResponses();
+                    // Reset dirty flag — approval saved config implicitly
+                    handleSaveConfig();
+                  }}
                 />
               )}
 
