@@ -723,13 +723,16 @@ export default function Tasks() {
     <Layout hideHeader>
        <div className="h-screen flex flex-col">
          {/* Header */}
-          <div className="px-6 py-4 border-b flex items-center justify-between shrink-0">
-            <div>
-              <div className="flex items-center gap-3">
-                <ListTodo className="h-6 w-6 text-primary" />
-                <h1 className="text-2xl font-bold">{t('tasks.title')}</h1>
-             </div>
-              <p className="text-sm text-muted-foreground mt-1">{t('tasks.pageDescription')}</p>
+          <div className="px-6 py-3 border-b flex items-center justify-between shrink-0">
+            <div className="flex items-center gap-2">
+              <SidebarTrigger className="text-muted-foreground hover:text-primary" />
+              <div>
+                <div className="flex items-center gap-3">
+                  <ListTodo className="h-6 w-6 text-primary" />
+                  <h1 className="text-2xl font-bold">{t('tasks.title')}</h1>
+               </div>
+                <p className="text-sm text-muted-foreground mt-1">{t('tasks.pageDescription')}</p>
+              </div>
             </div>
             <div className="flex items-center gap-2">
               <div className="relative" data-guide="tasks-search">
@@ -772,13 +775,12 @@ export default function Tasks() {
               data-guide="tasks-list"
             >
              <div className="h-full flex flex-col hydra-nav-surface">
-               <NavigatorHeader
-                 title={t('tasks.title')}
-                 isMinimized={nav.isMinimized}
-                 onToggle={nav.toggle}
-               >
-                 <SidebarTrigger className="text-muted-foreground hover:text-primary h-7 w-7 shrink-0" />
-               </NavigatorHeader>
+                <NavigatorHeader
+                  title={t('tasks.title')}
+                  isMinimized={nav.isMinimized}
+                  onToggle={nav.toggle}
+                />
+
                {nav.isMinimized ? (
                  <TooltipProvider delayDuration={200}>
                    <div className="flex-1 overflow-auto p-1 space-y-1">
