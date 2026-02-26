@@ -3,15 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCloudSettings } from '@/hooks/useCloudSettings';
 import { PERSONAL_KEY_MODELS } from '@/hooks/useAvailableModels';
-import type { LogEntry, AnalyticsEntry } from '@/components/profile/proxyapi/types';
-
-export interface OpenRouterTestResult {
-  model: string;
-  name: string;
-  status: 'idle' | 'testing' | 'ok' | 'quota' | 'no_credits' | 'not_found' | 'error';
-  latency?: number;
-  error?: string;
-}
+import type { LogEntry, AnalyticsEntry, TestResult, ProxyApiCatalogModel } from '@/components/profile/proxyapi/types';
 
 export interface OpenRouterKeyInfo {
   label: string;
@@ -22,22 +14,16 @@ export interface OpenRouterKeyInfo {
   limit_remaining: number | null;
 }
 
-const OPENROUTER_FREE_MODELS = PERSONAL_KEY_MODELS.filter(
-  m => m.provider === 'openrouter' && m.id.includes(':free')
+export interface OpenRouterCatalogModel {
+  id: string;
+  name: string;
+  pricing?: { prompt: string; completion: string };
+  context_length?: number;
+}
+
+const OPENROUTER_REGISTRY_MODELS = PERSONAL_KEY_MODELS.filter(
+  m => m.provider === 'openrouter'
 );
-
-const OPENROUTER_PAID_MODELS = [
-  { id: 'google/gemini-2.5-flash', name: 'Gemini 2.5 Flash' },
-  { id: 'google/gemini-2.5-pro', name: 'Gemini 2.5 Pro' },
-  { id: 'anthropic/claude-3.5-haiku', name: 'Claude 3.5 Haiku' },
-  { id: 'openai/gpt-4o-mini', name: 'GPT-4o Mini' },
-  { id: 'meta-llama/llama-3.3-70b-instruct', name: 'Llama 3.3 70B' },
-];
-
-export const ALL_OPENROUTER_MODELS = [
-  ...OPENROUTER_FREE_MODELS.map(m => ({ id: m.id, name: m.name, free: true })),
-  ...OPENROUTER_PAID_MODELS.map(m => ({ ...m, free: false })),
-];
 
 export function useOpenRouterData(hasKey: boolean) {
   const { user } = useAuth();
@@ -46,21 +32,57 @@ export function useOpenRouterData(hasKey: boolean) {
   const [pingResult, setPingResult] = useState<{ status: string; latency_ms: number; error?: string } | null>(null);
   const [pinging, setPinging] = useState(false);
 
-  // Model test results (persisted in cloud)
-  const { value: testResults, update: updateTestResults } = useCloudSettings<OpenRouterTestResult[]>(
-    'openrouter-test-results',
-    ALL_OPENROUTER_MODELS.map(m => ({ model: m.id, name: m.name, status: 'idle' as const })),
-    'openrouter_test_results',
-  );
-  const [testing, setTesting] = useState(false);
-
   // Key info
   const [keyInfo, setKeyInfo] = useState<OpenRouterKeyInfo | null>(null);
   const [keyLoading, setKeyLoading] = useState(false);
 
+  // Test results (persisted in cloud) — per-model like ProxyAPI
+  const { value: testResults, update: updateTestResults } = useCloudSettings<Record<string, TestResult>>(
+    'openrouter-test-results-v2', {}, 'openrouter_test_results_v2',
+  );
+  const setTestResults = useCallback((updater: Record<string, TestResult> | ((prev: Record<string, TestResult>) => Record<string, TestResult>)) => {
+    updateTestResults(updater as any);
+  }, [updateTestResults]);
+  const [testingModel, setTestingModel] = useState<string | null>(null);
+  const [massTestRunning, setMassTestRunning] = useState(false);
+  const [massTestProgress, setMassTestProgress] = useState({ done: 0, total: 0 });
+
+  // Catalog
+  const [catalog, setCatalog] = useState<OpenRouterCatalogModel[]>([]);
+  const [catalogLoading, setCatalogLoading] = useState(false);
+  const [catalogLoaded, setCatalogLoaded] = useState(false);
+  const [catalogSearch, setCatalogSearch] = useState('');
+
+  // User-added models (cloud-synced)
+  const { value: cloudUserModels, update: updateCloudUserModels } = useCloudSettings<string[]>(
+    'openrouter-user-models', [], 'openrouter_user_models',
+  );
+  const userModelIds = useMemo(() => new Set(cloudUserModels), [cloudUserModels]);
+
   // Logs
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [logsLoading, setLogsLoading] = useState(false);
+  const [logsRefreshTrigger, setLogsRefreshTrigger] = useState(0);
+
+  // ── Derived ──
+  const registryModels = OPENROUTER_REGISTRY_MODELS;
+
+  const filteredCatalogModels = useMemo(() => {
+    if (!catalogSearch.trim()) return [];
+    const q = catalogSearch.toLowerCase();
+    return catalog.filter(m =>
+      !userModelIds.has(m.id) &&
+      (m.id.toLowerCase().includes(q) || m.name.toLowerCase().includes(q))
+    ).slice(0, 20);
+  }, [catalogSearch, catalog, userModelIds]);
+
+  const userAddedModels = useMemo(() => {
+    const catalogMap = new Map(catalog.map(m => [m.id, m]));
+    return Array.from(userModelIds).map(id => {
+      const cm = catalogMap.get(id);
+      return { id, object: 'model', created: 0, owned_by: cm?.name || 'unknown' } as ProxyApiCatalogModel;
+    });
+  }, [catalog, userModelIds]);
 
   const analyticsData: AnalyticsEntry[] = useMemo(() => {
     const byModel: Record<string, AnalyticsEntry> = {};
@@ -79,12 +101,13 @@ export function useOpenRouterData(hasKey: boolean) {
     }));
   }, [logs]);
 
+  // ── API key helper ──
   const getApiKey = useCallback(async (): Promise<string | null> => {
     const { data } = await supabase.rpc('get_my_api_keys');
     return data?.[0]?.openrouter_api_key || null;
   }, []);
 
-  // Ping = fetch key info from /api/v1/key
+  // ── Ping ──
   const handlePing = useCallback(async () => {
     if (!hasKey) return;
     setPinging(true);
@@ -129,21 +152,91 @@ export function useOpenRouterData(hasKey: boolean) {
     }
   }, [hasKey, getApiKey]);
 
-  const testModels = useCallback(async () => {
-    if (!hasKey || testing) return;
-    setTesting(true);
+  // ── Catalog ──
+  const fetchCatalog = useCallback(async (force = false) => {
+    if (catalogLoaded && !force) return;
+    setCatalogLoading(true);
+    try {
+      const res = await fetch('https://openrouter.ai/api/v1/models');
+      if (res.ok) {
+        const json = await res.json();
+        const models = (json.data || []).map((m: any) => ({
+          id: m.id,
+          name: m.name || m.id,
+          pricing: m.pricing,
+          context_length: m.context_length,
+        }));
+        setCatalog(models);
+        setCatalogLoaded(true);
+      }
+    } catch { /* silent */ } finally {
+      setCatalogLoading(false);
+    }
+  }, [catalogLoaded]);
+
+  // ── Per-model test (client-side via OpenRouter API) ──
+  const handleTestModel = useCallback(async (modelId: string) => {
+    if (!hasKey) return;
+    setTestingModel(modelId);
+    const start = Date.now();
+    try {
+      const apiKey = await getApiKey();
+      if (!apiKey) { setTestingModel(null); return; }
+      const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          model: modelId,
+          messages: [{ role: 'user', content: 'Say ok' }],
+          max_tokens: 5,
+        }),
+      });
+      const latency_ms = Date.now() - start;
+
+      if (res.ok) {
+        const json = await res.json();
+        const usage = json.usage;
+        setTestResults(prev => ({
+          ...prev,
+          [modelId]: {
+            status: 'success',
+            latency_ms,
+            tokens: usage ? { input: usage.prompt_tokens || 0, output: usage.completion_tokens || 0 } : undefined,
+          },
+        }));
+      } else if (res.status === 429) {
+        setTestResults(prev => ({ ...prev, [modelId]: { status: 'timeout', latency_ms, error: 'Rate limited (429)' } }));
+      } else if (res.status === 402) {
+        setTestResults(prev => ({ ...prev, [modelId]: { status: 'error', latency_ms, error: 'No credits (402)' } }));
+      } else if (res.status === 404) {
+        setTestResults(prev => ({ ...prev, [modelId]: { status: 'gone', latency_ms, error: 'Not found (404)' } }));
+      } else {
+        const body = await res.json().catch(() => ({}));
+        setTestResults(prev => ({ ...prev, [modelId]: { status: 'error', latency_ms, error: body?.error?.message || `HTTP ${res.status}` } }));
+      }
+    } catch (err: any) {
+      setTestResults(prev => ({ ...prev, [modelId]: { status: 'error', latency_ms: Date.now() - start, error: err.message || 'Network error' } }));
+    } finally {
+      setTestingModel(null);
+    }
+  }, [hasKey, getApiKey, setTestResults]);
+
+  // ── Mass test ──
+  const handleMassTest = useCallback(async () => {
+    if (!hasKey || massTestRunning) return;
+    const allModels = [...registryModels.map(m => m.id), ...userAddedModels.map(m => m.id)];
+    if (allModels.length === 0) return;
+    setMassTestRunning(true);
+    setMassTestProgress({ done: 0, total: allModels.length });
     const apiKey = await getApiKey();
-    if (!apiKey) { setTesting(false); return; }
+    if (!apiKey) { setMassTestRunning(false); return; }
 
-    const newResults: OpenRouterTestResult[] = ALL_OPENROUTER_MODELS.map(m => ({
-      model: m.id, name: m.name, status: 'idle' as const,
-    }));
-
-    for (let i = 0; i < ALL_OPENROUTER_MODELS.length; i++) {
-      const m = ALL_OPENROUTER_MODELS[i];
-      newResults[i] = { model: m.id, name: m.name, status: 'testing' };
-      updateTestResults([...newResults]);
-
+    for (let i = 0; i < allModels.length; i++) {
+      const modelId = allModels[i];
+      setTestingModel(modelId);
       const start = Date.now();
       try {
         const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
@@ -153,33 +246,49 @@ export function useOpenRouterData(hasKey: boolean) {
             'Authorization': `Bearer ${apiKey}`,
           },
           body: JSON.stringify({
-            model: m.id,
+            model: modelId,
             messages: [{ role: 'user', content: 'Say ok' }],
             max_tokens: 5,
           }),
         });
-        const latency = Date.now() - start;
-
+        const latency_ms = Date.now() - start;
         if (res.ok) {
-          newResults[i] = { model: m.id, name: m.name, status: 'ok', latency };
+          setTestResults(prev => ({ ...prev, [modelId]: { status: 'success', latency_ms } }));
         } else if (res.status === 429) {
-          newResults[i] = { model: m.id, name: m.name, status: 'quota', latency, error: 'Rate limited' };
+          setTestResults(prev => ({ ...prev, [modelId]: { status: 'timeout', latency_ms, error: 'Rate limited' } }));
         } else if (res.status === 402) {
-          newResults[i] = { model: m.id, name: m.name, status: 'no_credits', latency, error: 'Insufficient credits' };
+          setTestResults(prev => ({ ...prev, [modelId]: { status: 'error', latency_ms, error: 'No credits' } }));
         } else if (res.status === 404) {
-          newResults[i] = { model: m.id, name: m.name, status: 'not_found', latency, error: 'Model not found' };
+          setTestResults(prev => ({ ...prev, [modelId]: { status: 'gone', latency_ms, error: 'Not found' } }));
         } else {
-          const body = await res.json().catch(() => ({}));
-          newResults[i] = { model: m.id, name: m.name, status: 'error', latency, error: body?.error?.message || `HTTP ${res.status}` };
+          setTestResults(prev => ({ ...prev, [modelId]: { status: 'error', latency_ms, error: `HTTP ${res.status}` } }));
         }
-      } catch (err: any) {
-        newResults[i] = { model: m.id, name: m.name, status: 'error', error: err.message || 'Network error' };
+      } catch {
+        setTestResults(prev => ({ ...prev, [modelId]: { status: 'error', latency_ms: 0, error: 'Network error' } }));
       }
-      updateTestResults([...newResults]);
+      setMassTestProgress({ done: i + 1, total: allModels.length });
     }
-    setTesting(false);
-  }, [hasKey, testing, getApiKey, updateTestResults]);
+    setTestingModel(null);
+    setMassTestRunning(false);
+  }, [hasKey, massTestRunning, registryModels, userAddedModels, getApiKey, setTestResults]);
 
+  // ── User model management ──
+  const addUserModel = useCallback((modelId: string) => {
+    updateCloudUserModels(prev => [...new Set([...prev, modelId])]);
+    setCatalogSearch('');
+  }, [updateCloudUserModels]);
+
+  const removeUserModel = useCallback(async (modelId: string) => {
+    updateCloudUserModels(prev => prev.filter(id => id !== modelId));
+    if (user) {
+      try {
+        await supabase.from('proxy_api_logs').delete().eq('user_id', user.id).eq('model_id', modelId);
+        setLogsRefreshTrigger(prev => prev + 1);
+      } catch { /* silent */ }
+    }
+  }, [updateCloudUserModels, user]);
+
+  // ── Logs ──
   const fetchLogs = useCallback(async () => {
     if (!user) return;
     setLogsLoading(true);
@@ -221,10 +330,14 @@ export function useOpenRouterData(hasKey: boolean) {
         await supabase.from('proxy_api_logs').delete().eq('user_id', user.id).eq('model_id', rawModelId);
       } catch { /* silent */ }
     }
-    fetchLogs();
-  }, [user, fetchLogs]);
+    updateCloudUserModels(prev => {
+      const key = prev.find(id => id === rawModelId) || null;
+      return key ? prev.filter(id => id !== key) : prev;
+    });
+    setLogsRefreshTrigger(prev => prev + 1);
+  }, [user, updateCloudUserModels]);
 
-  // Auto-fetch on mount
+  // ── Effects ──
   useEffect(() => {
     if (hasKey && user) {
       fetchKeyInfo();
@@ -232,10 +345,28 @@ export function useOpenRouterData(hasKey: boolean) {
     }
   }, [hasKey, user, fetchKeyInfo, fetchLogs]);
 
+  useEffect(() => {
+    if (hasKey && user && !catalogLoaded) fetchCatalog();
+  }, [hasKey, user, catalogLoaded, fetchCatalog]);
+
+  useEffect(() => {
+    if (hasKey && user) fetchLogs();
+  }, [hasKey, user, fetchLogs, logsRefreshTrigger]);
+
   return {
+    // Connection
     pingResult, pinging, handlePing,
-    testResults, testing, testModels,
     keyInfo, keyLoading, fetchKeyInfo,
+    // Catalog
+    catalog, catalogLoading, catalogLoaded, catalogSearch, setCatalogSearch,
+    filteredCatalogModels, userAddedModels, userModelIds,
+    registryModels,
+    fetchCatalog,
+    addUserModel, removeUserModel,
+    // Tests
+    testResults, testingModel, handleTestModel,
+    massTestRunning, massTestProgress, handleMassTest,
+    // Logs & analytics
     logs, logsLoading, fetchLogs,
     analyticsData, handleExportCSV, deleteModelStats,
   };
