@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -41,11 +41,17 @@ const VISION_LABELS: AddLabels = {
 
 export { STRATEGY_LABELS, VISION_LABELS };
 
+type ToolbarAction = 'rename' | 'edit' | 'comment';
+
+interface ToolbarSignal {
+  action: ToolbarAction;
+  tick: number;
+}
+
 interface ApprovalSectionEditorProps {
   sections: ApprovalSection[];
   onSectionsChange: (sections: ApprovalSection[]) => void;
   readOnly?: boolean;
-  /** Show add buttons; pass label config or true for strategy defaults */
   showAddButtons?: boolean | AddLabels;
 }
 
@@ -53,29 +59,62 @@ export function ApprovalSectionEditor({ sections, onSectionsChange, readOnly, sh
   const { language } = useLanguage();
   const diff = computeApprovalDiff(sections);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [toolbarSignal, setToolbarSignal] = useState<ToolbarSignal>({ action: 'edit', tick: 0 });
 
-  // Resolve add labels
   const addLabels: AddLabels | null = showAddButtons
     ? (typeof showAddButtons === 'object' ? showAddButtons : STRATEGY_LABELS)
     : null;
 
-  // Find selected phase index (or -1)
   const selectedPhaseIdx = sections.findIndex(s => s.id === selectedId);
   const selectedParentIdx = selectedPhaseIdx >= 0 ? selectedPhaseIdx : sections.findIndex(s => s.children.some(c => c.id === selectedId));
+
+  // Find selected section
+  const findSelected = (): { section: ApprovalSection; path: [number] | [number, number] } | null => {
+    for (let i = 0; i < sections.length; i++) {
+      if (sections[i].id === selectedId) return { section: sections[i], path: [i] };
+      for (let j = 0; j < sections[i].children.length; j++) {
+        if (sections[i].children[j].id === selectedId) return { section: sections[i].children[j], path: [i, j] };
+      }
+    }
+    return null;
+  };
+  const selected = findSelected();
+
+  const updateSelected = (updater: (s: ApprovalSection) => ApprovalSection) => {
+    if (!selected) return;
+    const next = [...sections];
+    if (selected.path.length === 1) {
+      next[selected.path[0]] = updater(next[selected.path[0]]);
+    } else {
+      const [pi, ci] = selected.path as [number, number];
+      const parent = { ...next[pi], children: [...next[pi].children] };
+      parent.children[ci] = updater(parent.children[ci]);
+      next[pi] = parent;
+    }
+    onSectionsChange(next);
+  };
+
+  const setSelectedStatus = (status: ApprovalStatus) => {
+    updateSelected((s) => {
+      const updated = { ...s, status };
+      if (s.depth === 0 && s.children.length > 0) {
+        updated.children = s.children.map(c => ({ ...c, status }));
+      }
+      return updated;
+    });
+  };
+
+  const fireToolbar = (action: ToolbarAction) => {
+    if (!selected) return;
+    setToolbarSignal({ action, tick: Date.now() });
+  };
 
   const addSection = () => {
     if (!addLabels) return;
     const num = sections.filter(s => s.depth === 0).length + 1;
     const newSection: ApprovalSection = {
-      id: `new_section_${Date.now()}`,
-      title: addLabels.newSectionTitle(num, language),
-      body: '',
-      originalBody: '',
-      status: 'pending',
-      userComment: '',
-      depth: 0,
-      children: [],
-      source: addLabels.source,
+      id: `new_section_${Date.now()}`, title: addLabels.newSectionTitle(num, language),
+      body: '', originalBody: '', status: 'pending', userComment: '', depth: 0, children: [], source: addLabels.source,
     };
     const next = [...sections];
     const insertIdx = selectedParentIdx >= 0 ? selectedParentIdx + 1 : next.length;
@@ -87,15 +126,8 @@ export function ApprovalSectionEditor({ sections, onSectionsChange, readOnly, sh
   const addItem = () => {
     if (!addLabels) return;
     const newItem: ApprovalSection = {
-      id: `new_item_${Date.now()}`,
-      title: addLabels.newItemTitle(language),
-      body: '',
-      originalBody: '',
-      status: 'pending',
-      userComment: '',
-      depth: 1,
-      children: [],
-      source: addLabels.source,
+      id: `new_item_${Date.now()}`, title: addLabels.newItemTitle(language),
+      body: '', originalBody: '', status: 'pending', userComment: '', depth: 1, children: [], source: addLabels.source,
     };
     const targetIdx = selectedParentIdx >= 0 ? selectedParentIdx : sections.length - 1;
     if (targetIdx >= 0) {
@@ -112,7 +144,7 @@ export function ApprovalSectionEditor({ sections, onSectionsChange, readOnly, sh
 
   return (
     <div className="flex flex-col h-full">
-      {/* Summary bar */}
+      {/* Summary bar + toolbar */}
       <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-muted/30 text-sm text-muted-foreground mb-3 shrink-0">
         <ListChecks className="h-4 w-4" />
         <span>{language === 'ru' ? 'Всего' : 'Total'}: {diff.total}</span>
@@ -120,17 +152,62 @@ export function ApprovalSectionEditor({ sections, onSectionsChange, readOnly, sh
         {diff.rejected > 0 && <Badge variant="outline" className="text-xs border-destructive/50 text-destructive">✗ {diff.rejected}</Badge>}
         {diff.rework > 0 && <Badge variant="outline" className="text-xs border-hydra-warning/50 text-hydra-warning">↻ {diff.rework}</Badge>}
         {diff.edited > 0 && <Badge variant="outline" className="text-xs border-primary/50 text-primary">✎ {diff.edited}</Badge>}
+
+        {!readOnly && (
+          <div className="flex items-center gap-0.5 ml-auto shrink-0">
+            <Tooltip><TooltipTrigger asChild>
+              <Button variant="ghost" size="icon" className={cn('h-7 w-7', !selected && 'opacity-30 pointer-events-none', selected?.section.status === 'approved' && 'text-emerald-500')}
+                onClick={() => selected && setSelectedStatus(selected.section.status === 'approved' ? 'pending' : 'approved')}>
+                <Check className="h-3.5 w-3.5" />
+              </Button>
+            </TooltipTrigger><TooltipContent>{language === 'ru' ? 'Утвердить' : 'Approve'}</TooltipContent></Tooltip>
+
+            <Tooltip><TooltipTrigger asChild>
+              <Button variant="ghost" size="icon" className={cn('h-7 w-7', !selected && 'opacity-30 pointer-events-none', selected?.section.status === 'rejected' && 'text-destructive')}
+                onClick={() => selected && setSelectedStatus(selected.section.status === 'rejected' ? 'pending' : 'rejected')}>
+                <X className="h-3.5 w-3.5" />
+              </Button>
+            </TooltipTrigger><TooltipContent>{language === 'ru' ? 'Отклонить' : 'Reject'}</TooltipContent></Tooltip>
+
+            <Tooltip><TooltipTrigger asChild>
+              <Button variant="ghost" size="icon" className={cn('h-7 w-7', !selected && 'opacity-30 pointer-events-none', selected?.section.status === 'rework' && 'text-hydra-warning')}
+                onClick={() => selected && setSelectedStatus(selected.section.status === 'rework' ? 'pending' : 'rework')}>
+                <RotateCcw className="h-3.5 w-3.5" />
+              </Button>
+            </TooltipTrigger><TooltipContent>{language === 'ru' ? 'На доработку' : 'Rework'}</TooltipContent></Tooltip>
+
+            <div className="w-px h-4 bg-border/50 mx-0.5" />
+
+            <Tooltip><TooltipTrigger asChild>
+              <Button variant="ghost" size="icon" className={cn('h-7 w-7', !selected && 'opacity-30 pointer-events-none')} onClick={() => fireToolbar('rename')}>
+                <Type className="h-3.5 w-3.5" />
+              </Button>
+            </TooltipTrigger><TooltipContent>{language === 'ru' ? 'Переименовать' : 'Rename'}</TooltipContent></Tooltip>
+
+            <Tooltip><TooltipTrigger asChild>
+              <Button variant="ghost" size="icon" className={cn('h-7 w-7', !selected && 'opacity-30 pointer-events-none')} onClick={() => fireToolbar('edit')}>
+                <Pencil className="h-3.5 w-3.5" />
+              </Button>
+            </TooltipTrigger><TooltipContent>{language === 'ru' ? 'Редактировать' : 'Edit'}</TooltipContent></Tooltip>
+
+            <Tooltip><TooltipTrigger asChild>
+              <Button variant="ghost" size="icon" className={cn('h-7 w-7', !selected && 'opacity-30 pointer-events-none')} onClick={() => fireToolbar('comment')}>
+                <MessageSquare className="h-3.5 w-3.5" />
+              </Button>
+            </TooltipTrigger><TooltipContent>{language === 'ru' ? 'Комментарий' : 'Comment'}</TooltipContent></Tooltip>
+          </div>
+        )}
       </div>
 
       <ScrollArea className="flex-1">
         <div className="space-y-1 pr-3">
-        {sections.map((section, idx) => (
+          {sections.map((section, idx) => (
             <SectionNode
               key={section.id}
               section={section}
-              readOnly={readOnly}
               selectedId={selectedId}
               onSelect={setSelectedId}
+              toolbarSignal={toolbarSignal}
               onChange={(updated) => {
                 const next = [...sections];
                 next[idx] = updated;
@@ -172,15 +249,17 @@ export function ApprovalSectionEditor({ sections, onSectionsChange, readOnly, sh
   );
 }
 
+/* ─── Section Node (no action buttons — driven by toolbar) ─── */
+
 interface SectionNodeProps {
   section: ApprovalSection;
-  readOnly?: boolean;
   selectedId: string | null;
   onSelect: (id: string | null) => void;
+  toolbarSignal: ToolbarSignal;
   onChange: (section: ApprovalSection) => void;
 }
 
-function SectionNode({ section, readOnly, selectedId, onSelect, onChange }: SectionNodeProps) {
+function SectionNode({ section, selectedId, onSelect, toolbarSignal, onChange }: SectionNodeProps) {
   const { language } = useLanguage();
   const [isOpen, setIsOpen] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
@@ -189,37 +268,23 @@ function SectionNode({ section, readOnly, selectedId, onSelect, onChange }: Sect
   const [commentDraft, setCommentDraft] = useState(section.userComment);
   const [isRenaming, setIsRenaming] = useState(false);
   const [titleDraft, setTitleDraft] = useState(section.title);
-  const isAspect = section.depth === 0;
+  const isPhase = section.depth === 0;
+  const isSelected = selectedId === section.id;
+
+  // React to toolbar signals when this node is selected
+  useEffect(() => {
+    if (!isSelected || toolbarSignal.tick === 0) return;
+    if (toolbarSignal.action === 'rename') { setIsRenaming(true); setTitleDraft(section.title); }
+    if (toolbarSignal.action === 'edit') { setIsEditing(true); setBodyDraft(section.body); }
+    if (toolbarSignal.action === 'comment') { setShowComment(true); setCommentDraft(section.userComment); }
+  }, [toolbarSignal.tick]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const statusColors: Record<ApprovalStatus, string> = {
-    pending: 'border-l-muted-foreground/30',
-    approved: 'border-l-emerald-500',
-    rejected: 'border-l-destructive',
-    rework: 'border-l-hydra-warning',
+    pending: 'border-l-muted-foreground/30', approved: 'border-l-emerald-500',
+    rejected: 'border-l-destructive', rework: 'border-l-hydra-warning',
   };
-
   const statusBg: Record<ApprovalStatus, string> = {
-    pending: '',
-    approved: 'bg-emerald-500/5',
-    rejected: 'bg-destructive/5',
-    rework: 'bg-hydra-warning/5',
-  };
-
-  const setStatus = (status: ApprovalStatus) => {
-    const updated = { ...section, status };
-    // Also apply to all children if approving/rejecting an aspect
-    if (isAspect && section.children.length > 0) {
-      updated.children = section.children.map(c => ({ ...c, status }));
-    }
-    onChange(updated);
-  };
-
-  const handleBodyChange = (body: string) => {
-    onChange({ ...section, body });
-  };
-
-  const handleCommentChange = (userComment: string) => {
-    onChange({ ...section, userComment });
+    pending: '', approved: 'bg-emerald-500/5', rejected: 'bg-destructive/5', rework: 'bg-hydra-warning/5',
   };
 
   const handleChildChange = (childIdx: number, child: ApprovalSection) => {
@@ -228,23 +293,19 @@ function SectionNode({ section, readOnly, selectedId, onSelect, onChange }: Sect
     onChange({ ...section, children });
   };
 
-  const isSelected = selectedId === section.id;
-
   return (
     <div
       className={cn(
         'border-l-2 rounded-r-md transition-colors cursor-pointer',
-        statusColors[section.status],
-        statusBg[section.status],
-        isAspect ? 'ml-0' : 'ml-4',
+        statusColors[section.status], statusBg[section.status],
+        isPhase ? 'ml-0' : 'ml-4',
         isSelected && 'ring-1 ring-primary/50 bg-primary/5',
       )}
       onClick={(e) => { e.stopPropagation(); onSelect(isSelected ? null : section.id); }}
     >
       <Collapsible open={isOpen} onOpenChange={setIsOpen}>
         <div className="flex items-start gap-1.5 px-3 py-2">
-          {/* Expand toggle */}
-          {(isAspect && section.children.length > 0) && (
+          {(isPhase && section.children.length > 0) && (
             <CollapsibleTrigger asChild>
               <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0 mt-0.5">
                 <ChevronRight className={cn('h-3.5 w-3.5 transition-transform', isOpen && 'rotate-90')} />
@@ -252,33 +313,21 @@ function SectionNode({ section, readOnly, selectedId, onSelect, onChange }: Sect
             </CollapsibleTrigger>
           )}
 
-          {/* Icon */}
-          {isAspect ? (
+          {isPhase ? (
             <FolderOpen className="h-4 w-4 mt-1 shrink-0 text-primary" />
           ) : (
             <div className="w-4 h-4 mt-1 shrink-0" />
           )}
 
-          {/* Title + body */}
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               {isRenaming ? (
                 <div className="flex items-center gap-1 flex-1 min-w-0">
-                  <Input
-                    value={titleDraft}
-                    onChange={(e) => setTitleDraft(e.target.value)}
-                    className="h-7 text-sm flex-1"
-                    autoFocus
+                  <Input value={titleDraft} onChange={(e) => setTitleDraft(e.target.value)} className="h-7 text-sm flex-1" autoFocus
                     onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        onChange({ ...section, title: titleDraft });
-                        setIsRenaming(false);
-                      } else if (e.key === 'Escape') {
-                        setTitleDraft(section.title);
-                        setIsRenaming(false);
-                      }
-                    }}
-                  />
+                      if (e.key === 'Enter') { onChange({ ...section, title: titleDraft }); setIsRenaming(false); }
+                      else if (e.key === 'Escape') { setTitleDraft(section.title); setIsRenaming(false); }
+                    }} />
                   <Button variant="ghost" size="icon" className="h-6 w-6 text-emerald-500" onClick={() => { onChange({ ...section, title: titleDraft }); setIsRenaming(false); }}>
                     <Save className="h-3 w-3" />
                   </Button>
@@ -287,16 +336,11 @@ function SectionNode({ section, readOnly, selectedId, onSelect, onChange }: Sect
                   </Button>
                 </div>
               ) : (
-                <span className={cn(
-                  'text-base font-medium',
-                  section.status === 'rejected' && 'line-through text-muted-foreground',
-                )}>
+                <span className={cn('text-base font-medium', section.status === 'rejected' && 'line-through text-muted-foreground')}>
                   {section.title}
                 </span>
               )}
-              {!isRenaming && section.status !== 'pending' && (
-                <StatusBadge status={section.status} />
-              )}
+              {!isRenaming && section.status !== 'pending' && <StatusBadge status={section.status} />}
               {!isRenaming && section.body !== section.originalBody && section.status === 'approved' && (
                 <Badge variant="outline" className="text-[10px] border-primary/40 text-primary">
                   {language === 'ru' ? 'изменено' : 'edited'}
@@ -304,206 +348,53 @@ function SectionNode({ section, readOnly, selectedId, onSelect, onChange }: Sect
               )}
             </div>
 
-            {/* Body text */}
+            {/* Body */}
             {(section.body || isEditing) && (
               isEditing ? (
                 <div className="mt-2 space-y-1.5">
-                  <Textarea
-                    value={bodyDraft}
-                    onChange={(e) => setBodyDraft(e.target.value)}
-                    className="text-sm min-h-[60px] resize-y"
-                    placeholder={language === 'ru' ? 'Описание задачи...' : 'Task description...'}
-                    autoFocus
-                  />
+                  <Textarea value={bodyDraft} onChange={(e) => setBodyDraft(e.target.value)} className="text-sm min-h-[60px] resize-y"
+                    placeholder={language === 'ru' ? 'Описание задачи...' : 'Task description...'} autoFocus />
                   <div className="flex items-center gap-1">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-6 text-[10px] gap-1 text-emerald-500"
-                      onClick={() => {
-                        handleBodyChange(bodyDraft);
-                        setIsEditing(false);
-                      }}
-                    >
-                      <Save className="h-3 w-3" />
-                      {language === 'ru' ? 'Сохранить' : 'Save'}
+                    <Button variant="ghost" size="sm" className="h-6 text-[10px] gap-1 text-emerald-500" onClick={() => { onChange({ ...section, body: bodyDraft }); setIsEditing(false); }}>
+                      <Save className="h-3 w-3" />{language === 'ru' ? 'Сохранить' : 'Save'}
                     </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-6 text-[10px] gap-1 text-muted-foreground"
-                      onClick={() => {
-                        setBodyDraft(section.body);
-                        setIsEditing(false);
-                      }}
-                    >
-                      <XCircle className="h-3 w-3" />
-                      {language === 'ru' ? 'Отмена' : 'Cancel'}
+                    <Button variant="ghost" size="sm" className="h-6 text-[10px] gap-1 text-muted-foreground" onClick={() => { setBodyDraft(section.body); setIsEditing(false); }}>
+                      <XCircle className="h-3 w-3" />{language === 'ru' ? 'Отмена' : 'Cancel'}
                     </Button>
                   </div>
                 </div>
               ) : (
-                <p className={cn(
-                  'text-sm text-muted-foreground mt-1 whitespace-pre-wrap cursor-pointer hover:text-foreground transition-colors',
-                  section.status === 'rejected' && 'line-through',
-                )}
-                  onClick={() => !readOnly && setIsEditing(true)}
-                  title={language === 'ru' ? 'Нажмите для редактирования' : 'Click to edit'}
-                >
+                <p className={cn('text-sm text-muted-foreground mt-1 whitespace-pre-wrap', section.status === 'rejected' && 'line-through')}>
                   {section.body!.length > 200 ? section.body!.substring(0, 200) + '...' : section.body}
                 </p>
               )
             )}
 
-            {/* User comment for reject/rework */}
+            {/* Comment */}
             {showComment && (
               <div className="mt-2 space-y-1.5">
-                <Textarea
-                  value={commentDraft}
-                  onChange={(e) => setCommentDraft(e.target.value)}
+                <Textarea value={commentDraft} onChange={(e) => setCommentDraft(e.target.value)}
                   placeholder={language === 'ru' ? 'Комментарий (причина отклонения / уточнение)...' : 'Comment (rejection reason / clarification)...'}
-                  className="text-sm min-h-[40px] resize-y border-hydra-warning/30"
-                  autoFocus
-                />
+                  className="text-sm min-h-[40px] resize-y border-hydra-warning/30" autoFocus />
                 <div className="flex items-center gap-1">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-6 text-[10px] gap-1 text-emerald-500"
-                    onClick={() => {
-                      handleCommentChange(commentDraft);
-                      setShowComment(false);
-                    }}
-                  >
-                    <Save className="h-3 w-3" />
-                    {language === 'ru' ? 'Сохранить' : 'Save'}
+                  <Button variant="ghost" size="sm" className="h-6 text-[10px] gap-1 text-emerald-500" onClick={() => { onChange({ ...section, userComment: commentDraft }); setShowComment(false); }}>
+                    <Save className="h-3 w-3" />{language === 'ru' ? 'Сохранить' : 'Save'}
                   </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-6 text-[10px] gap-1 text-muted-foreground"
-                    onClick={() => {
-                      setCommentDraft(section.userComment);
-                      setShowComment(false);
-                    }}
-                  >
-                    <XCircle className="h-3 w-3" />
-                    {language === 'ru' ? 'Отмена' : 'Cancel'}
+                  <Button variant="ghost" size="sm" className="h-6 text-[10px] gap-1 text-muted-foreground" onClick={() => { setCommentDraft(section.userComment); setShowComment(false); }}>
+                    <XCircle className="h-3 w-3" />{language === 'ru' ? 'Отмена' : 'Cancel'}
                   </Button>
                 </div>
               </div>
             )}
           </div>
-
-          {/* Action buttons */}
-          {!readOnly && (
-            <div className="flex items-center gap-0.5 shrink-0">
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className={cn('h-7 w-7', section.status === 'approved' && 'text-emerald-500')}
-                    onClick={() => setStatus(section.status === 'approved' ? 'pending' : 'approved')}
-                  >
-                    <Check className="h-3.5 w-3.5" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>{language === 'ru' ? 'Утвердить' : 'Approve'}</TooltipContent>
-              </Tooltip>
-
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className={cn('h-7 w-7', section.status === 'rejected' && 'text-destructive')}
-                    onClick={() => {
-                      setStatus(section.status === 'rejected' ? 'pending' : 'rejected');
-                      if (section.status !== 'rejected') setShowComment(true);
-                    }}
-                  >
-                    <X className="h-3.5 w-3.5" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>{language === 'ru' ? 'Отклонить' : 'Reject'}</TooltipContent>
-              </Tooltip>
-
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className={cn('h-7 w-7', section.status === 'rework' && 'text-hydra-warning')}
-                    onClick={() => {
-                      setStatus(section.status === 'rework' ? 'pending' : 'rework');
-                      if (section.status !== 'rework') setShowComment(true);
-                    }}
-                  >
-                    <RotateCcw className="h-3.5 w-3.5" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>{language === 'ru' ? 'На доработку' : 'Rework'}</TooltipContent>
-              </Tooltip>
-
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className={cn('h-7 w-7', isRenaming && 'text-primary')}
-                    onClick={() => { setIsRenaming(!isRenaming); setTitleDraft(section.title); }}
-                  >
-                    <Type className="h-3.5 w-3.5" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>{language === 'ru' ? 'Переименовать' : 'Rename'}</TooltipContent>
-              </Tooltip>
-
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className={cn('h-7 w-7', isEditing && 'text-primary')}
-                    onClick={() => setIsEditing(!isEditing)}
-                  >
-                    <Pencil className="h-3.5 w-3.5" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>{language === 'ru' ? 'Редактировать' : 'Edit'}</TooltipContent>
-              </Tooltip>
-
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-7 w-7"
-                    onClick={() => setShowComment(!showComment)}
-                  >
-                    <MessageSquare className="h-3.5 w-3.5" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>{language === 'ru' ? 'Комментарий' : 'Comment'}</TooltipContent>
-              </Tooltip>
-            </div>
-          )}
         </div>
 
-        {/* Children */}
         {section.children.length > 0 && (
           <CollapsibleContent>
             <div className="pl-2 pb-2 space-y-0.5">
               {section.children.map((child, idx) => (
-                <SectionNode
-                  key={child.id}
-                  section={child}
-                  readOnly={readOnly}
-                  selectedId={selectedId}
-                  onSelect={onSelect}
-                  onChange={(c) => handleChildChange(idx, c)}
-                />
+                <SectionNode key={child.id} section={child} selectedId={selectedId} onSelect={onSelect}
+                  toolbarSignal={toolbarSignal} onChange={(c) => handleChildChange(idx, c)} />
               ))}
             </div>
           </CollapsibleContent>
