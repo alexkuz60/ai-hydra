@@ -26,6 +26,12 @@ interface ApprovalSectionEditorProps {
 export function ApprovalSectionEditor({ sections, onSectionsChange, readOnly, showAddButtons }: ApprovalSectionEditorProps) {
   const { language } = useLanguage();
   const diff = computeApprovalDiff(sections);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+
+  // Find selected phase index (or -1)
+  const selectedPhaseIdx = sections.findIndex(s => s.id === selectedId);
+  // Check if selected is a child — find parent phase
+  const selectedParentIdx = selectedPhaseIdx >= 0 ? selectedPhaseIdx : sections.findIndex(s => s.children.some(c => c.id === selectedId));
 
   const addPhase = () => {
     const phaseNum = sections.filter(s => s.depth === 0).length + 1;
@@ -40,7 +46,12 @@ export function ApprovalSectionEditor({ sections, onSectionsChange, readOnly, sh
       children: [],
       source: 'strategist',
     };
-    onSectionsChange([...sections, newPhase]);
+    const next = [...sections];
+    // Insert after selected phase, or append
+    const insertIdx = selectedParentIdx >= 0 ? selectedParentIdx + 1 : next.length;
+    next.splice(insertIdx, 0, newPhase);
+    onSectionsChange(next);
+    setSelectedId(newPhase.id);
   };
 
   const addAspect = () => {
@@ -55,14 +66,17 @@ export function ApprovalSectionEditor({ sections, onSectionsChange, readOnly, sh
       children: [],
       source: 'strategist',
     };
-    // Add as child of last phase if exists, otherwise add at root
-    if (sections.length > 0) {
+    // Add as child of the selected phase (or its parent), or last phase
+    const targetIdx = selectedParentIdx >= 0 ? selectedParentIdx : sections.length - 1;
+    if (targetIdx >= 0) {
       const next = [...sections];
-      const lastPhase = next[next.length - 1];
-      next[next.length - 1] = { ...lastPhase, children: [...lastPhase.children, newAspect] };
+      const phase = next[targetIdx];
+      next[targetIdx] = { ...phase, children: [...phase.children, newAspect] };
       onSectionsChange(next);
+      setSelectedId(newAspect.id);
     } else {
       onSectionsChange([{ ...newAspect, depth: 0 }]);
+      setSelectedId(newAspect.id);
     }
   };
 
@@ -80,11 +94,13 @@ export function ApprovalSectionEditor({ sections, onSectionsChange, readOnly, sh
 
       <ScrollArea className="flex-1">
         <div className="space-y-1 pr-3">
-          {sections.map((section, idx) => (
+        {sections.map((section, idx) => (
             <SectionNode
               key={section.id}
               section={section}
               readOnly={readOnly}
+              selectedId={selectedId}
+              onSelect={setSelectedId}
               onChange={(updated) => {
                 const next = [...sections];
                 next[idx] = updated;
@@ -98,6 +114,20 @@ export function ApprovalSectionEditor({ sections, onSectionsChange, readOnly, sh
       {/* Add buttons */}
       {!readOnly && showAddButtons && (
         <div className="flex items-center gap-2 pt-3 shrink-0 border-t border-border/40 mt-2">
+          {selectedId && (
+            <Badge variant="outline" className="text-[10px] text-muted-foreground mr-1">
+              {language === 'ru' ? 'Вставка в:' : 'Insert at:'}{' '}
+              {(() => {
+                const phase = sections.find(s => s.id === selectedId);
+                if (phase) return phase.title;
+                for (const s of sections) {
+                  const child = s.children.find(c => c.id === selectedId);
+                  if (child) return `${s.title} → ${child.title}`;
+                }
+                return '?';
+              })()}
+            </Badge>
+          )}
           <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={addPhase}>
             <FolderPlus className="h-3.5 w-3.5" />
             {language === 'ru' ? 'Добавить фазу' : 'Add phase'}
@@ -115,10 +145,12 @@ export function ApprovalSectionEditor({ sections, onSectionsChange, readOnly, sh
 interface SectionNodeProps {
   section: ApprovalSection;
   readOnly?: boolean;
+  selectedId: string | null;
+  onSelect: (id: string | null) => void;
   onChange: (section: ApprovalSection) => void;
 }
 
-function SectionNode({ section, readOnly, onChange }: SectionNodeProps) {
+function SectionNode({ section, readOnly, selectedId, onSelect, onChange }: SectionNodeProps) {
   const { language } = useLanguage();
   const [isOpen, setIsOpen] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
@@ -166,13 +198,19 @@ function SectionNode({ section, readOnly, onChange }: SectionNodeProps) {
     onChange({ ...section, children });
   };
 
+  const isSelected = selectedId === section.id;
+
   return (
-    <div className={cn(
-      'border-l-2 rounded-r-md transition-colors',
-      statusColors[section.status],
-      statusBg[section.status],
-      isAspect ? 'ml-0' : 'ml-4',
-    )}>
+    <div
+      className={cn(
+        'border-l-2 rounded-r-md transition-colors cursor-pointer',
+        statusColors[section.status],
+        statusBg[section.status],
+        isAspect ? 'ml-0' : 'ml-4',
+        isSelected && 'ring-1 ring-primary/50 bg-primary/5',
+      )}
+      onClick={(e) => { e.stopPropagation(); onSelect(isSelected ? null : section.id); }}
+    >
       <Collapsible open={isOpen} onOpenChange={setIsOpen}>
         <div className="flex items-start gap-1.5 px-3 py-2">
           {/* Expand toggle */}
@@ -432,6 +470,8 @@ function SectionNode({ section, readOnly, onChange }: SectionNodeProps) {
                   key={child.id}
                   section={child}
                   readOnly={readOnly}
+                  selectedId={selectedId}
+                  onSelect={onSelect}
                   onChange={(c) => handleChildChange(idx, c)}
                 />
               ))}
