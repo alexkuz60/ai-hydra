@@ -2,14 +2,12 @@ import React from 'react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ClipboardCheck, Bot, Lightbulb } from 'lucide-react';
 
 import { useLanguage } from '@/contexts/LanguageContext';
 import { toast } from 'sonner';
-import { useAvailableModels } from '@/hooks/useAvailableModels';
 import { useTechRoleDefaults } from '@/hooks/useTechRoleDefaults';
-import { ModelNameWithIcon } from '@/components/ui/ModelNameWithIcon';
+import { ModelSelector } from '@/components/warroom/ModelSelector';
 import type { AgentRole } from '@/config/roles';
 import { s } from './i18n';
 
@@ -86,10 +84,8 @@ interface RoleSettingsSectionProps {
 export function RoleSettingsSection({ isTechnicalStaff, requiresApproval, isSaving, isLoading, userId, selectedRole, syncLoaded = true, onSaveRequiresApproval }: RoleSettingsSectionProps) {
   const { t, language } = useLanguage();
   const isRu = language === 'ru';
-  const { lovableModels, personalModels } = useAvailableModels();
   const { getDefaultModel, setDefaultModel } = useTechRoleDefaults();
 
-  const allModels = [...lovableModels, ...personalModels];
   const currentDefault = selectedRole ? getDefaultModel(selectedRole) : null;
 
   return (
@@ -101,7 +97,7 @@ export function RoleSettingsSection({ isTechnicalStaff, requiresApproval, isSavi
         </label>
       </div>
 
-       {selectedRole && allModels.length > 0 && (
+       {selectedRole && (
          <div className="pt-3 space-y-1.5">
            <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -114,28 +110,14 @@ export function RoleSettingsSection({ isTechnicalStaff, requiresApproval, isSavi
           <p className="text-xs text-muted-foreground">
             {s('defaultModelHint', isRu)}
           </p>
-          <Select
-            value={currentDefault || '__none__'}
-            onValueChange={(val) => {
-              const modelId = val === '__none__' ? null : val;
-              setDefaultModel(selectedRole, modelId);
+          <ModelSelector
+            value={currentDefault || ''}
+            onChange={(val) => {
+              setDefaultModel(selectedRole, val || null);
               toast.success(s('defaultModelUpdated', isRu));
             }}
-          >
-            <SelectTrigger className="h-9 text-sm">
-              <SelectValue placeholder={s('notAssigned', isRu)} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="__none__" className="text-muted-foreground text-sm">
-                {s('notAssignedDash', isRu)}
-              </SelectItem>
-              {allModels.map(model => (
-                <SelectItem key={model.id} value={model.id} className="text-sm">
-                  <ModelNameWithIcon modelName={model.name} />
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            className="w-full"
+          />
           {selectedRole && MODEL_CHOICE_RATIONALE[selectedRole] && (
             <div className="flex gap-2 rounded-md border border-hydra-warning/30 bg-hydra-warning/10 px-3 py-2">
               <Lightbulb className="h-4 w-4 shrink-0 mt-0.5 text-hydra-warning" />
