@@ -32,11 +32,11 @@ export function getModelPriceLabel(
 
 /** Parse "$X.XX" and multiply, returning formatted string */
 function applyMultiplier(priceStr: string, multiplier: number): string {
-  const cleaned = priceStr.replace(/[≈$]/g, '').trim();
+  const cleaned = priceStr.replace(/[≈~$]/g, '').trim();
   const num = parseFloat(cleaned);
   if (isNaN(num)) return priceStr;
   const result = num * multiplier;
-  return `$${result.toFixed(2)}`;
+  return `≈$${result.toFixed(2)}`;
 }
 
 /**
@@ -48,7 +48,8 @@ export function getCompactPriceLabel(modelId: string, provider: string): string 
   if (pricing === 'free') return 'FREE';
   if (pricing === 'included') return '✓';
 
-  const inVal = pricing.input.replace('$', '');
-  const outVal = pricing.output.replace('$', '');
-  return `$${inVal}/$${outVal}`;
+  const prefix = pricing.input.includes('≈') || pricing.output.includes('≈') ? '≈' : '';
+  const inVal = pricing.input.replace(/[≈$]/g, '');
+  const outVal = pricing.output.replace(/[≈$]/g, '');
+  return `${prefix}$${inVal}/$${outVal}`;
 }
