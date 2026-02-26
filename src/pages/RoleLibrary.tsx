@@ -3,6 +3,7 @@
  import { useAuth } from '@/contexts/AuthContext';
  import { useLanguage } from '@/contexts/LanguageContext';
  import { Layout } from '@/components/layout/Layout';
+ import { SidebarTrigger } from '@/components/ui/sidebar';
  import { Button } from '@/components/ui/button';
  import { Input } from '@/components/ui/input';
  import { Table, TableBody } from '@/components/ui/table';
@@ -281,17 +282,17 @@ import {
    }
  
    return (
-     <Layout>
-       <div className="h-[calc(100vh-4rem)] flex flex-col">
-         {/* Header */}
-         <div className="px-6 py-4 border-b flex items-center justify-between shrink-0">
-           <div>
-             <div className="flex items-center gap-3">
-               <Library className="h-6 w-6 text-primary" />
-               <h1 className="text-2xl font-bold">{t('roleLibrary.title')}</h1>
-             </div>
-             <p className="text-sm text-muted-foreground mt-1">{t('roleLibrary.pageDescription')}</p>
-           </div>
+    <Layout hideHeader>
+      <div className="h-screen flex flex-col">
+        {/* Header */}
+        <div className="px-6 py-3 border-b flex items-center justify-between shrink-0">
+          <div className="flex items-center gap-2">
+            <SidebarTrigger className="text-muted-foreground hover:text-primary" />
+            <div className="flex items-center gap-3">
+              <Library className="h-6 w-6 text-primary" />
+              <h1 className="text-2xl font-bold">{t('roleLibrary.title')}</h1>
+            </div>
+          </div>
            <Button onClick={handleStartCreate} data-guide="prompt-create-btn">
              <Plus className="h-4 w-4 mr-2" />
              {t('roleLibrary.new')}
