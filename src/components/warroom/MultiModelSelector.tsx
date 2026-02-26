@@ -15,42 +15,13 @@ import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { getCompactPriceLabel } from '@/lib/modelPricing';
 import { getUnavailableModelIds, clearModelCache } from '@/lib/modelAvailabilityCache';
-import { PROVIDER_LOGOS, PROVIDER_COLORS, LovableLogo, GroqLogo, OpenRouterLogo, DotPointLogo } from '@/components/ui/ProviderLogos';
+import { PROVIDER_LOGOS, PROVIDER_COLORS } from '@/components/ui/ProviderLogos';
+import { PROVIDER_LABELS, PROVIDER_BADGES, getOpenRouterBadge } from './modelSelectorConstants';
 
 interface MultiModelSelectorProps {
   value: string[];
   onChange: (value: string[]) => void;
   className?: string;
-}
-
-// Provider display labels
-const PROVIDER_LABELS: Record<string, string> = {
-  lovable: 'Lovable AI',
-  openai: 'OpenAI',
-  anthropic: 'Anthropic',
-  gemini: 'Google Gemini',
-  xai: 'xAI (Grok)',
-  groq: 'Groq (Fast)',
-  deepseek: 'DeepSeek',
-  mistral: 'Mistral AI',
-  openrouter: 'OpenRouter',
-  proxyapi: 'ProxyAPI',
-  dotpoint: 'DotPoint',
-};
-
-// Badge config per provider
-const PROVIDER_BADGES: Record<string, { label: string; className: string } | undefined> = {
-  groq: { label: '⚡ Fast', className: 'bg-hydra-warning/10 text-hydra-warning border-hydra-warning/30' },
-  proxyapi: { label: '🇷🇺 Gateway', className: 'bg-blue-500/10 text-blue-400 border-blue-500/30' },
-  dotpoint: { label: '🇷🇺 Gateway', className: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' },
-};
-
-// OpenRouter sub-badges
-function getOpenRouterBadge(modelId: string) {
-  if (modelId.includes(':free')) {
-    return { label: 'FREE', className: 'bg-hydra-success/10 text-hydra-success border-hydra-success/30' };
-  }
-  return { label: '💎 Premium', className: 'bg-violet-500/10 text-violet-400 border-violet-500/30' };
 }
 
 export function MultiModelSelector({ value, onChange, className }: MultiModelSelectorProps) {
