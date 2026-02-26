@@ -45,7 +45,7 @@ export default function ExpertPanel() {
   const location = useLocation();
   const { t } = useLanguage();
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const { lovableModels, personalModels } = useAvailableModels();
+  const { lovableModels, personalModels, proxyapiPriority } = useAvailableModels();
   const { profile } = useUserProfile();
   const { isSupervisor } = useUserRoles();
   const messageRefs = useRef<Map<string, HTMLDivElement>>(new Map());
@@ -489,6 +489,7 @@ export default function ExpertPanel() {
             <ConsultantPanel
               sessionId={currentTask?.id || null}
               availableModels={allAvailableModels}
+              proxyapiPriority={proxyapiPriority}
               isCollapsed={isDChatCollapsed}
               onExpand={handleDChatExpand}
               onCollapse={handleDChatCollapse}
