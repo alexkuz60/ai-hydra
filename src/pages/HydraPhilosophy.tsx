@@ -1,5 +1,6 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { Layout } from '@/components/layout/Layout';
+import { SidebarTrigger } from '@/components/ui/sidebar';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { HydrapediaMarkdown } from '@/components/hydrapedia/HydrapediaMarkdown';
 import { List, ChevronRight, X } from 'lucide-react';
@@ -825,8 +826,12 @@ export default function HydraPhilosophy() {
   }, []);
 
   return (
-    <Layout>
-      <div className="flex h-[calc(100vh-2rem)] w-full max-w-[1400px] mx-auto relative">
+    <Layout hideHeader>
+      <div className="flex h-screen w-full max-w-[1400px] mx-auto relative">
+        {/* SidebarTrigger */}
+        <div className="absolute left-2 top-3 z-20">
+          <SidebarTrigger className="text-muted-foreground hover:text-primary" />
+        </div>
         {/* TOC sidebar */}
         <div className={cn(
           "shrink-0 border-r border-border/50 overflow-y-auto transition-all duration-200",
