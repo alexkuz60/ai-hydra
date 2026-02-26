@@ -363,7 +363,7 @@ export function ConceptResponsesPreview({
                   size="sm"
                   className="gap-1.5"
                   onClick={() => handleSaveTab(activeTab)}
-                  disabled={saving || (tabDiff?.approved === 0)}
+                  disabled={saving || !tabDiff || (tabDiff.approved === 0 && tabDiff.rejected === 0 && tabDiff.rework === 0)}
                 >
                   {label.icon}
                   {saving
