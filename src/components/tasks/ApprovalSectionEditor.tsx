@@ -8,7 +8,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { cn } from '@/lib/utils';
 import {
   Check, X, RotateCcw, ChevronRight, Pencil, FolderOpen,
-  ListChecks, MessageSquare, Save, XCircle,
+  ListChecks, MessageSquare, Save, XCircle, Plus, FolderPlus,
 } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import type { ApprovalSection, ApprovalStatus } from '@/lib/strategySectionParser';
@@ -23,6 +23,37 @@ interface ApprovalSectionEditorProps {
 export function ApprovalSectionEditor({ sections, onSectionsChange, readOnly }: ApprovalSectionEditorProps) {
   const { language } = useLanguage();
   const diff = computeApprovalDiff(sections);
+
+  const addPhase = () => {
+    const phaseNum = sections.filter(s => s.depth === 0).length + 1;
+    const newPhase: ApprovalSection = {
+      id: `new_phase_${Date.now()}`,
+      title: language === 'ru' ? `Фаза ${phaseNum}: Новая фаза` : `Phase ${phaseNum}: New phase`,
+      body: '',
+      originalBody: '',
+      status: 'pending',
+      userComment: '',
+      depth: 0,
+      children: [],
+      source: 'strategist',
+    };
+    onSectionsChange([...sections, newPhase]);
+  };
+
+  const addAspect = () => {
+    const newAspect: ApprovalSection = {
+      id: `new_aspect_${Date.now()}`,
+      title: language === 'ru' ? 'Новый аспект' : 'New aspect',
+      body: '',
+      originalBody: '',
+      status: 'pending',
+      userComment: '',
+      depth: 0,
+      children: [],
+      source: 'strategist',
+    };
+    onSectionsChange([...sections, newAspect]);
+  };
 
   return (
     <div className="flex flex-col h-full">
@@ -52,6 +83,20 @@ export function ApprovalSectionEditor({ sections, onSectionsChange, readOnly }: 
           ))}
         </div>
       </ScrollArea>
+
+      {/* Add buttons */}
+      {!readOnly && (
+        <div className="flex items-center gap-2 pt-3 shrink-0 border-t border-border/40 mt-2">
+          <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={addPhase}>
+            <FolderPlus className="h-3.5 w-3.5" />
+            {language === 'ru' ? 'Добавить фазу' : 'Add phase'}
+          </Button>
+          <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={addAspect}>
+            <Plus className="h-3.5 w-3.5" />
+            {language === 'ru' ? 'Добавить аспект' : 'Add aspect'}
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
