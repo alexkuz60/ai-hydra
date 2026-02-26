@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { useAvailableModels, ModelOption } from '@/hooks/useAvailableModels';
+import { useAvailableModels, ModelOption, getProviderOrder } from '@/hooks/useAvailableModels';
+import { useCollapsedProviders } from '@/hooks/useCollapsedProviders';
 import {
   Popover,
   PopoverContent,
@@ -11,9 +12,13 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
-import { Key, AlertCircle, ChevronDown, Check, Zap } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { AlertCircle, ChevronDown, ChevronRight, Check, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { getCompactPriceLabel } from '@/lib/modelPricing';
 import { PROVIDER_LOGOS, PROVIDER_COLORS } from '@/components/ui/ProviderLogos';
 
 interface ModelSelectorProps {
@@ -24,80 +29,81 @@ interface ModelSelectorProps {
   excludeLovableAI?: boolean;
 }
 
-// Provider labels
 const PROVIDER_LABELS: Record<string, string> = {
   lovable: 'Lovable AI',
   openai: 'OpenAI',
   anthropic: 'Anthropic',
   gemini: 'Google Gemini',
   xai: 'xAI (Grok)',
-  openrouter: 'OpenRouter (Free)',
+  openrouter: 'OpenRouter',
   groq: 'Groq (Fast)',
   deepseek: 'DeepSeek',
   mistral: 'Mistral AI',
   proxyapi: 'ProxyAPI',
+  dotpoint: 'DotPoint',
 };
 
-interface GroupedModels {
-  provider: string;
-  models: ModelOption[];
+const PROVIDER_BADGES: Record<string, { label: string; className: string } | undefined> = {
+  groq: { label: '⚡ Fast', className: 'bg-hydra-warning/10 text-hydra-warning border-hydra-warning/30' },
+  proxyapi: { label: '🇷🇺 Gateway', className: 'bg-blue-500/10 text-blue-400 border-blue-500/30' },
+  dotpoint: { label: '🇷🇺 Gateway', className: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' },
+};
+
+function getOpenRouterBadge(modelId: string) {
+  if (modelId.includes(':free')) {
+    return { label: 'FREE', className: 'bg-hydra-success/10 text-hydra-success border-hydra-success/30' };
+  }
+  return { label: '💎 Premium', className: 'bg-violet-500/10 text-violet-400 border-violet-500/30' };
 }
 
 export function ModelSelector({ value, onChange, className, excludeLovableAI }: ModelSelectorProps) {
   const { t } = useLanguage();
-  const { isAdmin, lovableModels, personalModels, hasAnyModels, loading } = useAvailableModels();
+  const { isAdmin, proxyapiPriority, lovableModels, personalModels, hasAnyModels, loading } = useAvailableModels();
+  const { isCollapsed: getCollapsed, toggle: toggleProvider } = useCollapsedProviders('single-model-collapsed');
   const [open, setOpen] = useState(false);
-  const [expandedProviders, setExpandedProviders] = useState<Set<string>>(new Set(['lovable', 'openai', 'proxyapi']));
+  const [searchQuery, setSearchQuery] = useState('');
 
-  // Group models by provider
-  const groupedModels = useMemo(() => {
-    const groups: GroupedModels[] = [];
-    
-    // Lovable AI models first (admin only), unless excluded
-    if (!excludeLovableAI && lovableModels.length > 0) {
-      groups.push({ provider: 'lovable', models: lovableModels });
-    }
-    
-    // Group personal models by provider
-    const providerMap = new Map<string, ModelOption[]>();
-    personalModels.forEach(model => {
-      const existing = providerMap.get(model.provider) || [];
-      existing.push(model);
-      providerMap.set(model.provider, existing);
-    });
-    
-    // Add in specific order
-    ['openai', 'anthropic', 'gemini', 'xai', 'groq', 'deepseek', 'mistral', 'proxyapi', 'openrouter'].forEach(provider => {
-      const models = providerMap.get(provider);
-      if (models && models.length > 0) {
-        groups.push({ provider, models });
-      }
-    });
-    
-    return groups;
-  }, [lovableModels, personalModels, excludeLovableAI]);
+  const allModels = [...lovableModels, ...personalModels];
 
-  // Find selected model info
-  const selectedModel = useMemo(() => {
-    const allModels = [...lovableModels, ...personalModels];
-    return allModels.find(m => m.id === value);
-  }, [value, lovableModels, personalModels]);
+  const providerGroups = useMemo(() => {
+    const order = getProviderOrder(proxyapiPriority);
+    const q = searchQuery.toLowerCase().trim();
 
-  const toggleProvider = (provider: string) => {
-    setExpandedProviders(prev => {
-      const next = new Set(prev);
-      if (next.has(provider)) {
-        next.delete(provider);
-      } else {
-        next.add(provider);
-      }
-      return next;
+    const available = [
+      ...(!excludeLovableAI && isAdmin ? lovableModels : []),
+      ...(excludeLovableAI ? personalModels : [...(!isAdmin ? [] : []), ...personalModels]),
+    ].filter(m => !q || m.name.toLowerCase().includes(q) || m.id.toLowerCase().includes(q));
+
+    // Deduplicate
+    const seen = new Set<string>();
+    const deduped = available.filter(m => {
+      if (seen.has(m.id)) return false;
+      seen.add(m.id);
+      return true;
     });
-  };
+
+    const grouped = new Map<string, ModelOption[]>();
+    deduped.forEach(m => {
+      const list = grouped.get(m.provider) || [];
+      list.push(m);
+      grouped.set(m.provider, list);
+    });
+
+    return order
+      .filter(p => grouped.has(p))
+      .map(provider => ({
+        provider,
+        label: PROVIDER_LABELS[provider] || provider,
+        models: grouped.get(provider)!,
+      }));
+  }, [isAdmin, lovableModels, personalModels, excludeLovableAI, proxyapiPriority, searchQuery]);
+
+  const selectedModel = useMemo(() => allModels.find(m => m.id === value), [value, allModels]);
 
   const handleSelect = (modelId: string) => {
     onChange(modelId);
     setOpen(false);
+    setSearchQuery('');
   };
 
   if (loading) {
@@ -124,7 +130,7 @@ export function ModelSelector({ value, onChange, className, excludeLovableAI }: 
   const selectedColor = selectedModel ? (PROVIDER_COLORS[selectedModel.provider] || 'text-muted-foreground') : null;
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={open} onOpenChange={(v) => { setOpen(v); if (!v) setSearchQuery(''); }}>
       <PopoverTrigger asChild>
         <Button
           variant="outline"
@@ -143,71 +149,83 @@ export function ModelSelector({ value, onChange, className, excludeLovableAI }: 
           <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[280px] p-0 max-h-[400px] overflow-y-auto" align="start">
-        <div className="p-1">
-          {groupedModels.map((group) => {
-            const Logo = PROVIDER_LOGOS[group.provider] || Key;
-            const color = PROVIDER_COLORS[group.provider] || 'text-muted-foreground';
-            const label = PROVIDER_LABELS[group.provider] || group.provider;
-            const isExpanded = expandedProviders.has(group.provider);
-            
-            return (
-              <Collapsible
-                key={group.provider}
-                open={isExpanded}
-                onOpenChange={() => toggleProvider(group.provider)}
-              >
-                <CollapsibleTrigger className="flex w-full items-center justify-between px-2 py-2 text-sm font-medium hover:bg-accent/50 rounded-md transition-colors">
-                  <div className="flex items-center gap-2">
-                    <Logo className={cn('h-4 w-4', color)} />
-                    <span>{label}</span>
-                    <span className="text-xs text-muted-foreground">({group.models.length})</span>
-                  </div>
-                  <ChevronDown className={cn(
-                    'h-4 w-4 transition-transform duration-200',
-                    isExpanded && 'rotate-180'
-                  )} />
-                </CollapsibleTrigger>
-                <CollapsibleContent>
-                  <div className="pl-2 pb-1">
-                    {group.models.map((model) => {
-                      const isFree = model.id.endsWith(':free');
-                      const isFast = model.provider === 'groq';
-                      return (
-                        <button
-                          key={model.id}
-                          onClick={() => handleSelect(model.id)}
-                          className={cn(
-                            'flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors',
-                            'hover:bg-accent hover:text-accent-foreground',
-                            value === model.id && 'bg-accent text-accent-foreground'
-                          )}
-                        >
-                          <Check className={cn(
-                            'h-4 w-4 shrink-0',
-                            value === model.id ? 'opacity-100' : 'opacity-0'
-                          )} />
-                          <span className="truncate">{model.name}</span>
-                          {isFast && (
-                            <span className="ml-auto shrink-0 flex items-center gap-0.5 rounded bg-hydra-warning/20 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-hydra-warning">
-                              <Zap className="h-3 w-3" />
-                              Fast
-                            </span>
-                          )}
-                          {isFree && (
-                            <span className="ml-auto shrink-0 rounded bg-hydra-success/20 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-hydra-success">
-                              Free
-                            </span>
-                          )}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </CollapsibleContent>
-              </Collapsible>
-            );
-          })}
+      <PopoverContent className="w-[420px] p-0" align="start">
+        {/* Search */}
+        <div className="p-2 border-b border-border">
+          <div className="relative">
+            <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+            <Input
+              placeholder={t('common.search') + '...'}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="h-7 text-xs pl-7 bg-transparent"
+            />
+          </div>
         </div>
+
+        <ScrollArea className="h-[55vh] max-h-[450px]">
+          <div className="p-2">
+            {providerGroups.map(({ provider, label, models }) => {
+              const Logo = PROVIDER_LOGOS[provider];
+              const color = PROVIDER_COLORS[provider] || 'text-muted-foreground';
+              const badge = PROVIDER_BADGES[provider];
+
+              const hasSelected = models.some(m => m.id === value);
+              const defaultClosed = !hasSelected && models.length > 3;
+              const collapsed = searchQuery ? false : getCollapsed(provider, defaultClosed);
+
+              return (
+                <Collapsible key={provider} open={!collapsed} onOpenChange={() => !searchQuery && toggleProvider(provider)} className="mb-1">
+                  <div className="flex items-center px-2 py-1">
+                    <CollapsibleTrigger className={cn('flex items-center gap-2 text-sm font-medium hover:opacity-80 transition-opacity group', color)}>
+                      <ChevronRight className="h-3.5 w-3.5 transition-transform group-data-[state=open]:rotate-90" />
+                      {Logo && <Logo className="h-4 w-4" />}
+                      {label}
+                      <span className="text-xs text-muted-foreground">({models.length})</span>
+                    </CollapsibleTrigger>
+                  </div>
+                  <CollapsibleContent>
+                    <div className="space-y-0.5 ml-2">
+                      {models.map((model) => {
+                        const modelBadge = provider === 'openrouter'
+                          ? getOpenRouterBadge(model.id)
+                          : badge;
+                        const isSelected = value === model.id;
+
+                        return (
+                          <button
+                            key={model.id}
+                            onClick={() => handleSelect(model.id)}
+                            className={cn(
+                              'flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors',
+                              'hover:bg-accent hover:text-accent-foreground',
+                              isSelected && 'bg-accent text-accent-foreground'
+                            )}
+                          >
+                            <Check className={cn('h-4 w-4 shrink-0', isSelected ? 'opacity-100' : 'opacity-0')} />
+                            <span className="truncate flex-1 text-left">{model.name}</span>
+                            {(() => {
+                              const price = getCompactPriceLabel(model.id, provider);
+                              if (price) return (
+                                <span className="text-[10px] text-muted-foreground whitespace-nowrap shrink-0">{price}</span>
+                              );
+                              return null;
+                            })()}
+                            {modelBadge && (
+                              <Badge variant="outline" className={cn('text-[10px]', modelBadge.className)}>
+                                {modelBadge.label}
+                              </Badge>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </CollapsibleContent>
+                </Collapsible>
+              );
+            })}
+          </div>
+        </ScrollArea>
       </PopoverContent>
     </Popover>
   );
