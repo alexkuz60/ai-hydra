@@ -366,7 +366,7 @@ export function TaskDetailsPanel({
                value={taskDescription}
                onChange={(e) => handleDescriptionChange(e.target.value)}
                placeholder={isPlanLevel ? t('plans.goalPlaceholder') : t('tasks.formulationPlaceholder')}
-               className={cn("resize-y text-base", isPlanLevel ? "min-h-[160px]" : "min-h-[80px]")}
+               className={cn("resize-y text-sm", isPlanLevel ? "min-h-[160px]" : "min-h-[80px]")}
                disabled={task.is_system}
              />
             </section>
