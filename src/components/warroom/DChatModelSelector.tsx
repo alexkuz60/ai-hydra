@@ -1,11 +1,12 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { PROVIDER_LOGOS, PROVIDER_COLORS } from '@/components/ui/ProviderLogos';
 import { ModelOption, getProviderOrder } from '@/hooks/useAvailableModels';
 import { useCollapsedProviders } from '@/hooks/useCollapsedProviders';
 import { cn } from '@/lib/utils';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, Search } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 
 const PROVIDER_LABELS: Record<string, string> = {
   lovable: 'Lovable AI',
@@ -31,13 +32,21 @@ interface DChatModelSelectorProps {
 export function DChatModelSelector({ selectedModel, onSelectModel, availableModels, proxyapiPriority = false }: DChatModelSelectorProps) {
   const { t } = useLanguage();
   const { isCollapsed: getCollapsed, toggle: toggleProvider } = useCollapsedProviders('dchat-model-collapsed');
+  const [searchQuery, setSearchQuery] = useState('');
 
-  const grouped = new Map<string, ModelOption[]>();
-  availableModels.forEach(m => {
-    const list = grouped.get(m.provider) || [];
-    list.push(m);
-    grouped.set(m.provider, list);
-  });
+  const q = searchQuery.toLowerCase().trim();
+
+  const grouped = useMemo(() => {
+    const map = new Map<string, ModelOption[]>();
+    availableModels
+      .filter(m => !q || m.name.toLowerCase().includes(q) || m.id.toLowerCase().includes(q))
+      .forEach(m => {
+        const list = map.get(m.provider) || [];
+        list.push(m);
+        map.set(m.provider, list);
+      });
+    return map;
+  }, [availableModels, q]);
 
   const providerOrder = getProviderOrder(proxyapiPriority);
   const sel = availableModels.find(m => m.id === selectedModel);
@@ -65,6 +74,18 @@ export function DChatModelSelector({ selectedModel, onSelectModel, availableMode
           })()}
         </SelectTrigger>
         <SelectContent>
+          <div className="px-2 pb-1.5 pt-1">
+            <div className="relative">
+              <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground" />
+              <Input
+                placeholder={t('common.search') + '...'}
+                value={searchQuery}
+                onChange={(e) => { e.stopPropagation(); setSearchQuery(e.target.value); }}
+                onKeyDown={(e) => e.stopPropagation()}
+                className="h-6 text-xs pl-6 bg-transparent"
+              />
+            </div>
+          </div>
           {providerOrder.filter(p => grouped.has(p)).map(provider => {
             const models = grouped.get(provider)!;
             const Logo = PROVIDER_LOGOS[provider];
