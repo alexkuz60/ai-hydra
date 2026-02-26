@@ -10,7 +10,8 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { AlertCircle, ChevronDown, ChevronRight, Users, RefreshCw, Star } from 'lucide-react';
+import { AlertCircle, ChevronDown, ChevronRight, Users, RefreshCw, Star, Search } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { getUnavailableModelIds, clearModelCache } from '@/lib/modelAvailabilityCache';
 import { PROVIDER_LOGOS, PROVIDER_COLORS, LovableLogo, GroqLogo, OpenRouterLogo, DotPointLogo } from '@/components/ui/ProviderLogos';
@@ -70,6 +71,7 @@ export function MultiModelSelector({ value, onChange, className }: MultiModelSel
   }, []);
   
   const [cacheVersion, setCacheVersion] = useState(0);
+  const [searchQuery, setSearchQuery] = useState('');
   const unavailableModelIds = useMemo(() => getUnavailableModelIds(), [cacheVersion]);
 
   const allModels = [...lovableModels, ...personalModels];
@@ -77,10 +79,12 @@ export function MultiModelSelector({ value, onChange, className }: MultiModelSel
   // Build provider groups in priority order, filtering out unavailable models
   const providerGroups = useMemo(() => {
     const order = getProviderOrder(proxyapiPriority);
+    const q = searchQuery.toLowerCase().trim();
     const availableModels = [
       ...(isAdmin ? lovableModels : []),
       ...personalModels,
-    ].filter(m => !unavailableModelIds.includes(m.id));
+    ].filter(m => !unavailableModelIds.includes(m.id))
+     .filter(m => !q || m.name.toLowerCase().includes(q) || m.id.toLowerCase().includes(q));
 
     // Group by provider
     const grouped = new Map<string, ModelOption[]>();
@@ -98,7 +102,7 @@ export function MultiModelSelector({ value, onChange, className }: MultiModelSel
         label: PROVIDER_LABELS[provider] || provider,
         models: grouped.get(provider)!,
       }));
-  }, [isAdmin, lovableModels, personalModels, unavailableModelIds, proxyapiPriority]);
+  }, [isAdmin, lovableModels, personalModels, unavailableModelIds, proxyapiPriority, searchQuery]);
 
   // Auto-cleanup deprecated/unavailable model IDs from value
   useEffect(() => {
@@ -176,7 +180,18 @@ export function MultiModelSelector({ value, onChange, className }: MultiModelSel
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[340px] p-0" align="end">
-        <ScrollArea className="h-[60vh] max-h-[500px]">
+        <div className="p-2 border-b border-border">
+          <div className="relative">
+            <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+            <Input
+              placeholder={t('common.search') + '...'}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="h-7 text-xs pl-7 bg-transparent"
+            />
+          </div>
+        </div>
+        <ScrollArea className="h-[55vh] max-h-[450px]">
           <div className="p-2">
             {providerGroups.map(({ provider, label, models }) => {
               const Logo = PROVIDER_LOGOS[provider];
@@ -186,10 +201,10 @@ export function MultiModelSelector({ value, onChange, className }: MultiModelSel
               const hasSelected = models.some(m => value.includes(m.id));
               const selectedInGroup = models.filter(m => value.includes(m.id)).length;
               const defaultClosed = !hasSelected && models.length > 3;
-              const collapsed = getCollapsed(provider, defaultClosed);
+              const collapsed = searchQuery ? false : getCollapsed(provider, defaultClosed);
 
               return (
-                <Collapsible key={provider} open={!collapsed} onOpenChange={() => toggleProvider(provider)} className="mb-1">
+                <Collapsible key={provider} open={!collapsed} onOpenChange={() => !searchQuery && toggleProvider(provider)} className="mb-1">
                   <div className="flex items-center justify-between px-2 py-1">
                     <CollapsibleTrigger className={cn('flex items-center gap-2 text-sm font-medium hover:opacity-80 transition-opacity group', color)}>
                       <ChevronRight className="h-3.5 w-3.5 transition-transform group-data-[state=open]:rotate-90" />
