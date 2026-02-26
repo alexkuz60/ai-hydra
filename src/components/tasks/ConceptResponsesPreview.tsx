@@ -15,6 +15,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { UnsavedChangesDialog } from '@/components/ui/unsaved-changes-dialog';
+import { computeSyncPlan, applySyncPlan } from '@/lib/strategySyncEngine';
+import type { SyncPlan } from '@/lib/strategySyncEngine';
+import { StrategySyncDialog } from './StrategySyncDialog';
 
 interface CollapsedResponseProps {
   content: string | null;
@@ -79,6 +82,9 @@ export function ConceptResponsesPreview({
   const [approvalSections, setApprovalSections] = useState<ApprovalSection[]>([]);
   const [saving, setSaving] = useState(false);
   const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
+  const [syncPlan, setSyncPlan] = useState<SyncPlan | null>(null);
+  const [showSyncDialog, setShowSyncDialog] = useState(false);
+  const [applyingSync, setApplyingSync] = useState(false);
   
   // Track initial state for dirty detection
   const initialSectionsRef = useRef<string>('');
@@ -148,96 +154,104 @@ export function ConceptResponsesPreview({
     onOpenChange(false);
   };
 
-  const handleSaveTab = async (tabSource: 'visionary' | 'strategist' | 'patent') => {
+  // For strategist: compute sync plan first, show confirmation dialog
+  const handleStrategistApproval = async () => {
     if (!planId || !user?.id) return;
     setSaving(true);
-
     try {
-      const tabSections = approvalSections.filter(s => s.source === tabSource);
+      const tabSections = approvalSections.filter(s => s.source === 'strategist');
+      const plan = await computeSyncPlan(planId, user.id, tabSections);
+      setSyncPlan(plan);
+      setShowSyncDialog(true);
+    } catch (err: any) {
+      console.error('Sync plan error:', err);
+      toast.error(err.message || 'Failed to compute sync plan');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleConfirmSync = async () => {
+    if (!planId || !user?.id || !syncPlan) return;
+    setApplyingSync(true);
+    try {
+      // 1. Save approval metadata first
+      await saveApprovalMetadata('strategist');
       
-      // Save approval sections to plan metadata
+      // 2. Apply sync plan
+      const result = await applySyncPlan(planId, user.id, syncPlan);
+      if (!result.success) throw new Error(result.error);
+
+      // 3. Save section→session mapping in plan metadata
       const { data: plan } = await supabase
         .from('strategic_plans')
         .select('metadata')
         .eq('id', planId)
         .single();
-
-      const existingMeta = (plan?.metadata as Record<string, unknown>) || {};
-      const allSectionsJson = sectionsToJson(approvalSections);
-      const tabDiff = computeApprovalDiff(tabSections);
-      
-      const metaKey = `approval_${tabSource}`;
-      const updatedMeta = {
-        ...existingMeta,
-        approval_sections: allSectionsJson,
-        [metaKey]: {
-          diff: tabDiff,
-          updated_at: new Date().toISOString(),
-        },
-      };
-
-      const { error: updateError } = await supabase
+      const meta = (plan?.metadata as Record<string, unknown>) || {};
+      await supabase
         .from('strategic_plans')
-        .update({ metadata: updatedMeta as any })
+        .update({
+          metadata: {
+            ...meta,
+            last_sync_at: new Date().toISOString(),
+            sync_stats: syncPlan.stats,
+          } as any,
+        })
         .eq('id', planId);
 
-      if (updateError) throw updateError;
+      initialSectionsRef.current = JSON.stringify(sectionsToJson(approvalSections));
+      toast.success(language === 'ru' ? 'Стратегия принята и структура СПРЗ обновлена' : 'Strategy accepted and SPSP structure updated');
+      setShowSyncDialog(false);
+      setSyncPlan(null);
+      onApprovalComplete?.();
+    } catch (err: any) {
+      console.error('Sync apply error:', err);
+      toast.error(err.message || 'Failed to apply sync');
+    } finally {
+      setApplyingSync(false);
+    }
+  };
 
-      // Only create sessions/aspects for strategist tab
-      if (tabSource === 'strategist') {
-        const approvedAspects = tabSections.filter(
-          s => s.depth === 0 && s.status === 'approved'
-        );
+  const saveApprovalMetadata = async (tabSource: 'visionary' | 'strategist' | 'patent') => {
+    if (!planId) return;
+    const tabSections = approvalSections.filter(s => s.source === tabSource);
+    const { data: plan } = await supabase
+      .from('strategic_plans')
+      .select('metadata')
+      .eq('id', planId)
+      .single();
 
-        if (approvedAspects.length > 0) {
-          const { data: existingSessions } = await supabase
-            .from('sessions')
-            .select('id, title')
-            .eq('plan_id', planId)
-            .eq('user_id', user.id)
-            .is('parent_id', null);
+    const existingMeta = (plan?.metadata as Record<string, unknown>) || {};
+    const allSectionsJson = sectionsToJson(approvalSections);
+    const tabDiff = computeApprovalDiff(tabSections);
+    const metaKey = `approval_${tabSource}`;
 
-          const existingTitles = new Set((existingSessions || []).map(s => s.title));
+    const updatedMeta = {
+      ...existingMeta,
+      approval_sections: allSectionsJson,
+      [metaKey]: { diff: tabDiff, updated_at: new Date().toISOString() },
+    };
 
-          for (let i = 0; i < approvedAspects.length; i++) {
-            const aspect = approvedAspects[i];
-            if (existingTitles.has(aspect.title)) continue;
+    const { error } = await supabase
+      .from('strategic_plans')
+      .update({ metadata: updatedMeta as any })
+      .eq('id', planId);
+    if (error) throw error;
+  };
 
-            const { data: aspectSession, error: aspectErr } = await supabase
-              .from('sessions')
-              .insert({
-                user_id: user.id,
-                plan_id: planId,
-                title: aspect.title,
-                description: aspect.body || null,
-                is_active: true,
-                sort_order: (existingSessions?.length || 0) + i,
-              })
-              .select('id')
-              .single();
+  const handleSaveTab = async (tabSource: 'visionary' | 'strategist' | 'patent') => {
+    if (!planId || !user?.id) return;
 
-            if (aspectErr || !aspectSession) continue;
+    // For strategist: use sync flow with confirmation dialog
+    if (tabSource === 'strategist') {
+      await handleStrategistApproval();
+      return;
+    }
 
-            const approvedTasks = aspect.children.filter(c => c.status === 'approved');
-            for (let j = 0; j < approvedTasks.length; j++) {
-              const task = approvedTasks[j];
-              await supabase
-                .from('sessions')
-                .insert({
-                  user_id: user.id,
-                  plan_id: planId,
-                  parent_id: aspectSession.id,
-                  title: task.title,
-                  description: task.body || null,
-                  is_active: true,
-                  sort_order: j,
-                });
-            }
-          }
-        }
-      }
-
-      // Update initial ref so dialog is no longer dirty for this tab
+    setSaving(true);
+    try {
+      await saveApprovalMetadata(tabSource);
       initialSectionsRef.current = JSON.stringify(sectionsToJson(approvalSections));
 
       const labels = {
@@ -367,6 +381,14 @@ export function ConceptResponsesPreview({
         open={showUnsavedDialog}
         onConfirm={handleDiscardAndClose}
         onCancel={() => setShowUnsavedDialog(false)}
+      />
+
+      <StrategySyncDialog
+        open={showSyncDialog}
+        onOpenChange={setShowSyncDialog}
+        syncPlan={syncPlan}
+        onConfirm={handleConfirmSync}
+        applying={applyingSync}
       />
     </>
   );
