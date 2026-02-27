@@ -133,9 +133,9 @@ export function RoleHierarchySection({ selectedRole, userId, onHasUnsavedChanges
       <Collapsible open={hierarchyOpen} onOpenChange={setHierarchyOpen}>
         <div className="flex items-center justify-between">
           <CollapsibleTrigger className="flex items-center gap-2 hover:text-foreground transition-colors">
-            <ChevronDown className={cn("h-4 w-4 transition-transform", !hierarchyOpen && "-rotate-90")} />
-            <Network className="h-4 w-4 text-muted-foreground" />
-            <h3 className="text-sm font-medium text-muted-foreground">{t('staffRoles.hierarchy.title')}</h3>
+             <ChevronDown className={cn("h-5 w-5 transition-transform", !hierarchyOpen && "-rotate-90")} />
+            <Network className="h-5 w-5 text-muted-foreground" />
+            <h3 className="text-base font-medium text-muted-foreground">{t('staffRoles.hierarchy.title')}</h3>
           </CollapsibleTrigger>
           {userId && (
             <div className="flex items-center gap-1">
@@ -157,7 +157,7 @@ export function RoleHierarchySection({ selectedRole, userId, onHasUnsavedChanges
           {isLoadingBehavior ? (
             <div className="flex items-center justify-center py-4">
               <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-              <span className="ml-2 text-sm text-muted-foreground">{t('staffRoles.hierarchy.loading')}</span>
+              <span className="ml-2 text-base text-muted-foreground">{t('staffRoles.hierarchy.loading')}</span>
             </div>
           ) : (
             <RoleHierarchyEditor selectedRole={selectedRole} interactions={interactions} onInteractionsChange={handleInteractionsChange} isEditing={isEditingHierarchy} />

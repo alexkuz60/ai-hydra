@@ -63,8 +63,8 @@ export function RoleAssignmentHistory({ role }: RoleAssignmentHistoryProps) {
   if (loading) {
     return (
       <div className="space-y-3">
-        <h3 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-          <History className="h-4 w-4" />
+         <h3 className="text-base font-medium text-muted-foreground flex items-center gap-2">
+          <History className="h-5 w-5" />
           {s('assignmentHistory', isRu)}
         </h3>
         <div className="space-y-2">
@@ -78,11 +78,11 @@ export function RoleAssignmentHistory({ role }: RoleAssignmentHistoryProps) {
   if (records.length === 0) {
     return (
       <div className="space-y-3">
-        <h3 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-          <History className="h-4 w-4" />
+         <h3 className="text-base font-medium text-muted-foreground flex items-center gap-2">
+          <History className="h-5 w-5" />
           {s('assignmentHistory', isRu)}
         </h3>
-        <p className="text-xs text-muted-foreground italic">
+        <p className="text-sm text-muted-foreground italic">
           {s('noAssignments', isRu)}
         </p>
       </div>
@@ -93,8 +93,8 @@ export function RoleAssignmentHistory({ role }: RoleAssignmentHistoryProps) {
 
   return (
     <div className="space-y-3">
-      <h3 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-        <History className="h-4 w-4" />
+       <h3 className="text-base font-medium text-muted-foreground flex items-center gap-2">
+        <History className="h-5 w-5" />
         {s('assignmentHistory', isRu)}
         <Badge variant="outline" className="text-[10px] ml-auto">{records.length}</Badge>
       </h3>
@@ -110,7 +110,7 @@ export function RoleAssignmentHistory({ role }: RoleAssignmentHistoryProps) {
               <div
                 key={record.id}
                 className={cn(
-                  "rounded-lg border p-3 text-sm transition-colors",
+                  "rounded-lg border p-3 text-base transition-colors",
                   isActive ? "border-primary/40 bg-primary/5" : "border-border bg-muted/20",
                   record.is_synthetic && "opacity-60"
                 )}
@@ -120,7 +120,7 @@ export function RoleAssignmentHistory({ role }: RoleAssignmentHistoryProps) {
                     {record.is_synthetic && (
                       <Ghost className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                     )}
-                    <span className="font-mono text-xs truncate">{getModelShortName(record.model_id)}</span>
+                    <span className="font-mono text-sm truncate">{getModelShortName(record.model_id)}</span>
                     {isActive && (
                       <Badge variant="default" className="text-[10px] py-0 gap-1">
                         <UserCheck className="h-2.5 w-2.5" />
@@ -144,7 +144,7 @@ export function RoleAssignmentHistory({ role }: RoleAssignmentHistoryProps) {
                   )}
                 </div>
 
-                <div className="flex items-center justify-between mt-1.5 text-[11px] text-muted-foreground">
+                <div className="flex items-center justify-between mt-1.5 text-xs text-muted-foreground">
                   <span>
                     {new Date(record.assigned_at).toLocaleDateString(isRu ? 'ru-RU' : 'en-US', {
                       day: 'numeric', month: 'short', year: '2-digit'
