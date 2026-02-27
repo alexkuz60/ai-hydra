@@ -34,6 +34,12 @@ const dict = {
   'taskFiles.digest': { ru: 'AI-дайджест', en: 'AI Digest' },
   'taskFiles.noDigest': { ru: 'Дайджест ещё не создан', en: 'Digest not yet generated' },
   'taskFiles.preview': { ru: 'Предпросмотр', en: 'Preview' },
+  'taskFiles.scrapeUrl': { ru: 'Скрейпинг URL', en: 'Scrape URL' },
+  'taskFiles.scrapeUrlPlaceholder': { ru: 'Введите URL для извлечения контента...', en: 'Enter URL to extract content...' },
+  'taskFiles.scraping': { ru: 'Извлечение...', en: 'Extracting...' },
+  'taskFiles.scrapeSuccess': { ru: 'Контент извлечён и сохранён как файл', en: 'Content extracted and saved as file' },
+  'taskFiles.scrapeFailed': { ru: 'Ошибка извлечения контента', en: 'Failed to extract content' },
+  'taskFiles.scrapeEmpty': { ru: 'Не удалось извлечь контент с этой страницы', en: 'Could not extract content from this page' },
 
   // Layout - AppSidebar
   'nav.guidedTour': { ru: 'Экскурсия', en: 'Guided Tour' },

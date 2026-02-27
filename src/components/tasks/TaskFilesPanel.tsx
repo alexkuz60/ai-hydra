@@ -1,15 +1,19 @@
 import React, { useRef, useState, useCallback } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { useTaskFiles } from '@/hooks/useTaskFiles';
 import { useFileDigests } from '@/hooks/useFileDigests';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { Paperclip, Upload, Trash2, FileText, Image, File, Loader2, Eye } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Paperclip, Upload, Trash2, FileText, Image, File as FileIcon, Loader2, Eye, Globe, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { wt } from '@/components/warroom/i18n';
 import { FileViewerDialog } from './FileViewerDialog';
 import { toast } from 'sonner';
+import { sanitizeFileName } from '@/lib/fileUtils';
 
 interface TaskFilesPanelProps {
   sessionId: string | null;
@@ -21,7 +25,7 @@ function isImageMime(mimeType: string | null): boolean {
 }
 
 function getFileIcon(mimeType: string | null) {
-  if (!mimeType) return <File className="h-4 w-4" />;
+  if (!mimeType) return <FileIcon className="h-4 w-4" />;
   if (isImageMime(mimeType)) return <Image className="h-4 w-4 text-blue-400" />;
   if (mimeType.includes('pdf')) return <FileText className="h-4 w-4 text-red-400" />;
   return <FileText className="h-4 w-4 text-muted-foreground" />;
@@ -35,6 +39,7 @@ function formatFileSize(bytes: number): string {
 
 export function TaskFilesPanel({ sessionId, className }: TaskFilesPanelProps) {
   const { language } = useLanguage();
+  const { user } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { files, loading, uploading, uploadFile, deleteFile, updateFileComment, getSignedUrl } = useTaskFiles(sessionId);
   const { digests } = useFileDigests(sessionId);
@@ -42,6 +47,11 @@ export function TaskFilesPanel({ sessionId, className }: TaskFilesPanelProps) {
   const [viewerOpen, setViewerOpen] = useState(false);
   const [viewerInitialFileId, setViewerInitialFileId] = useState<string | undefined>();
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; path: string; name: string } | null>(null);
+
+  // URL scraping state
+  const [showScrapeInput, setShowScrapeInput] = useState(false);
+  const [scrapeUrl, setScrapeUrl] = useState('');
+  const [isScraping, setIsScraping] = useState(false);
 
   // Fetch signed URLs for image files
   const getOrFetchUrl = useCallback(async (filePath: string): Promise<string> => {
@@ -89,9 +99,43 @@ export function TaskFilesPanel({ sessionId, className }: TaskFilesPanelProps) {
     toast.success(wt('taskFiles.commentSaved', language));
   };
 
+  // URL scraping: fetch content via firecrawl, save as .md file
+  const handleScrapeUrl = useCallback(async () => {
+    if (!scrapeUrl.trim() || !sessionId || !user) return;
+    setIsScraping(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('firecrawl-scrape', {
+        body: { url: scrapeUrl.trim(), options: { formats: ['markdown'], onlyMainContent: true } },
+      });
+      if (error) throw error;
+      const markdown = data?.data?.markdown || data?.markdown;
+      const title = data?.data?.metadata?.title || data?.metadata?.title || scrapeUrl.trim();
+      if (!markdown) {
+        toast.error(wt('taskFiles.scrapeEmpty', language));
+        return;
+      }
+
+      // Save as .md file in task-files storage
+      const safeName = sanitizeFileName(title.slice(0, 80) + '.md');
+      const blob = new Blob([`<!-- Source: ${scrapeUrl.trim()} -->\n<!-- Scraped: ${new Date().toISOString()} -->\n\n${markdown}`], { type: 'text/markdown' });
+      const file = new File([blob], safeName, { type: 'text/markdown' });
+      await uploadFile(file);
+
+      toast.success(wt('taskFiles.scrapeSuccess', language));
+      setScrapeUrl('');
+      setShowScrapeInput(false);
+    } catch (err) {
+      console.error('[TaskFilesPanel] Scrape error:', err);
+      toast.error(wt('taskFiles.scrapeFailed', language));
+    } finally {
+      setIsScraping(false);
+    }
+  }, [scrapeUrl, sessionId, user, uploadFile, language]);
+
   if (!sessionId) return null;
 
   return (
+    <TooltipProvider delayDuration={200}>
     <section className={cn("space-y-3", className)}>
       <div className="flex items-center justify-between">
         <h3 className="text-base font-medium text-muted-foreground flex items-center gap-2">
@@ -103,6 +147,19 @@ export function TaskFilesPanel({ sessionId, className }: TaskFilesPanelProps) {
           >
             {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Paperclip className="h-4 w-4" />}
           </button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                type="button"
+                onClick={() => setShowScrapeInput(prev => !prev)}
+                disabled={isScraping}
+                className="hover:text-primary transition-colors"
+              >
+                {isScraping ? <Loader2 className="h-4 w-4 animate-spin" /> : <Globe className="h-4 w-4" />}
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>{wt('taskFiles.scrapeUrl', language)}</TooltipContent>
+          </Tooltip>
           {wt('taskFiles.title', language)}
           {files.length > 0 && (
             <span className="text-xs bg-muted/50 px-1.5 py-0.5 rounded">
@@ -130,6 +187,38 @@ export function TaskFilesPanel({ sessionId, className }: TaskFilesPanelProps) {
         />
       </div>
 
+      {/* URL scrape input */}
+      {showScrapeInput && (
+        <div className="flex items-center gap-2">
+          <Input
+            value={scrapeUrl}
+            onChange={(e) => setScrapeUrl(e.target.value)}
+            placeholder={wt('taskFiles.scrapeUrlPlaceholder', language)}
+            className="flex-1 h-9 text-sm"
+            onKeyDown={(e) => { if (e.key === 'Enter') handleScrapeUrl(); }}
+            disabled={isScraping}
+            autoFocus
+          />
+          <Button
+            size="sm"
+            className="h-9 gap-1.5"
+            onClick={handleScrapeUrl}
+            disabled={!scrapeUrl.trim() || isScraping}
+          >
+            {isScraping ? <Loader2 className="h-4 w-4 animate-spin" /> : <Globe className="h-4 w-4" />}
+            {isScraping ? wt('taskFiles.scraping', language) : wt('taskFiles.scrapeUrl', language)}
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-9 w-9 shrink-0"
+            onClick={() => { setShowScrapeInput(false); setScrapeUrl(''); }}
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+      )}
+
       {loading ? (
         <div className="flex items-center justify-center py-4">
           <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
@@ -141,7 +230,7 @@ export function TaskFilesPanel({ sessionId, className }: TaskFilesPanelProps) {
           </p>
         </div>
       ) : (
-        <TooltipProvider delayDuration={200}>
+        <>
           <div className="flex flex-wrap gap-2">
             {files.map(file => {
               const isImage = isImageMime(file.mime_type);
@@ -193,7 +282,7 @@ export function TaskFilesPanel({ sessionId, className }: TaskFilesPanelProps) {
               );
             })}
           </div>
-        </TooltipProvider>
+        </>
       )}
 
       <FileViewerDialog
@@ -233,5 +322,6 @@ export function TaskFilesPanel({ sessionId, className }: TaskFilesPanelProps) {
         </AlertDialogContent>
       </AlertDialog>
     </section>
+    </TooltipProvider>
   );
 }
