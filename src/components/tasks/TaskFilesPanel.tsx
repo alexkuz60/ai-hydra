@@ -136,7 +136,7 @@ export function TaskFilesPanel({ sessionId, className }: TaskFilesPanelProps) {
 
   return (
     <TooltipProvider delayDuration={200}>
-    <section className={cn("space-y-3", className)}>
+    <section className={cn("space-y-4 min-h-[120px]", className)}>
       <div className="flex items-center justify-between">
         <h3 className="text-base font-medium text-muted-foreground flex items-center gap-2">
           <button
@@ -231,7 +231,7 @@ export function TaskFilesPanel({ sessionId, className }: TaskFilesPanelProps) {
         </div>
       ) : (
         <>
-          <div className="flex flex-wrap gap-2 max-h-[280px] overflow-y-auto pr-1">
+          <div className="flex flex-wrap gap-3 max-h-[320px] overflow-y-auto pr-1 py-2">
             {files.map(file => {
               const isImage = isImageMime(file.mime_type);
               const url = signedUrls[file.file_path];
