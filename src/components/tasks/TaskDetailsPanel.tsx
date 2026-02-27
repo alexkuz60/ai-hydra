@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
@@ -151,17 +151,45 @@ export function TaskDetailsPanel({
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewTab, setPreviewTab] = useState<'visionary' | 'strategist' | 'patent'>('visionary');
 
-  // Per-expert model selection with role defaults
-  const [expertModels, setExpertModels] = useState<ConceptModelOverrides>(() => ({
-    visionary: getTechRoleDefaultModel('visionary') || 'perplexity/sonar-reasoning-pro',
-    strategist: getTechRoleDefaultModel('strategist') || 'google/gemini-2.5-pro-preview',
-    patent: getTechRoleDefaultModel('patent_attorney') || 'perplexity/sonar-deep-research',
-  }));
+  // Per-expert model selection with role defaults, persisted per plan
+  const getStoredExpertModels = useCallback((planId: string | null): ConceptModelOverrides => {
+    if (planId) {
+      try {
+        const raw = localStorage.getItem(`hydra-expert-models-${planId}`);
+        if (raw) return JSON.parse(raw);
+      } catch {}
+    }
+    return {
+      visionary: getTechRoleDefaultModel('visionary') || 'perplexity/sonar-reasoning-pro',
+      strategist: getTechRoleDefaultModel('strategist') || 'google/gemini-2.5-pro-preview',
+      patent: getTechRoleDefaultModel('patent_attorney') || 'perplexity/sonar-deep-research',
+    };
+  }, []);
+
+  const [expertModels, setExpertModels] = useState<ConceptModelOverrides>(() => getStoredExpertModels(null));
 
   // Concept responses for plan-level tasks
   const currentIsPlan = !!(task?.session_config as any)?.__isPlan;
   const conceptPlanId = currentIsPlan ? ((task?.session_config as any)?.__planId || task?.plan_id || task?.id || null) : null;
   const { responses: conceptResponses, refetch: refetchResponses } = useConceptResponses(conceptPlanId);
+
+  // Restore expert models when plan changes
+  useEffect(() => {
+    if (conceptPlanId) {
+      setExpertModels(getStoredExpertModels(conceptPlanId));
+    }
+  }, [conceptPlanId, getStoredExpertModels]);
+
+  // Persist expert models to localStorage on change
+  const updateExpertModel = useCallback((key: string, value: string) => {
+    setExpertModels(prev => {
+      const next = { ...prev, [key]: value };
+      if (conceptPlanId) {
+        localStorage.setItem(`hydra-expert-models-${conceptPlanId}`, JSON.stringify(next));
+      }
+      return next;
+    });
+  }, [conceptPlanId]);
 
   // Pipeline for concept analysis
   const pipeline = useConceptPipeline({
@@ -540,7 +568,7 @@ export function TaskDetailsPanel({
                     onInvoke={() => pipeline.runStep('visionary', expertModels)}
                     invoking={pipeline.state.phaseStatuses.visionary === 'running' || expertLoading === 'visionary'}
                     selectedModel={expertModels.visionary || ''}
-                    onModelChange={(m) => setExpertModels(prev => ({ ...prev, visionary: m }))}
+                    onModelChange={(m) => updateExpertModel('visionary', m)}
                   />
 
                   <ConceptStrategistCall
@@ -552,7 +580,7 @@ export function TaskDetailsPanel({
                     onInvoke={() => pipeline.runStep('strategist', expertModels)}
                     invoking={pipeline.state.phaseStatuses.strategist === 'running' || expertLoading === 'strategist'}
                     selectedModel={expertModels.strategist || ''}
-                    onModelChange={(m) => setExpertModels(prev => ({ ...prev, strategist: m }))}
+                    onModelChange={(m) => updateExpertModel('strategist', m)}
                   />
 
                   {includePatent && (
@@ -565,7 +593,7 @@ export function TaskDetailsPanel({
                       onInvoke={() => pipeline.runStep('patent', expertModels)}
                       invoking={pipeline.state.phaseStatuses.patent === 'running' || expertLoading === 'patent'}
                       selectedModel={expertModels.patent || ''}
-                      onModelChange={(m) => setExpertModels(prev => ({ ...prev, patent: m }))}
+                      onModelChange={(m) => updateExpertModel('patent', m)}
                     />
                   )}
 
