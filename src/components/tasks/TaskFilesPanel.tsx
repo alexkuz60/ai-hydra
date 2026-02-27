@@ -237,14 +237,14 @@ export function TaskFilesPanel({ sessionId, className }: TaskFilesPanelProps) {
               const url = signedUrls[file.file_path];
 
               return (
-                <div key={file.id} className="relative group">
+                <div key={file.id} className="relative group flex flex-col gap-1">
                   <button
                     type="button"
                     onClick={() => handleOpenViewer(file.id)}
                     className={cn(
                       "rounded-md overflow-hidden border border-border/50",
                       "hover:border-primary/50 transition-colors cursor-pointer",
-                      isImage ? "w-24 h-24" : "w-auto h-auto px-4 py-3 flex items-center gap-2.5 bg-muted/20"
+                      isImage ? "w-28 h-28" : "w-auto min-h-16 px-4 py-3 flex items-center gap-2.5 bg-muted/20"
                     )}
                   >
                     {isImage && url ? (
@@ -260,12 +260,16 @@ export function TaskFilesPanel({ sessionId, className }: TaskFilesPanelProps) {
                         <span className="text-xs text-muted-foreground">{formatFileSize(file.file_size)}</span>
                       </>
                     )}
-                    {file.comment && (
-                      <span className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-[10px] px-1 py-0.5 truncate">
-                        💬 {file.comment}
-                      </span>
-                    )}
                   </button>
+
+                  {file.comment && (
+                    <span className={cn(
+                      "text-[10px] text-muted-foreground truncate",
+                      isImage ? "w-28" : "max-w-[220px]"
+                    )}>
+                      💬 {file.comment}
+                    </span>
+                  )}
 
                   <Tooltip>
                     <TooltipTrigger asChild>
