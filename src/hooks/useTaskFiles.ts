@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { sanitizeFileName } from '@/lib/fileUtils';
 
 export interface TaskFile {
   id: string;
@@ -43,8 +44,7 @@ export function useTaskFiles(sessionId: string | null) {
     if (!sessionId || !user) return;
     setUploading(true);
     try {
-      const ext = file.name.split('.').pop() || 'bin';
-      const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+      const safeName = sanitizeFileName(file.name);
       const path = `${user.id}/${sessionId}/${Date.now()}_${safeName}`;
 
       const { error: uploadError } = await supabase.storage

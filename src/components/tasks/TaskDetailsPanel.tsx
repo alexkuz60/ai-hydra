@@ -46,14 +46,21 @@ const filterValidModels = (modelIds: string[]): string[] => {
    return <Cpu className="h-4 w-4 text-accent-foreground" />;
  }
  
+/** Extract real UUID from virtual plan id like __plan__<uuid> */
+function resolveSessionId(taskId: string): string | null {
+  if (!taskId) return null;
+  if (taskId.startsWith('__plan__')) return taskId.replace('__plan__', '');
+  return taskId;
+}
+
 /** Small wrapper: FileUpload dropdown that auto-uploads picked files to task storage */
 function ConceptFileUpload({ taskId }: { taskId: string }) {
   const [attached, setAttached] = React.useState<AttachedFile[]>([]);
-  const { uploadFile } = useTaskFiles(taskId);
+  const realId = resolveSessionId(taskId);
+  const { uploadFile } = useTaskFiles(realId);
 
   React.useEffect(() => {
     if (attached.length === 0) return;
-    // Upload each newly attached file then clear
     (async () => {
       for (const a of attached) {
         if (a.file) await uploadFile(a.file);
@@ -561,7 +568,7 @@ export function TaskDetailsPanel({
                )}
 
                <div data-guide="tasks-files-tab">
-                 <TaskFilesPanel sessionId={task.id} className="border-t pt-4" />
+                 <TaskFilesPanel sessionId={resolveSessionId(task.id)} className="border-t pt-4" />
                </div>
 
                <div data-guide="tasks-hybrid-toggle">
