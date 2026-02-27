@@ -73,11 +73,11 @@ function featureExplanationTask(ctx: RoleTestContext): RoleTestTask {
     task_type: 'explanation',
     competency: C.FEATURE_EXPLANATION,
     task_prompt: isRu
-      ? `Объясни функцию «Конкурс красоты моделей» (Beauty Contest) двумя способами:
+      ? `Объясни функцию «Конкурс красоты ИИ-интеллекта» (AI Intelligence Beauty Contest) двумя способами:
 1. Для новичка, который впервые открыл платформу (максимум 3 предложения, без терминов).
 2. Для опытного пользователя, который хочет понять внутреннюю механику (arbiter scoring, критерии, пайплайн).
 Оба объяснения должны быть точными и не содержать вымышленных деталей.`
-      : `Explain the "Beauty Contest" feature in two ways:
+      : `Explain the "AI Intelligence Beauty Contest" feature in two ways:
 1. For a beginner who just opened the platform (max 3 sentences, no jargon).
 2. For an advanced user who wants to understand internal mechanics (arbiter scoring, criteria, pipeline).
 Both explanations must be accurate and contain no fabricated details.`,

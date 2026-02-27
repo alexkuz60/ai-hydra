@@ -29,7 +29,7 @@ export const featuresSections: HydrapediaSection[] = [
 - **Арбитраж** — выбор модели-арбитра, схемы оценки, баланс весов
 - **Итоговая конфигурация** — сводка всех настроек перед запуском
 
-### Конкурс интеллект-красоты
+### Конкурс красоты ИИ-интеллекта
 
 Модуль для сравнительного тестирования моделей. Позволяет создать конкурс между несколькими моделями и оценить их на соответствие заданным критериям. Результаты рассчитываются по одной из трёх схем оценки (см. раздел ниже).
 
@@ -156,7 +156,7 @@ export const featuresSections: HydrapediaSection[] = [
 
 ## Схемы итоговой оценки конкурса
 
-Конкурс интеллект-красоты поддерживает три независимых метода расчёта итогового балла на основе полученных оценок:
+Конкурс красоты ИИ-интеллекта поддерживает три независимых метода расчёта итогового балла на основе полученных оценок:
 
 ### 1️⃣ Средневзвешенный балл (Weighted Average)
 ФинальныйБалл = (ОценкаПользователя × УдельныйВесПользователя) + (ОценкаАрбитра × УдельныйВесАрбитра)
@@ -298,7 +298,7 @@ Centralized contest configuration before launch:
 - **Arbitration** — arbiter model, scoring scheme, weight balance
 - **Final Configuration** — summary of all settings before launch
 
-### Intelligence Beauty Contest
+### AI Intelligence Beauty Contest
 
 A module for comparative model testing. Allows you to create a contest between several models and evaluate them against specified criteria. Results are calculated using one of three scoring schemes (see section below).
 
@@ -410,7 +410,7 @@ These ratings accumulate and form a personal model ranking.
 
 ## Final Scoring Schemes for Contest
 
-The Intelligence Beauty Contest supports three independent methods for calculating the final score based on received evaluations:
+The AI Intelligence Beauty Contest supports three independent methods for calculating the final score based on received evaluations:
 
 ### 1️⃣ Weighted Average
 
@@ -2016,7 +2016,7 @@ The winner is determined by the number of rounds won. Equal score means a draw.`
     content: {
       ru: `# Правила конкурса — детальный разбор
 
-Раздел **«Правила конкурса»** — это пошаговый мастер настройки перед запуском конкурса интеллект-красоты. Каждый шаг реализован отдельным компонентом-карточкой (\`HydraCard\`) с номером этапа и тематической иконкой.
+Раздел **«Правила конкурса»** — это пошаговый мастер настройки перед запуском Конкурса красоты ИИ-интеллекта. Каждый шаг реализован отдельным компонентом-карточкой (\`HydraCard\`) с номером этапа и тематической иконкой.
 
 ## Шаг 1 — Задача и промпт (TaskSelector)
 
@@ -2152,7 +2152,7 @@ The winner is determined by the number of rounds won. Equal score means a draw.`
 > Все настройки конкурса автоматически сохраняются в облако. При перезагрузке страницы конфигурация восстанавливается.`,
       en: `# Contest Rules — Detailed Breakdown
 
-The **"Contest Rules"** section is a step-by-step configuration wizard for setting up an Intelligence Beauty Contest. Each step is implemented as a separate card component (\`HydraCard\`) with a step number and themed icon.
+The **"Contest Rules"** section is a step-by-step configuration wizard for setting up an AI Intelligence Beauty Contest. Each step is implemented as a separate card component (\`HydraCard\`) with a step number and themed icon.
 
 ## Step 1 — Task & Prompt (TaskSelector)
 
@@ -2299,7 +2299,7 @@ export const podiumInterviewSections: HydrapediaSection[] = [
     content: {
       ru: `# Собеседование на Подиуме
 
-Подиумное собеседование — облегчённый формат интервью, предназначенный для пакетной оценки победителей Конкурса интеллект-красоты. В отличие от полноценного Собеседования в Штате, подиумное собеседование **не предполагает решения о найме** — его цель обновить профили компетенций моделей.
+Подиумное собеседование — облегчённый формат интервью, предназначенный для пакетной оценки победителей Конкурса красоты ИИ-интеллекта. В отличие от полноценного Собеседования в Штате, подиумное собеседование **не предполагает решения о найме** — его цель обновить профили компетенций моделей.
 
 ## Алгоритм
 
@@ -2364,7 +2364,7 @@ graph TD
 > Подиумные тесты короче и не зависят от контекста конкурса, что снижает расход токенов на 40-60% по сравнению с полным собеседованием.`,
       en: `# Podium Interview
 
-The Podium Interview is a lightweight interview format designed for batch evaluation of Beauty Contest winners. Unlike the full Staff Interview, a podium interview **does not result in a hiring decision** — its purpose is to update model competency profiles.
+The Podium Interview is a lightweight interview format designed for batch evaluation of AI Intelligence Beauty Contest winners. Unlike the full Staff Interview, a podium interview **does not result in a hiring decision** — its purpose is to update model competency profiles.
 
 ## Algorithm
 

@@ -62,7 +62,7 @@ Automatic experience consolidation: patterns from `role_memory` are distilled in
 
 **D-Chat (Consultant Panel)** — Side panel for single expert queries with Moderator mode, result transfer to main chat, independent model/role selection
 
-**Model Contest (Beauty Contest / Podium)** — Multi-round competition, AI arbitration, scoreboard & podium, Likert/manual scoring, Duels (1v1), Screening Interviews for winners, Staff Synchronization ("Hire" from verdict)
+**Model Contest (AI Intelligence Beauty Contest / Podium)** — Multi-round competition, AI arbitration, scoreboard & podium, Likert/manual scoring, Duels (1v1), Screening Interviews for winners, Staff Synchronization ("Hire" from verdict)
 
 ### 🏢 Management & Tools
 

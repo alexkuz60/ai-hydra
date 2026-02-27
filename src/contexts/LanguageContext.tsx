@@ -1458,7 +1458,7 @@ const translations: Translations = {
    'page.podium.portfolioDesc': { ru: 'Каталог всех доступных моделей', en: 'Catalog of all available models' },
    'page.podium.rules': { ru: 'Правила конкурса', en: 'Contest Rules' },
    'page.podium.rulesDesc': { ru: 'Настройка туров и критериев', en: 'Rounds and criteria setup' },
-   'page.podium.contest': { ru: 'Конкурс интеллект-красоты', en: 'Intelligence Contest' },
+   'page.podium.contest': { ru: 'Конкурс красоты ИИ-интеллекта', en: 'AI Intelligence Beauty Contest' },
    'page.podium.contestDesc': { ru: 'Соревнования между моделями', en: 'AI model competitions' },
    'page.podium.duel': { ru: 'Дуэль «К барьеру»', en: 'Duel «En Garde»' },
    'page.podium.duelDesc': { ru: 'Попарное состязание кандидатов', en: 'Head-to-head candidate battle' },

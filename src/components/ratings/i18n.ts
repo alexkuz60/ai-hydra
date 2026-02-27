@@ -89,7 +89,7 @@ export const RATINGS_I18N = {
   pipeline_label: { ru: 'Пайплайн', en: 'Pipeline' },
 
   // ===== BEAUTY CONTEST EXECUTION =====
-  intelligenceBeautyContest: { ru: 'Конкурс интеллект-красоты', en: 'Intelligence Beauty Contest' },
+  intelligenceBeautyContest: { ru: 'Конкурс красоты ИИ-интеллекта', en: 'AI Intelligence Beauty Contest' },
   configureContestAndLaunch: { ru: 'Настройте конкурс в разделе «Правила» и запустите его здесь, или восстановите предыдущую сессию.', en: 'Configure the contest in "Rules" section and launch it here, or restore a previous session.' },
   launchFromPlan: { ru: 'Запустить из плана', en: 'Launch from Plan' },
   loadFromArchive: { ru: 'Загрузить из архива', en: 'Load from Archive' },
