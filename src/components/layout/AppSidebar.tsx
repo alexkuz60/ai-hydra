@@ -64,7 +64,7 @@ export function AppSidebar() {
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
-  const { state } = useSidebar();
+  const { state, toggleSidebar } = useSidebar();
   const isCollapsed = state === 'collapsed';
   const { openPicker: openGuideTour } = useGuideTourContext();
   const { isAdmin, isSupervisor } = useUserRoles();
@@ -103,11 +103,18 @@ export function AppSidebar() {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton
-              asChild
               size="lg"
               tooltip="AI-Hydra"
+              onClick={(e) => {
+                if (isCollapsed) {
+                  e.preventDefault();
+                  toggleSidebar();
+                } else {
+                  navigate('/');
+                }
+              }}
+              className="flex items-center gap-1.5 group cursor-pointer"
             >
-              <Link to="/" className="flex items-center gap-1.5 group">
                 <img
                   src={hydraLogo}
                   alt=""
@@ -122,7 +129,6 @@ export function AppSidebar() {
                 >
                   ai*hYdra
                 </span>
-              </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
