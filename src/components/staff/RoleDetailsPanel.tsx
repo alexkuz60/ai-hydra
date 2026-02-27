@@ -55,12 +55,12 @@ const RoleDetailsPanel = forwardRef<HTMLDivElement, RoleDetailsPanelProps>(
           <div className="p-6 space-y-6">
             {/* Header */}
             <div className="flex items-center gap-4">
-              <div className={cn("w-14 h-14 rounded-xl flex items-center justify-center", `bg-${config.color.replace('text-', '')}/10`)}>
-                <IconComponent className={cn("h-7 w-7", config.color)} />
+              <div className={cn("w-16 h-16 rounded-xl flex items-center justify-center", `bg-${config.color.replace('text-', '')}/10`)}>
+                <IconComponent className={cn("h-8 w-8", config.color)} />
               </div>
               <div className="flex-1">
-                <h2 className={cn("text-xl font-semibold", config.color)}>{t(config.label)}</h2>
-                <code className="text-xs text-muted-foreground font-mono">{selectedRole}</code>
+                <h2 className={cn("text-2xl font-semibold", config.color)}>{t(config.label)}</h2>
+                <code className="text-sm text-muted-foreground font-mono">{selectedRole}</code>
               </div>
               {onOpenRecert && hasChanged && selectedRole && (
                 <TooltipProvider>
@@ -100,8 +100,8 @@ const RoleDetailsPanel = forwardRef<HTMLDivElement, RoleDetailsPanelProps>(
 
             {/* Description */}
             <div className="space-y-2">
-              <h3 className="text-sm font-medium text-muted-foreground">{t('staffRoles.roleDescription')}</h3>
-              <p className="text-sm leading-relaxed line-clamp-2 min-h-[2.5rem]">{t(config.description)}</p>
+              <h3 className="text-base font-medium text-muted-foreground">{t('staffRoles.roleDescription')}</h3>
+              <p className="text-base leading-relaxed line-clamp-2 min-h-[2.5rem]">{t(config.description)}</p>
             </div>
 
             <Separator />
