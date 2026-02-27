@@ -65,7 +65,12 @@ export function KnowledgeTab({ stats, loading }: { stats: ReturnType<typeof useH
   // Detailed entries state
   const [detailedEntries, setDetailedEntries] = useState<KnowledgeEntryRaw[]>([]);
   const [detailedLoading, setDetailedLoading] = useState(true);
-  const [collapsedRoles, setCollapsedRoles] = useState<Set<string>>(new Set());
+  const [collapsedRoles, setCollapsedRoles] = useState<Set<string>>(() => {
+    try {
+      const saved = localStorage.getItem('hydra-knowledge-collapsed-roles');
+      return saved ? new Set(JSON.parse(saved)) : new Set();
+    } catch { return new Set(); }
+  });
 
   const isRu = language === 'ru';
 
@@ -108,6 +113,7 @@ export function KnowledgeTab({ stats, loading }: { stats: ReturnType<typeof useH
       const next = new Set(prev);
       if (next.has(role)) next.delete(role);
       else next.add(role);
+      try { localStorage.setItem('hydra-knowledge-collapsed-roles', JSON.stringify([...next])); } catch {}
       return next;
     });
   };
