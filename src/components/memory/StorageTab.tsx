@@ -350,9 +350,6 @@ export function StorageTab() {
                   <TooltipContent>{t('memory.hub.download')}</TooltipContent>
                 </Tooltip>
               )}
-              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setPreview(null)}>
-                <X className="h-4 w-4" />
-              </Button>
             </div>
           </DialogHeader>
           {preview && (
