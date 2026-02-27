@@ -20,10 +20,10 @@ function isImageMime(mimeType: string | null): boolean {
 }
 
 function getFileIcon(mimeType: string | null) {
-  if (!mimeType) return <File className="h-3.5 w-3.5" />;
-  if (isImageMime(mimeType)) return <Image className="h-3.5 w-3.5 text-blue-400" />;
-  if (mimeType.includes('pdf')) return <FileText className="h-3.5 w-3.5 text-red-400" />;
-  return <FileText className="h-3.5 w-3.5 text-muted-foreground" />;
+  if (!mimeType) return <File className="h-4 w-4" />;
+  if (isImageMime(mimeType)) return <Image className="h-4 w-4 text-blue-400" />;
+  if (mimeType.includes('pdf')) return <FileText className="h-4 w-4 text-red-400" />;
+  return <FileText className="h-4 w-4 text-muted-foreground" />;
 }
 
 function formatFileSize(bytes: number): string {
@@ -90,20 +90,20 @@ export function TaskFilesPanel({ sessionId, className }: TaskFilesPanelProps) {
   if (!sessionId) return null;
 
   return (
-    <section className={cn("space-y-2", className)}>
+    <section className={cn("space-y-3", className)}>
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-medium text-muted-foreground flex items-center gap-1.5">
+        <h3 className="text-base font-medium text-muted-foreground flex items-center gap-2">
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
             disabled={uploading}
             className="hover:text-primary transition-colors"
           >
-            {uploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Paperclip className="h-3.5 w-3.5" />}
+            {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Paperclip className="h-4 w-4" />}
           </button>
           {wt('taskFiles.title', language)}
           {files.length > 0 && (
-            <span className="text-[10px] bg-muted/50 px-1.5 py-0.5 rounded">
+            <span className="text-xs bg-muted/50 px-1.5 py-0.5 rounded">
               {files.length}
             </span>
           )}
@@ -112,10 +112,10 @@ export function TaskFilesPanel({ sessionId, className }: TaskFilesPanelProps) {
           <Button
             variant="ghost"
             size="sm"
-            className="h-7 text-xs gap-1.5"
+            className="h-8 text-sm gap-1.5"
             onClick={() => handleOpenViewer()}
           >
-            <Eye className="h-3 w-3" />
+            <Eye className="h-4 w-4" />
             {wt('taskFiles.viewAll', language)}
           </Button>
         )}
@@ -130,11 +130,11 @@ export function TaskFilesPanel({ sessionId, className }: TaskFilesPanelProps) {
 
       {loading ? (
         <div className="flex items-center justify-center py-4">
-          <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
         </div>
       ) : files.length === 0 ? (
         <div className="p-3 rounded-md border border-dashed border-border/40 bg-muted/10 text-center">
-          <p className="text-[11px] text-muted-foreground/60">
+          <p className="text-sm text-muted-foreground/60">
             {wt('taskFiles.noFiles', language)}
           </p>
         </div>
@@ -153,24 +153,24 @@ export function TaskFilesPanel({ sessionId, className }: TaskFilesPanelProps) {
                     className={cn(
                       "rounded-md overflow-hidden border border-border/50",
                       "hover:border-primary/50 transition-colors cursor-pointer",
-                      isImage ? "w-16 h-16" : "w-auto h-auto px-2.5 py-1.5 flex items-center gap-1.5 bg-muted/20"
+                      isImage ? "w-20 h-20" : "w-auto h-auto px-3 py-2 flex items-center gap-2 bg-muted/20"
                     )}
                   >
                     {isImage && url ? (
                       <img src={url} alt={file.file_name} className="w-full h-full object-cover" />
                     ) : isImage ? (
                       <div className="w-full h-full bg-muted/30 flex items-center justify-center">
-                        <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
+                        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
                       </div>
                     ) : (
                       <>
                         {getFileIcon(file.mime_type)}
-                        <span className="text-[11px] font-medium truncate max-w-[100px]">{file.file_name}</span>
-                        <span className="text-[9px] text-muted-foreground">{formatFileSize(file.file_size)}</span>
+                        <span className="text-sm font-medium truncate max-w-[120px]">{file.file_name}</span>
+                        <span className="text-xs text-muted-foreground">{formatFileSize(file.file_size)}</span>
                       </>
                     )}
                     {file.comment && (
-                      <span className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-[8px] px-1 py-0.5 truncate">
+                      <span className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-[10px] px-1 py-0.5 truncate">
                         💬 {file.comment}
                       </span>
                     )}
@@ -185,7 +185,7 @@ export function TaskFilesPanel({ sessionId, className }: TaskFilesPanelProps) {
                         <Trash2 className="h-3.5 w-3.5" />
                       </button>
                     </TooltipTrigger>
-                    <TooltipContent className="text-xs">{wt('taskFiles.delete', language)}</TooltipContent>
+                    <TooltipContent className="text-sm">{wt('taskFiles.delete', language)}</TooltipContent>
                   </Tooltip>
                 </div>
               );
