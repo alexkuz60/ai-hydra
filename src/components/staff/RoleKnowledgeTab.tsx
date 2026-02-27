@@ -37,8 +37,9 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
-import { Plus, Trash2, Search, BookOpen, FileText, Loader2, ExternalLink, Sparkles, Globe, Upload } from 'lucide-react';
+import { Plus, Trash2, Search, BookOpen, FileText, Loader2, ExternalLink, Sparkles, Globe, Upload, RefreshCw, Link, FileUp, PenLine, Calendar } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { format } from 'date-fns';
 
 const CATEGORIES = [
   { value: 'general', label: { ru: 'Общее', en: 'General' } },
@@ -101,6 +102,7 @@ export default function RoleKnowledgeTab({ role }: RoleKnowledgeTabProps) {
   const [filterCategory, setFilterCategory] = useState<string>('all');
   const [isSaving, setIsSaving] = useState(false);
   const [isSeeding, setIsSeeding] = useState(false);
+  const [refreshingSource, setRefreshingSource] = useState<string | null>(null);
 
   // Firecrawl state
   const [showFirecrawlDialog, setShowFirecrawlDialog] = useState(false);
@@ -227,6 +229,7 @@ export default function RoleKnowledgeTab({ role }: RoleKnowledgeTabProps) {
             file_name: file.name,
             file_size: file.size,
             uploaded_at: new Date().toISOString(),
+            load_method: 'file',
           },
         });
         if (id) saved++;
@@ -288,6 +291,9 @@ export default function RoleKnowledgeTab({ role }: RoleKnowledgeTabProps) {
           version: newVersion.trim() || undefined,
           chunk_index: i,
           chunk_total: chunks.length,
+          metadata: {
+            load_method: 'manual',
+          },
         });
         if (id) saved++;
       }
@@ -329,6 +335,111 @@ export default function RoleKnowledgeTab({ role }: RoleKnowledgeTabProps) {
     }
     setDeleteConfirm(null);
   }, [deleteConfirm, deleteEntry, deleteBySource, language]);
+
+  // Refresh a source: re-scrape URL or re-read file
+  const handleRefreshSource = useCallback(async (sourceTitle: string, items: RoleKnowledgeEntry[]) => {
+    const meta = items[0]?.metadata as any;
+    const loadMethod = meta?.load_method;
+    const sourceUrl = items[0]?.source_url;
+
+    if (loadMethod === 'url' && sourceUrl) {
+      // Re-scrape the URL
+      setRefreshingSource(sourceTitle);
+      try {
+        const { data, error } = await supabase.functions.invoke('firecrawl-scrape', {
+          body: { url: sourceUrl, options: { formats: ['markdown'], onlyMainContent: true } },
+        });
+        if (error) throw error;
+        const markdown = data?.data?.markdown || data?.markdown;
+        if (!markdown) {
+          toast.error(language === 'ru' ? 'Не удалось извлечь контент' : 'Failed to extract content');
+          return;
+        }
+
+        // Delete old entries
+        await deleteBySource(sourceTitle);
+
+        // Save new
+        const chunks = chunkText(markdown);
+        let saved = 0;
+        for (let i = 0; i < chunks.length; i++) {
+          const id = await saveEntry({
+            content: chunks[i],
+            source_title: sourceTitle,
+            source_url: sourceUrl,
+            category: items[0]?.category || 'documentation',
+            version: items[0]?.version || undefined,
+            chunk_index: i,
+            chunk_total: chunks.length,
+            metadata: {
+              load_method: 'url',
+              is_virtual: true,
+              scraped_at: new Date().toISOString(),
+            },
+          });
+          if (id) saved++;
+        }
+
+        toast.success(
+          language === 'ru'
+            ? `Обновлено: ${saved} фрагментов из «${sourceTitle}»`
+            : `Refreshed: ${saved} chunks from "${sourceTitle}"`
+        );
+      } catch (err) {
+        console.error('[RefreshSource] Error:', err);
+        toast.error(language === 'ru' ? 'Ошибка обновления' : 'Refresh failed');
+      } finally {
+        setRefreshingSource(null);
+      }
+    } else if (loadMethod === 'file' && meta?.file_path) {
+      // Re-read file from storage
+      setRefreshingSource(sourceTitle);
+      try {
+        const { data: blob, error } = await supabase.storage
+          .from('knowledge-files')
+          .download(meta.file_path);
+        if (error || !blob) throw error || new Error('Download failed');
+        const content = await blob.text();
+        if (!content.trim()) {
+          toast.error(language === 'ru' ? 'Файл пустой' : 'File is empty');
+          return;
+        }
+
+        await deleteBySource(sourceTitle);
+
+        const chunks = chunkText(content);
+        let saved = 0;
+        for (let i = 0; i < chunks.length; i++) {
+          const id = await saveEntry({
+            content: chunks[i],
+            source_title: sourceTitle,
+            category: items[0]?.category || 'documentation',
+            chunk_index: i,
+            chunk_total: chunks.length,
+            metadata: {
+              ...meta,
+              load_method: 'file',
+              uploaded_at: new Date().toISOString(),
+            },
+          });
+          if (id) saved++;
+        }
+
+        toast.success(
+          language === 'ru'
+            ? `Перечитано: ${saved} фрагментов из файла`
+            : `Re-read: ${saved} chunks from file`
+        );
+      } catch (err) {
+        console.error('[RefreshSource] File error:', err);
+        toast.error(language === 'ru' ? 'Ошибка повторного чтения файла' : 'File re-read failed');
+      } finally {
+        setRefreshingSource(null);
+      }
+    } else {
+      toast.info(language === 'ru' ? 'Для этого источника обновление недоступно' : 'Refresh not available for this source');
+    }
+  }, [language, deleteBySource, saveEntry]);
 
   // Firecrawl: scrape URL
   const handleScrape = useCallback(async () => {
@@ -376,6 +487,11 @@ export default function RoleKnowledgeTab({ role }: RoleKnowledgeTabProps) {
           version: firecrawlVersion.trim() || undefined,
           chunk_index: i,
           chunk_total: chunks.length,
+          metadata: {
+            load_method: 'url',
+            is_virtual: true,
+            scraped_at: new Date().toISOString(),
+          },
         });
         if (id) saved++;
       }
@@ -568,13 +684,34 @@ export default function RoleKnowledgeTab({ role }: RoleKnowledgeTabProps) {
           <div className="space-y-3">
             {filteredGroups.map(([sourceTitle, { items, titleEn }]) => {
               const displayTitle = isEn && titleEn ? titleEn : sourceTitle;
-              const hasFile = !!(items[0]?.metadata as any)?.file_path;
+              const meta = items[0]?.metadata as any;
+              const loadMethod: string = meta?.load_method || (items[0]?.source_url ? 'url' : meta?.file_path ? 'file' : 'manual');
+              const isVirtual = !!meta?.is_virtual;
+              const scrapedAt = meta?.scraped_at;
+              const uploadedAt = meta?.uploaded_at;
+              const canRefresh = loadMethod === 'url' || loadMethod === 'file';
+              const isRefreshing = refreshingSource === sourceTitle;
+
+              const LoadMethodIcon = loadMethod === 'url' ? Globe : loadMethod === 'file' ? FileUp : PenLine;
+              const methodLabel = loadMethod === 'url'
+                ? (language === 'ru' ? 'Скрейпинг' : 'Scraped')
+                : loadMethod === 'file'
+                  ? (language === 'ru' ? 'Файл' : 'File')
+                  : (language === 'ru' ? 'Вручную' : 'Manual');
+
+              const lastDate = scrapedAt || uploadedAt;
+
               return (
               <div key={sourceTitle} className="rounded-lg border border-border p-3 space-y-2">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 min-w-0">
-                    {hasFile ? <Upload className="h-3.5 w-3.5 text-primary shrink-0" /> : <FileText className="h-3.5 w-3.5 text-muted-foreground shrink-0" />}
+                  <div className="flex items-center gap-2 min-w-0 flex-wrap">
+                    <LoadMethodIcon className={cn("h-3.5 w-3.5 shrink-0", loadMethod === 'url' ? 'text-hydra-info' : loadMethod === 'file' ? 'text-primary' : 'text-muted-foreground')} />
                     <span className="text-sm font-medium truncate">{displayTitle}</span>
+                    {isVirtual && (
+                      <Badge variant="outline" className="text-[10px] shrink-0 border-hydra-info/40 text-hydra-info">
+                        {language === 'ru' ? 'виртуальный' : 'virtual'}
+                      </Badge>
+                    )}
                     <Badge variant="outline" className="text-[10px] shrink-0">
                       {items.length} {language === 'ru' ? 'чанк.' : 'ch.'}
                     </Badge>
@@ -599,8 +736,24 @@ export default function RoleKnowledgeTab({ role }: RoleKnowledgeTabProps) {
                         v{items[0].version}
                       </Badge>
                     )}
+                    <Badge variant="outline" className="text-[10px] shrink-0 gap-0.5">
+                      <LoadMethodIcon className="h-2.5 w-2.5" />
+                      {methodLabel}
+                    </Badge>
                   </div>
                   <div className="flex items-center gap-1 shrink-0">
+                    {canRefresh && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6 text-muted-foreground hover:text-primary"
+                        onClick={() => handleRefreshSource(sourceTitle, items)}
+                        disabled={isRefreshing}
+                        title={language === 'ru' ? 'Обновить источник' : 'Refresh source'}
+                      >
+                        {isRefreshing ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
+                      </Button>
+                    )}
                     {items[0]?.source_url && (
                       <Button
                         variant="ghost"
@@ -625,6 +778,14 @@ export default function RoleKnowledgeTab({ role }: RoleKnowledgeTabProps) {
                     </Button>
                   </div>
                 </div>
+                {/* Date info */}
+                {lastDate && (
+                  <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                    <Calendar className="h-2.5 w-2.5" />
+                    {loadMethod === 'url' ? (language === 'ru' ? 'Скрейпинг: ' : 'Scraped: ') : (language === 'ru' ? 'Загружено: ' : 'Uploaded: ')}
+                    {format(new Date(lastDate), 'dd.MM.yyyy HH:mm')}
+                  </div>
+                )}
                 {/* Preview first chunk */}
                 <p className="text-xs text-muted-foreground line-clamp-2">
                   {isEn && items[0]?.content_en ? items[0].content_en : items[0]?.content}
