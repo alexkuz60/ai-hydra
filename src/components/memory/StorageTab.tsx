@@ -3,6 +3,7 @@ import {
   HardDrive, FolderOpen, FileImage, FileText, File, Search,
   Loader2, Trash2, Eye, X, Download, RefreshCw, Database, Eraser,
   ChevronDown, ChevronRight, FolderClosed, ExternalLink, BookOpen,
+  Globe, FileUp, PenLine, Calendar,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -30,6 +31,13 @@ type StorageFile = {
   mime_type: string | null;
   created_at: string;
   updated_at: string;
+  // Extended fields for knowledge entries
+  is_virtual?: boolean;
+  load_method?: string;
+  source_url?: string;
+  scraped_at?: string;
+  role?: string;
+  chunk_count?: number;
 };
 
 type SessionInfo = {
@@ -158,6 +166,49 @@ export function StorageTab() {
           allFiles.push(...bucketFiles);
         } catch { /* skip bucket on error */ }
       }
+
+      // Load virtual knowledge entries (scraped URLs with no physical file)
+      try {
+        const { data: knowledgeEntries } = await supabase
+          .from('role_knowledge')
+          .select('source_title, source_url, role, category, metadata, created_at, updated_at')
+          .eq('user_id', user.id)
+          .eq('chunk_index', 0); // only first chunk per source
+
+        if (knowledgeEntries) {
+          // Group: deduplicate by source_title + role
+          const seen = new Set<string>();
+          for (const entry of knowledgeEntries) {
+            const meta = entry.metadata as any;
+            const loadMethod = meta?.load_method || 'manual';
+            const key = `${entry.role}:${entry.source_title}`;
+            if (seen.has(key)) continue;
+            seen.add(key);
+
+            // Skip if already has a physical file in knowledge-files
+            if (meta?.file_path) continue;
+
+            // Add as virtual entry in knowledge-files bucket
+            const isVirtual = !!meta?.is_virtual || loadMethod === 'url';
+            allFiles.push({
+              id: `knowledge-virtual/${entry.role}/${entry.source_title}`,
+              name: entry.source_title || '(unnamed)',
+              bucket: 'knowledge-files',
+              size: 0,
+              mime_type: null,
+              created_at: entry.created_at,
+              updated_at: entry.updated_at,
+              is_virtual: isVirtual,
+              load_method: loadMethod,
+              source_url: entry.source_url || undefined,
+              scraped_at: meta?.scraped_at,
+              role: entry.role,
+              chunk_count: meta?.chunk_total,
+            });
+          }
+        }
+      } catch { /* skip on error */ }
+
       setFiles(allFiles);
 
       // Load session info for task-files
@@ -668,8 +719,10 @@ function FileRow({
   indent: boolean;
 }) {
   const isImage = file.mime_type?.startsWith('image/') ?? false;
-  const canPreview = isPreviewable(file);
-  const Icon = fileIcon(file.mime_type);
+  const canPreview = file.is_virtual ? false : isPreviewable(file);
+  const Icon = file.is_virtual
+    ? (file.load_method === 'url' ? Globe : file.load_method === 'file' ? FileUp : PenLine)
+    : fileIcon(file.mime_type);
 
   return (
     <div className={cn('flex items-center gap-3 px-4 py-2.5 hover:bg-muted/40 transition-colors group', indent && 'pl-14')}>
@@ -680,34 +733,72 @@ function FileRow({
             ? 'w-10 h-10 border border-border bg-muted hover:border-hydra-memory/50 transition-colors cursor-pointer'
             : canPreview
               ? 'w-7 h-7 cursor-pointer hover:text-hydra-memory transition-colors'
-              : 'w-7 h-7 cursor-default pointer-events-none'
+              : file.is_virtual && file.source_url
+                ? 'w-7 h-7 cursor-pointer hover:text-hydra-info transition-colors'
+                : 'w-7 h-7 cursor-default pointer-events-none'
         )}
-        onClick={() => canPreview && onPreview(file)}
-        disabled={previewLoading || !canPreview}
-        title={canPreview ? t('memory.hub.preview') : undefined}
+        onClick={() => {
+          if (canPreview) onPreview(file);
+          else if (file.is_virtual && file.source_url) window.open(file.source_url, '_blank');
+        }}
+        disabled={previewLoading || (!canPreview && !(file.is_virtual && file.source_url))}
+        title={file.is_virtual ? (file.source_url || file.name) : canPreview ? t('memory.hub.preview') : undefined}
       >
         {isImage && thumbnails[file.id] ? (
           <img src={thumbnails[file.id]} alt={file.name} className="w-full h-full object-cover" />
         ) : previewLoading && preview === null && isImage ? (
           <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
         ) : (
-          <Icon className={cn('text-muted-foreground', isImage ? 'h-5 w-5' : 'h-4 w-4')} />
+          <Icon className={cn(
+            isImage ? 'h-5 w-5' : 'h-4 w-4',
+            file.is_virtual ? 'text-hydra-info' : 'text-muted-foreground'
+          )} />
         )}
       </button>
 
       <div className="flex-1 min-w-0">
-        <p
-          className={cn('text-sm font-medium truncate', canPreview && 'cursor-pointer hover:text-hydra-memory transition-colors')}
-          onClick={() => canPreview && onPreview(file)}
-        >
-          {file.name}
-        </p>
-        <div className="flex items-center gap-2 mt-0.5">
-          <span className="text-[10px] text-muted-foreground">{formatBytes(file.size)}</span>
-          {file.created_at && (
+        <div className="flex items-center gap-1.5">
+          <p
+            className={cn('text-sm font-medium truncate', (canPreview || file.source_url) && 'cursor-pointer hover:text-hydra-memory transition-colors')}
+            onClick={() => {
+              if (canPreview) onPreview(file);
+              else if (file.source_url) window.open(file.source_url, '_blank');
+            }}
+          >
+            {file.name}
+          </p>
+          {file.is_virtual && (
+            <span className="text-[9px] px-1 py-0.5 rounded bg-hydra-info/10 text-hydra-info border border-hydra-info/20 shrink-0">
+              {file.load_method === 'url' ? '🌐' : '✍️'}
+            </span>
+          )}
+          {file.role && (
+            <span className="text-[9px] text-muted-foreground shrink-0">[{file.role}]</span>
+          )}
+        </div>
+        <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+          {!file.is_virtual && <span className="text-[10px] text-muted-foreground">{formatBytes(file.size)}</span>}
+          {file.scraped_at && (
+            <span className="text-[10px] text-muted-foreground flex items-center gap-0.5">
+              <Calendar className="h-2.5 w-2.5" />
+              {format(new Date(file.scraped_at), 'dd.MM.yy HH:mm')}
+            </span>
+          )}
+          {!file.scraped_at && file.created_at && (
             <span className="text-[10px] text-muted-foreground">
               {format(new Date(file.created_at), 'dd.MM.yy HH:mm')}
             </span>
+          )}
+          {file.source_url && (
+            <a
+              href={file.source_url}
+              target="_blank"
+              rel="noreferrer"
+              className="text-[10px] text-hydra-info hover:underline truncate max-w-[200px]"
+              onClick={e => e.stopPropagation()}
+            >
+              {file.source_url.replace(/^https?:\/\//, '').slice(0, 40)}
+            </a>
           )}
         </div>
       </div>
