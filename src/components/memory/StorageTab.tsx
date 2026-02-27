@@ -333,7 +333,7 @@ export function StorageTab() {
               <FileImage className="h-4 w-4 text-hydra-memory shrink-0" />
               {preview?.file.name}
             </DialogTitle>
-            <div className="flex items-center gap-1 shrink-0">
+            <div className="flex items-center gap-1 shrink-0 mr-8">
               {preview && (
                 <Tooltip>
                   <TooltipTrigger asChild>
