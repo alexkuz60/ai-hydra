@@ -11,6 +11,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { TaskFilesPanel } from './TaskFilesPanel';
 import { FileUpload, AttachedFile } from '@/components/warroom/FileUpload';
 import { useTaskFiles } from '@/hooks/useTaskFiles';
+import { supabase } from '@/integrations/supabase/client';
 
 import { ConceptPatentSearch } from './ConceptPatentSearch';
 import { ConceptVisionaryCall } from './ConceptVisionaryCall';
@@ -47,17 +48,43 @@ const filterValidModels = (modelIds: string[]): string[] => {
  }
  
 /** Extract real UUID from virtual plan id like __plan__<uuid> */
-function resolveSessionId(taskId: string): string | null {
-  if (!taskId) return null;
+function resolveTaskId(taskId: string): string {
   if (taskId.startsWith('__plan__')) return taskId.replace('__plan__', '');
   return taskId;
+}
+
+/** For plan-level tasks, find the first session linked to that plan */
+function usePlanSessionId(taskId: string): string | null {
+  const [sessionId, setSessionId] = React.useState<string | null>(null);
+  const realId = resolveTaskId(taskId);
+  const isPlan = taskId.startsWith('__plan__');
+
+  React.useEffect(() => {
+    if (!isPlan) {
+      setSessionId(realId);
+      return;
+    }
+    // Find a session that belongs to this plan
+    (async () => {
+      const { data } = await supabase
+        .from('sessions')
+        .select('id')
+        .eq('plan_id', realId)
+        .order('sort_order', { ascending: true })
+        .limit(1)
+        .maybeSingle();
+      setSessionId(data?.id ?? null);
+    })();
+  }, [realId, isPlan]);
+
+  return sessionId;
 }
 
 /** Small wrapper: FileUpload dropdown that auto-uploads picked files to task storage */
 function ConceptFileUpload({ taskId }: { taskId: string }) {
   const [attached, setAttached] = React.useState<AttachedFile[]>([]);
-  const realId = resolveSessionId(taskId);
-  const { uploadFile } = useTaskFiles(realId);
+  const sessionId = usePlanSessionId(taskId);
+  const { uploadFile } = useTaskFiles(sessionId);
 
   React.useEffect(() => {
     if (attached.length === 0) return;
@@ -73,9 +100,14 @@ function ConceptFileUpload({ taskId }: { taskId: string }) {
     <FileUpload
       files={attached}
       onFilesChange={setAttached}
-      disabled={false}
+      disabled={!sessionId}
     />
   );
+}
+/** TaskFilesPanel wrapper that resolves plan → session */
+function TaskFilesPanelWithPlan({ taskId }: { taskId: string }) {
+  const sessionId = usePlanSessionId(taskId);
+  return <TaskFilesPanel sessionId={sessionId} className="border-t pt-4" />;
 }
 
 
@@ -568,7 +600,7 @@ export function TaskDetailsPanel({
                )}
 
                <div data-guide="tasks-files-tab">
-                 <TaskFilesPanel sessionId={resolveSessionId(task.id)} className="border-t pt-4" />
+                 <TaskFilesPanelWithPlan taskId={task.id} />
                </div>
 
                <div data-guide="tasks-hybrid-toggle">
