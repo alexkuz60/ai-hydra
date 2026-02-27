@@ -11,19 +11,21 @@ let idCounter = 0;
 
 function getThemeConfig(theme: string) {
   const isDark = theme === 'dark';
+  const mermaidFont = 'Arial, "Noto Sans", "Segoe UI", sans-serif';
+
   return {
     startOnLoad: false,
     theme: isDark ? 'dark' as const : 'default' as const,
     securityLevel: 'loose' as const,
-    fontFamily: 'ui-sans-serif, system-ui, sans-serif',
+    fontFamily: mermaidFont,
     suppressErrorRendering: true,
     flowchart: {
       htmlLabels: true,
       curve: 'basis' as const,
       useMaxWidth: false,
-      padding: 15,
-      nodeSpacing: 30,
-      rankSpacing: 50,
+      padding: 24,
+      nodeSpacing: 52,
+      rankSpacing: 78,
     },
     themeVariables: isDark ? {
       primaryColor: '#3b82f6',
@@ -40,6 +42,7 @@ function getThemeConfig(theme: string) {
       titleColor: '#f8fafc',
       edgeLabelBackground: '#1e293b',
       fontSize: '12px',
+      fontFamily: mermaidFont,
     } : {
       primaryColor: '#3b82f6',
       primaryTextColor: '#1e293b',
@@ -55,6 +58,7 @@ function getThemeConfig(theme: string) {
       titleColor: '#1e293b',
       edgeLabelBackground: '#f8fafc',
       fontSize: '12px',
+      fontFamily: mermaidFont,
     },
   };
 }
@@ -110,6 +114,18 @@ export async function renderMermaid(
       try {
         // Re-initialize if theme changed
         ensureInitialized(theme);
+
+        // Wait for webfonts to be ready to avoid text clipping in calculated node widths.
+        if (typeof document !== 'undefined' && 'fonts' in document) {
+          try {
+            await Promise.race([
+              (document as Document & { fonts: FontFaceSet }).fonts.ready,
+              new Promise<void>(resolveTimeout => setTimeout(resolveTimeout, 800)),
+            ]);
+          } catch {
+            // noop
+          }
+        }
 
         const { svg } = await mermaid.render(renderId, sanitizeContent(content));
         resolve(svg);

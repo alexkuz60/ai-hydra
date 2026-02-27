@@ -113,11 +113,11 @@ Gaggioli et al. (2025) предложили концептуальную рам�
 
 \`\`\`mermaid
 graph TD
-    S1[Поддержка]
-    S2[Синергия]
-    S3[Симбиоз]
-    S1 -->|"Автономия"| S2
-    S2 -->|"Агентность"| S3
+    S1["Поддержка<br/>AI как инструмент"]
+    S2["Синергия<br/>Комплементарная работа"]
+    S3["Симбиоз<br/>Единая творческая система"]
+    S1 -->|"Тех. автономия"| S2
+    S2 -->|"Воспр. агентность"| S3
     style S1 fill:#64748b,color:#fff
     style S2 fill:#3b82f6,color:#fff
     style S3 fill:#8b5cf6,color:#fff
@@ -178,22 +178,13 @@ $$\\text{Отказ} = f(\\text{отсутствие структуры},\\; \\t
 Архитектура Гидры опирается на шесть столпов, каждый из которых непосредственно адресует один или несколько задокументированных режимов отказа.
 
 \`\`\`mermaid
-graph LR
-    subgraph pillars [" "]
-        direction TB
-        P1["С1: Ролевые контракты"]
-        P2["С2: Многоур. верификация"]
-        P3["С3: Сигналы доверия"]
-        P4["С4: Когнит. разнообразие"]
-        P5["С5: Самокоррекция"]
-        P6["С6: Орг. метафора"]
-    end
-    P1 --> F1x["F1,F2,F7"]
-    P2 --> F2x["F3,F8"]
-    P3 --> F3x["F4,F5"]
-    P4 --> F4x["F6"]
-    P5 --> F5x["F4,F8"]
-    P6 --> F6x["F7+все"]
+graph TD
+    P1["С1: Ролевые<br/>контракты"] --> F1x["F1, F2, F7"]
+    P2["С2: Многоуровневая<br/>верификация"] --> F2x["F3, F8"]
+    P3["С3: Калиброванные<br/>сигналы доверия"] --> F3x["F4, F5"]
+    P4["С4: Когнитивное<br/>разнообразие"] --> F4x["F6"]
+    P5["С5: Самокоррекция<br/>и эволюция"] --> F5x["F4, F8"]
+    P6["С6: Организационная<br/>метафора"] --> F6x["F7 + все"]
     style P1 fill:#3b82f6,color:#fff
     style P2 fill:#ef4444,color:#fff
     style P3 fill:#f59e0b,color:#fff
@@ -349,13 +340,13 @@ graph TD
 
 \`\`\`mermaid
 graph TD
-    T["THINK — Анализ состояния"]
-    A["ACT — Поиск в БЗ и памяти"]
-    V["VERIFY — Проверка гипотезы"]
-    O["OBSERVE — Оценка свидетельств"]
-    R["REVISE — Формирование ревизии"]
+    T["THINK<br/>Анализ состояния"]
+    A["ACT<br/>Поиск в БЗ и памяти"]
+    V["VERIFY<br/>Проверка гипотезы"]
+    O["OBSERVE<br/>Оценка свидетельств"]
+    R["REVISE<br/>Формирование ревизии"]
     T --> A --> V --> O --> R
-    R -->|"Цикл"| T
+    R -->|"Следующий цикл"| T
     style T fill:#3b82f6,color:#fff
     style A fill:#f59e0b,color:#fff
     style V fill:#ef4444,color:#fff
@@ -441,29 +432,29 @@ graph TD
 
 \`\`\`mermaid
 graph TB
-    subgraph "Слой 3: База знаний (role_knowledge)"
-        K1["📚 Версионированные документы"]
-        K2["🏷️ Категоризированные чанки"]
-        K3["🔗 Отслеживание источников"]
+    subgraph "Слой 3: База знаний"
+        K1["Версионированные<br/>документы"]
+        K2["Категоризированные<br/>чанки"]
+        K3["Трассировка<br/>источников"]
     end
-    
-    subgraph "Слой 2: Опыт ролей (role_memory)"
-        R1["💡 Опыт"]
-        R2["⚠️ Ошибки"]
-        R3["✅ Успехи"]
+
+    subgraph "Слой 2: Опыт ролей"
+        R1["Опыт"]
+        R2["Ошибки"]
+        R3["Успехи"]
     end
-    
-    subgraph "Слой 1: Память сессий (session_memory)"
-        S1["📝 Решения"]
-        S2["📋 Контекст"]
-        S3["📌 Инструкции"]
+
+    subgraph "Слой 1: Память сессий"
+        S1["Решения"]
+        S2["Контекст"]
+        S3["Инструкции"]
     end
-    
-    K1 & K2 -->|"Информирует"| R1
-    R1 & R2 & R3 -->|"Обогащает"| S1
-    S2 & S3 -->|"Дистиллирует"| R3
+
+    K1 & K2 -->|"Информируют"| R1
+    R1 & R2 & R3 -->|"Обогащают"| S1
+    S2 & S3 -->|"Дистиллируют"| R3
     R2 -->|"Питает эволюцию"| K1
-    
+
     style K1 fill:#8b5cf6,color:#fff
     style K2 fill:#8b5cf6,color:#fff
     style K3 fill:#8b5cf6,color:#fff
@@ -715,9 +706,9 @@ Gaggioli et al. (2025) proposed the **Extended Creativity** framework distinguis
 
 \`\`\`mermaid
 graph TD
-    S1["Support — AI as tool"]
-    S2["Synergy — Complementary work"]
-    S3["Symbiosis — Unified creative system"]
+    S1["Support<br/>AI as tool"]
+    S2["Synergy<br/>Complementary work"]
+    S3["Symbiosis<br/>Unified creative system"]
     S1 -->|"Technical autonomy"| S2
     S2 -->|"Perceived agency"| S3
     style S1 fill:#64748b,color:#fff
@@ -754,22 +745,13 @@ $$\\text{Failure} = f(\\text{absent structure},\\; \\text{missing verification},
 ## 3. The Six Pillars of AI-Hydra
 
 \`\`\`mermaid
-graph LR
-    subgraph pillars [" "]
-        direction TB
-        P1["P1: Role Contracts"]
-        P2["P2: Multi-Level Verification"]
-        P3["P3: Calibrated Trust"]
-        P4["P4: Cognitive Diversity"]
-        P5["P5: Self-Correction"]
-        P6["P6: Org. Metaphor"]
-    end
-    P1 --> F1x["F1,F2,F7"]
-    P2 --> F2x["F3,F8"]
-    P3 --> F3x["F4,F5"]
-    P4 --> F4x["F6"]
-    P5 --> F5x["F4,F8"]
-    P6 --> F6x["F7,All"]
+graph TD
+    P1["P1: Role<br/>Contracts"] --> F1x["F1, F2, F7"]
+    P2["P2: Multi-Level<br/>Verification"] --> F2x["F3, F8"]
+    P3["P3: Calibrated<br/>Trust"] --> F3x["F4, F5"]
+    P4["P4: Cognitive<br/>Diversity"] --> F4x["F6"]
+    P5["P5: Self-Correction<br/>& Evolution"] --> F5x["F4, F8"]
+    P6["P6: Organizational<br/>Metaphor"] --> F6x["F7, All"]
     style P1 fill:#3b82f6,color:#fff
     style P2 fill:#ef4444,color:#fff
     style P3 fill:#f59e0b,color:#fff
@@ -858,8 +840,8 @@ export default function HydraPhilosophy() {
         )}
 
         {/* Article content */}
-        <div ref={scrollRef} className="flex-1 overflow-y-auto px-8 py-8">
-          <HydrapediaMarkdown content={content} className="pb-16 max-w-4xl mx-auto" />
+        <div ref={scrollRef} className="flex-1 overflow-y-auto px-6 md:px-8 py-8">
+          <HydrapediaMarkdown content={content} className="pb-16 max-w-6xl mx-auto" />
         </div>
       </div>
     </Layout>
