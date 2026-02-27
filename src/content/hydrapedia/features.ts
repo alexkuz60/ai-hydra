@@ -639,7 +639,7 @@ The indicator is consolidated in one place (page header) instead of being duplic
 
 ### Фиксация выводов и RAG-поиск
 
-Механизм \`plan_conclusions\` обеспечивает передачу знаний между подзадачами одного стратегического плана:
+Механизм \`plan_conclusions\` обеспечивает **персистентную межзадачную память** — передачу знаний между подзадачами одного стратегического плана:
 
 **Фиксация вывода:**
 - В любой подзадаче пользователь может нажать «Зафиксировать вывод» — итоговый вердикт сохраняется в таблице \`plan_conclusions\`
@@ -657,6 +657,43 @@ The indicator is consolidated in one place (page header) instead of being duplic
 ├── Аспект B → вывод B (embedding) ─┤── RAG-поиск
 └── Аспект C → запрос → находит A, B ─┘
 \`\`\`
+
+> [!NOTE] Архитектурное значение (EVO-013)
+> Персистентная межзадачная память — ключевая архитектурная веха: итоговые вердикты экспертов фиксируются как векторные артефакты, формируя «институциональную память» стратегического процесса. Это устраняет информационные силосы между аспектами плана и позволяет каждому эксперту учитывать выводы коллег без ручного копирования контекста.
+
+### StrategySyncEngine (EVO-011)
+
+Движок автоматической синхронизации утверждённых стратегий с иерархией задач в сайдбаре:
+
+\`\`\`
+Утверждение стратегии (Принять видение / Принять стратегию)
+   ↓
+StrategySyncEngine
+   ↓
+┌────────────────────────────────────────┐
+│ 1. Intelligent Diff                    │
+│    — сравнение текущей и новой структуры│
+│    — учёт переименований и правок      │
+│                                        │
+│ 2. Утверждённые/Pending секции         │
+│    → Аспекты и подзадачи в сайдбаре    │
+│                                        │
+│ 3. Отклонённые секции → Архивация      │
+│    — is_active: false                  │
+│    — metadata: { archived: true,       │
+│        archive_reason:                 │
+│        'strategy_rejected' }           │
+│    — исключение из RAG-поиска          │
+│    — сохранение для Хроник Эволюции    │
+│                                        │
+│ 4. Диалог подтверждения               │
+│    — статистика изменений              │
+│    — превью структуры                  │
+└────────────────────────────────────────┘
+\`\`\`
+
+> [!TIP] Принцип «мягкого удаления»
+> Отклонённые элементы не удаляются физически — они архивируются с метаданными причины. Это позволяет Эволюционеру анализировать паттерны отклонений в «Хрониках Эволюции» для улучшения будущих стратегий.
 
 ### 🎯 Назначение
 - **RAG warm-start** — сегменты decision/evaluation/context/instruction для немедленной работы поиска по памяти
@@ -763,7 +800,7 @@ Each expert response is tagged with \`concept_type\` metadata for precise identi
 
 ### Conclusion Fixation & RAG Search
 
-The \`plan_conclusions\` mechanism enables knowledge sharing between subtasks within a strategic plan:
+The \`plan_conclusions\` mechanism enables **persistent cross-task memory** — knowledge sharing between subtasks within a strategic plan:
 
 **Fixating a conclusion:**
 - In any subtask, the user can click "Fixate Conclusion" — the final verdict is saved to the \`plan_conclusions\` table
@@ -781,6 +818,43 @@ SPSP Plan
 ├── Aspect B → conclusion B (embedding) ─┤── RAG search
 └── Aspect C → query → finds A, B ────────┘
 \`\`\`
+
+> [!NOTE] Architectural Significance (EVO-013)
+> Persistent cross-task memory is a key architectural milestone: expert verdicts are fixated as vector artifacts, forming "institutional memory" of the strategic process. This eliminates information silos between plan aspects and allows each expert to leverage colleagues' conclusions without manual context copying.
+
+### StrategySyncEngine (EVO-011)
+
+An engine for automatic synchronization of approved strategies with the task hierarchy in the sidebar:
+
+\`\`\`
+Strategy Approval (Accept Vision / Accept Strategy)
+   ↓
+StrategySyncEngine
+   ↓
+┌────────────────────────────────────────┐
+│ 1. Intelligent Diff                    │
+│    — comparing current vs new structure│
+│    — accounting for renames and edits  │
+│                                        │
+│ 2. Approved/Pending sections           │
+│    → Aspects and subtasks in sidebar   │
+│                                        │
+│ 3. Rejected sections → Archival        │
+│    — is_active: false                  │
+│    — metadata: { archived: true,       │
+│        archive_reason:                 │
+│        'strategy_rejected' }           │
+│    — excluded from RAG search          │
+│    — preserved for Evolution Chronicles│
+│                                        │
+│ 4. Confirmation dialog                 │
+│    — change statistics                 │
+│    — structure preview                 │
+└────────────────────────────────────────┘
+\`\`\`
+
+> [!TIP] "Soft Delete" Principle
+> Rejected elements are not physically deleted — they are archived with reason metadata. This allows the Evolutioner to analyze rejection patterns in "Evolution Chronicles" to improve future strategies.
 
 ### 🎯 Purpose
 - **RAG warm-start** — decision/evaluation/context/instruction segments for immediate memory search
@@ -914,6 +988,29 @@ AI-Hydra включает 18 специализированных ИИ-роле�
 - Скрейпинг веб-страниц через Firecrawl
 - Статистика: количество чанков и статус обучения
 
+#### Пирамида контекста (EVO-012)
+
+Знания организованы по **3-уровневой пирамиде** для оптимизации RAG и предотвращения межролевой предвзятости:
+
+| Уровень | Цвет бейджа | Содержание | Доступ |
+|---------|-------------|------------|--------|
+| **A — Global** | 🟢 Зелёный | Миссия, стратегия, общие принципы | Все роли |
+| **B — Organizational** | 🔵 Синий | Карта штата, функции ролей | Все роли |
+| **C — Expertise** | 🟡 Янтарный | Глубокие инструкции, промпты, методологии | Только целевая роль |
+
+\`\`\`
+        ┌─────────┐
+        │  A Global │  ← миссия, ценности
+        ├───────────┤
+        │ B Org     │  ← карта штата
+        ├───────────┤
+        │C Expertise│  ← role-specific
+        └───────────┘
+\`\`\`
+
+> [!NOTE] Изоляция контекста
+> Уровень C гарантирует, что Критик не видит критерии Арбитра, а Арбитр не знает инструкций Критика. Это обеспечивает объективность суждений и устраняет «подстройку» ответов. Сокращение токенов ~70% за счёт фильтрации нерелевантных уровней.
+
 ### 4. История назначений
 
 Хронология всех назначенных моделей на роль: текущая (активная), снятые (с причиной снятия), средний балл собеседования, даты.
@@ -1044,6 +1141,29 @@ Available only for **technical roles**. Allows training a role with documentatio
 - Import from Hydrapedia
 - Web page scraping via Firecrawl
 - Statistics: chunk count and training status
+
+#### Context Pyramid (EVO-012)
+
+Knowledge is organized in a **3-tier pyramid** to optimize RAG and prevent cross-role bias:
+
+| Level | Badge Color | Content | Access |
+|-------|-------------|---------|--------|
+| **A — Global** | 🟢 Green | Mission, strategy, general principles | All roles |
+| **B — Organizational** | 🔵 Blue | Staff map, role functions | All roles |
+| **C — Expertise** | 🟡 Amber | Deep instructions, prompts, methodologies | Target role only |
+
+\`\`\`
+        ┌─────────┐
+        │  A Global │  ← mission, values
+        ├───────────┤
+        │ B Org     │  ← staff map
+        ├───────────┤
+        │C Expertise│  ← role-specific
+        └───────────┘
+\`\`\`
+
+> [!NOTE] Context Isolation
+> Level C ensures the Critic cannot see the Arbiter's criteria, and the Arbiter doesn't know the Critic's instructions. This guarantees judgment objectivity and eliminates response "tailoring." ~70% token reduction through irrelevant level filtering.
 
 ### 4. Assignment History
 
