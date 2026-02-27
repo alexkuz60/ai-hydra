@@ -136,7 +136,7 @@ export function TaskFilesPanel({ sessionId, className }: TaskFilesPanelProps) {
 
   return (
     <TooltipProvider delayDuration={200}>
-    <section className={cn("space-y-4 min-h-[120px]", className)}>
+    <section className={cn("space-y-4 min-h-[160px] py-2", className)}>
       <div className="flex items-center justify-between">
         <h3 className="text-base font-medium text-muted-foreground flex items-center gap-2">
           <button
@@ -244,7 +244,7 @@ export function TaskFilesPanel({ sessionId, className }: TaskFilesPanelProps) {
                     className={cn(
                       "rounded-md overflow-hidden border border-border/50",
                       "hover:border-primary/50 transition-colors cursor-pointer",
-                      isImage ? "w-20 h-20" : "w-auto h-auto px-3 py-2 flex items-center gap-2 bg-muted/20"
+                      isImage ? "w-24 h-24" : "w-auto h-auto px-4 py-3 flex items-center gap-2.5 bg-muted/20"
                     )}
                   >
                     {isImage && url ? (
