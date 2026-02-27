@@ -3,7 +3,7 @@
   <p><em>Здесь даже догмы эволюционируют</em></p>
   <p>🇷🇺 <b>Русский</b> · <a href="README.md">🇬🇧 English</a></p>
 
-  ![Version](https://img.shields.io/badge/version-0.2.19--alpha-0ff?style=flat-square&logo=semver&logoColor=white)
+  ![Version](https://img.shields.io/badge/version-0.2.20--alpha-0ff?style=flat-square&logo=semver&logoColor=white)
   ![Build](https://img.shields.io/badge/build-passing-brightgreen?style=flat-square&logo=github-actions&logoColor=white)
   ![License](https://img.shields.io/badge/license-MIT-blue?style=flat-square)
   ![Stack](https://img.shields.io/badge/stack-React%2018%20%2B%20TypeScript%20%2B%20Supabase-8b5cf6?style=flat-square)
@@ -66,7 +66,7 @@ Hydra строится по принципу **живой архитектуры
 
 ### 🏢 Управление и инструменты
 
-**Отдел кадров (Staff Roles)** — Редактор иерархии ролей, поведенческие паттерны, собеседования моделей (брифинг → тесты → вердикт), таблица истории, база знаний ролей (RAG), сертификация 🛡️
+**Отдел кадров (Staff Roles)** — Редактор иерархии ролей, поведенческие паттерны, собеседования моделей (брифинг → тесты → вердикт), таблица истории, база знаний ролей (RAG), сертификация 🛡️, персистентность свёрнутости групп в Базе знаний, масштабированная типографика в панелях деталей
 
 **Управление задачами (Tasks)** — Хаб сессий, конфигурация моделей через Sheet, файлы задач, память сессий (эмбеддинги), учебные примеры с 26 преднаполненными диалогами (клонирование в личные)
 
@@ -133,7 +133,7 @@ React 18 + TypeScript + Vite
 Lovable Cloud (Supabase)
 ├── Auth: Email/password authentication
 ├── Database: PostgreSQL с RLS
-├── Edge Functions: Deno runtime (20 функций)
+├── Edge Functions: Deno runtime (20+ функций)
 ├── Vault: Secure API key storage
 ├── Storage: File attachments
 ├── Vector Search: pgvector для эмбеддингов
@@ -285,11 +285,11 @@ src/
 ├── hooks/              # 60+ custom hooks
 ├── lib/                # Utilities (scoring, templates, parsers, cache)
 ├── pages/              # 13 route pages (lazy loaded)
-├── plugins/interview/  # Interview plugins (7 specialists)
+├── plugins/interview/  # Interview plugins (8 specialists incl. Patent Attorney)
 ├── styles/             # Design system docs
 └── types/              # TypeScript definitions
 
-supabase/functions/     # 17 Edge Functions
+supabase/functions/     # 20+ Edge Functions
 ```
 
 ---
@@ -321,4 +321,4 @@ supabase/functions/     # 17 Edge Functions
 
 ---
 
-*Последнее обновление: 22 Февраля 2026*
+*Последнее обновление: 27 Февраля 2026*

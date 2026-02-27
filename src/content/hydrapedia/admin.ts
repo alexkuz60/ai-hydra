@@ -114,7 +114,10 @@ Administrators can create and edit **system** patterns (with ✏️ icon), which
     content: {
       ru: `# Технический персонал
 
-Штатное расписание AI-Hydra включает **16 ИИ-ролей**, из которых 10 относятся к техническому персоналу. Технические роли разделяются на две группы: **специалисты** (доступны в D-Chat и техподдержке) и **ОТК** (системные роли, работающие автоматически).
+Штатное расписание AI-Hydra включает **18 ИИ-ролей**, из которых 10 относятся к техническому персоналу. Технические роли разделяются на две группы: **специалисты** (доступны в D-Chat и техподдержке) и **ОТК** (системные роли, работающие автоматически).
+
+> [!TIP] Масштабированная типографика
+> Панель деталей роли использует увеличенные шрифты (text-2xl заголовки, text-base описания) для улучшенной читаемости на Desktop-First интерфейсе.
 
 ## Архитектура оркестратора
 
@@ -215,7 +218,10 @@ Supervisor Wishes — текстовые директивы для управл�
 - Доступны только пользователям с ролью \`supervisor\``,
       en: `# Technical Staff
 
-The AI-Hydra staff roster includes **16 AI roles**, of which 10 are technical staff. Technical roles are divided into two groups: **specialists** (available in D-Chat and tech support) and **QC Dept.** (system roles that operate automatically).
+The AI-Hydra staff roster includes **18 AI roles**, of which 10 are technical staff. Technical roles are divided into two groups: **specialists** (available in D-Chat and tech support) and **QC Dept.** (system roles that operate automatically).
+
+> [!TIP] Scaled Typography
+> The role detail panel uses enlarged fonts (text-2xl headings, text-base descriptions) for improved readability in the Desktop-First interface.
 
 ## Orchestrator Architecture
 

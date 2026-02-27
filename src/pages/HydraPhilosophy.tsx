@@ -91,7 +91,7 @@ const PAPER_RU = `# AI-Hydra: Открытый фреймворк человек
 
 **Репозиторий:** [github.com/alexkuz60/ai-hydra](https://github.com/alexkuz60/ai-hydra)
 **Лицензия:** MIT
-**Версия:** 0.2.18 (Февраль 2026)
+**Версия:** 0.2.20 (Февраль 2026)
 
 ---
 
@@ -704,7 +704,7 @@ const PAPER_EN = `# AI-Hydra: An Open-Source Framework for Human-AI Creative Sym
 
 **Repository:** [github.com/alexkuz60/ai-hydra](https://github.com/alexkuz60/ai-hydra)
 **License:** MIT
-**Version:** 0.2.18 (February 2026)
+**Version:** 0.2.20 (February 2026)
 
 ---
 
