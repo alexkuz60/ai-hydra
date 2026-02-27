@@ -2,7 +2,7 @@ import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import {
   HardDrive, FolderOpen, FileImage, FileText, File, Search,
   Loader2, Trash2, Eye, X, Download, RefreshCw, Database, Eraser,
-  ChevronDown, ChevronRight, FolderClosed,
+  ChevronDown, ChevronRight, FolderClosed, ExternalLink,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -39,7 +39,27 @@ type SessionInfo = {
 
 const BUCKETS = ['message-files', 'task-files', 'avatars'] as const;
 
-type PreviewState = { file: StorageFile; url: string } | null;
+type PreviewState = { file: StorageFile; url: string; textContent?: string } | null;
+
+const isTextFile = (mime: string | null, name: string): boolean => {
+  if (!mime) return false;
+  if (mime.startsWith('text/')) return true;
+  if (mime === 'application/json') return true;
+  const ext = name.split('.').pop()?.toLowerCase();
+  return ext === 'md' || ext === 'txt' || ext === 'json' || ext === 'csv' || ext === 'yaml' || ext === 'yml' || ext === 'xml' || ext === 'log';
+};
+
+const isDocFile = (mime: string | null, name: string): boolean => {
+  if (!mime) return false;
+  if (mime === 'application/pdf') return true;
+  if (mime.includes('msword') || mime.includes('wordprocessingml') || mime.includes('opendocument')) return true;
+  const ext = name.split('.').pop()?.toLowerCase();
+  return ext === 'pdf' || ext === 'doc' || ext === 'docx' || ext === 'odt';
+};
+
+const isPreviewable = (file: StorageFile): boolean => {
+  return (file.mime_type?.startsWith('image/') ?? false) || isTextFile(file.mime_type, file.name) || isDocFile(file.mime_type, file.name);
+};
 
 export function StorageTab() {
   const { t, language } = useLanguage();
@@ -169,22 +189,50 @@ export function StorageTab() {
 
   useEffect(() => { loadFiles(); }, [loadFiles]);
 
+  const getSignedUrl = async (file: StorageFile): Promise<string | null> => {
+    if (thumbnails[file.id]) return thumbnails[file.id];
+    const path = file.id.replace(`${file.bucket}/`, '');
+    const { data, error } = await supabase.storage.from(file.bucket).createSignedUrl(path, 3600);
+    if (error || !data?.signedUrl) return null;
+    setThumbnails(prev => ({ ...prev, [file.id]: data.signedUrl }));
+    return data.signedUrl;
+  };
+
   const handlePreview = async (file: StorageFile) => {
-    if (!file.mime_type?.startsWith('image/')) return;
-    if (thumbnails[file.id]) {
-      setPreview({ file, url: thumbnails[file.id] });
-      return;
-    }
+    const isImage = file.mime_type?.startsWith('image/') ?? false;
+    const isText = isTextFile(file.mime_type, file.name);
+    const isDoc = isDocFile(file.mime_type, file.name);
+
+    if (!isImage && !isText && !isDoc) return;
+
     setPreviewLoading(true);
     try {
-      const path = file.id.replace(`${file.bucket}/`, '');
-      const { data, error } = await supabase.storage.from(file.bucket).createSignedUrl(path, 3600);
-      if (error || !data?.signedUrl) {
+      const url = await getSignedUrl(file);
+      if (!url) {
         toast.error(t('memory.hub.imageLoadError'));
         return;
       }
-      setThumbnails(prev => ({ ...prev, [file.id]: data.signedUrl }));
-      setPreview({ file, url: data.signedUrl });
+
+      // Doc/PDF: open in new tab
+      if (isDoc) {
+        window.open(url, '_blank', 'noopener,noreferrer');
+        return;
+      }
+
+      // Text/MD: fetch content and show in dialog
+      if (isText) {
+        try {
+          const resp = await fetch(url);
+          const textContent = await resp.text();
+          setPreview({ file, url, textContent });
+        } catch {
+          toast.error(t('memory.hub.imageLoadError'));
+        }
+        return;
+      }
+
+      // Image
+      setPreview({ file, url });
     } catch {
       toast.error(t('memory.hub.imageLoadError'));
     } finally {
@@ -412,12 +460,15 @@ export function StorageTab() {
         </ScrollArea>
       </div>
 
-      {/* Image Preview Dialog */}
+      {/* Preview Dialog (images + text/md) */}
       <Dialog open={!!preview} onOpenChange={open => !open && setPreview(null)}>
         <DialogContent className="max-w-3xl p-0 overflow-hidden bg-background/95 backdrop-blur">
           <DialogHeader className="px-4 pt-4 pb-3 border-b border-border flex-row items-center justify-between space-y-0">
             <DialogTitle className="text-sm font-medium truncate max-w-[calc(100%-5rem)] flex items-center gap-2">
-              <FileImage className="h-4 w-4 text-hydra-memory shrink-0" />
+              {preview?.textContent !== undefined
+                ? <FileText className="h-4 w-4 text-hydra-info shrink-0" />
+                : <FileImage className="h-4 w-4 text-hydra-memory shrink-0" />
+              }
               {preview?.file.name}
             </DialogTitle>
             <div className="flex items-center gap-1 shrink-0 mr-8">
@@ -441,12 +492,18 @@ export function StorageTab() {
           </DialogHeader>
           {preview && (
             <div className="flex flex-col items-center justify-center p-4 min-h-[300px] max-h-[75vh] overflow-auto">
-              <img
-                src={preview.url}
-                alt={preview.file.name}
-                className="max-w-full max-h-[65vh] object-contain rounded-md shadow-lg"
-                onError={() => { toast.error(t('memory.hub.imageLoadError')); setPreview(null); }}
-              />
+              {preview.textContent !== undefined ? (
+                <pre className="w-full text-sm font-mono whitespace-pre-wrap break-words text-foreground bg-muted/30 rounded-md p-4 max-h-[65vh] overflow-auto">
+                  {preview.textContent}
+                </pre>
+              ) : (
+                <img
+                  src={preview.url}
+                  alt={preview.file.name}
+                  className="max-w-full max-h-[65vh] object-contain rounded-md shadow-lg"
+                  onError={() => { toast.error(t('memory.hub.imageLoadError')); setPreview(null); }}
+                />
+              )}
               <div className="flex items-center gap-3 mt-3 text-xs text-muted-foreground">
                 <Badge variant="outline" className={cn('text-[10px]', bucketColors[preview.file.bucket])}>{preview.file.bucket}</Badge>
                 <span>{formatBytes(preview.file.size)}</span>
@@ -581,6 +638,7 @@ function FileRow({
   indent: boolean;
 }) {
   const isImage = file.mime_type?.startsWith('image/') ?? false;
+  const canPreview = isPreviewable(file);
   const Icon = fileIcon(file.mime_type);
 
   return (
@@ -590,11 +648,13 @@ function FileRow({
           'shrink-0 flex items-center justify-center rounded overflow-hidden',
           isImage
             ? 'w-10 h-10 border border-border bg-muted hover:border-hydra-memory/50 transition-colors cursor-pointer'
-            : 'w-7 h-7 cursor-default pointer-events-none'
+            : canPreview
+              ? 'w-7 h-7 cursor-pointer hover:text-hydra-memory transition-colors'
+              : 'w-7 h-7 cursor-default pointer-events-none'
         )}
-        onClick={() => isImage && onPreview(file)}
-        disabled={previewLoading || !isImage}
-        title={isImage ? t('memory.hub.preview') : undefined}
+        onClick={() => canPreview && onPreview(file)}
+        disabled={previewLoading || !canPreview}
+        title={canPreview ? t('memory.hub.preview') : undefined}
       >
         {isImage && thumbnails[file.id] ? (
           <img src={thumbnails[file.id]} alt={file.name} className="w-full h-full object-cover" />
@@ -607,8 +667,8 @@ function FileRow({
 
       <div className="flex-1 min-w-0">
         <p
-          className={cn('text-sm font-medium truncate', isImage && 'cursor-pointer hover:text-hydra-memory transition-colors')}
-          onClick={() => isImage && onPreview(file)}
+          className={cn('text-sm font-medium truncate', canPreview && 'cursor-pointer hover:text-hydra-memory transition-colors')}
+          onClick={() => canPreview && onPreview(file)}
         >
           {file.name}
         </p>
@@ -623,7 +683,7 @@ function FileRow({
       </div>
 
       <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-        {isImage && (
+        {canPreview && (
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -633,10 +693,14 @@ function FileRow({
                   onClick={() => onPreview(file)}
                   disabled={previewLoading}
                 >
-                  {previewLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Eye className="h-3.5 w-3.5" />}
+                  {previewLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> :
+                    isDocFile(file.mime_type, file.name)
+                      ? <ExternalLink className="h-3.5 w-3.5" />
+                      : <Eye className="h-3.5 w-3.5" />
+                  }
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>{t('memory.hub.preview')}</TooltipContent>
+              <TooltipContent>{isDocFile(file.mime_type, file.name) ? t('memory.hub.openInTab') : t('memory.hub.preview')}</TooltipContent>
             </Tooltip>
           </TooltipProvider>
         )}
