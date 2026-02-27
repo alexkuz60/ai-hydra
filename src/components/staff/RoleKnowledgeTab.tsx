@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useRoleKnowledge, type RoleKnowledgeEntry } from '@/hooks/useRoleKnowledge';
 import type { AgentRole } from '@/config/roles';
@@ -37,7 +37,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
-import { Plus, Trash2, Search, BookOpen, FileText, Loader2, ExternalLink, Sparkles, Globe } from 'lucide-react';
+import { Plus, Trash2, Search, BookOpen, FileText, Loader2, ExternalLink, Sparkles, Globe, Upload } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const CATEGORIES = [
@@ -84,6 +84,7 @@ function chunkText(text: string, maxChunkSize = 1500, overlap = 200): string[] {
 
 export default function RoleKnowledgeTab({ role }: RoleKnowledgeTabProps) {
   const { t, language } = useLanguage();
+  const { user } = useAuth();
   const {
     entries,
     loading,
@@ -110,6 +111,8 @@ export default function RoleKnowledgeTab({ role }: RoleKnowledgeTabProps) {
   const [scrapedContent, setScrapedContent] = useState<string | null>(null);
   const [scrapedTitle, setScrapedTitle] = useState('');
   const [saveProgress, setSaveProgress] = useState<{ current: number; total: number } | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isUploadingFile, setIsUploadingFile] = useState(false);
 
   // Add form state
   const [newContent, setNewContent] = useState('');
@@ -162,7 +165,88 @@ export default function RoleKnowledgeTab({ role }: RoleKnowledgeTabProps) {
     }
   }, [role, language, fetchEntries]);
 
-  // Group entries by source
+  // Handle file upload
+  const ALLOWED_KNOWLEDGE_TYPES = [
+    'text/plain', 'text/markdown', 'text/x-markdown',
+    'application/json', 'text/csv', 'text/yaml', 'text/x-yaml',
+  ];
+  const ALLOWED_EXTENSIONS = ['.txt', '.md', '.markdown', '.json', '.csv', '.yaml', '.yml'];
+
+  const handleFileUpload = useCallback(async (fileList: FileList | null) => {
+    if (!fileList?.[0] || !user?.id) return;
+    const file = fileList[0];
+    
+    // Validate file type
+    const ext = '.' + file.name.split('.').pop()?.toLowerCase();
+    const isAllowed = ALLOWED_KNOWLEDGE_TYPES.includes(file.type) || ALLOWED_EXTENSIONS.includes(ext);
+    if (!isAllowed) {
+      toast.error(language === 'ru' 
+        ? 'Поддерживаются только текстовые файлы: TXT, MD, JSON, CSV, YAML' 
+        : 'Only text files supported: TXT, MD, JSON, CSV, YAML');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error(language === 'ru' ? 'Максимум 5 МБ' : 'Max 5 MB');
+      return;
+    }
+
+    setIsUploadingFile(true);
+    setSaveProgress(null);
+    try {
+      // 1. Read file content
+      const content = await file.text();
+      if (!content.trim()) {
+        toast.error(language === 'ru' ? 'Файл пустой' : 'File is empty');
+        return;
+      }
+
+      // 2. Upload to storage
+      const filePath = `${user.id}/${role}/${Date.now()}_${file.name}`;
+      const { error: uploadErr } = await supabase.storage
+        .from('knowledge-files')
+        .upload(filePath, file);
+      if (uploadErr) throw uploadErr;
+
+      // 3. Chunk and save to role_knowledge
+      const chunks = chunkText(content);
+      let saved = 0;
+      const fileName = file.name.replace(/\.[^/.]+$/, '');
+      setSaveProgress({ current: 0, total: chunks.length });
+
+      for (let i = 0; i < chunks.length; i++) {
+        setSaveProgress({ current: i + 1, total: chunks.length });
+        const id = await saveEntry({
+          content: chunks[i],
+          source_title: fileName,
+          category: 'documentation',
+          chunk_index: i,
+          chunk_total: chunks.length,
+          metadata: { 
+            file_path: filePath, 
+            file_name: file.name,
+            file_size: file.size,
+            uploaded_at: new Date().toISOString(),
+          },
+        });
+        if (id) saved++;
+      }
+
+      toast.success(
+        language === 'ru'
+          ? `Файл «${file.name}» → ${saved} фрагмент(ов) в базу знаний`
+          : `File "${file.name}" → ${saved} chunk(s) to knowledge base`
+      );
+    } catch (err) {
+      console.error('[RoleKnowledgeTab] File upload error:', err);
+      toast.error(language === 'ru' ? 'Ошибка загрузки файла' : 'File upload failed');
+    } finally {
+      setIsUploadingFile(false);
+      setSaveProgress(null);
+    }
+  }, [user?.id, role, language, saveEntry]);
+
+
   const isEn = language !== 'ru';
   const groupedEntries = entries.reduce((acc, entry) => {
     const key = entry.source_title || (language === 'ru' ? '(без источника)' : '(no source)');
@@ -361,6 +445,16 @@ export default function RoleKnowledgeTab({ role }: RoleKnowledgeTabProps) {
             size="sm"
             variant="outline"
             className="gap-1.5 h-7 text-xs"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={isUploadingFile}
+          >
+            {isUploadingFile ? <Loader2 className="h-3 w-3 animate-spin" /> : <Upload className="h-3 w-3" />}
+            {language === 'ru' ? 'Из файла' : 'From file'}
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            className="gap-1.5 h-7 text-xs"
             onClick={() => setShowFirecrawlDialog(true)}
           >
             <Globe className="h-3 w-3" />
@@ -377,6 +471,18 @@ export default function RoleKnowledgeTab({ role }: RoleKnowledgeTabProps) {
           </Button>
         </div>
       </div>
+
+      {/* Hidden file input for knowledge files */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".txt,.md,.markdown,.json,.csv,.yaml,.yml"
+        className="hidden"
+        onChange={(e) => {
+          handleFileUpload(e.target.files);
+          e.target.value = '';
+        }}
+      />
 
       {/* Filters */}
       <div className="flex gap-2">
@@ -427,6 +533,16 @@ export default function RoleKnowledgeTab({ role }: RoleKnowledgeTabProps) {
               size="sm"
               variant="outline"
               className="gap-1.5"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isUploadingFile}
+            >
+              {isUploadingFile ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+              {language === 'ru' ? 'Из файла' : 'From file'}
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              className="gap-1.5"
               onClick={() => setShowFirecrawlDialog(true)}
             >
               <Globe className="h-4 w-4" />
@@ -452,11 +568,12 @@ export default function RoleKnowledgeTab({ role }: RoleKnowledgeTabProps) {
           <div className="space-y-3">
             {filteredGroups.map(([sourceTitle, { items, titleEn }]) => {
               const displayTitle = isEn && titleEn ? titleEn : sourceTitle;
+              const hasFile = !!(items[0]?.metadata as any)?.file_path;
               return (
               <div key={sourceTitle} className="rounded-lg border border-border p-3 space-y-2">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2 min-w-0">
-                    <FileText className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                    {hasFile ? <Upload className="h-3.5 w-3.5 text-primary shrink-0" /> : <FileText className="h-3.5 w-3.5 text-muted-foreground shrink-0" />}
                     <span className="text-sm font-medium truncate">{displayTitle}</span>
                     <Badge variant="outline" className="text-[10px] shrink-0">
                       {items.length} {language === 'ru' ? 'чанк.' : 'ch.'}

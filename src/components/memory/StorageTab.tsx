@@ -2,7 +2,7 @@ import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import {
   HardDrive, FolderOpen, FileImage, FileText, File, Search,
   Loader2, Trash2, Eye, X, Download, RefreshCw, Database, Eraser,
-  ChevronDown, ChevronRight, FolderClosed, ExternalLink,
+  ChevronDown, ChevronRight, FolderClosed, ExternalLink, BookOpen,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -38,7 +38,7 @@ type SessionInfo = {
   plan_title: string | null;
 };
 
-const BUCKETS = ['message-files', 'task-files', 'avatars'] as const;
+const BUCKETS = ['message-files', 'task-files', 'knowledge-files', 'avatars'] as const;
 
 type PreviewState = { file: StorageFile; url: string; textContent?: string } | null;
 
@@ -336,18 +336,21 @@ export function StorageTab() {
   const bucketColors: Record<string, string> = {
     'message-files': 'text-hydra-info border-hydra-info/30',
     'task-files': 'text-hydra-warning border-hydra-warning/30',
+    'knowledge-files': 'text-hydra-cyan border-hydra-cyan/30',
     'avatars': 'text-hydra-success border-hydra-success/30',
   };
 
   const bucketLabels: Record<string, string> = {
     'message-files': t('memory.storage.bucketMessageFiles'),
     'task-files': t('memory.storage.bucketTaskFiles'),
+    'knowledge-files': t('memory.storage.bucketKnowledgeFiles'),
     'avatars': t('memory.storage.bucketAvatars'),
   };
 
   const bucketIcons: Record<string, React.ElementType> = {
     'message-files': FileText,
     'task-files': FolderOpen,
+    'knowledge-files': BookOpen,
     'avatars': HardDrive,
   };
 
