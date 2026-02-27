@@ -161,7 +161,7 @@ Each role is defined by a **role contract** consisting of:
 
 The most common class of MAS failures is not generation but **verification and task termination**. Hydra implements a four-tier verification architecture:
 
-**Tier 1 — Competitive Screening (Podium / Beauty Contest):**
+**Tier 1 — Competitive Screening (Podium / AI Intelligence Beauty Contest):**
 Multiple models respond to the same prompt simultaneously. An AI Arbiter evaluates responses across configurable criteria (accuracy, depth, style, relevance) on a 10-point scale. User scores are collected via Likert widgets. This is Hydra's implementation of **cognitive diversity through redundancy**.
 
 **Tier 2 — Adversarial Verification (Duel Arena):**
@@ -191,7 +191,7 @@ Where each $V$ represents the independent verification signal, and the multiplic
 
 > **⚠️ Technical Context: Contest Arbiter Pipeline**
 >
-> The Beauty Contest executes through a dedicated backend function (`contest-arbiter`) that:
+> The AI Intelligence Beauty Contest executes through a dedicated backend function (`contest-arbiter`) that:
 > 1. Collects all model responses for a round
 > 2. Constructs an evaluation prompt with criteria weights
 > 3. Invokes the Arbiter model with structured output schema
@@ -208,7 +208,7 @@ Poorly calibrated trust — either over-reliance or total dismissal — is a fun
 
 **Model Dossier & Portfolio:** Every model used in Hydra accumulates a performance record including:
 - Total responses, total "brains" (quality votes)
-- Contest scores (aggregated across all Beauty Contest rounds)
+- Contest scores (aggregated across all AI Intelligence Beauty Contest rounds)
 - Arbiter evaluation statistics
 - Hallucination count
 - Dismissal count (times a response was explicitly rejected)
@@ -345,7 +345,7 @@ This is Hydra's most distinctive architectural choice and, we argue, its most im
 | 📋 Job Descriptions | System prompts with behavioral patterns | `prompt_library`, `role_behaviors` |
 | 🎓 Interviews & Hiring | Automated model assessment (Briefing → Test → Verdict) | `interview-briefing`, `interview-test-runner`, `interview-verdict` |
 | 📊 Performance Reviews | Model dossier, contest scores, brain counts | `model_statistics`, `contest_results` |
-| 🏆 Model Agency | Beauty Contests and Duel Arena | `contest_sessions`, `contest_rounds` |
+| 🏆 Model Agency | AI Intelligence Beauty Contests and Duel Arena | `contest_sessions`, `contest_rounds` |
 | 🔍 Quality Control (OTK) | Techno-Critic + Techno-Arbiter + Techno-Moderator | Dedicated system roles |
 | 📜 Code of Conduct | Hierarchical subordination, `requires_approval` | `role_behaviors.interactions` |
 | 💼 Consultant Engagement | D-Chat panel for on-demand expert queries | Consultant Panel (sidebar) |
@@ -360,7 +360,7 @@ The organizational metaphor serves as a **cognitive bridge** between human intui
 | Technical framing | Organizational framing |
 |------------------|----------------------|
 | "Configure the system prompt for agent role `critic` with behavioral parameters" | "Update the job description for the Critic position" |
-| "Run a multi-model benchmark with structured evaluation" | "Hold a Beauty Contest to select the best candidate" |
+| "Run a multi-model benchmark with structured evaluation" | "Hold an AI Intelligence Beauty Contest to select the best candidate" |
 | "Execute the interview pipeline: briefing → test → verdict" | "HR Department conducts interviews for open positions" |
 | "Query the RAG memory layer with hybrid search" | "Check the corporate knowledge base" |
 
@@ -578,7 +578,7 @@ Several capabilities emerged during development that were not explicitly planned
 
 1. **The Chronicler role** arose from the need to document evolutionary changes — becoming a formal record-keeping mechanism that serves both internal quality control and external transparency (the CHRONICLES.md artifact on GitHub).
 
-2. **The Beauty Contest → Interview pipeline** was originally two independent features. During development, a natural workflow emerged: top-performing models from contests could be directly "interviewed" for permanent role assignments — creating a seamless talent pipeline metaphor.
+2. **The AI Intelligence Beauty Contest → Interview pipeline** was originally two independent features. During development, a natural workflow emerged: top-performing models from contests could be directly "interviewed" for permanent role assignments — creating a seamless talent pipeline metaphor.
 
 3. **The Cognitive Arsenal tab** in the Memory Hub emerged from the observation that viewing all three memory layers simultaneously revealed cross-layer patterns invisible when examining each layer in isolation.
 

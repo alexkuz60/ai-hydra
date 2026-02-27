@@ -163,7 +163,7 @@ export const guideSections: HydrapediaSection[] = [
 - **Контекстное окно** — размер окна в токенах
 - **Поддержка возможностей** — vision, tools, streaming
 
-### Конкурс красоты
+### Конкурс красоты ИИ-интеллекта
 - **Правила конкурса** — критерии и веса для оценки
 - **Задание** — текст для сравнительного тестирования
 - **Кандидаты** — список участвующих моделей
@@ -486,7 +486,7 @@ Portfolio, contests, and model ratings. 5 steps, 24 elements.
 - **Context Window** — window size in tokens
 - **Capability Support** — vision, tools, streaming
 
-### Beauty Contest
+### AI Intelligence Beauty Contest
 - **Contest Rules** — criteria and weights for evaluation
 - **Task** — text for comparative testing
 - **Candidates** — participating models list
