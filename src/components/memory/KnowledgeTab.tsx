@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { Link } from 'react-router-dom';
@@ -188,7 +189,7 @@ export function KnowledgeTab({ stats, loading }: { stats: ReturnType<typeof useH
   const isRu = language === 'ru';
 
   return (
-    <div className="space-y-4">
+    <ScrollArea className="h-[calc(100vh-12rem)]"><div className="space-y-4">
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
         {loading ? Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-20" />) : (
           <>
@@ -386,6 +387,6 @@ export function KnowledgeTab({ stats, loading }: { stats: ReturnType<typeof useH
           <Link to="/staff-roles">{t('memory.hub.goToStaff')}</Link>
         </Button>
       </div>
-    </div>
+    </div></ScrollArea>
   );
 }
