@@ -105,13 +105,8 @@ export function AppSidebar() {
             <SidebarMenuButton
               size="lg"
               tooltip="AI-Hydra"
-              onClick={(e) => {
-                if (isCollapsed) {
-                  e.preventDefault();
-                  toggleSidebar();
-                } else {
-                  navigate('/');
-                }
+              onClick={() => {
+                toggleSidebar();
               }}
               className="flex items-center gap-1.5 group cursor-pointer"
             >
