@@ -360,7 +360,7 @@ export function ChroniclesTab({ language, isSupervisor }: { language: string; is
       const { data, error } = await supabase
         .from('chronicles')
         .select('*')
-        .order('entry_code', { ascending: false });
+        .order('created_at', { ascending: false });
       if (error) throw error;
       setEntries((data || []) as ChronicleDBEntry[]);
     } catch (err) {
