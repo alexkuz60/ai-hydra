@@ -92,7 +92,7 @@ export function RoleSettingsSection({ isTechnicalStaff, requiresApproval, isSavi
     <>
       <div className="flex items-center gap-3 pt-2">
         <Checkbox id="technicalStaff" checked={isTechnicalStaff} disabled />
-        <label htmlFor="technicalStaff" className="text-sm text-muted-foreground cursor-default">
+        <label htmlFor="technicalStaff" className="text-base text-muted-foreground cursor-default">
           {t('staffRoles.technicalStaff')}
         </label>
       </div>
@@ -101,13 +101,13 @@ export function RoleSettingsSection({ isTechnicalStaff, requiresApproval, isSavi
          <div className="pt-3 space-y-1.5">
            <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Bot className="h-4 w-4 text-muted-foreground" />
-                <label className="text-sm font-medium">
+                <Bot className="h-5 w-5 text-muted-foreground" />
+                <label className="text-base font-medium">
                   {s('defaultModel', isRu)}
                 </label>
               </div>
             </div>
-          <p className="text-xs text-muted-foreground">
+           <p className="text-sm text-muted-foreground">
             {s('defaultModelHint', isRu)}
           </p>
           <ModelSelector
@@ -121,7 +121,7 @@ export function RoleSettingsSection({ isTechnicalStaff, requiresApproval, isSavi
           {selectedRole && MODEL_CHOICE_RATIONALE[selectedRole] && (
             <div className="flex gap-2 rounded-md border border-hydra-warning/30 bg-hydra-warning/10 px-3 py-2">
               <Lightbulb className="h-4 w-4 shrink-0 mt-0.5 text-hydra-warning" />
-              <p className="text-xs text-hydra-warning leading-relaxed">
+               <p className="text-sm text-hydra-warning leading-relaxed">
                 {isRu ? MODEL_CHOICE_RATIONALE[selectedRole].ru : MODEL_CHOICE_RATIONALE[selectedRole].en}
               </p>
             </div>
@@ -132,12 +132,12 @@ export function RoleSettingsSection({ isTechnicalStaff, requiresApproval, isSavi
       {userId && (
         <div className="flex items-center justify-between pt-2">
           <div className="flex items-center gap-2">
-            <ClipboardCheck className="h-4 w-4 text-muted-foreground" />
+             <ClipboardCheck className="h-5 w-5 text-muted-foreground" />
             <div className="space-y-0.5">
-              <label htmlFor="requiresApproval" className="text-sm font-medium cursor-pointer">
+              <label htmlFor="requiresApproval" className="text-base font-medium cursor-pointer">
                 {t('staffRoles.requiresApproval')}
               </label>
-              <p className="text-xs text-muted-foreground">{t('staffRoles.requiresApprovalHint')}</p>
+              <p className="text-sm text-muted-foreground">{t('staffRoles.requiresApprovalHint')}</p>
             </div>
           </div>
           <Switch

@@ -73,8 +73,8 @@ export function RolePromptSection(props: RolePromptSectionProps) {
   const librarySection = userId && !isSystemOnly && libraryPrompts.length > 0 && !isEditing && (
     <div className="space-y-3">
       <div className="flex items-center gap-2">
-        <Library className="h-4 w-4 text-muted-foreground" />
-        <h3 className="text-sm font-medium text-muted-foreground">{t('staffRoles.libraryPrompts')}</h3>
+        <Library className="h-5 w-5 text-muted-foreground" />
+        <h3 className="text-base font-medium text-muted-foreground">{t('staffRoles.libraryPrompts')}</h3>
       </div>
       <Select onValueChange={handleLoadFromLibrary} value="">
         <SelectTrigger className="w-full">
@@ -110,7 +110,7 @@ export function RolePromptSection(props: RolePromptSectionProps) {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <h3 className="text-sm font-medium text-muted-foreground">{t('staffRoles.systemPrompt')}</h3>
+             <h3 className="text-base font-medium text-muted-foreground">{t('staffRoles.systemPrompt')}</h3>
               {isPromptModified && <span className="inline-flex items-center justify-center w-2 h-2 bg-primary rounded-full" />}
             </div>
           </div>
@@ -124,13 +124,13 @@ export function RolePromptSection(props: RolePromptSectionProps) {
           />
           <div className="space-y-3">
             <div className="space-y-2">
-              <Label htmlFor="promptName" className="text-sm font-medium">{t('staffRoles.promptName')}</Label>
+              <Label htmlFor="promptName" className="text-base font-medium">{t('staffRoles.promptName')}</Label>
               <Input id="promptName" value={promptName} onChange={e => setPromptName(e.target.value)} placeholder={t('staffRoles.promptNamePlaceholder')} />
             </div>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Switch id="isShared" checked={isShared} onCheckedChange={setIsShared} />
-                <Label htmlFor="isShared" className="text-sm cursor-pointer">{t('staffRoles.shareWithTeam')}</Label>
+                <Label htmlFor="isShared" className="text-base cursor-pointer">{t('staffRoles.shareWithTeam')}</Label>
               </div>
             </div>
           </div>
@@ -154,9 +154,9 @@ export function RolePromptSection(props: RolePromptSectionProps) {
       <Collapsible open={promptOpen} onOpenChange={setPromptOpen}>
         <div className="flex items-center justify-between">
           <CollapsibleTrigger className="flex items-center gap-2 hover:text-foreground transition-colors">
-            <ChevronDown className={cn("h-4 w-4 transition-transform", !promptOpen && "-rotate-90")} />
-            <FileText className="h-4 w-4 text-muted-foreground" />
-            <h3 className="text-sm font-medium text-muted-foreground">{t('staffRoles.systemPrompt')}</h3>
+             <ChevronDown className={cn("h-5 w-5 transition-transform", !promptOpen && "-rotate-90")} />
+158:             <FileText className="h-5 w-5 text-muted-foreground" />
+            <h3 className="text-base font-medium text-muted-foreground">{t('staffRoles.systemPrompt')}</h3>
             <div className="flex items-center gap-1 ml-2">
               {parsedSystemPrompt.sections.filter(s => s.content.trim()).slice(0, 4).map(section => {
                 const Icon = section.icon;
