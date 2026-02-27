@@ -1,6 +1,8 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import { useConceptInvoke, ConceptExpertType, PipelineContext } from './useConceptInvoke';
 import { useConceptResponses, ConceptResponses } from './useConceptResponses';
+import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { toast } from 'sonner';
 
@@ -23,10 +25,53 @@ interface UseConceptPipelineOptions {
   onStepComplete?: () => void;
 }
 
+/** Fetch combined file digests for a plan's concept session */
+async function fetchFileDigestsForPlan(planId: string, userId: string): Promise<string> {
+  try {
+    // Find the concept session
+    const { data: session } = await supabase
+      .from('sessions')
+      .select('id')
+      .eq('plan_id', planId)
+      .eq('user_id', userId)
+      .order('sort_order', { ascending: true })
+      .limit(1)
+      .maybeSingle();
+
+    if (!session?.id) return '';
+
+    const { data: digests } = await supabase
+      .from('file_digests')
+      .select('digest, source_file_name, digest_type')
+      .eq('session_id', session.id)
+      .order('created_at', { ascending: true });
+
+    if (!digests || digests.length === 0) return '';
+
+    return digests
+      .map((d: any) => `### ${d.source_file_name || 'Файл'} (${d.digest_type})\n${d.digest}`)
+      .join('\n\n');
+  } catch (e) {
+    console.warn('[pipeline] Failed to fetch file digests:', e);
+    return '';
+  }
+}
+
 export function useConceptPipeline({ planId, planTitle, planGoal, includePatent = false, onStepComplete }: UseConceptPipelineOptions) {
+  const { user } = useAuth();
   const { language } = useLanguage();
   const { responses, loading: responsesLoading, refetch } = useConceptResponses(planId || null);
   const abortRef = useRef(false);
+  const fileDigestsCache = useRef<string | null>(null);
+
+  /** Fetch and cache file digests for this plan */
+  const getFileDigests = useCallback(async (): Promise<string> => {
+    if (fileDigestsCache.current !== null) return fileDigestsCache.current;
+    if (!user?.id) return '';
+    const digests = await fetchFileDigestsForPlan(planId, user.id);
+    fileDigestsCache.current = digests;
+    return digests;
+  }, [planId, user?.id]);
 
   const [state, setState] = useState<ConceptPipelineState>({
     phaseStatuses: {
@@ -93,8 +138,11 @@ export function useConceptPipeline({ planId, planTitle, planGoal, includePatent 
     }));
 
     try {
-      // Get latest context from responses (they should be updated by now)
+      // Get latest context from responses + file digests
       const ctx: PipelineContext = {};
+      const fileDigests = await getFileDigests();
+      if (fileDigests) ctx.fileDigests = fileDigests;
+      
       if (step === 'strategist') {
         ctx.visionaryResponse = responses.visionary?.content || null;
       } else if (step === 'patent') {
@@ -119,7 +167,7 @@ export function useConceptPipeline({ planId, planTitle, planGoal, includePatent 
       }));
       throw err;
     }
-  }, [invoke, refetch, responses]);
+  }, [invoke, refetch, responses, getFileDigests]);
 
   /** Run the full pipeline: Visionary → Strategist → Patent */
   const runFullPipeline = useCallback(async () => {
@@ -129,7 +177,7 @@ export function useConceptPipeline({ planId, planTitle, planGoal, includePatent 
     }
 
     abortRef.current = false;
-
+    fileDigestsCache.current = null; // Reset cache for fresh data
     // Reset all statuses
     setState({
       phaseStatuses: { visionary: 'idle', strategist: 'idle', patent: 'idle' },
@@ -147,8 +195,10 @@ export function useConceptPipeline({ planId, planTitle, planGoal, includePatent 
       }));
 
       try {
-        // Build cascading context from completed steps
+        // Build cascading context from completed steps + file digests
         const ctx: PipelineContext = {};
+        const fileDigests = await getFileDigests();
+        if (fileDigests) ctx.fileDigests = fileDigests;
         
         // After step completes, responses are refetched via onComplete
         // For the pipeline, we need to wait and get fresh data
@@ -199,7 +249,7 @@ export function useConceptPipeline({ planId, planTitle, planGoal, includePatent 
         ? 'Полный анализ завершён'
         : 'Full analysis completed'
     );
-  }, [planGoal, language, invoke, refetch, responses, includePatent]);
+  }, [planGoal, language, invoke, refetch, responses, includePatent, getFileDigests]);
 
   /** Abort the pipeline */
   const abort = useCallback(() => {

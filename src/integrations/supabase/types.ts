@@ -286,6 +286,66 @@ export type Database = {
         }
         Relationships: []
       }
+      file_digests: {
+        Row: {
+          created_at: string
+          digest: string
+          digest_type: string
+          id: string
+          metadata: Json | null
+          session_id: string
+          source_file_name: string | null
+          source_mime_type: string | null
+          task_file_id: string
+          token_estimate: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          digest: string
+          digest_type?: string
+          id?: string
+          metadata?: Json | null
+          session_id: string
+          source_file_name?: string | null
+          source_mime_type?: string | null
+          task_file_id: string
+          token_estimate?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          digest?: string
+          digest_type?: string
+          id?: string
+          metadata?: Json | null
+          session_id?: string
+          source_file_name?: string | null
+          source_mime_type?: string | null
+          task_file_id?: string
+          token_estimate?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "file_digests_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "file_digests_task_file_id_fkey"
+            columns: ["task_file_id"]
+            isOneToOne: false
+            referencedRelation: "task_files"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       flow_diagrams: {
         Row: {
           created_at: string

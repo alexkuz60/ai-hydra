@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { toast } from 'sonner';
 import { sanitizeFileName } from '@/lib/fileUtils';
 
@@ -16,6 +17,7 @@ export interface TaskFile {
 
 export function useTaskFiles(sessionId: string | null) {
   const { user } = useAuth();
+  const { language } = useLanguage();
   const [files, setFiles] = useState<TaskFile[]>([]);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -52,7 +54,7 @@ export function useTaskFiles(sessionId: string | null) {
         .upload(path, file);
       if (uploadError) throw uploadError;
 
-      const { error: insertError } = await supabase
+      const { data: insertData, error: insertError } = await supabase
         .from('task_files')
         .insert({
           session_id: sessionId,
@@ -61,17 +63,30 @@ export function useTaskFiles(sessionId: string | null) {
           file_path: path,
           file_size: file.size,
           mime_type: file.type || null,
-        });
+        })
+        .select('id')
+        .single();
       if (insertError) throw insertError;
 
       await fetchFiles();
       toast.success(`Файл "${file.name}" загружен`);
+
+      // Trigger background digest generation
+      if (insertData?.id) {
+        supabase.functions.invoke('digest-file', {
+          body: { task_file_id: insertData.id, session_id: sessionId, language },
+        }).then(() => {
+          console.log(`[digest] Generated for ${file.name}`);
+        }).catch(e => {
+          console.warn(`[digest] Failed for ${file.name}:`, e);
+        });
+      }
     } catch (e: any) {
       toast.error(e.message || 'Upload failed');
     } finally {
       setUploading(false);
     }
-  }, [sessionId, user, fetchFiles]);
+  }, [sessionId, user, fetchFiles, language]);
 
   const deleteFile = useCallback(async (fileId: string, filePath: string) => {
     try {
