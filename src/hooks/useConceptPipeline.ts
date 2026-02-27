@@ -17,6 +17,8 @@ export interface ConceptPipelineState {
 const PIPELINE_ORDER_FULL: ConceptExpertType[] = ['visionary', 'strategist', 'patent'];
 const PIPELINE_ORDER_NO_PATENT: ConceptExpertType[] = ['visionary', 'strategist'];
 
+export type ConceptModelOverrides = Partial<Record<ConceptExpertType, string>>;
+
 interface UseConceptPipelineOptions {
   planId: string;
   planTitle: string;
@@ -117,7 +119,7 @@ export function useConceptPipeline({ planId, planTitle, planGoal, includePatent 
   });
 
   /** Run a single step with cascading context */
-  const runStep = useCallback(async (step: ConceptExpertType) => {
+  const runStep = useCallback(async (step: ConceptExpertType, modelOverrides?: ConceptModelOverrides) => {
     // Refresh responses to get latest data
     await refetch();
     
@@ -150,7 +152,7 @@ export function useConceptPipeline({ planId, planTitle, planGoal, includePatent 
         ctx.strategistResponse = responses.strategist?.content || null;
       }
 
-      await invoke(step, ctx);
+      await invoke(step, ctx, modelOverrides?.[step]);
 
       setState(prev => ({
         ...prev,
@@ -170,7 +172,7 @@ export function useConceptPipeline({ planId, planTitle, planGoal, includePatent 
   }, [invoke, refetch, responses, getFileDigests]);
 
   /** Run the full pipeline: Visionary → Strategist → Patent */
-  const runFullPipeline = useCallback(async () => {
+  const runFullPipeline = useCallback(async (modelOverrides?: ConceptModelOverrides) => {
     if (!planGoal?.trim()) {
       toast.error(language === 'ru' ? 'Заполните концепцию проекта' : 'Please fill in the project concept');
       return;
@@ -217,7 +219,7 @@ export function useConceptPipeline({ planId, planTitle, planGoal, includePatent 
           ctx.strategistResponse = responses.strategist?.content || null;
         }
 
-        await invoke(step, ctx);
+        await invoke(step, ctx, modelOverrides?.[step]);
 
         setState(prev => ({
           ...prev,

@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Target, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { CollapsedResponse } from './ConceptResponsesPreview';
+import { ModelSelector } from '@/components/warroom/ModelSelector';
 import type { ConceptResponse } from '@/hooks/useConceptResponses';
 
 interface ConceptStrategistCallProps {
@@ -15,9 +16,11 @@ interface ConceptStrategistCallProps {
   onExpand?: () => void;
   onInvoke?: () => void;
   invoking?: boolean;
+  selectedModel: string;
+  onModelChange: (model: string) => void;
 }
 
-export function ConceptStrategistCall({ planId, planTitle, planGoal, className, response, onExpand, onInvoke, invoking }: ConceptStrategistCallProps) {
+export function ConceptStrategistCall({ planId, planTitle, planGoal, className, response, onExpand, onInvoke, invoking, selectedModel, onModelChange }: ConceptStrategistCallProps) {
   const { t } = useLanguage();
 
   return (
@@ -29,16 +32,19 @@ export function ConceptStrategistCall({ planId, planTitle, planGoal, className, 
       <p className="text-sm text-muted-foreground/70">
         {t('concept.strategist.description')}
       </p>
-      <Button
-        onClick={onInvoke}
-        variant="outline"
-        size="sm"
-        className="gap-2 border-hydra-strategist/30 text-hydra-strategist hover:bg-hydra-strategist/10"
-        disabled={!planGoal?.trim() || invoking}
-      >
-        {invoking ? <Loader2 className="h-4 w-4 animate-spin" /> : <Target className="h-4 w-4" />}
-        {t('concept.strategist.invoke')}
-      </Button>
+      <div className="flex items-center gap-2 flex-wrap">
+        <Button
+          onClick={onInvoke}
+          variant="outline"
+          size="sm"
+          className="gap-2 border-hydra-strategist/30 text-hydra-strategist hover:bg-hydra-strategist/10"
+          disabled={!planGoal?.trim() || invoking}
+        >
+          {invoking ? <Loader2 className="h-4 w-4 animate-spin" /> : <Target className="h-4 w-4" />}
+          {t('concept.strategist.invoke')}
+        </Button>
+        <ModelSelector value={selectedModel} onChange={onModelChange} className="flex-1 min-w-[200px]" />
+      </div>
       {!planGoal?.trim() && (
         <p className="text-sm text-muted-foreground/50 italic">
           {t('concept.strategist.needGoal')}

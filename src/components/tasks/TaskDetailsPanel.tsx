@@ -18,7 +18,8 @@ import { ConceptVisionaryCall } from './ConceptVisionaryCall';
 import { ConceptStrategistCall } from './ConceptStrategistCall';
 import { ConceptResponsesPreview } from './ConceptResponsesPreview';
 import { ConceptPipelineTimeline, ConceptPhase } from './ConceptPipelineTimeline';
-import { useConceptPipeline } from '@/hooks/useConceptPipeline';
+import { useConceptPipeline, ConceptModelOverrides } from '@/hooks/useConceptPipeline';
+import { getTechRoleDefaultModel } from '@/hooks/useTechRoleDefaults';
 import { useConceptResponses } from '@/hooks/useConceptResponses';
 import { useConceptInvoke } from '@/hooks/useConceptInvoke';
 import { cn } from '@/lib/utils';
@@ -149,6 +150,13 @@ export function TaskDetailsPanel({
   const [includePatent, setIncludePatent] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewTab, setPreviewTab] = useState<'visionary' | 'strategist' | 'patent'>('visionary');
+
+  // Per-expert model selection with role defaults
+  const [expertModels, setExpertModels] = useState<ConceptModelOverrides>(() => ({
+    visionary: getTechRoleDefaultModel('visionary') || 'perplexity/sonar-reasoning-pro',
+    strategist: getTechRoleDefaultModel('strategist') || 'google/gemini-2.5-pro-preview',
+    patent: getTechRoleDefaultModel('patent_attorney') || 'perplexity/sonar-deep-research',
+  }));
 
   // Concept responses for plan-level tasks
   const currentIsPlan = !!(task?.session_config as any)?.__isPlan;
@@ -495,13 +503,13 @@ export function TaskDetailsPanel({
                             }
                           }
                         }}
-                        onRestart={() => pipeline.runFullPipeline()}
+                        onRestart={() => pipeline.runFullPipeline(expertModels)}
                       />
                     </div>
                     {/* Auto-run button */}
                     {!pipeline.state.isRunning ? (
                       <Button
-                        onClick={() => pipeline.runFullPipeline()}
+                        onClick={() => pipeline.runFullPipeline(expertModels)}
                         size="sm"
                         className="gap-2 shrink-0"
                         disabled={!taskDescription?.trim() || pipeline.state.isRunning}
@@ -529,8 +537,10 @@ export function TaskDetailsPanel({
                     planGoal={taskDescription}
                     response={conceptResponses.visionary}
                     onExpand={() => { setPreviewTab('visionary'); setPreviewOpen(true); }}
-                    onInvoke={() => pipeline.runStep('visionary')}
+                    onInvoke={() => pipeline.runStep('visionary', expertModels)}
                     invoking={pipeline.state.phaseStatuses.visionary === 'running' || expertLoading === 'visionary'}
+                    selectedModel={expertModels.visionary || ''}
+                    onModelChange={(m) => setExpertModels(prev => ({ ...prev, visionary: m }))}
                   />
 
                   <ConceptStrategistCall
@@ -539,8 +549,10 @@ export function TaskDetailsPanel({
                     planGoal={taskDescription}
                     response={conceptResponses.strategist}
                     onExpand={() => { setPreviewTab('strategist'); setPreviewOpen(true); }}
-                    onInvoke={() => pipeline.runStep('strategist')}
+                    onInvoke={() => pipeline.runStep('strategist', expertModels)}
                     invoking={pipeline.state.phaseStatuses.strategist === 'running' || expertLoading === 'strategist'}
+                    selectedModel={expertModels.strategist || ''}
+                    onModelChange={(m) => setExpertModels(prev => ({ ...prev, strategist: m }))}
                   />
 
                   {includePatent && (
@@ -550,8 +562,10 @@ export function TaskDetailsPanel({
                       planGoal={taskDescription}
                       response={conceptResponses.patent}
                       onExpand={() => { setPreviewTab('patent'); setPreviewOpen(true); }}
-                      onInvoke={() => pipeline.runStep('patent')}
+                      onInvoke={() => pipeline.runStep('patent', expertModels)}
                       invoking={pipeline.state.phaseStatuses.patent === 'running' || expertLoading === 'patent'}
+                      selectedModel={expertModels.patent || ''}
+                      onModelChange={(m) => setExpertModels(prev => ({ ...prev, patent: m }))}
                     />
                   )}
 

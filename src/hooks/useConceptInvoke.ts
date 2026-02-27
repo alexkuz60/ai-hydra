@@ -61,7 +61,7 @@ export function useConceptInvoke({ planId, planTitle, planGoal, onComplete }: Us
   const { language } = useLanguage();
   const [loading, setLoading] = useState<ConceptExpertType | null>(null);
 
-  const invoke = useCallback(async (expertType: ConceptExpertType, pipelineContext?: PipelineContext) => {
+  const invoke = useCallback(async (expertType: ConceptExpertType, pipelineContext?: PipelineContext, modelOverride?: string) => {
     if (!user?.id || !planGoal?.trim()) return;
 
     setLoading(expertType);
@@ -147,9 +147,7 @@ export function useConceptInvoke({ planId, planTitle, planGoal, onComplete }: Us
       if (insertError) throw insertError;
 
       // 5. Determine model and search provider
-      const config = conceptSession?.session_config as any;
-      const selectedModels: string[] = config?.selectedModels || [];
-      const modelId = selectedModels[0] || DEFAULT_MODEL;
+      const modelId = modelOverride || DEFAULT_MODEL;
       const searchProvider = await searchProviderPromise;
 
       // 6. Call hydra-orchestrator with tools enabled
