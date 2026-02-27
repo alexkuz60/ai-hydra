@@ -3,11 +3,12 @@ import {
   HardDrive, FolderOpen, FileImage, FileText, File, Search,
   Loader2, Trash2, Eye, X, Download, RefreshCw, Database, Eraser,
   ChevronDown, ChevronRight, FolderClosed, ExternalLink, BookOpen,
-  Globe, FileUp, PenLine, Calendar,
+  Globe, FileUp, PenLine, Calendar, BookMarked,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { ROLE_CONFIG } from '@/config/roles';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -38,6 +39,7 @@ type StorageFile = {
   scraped_at?: string;
   role?: string;
   chunk_count?: number;
+  knowledge_category?: string;
 };
 
 type SessionInfo = {
@@ -204,6 +206,7 @@ export function StorageTab() {
               scraped_at: meta?.scraped_at,
               role: entry.role,
               chunk_count: meta?.chunk_total,
+              knowledge_category: entry.category,
             });
           }
         }
@@ -484,7 +487,21 @@ export function StorageTab() {
                           preview={preview}
                           deletingId={deletingId}
                           onPreview={handlePreview}
-                             onDelete={setDeleteTarget}
+                          onDelete={setDeleteTarget}
+                          t={t}
+                          bucketColors={bucketColors}
+                        />
+                      ) : bucket === 'knowledge-files' ? (
+                        <KnowledgeFilesGrouped
+                          files={bucketFiles}
+                          collapsedGroups={collapsedGroups}
+                          toggleGroup={toggleGroup}
+                          thumbnails={thumbnails}
+                          previewLoading={previewLoading}
+                          preview={preview}
+                          deletingId={deletingId}
+                          onPreview={handlePreview}
+                          onDelete={setDeleteTarget}
                           t={t}
                           bucketColors={bucketColors}
                         />
@@ -693,6 +710,84 @@ function TaskFilesGrouped({
   );
 }
 
+/* ─── Knowledge Files Grouped (Hydrapedia vs User) ───────────────────────── */
+
+function KnowledgeFilesGrouped({
+  files,
+  collapsedGroups,
+  toggleGroup,
+  thumbnails,
+  previewLoading,
+  preview,
+  deletingId,
+  onPreview,
+  onDelete,
+  t,
+  bucketColors,
+}: {
+  files: StorageFile[];
+  collapsedGroups: Set<string>;
+  toggleGroup: (key: string) => void;
+  thumbnails: Record<string, string>;
+  previewLoading: boolean;
+  preview: PreviewState;
+  deletingId: string | null;
+  onPreview: (f: StorageFile) => void;
+  onDelete: (f: StorageFile) => void;
+  t: (key: string) => string;
+  bucketColors: Record<string, string>;
+}) {
+  const hydrapediaFiles = files.filter(f => f.knowledge_category === 'hydrapedia');
+  const userFiles = files.filter(f => f.knowledge_category !== 'hydrapedia');
+
+  const groups = [
+    { key: 'knowledge-user', label: t('memory.storage.userKnowledge'), files: userFiles, icon: BookOpen, color: 'text-hydra-cyan' },
+    { key: 'knowledge-hydrapedia', label: t('memory.storage.fromHydrapedia'), files: hydrapediaFiles, icon: BookMarked, color: 'text-hydra-memory' },
+  ];
+
+  return (
+    <div>
+      {groups.map(group => {
+        if (group.files.length === 0) return null;
+        const isCollapsed = collapsedGroups.has(group.key);
+        const GroupIcon = group.icon;
+
+        return (
+          <Collapsible key={group.key} open={!isCollapsed} onOpenChange={() => toggleGroup(group.key)}>
+            <CollapsibleTrigger asChild>
+              <button className="w-full flex items-center gap-2 pl-8 pr-4 py-2 text-left hover:bg-muted/30 transition-colors border-b border-border/50">
+                {isCollapsed ? <ChevronRight className="h-3 w-3 shrink-0 text-muted-foreground" /> : <ChevronDown className="h-3 w-3 shrink-0 text-muted-foreground" />}
+                <GroupIcon className={cn('h-3.5 w-3.5 shrink-0', group.color)} />
+                <span className={cn('text-xs font-medium', group.color)}>{group.label}</span>
+                <Badge variant="outline" className="ml-1 h-4 px-1 text-[9px]">{group.files.length}</Badge>
+              </button>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <div className="divide-y divide-border/50">
+                {group.files.map(file => (
+                  <FileRow
+                    key={file.id}
+                    file={file}
+                    thumbnails={thumbnails}
+                    previewLoading={previewLoading}
+                    preview={preview}
+                    deletingId={deletingId}
+                    onPreview={onPreview}
+                    onDelete={onDelete}
+                    t={t}
+                    bucketColors={bucketColors}
+                    indent
+                  />
+                ))}
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
+        );
+      })}
+    </div>
+  );
+}
+
 /* ─── Single File Row ────────────────────────────────────────────────────── */
 
 function FileRow({
@@ -772,9 +867,18 @@ function FileRow({
               {file.load_method === 'url' ? '🌐' : '✍️'}
             </span>
           )}
-          {file.role && (
-            <span className="text-[9px] text-muted-foreground shrink-0">[{file.role}]</span>
-          )}
+          {file.role && (() => {
+            const cfg = ROLE_CONFIG[file.role as keyof typeof ROLE_CONFIG];
+            if (cfg) {
+              const RoleIcon = cfg.icon;
+              return (
+                <Badge variant="outline" className={cn('text-[10px] font-medium gap-1 py-0.5 px-1.5 border shrink-0', cfg.color, cfg.bgClass || '')}>
+                  <RoleIcon className={cn('h-3 w-3', cfg.color)} />
+                </Badge>
+              );
+            }
+            return <span className="text-[9px] text-muted-foreground shrink-0">[{file.role}]</span>;
+          })()}
         </div>
         <div className="flex items-center gap-2 mt-0.5 flex-wrap">
           {!file.is_virtual && <span className="text-[10px] text-muted-foreground">{formatBytes(file.size)}</span>}
