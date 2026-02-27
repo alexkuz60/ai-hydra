@@ -19,7 +19,7 @@ const dict = {
   'flowPicker.hoverToPreview': { ru: 'Наведите на диаграмму для превью', en: 'Hover over a diagram to preview' },
 
   // TaskFilesPanel
-  'taskFiles.title': { ru: 'Файлы задачи', en: 'Task Files' },
+  'taskFiles.title': { ru: 'Дополнительные файлы для стратегического плана решения задачи', en: 'Additional files for strategic task plan' },
   'taskFiles.upload': { ru: 'Загрузить', en: 'Upload' },
   'taskFiles.noFiles': { ru: 'Нет прикреплённых файлов', en: 'No attached files' },
   'taskFiles.download': { ru: 'Скачать', en: 'Download' },
