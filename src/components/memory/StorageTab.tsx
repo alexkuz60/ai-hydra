@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
@@ -74,6 +75,7 @@ export function StorageTab() {
   const [cleaning, setCleaning] = useState(false);
   const [sessionInfoMap, setSessionInfoMap] = useState<Record<string, SessionInfo>>({});
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
+  const [deleteTarget, setDeleteTarget] = useState<StorageFile | null>(null);
 
   const listBucketRecursive = useCallback(async (bucket: string, prefix: string): Promise<StorageFile[]> => {
     const result: StorageFile[] = [];
@@ -428,7 +430,7 @@ export function StorageTab() {
                           preview={preview}
                           deletingId={deletingId}
                           onPreview={handlePreview}
-                          onDelete={handleDelete}
+                             onDelete={setDeleteTarget}
                           t={t}
                           bucketColors={bucketColors}
                         />
@@ -443,7 +445,7 @@ export function StorageTab() {
                               preview={preview}
                               deletingId={deletingId}
                               onPreview={handlePreview}
-                              onDelete={handleDelete}
+                              onDelete={setDeleteTarget}
                               t={t}
                               bucketColors={bucketColors}
                               indent={false}
@@ -514,6 +516,31 @@ export function StorageTab() {
           )}
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={!!deleteTarget} onOpenChange={open => !open && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('memory.hub.deleteFileConfirmTitle')}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t('memory.hub.deleteFileConfirmDesc').replace('{name}', deleteTarget?.name || '')}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                if (deleteTarget) {
+                  handleDelete(deleteTarget);
+                  setDeleteTarget(null);
+                }
+              }}
+            >
+              {t('common.delete')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
