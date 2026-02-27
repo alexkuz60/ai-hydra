@@ -66,9 +66,11 @@ Automatic experience consolidation: patterns from `role_memory` are distilled in
 
 ### 🏢 Management & Tools
 
-**Staff Roles (HR Department)** — Role hierarchy editor, behavioral patterns, model interviews (briefing → tests → verdict), interview history table, Role Knowledge Base (RAG), certification 🛡️, persistent collapse state in Knowledge Base, scaled typography in detail panels
+**Staff Roles (HR Department)** — Role hierarchy editor, behavioral patterns, model interviews (briefing → tests → verdict), interview history table, Role Knowledge Base (RAG), certification 🛡️, 3-tier Context Pyramid (Global → Org → Expertise)
 
-**Task Management** — Session hub, model configuration via Sheet, task files, session memory (embeddings), tutorial examples with 26 pre-seeded conversations (clone-to-personal)
+**Task Management** — Session hub, model configuration via Sheet, task files, session memory (embeddings), tutorial examples with 26 pre-seeded conversations (clone-to-personal), **StrategySyncEngine** (auto-sync approved strategies to task tree, intelligent diff, soft-delete)
+
+**Cross-task Memory** — Vector-embedded verdict fixation (`plan_conclusions`, 1536-dim embeddings) for sharing "institutional memory" across subtasks within a strategic plan
 
 **Prompt Library** — CRUD with tags, role/owner/language filters, shared/personal prompts, advanced editor with sections and translation
 
@@ -188,6 +190,9 @@ Lovable Cloud (Supabase)
 | `task_blueprints` | Task templates |
 | `task_files` | Task files |
 | `guide_tours/steps/elements` | Guided tours |
+| `strategic_plans` | Strategic plans with progress tracking |
+| `plan_conclusions` | Cross-task vector memory (RAG) |
+| `chronicles` | Evolution chronicles (EVO entries) |
 | `user_roles` | User roles |
 | `user_settings` | User settings |
 | `proxy_api_logs` | ProxyAPI logs |
