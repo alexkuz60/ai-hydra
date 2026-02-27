@@ -24,6 +24,13 @@ const dict = {
   'taskFiles.noFiles': { ru: 'Нет прикреплённых файлов', en: 'No attached files' },
   'taskFiles.download': { ru: 'Скачать', en: 'Download' },
   'taskFiles.delete': { ru: 'Удалить', en: 'Delete' },
+  'taskFiles.viewAll': { ru: 'Просмотр файлов', en: 'View Files' },
+  'taskFiles.commentPlaceholder': { ru: 'Для чего добавлен этот файл...', en: 'Why was this file added...' },
+  'taskFiles.commentSaved': { ru: 'Комментарий сохранён', en: 'Comment saved' },
+  'taskFiles.save': { ru: 'Сохранить', en: 'Save' },
+  'taskFiles.digest': { ru: 'AI-дайджест', en: 'AI Digest' },
+  'taskFiles.noDigest': { ru: 'Дайджест ещё не создан', en: 'Digest not yet generated' },
+  'taskFiles.preview': { ru: 'Предпросмотр', en: 'Preview' },
 
   // Layout - AppSidebar
   'nav.guidedTour': { ru: 'Экскурсия', en: 'Guided Tour' },

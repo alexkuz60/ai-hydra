@@ -1479,6 +1479,7 @@ export type Database = {
       }
       task_files: {
         Row: {
+          comment: string | null
           created_at: string
           file_name: string
           file_path: string
@@ -1489,6 +1490,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          comment?: string | null
           created_at?: string
           file_name: string
           file_path: string
@@ -1499,6 +1501,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          comment?: string | null
           created_at?: string
           file_name?: string
           file_path?: string
