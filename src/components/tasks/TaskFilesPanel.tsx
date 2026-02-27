@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Paperclip, Upload, Trash2, FileText, Image, File, Loader2, Eye } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { wt } from '@/components/warroom/i18n';
 import { FileViewerDialog } from './FileViewerDialog';
 import { toast } from 'sonner';
@@ -40,6 +41,7 @@ export function TaskFilesPanel({ sessionId, className }: TaskFilesPanelProps) {
   const [signedUrls, setSignedUrls] = useState<Record<string, string>>({});
   const [viewerOpen, setViewerOpen] = useState(false);
   const [viewerInitialFileId, setViewerInitialFileId] = useState<string | undefined>();
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; path: string; name: string } | null>(null);
 
   // Fetch signed URLs for image files
   const getOrFetchUrl = useCallback(async (filePath: string): Promise<string> => {
@@ -179,7 +181,7 @@ export function TaskFilesPanel({ sessionId, className }: TaskFilesPanelProps) {
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <button
-                        onClick={(e) => { e.stopPropagation(); deleteFile(file.id, file.file_path); }}
+                        onClick={(e) => { e.stopPropagation(); setDeleteTarget({ id: file.id, path: file.file_path, name: file.file_name }); }}
                         className="absolute -top-1.5 -right-1.5 bg-destructive text-destructive-foreground rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity z-10"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
@@ -205,6 +207,31 @@ export function TaskFilesPanel({ sessionId, className }: TaskFilesPanelProps) {
         onDownload={handleDownload}
         getSignedUrl={getSignedUrl}
       />
+
+      <AlertDialog open={!!deleteTarget} onOpenChange={open => !open && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{wt('taskFiles.deleteConfirmTitle', language)}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {wt('taskFiles.deleteConfirmDesc', language).replace('{name}', deleteTarget?.name || '')}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{wt('taskFiles.cancel', language)}</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                if (deleteTarget) {
+                  deleteFile(deleteTarget.id, deleteTarget.path);
+                  setDeleteTarget(null);
+                }
+              }}
+            >
+              {wt('taskFiles.delete', language)}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </section>
   );
 }
