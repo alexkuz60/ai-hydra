@@ -547,6 +547,11 @@ export function TaskDetailsPanel({
                       invoking={pipeline.state.phaseStatuses.patent === 'running' || expertLoading === 'patent'}
                     />
                   )}
+
+                  {/* Files panel for concept */}
+                  <div data-guide="tasks-files-tab">
+                    <TaskFilesPanelWithPlan taskId={task.id} />
+                  </div>
                 </section>
               )}
 
