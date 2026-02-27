@@ -424,21 +424,21 @@ export function StorageTab() {
       {/* Search + actions */}
       <div className="flex items-center gap-3">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-          <Input placeholder={t('memory.hub.searchByName')} value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="pl-8 h-7 text-xs" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input placeholder={t('memory.hub.searchByName')} value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="pl-9 h-8 text-sm" />
         </div>
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0 text-muted-foreground hover:text-destructive" onClick={cleanOrphanedFiles} disabled={cleaning || loading}>
-                {cleaning ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Eraser className="h-3.5 w-3.5" />}
+              <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive" onClick={cleanOrphanedFiles} disabled={cleaning || loading}>
+                {cleaning ? <Loader2 className="h-4 w-4 animate-spin" /> : <Eraser className="h-4 w-4" />}
               </Button>
             </TooltipTrigger>
             <TooltipContent>{t('memory.storage.cleanOrphans')}</TooltipContent>
           </Tooltip>
         </TooltipProvider>
-        <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={loadFiles}>
-          <RefreshCw className={cn('h-3.5 w-3.5', loading && 'animate-spin')} />
+        <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={loadFiles}>
+          <RefreshCw className={cn('h-4 w-4', loading && 'animate-spin')} />
         </Button>
       </div>
 
@@ -465,14 +465,14 @@ export function StorageTab() {
                   <Collapsible key={bucket} open={!isCollapsed} onOpenChange={() => toggleGroup(bucket)}>
                     <CollapsibleTrigger asChild>
                       <button className={cn(
-                        'w-full flex items-center gap-2 px-4 py-2.5 text-left hover:bg-muted/40 transition-colors border-b border-border',
+                        'w-full flex items-center gap-2 px-4 py-3 text-left hover:bg-muted/40 transition-colors border-b border-border',
                         bucketColors[bucket]
                       )}>
-                        {isCollapsed ? <ChevronRight className="h-3.5 w-3.5 shrink-0" /> : <ChevronDown className="h-3.5 w-3.5 shrink-0" />}
-                        <BucketIcon className="h-4 w-4 shrink-0" />
-                        <span className="text-sm font-semibold">{bucketLabels[bucket]}</span>
-                        <Badge variant="outline" className="ml-1 h-5 px-1.5 text-[10px]">{bucketFiles.length}</Badge>
-                        <span className="text-[10px] text-muted-foreground ml-auto">{formatBytes(bucketSize)}</span>
+                        {isCollapsed ? <ChevronRight className="h-4 w-4 shrink-0" /> : <ChevronDown className="h-4 w-4 shrink-0" />}
+                        <BucketIcon className="h-5 w-5 shrink-0" />
+                        <span className="text-base font-semibold">{bucketLabels[bucket]}</span>
+                        <Badge variant="outline" className="ml-1 h-5 px-1.5 text-xs">{bucketFiles.length}</Badge>
+                        <span className="text-xs text-muted-foreground ml-auto">{formatBytes(bucketSize)}</span>
                       </button>
                     </CollapsibleTrigger>
                     <CollapsibleContent>
@@ -677,11 +677,11 @@ function TaskFilesGrouped({
           <Collapsible key={sessionId} open={!isCollapsed} onOpenChange={() => toggleGroup(groupKey)}>
             <CollapsibleTrigger asChild>
               <button className="w-full flex items-center gap-2 pl-8 pr-4 py-2 text-left hover:bg-muted/30 transition-colors border-b border-border/50">
-                {isCollapsed ? <ChevronRight className="h-3 w-3 shrink-0 text-muted-foreground" /> : <ChevronDown className="h-3 w-3 shrink-0 text-muted-foreground" />}
-                <FolderClosed className="h-3.5 w-3.5 shrink-0 text-hydra-warning/70" />
-                <span className="text-xs font-medium truncate">{label}</span>
-                <Badge variant="outline" className="ml-1 h-4 px-1 text-[9px]">{sessionFiles.length}</Badge>
-                <span className="text-[10px] text-muted-foreground ml-auto">{formatBytes(sessionSize)}</span>
+                {isCollapsed ? <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground" /> : <ChevronDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />}
+                <FolderClosed className="h-4 w-4 shrink-0 text-hydra-warning/70" />
+                <span className="text-sm font-medium truncate">{label}</span>
+                <Badge variant="outline" className="ml-1 h-5 px-1.5 text-[10px]">{sessionFiles.length}</Badge>
+                <span className="text-xs text-muted-foreground ml-auto">{formatBytes(sessionSize)}</span>
               </button>
             </CollapsibleTrigger>
             <CollapsibleContent>
@@ -756,10 +756,10 @@ function KnowledgeFilesGrouped({
           <Collapsible key={group.key} open={!isCollapsed} onOpenChange={() => toggleGroup(group.key)}>
             <CollapsibleTrigger asChild>
               <button className="w-full flex items-center gap-2 pl-8 pr-4 py-2 text-left hover:bg-muted/30 transition-colors border-b border-border/50">
-                {isCollapsed ? <ChevronRight className="h-3 w-3 shrink-0 text-muted-foreground" /> : <ChevronDown className="h-3 w-3 shrink-0 text-muted-foreground" />}
-                <GroupIcon className={cn('h-3.5 w-3.5 shrink-0', group.color)} />
-                <span className={cn('text-xs font-medium', group.color)}>{group.label}</span>
-                <Badge variant="outline" className="ml-1 h-4 px-1 text-[9px]">{group.files.length}</Badge>
+                {isCollapsed ? <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground" /> : <ChevronDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />}
+                <GroupIcon className={cn('h-4 w-4 shrink-0', group.color)} />
+                <span className={cn('text-sm font-medium', group.color)}>{group.label}</span>
+                <Badge variant="outline" className="ml-1 h-5 px-1.5 text-[10px]">{group.files.length}</Badge>
               </button>
             </CollapsibleTrigger>
             <CollapsibleContent>
@@ -820,17 +820,17 @@ function FileRow({
     : fileIcon(file.mime_type);
 
   return (
-    <div className={cn('flex items-center gap-3 px-4 py-2.5 hover:bg-muted/40 transition-colors group', indent && 'pl-14')}>
+    <div className={cn('flex items-center gap-3 px-4 py-3 hover:bg-muted/40 transition-colors group', indent && 'pl-14')}>
       <button
         className={cn(
           'shrink-0 flex items-center justify-center rounded overflow-hidden',
           isImage
-            ? 'w-10 h-10 border border-border bg-muted hover:border-hydra-memory/50 transition-colors cursor-pointer'
+            ? 'w-12 h-12 border border-border bg-muted hover:border-hydra-memory/50 transition-colors cursor-pointer'
             : canPreview
-              ? 'w-7 h-7 cursor-pointer hover:text-hydra-memory transition-colors'
+              ? 'w-8 h-8 cursor-pointer hover:text-hydra-memory transition-colors'
               : file.is_virtual && file.source_url
-                ? 'w-7 h-7 cursor-pointer hover:text-hydra-info transition-colors'
-                : 'w-7 h-7 cursor-default pointer-events-none'
+                ? 'w-8 h-8 cursor-pointer hover:text-hydra-info transition-colors'
+                : 'w-8 h-8 cursor-default pointer-events-none'
         )}
         onClick={() => {
           if (canPreview) onPreview(file);
@@ -842,19 +842,19 @@ function FileRow({
         {isImage && thumbnails[file.id] ? (
           <img src={thumbnails[file.id]} alt={file.name} className="w-full h-full object-cover" />
         ) : previewLoading && preview === null && isImage ? (
-          <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
         ) : (
           <Icon className={cn(
-            isImage ? 'h-5 w-5' : 'h-4 w-4',
+            isImage ? 'h-6 w-6' : 'h-5 w-5',
             file.is_virtual ? 'text-hydra-info' : 'text-muted-foreground'
           )} />
         )}
       </button>
 
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1.5 flex-wrap">
           <p
-            className={cn('text-sm font-medium truncate', (canPreview || file.source_url) && 'cursor-pointer hover:text-hydra-memory transition-colors')}
+            className={cn('text-base font-medium truncate', (canPreview || file.source_url) && 'cursor-pointer hover:text-hydra-memory transition-colors')}
             onClick={() => {
               if (canPreview) onPreview(file);
               else if (file.source_url) window.open(file.source_url, '_blank');
@@ -863,7 +863,7 @@ function FileRow({
             {file.name}
           </p>
           {file.is_virtual && (
-            <span className="text-[9px] px-1 py-0.5 rounded bg-hydra-info/10 text-hydra-info border border-hydra-info/20 shrink-0">
+            <span className="text-[10px] px-1 py-0.5 rounded bg-hydra-info/10 text-hydra-info border border-hydra-info/20 shrink-0">
               {file.load_method === 'url' ? '🌐' : '✍️'}
             </span>
           )}
@@ -872,24 +872,25 @@ function FileRow({
             if (cfg) {
               const RoleIcon = cfg.icon;
               return (
-                <Badge variant="outline" className={cn('text-[10px] font-medium gap-1 py-0.5 px-1.5 border shrink-0', cfg.color, cfg.bgClass || '')}>
-                  <RoleIcon className={cn('h-3 w-3', cfg.color)} />
+                <Badge variant="outline" className={cn('text-xs font-medium gap-1 py-0.5 px-2 border shrink-0', cfg.color, cfg.bgClass || '')}>
+                  <RoleIcon className={cn('h-3.5 w-3.5', cfg.color)} />
+                  {t(cfg.label)}
                 </Badge>
               );
             }
-            return <span className="text-[9px] text-muted-foreground shrink-0">[{file.role}]</span>;
+            return <span className="text-[10px] text-muted-foreground shrink-0">[{file.role}]</span>;
           })()}
         </div>
         <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-          {!file.is_virtual && <span className="text-[10px] text-muted-foreground">{formatBytes(file.size)}</span>}
+          {!file.is_virtual && <span className="text-xs text-muted-foreground">{formatBytes(file.size)}</span>}
           {file.scraped_at && (
-            <span className="text-[10px] text-muted-foreground flex items-center gap-0.5">
-              <Calendar className="h-2.5 w-2.5" />
+            <span className="text-xs text-muted-foreground flex items-center gap-0.5">
+              <Calendar className="h-3 w-3" />
               {format(new Date(file.scraped_at), 'dd.MM.yy HH:mm')}
             </span>
           )}
           {!file.scraped_at && file.created_at && (
-            <span className="text-[10px] text-muted-foreground">
+            <span className="text-xs text-muted-foreground">
               {format(new Date(file.created_at), 'dd.MM.yy HH:mm')}
             </span>
           )}
@@ -898,7 +899,7 @@ function FileRow({
               href={file.source_url}
               target="_blank"
               rel="noreferrer"
-              className="text-[10px] text-hydra-info hover:underline truncate max-w-[200px]"
+              className="text-xs text-hydra-info hover:underline truncate max-w-[200px]"
               onClick={e => e.stopPropagation()}
             >
               {file.source_url.replace(/^https?:\/\//, '').slice(0, 40)}
@@ -912,16 +913,16 @@ function FileRow({
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button
+          <Button
                   variant="ghost" size="icon"
-                  className="h-7 w-7 text-muted-foreground hover:text-hydra-memory"
+                  className="h-8 w-8 text-muted-foreground hover:text-hydra-memory"
                   onClick={() => onPreview(file)}
                   disabled={previewLoading}
                 >
-                  {previewLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> :
+                  {previewLoading ? <Loader2 className="h-4 w-4 animate-spin" /> :
                     isDocFile(file.mime_type, file.name)
-                      ? <ExternalLink className="h-3.5 w-3.5" />
-                      : <Eye className="h-3.5 w-3.5" />
+                      ? <ExternalLink className="h-4 w-4" />
+                      : <Eye className="h-4 w-4" />
                   }
                 </Button>
               </TooltipTrigger>
@@ -934,11 +935,11 @@ function FileRow({
             <TooltipTrigger asChild>
               <Button
                 variant="ghost" size="icon"
-                className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10"
+                className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
                 onClick={() => onDelete(file)}
                 disabled={deletingId === file.id}
               >
-                {deletingId === file.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+                {deletingId === file.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
               </Button>
             </TooltipTrigger>
             <TooltipContent>{t('common.delete')}</TooltipContent>
