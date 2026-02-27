@@ -6,9 +6,11 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
-import { MessageSquare, Play, Trash2, Pencil, Check, X, Bot, Sparkles, Cpu, Loader2, Save, Lock, Copy, FileText, Target, Zap, StopCircle, Paperclip } from 'lucide-react';
+import { MessageSquare, Play, Trash2, Pencil, Check, X, Bot, Sparkles, Cpu, Loader2, Save, Lock, Copy, FileText, Target, Zap, StopCircle } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { TaskFilesPanel } from './TaskFilesPanel';
+import { FileUpload, AttachedFile } from '@/components/warroom/FileUpload';
+import { useTaskFiles } from '@/hooks/useTaskFiles';
 
 import { ConceptPatentSearch } from './ConceptPatentSearch';
 import { ConceptVisionaryCall } from './ConceptVisionaryCall';
@@ -44,6 +46,32 @@ const filterValidModels = (modelIds: string[]): string[] => {
    return <Cpu className="h-4 w-4 text-accent-foreground" />;
  }
  
+/** Small wrapper: FileUpload dropdown that auto-uploads picked files to task storage */
+function ConceptFileUpload({ taskId }: { taskId: string }) {
+  const [attached, setAttached] = React.useState<AttachedFile[]>([]);
+  const { uploadFile } = useTaskFiles(taskId);
+
+  React.useEffect(() => {
+    if (attached.length === 0) return;
+    // Upload each newly attached file then clear
+    (async () => {
+      for (const a of attached) {
+        if (a.file) await uploadFile(a.file);
+      }
+      setAttached([]);
+    })();
+  }, [attached]);
+
+  return (
+    <FileUpload
+      files={attached}
+      onFilesChange={setAttached}
+      disabled={false}
+    />
+  );
+}
+
+
 interface TaskDetailsPanelProps {
   task: Task | null;
   onUpdateTitle: (taskId: string, title: string) => Promise<void>;
@@ -364,17 +392,7 @@ export function TaskDetailsPanel({
                   {isPlanLevel ? t('plans.goalFormulation') : t('tasks.formulation')}
                 </h3>
                 {isPlanLevel && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-7 w-7 text-muted-foreground hover:text-foreground"
-                    onClick={() => {
-                      document.querySelector('[data-guide="tasks-files-tab"]')?.scrollIntoView({ behavior: 'smooth' });
-                    }}
-                    title={language === 'ru' ? 'Файлы концепции' : 'Concept files'}
-                  >
-                    <Paperclip className="h-4 w-4" />
-                  </Button>
+                  <ConceptFileUpload taskId={task.id} />
                 )}
               </div>
              <Textarea
