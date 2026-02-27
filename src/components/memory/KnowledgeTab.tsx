@@ -206,15 +206,15 @@ export function KnowledgeTab({ stats, loading }: { stats: ReturnType<typeof useH
           className="w-full flex items-center justify-between px-4 py-3 hover:bg-muted/30 transition-colors"
         >
           <div className="flex items-center gap-2">
-            <Wrench className="h-4 w-4 text-[hsl(var(--hydra-memory))]" />
-            <span className="text-sm font-medium">{t('memory.hub.cleanupTools')}</span>
+            <Wrench className="h-5 w-5 text-[hsl(var(--hydra-memory))]" />
+            <span className="text-base font-medium">{t('memory.hub.cleanupTools')}</span>
             {scanDone && (similarGroups.length > 0 || outdatedGroups.length > 0) && (
-              <Badge variant="outline" className="text-xs text-amber-400 border-amber-500/40">
+              <Badge variant="outline" className="text-sm text-amber-400 border-amber-500/40">
                 {similarGroups.length + outdatedGroups.length} {t('memory.hub.problems')}
               </Badge>
             )}
           </div>
-          <span className={`text-muted-foreground transition-transform text-xs ${toolsOpen ? 'rotate-90' : ''}`}>›</span>
+          <span className={`text-muted-foreground transition-transform text-sm ${toolsOpen ? 'rotate-90' : ''}`}>›</span>
         </button>
 
         <AnimatePresence>
@@ -228,9 +228,9 @@ export function KnowledgeTab({ stats, loading }: { stats: ReturnType<typeof useH
             >
               <div className="p-4 space-y-4">
                 <div className="flex items-center justify-between">
-                  <p className="text-xs text-muted-foreground">{t('memory.hub.cleanupToolsDesc')}</p>
-                  <Button size="sm" variant="outline" onClick={runScan} disabled={scanning} className="h-7 gap-1.5">
-                    {scanning ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ScanSearch className="h-3.5 w-3.5" />}
+                  <p className="text-sm text-muted-foreground">{t('memory.hub.cleanupToolsDesc')}</p>
+                  <Button size="sm" variant="outline" onClick={runScan} disabled={scanning} className="h-8 gap-1.5">
+                    {scanning ? <Loader2 className="h-4 w-4 animate-spin" /> : <ScanSearch className="h-4 w-4" />}
                     {scanning ? t('memory.hub.scanning') : t('memory.hub.scan')}
                   </Button>
                 </div>
@@ -238,27 +238,27 @@ export function KnowledgeTab({ stats, loading }: { stats: ReturnType<typeof useH
                 {scanDone && qualityStats && (
                   <div className="grid grid-cols-3 gap-3">
                     <div className="rounded-lg border border-border bg-muted/30 p-3 text-center">
-                      <BarChart2 className="h-4 w-4 mx-auto mb-1 text-[hsl(var(--hydra-memory))]" />
-                      <p className="text-lg font-bold">{qualityStats.avgWords}</p>
-                      <p className="text-[10px] text-muted-foreground">{t('memory.hub.avgWordsChunk')}</p>
+                      <BarChart2 className="h-5 w-5 mx-auto mb-1 text-[hsl(var(--hydra-memory))]" />
+                      <p className="text-xl font-bold">{qualityStats.avgWords}</p>
+                      <p className="text-xs text-muted-foreground">{t('memory.hub.avgWordsChunk')}</p>
                     </div>
                     <div className="rounded-lg border border-border bg-muted/30 p-3 text-center">
-                      <Copy className="h-4 w-4 mx-auto mb-1 text-amber-400" />
-                      <p className="text-lg font-bold text-amber-400">{similarGroups.length}</p>
-                      <p className="text-[10px] text-muted-foreground">{t('memory.hub.similarGroups')}</p>
+                      <Copy className="h-5 w-5 mx-auto mb-1 text-amber-400" />
+                      <p className="text-xl font-bold text-amber-400">{similarGroups.length}</p>
+                      <p className="text-xs text-muted-foreground">{t('memory.hub.similarGroups')}</p>
                     </div>
                     <div className="rounded-lg border border-border bg-muted/30 p-3 text-center">
-                      <Clock className="h-4 w-4 mx-auto mb-1 text-orange-400" />
-                      <p className="text-lg font-bold text-orange-400">{allOutdatedToDelete.length}</p>
-                      <p className="text-[10px] text-muted-foreground">{t('memory.hub.outdated')}</p>
+                      <Clock className="h-5 w-5 mx-auto mb-1 text-orange-400" />
+                      <p className="text-xl font-bold text-orange-400">{allOutdatedToDelete.length}</p>
+                      <p className="text-xs text-muted-foreground">{t('memory.hub.outdated')}</p>
                     </div>
                   </div>
                 )}
 
                 {scanDone && qualityStats && qualityStats.noEmbedding > 0 && (
-                  <div className="flex items-center justify-between gap-2 text-xs text-amber-500 bg-amber-500/10 rounded-lg px-3 py-2 border border-amber-500/20">
+                  <div className="flex items-center justify-between gap-2 text-sm text-amber-500 bg-amber-500/10 rounded-lg px-3 py-2 border border-amber-500/20">
                     <div className="flex items-center gap-2">
-                      <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+                      <AlertTriangle className="h-4 w-4 shrink-0" />
                       <span>
                         {qualityStats.noEmbedding} {t('memory.hub.noEmbeddingWarning')}
                         {embeddingProgress && ` (${embeddingProgress.done}/${embeddingProgress.total})`}
@@ -266,19 +266,19 @@ export function KnowledgeTab({ stats, loading }: { stats: ReturnType<typeof useH
                     </div>
                     <Button
                       size="sm" variant="outline"
-                      className="h-6 text-[10px] border-hydra-expert/40 text-hydra-expert hover:bg-hydra-expert/10 shrink-0"
+                      className="h-7 text-xs border-hydra-expert/40 text-hydra-expert hover:bg-hydra-expert/10 shrink-0"
                       disabled={generatingEmbeddings}
                       onClick={generateEmbeddings}
                     >
-                      {generatingEmbeddings ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Sparkles className="h-3 w-3 mr-1" />}
+                      {generatingEmbeddings ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : <Sparkles className="h-3.5 w-3.5 mr-1" />}
                       {generatingEmbeddings ? t('memory.hub.generatingEmbeddings') : t('memory.hub.generateEmbeddings')}
                     </Button>
                   </div>
                 )}
 
                 {scanDone && similarGroups.length === 0 && outdatedGroups.length === 0 && (
-                  <div className="flex items-center gap-2 text-xs text-green-400 bg-green-500/10 rounded-lg px-3 py-2 border border-green-500/20">
-                    <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
+                  <div className="flex items-center gap-2 text-sm text-green-400 bg-green-500/10 rounded-lg px-3 py-2 border border-green-500/20">
+                    <CheckCircle2 className="h-4 w-4 shrink-0" />
                     <span>{t('memory.hub.cleanResult')}</span>
                   </div>
                 )}
@@ -286,32 +286,32 @@ export function KnowledgeTab({ stats, loading }: { stats: ReturnType<typeof useH
                 {scanDone && similarGroups.length > 0 && (
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <p className="text-xs font-medium text-amber-400 flex items-center gap-1.5">
-                        <Copy className="h-3.5 w-3.5" />
+                      <p className="text-sm font-medium text-amber-400 flex items-center gap-1.5">
+                        <Copy className="h-4 w-4" />
                         {t('memory.hub.similarChunks')} ({similarGroups.length} {t('memory.hub.groups')}, {allSimilarToDelete.length} {t('memory.hub.duplicates')})
                       </p>
                       <Button
                         size="sm" variant="outline"
-                        className="h-6 text-[10px] border-amber-500/40 text-amber-400 hover:bg-amber-500/10"
+                        className="h-7 text-xs border-amber-500/40 text-amber-400 hover:bg-amber-500/10"
                         disabled={deletingIds.size > 0}
                         onClick={() => deleteEntries(allSimilarToDelete)}
                       >
-                        {deletingIds.size > 0 ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Trash2 className="h-3 w-3 mr-1" />}
+                        {deletingIds.size > 0 ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : <Trash2 className="h-3.5 w-3.5 mr-1" />}
                         {t('memory.hub.deleteAllDuplicates')}
                       </Button>
                     </div>
                     <div className="space-y-1.5 max-h-40 overflow-y-auto pr-1">
                       {similarGroups.map((group, gi) => (
-                        <div key={gi} className="rounded border border-amber-500/20 bg-amber-500/5 px-3 py-2 text-xs">
+                        <div key={gi} className="rounded border border-amber-500/20 bg-amber-500/5 px-3 py-2 text-sm">
                           <div className="flex items-center justify-between mb-1">
                             <span className="text-amber-400 font-medium">{group.length} {t('memory.hub.copies')}</span>
                             <Button
                               size="sm" variant="ghost"
-                              className="h-5 px-2 text-[10px] text-destructive hover:text-destructive"
+                              className="h-6 px-2 text-xs text-destructive hover:text-destructive"
                               disabled={deletingIds.size > 0}
                               onClick={() => deleteEntries(group.slice(1).map(r => r.id))}
                             >
-                              <Trash2 className="h-3 w-3 mr-1" />
+                              <Trash2 className="h-3.5 w-3.5 mr-1" />
                               {t('memory.hub.delete')} {group.length - 1}
                             </Button>
                           </div>
@@ -325,23 +325,23 @@ export function KnowledgeTab({ stats, loading }: { stats: ReturnType<typeof useH
                 {scanDone && outdatedGroups.length > 0 && (
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <p className="text-xs font-medium text-orange-400 flex items-center gap-1.5">
-                        <Clock className="h-3.5 w-3.5" />
+                      <p className="text-sm font-medium text-orange-400 flex items-center gap-1.5">
+                        <Clock className="h-4 w-4" />
                         {t('memory.hub.outdatedVersions')} ({allOutdatedToDelete.length} {t('memory.hub.chunks')})
                       </p>
                        <Button
                          size="sm" variant="outline"
-                         className="h-6 text-[10px] border-hydra-webhunter/40 text-hydra-webhunter hover:bg-hydra-webhunter/10"
+                         className="h-7 text-xs border-hydra-webhunter/40 text-hydra-webhunter hover:bg-hydra-webhunter/10"
                         disabled={deletingIds.size > 0}
                         onClick={() => deleteEntries(allOutdatedToDelete)}
                       >
-                        {deletingIds.size > 0 ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Trash2 className="h-3 w-3 mr-1" />}
+                        {deletingIds.size > 0 ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : <Trash2 className="h-3.5 w-3.5 mr-1" />}
                         {t('memory.hub.deleteOutdated')}
                       </Button>
                     </div>
                     <div className="space-y-1.5 max-h-40 overflow-y-auto pr-1">
                       {outdatedGroups.map((group, gi) => (
-                         <div key={gi} className="rounded border border-hydra-webhunter/20 bg-hydra-webhunter/5 px-3 py-2 text-xs">
+                         <div key={gi} className="rounded border border-hydra-webhunter/20 bg-hydra-webhunter/5 px-3 py-2 text-sm">
                            <div className="flex items-center justify-between">
                              <span className="text-muted-foreground truncate">{group[0].source_url}</span>
                              <span className="text-hydra-webhunter ml-2 shrink-0">{group.map(r => r.version).join(', ')}</span>
@@ -358,7 +358,7 @@ export function KnowledgeTab({ stats, loading }: { stats: ReturnType<typeof useH
       </Card>
 
       {!loading && stats.totalKnowledge === 0 && (
-        <div className="text-center py-12 text-muted-foreground text-sm">{t('memory.hub.empty')}</div>
+        <div className="text-center py-12 text-muted-foreground text-base">{t('memory.hub.empty')}</div>
       )}
       <div className="space-y-3">
         {Object.entries(roleGroups).map(([role, categories]) => {
@@ -366,12 +366,12 @@ export function KnowledgeTab({ stats, loading }: { stats: ReturnType<typeof useH
           const roleLabel = rc ? t(rc.label) : role;
           return (
           <Card key={role}>
-            <CardHeader className="pb-2 pt-3 px-4"><CardTitle className="text-sm">{roleLabel}</CardTitle></CardHeader>
+            <CardHeader className="pb-2 pt-3 px-4"><CardTitle className="text-base">{roleLabel}</CardTitle></CardHeader>
             <CardContent className="pb-3 px-4 flex flex-wrap gap-2">
               {categories.map(({ category, count }) => {
                 const catLabel = KNOWLEDGE_CATEGORY_LABELS[category]?.[isRu ? 'ru' : 'en'] ?? category;
                 return (
-                  <Badge key={category} variant="outline" className="text-xs gap-1.5">
+                  <Badge key={category} variant="outline" className="text-sm gap-1.5">
                     {catLabel} <span className="font-bold text-hydra-memory">{count}</span>
                   </Badge>
                 );
