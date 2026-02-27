@@ -115,11 +115,11 @@ export function MermaidBlock({ content, className, defaultZoom = 1 }: MermaidBlo
       <div
         ref={containerRef}
         data-mermaid-container
-        className="overflow-x-auto overflow-y-visible p-4 bg-background/50"
+        className="overflow-x-auto overflow-y-visible p-5 md:p-6 bg-background/50"
       >
         <div
-          className="flex items-center justify-center transition-transform duration-200 [&_svg]:max-w-none"
-          style={{ transform: `scale(${zoom})`, transformOrigin: 'center top', minHeight: svg ? undefined : '100px' }}
+          className="mx-auto w-fit min-w-full flex justify-center transition-transform duration-200 [&_svg]:max-w-none [&_svg]:overflow-visible"
+          style={{ transform: `scale(${zoom})`, transformOrigin: 'top center', minHeight: svg ? undefined : '140px' }}
           dangerouslySetInnerHTML={{ __html: svg }}
         />
       </div>
