@@ -32,7 +32,10 @@ export function useTaskDeletion({ userId, onTaskDeleted }: UseTaskDeletionProps)
 
       if (files && files.length > 0) {
         const paths = files.map(f => f.file_path);
+        const fileIds = files.map(f => f.id);
         await supabase.storage.from('task-files').remove(paths);
+        // Delete file digests first (FK dependency)
+        await supabase.from('file_digests').delete().in('task_file_id', fileIds);
         await supabase.from('task_files').delete().eq('session_id', sessionId);
       }
 
@@ -98,9 +101,14 @@ export function useTaskDeletion({ userId, onTaskDeleted }: UseTaskDeletionProps)
 
       if (allFiles && allFiles.length > 0) {
         const paths = allFiles.map(f => f.file_path);
+        const fileIds = allFiles.map(f => f.id);
         // Storage remove has a limit, batch by 100
         for (let i = 0; i < paths.length; i += 100) {
           await supabase.storage.from('task-files').remove(paths.slice(i, i + 100));
+        }
+        // Delete file digests first (FK dependency)
+        for (let i = 0; i < fileIds.length; i += 50) {
+          await supabase.from('file_digests').delete().in('task_file_id', fileIds.slice(i, i + 50));
         }
         for (let i = 0; i < sessionIds.length; i += 50) {
           await supabase.from('task_files').delete().in('session_id', sessionIds.slice(i, i + 50));
