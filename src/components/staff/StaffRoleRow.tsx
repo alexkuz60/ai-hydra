@@ -39,14 +39,14 @@ export function StaffRoleRow({
       onClick={() => onSelect(role)}
     >
       <TableCell className="pl-8">
-        <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center", `bg-${config.color.replace('text-', '')}/10`)}>
-          <IconComponent className={cn("h-5 w-5", config.color)} />
+        <div className={cn("w-12 h-12 rounded-lg flex items-center justify-center", `bg-${config.color.replace('text-', '')}/10`)}>
+          <IconComponent className={cn("h-6 w-6", config.color)} />
         </div>
       </TableCell>
       <TableCell>
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className={cn("font-medium", config.color)}>{t(config.label)}</span>
+            <span className={cn("text-base font-medium", config.color)}>{t(config.label)}</span>
             {isSelected && hasUnsavedChanges && (
               <span className="w-2 h-2 rounded-full bg-hydra-warning animate-pulse-glow shrink-0" title="Unsaved changes" />
             )}
@@ -76,7 +76,7 @@ export function StaffRoleRow({
             )}
             {assignment && <KnowledgeChangedBadge role={role} isRu={isRu} onRecertify={() => onRecertify(role)} />}
           </div>
-          <span className="text-xs text-muted-foreground font-mono">{role}</span>
+          <span className="text-sm text-muted-foreground font-mono">{role}</span>
         </div>
       </TableCell>
     </TableRow>
