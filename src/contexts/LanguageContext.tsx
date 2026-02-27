@@ -72,6 +72,7 @@ const translations: Translations = {
   'memory.storage.cleanOrphans': { ru: 'Очистить осиротевшие файлы задач', en: 'Clean orphaned task files' },
   'memory.storage.noOrphans': { ru: 'Осиротевших файлов не найдено', en: 'No orphaned files found' },
   'memory.storage.orphansDeleted': { ru: 'Удалено {count} осиротевших файлов', en: '{count} orphaned files deleted' },
+  'memory.storage.unknownTask': { ru: 'Без привязки к задаче', en: 'Unlinked files' },
   'memory.hub.storageSize': { ru: 'Занято места', en: 'Storage used' },
   'memory.hub.storageEmpty': { ru: 'Файлы не найдены', en: 'No files found' },
   // Hydra Memory – extended

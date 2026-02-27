@@ -2,6 +2,7 @@ import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import {
   HardDrive, FolderOpen, FileImage, FileText, File, Search,
   Loader2, Trash2, Eye, X, Download, RefreshCw, Database, Eraser,
+  ChevronDown, ChevronRight, FolderClosed,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -11,6 +12,7 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -29,24 +31,30 @@ type StorageFile = {
   updated_at: string;
 };
 
+type SessionInfo = {
+  id: string;
+  title: string;
+  plan_title: string | null;
+};
+
 const BUCKETS = ['message-files', 'task-files', 'avatars'] as const;
 
 type PreviewState = { file: StorageFile; url: string } | null;
 
 export function StorageTab() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const { user } = useAuth();
   const [files, setFiles] = useState<StorageFile[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeBucket, setActiveBucket] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [preview, setPreview] = useState<PreviewState>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [thumbnails, setThumbnails] = useState<Record<string, string>>({});
   const [cleaning, setCleaning] = useState(false);
+  const [sessionInfoMap, setSessionInfoMap] = useState<Record<string, SessionInfo>>({});
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
 
-  /** Recursively list files in a storage bucket under a prefix */
   const listBucketRecursive = useCallback(async (bucket: string, prefix: string): Promise<StorageFile[]> => {
     const result: StorageFile[] = [];
     const { data, error } = await supabase.storage.from(bucket).list(prefix, {
@@ -57,7 +65,6 @@ export function StorageTab() {
     for (const item of data) {
       const fullPath = prefix ? `${prefix}/${item.name}` : item.name;
       if (item.id) {
-        // It's a file
         result.push({
           id: `${bucket}/${fullPath}`,
           name: item.name,
@@ -68,13 +75,55 @@ export function StorageTab() {
           updated_at: item.updated_at ?? '',
         });
       } else {
-        // It's a folder — recurse
         const subFiles = await listBucketRecursive(bucket, fullPath);
         result.push(...subFiles);
       }
     }
     return result;
   }, []);
+
+  /** Extract session ID from a task-files path: {user_id}/{session_id}/... */
+  const extractSessionId = useCallback((file: StorageFile): string | null => {
+    if (file.bucket !== 'task-files') return null;
+    const storagePath = file.id.replace(`${file.bucket}/`, '');
+    const parts = storagePath.split('/');
+    // parts[0] = user_id, parts[1] = session_id
+    return parts.length >= 3 ? parts[1] : null;
+  }, []);
+
+  const loadSessionInfo = useCallback(async (sessionIds: string[]) => {
+    if (sessionIds.length === 0) return;
+    const { data: sessions } = await supabase
+      .from('sessions')
+      .select('id, title, title_en, plan_id')
+      .in('id', sessionIds);
+
+    if (!sessions || sessions.length === 0) return;
+
+    // Fetch plan titles for sessions that have plan_id
+    const planIds = [...new Set(sessions.filter(s => s.plan_id).map(s => s.plan_id!))];
+    let planMap: Record<string, string> = {};
+    if (planIds.length > 0) {
+      const { data: plans } = await supabase
+        .from('strategic_plans')
+        .select('id, title, title_en')
+        .in('id', planIds);
+      if (plans) {
+        planMap = Object.fromEntries(plans.map(p => [p.id, language === 'en' ? (p.title_en || p.title) : p.title]));
+      }
+    }
+
+    const infoMap: Record<string, SessionInfo> = {};
+    for (const s of sessions) {
+      const title = language === 'en' ? (s.title_en || s.title) : s.title;
+      infoMap[s.id] = {
+        id: s.id,
+        title,
+        plan_title: s.plan_id ? (planMap[s.plan_id] || null) : null,
+      };
+    }
+    setSessionInfoMap(infoMap);
+  }, [language]);
 
   const loadFiles = useCallback(async () => {
     if (!user) return;
@@ -88,6 +137,19 @@ export function StorageTab() {
         } catch { /* skip bucket on error */ }
       }
       setFiles(allFiles);
+
+      // Load session info for task-files
+      const sessionIds = [...new Set(allFiles
+        .filter(f => f.bucket === 'task-files')
+        .map(f => {
+          const path = f.id.replace(`${f.bucket}/`, '');
+          const parts = path.split('/');
+          return parts.length >= 3 ? parts[1] : null;
+        })
+        .filter(Boolean) as string[])];
+      await loadSessionInfo(sessionIds);
+
+      // Load thumbnails
       const thumbMap: Record<string, string> = {};
       const imageFiles = allFiles.filter(f => f.mime_type?.startsWith('image/'));
       await Promise.all(
@@ -103,7 +165,7 @@ export function StorageTab() {
     } finally {
       setLoading(false);
     }
-  }, [user, listBucketRecursive]);
+  }, [user, listBucketRecursive, loadSessionInfo]);
 
   useEffect(() => { loadFiles(); }, [loadFiles]);
 
@@ -146,7 +208,6 @@ export function StorageTab() {
     }
   };
 
-  /** Clean orphaned files from task-files bucket that have no matching DB record */
   const cleanOrphanedFiles = useCallback(async () => {
     if (!user) return;
     setCleaning(true);
@@ -184,20 +245,43 @@ export function StorageTab() {
     }
   }, [user, files, t]);
 
-  const bucketCounts = useMemo(() => {
-    const counts: Record<string, number> = { all: files.length };
-    files.forEach(f => { counts[f.bucket] = (counts[f.bucket] || 0) + 1; });
-    return counts;
-  }, [files]);
-
   const totalSize = useMemo(() => files.reduce((s, f) => s + f.size, 0), [files]);
 
   const displayed = useMemo(() => {
-    let result = files;
-    if (activeBucket !== 'all') result = result.filter(f => f.bucket === activeBucket);
-    if (searchQuery.trim()) result = result.filter(f => f.name.toLowerCase().includes(searchQuery.toLowerCase()));
-    return result;
-  }, [files, activeBucket, searchQuery]);
+    if (!searchQuery.trim()) return files;
+    return files.filter(f => f.name.toLowerCase().includes(searchQuery.toLowerCase()));
+  }, [files, searchQuery]);
+
+  /** Group files: bucket -> (for task-files: session_id -> files) */
+  const groupedFiles = useMemo(() => {
+    const bucketGroups: Record<string, StorageFile[]> = {};
+    for (const b of BUCKETS) bucketGroups[b] = [];
+    for (const f of displayed) {
+      if (bucketGroups[f.bucket]) bucketGroups[f.bucket].push(f);
+    }
+    return bucketGroups;
+  }, [displayed]);
+
+  /** Sub-group task-files by session */
+  const taskFilesBySession = useMemo(() => {
+    const map: Record<string, StorageFile[]> = {};
+    const unknownKey = '__unknown__';
+    for (const f of (groupedFiles['task-files'] || [])) {
+      const sessionId = extractSessionId(f) || unknownKey;
+      if (!map[sessionId]) map[sessionId] = [];
+      map[sessionId].push(f);
+    }
+    return map;
+  }, [groupedFiles, extractSessionId]);
+
+  const toggleGroup = (key: string) => {
+    setCollapsedGroups(prev => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
 
   const bucketColors: Record<string, string> = {
     'message-files': 'text-hydra-info border-hydra-info/30',
@@ -205,19 +289,16 @@ export function StorageTab() {
     'avatars': 'text-hydra-success border-hydra-success/30',
   };
 
-  const bucketLabels: Record<string, { label: string; hint: string }> = {
-    'message-files': {
-      label: t('memory.storage.bucketMessageFiles'),
-      hint: t('memory.storage.bucketMessageFilesHint'),
-    },
-    'task-files': {
-      label: t('memory.storage.bucketTaskFiles'),
-      hint: t('memory.storage.bucketTaskFilesHint'),
-    },
-    'avatars': {
-      label: t('memory.storage.bucketAvatars'),
-      hint: t('memory.storage.bucketAvatarsHint'),
-    },
+  const bucketLabels: Record<string, string> = {
+    'message-files': t('memory.storage.bucketMessageFiles'),
+    'task-files': t('memory.storage.bucketTaskFiles'),
+    'avatars': t('memory.storage.bucketAvatars'),
+  };
+
+  const bucketIcons: Record<string, React.ElementType> = {
+    'message-files': FileText,
+    'task-files': FolderOpen,
+    'avatars': HardDrive,
   };
 
   return (
@@ -233,36 +314,9 @@ export function StorageTab() {
         )}
       </div>
 
-      {/* Bucket filter + search */}
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="flex items-center gap-2 flex-wrap flex-1">
-          <Button variant={activeBucket === 'all' ? 'secondary' : 'ghost'} size="sm" onClick={() => setActiveBucket('all')} className="h-7">
-            {t('common.all')}
-            <Badge variant="outline" className="ml-1 h-5 px-1.5 text-[10px]">{bucketCounts.all || 0}</Badge>
-          </Button>
-          {BUCKETS.map(b => (
-            <TooltipProvider key={b}>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant={activeBucket === b ? 'secondary' : 'ghost'}
-                    size="sm"
-                    onClick={() => setActiveBucket(b)}
-                    className={cn('h-7', activeBucket === b && bucketColors[b])}
-                  >
-                    {bucketLabels[b]?.label ?? b}
-                    <Badge variant="outline" className="ml-1 h-5 px-1.5 text-[10px]">{bucketCounts[b] || 0}</Badge>
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom" className="text-xs">
-                  <p className="font-mono text-muted-foreground">{b}</p>
-                  <p>{bucketLabels[b]?.hint}</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          ))}
-        </div>
-        <div className="relative w-full sm:w-48">
+      {/* Search + actions */}
+      <div className="flex items-center gap-3">
+        <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
           <Input placeholder={t('memory.hub.searchByName')} value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="pl-8 h-7 text-xs" />
         </div>
@@ -281,7 +335,7 @@ export function StorageTab() {
         </Button>
       </div>
 
-      {/* File list */}
+      {/* File list grouped by bucket */}
       <div className="border rounded-md overflow-hidden">
         <ScrollArea className="h-[420px]">
           {loading ? (
@@ -292,81 +346,65 @@ export function StorageTab() {
               <p className="text-sm">{t('memory.hub.storageEmpty')}</p>
             </div>
           ) : (
-            <div className="divide-y divide-border">
-              {displayed.map(file => {
-                const isImage = file.mime_type?.startsWith('image/') ?? false;
-                const Icon = fileIcon(file.mime_type);
+            <div>
+              {BUCKETS.map(bucket => {
+                const bucketFiles = groupedFiles[bucket] || [];
+                if (bucketFiles.length === 0) return null;
+                const BucketIcon = bucketIcons[bucket] || FolderClosed;
+                const isCollapsed = collapsedGroups.has(bucket);
+                const bucketSize = bucketFiles.reduce((s, f) => s + f.size, 0);
+
                 return (
-                  <div key={file.id} className="flex items-center gap-3 px-4 py-3 hover:bg-muted/40 transition-colors group">
-                    <button
-                      className={cn(
-                        'shrink-0 flex items-center justify-center rounded overflow-hidden',
-                        isImage
-                          ? 'w-10 h-10 border border-border bg-muted hover:border-hydra-memory/50 transition-colors cursor-pointer'
-                          : 'w-7 h-7 cursor-default pointer-events-none'
-                      )}
-                      onClick={() => isImage && handlePreview(file)}
-                      disabled={previewLoading || !isImage}
-                      title={isImage ? t('memory.hub.preview') : undefined}
-                    >
-                      {isImage && thumbnails[file.id] ? (
-                        <img src={thumbnails[file.id]} alt={file.name} className="w-full h-full object-cover" />
-                      ) : previewLoading && preview === null && isImage ? (
-                        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                  <Collapsible key={bucket} open={!isCollapsed} onOpenChange={() => toggleGroup(bucket)}>
+                    <CollapsibleTrigger asChild>
+                      <button className={cn(
+                        'w-full flex items-center gap-2 px-4 py-2.5 text-left hover:bg-muted/40 transition-colors border-b border-border',
+                        bucketColors[bucket]
+                      )}>
+                        {isCollapsed ? <ChevronRight className="h-3.5 w-3.5 shrink-0" /> : <ChevronDown className="h-3.5 w-3.5 shrink-0" />}
+                        <BucketIcon className="h-4 w-4 shrink-0" />
+                        <span className="text-sm font-semibold">{bucketLabels[bucket]}</span>
+                        <Badge variant="outline" className="ml-1 h-5 px-1.5 text-[10px]">{bucketFiles.length}</Badge>
+                        <span className="text-[10px] text-muted-foreground ml-auto">{formatBytes(bucketSize)}</span>
+                      </button>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent>
+                      {bucket === 'task-files' ? (
+                        <TaskFilesGrouped
+                          filesBySession={taskFilesBySession}
+                          sessionInfoMap={sessionInfoMap}
+                          collapsedGroups={collapsedGroups}
+                          toggleGroup={toggleGroup}
+                          thumbnails={thumbnails}
+                          previewLoading={previewLoading}
+                          preview={preview}
+                          deletingId={deletingId}
+                          onPreview={handlePreview}
+                          onDelete={handleDelete}
+                          t={t}
+                          bucketColors={bucketColors}
+                        />
                       ) : (
-                        <Icon className={cn('text-muted-foreground', isImage ? 'h-5 w-5' : 'h-4 w-4')} />
+                        <div className="divide-y divide-border">
+                          {bucketFiles.map(file => (
+                            <FileRow
+                              key={file.id}
+                              file={file}
+                              thumbnails={thumbnails}
+                              previewLoading={previewLoading}
+                              preview={preview}
+                              deletingId={deletingId}
+                              onPreview={handlePreview}
+                              onDelete={handleDelete}
+                              t={t}
+                              bucketColors={bucketColors}
+                              indent={false}
+                            />
+                          ))}
+                        </div>
                       )}
-                    </button>
-
-                    <div className="flex-1 min-w-0">
-                      <p
-                        className={cn('text-sm font-medium truncate', isImage && 'cursor-pointer hover:text-hydra-memory transition-colors')}
-                        onClick={() => isImage && handlePreview(file)}
-                      >
-                        {file.name}
-                      </p>
-                      <div className="flex items-center gap-2 mt-0.5">
-                        <Badge variant="outline" className={cn('text-[10px] h-4 px-1.5', bucketColors[file.bucket])}>{file.bucket}</Badge>
-                        <span className="text-[10px] text-muted-foreground">{formatBytes(file.size)}</span>
-                        {file.created_at && (
-                          <span className="text-[10px] text-muted-foreground">
-                            {format(new Date(file.created_at), 'dd.MM.yy HH:mm')}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      {isImage && (
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              variant="ghost" size="icon"
-                              className="h-7 w-7 text-muted-foreground hover:text-hydra-memory"
-                              onClick={() => handlePreview(file)}
-                              disabled={previewLoading}
-                            >
-                              {previewLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Eye className="h-3.5 w-3.5" />}
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>{t('memory.hub.preview')}</TooltipContent>
-                        </Tooltip>
-                      )}
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant="ghost" size="icon"
-                            className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10"
-                            onClick={() => handleDelete(file)}
-                            disabled={deletingId === file.id}
-                          >
-                            {deletingId === file.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>{t('common.delete')}</TooltipContent>
-                      </Tooltip>
-                    </div>
-                  </div>
+                    </CollapsibleContent>
+                  </Collapsible>
                 );
               })}
             </div>
@@ -419,6 +457,205 @@ export function StorageTab() {
           )}
         </DialogContent>
       </Dialog>
+    </div>
+  );
+}
+
+/* ─── Task Files Grouped by Session ──────────────────────────────────────── */
+
+function TaskFilesGrouped({
+  filesBySession,
+  sessionInfoMap,
+  collapsedGroups,
+  toggleGroup,
+  thumbnails,
+  previewLoading,
+  preview,
+  deletingId,
+  onPreview,
+  onDelete,
+  t,
+  bucketColors,
+}: {
+  filesBySession: Record<string, StorageFile[]>;
+  sessionInfoMap: Record<string, SessionInfo>;
+  collapsedGroups: Set<string>;
+  toggleGroup: (key: string) => void;
+  thumbnails: Record<string, string>;
+  previewLoading: boolean;
+  preview: PreviewState;
+  deletingId: string | null;
+  onPreview: (f: StorageFile) => void;
+  onDelete: (f: StorageFile) => void;
+  t: (key: string) => string;
+  bucketColors: Record<string, string>;
+}) {
+  const sessionIds = Object.keys(filesBySession).sort((a, b) => {
+    // Put __unknown__ last
+    if (a === '__unknown__') return 1;
+    if (b === '__unknown__') return -1;
+    return 0;
+  });
+
+  return (
+    <div>
+      {sessionIds.map(sessionId => {
+        const sessionFiles = filesBySession[sessionId];
+        const info = sessionInfoMap[sessionId];
+        const groupKey = `task-session-${sessionId}`;
+        const isCollapsed = collapsedGroups.has(groupKey);
+
+        let label: string;
+        if (sessionId === '__unknown__') {
+          label = t('memory.storage.unknownTask');
+        } else if (info) {
+          label = info.plan_title
+            ? `${info.title} · ${info.plan_title}`
+            : info.title;
+        } else {
+          label = sessionId.slice(0, 8) + '…';
+        }
+
+        const sessionSize = sessionFiles.reduce((s, f) => s + f.size, 0);
+
+        return (
+          <Collapsible key={sessionId} open={!isCollapsed} onOpenChange={() => toggleGroup(groupKey)}>
+            <CollapsibleTrigger asChild>
+              <button className="w-full flex items-center gap-2 pl-8 pr-4 py-2 text-left hover:bg-muted/30 transition-colors border-b border-border/50">
+                {isCollapsed ? <ChevronRight className="h-3 w-3 shrink-0 text-muted-foreground" /> : <ChevronDown className="h-3 w-3 shrink-0 text-muted-foreground" />}
+                <FolderClosed className="h-3.5 w-3.5 shrink-0 text-hydra-warning/70" />
+                <span className="text-xs font-medium truncate">{label}</span>
+                <Badge variant="outline" className="ml-1 h-4 px-1 text-[9px]">{sessionFiles.length}</Badge>
+                <span className="text-[10px] text-muted-foreground ml-auto">{formatBytes(sessionSize)}</span>
+              </button>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <div className="divide-y divide-border/50">
+                {sessionFiles.map(file => (
+                  <FileRow
+                    key={file.id}
+                    file={file}
+                    thumbnails={thumbnails}
+                    previewLoading={previewLoading}
+                    preview={preview}
+                    deletingId={deletingId}
+                    onPreview={onPreview}
+                    onDelete={onDelete}
+                    t={t}
+                    bucketColors={bucketColors}
+                    indent
+                  />
+                ))}
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
+        );
+      })}
+    </div>
+  );
+}
+
+/* ─── Single File Row ────────────────────────────────────────────────────── */
+
+function FileRow({
+  file,
+  thumbnails,
+  previewLoading,
+  preview,
+  deletingId,
+  onPreview,
+  onDelete,
+  t,
+  bucketColors,
+  indent,
+}: {
+  file: StorageFile;
+  thumbnails: Record<string, string>;
+  previewLoading: boolean;
+  preview: PreviewState;
+  deletingId: string | null;
+  onPreview: (f: StorageFile) => void;
+  onDelete: (f: StorageFile) => void;
+  t: (key: string) => string;
+  bucketColors: Record<string, string>;
+  indent: boolean;
+}) {
+  const isImage = file.mime_type?.startsWith('image/') ?? false;
+  const Icon = fileIcon(file.mime_type);
+
+  return (
+    <div className={cn('flex items-center gap-3 px-4 py-2.5 hover:bg-muted/40 transition-colors group', indent && 'pl-14')}>
+      <button
+        className={cn(
+          'shrink-0 flex items-center justify-center rounded overflow-hidden',
+          isImage
+            ? 'w-10 h-10 border border-border bg-muted hover:border-hydra-memory/50 transition-colors cursor-pointer'
+            : 'w-7 h-7 cursor-default pointer-events-none'
+        )}
+        onClick={() => isImage && onPreview(file)}
+        disabled={previewLoading || !isImage}
+        title={isImage ? t('memory.hub.preview') : undefined}
+      >
+        {isImage && thumbnails[file.id] ? (
+          <img src={thumbnails[file.id]} alt={file.name} className="w-full h-full object-cover" />
+        ) : previewLoading && preview === null && isImage ? (
+          <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+        ) : (
+          <Icon className={cn('text-muted-foreground', isImage ? 'h-5 w-5' : 'h-4 w-4')} />
+        )}
+      </button>
+
+      <div className="flex-1 min-w-0">
+        <p
+          className={cn('text-sm font-medium truncate', isImage && 'cursor-pointer hover:text-hydra-memory transition-colors')}
+          onClick={() => isImage && onPreview(file)}
+        >
+          {file.name}
+        </p>
+        <div className="flex items-center gap-2 mt-0.5">
+          <span className="text-[10px] text-muted-foreground">{formatBytes(file.size)}</span>
+          {file.created_at && (
+            <span className="text-[10px] text-muted-foreground">
+              {format(new Date(file.created_at), 'dd.MM.yy HH:mm')}
+            </span>
+          )}
+        </div>
+      </div>
+
+      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+        {isImage && (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost" size="icon"
+                  className="h-7 w-7 text-muted-foreground hover:text-hydra-memory"
+                  onClick={() => onPreview(file)}
+                  disabled={previewLoading}
+                >
+                  {previewLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Eye className="h-3.5 w-3.5" />}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>{t('memory.hub.preview')}</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        )}
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost" size="icon"
+                className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10"
+                onClick={() => onDelete(file)}
+                disabled={deletingId === file.id}
+              >
+                {deletingId === file.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>{t('common.delete')}</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      </div>
     </div>
   );
 }
