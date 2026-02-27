@@ -510,7 +510,7 @@ export function ChroniclesTab({ language, isSupervisor }: { language: string; is
   }, [entries, isRu]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 overflow-y-auto max-h-[calc(100vh-14rem)] pr-1">
       {/* Header banner */}
       <Card className="border-hydra-arbiter/30 bg-hydra-arbiter/5">
         <CardContent className="p-5">
