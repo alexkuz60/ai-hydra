@@ -131,6 +131,7 @@ const translations: Translations = {
   'memory.hub.searchByName': { ru: 'Поиск по имени...', en: 'Search by name...' },
   'memory.hub.preview': { ru: 'Предпросмотр', en: 'Preview' },
   'memory.hub.download': { ru: 'Скачать', en: 'Download' },
+  'memory.hub.openInTab': { ru: 'Открыть в новой вкладке', en: 'Open in new tab' },
   'memory.hub.imageLoadError': { ru: 'Не удалось загрузить изображение', en: 'Failed to load image' },
   'memory.hub.deleteFileSuccess': { ru: 'удалён', en: 'deleted' },
   'memory.hub.deleteFileError': { ru: 'Ошибка удаления файла', en: 'File deletion error' },
