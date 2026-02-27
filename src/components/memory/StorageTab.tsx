@@ -738,16 +738,29 @@ function KnowledgeFilesGrouped({
   bucketColors: Record<string, string>;
 }) {
   const hydrapediaFiles = files.filter(f => f.knowledge_category === 'hydrapedia');
-  const userFiles = files.filter(f => f.knowledge_category !== 'hydrapedia');
+  const nonHydra = files.filter(f => f.knowledge_category !== 'hydrapedia');
 
-  const groups = [
-    { key: 'knowledge-user', label: t('memory.storage.userKnowledge'), files: userFiles, icon: BookOpen, color: 'text-hydra-cyan' },
-    { key: 'knowledge-hydrapedia', label: t('memory.storage.fromHydrapedia'), files: hydrapediaFiles, icon: BookMarked, color: 'text-hydra-memory' },
+  const promptCategories = new Set(['system_prompt', 'rejection_examples', 'procedure']);
+  const docCategories = new Set(['documentation', 'tutorial']);
+
+  const promptFiles = nonHydra.filter(f => promptCategories.has(f.knowledge_category || ''));
+  const docFiles = nonHydra.filter(f => docCategories.has(f.knowledge_category || ''));
+  const competencyFiles = nonHydra.filter(f => !promptCategories.has(f.knowledge_category || '') && !docCategories.has(f.knowledge_category || ''));
+
+  const systemSubgroups = [
+    { key: 'knowledge-prompts', label: t('memory.storage.knowledgePrompts'), files: promptFiles, icon: PenLine, color: 'text-hydra-cyan' },
+    { key: 'knowledge-competencies', label: t('memory.storage.knowledgeCompetencies'), files: competencyFiles, icon: BookOpen, color: 'text-hydra-cyan' },
+    { key: 'knowledge-docs', label: t('memory.storage.knowledgeDocs'), files: docFiles, icon: FileText, color: 'text-hydra-cyan' },
+  ];
+
+  const topGroups = [
+    { key: 'knowledge-system', label: t('memory.storage.systemKnowledge'), files: nonHydra, icon: BookOpen, color: 'text-hydra-cyan', subgroups: systemSubgroups },
+    { key: 'knowledge-hydrapedia', label: t('memory.storage.fromHydrapedia'), files: hydrapediaFiles, icon: BookMarked, color: 'text-hydra-memory', subgroups: null },
   ];
 
   return (
     <div>
-      {groups.map(group => {
+      {topGroups.map(group => {
         if (group.files.length === 0) return null;
         const isCollapsed = collapsedGroups.has(group.key);
         const GroupIcon = group.icon;
@@ -763,23 +776,64 @@ function KnowledgeFilesGrouped({
               </button>
             </CollapsibleTrigger>
             <CollapsibleContent>
-              <div className="divide-y divide-border/50">
-                {group.files.map(file => (
-                  <FileRow
-                    key={file.id}
-                    file={file}
-                    thumbnails={thumbnails}
-                    previewLoading={previewLoading}
-                    preview={preview}
-                    deletingId={deletingId}
-                    onPreview={onPreview}
-                    onDelete={onDelete}
-                    t={t}
-                    bucketColors={bucketColors}
-                    indent
-                  />
-                ))}
-              </div>
+              {group.subgroups ? (
+                <div>
+                  {group.subgroups.map(sub => {
+                    if (sub.files.length === 0) return null;
+                    const isSubCollapsed = collapsedGroups.has(sub.key);
+                    const SubIcon = sub.icon;
+                    return (
+                      <Collapsible key={sub.key} open={!isSubCollapsed} onOpenChange={() => toggleGroup(sub.key)}>
+                        <CollapsibleTrigger asChild>
+                          <button className="w-full flex items-center gap-2 pl-14 pr-4 py-2 text-left hover:bg-muted/30 transition-colors border-b border-border/30">
+                            {isSubCollapsed ? <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground" /> : <ChevronDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />}
+                            <SubIcon className={cn('h-4 w-4 shrink-0', sub.color)} />
+                            <span className={cn('text-sm font-medium', sub.color)}>{sub.label}</span>
+                            <Badge variant="outline" className="ml-1 h-5 px-1.5 text-[10px]">{sub.files.length}</Badge>
+                          </button>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent>
+                          <div className="divide-y divide-border/50">
+                            {sub.files.map(file => (
+                              <FileRow
+                                key={file.id}
+                                file={file}
+                                thumbnails={thumbnails}
+                                previewLoading={previewLoading}
+                                preview={preview}
+                                deletingId={deletingId}
+                                onPreview={onPreview}
+                                onDelete={onDelete}
+                                t={t}
+                                bucketColors={bucketColors}
+                                indent
+                              />
+                            ))}
+                          </div>
+                        </CollapsibleContent>
+                      </Collapsible>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="divide-y divide-border/50">
+                  {group.files.map(file => (
+                    <FileRow
+                      key={file.id}
+                      file={file}
+                      thumbnails={thumbnails}
+                      previewLoading={previewLoading}
+                      preview={preview}
+                      deletingId={deletingId}
+                      onPreview={onPreview}
+                      onDelete={onDelete}
+                      t={t}
+                      bucketColors={bucketColors}
+                      indent
+                    />
+                  ))}
+                </div>
+              )}
             </CollapsibleContent>
           </Collapsible>
         );
