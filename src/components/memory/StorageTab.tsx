@@ -45,6 +45,36 @@ export function StorageTab() {
   const [previewLoading, setPreviewLoading] = useState(false);
   const [thumbnails, setThumbnails] = useState<Record<string, string>>({});
 
+  /** Recursively list files in a storage bucket under a prefix */
+  const listBucketRecursive = useCallback(async (bucket: string, prefix: string): Promise<StorageFile[]> => {
+    const result: StorageFile[] = [];
+    const { data, error } = await supabase.storage.from(bucket).list(prefix, {
+      limit: 500,
+      sortBy: { column: 'created_at', order: 'desc' },
+    });
+    if (error || !data) return result;
+    for (const item of data) {
+      const fullPath = prefix ? `${prefix}/${item.name}` : item.name;
+      if (item.id) {
+        // It's a file
+        result.push({
+          id: `${bucket}/${fullPath}`,
+          name: item.name,
+          bucket,
+          size: item.metadata?.size ?? 0,
+          mime_type: item.metadata?.mimetype ?? null,
+          created_at: item.created_at ?? '',
+          updated_at: item.updated_at ?? '',
+        });
+      } else {
+        // It's a folder — recurse
+        const subFiles = await listBucketRecursive(bucket, fullPath);
+        result.push(...subFiles);
+      }
+    }
+    return result;
+  }, []);
+
   const loadFiles = useCallback(async () => {
     if (!user) return;
     setLoading(true);
@@ -52,24 +82,8 @@ export function StorageTab() {
       const allFiles: StorageFile[] = [];
       for (const bucket of BUCKETS) {
         try {
-          const { data, error } = await supabase.storage.from(bucket).list(`${user.id}`, {
-            limit: 200,
-            sortBy: { column: 'created_at', order: 'desc' },
-          });
-          if (error || !data) continue;
-          for (const f of data) {
-            if (f.id) {
-              allFiles.push({
-                id: `${bucket}/${user.id}/${f.name}`,
-                name: f.name,
-                bucket,
-                size: f.metadata?.size ?? 0,
-                mime_type: f.metadata?.mimetype ?? null,
-                created_at: f.created_at ?? '',
-                updated_at: f.updated_at ?? '',
-              });
-            }
-          }
+          const bucketFiles = await listBucketRecursive(bucket, user.id);
+          allFiles.push(...bucketFiles);
         } catch { /* skip bucket on error */ }
       }
       setFiles(allFiles);
@@ -78,8 +92,8 @@ export function StorageTab() {
       await Promise.all(
         imageFiles.map(async f => {
           try {
-            const path = `${user.id}/${f.name}`;
-            const { data } = await supabase.storage.from(f.bucket).createSignedUrl(path, 3600);
+            const storagePath = f.id.replace(`${f.bucket}/`, '');
+            const { data } = await supabase.storage.from(f.bucket).createSignedUrl(storagePath, 3600);
             if (data?.signedUrl) thumbMap[f.id] = data.signedUrl;
           } catch { /* skip */ }
         })
@@ -88,7 +102,7 @@ export function StorageTab() {
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [user, listBucketRecursive]);
 
   useEffect(() => { loadFiles(); }, [loadFiles]);
 
@@ -100,7 +114,7 @@ export function StorageTab() {
     }
     setPreviewLoading(true);
     try {
-      const path = `${user!.id}/${file.name}`;
+      const path = file.id.replace(`${file.bucket}/`, '');
       const { data, error } = await supabase.storage.from(file.bucket).createSignedUrl(path, 3600);
       if (error || !data?.signedUrl) {
         toast.error(t('memory.hub.imageLoadError'));
@@ -118,7 +132,7 @@ export function StorageTab() {
   const handleDelete = async (file: StorageFile) => {
     setDeletingId(file.id);
     try {
-      const path = `${user!.id}/${file.name}`;
+      const path = file.id.replace(`${file.bucket}/`, '');
       const { error } = await supabase.storage.from(file.bucket).remove([path]);
       if (error) toast.error(t('memory.hub.deleteFileError'));
       else {
