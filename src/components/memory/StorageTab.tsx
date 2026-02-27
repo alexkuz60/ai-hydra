@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import {
   HardDrive, FolderOpen, FileImage, FileText, File, Search,
-  Loader2, Trash2, Eye, X, Download, RefreshCw, Database,
+  Loader2, Trash2, Eye, X, Download, RefreshCw, Database, Eraser,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -44,6 +44,7 @@ export function StorageTab() {
   const [preview, setPreview] = useState<PreviewState>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [thumbnails, setThumbnails] = useState<Record<string, string>>({});
+  const [cleaning, setCleaning] = useState(false);
 
   /** Recursively list files in a storage bucket under a prefix */
   const listBucketRecursive = useCallback(async (bucket: string, prefix: string): Promise<StorageFile[]> => {
@@ -145,6 +146,44 @@ export function StorageTab() {
     }
   };
 
+  /** Clean orphaned files from task-files bucket that have no matching DB record */
+  const cleanOrphanedFiles = useCallback(async () => {
+    if (!user) return;
+    setCleaning(true);
+    try {
+      const storageFiles = files.filter(f => f.bucket === 'task-files');
+      if (storageFiles.length === 0) {
+        toast.info(t('memory.storage.noOrphans'));
+        return;
+      }
+      const { data: dbFiles } = await supabase
+        .from('task_files')
+        .select('file_path')
+        .eq('user_id', user.id);
+      const knownPaths = new Set((dbFiles || []).map((f: any) => f.file_path));
+      const orphans = storageFiles.filter(f => {
+        const storagePath = f.id.replace(`${f.bucket}/`, '');
+        return !knownPaths.has(storagePath);
+      });
+      if (orphans.length === 0) {
+        toast.info(t('memory.storage.noOrphans'));
+        return;
+      }
+      const orphanPaths = orphans.map(f => f.id.replace(`${f.bucket}/`, ''));
+      for (let i = 0; i < orphanPaths.length; i += 100) {
+        await supabase.storage.from('task-files').remove(orphanPaths.slice(i, i + 100));
+      }
+      setFiles(prev => prev.filter(f => !orphans.some(o => o.id === f.id)));
+      toast.success(
+        t('memory.storage.orphansDeleted').replace('{count}', String(orphans.length))
+      );
+    } catch (e: any) {
+      toast.error(e.message || 'Cleanup failed');
+    } finally {
+      setCleaning(false);
+    }
+  }, [user, files, t]);
+
   const bucketCounts = useMemo(() => {
     const counts: Record<string, number> = { all: files.length };
     files.forEach(f => { counts[f.bucket] = (counts[f.bucket] || 0) + 1; });
@@ -227,6 +266,16 @@ export function StorageTab() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
           <Input placeholder={t('memory.hub.searchByName')} value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="pl-8 h-7 text-xs" />
         </div>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0 text-muted-foreground hover:text-destructive" onClick={cleanOrphanedFiles} disabled={cleaning || loading}>
+                {cleaning ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Eraser className="h-3.5 w-3.5" />}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>{t('memory.storage.cleanOrphans')}</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
         <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={loadFiles}>
           <RefreshCw className={cn('h-3.5 w-3.5', loading && 'animate-spin')} />
         </Button>
