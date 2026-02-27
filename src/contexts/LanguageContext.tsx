@@ -135,6 +135,8 @@ const translations: Translations = {
   'memory.hub.imageLoadError': { ru: 'Не удалось загрузить изображение', en: 'Failed to load image' },
   'memory.hub.deleteFileSuccess': { ru: 'удалён', en: 'deleted' },
   'memory.hub.deleteFileError': { ru: 'Ошибка удаления файла', en: 'File deletion error' },
+  'memory.hub.deleteFileConfirmTitle': { ru: 'Удалить файл?', en: 'Delete file?' },
+  'memory.hub.deleteFileConfirmDesc': { ru: 'Файл «{name}» будет удалён безвозвратно.', en: 'File "{name}" will be permanently deleted.' },
   'memory.hub.hybridSearchPlaceholder': { ru: 'Гибридный поиск (BM25 + вектор)...', en: 'Hybrid search (BM25 + vector)...' },
   'memory.hub.hybridSearchHint': { ru: 'Гибридный поиск: BM25 + косинусное сходство, объединение через RRF', en: 'Hybrid search: BM25 + cosine similarity, merged via RRF' },
   'memory.hub.searchModeText': { ru: 'Текстовый поиск → нажми для семантического', en: 'Text search → click for semantic' },
