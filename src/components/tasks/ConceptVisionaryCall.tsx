@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Eye, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { CollapsedResponse } from './ConceptResponsesPreview';
+import { ModelSelector } from '@/components/warroom/ModelSelector';
 import type { ConceptResponse } from '@/hooks/useConceptResponses';
 
 interface ConceptVisionaryCallProps {
@@ -15,9 +16,11 @@ interface ConceptVisionaryCallProps {
   onExpand?: () => void;
   onInvoke?: () => void;
   invoking?: boolean;
+  selectedModel: string;
+  onModelChange: (model: string) => void;
 }
 
-export function ConceptVisionaryCall({ planId, planTitle, planGoal, className, response, onExpand, onInvoke, invoking }: ConceptVisionaryCallProps) {
+export function ConceptVisionaryCall({ planId, planTitle, planGoal, className, response, onExpand, onInvoke, invoking, selectedModel, onModelChange }: ConceptVisionaryCallProps) {
   const { t } = useLanguage();
 
   return (
@@ -29,16 +32,19 @@ export function ConceptVisionaryCall({ planId, planTitle, planGoal, className, r
       <p className="text-sm text-muted-foreground/70">
         {t('concept.visionary.description')}
       </p>
-      <Button
-        onClick={onInvoke}
-        variant="outline"
-        size="sm"
-        className="gap-2 border-hydra-visionary/30 text-hydra-visionary hover:bg-hydra-visionary/10"
-        disabled={!planGoal?.trim() || invoking}
-      >
-        {invoking ? <Loader2 className="h-4 w-4 animate-spin" /> : <Eye className="h-4 w-4" />}
-        {t('concept.visionary.invoke')}
-      </Button>
+      <div className="flex items-center gap-2 flex-wrap">
+        <Button
+          onClick={onInvoke}
+          variant="outline"
+          size="sm"
+          className="gap-2 border-hydra-visionary/30 text-hydra-visionary hover:bg-hydra-visionary/10"
+          disabled={!planGoal?.trim() || invoking}
+        >
+          {invoking ? <Loader2 className="h-4 w-4 animate-spin" /> : <Eye className="h-4 w-4" />}
+          {t('concept.visionary.invoke')}
+        </Button>
+        <ModelSelector value={selectedModel} onChange={onModelChange} className="flex-1 min-w-[200px]" />
+      </div>
       {!planGoal?.trim() && (
         <p className="text-sm text-muted-foreground/50 italic">
           {t('concept.visionary.needGoal')}
