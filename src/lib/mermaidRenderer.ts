@@ -14,12 +14,16 @@ function getThemeConfig(theme: string) {
   return {
     startOnLoad: false,
     theme: isDark ? 'dark' as const : 'default' as const,
-    securityLevel: 'strict' as const,
+    securityLevel: 'loose' as const,
     fontFamily: 'ui-sans-serif, system-ui, sans-serif',
     suppressErrorRendering: true,
     flowchart: {
       htmlLabels: true,
       curve: 'basis' as const,
+      useMaxWidth: false,
+      padding: 15,
+      nodeSpacing: 30,
+      rankSpacing: 50,
     },
     themeVariables: isDark ? {
       primaryColor: '#3b82f6',
