@@ -461,6 +461,13 @@ export function TaskDetailsPanel({
               </div>
             )}
 
+              {/* Files panel for concept — above pipeline */}
+              {isPlanLevel && (
+                <div data-guide="tasks-files-tab" className="border-t pt-4">
+                  <TaskFilesPanelWithPlan taskId={task.id} />
+                </div>
+              )}
+
               {/* Concept Pipeline — only for plan-level */}
               {isPlanLevel && (
                 <section className="border-t pt-4 space-y-4">
@@ -548,10 +555,6 @@ export function TaskDetailsPanel({
                     />
                   )}
 
-                  {/* Files panel for concept */}
-                  <div data-guide="tasks-files-tab">
-                    <TaskFilesPanelWithPlan taskId={task.id} />
-                  </div>
                 </section>
               )}
 

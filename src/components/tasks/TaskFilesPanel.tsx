@@ -185,9 +185,9 @@ export function TaskFilesPanel({ sessionId, className }: TaskFilesPanelProps) {
                     <TooltipTrigger asChild>
                       <button
                         onClick={(e) => { e.stopPropagation(); deleteFile(file.id, file.file_path); }}
-                        className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                        className="absolute -top-1.5 -right-1.5 bg-destructive text-destructive-foreground rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity z-10"
                       >
-                        <Trash2 className="h-2.5 w-2.5" />
+                        <Trash2 className="h-3.5 w-3.5" />
                       </button>
                     </TooltipTrigger>
                     <TooltipContent className="text-xs">{wt('taskFiles.delete', language)}</TooltipContent>
