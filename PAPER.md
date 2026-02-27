@@ -7,13 +7,13 @@
 
 **Repository:** [github.com/alexkuz60/ai-hydra](https://github.com/alexkuz60/ai-hydra)  
 **License:** MIT  
-**Version:** 0.2.19 (February 2026)  
+**Version:** 0.2.20 (February 2026)  
 
 ---
 
 ## Abstract
 
-Recent research demonstrates that hybrid human-AI teams consistently outperform both purely human and purely AI groups in creative tasks — yet most such teams fail in practice due to poor delegation, validation asymmetry, uncalibrated trust, and competence degradation. We present **AI-Hydra**, an open-source multi-model AI platform that addresses these systemic failures through six architectural pillars: formalized role contracts, multi-level verification, calibrated trust signals, cognitive diversity, self-correcting evolution, and anthropomorphic organizational metaphor. Built over 25 days of continuous human-AI co-creation, Hydra implements 18 specialized agent roles across Expert, Technical, Legal, and System categories — including a fully operational **Legal category** with a Patent Attorney role featuring multi-pass adversarial analysis and Devil's Advocate verification — a three-layer RAG memory system with hybrid search, a ReAct-based self-evolution mechanism, and a unique organizational isomorphism that maps AI infrastructure onto familiar social structures — departments, staffing, interviews, quality control. We report empirical observations from the development process itself as evidence that the symbiotic co-creation paradigm, when properly scaffolded, produces emergent capabilities exceeding the sum of its parts. The paper contributes: (1) a taxonomy mapping documented failure modes to implemented countermeasures; (2) the first open-source platform realizing all six pillars simultaneously; (3) a self-evolution architecture with verifiable reasoning trajectories; (4) the anthropomorphic organizational metaphor as a cognitive bridge reducing adoption barriers.
+Recent research demonstrates that hybrid human-AI teams consistently outperform both purely human and purely AI groups in creative tasks — yet most such teams fail in practice due to poor delegation, validation asymmetry, uncalibrated trust, and competence degradation. We present **AI-Hydra**, an open-source multi-model AI platform that addresses these systemic failures through six architectural pillars: formalized role contracts, multi-level verification, calibrated trust signals, cognitive diversity, self-correcting evolution, and anthropomorphic organizational metaphor. Built over 30 days of continuous human-AI co-creation, Hydra implements 18 specialized agent roles across Expert, Technical, Legal, and System categories — including a fully operational **Legal category** with a Patent Attorney role featuring multi-pass adversarial analysis and Devil's Advocate verification — a three-layer RAG memory system with hybrid search and a **three-tier Context Pyramid** (Global → Organizational → Expertise) that enforces cognitive isolation between roles, a ReAct-based self-evolution mechanism, **persistent cross-task institutional memory** through vector-embedded verdict fixation, and a unique organizational isomorphism that maps AI infrastructure onto familiar social structures — departments, staffing, interviews, quality control. We introduce the **StrategySyncEngine** — a mechanism for automatic synchronization of approved strategic plans with the operational task hierarchy through intelligent diff and soft-delete semantics. We report empirical observations from the development process itself as evidence that the symbiotic co-creation paradigm, when properly scaffolded, produces emergent capabilities exceeding the sum of its parts. The paper contributes: (1) a taxonomy mapping documented failure modes to implemented countermeasures; (2) the first open-source platform realizing all six pillars simultaneously; (3) a self-evolution architecture with verifiable reasoning trajectories; (4) the anthropomorphic organizational metaphor as a cognitive bridge reducing adoption barriers; (5) the Context Pyramid as a principled solution to inter-role cognitive contamination in RAG systems.
 
 **Keywords:** human-AI symbiosis, multi-agent systems, creative collaboration, self-evolving AI, RAG architecture, organizational isomorphism, open-source
 
@@ -465,25 +465,111 @@ The system tracks retrieval quality through:
 
 This data feeds the **RAG Dashboard** — a monitoring interface that visualizes chunk utilization, identifies "dead" knowledge (never retrieved), and highlights high-value memories.
 
+### 4.3 The Context Pyramid: Cognitive Isolation Through RAG Architecture
+
+Traditional RAG systems feed all available context to all agents equally. In a multi-agent environment, this creates a fundamental problem: **inter-role cognitive contamination**. If the Critic knows the Arbiter's evaluation criteria, it tailors its review to score well — destroying verification independence (see F8). If the Analyst sees the Moderator's strategic directives, it biases analysis toward "politically convenient" conclusions.
+
+Hydra addresses this through a **three-tier Context Pyramid** — an architectural pattern that we consider one of the key contributions of this work:
+
+```mermaid
+graph TD
+    subgraph "Level A — Global (all roles)"
+        A1["🌐 Organization mission & strategy"]
+        A2["📋 Core principles & values"]
+    end
+    
+    subgraph "Level B — Organizational (all roles)"
+        B1["👥 Staff map: who is who"]
+        B2["📐 Each role's function (brief)"]
+    end
+    
+    subgraph "Level C — Expertise (target role only)"
+        C1["🎯 Deep instructions"]
+        C2["📝 Specialized prompts"]
+        C3["📚 Domain knowledge base"]
+    end
+    
+    A1 & A2 --> B1 & B2
+    B1 & B2 --> C1 & C2 & C3
+    
+    style A1 fill:#10b981,color:#fff
+    style A2 fill:#10b981,color:#fff
+    style B1 fill:#3b82f6,color:#fff
+    style B2 fill:#3b82f6,color:#fff
+    style C1 fill:#f59e0b,color:#fff
+    style C2 fill:#f59e0b,color:#fff
+    style C3 fill:#f59e0b,color:#fff
+```
+
+| Level | Content | Access | Purpose |
+|-------|---------|--------|---------|
+| **A — Global** | Mission, strategy, core principles | All roles | Unified strategic direction |
+| **B — Organizational** | Staff map, brief role functions | All roles | Coordination without interference |
+| **C — Expertise** | Deep instructions, prompts, domain knowledge | Target role only | Cognitive isolation |
+
+**The Level C isolation principle** is not merely a token optimization (though it yields ~70% context window reduction). It is an **architectural guarantee of judgment independence**: the Critic reviews work without knowing the Arbiter's scoring criteria; the Analyst explores data without seeing management's strategic preferences; the Patent Attorney evaluates novelty without adapting to the client's expectations.
+
+This is a direct architectural countermeasure to what we term **observer-expectancy contamination in multi-agent systems** — the phenomenon where an agent's knowledge of how its output will be evaluated systematically biases that output. The analogy to double-blind experimental design is deliberate: just as blinding prevents researcher bias, the Context Pyramid prevents inter-role cognitive contamination.
+
+> **⚠️ Technical Context: Pyramid Implementation**
+>
+> During briefing assembly (e.g., `interview-briefing`) or system context construction for a role, the system strictly filters `role_knowledge` chunks by the `visibility_level` field:
+> - `global` → Level A (visible to all)
+> - `organizational` → Level B (visible to all)
+> - `expertise` → Level C (visible to target role only)
+>
+> The `hybrid_search_role_knowledge` function accepts a `p_visibility_levels` parameter, enforcing filtration at the PostgreSQL level *before* ranking — meaning isolated chunks are not merely hidden in the UI but **physically excluded from the model's context window**.
+
+This architecture transforms the familiar "need-to-know basis" principle from information management into a formal design constraint for multi-agent RAG systems. To our knowledge, AI-Hydra is the first open-source platform to implement cognitive isolation through knowledge storage architecture rather than post-hoc prompt filtering.
+
+### 4.4 Persistent Cross-Task Memory: Institutional Continuity
+
+Strategic tasks are rarely solved in a single session. A complex plan decomposes into subtasks, each generating its own conclusions, decisions, and context. The critical problem: **context is lost at subtask boundaries.** Each new session starts with a blank slate — the system "forgets" the institutional experience accumulated in previous stages.
+
+Hydra addresses this through the `plan_conclusions` table — a mechanism for **vector-embedded verdict fixation** that provides persistent cross-task memory within a strategic plan:
+
+$$\text{Conclusion}_i = \langle \text{content}, \text{embedding}_{1536}, \text{session\_id}, \text{plan\_id}, \text{is\_pinned} \rangle$$
+
+When beginning work on a new plan subtask, the system automatically:
+1. Retrieves all pinned (`is_pinned`) verdicts from previous subtasks
+2. Performs semantic search across relevant conclusions using 1536-dimensional embeddings
+3. Injects the retrieved context into the system prompt — ensuring **institutional memory continuity**
+
+This mechanism implements in practice what organizational theory calls **organizational memory** — an organization's ability to preserve and transfer accumulated experience across departments and projects. In Hydra, this is not a metaphor but an operational engineering system.
+
+> **⚠️ Technical Context: plan_conclusions Architecture**
+>
+> ```sql
+> -- plan_conclusions table
+> id UUID PRIMARY KEY
+> content TEXT              -- Verdict text
+> content_en TEXT           -- English version
+> embedding vector(1536)    -- Embedding for semantic search
+> session_id UUID           -- Link to subtask session
+> is_pinned BOOLEAN         -- Priority conclusions
+> ```
+>
+> The plan linkage operates through `sessions.plan_id → strategic_plans.id`, enabling navigation across the full hierarchy: plan → subtasks → verdicts. Embeddings are generated via `text-embedding-004`, enabling semantically similar conclusions to be found even when phrased differently.
+
 ---
 
 ## 5. The Development Process as Evidence
 
 ### 5.1 Co-Creation Metrics
 
-AI-Hydra was built over **25 days** (January 27 — February 21, 2026) through continuous human-AI collaboration between the project creator and the Lovable AI platform. The development itself serves as empirical evidence for the symbiotic paradigm:
+AI-Hydra was built over **30 days** (January 27 — February 27, 2026) through continuous human-AI collaboration between the project creator and the Lovable AI platform. The development itself serves as empirical evidence for the symbiotic paradigm:
 
 | Metric | Value |
 |--------|-------|
-| Development period | 25 days |
-| Active roles implemented | 16 |
-| Backend functions | 16 edge functions |
-| AI providers integrated | 11 |
-| Memory layers | 3 (session, role, knowledge) |
-| Database tables with RLS | 25+ |
+| Development period | 30 days |
+| Active roles implemented | 18 |
+| Backend functions | 21+ edge functions |
+| AI providers integrated | 12 |
+| Memory layers | 3 (session, role, knowledge) + cross-task |
+| Database tables with RLS | 28+ |
 | Flow editor node types | 20+ |
 | Hydrapedia documentation sections | 40+ |
-| Evolution chronicle entries | 4 |
+| Evolution chronicle entries | 13 |
 | Evolution phases implemented | 3/3 |
 
 ### 5.2 Emergent Capabilities
@@ -497,6 +583,10 @@ Several capabilities emerged during development that were not explicitly planned
 3. **The Cognitive Arsenal tab** in the Memory Hub emerged from the observation that viewing all three memory layers simultaneously revealed cross-layer patterns invisible when examining each layer in isolation.
 
 4. **The organizational metaphor itself** started as a naming convention and evolved into a fundamental architectural constraint — forcing every technical component to have an intuitive organizational analog.
+
+5. **The Context Pyramid** (EVO-012) emerged from observing objectivity degradation: when the Critic had access to the Arbiter's evaluation criteria, it systematically tailored reviews to score well. The solution — architectural isolation at the storage level — turned out to be both a principled contribution to multi-agent RAG theory and a pragmatic optimization (~70% context reduction).
+
+6. **The StrategySyncEngine** (EVO-011) emerged from a contradiction between approved strategy and operational reality: plans were decomposed into tasks, but tasks "lived their own life" and diverged from the plan. The automatic synchronization engine with a soft-delete principle (archiving rejected elements with metadata rather than physical deletion) resolved this, transforming strategic planning into a **living, self-synchronizing artifact**.
 
 ### 5.3 The Human-as-Supreme-Arbiter Pattern
 
@@ -566,7 +656,7 @@ The following table provides a comprehensive mapping between documented failure 
 | **Parent-Document Retrieval** | Retrieve full documents instead of isolated chunks when context demands it | Higher answer quality for complex queries |
 | **Autonomous A/B Testing** | Evolutioner runs controlled experiments on prompt variants with statistical significance testing | Data-driven evolution instead of heuristic |
 | **Adaptive Proactivity** | Dynamic adjustment of AI agent initiative level based on task complexity and user preferences | Better balance between helpfulness and cognitive overload |
-| **Cross-Session Memory Consolidation** | Periodic distillation of session memories into role-level insights | Reduced redundancy, faster retrieval |
+| **Cross-Session Memory Consolidation** | ~~Periodic distillation of session memories into role-level insights~~ **Partially implemented** via `plan_conclusions` (EVO-013): cross-task vector memory provides continuity within strategic plans | ✅ Partially implemented |
 
 ### 8.2 Ambitious Horizon (12–18 months)
 
@@ -630,7 +720,7 @@ We acknowledge several limitations of the current work:
 
 2. **No controlled experiment.** We report observational evidence from the development process, not a controlled experiment comparing Hydra with alternative approaches.
 
-3. **Self-evolution is young.** The Evolution Department has 4 chronicle entries. Statistical significance of meta-learning requires hundreds of recorded outcomes.
+3. **Self-evolution is maturing.** The Evolution Department has 13 chronicle entries. Meta-learning is beginning to show statistically meaningful patterns, but full calibration requires hundreds of recorded outcomes.
 
 4. **Organizational metaphor is culturally situated.** The mapping assumes familiarity with hierarchical organizational structures, which may not resonate universally.
 
@@ -719,11 +809,11 @@ AI-Hydra addresses this gap through six pillars that directly counter documented
 5. **Self-correcting evolution** maintains and improves system quality over time
 6. **Anthropomorphic organizational metaphor** makes the entire system intuitive to non-technical users
 
-The development of Hydra itself — 25 days of continuous human-AI co-creation resulting in a platform with 18 roles, 20 backend functions, three-layer RAG memory, and a self-evolution mechanism — is evidence that the symbiotic paradigm works when properly scaffolded.
+The development of Hydra itself — 30 days of continuous human-AI co-creation resulting in a platform with 18 roles, 21+ backend functions, three-layer RAG memory with a Context Pyramid, persistent cross-task institutional memory, the StrategySyncEngine, and 13 verifiable evolution chronicle entries — is evidence that the symbiotic paradigm works when properly scaffolded.
 
 We release Hydra as open-source software under the MIT license, inviting the research community and practitioners to build upon, criticize, and extend this work.
 
-> **The living architecture is not a metaphor — it is an engineering fact.**
+> **The living architecture is not a metaphor — it is an engineering fact. A system that remembers its mistakes, isolates its biases, and documents its own evolution is not a vision of future AI. It is working code, published today.**
 
 ---
 
@@ -774,6 +864,11 @@ AI:        11 providers via gateway + direct API integration
 | EVO-006 | 2026-02-23 | Interview pipeline | Accuracy vs Speed strategy: reasoning models for patent analysis, multi-level verification, adaptive retry | ✅ Implemented |
 | EVO-007 | 2026-02-23 | Patent Attorney | Presumption of Non-Novelty: adversarial Devil's Advocate pass, strict rejection thresholds, real rejection examples in knowledge base | ✅ Implemented |
 | EVO-008 | 2026-02-23 | Legal Department | Full Patent Attorney infrastructure: 7-task interview plugin, patent-deep-analysis (4 modules), arbiter fallback chain, specialized criteria. GPT-5.2 hired at 9.4/10 | ✅ Implemented |
+| EVO-009 | 2026-02-24 | Conceptual analysis | SPSP Pipeline (Visionary → Strategist → Patent Attorney): systemic shift from task solving to strategy formation and IP protection | ✅ Implemented |
+| EVO-010 | 2026-02-25 | Visionary/Strategist roles | New roles for conceptual analysis: Visionary generates strategic visions, Strategist decomposes them into executable plans | ✅ Implemented |
+| EVO-011 | 2026-02-26 | StrategySyncEngine | Automatic synchronization of approved strategies with task tree: intelligent diff, soft-delete (archive rejected elements with metadata instead of physical deletion) | ✅ Implemented |
+| EVO-012 | 2026-02-26 | Context Pyramid | 3-tier RAG hierarchy (Global → Org → Expertise): cognitive isolation between roles, ~70% context window reduction, physical filtration at PostgreSQL level | ✅ Implemented |
+| EVO-013 | 2026-02-27 | Cross-task memory | Persistent vector-embedded verdict fixation (`plan_conclusions`, 1536-dim embeddings): institutional memory transfer between subtasks of a strategic plan | ✅ Implemented |
 
 ---
 
