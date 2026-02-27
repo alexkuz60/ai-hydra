@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
-import { MessageSquare, Play, Trash2, Pencil, Check, X, Bot, Sparkles, Cpu, Loader2, Save, Lock, Copy, FileText, Target, Zap, StopCircle } from 'lucide-react';
+import { MessageSquare, Play, Trash2, Pencil, Check, X, Bot, Sparkles, Cpu, Loader2, Save, Lock, Copy, FileText, Target, Zap, StopCircle, Paperclip } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { TaskFilesPanel } from './TaskFilesPanel';
 
@@ -357,11 +357,26 @@ export function TaskDetailsPanel({
        <ScrollArea className="flex-1">
          <div className="p-4 space-y-6">
            {/* Task / Plan Formulation */}
-           <section>
-             <h3 className="text-base font-medium text-muted-foreground mb-3 flex items-center gap-2">
-               <FileText className="h-4 w-4" />
-               {isPlanLevel ? t('plans.goalFormulation') : t('tasks.formulation')}
-             </h3>
+            <section>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-base font-medium text-muted-foreground flex items-center gap-2">
+                  <FileText className="h-4 w-4" />
+                  {isPlanLevel ? t('plans.goalFormulation') : t('tasks.formulation')}
+                </h3>
+                {isPlanLevel && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                    onClick={() => {
+                      document.querySelector('[data-guide="tasks-files-tab"]')?.scrollIntoView({ behavior: 'smooth' });
+                    }}
+                    title={language === 'ru' ? 'Файлы концепции' : 'Concept files'}
+                  >
+                    <Paperclip className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
              <Textarea
                value={taskDescription}
                onChange={(e) => handleDescriptionChange(e.target.value)}
