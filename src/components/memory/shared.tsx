@@ -54,6 +54,11 @@ export const KNOWLEDGE_CATEGORY_LABELS: Record<string, { ru: string; en: string 
   tutorial: { ru: 'Обучение', en: 'Tutorial' },
   faq: { ru: 'ЧаВО', en: 'FAQ' },
   api: { ru: 'API', en: 'API' },
+  system_prompt: { ru: 'Системный промпт', en: 'System Prompt' },
+  rejection_examples: { ru: 'Примеры отказов', en: 'Rejection Examples' },
+  procedure: { ru: 'Процедура', en: 'Procedure' },
+  standard: { ru: 'Стандарт', en: 'Standard' },
+  hydrapedia: { ru: 'Гидрапедия', en: 'Hydrapedia' },
 };
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
