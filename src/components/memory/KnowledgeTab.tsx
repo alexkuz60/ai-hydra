@@ -1,14 +1,16 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import {
   BookOpen, Database, Layers, Trash2, Loader2,
   Copy, Wrench, BarChart2, ScanSearch, Clock,
   CheckCircle2, AlertTriangle, Sparkles,
+  ChevronDown, ChevronRight,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { Link } from 'react-router-dom';
@@ -24,12 +26,27 @@ interface KnowledgeEntryRaw {
   id: string;
   content: string;
   source_title: string | null;
+  source_title_en: string | null;
   source_url: string | null;
   category: string;
   version: string | null;
   chunk_index: number;
+  chunk_total: number;
   embedding: unknown;
+  role: string;
 }
+
+// Category color mapping
+const CATEGORY_COLORS: Record<string, string> = {
+  system_prompt: 'border-hydra-memory/40 text-hydra-memory bg-hydra-memory/10',
+  documentation: 'border-hydra-info/40 text-hydra-info bg-hydra-info/10',
+  procedure: 'border-hydra-warning/40 text-hydra-warning bg-hydra-warning/10',
+  standard: 'border-hydra-expert/40 text-hydra-expert bg-hydra-expert/10',
+  rejection_examples: 'border-hydra-critical/40 text-hydra-critical bg-hydra-critical/10',
+  tutorial: 'border-hydra-success/40 text-hydra-success bg-hydra-success/10',
+  hydrapedia: 'border-hydra-cyan/40 text-hydra-cyan bg-hydra-cyan/10',
+  general: 'border-border text-muted-foreground bg-muted/30',
+};
 
 export function KnowledgeTab({ stats, loading }: { stats: ReturnType<typeof useHydraMemoryStats>; loading: boolean }) {
   const { t, language } = useLanguage();
@@ -43,8 +60,57 @@ export function KnowledgeTab({ stats, loading }: { stats: ReturnType<typeof useH
   const [scanDone, setScanDone] = useState(false);
   const [generatingEmbeddings, setGeneratingEmbeddings] = useState(false);
   const [embeddingProgress, setEmbeddingProgress] = useState<{ done: number; total: number } | null>(null);
-  // Keep raw rows for embedding generation
   const [rawRows, setRawRows] = useState<KnowledgeEntryRaw[]>([]);
+  
+  // Detailed entries state
+  const [detailedEntries, setDetailedEntries] = useState<KnowledgeEntryRaw[]>([]);
+  const [detailedLoading, setDetailedLoading] = useState(true);
+  const [collapsedRoles, setCollapsedRoles] = useState<Set<string>>(new Set());
+
+  const isRu = language === 'ru';
+
+  // Load detailed entries on mount
+  useEffect(() => {
+    if (!user?.id) return;
+    const loadEntries = async () => {
+      setDetailedLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('role_knowledge')
+          .select('id, content, source_title, source_title_en, source_url, category, version, chunk_index, chunk_total, embedding, role')
+          .eq('user_id', user.id)
+          .eq('chunk_index', 0)
+          .order('role')
+          .order('category');
+        if (error) throw error;
+        setDetailedEntries((data || []) as KnowledgeEntryRaw[]);
+      } catch (e) {
+        console.error('[KnowledgeTab] load entries error', e);
+      } finally {
+        setDetailedLoading(false);
+      }
+    };
+    loadEntries();
+  }, [user?.id]);
+
+  // Group detailed entries by role
+  const entriesByRole = useMemo(() => {
+    const map: Record<string, KnowledgeEntryRaw[]> = {};
+    for (const entry of detailedEntries) {
+      if (!map[entry.role]) map[entry.role] = [];
+      map[entry.role].push(entry);
+    }
+    return map;
+  }, [detailedEntries]);
+
+  const toggleRole = (role: string) => {
+    setCollapsedRoles(prev => {
+      const next = new Set(prev);
+      if (next.has(role)) next.delete(role);
+      else next.add(role);
+      return next;
+    });
+  };
 
   const roleGroups = stats.knowledge.reduce<Record<string, { category: string; count: number }[]>>((acc, k) => {
     if (!acc[k.role]) acc[k.role] = [];
@@ -59,7 +125,7 @@ export function KnowledgeTab({ stats, loading }: { stats: ReturnType<typeof useH
     try {
       const { data, error } = await supabase
         .from('role_knowledge')
-        .select('id, content, source_title, source_url, category, version, chunk_index, embedding')
+        .select('id, content, source_title, source_title_en, source_url, category, version, chunk_index, chunk_total, embedding, role')
         .eq('user_id', user.id);
       if (error) throw error;
       const rows = (data || []) as KnowledgeEntryRaw[];
@@ -159,7 +225,6 @@ export function KnowledgeTab({ stats, loading }: { stats: ReturnType<typeof useH
         const embeddings = resp.data?.embeddings as (number[] | null)[];
         if (!embeddings) continue;
 
-        // Save embeddings to DB
         for (let j = 0; j < batch.length; j++) {
           if (embeddings[j]) {
             await supabase
@@ -186,8 +251,6 @@ export function KnowledgeTab({ stats, loading }: { stats: ReturnType<typeof useH
     }
   }, [user?.id, rawRows, runScan, stats, t]);
 
-  const isRu = language === 'ru';
-
   return (
     <ScrollArea className="h-[calc(100vh-12rem)]"><div className="space-y-4">
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
@@ -200,7 +263,7 @@ export function KnowledgeTab({ stats, loading }: { stats: ReturnType<typeof useH
         )}
       </div>
 
-      {/* Deduplication Tools Panel */}
+      {/* Cleanup Tools Panel */}
       <Card className="border-[hsl(var(--hydra-memory)/0.25)] bg-[hsl(var(--hydra-memory)/0.03)]">
         <button
           onClick={() => { setToolsOpen(o => !o); if (!toolsOpen && !scanDone) runScan(); }}
@@ -358,30 +421,83 @@ export function KnowledgeTab({ stats, loading }: { stats: ReturnType<typeof useH
         </AnimatePresence>
       </Card>
 
-      {!loading && stats.totalKnowledge === 0 && (
+      {/* Detailed Knowledge Table by Role */}
+      {!loading && !detailedLoading && detailedEntries.length > 0 && (
+        <div className="border rounded-lg overflow-hidden">
+          {Object.entries(entriesByRole).sort(([a], [b]) => a.localeCompare(b)).map(([role, entries]) => {
+            const rc = ROLE_CONFIG[role as keyof typeof ROLE_CONFIG];
+            const roleLabel = rc ? t(rc.label) : role;
+            const RoleIcon = rc?.icon;
+            const roleColor = rc?.color || 'text-muted-foreground';
+            const isCollapsed = collapsedRoles.has(role);
+
+            // Group entries by category for badge summary
+            const categoryCounts: Record<string, number> = {};
+            entries.forEach(e => {
+              categoryCounts[e.category] = (categoryCounts[e.category] || 0) + 1;
+            });
+
+            return (
+              <Collapsible key={role} open={!isCollapsed} onOpenChange={() => toggleRole(role)}>
+                <CollapsibleTrigger asChild>
+                  <button className="w-full flex items-center gap-2.5 px-4 py-3 text-left hover:bg-muted/40 transition-colors border-b border-border">
+                    {isCollapsed ? <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />}
+                    {RoleIcon && <RoleIcon className={cn('h-5 w-5 shrink-0', roleColor)} />}
+                    <span className={cn('text-base font-semibold', roleColor)}>{roleLabel}</span>
+                    <div className="flex items-center gap-1.5 ml-2 flex-wrap">
+                      {Object.entries(categoryCounts).map(([cat, cnt]) => {
+                        const catLabel = KNOWLEDGE_CATEGORY_LABELS[cat]?.[isRu ? 'ru' : 'en'] ?? cat;
+                        const catColor = CATEGORY_COLORS[cat] || CATEGORY_COLORS.general;
+                        return (
+                          <Badge key={cat} variant="outline" className={cn('text-xs gap-1 border', catColor)}>
+                            {catLabel} <span className="font-bold">{cnt}</span>
+                          </Badge>
+                        );
+                      })}
+                    </div>
+                  </button>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <div className="divide-y divide-border/50">
+                    {entries.map(entry => {
+                      const catLabel = KNOWLEDGE_CATEGORY_LABELS[entry.category]?.[isRu ? 'ru' : 'en'] ?? entry.category;
+                      const catColor = CATEGORY_COLORS[entry.category] || CATEGORY_COLORS.general;
+                      const title = isRu
+                        ? (entry.source_title || entry.content.slice(0, 60))
+                        : (entry.source_title_en || entry.source_title || entry.content.slice(0, 60));
+
+                      return (
+                        <div key={entry.id} className="flex items-center gap-3 px-4 py-2.5 pl-12 hover:bg-muted/30 transition-colors">
+                          <Badge variant="outline" className={cn('text-xs shrink-0 border', catColor)}>
+                            {catLabel}
+                          </Badge>
+                          <span className="text-sm truncate flex-1">{title}</span>
+                          {entry.chunk_total > 1 && (
+                            <span className="text-xs text-muted-foreground shrink-0">
+                              {entry.chunk_total} {isRu ? 'чанков' : 'chunks'}
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
+            );
+          })}
+        </div>
+      )}
+
+      {!loading && !detailedLoading && detailedEntries.length === 0 && (
         <div className="text-center py-12 text-muted-foreground text-base">{t('memory.hub.empty')}</div>
       )}
-      <div className="space-y-3">
-        {Object.entries(roleGroups).map(([role, categories]) => {
-          const rc = ROLE_CONFIG[role as keyof typeof ROLE_CONFIG];
-          const roleLabel = rc ? t(rc.label) : role;
-          return (
-          <Card key={role}>
-            <CardHeader className="pb-2 pt-3 px-4"><CardTitle className="text-base">{roleLabel}</CardTitle></CardHeader>
-            <CardContent className="pb-3 px-4 flex flex-wrap gap-2">
-              {categories.map(({ category, count }) => {
-                const catLabel = KNOWLEDGE_CATEGORY_LABELS[category]?.[isRu ? 'ru' : 'en'] ?? category;
-                return (
-                  <Badge key={category} variant="outline" className="text-sm gap-1.5">
-                    {catLabel} <span className="font-bold text-hydra-memory">{count}</span>
-                  </Badge>
-                );
-              })}
-            </CardContent>
-          </Card>
-          );
-        })}
-      </div>
+
+      {detailedLoading && (
+        <div className="space-y-2">
+          {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-14" />)}
+        </div>
+      )}
+
       <div className="flex justify-end">
         <Button variant="outline" size="sm" asChild>
           <Link to="/staff-roles">{t('memory.hub.goToStaff')}</Link>
