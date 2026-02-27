@@ -69,6 +69,8 @@ const translations: Translations = {
   'memory.storage.bucketTaskFilesHint': { ru: 'Вложения к задачам и сессиям', en: 'Attachments for tasks and sessions' },
   'memory.storage.bucketAvatars': { ru: 'Аватары', en: 'Avatars' },
   'memory.storage.bucketAvatarsHint': { ru: 'Фотографии профилей пользователей', en: 'User profile pictures' },
+  'memory.storage.bucketKnowledgeFiles': { ru: 'Файлы знаний', en: 'Knowledge files' },
+  'memory.storage.bucketKnowledgeFilesHint': { ru: 'Документация, загруженная в базу знаний ролей', en: 'Documentation uploaded to role knowledge base' },
   'memory.storage.cleanOrphans': { ru: 'Очистить осиротевшие файлы задач', en: 'Clean orphaned task files' },
   'memory.storage.noOrphans': { ru: 'Осиротевших файлов не найдено', en: 'No orphaned files found' },
   'memory.storage.orphansDeleted': { ru: 'Удалено {count} осиротевших файлов', en: '{count} orphaned files deleted' },

@@ -170,6 +170,18 @@ export function useRoleKnowledge(role: AgentRole) {
   const deleteBySource = useCallback(async (sourceTitle: string): Promise<boolean> => {
     if (!user?.id) return false;
     try {
+      // Find entries to check for linked storage files
+      const entriesToDelete = entries.filter(
+        e => e.source_title === sourceTitle
+      );
+      
+      // Collect unique file paths from metadata
+      const filePaths = new Set<string>();
+      for (const entry of entriesToDelete) {
+        const fp = (entry.metadata as any)?.file_path;
+        if (fp) filePaths.add(fp);
+      }
+
       const { error } = await supabase
         .from('role_knowledge' as any)
         .delete()
@@ -178,6 +190,17 @@ export function useRoleKnowledge(role: AgentRole) {
         .eq('source_title', sourceTitle);
 
       if (error) throw error;
+
+      // Clean up linked storage files
+      if (filePaths.size > 0) {
+        const { error: storageErr } = await supabase.storage
+          .from('knowledge-files')
+          .remove(Array.from(filePaths));
+        if (storageErr) {
+          console.warn('[useRoleKnowledge] Storage cleanup failed:', storageErr);
+        }
+      }
+
       setEntries(prev => prev.filter(e => e.source_title !== sourceTitle));
       return true;
     } catch (error) {
@@ -185,7 +208,7 @@ export function useRoleKnowledge(role: AgentRole) {
       toast.error('Ошибка удаления');
       return false;
     }
-  }, [user?.id, role]);
+  }, [user?.id, role, entries]);
 
   const searchKnowledge = useCallback(async (
     query: string,
