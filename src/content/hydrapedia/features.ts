@@ -798,9 +798,9 @@ Tutorial examples can be cloned into personal tasks for editing and experimentat
     content: {
       ru: `# Каталог ролей
 
-AI-Hydra включает 12 специализированных ИИ-ролей, разделённых на две группы.
+AI-Hydra включает 18 специализированных ИИ-ролей, разделённых на четыре группы.
 
-## Экспертные роли (6)
+## Экспертные роли (9)
 
 | Роль | Иконка | Специализация |
 |------|--------|---------------|
@@ -810,17 +810,23 @@ AI-Hydra включает 12 специализированных ИИ-роле�
 | Консультант | \`Lightbulb\` | Креативные подходы, альтернативы |
 | Модератор | \`Gavel\` | Структурирование дискуссии |
 | Советник | \`HandHelping\` | Практические рекомендации |
-
-## Технический персонал (6)
-
-| Роль | Иконка | Специализация |
-|------|--------|---------------|
 | Архивариус | \`Archive\` | Управление памятью, сохранение контекста |
 | Аналитик | \`LineChart\` | Анализ данных и метрик |
 | Веб-хантер | \`Globe\` | Поиск информации в интернете |
+
+## Технический персонал (3)
+
+| Роль | Иконка | Специализация |
+|------|--------|---------------|
 | Промпт-Инженер | \`Wand2\` | Оптимизация системных промптов |
 | Логистик | \`Route\` | Проверка и настройка потоков |
 | Инструменталист | \`Wrench\` | Создание и тестирование инструментов |
+
+## Юридические роли (1)
+
+| Роль | Иконка | Специализация |
+|------|--------|---------------|
+| Патентовед | \`FileSearch\` | Патентный поиск, составление заявок, юридическая консультация |
 
 ## Отдел ТехКонтроля (ОТК)
 
@@ -871,7 +877,7 @@ AI-Hydra включает 12 специализированных ИИ-роле�
 
 ### Карточка роли
 
-При выборе роли открывается детальная карточка с заголовком (иконка, имя, тип), описанием и четырьмя секциями:
+При выборе роли открывается детальная карточка с масштабированной типографикой (text-2xl заголовки, text-base описания) и пятью секциями:
 
 ### 1. Системный промпт
 
@@ -908,8 +914,13 @@ AI-Hydra включает 12 специализированных ИИ-роле�
 - Скрейпинг веб-страниц через Firecrawl
 - Статистика: количество чанков и статус обучения
 
-### 4. Настройки
+### 4. История назначений
 
+Хронология всех назначенных моделей на роль: текущая (активная), снятые (с причиной снятия), средний балл собеседования, даты.
+
+### 5. Настройки
+
+- **Модель по умолчанию** — выбор предпочтительной модели для роли с обоснованием выбора (rationale)
 - **Утверждение Супервизором** — переключатель Human-in-the-Loop. Когда включён, ответы роли требуют одобрения перед финализацией
 - **Технический персонал** — бейдж 🔧 для технических ролей
 
@@ -918,9 +929,9 @@ AI-Hydra включает 12 специализированных ИИ-роле�
 \`\`\``,
       en: `# Roles Catalog
 
-AI-Hydra includes 12 specialized AI roles divided into two groups.
+AI-Hydra includes 18 specialized AI roles divided into four groups.
 
-## Expert Roles (6)
+## Expert Roles (9)
 
 | Role | Icon | Specialization |
 |------|------|----------------|
@@ -930,17 +941,23 @@ AI-Hydra includes 12 specialized AI roles divided into two groups.
 | Consultant | \`Lightbulb\` | Creative approaches, alternatives |
 | Moderator | \`Gavel\` | Discussion structuring |
 | Advisor | \`HandHelping\` | Practical recommendations |
-
-## Technical Staff (6)
-
-| Role | Icon | Specialization |
-|------|------|----------------|
 | Archivist | \`Archive\` | Memory management, context preservation |
 | Analyst | \`LineChart\` | Data and metrics analysis |
 | Web Hunter | \`Globe\` | Internet information search |
+
+## Technical Staff (3)
+
+| Role | Icon | Specialization |
+|------|------|----------------|
 | Prompt Engineer | \`Wand2\` | System prompt optimization |
 | Flow Regulator | \`Route\` | Flow checking and configuration |
 | Toolsmith | \`Wrench\` | Tool creation and testing |
+
+## Legal Roles (1)
+
+| Role | Icon | Specialization |
+|------|------|----------------|
+| Patent Attorney | \`FileSearch\` | Patent search, application drafting, legal consultation |
 
 ## Quality Control Department (QCD)
 
@@ -991,7 +1008,7 @@ The **Staff** section is the administration center for all roles. The interface 
 
 ### Role Card
 
-Selecting a role opens a detailed card with a header (icon, name, type), description, and four sections:
+Selecting a role opens a detailed card with scaled typography (text-2xl headings, text-base descriptions) and five sections:
 
 ### 1. System Prompt
 
@@ -1028,8 +1045,13 @@ Available only for **technical roles**. Allows training a role with documentatio
 - Web page scraping via Firecrawl
 - Statistics: chunk count and training status
 
-### 4. Settings
+### 4. Assignment History
 
+Chronology of all models assigned to the role: current (active), removed (with removal reason), average interview score, dates.
+
+### 5. Settings
+
+- **Default Model** — preferred model selection for the role with choice rationale
 - **Supervisor Approval** — Human-in-the-Loop toggle. When enabled, role responses require approval before finalization
 - **Technical Staff** — 🔧 badge for technical roles
 
@@ -1230,7 +1252,7 @@ In each model's settings you can choose:
 | **Когнитивный арсенал** | Дашборд «подсознания» Гидры в 6 слоях: Инстинкты (промпты), Паттерны (поведение), Арсенал инструментов (Prompt/HTTP), Потоки мыслей, Достижения (конкурсы/собеседования), Долгосрочная память (3-уровневый RAG) |
 | **Контекст сессий** | Inline-менеджер чанков \`session_memory\` с фильтрами типов (decision/context/instruction/evaluation/summary/message), обнаружение дубликатов, массовое удаление, фидбэк 👍/👎 |
 | **Опыт ролей** | Записи \`role_memory\` с confidence-скорами, группировка по ролям, inline-удаление, раскрывающиеся детали. Локализованный контент через \`metadata.content_en\` |
-| **База знаний** | \`role_knowledge\` (RAG) — инструменты очистки: сканирование дубликатов, удаление устаревших версий по \`source_url\`, фильтрация по роли и категории |
+| **База знаний** | \`role_knowledge\` (RAG) — инструменты очистки: сканирование дубликатов, удаление устаревших версий по \`source_url\`, фильтрация по роли и категории. Состояние свёрнутости групп сохраняется в localStorage |
 | **Графы памяти и связей** | Два SVG-графа в двухколоночном layout (560px): Граф памяти (Гидра → роли → сессии, hover-glow, «горячие роли» ⚡) и Граф связей арсенала (гексагональная структура когнитивных слоёв) |
 | **Файлохранилище** | Файловый браузер с локализованными метками бакетов (Архив чатов / Файлы задач / Аватары) и тултипами технических ID |
 | **RAG-аналитика** | Мониторинг-дашборд: средняя релевантность, общее число извлечений, статистика фидбэка, распределение типов чанков |
@@ -1362,7 +1384,7 @@ SVG-граф с гексагональной структурой показыв
 
 Фильтрация по роли, дате (locale-aware Calendar) и статусу. Риск-индикаторы (🟢/🟡/🔴) в уведомлениях. Дублирование уведомлений исключено фильтрацией по статусу \`revised\`.
 
-## Модульная архитектура (v0.2.18)
+## Модульная архитектура (v0.2.20)
 
 Начиная с версии 0.2.18, Memory Hub реализован как набор из 11 независимых модулей в \`src/components/memory/\`. Монолитный файл (4225 строк) декомпозирован на атомарные компоненты:
 
@@ -1446,7 +1468,7 @@ Central command center of Hydra's entire cognitive subsystem — 8 functional ar
 | **Cognitive Arsenal** | Dashboard of Hydra's "subconscious" in 6 layers: Instincts (prompts), Patterns (behavior), Tool Arsenal (Prompt/HTTP), Thought Flows, Achievements (contests/interviews), Long-term Memory (3-level RAG) |
 | **Session Memory** | Inline chunk manager for \`session_memory\` with type filters (decision/context/instruction/evaluation/summary/message), duplicate detection, batch deletion, feedback 👍/👎 |
 | **Role Experience** | \`role_memory\` records with confidence scores, role grouping, inline deletion, expandable details. Localized content display via \`metadata.content_en\` |
-| **Knowledge Base** | \`role_knowledge\` (RAG) — cleanup tools: duplicate scanning, outdated version deletion by \`source_url\`, filtering by role and category |
+| **Knowledge Base** | \`role_knowledge\` (RAG) — cleanup tools: duplicate scanning, outdated version deletion by \`source_url\`, filtering by role and category. Collapsed group state persists in localStorage |
 | **Memory & Connections Graphs** | Two SVG graphs in two-column layout (560px): Memory Graph (Hydra → roles → sessions, hover-glow, "hot roles" ⚡) and Arsenal Connections Graph (hexagonal cognitive layer structure) |
 | **File Storage** | File browser with localized bucket labels (Chat Archive / Task Files / Avatars) and technical ID tooltips |
 | **RAG Analytics** | Monitoring dashboard: average relevance, total retrievals, feedback statistics, chunk type distribution |
@@ -1578,7 +1600,7 @@ Each entry contains bilingual content:
 
 Filtering by role, date (locale-aware Calendar), and status. Risk indicators (🟢/🟡/🔴) in notifications. Duplicate notifications prevented by \`revised\` status filtering.
 
-## Modular Architecture (v0.2.18)
+## Modular Architecture (v0.2.20)
 
 Since v0.2.18, Memory Hub is implemented as 11 independent modules in \`src/components/memory/\`. The monolithic file (4,225 lines) was decomposed into atomic components:
 

@@ -3,7 +3,7 @@
   <p><em>Where even dogmas evolve</em></p>
   <p><a href="README_RU.md">🇷🇺 Русский</a> · 🇬🇧 <b>English</b></p>
 
-  ![Version](https://img.shields.io/badge/version-0.2.19--alpha-0ff?style=flat-square&logo=semver&logoColor=white)
+  ![Version](https://img.shields.io/badge/version-0.2.20--alpha-0ff?style=flat-square&logo=semver&logoColor=white)
   ![Build](https://img.shields.io/badge/build-passing-brightgreen?style=flat-square&logo=github-actions&logoColor=white)
   ![License](https://img.shields.io/badge/license-MIT-blue?style=flat-square)
   ![Stack](https://img.shields.io/badge/stack-React%2018%20%2B%20TypeScript%20%2B%20Supabase-8b5cf6?style=flat-square)
@@ -66,7 +66,7 @@ Automatic experience consolidation: patterns from `role_memory` are distilled in
 
 ### 🏢 Management & Tools
 
-**Staff Roles (HR Department)** — Role hierarchy editor, behavioral patterns, model interviews (briefing → tests → verdict), interview history table, Role Knowledge Base (RAG), certification 🛡️
+**Staff Roles (HR Department)** — Role hierarchy editor, behavioral patterns, model interviews (briefing → tests → verdict), interview history table, Role Knowledge Base (RAG), certification 🛡️, persistent collapse state in Knowledge Base, scaled typography in detail panels
 
 **Task Management** — Session hub, model configuration via Sheet, task files, session memory (embeddings), tutorial examples with 26 pre-seeded conversations (clone-to-personal)
 
@@ -133,7 +133,7 @@ React 18 + TypeScript + Vite
 Lovable Cloud (Supabase)
 ├── Auth: Email/password authentication
 ├── Database: PostgreSQL with RLS
-├── Edge Functions: Deno runtime (20 functions)
+├── Edge Functions: Deno runtime (20+ functions)
 ├── Vault: Secure API key storage
 ├── Storage: File attachments & avatars
 ├── Vector Search: pgvector for embeddings
@@ -314,4 +314,4 @@ supabase/functions/     # 20 Edge Functions
 
 ---
 
-*Last updated: February 23, 2026*
+*Last updated: February 27, 2026*
