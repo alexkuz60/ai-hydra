@@ -668,8 +668,8 @@ export function ChroniclesTab({ language, isSupervisor }: { language: string; is
       {/* Autorun banner */}
       {isSupervisor && !loading && rejectedCount > 0 && (
         <div className="sticky top-0 z-10 rounded-xl border border-hydra-critical/40 bg-hydra-critical/10 backdrop-blur-sm p-3 flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2 text-sm">
-            <AlertCircle className="h-4 w-4 text-hydra-critical shrink-0" />
+          <div className="flex items-center gap-2 text-base">
+            <AlertCircle className="h-4.5 w-4.5 text-hydra-critical shrink-0" />
             <span className="text-hydra-critical font-medium">
               {isRu
                  ? `${rejectedCount} ${rejectedCount === 1 ? 'запись отклонена' : rejectedCount < 5 ? 'записи отклонены' : 'записей отклонено'} — требуют авторевизии`
@@ -689,8 +689,8 @@ export function ChroniclesTab({ language, isSupervisor }: { language: string; is
           <CardContent className="p-4 space-y-3">
             <div className="flex items-center gap-2">
               <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input value={searchText} onChange={e => setSearchText(e.target.value)} placeholder={tm('chron.searchPlaceholder')} className="pl-9 h-9 text-sm" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4.5 w-4.5 text-muted-foreground" />
+                <Input value={searchText} onChange={e => setSearchText(e.target.value)} placeholder={tm('chron.searchPlaceholder')} className="pl-9 h-9 text-base" />
               </div>
               {hasActiveFilters && (
                 <Button variant="ghost" size="sm" onClick={clearFilters} className="h-9 gap-1.5 text-muted-foreground hover:text-foreground shrink-0">
@@ -700,8 +700,8 @@ export function ChroniclesTab({ language, isSupervisor }: { language: string; is
               )}
             </div>
             <div className="flex flex-wrap gap-2 items-center">
-              <Filter className="h-4 w-4 text-muted-foreground shrink-0" />
-              <select value={filterResolution} onChange={e => setFilterResolution(e.target.value)} className="h-8 rounded-md border border-input bg-background px-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring">
+              <Filter className="h-4.5 w-4.5 text-muted-foreground shrink-0" />
+              <select value={filterResolution} onChange={e => setFilterResolution(e.target.value)} className="h-8 rounded-md border border-input bg-background px-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring">
                 <option value="all">{tm('chron.allResolutions')}</option>
                 <option value="pending">{tm('chronicles.pending')}</option>
                 <option value="approved">{tm('chronicles.agreed')}</option>
@@ -710,13 +710,13 @@ export function ChroniclesTab({ language, isSupervisor }: { language: string; is
                 <option value="revised">{tm('chronicles.revised')}</option>
               </select>
               {uniqueRoles.length > 0 && (
-                <select value={filterRole} onChange={e => setFilterRole(e.target.value)} className="h-8 rounded-md border border-input bg-background px-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring">
+                <select value={filterRole} onChange={e => setFilterRole(e.target.value)} className="h-8 rounded-md border border-input bg-background px-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring">
                   <option value="all">{tm('chron.allRoles')}</option>
                   {uniqueRoles.map(r => <option key={r} value={r}>{r}</option>)}
                 </select>
               )}
               <div className="flex items-center gap-1.5 ml-auto">
-                <span className="text-xs text-muted-foreground shrink-0">{tm('chron.from')}</span>
+                <span className="text-sm text-muted-foreground shrink-0">{tm('chron.from')}</span>
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button variant="outline" size="sm" className={cn("h-8 px-2 text-xs font-normal gap-1", !filterDateFrom && "text-muted-foreground")}>
@@ -742,7 +742,7 @@ export function ChroniclesTab({ language, isSupervisor }: { language: string; is
                     )}
                   </PopoverContent>
                 </Popover>
-                <span className="text-xs text-muted-foreground shrink-0">{tm('chron.to')}</span>
+                <span className="text-sm text-muted-foreground shrink-0">{tm('chron.to')}</span>
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button variant="outline" size="sm" className={cn("h-8 px-2 text-xs font-normal gap-1", !filterDateTo && "text-muted-foreground")}>
@@ -771,7 +771,7 @@ export function ChroniclesTab({ language, isSupervisor }: { language: string; is
               </div>
             </div>
             {hasActiveFilters && (
-              <p className="text-xs text-muted-foreground">
+              <p className="text-sm text-muted-foreground">
                 {isRu ? `Показано ${filteredEntries.length} из ${entries.length}` : `Showing ${filteredEntries.length} of ${entries.length}`}
               </p>
             )}
@@ -801,20 +801,20 @@ export function ChroniclesTab({ language, isSupervisor }: { language: string; is
                   <CardHeader className="pb-3">
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex items-center gap-2 flex-1 min-w-0">
-                        <Badge variant="outline" className="font-mono text-xs shrink-0 border-muted-foreground/30">{entry.entry_code}</Badge>
-                        <span className={`inline-flex items-center gap-1 text-xs ${statusCfg.color}`}>
-                          <StatusIcon className="h-3 w-3" />
+                        <Badge variant="outline" className="font-mono text-sm shrink-0 border-muted-foreground/30">{entry.entry_code}</Badge>
+                        <span className={`inline-flex items-center gap-1 text-sm ${statusCfg.color}`}>
+                          <StatusIcon className="h-3.5 w-3.5" />
                           {statusCfg.label[isRu ? 'ru' : 'en']}
                         </span>
                       </div>
-                      <span className="text-xs text-muted-foreground shrink-0">{entry.entry_date}</span>
+                      <span className="text-sm text-muted-foreground shrink-0">{entry.entry_date}</span>
                     </div>
-                    <CardTitle className="text-base mt-1">{loc(entry.title, entry.title_en) || entry.title}</CardTitle>
+                    <CardTitle className="text-lg mt-1">{loc(entry.title, entry.title_en) || entry.title}</CardTitle>
                     <div className="flex items-center gap-2 flex-wrap mt-1">
-                      <span className="text-xs text-muted-foreground font-medium">{tm('chron.target')}</span>
+                      <span className="text-sm text-muted-foreground font-medium">{tm('chron.target')}</span>
                       <RoleBadge value={entry.role_object} isRu={isRu} />
-                      <span className="text-xs text-muted-foreground">·</span>
-                      <span className="text-xs text-muted-foreground font-medium">{tm('chron.initiatorLabel')}</span>
+                      <span className="text-sm text-muted-foreground">·</span>
+                      <span className="text-sm text-muted-foreground font-medium">{tm('chron.initiatorLabel')}</span>
                       <RoleBadge value={entry.initiator} isRu={isRu} />
                     </div>
                   </CardHeader>
@@ -831,23 +831,23 @@ export function ChroniclesTab({ language, isSupervisor }: { language: string; is
                       >
                         <div className="rounded-lg border border-border bg-muted/20 p-3">
                           <CollapsibleTrigger className="flex items-center justify-between w-full">
-                            <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-                              <Lightbulb className="h-3.5 w-3.5" />
+                            <div className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground">
+                              <Lightbulb className="h-4 w-4" />
                               {tm('chron.hypothesis')}
                             </div>
-                            <span className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1">
+                            <span className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1">
                               {expandedCards.has(entry.id) ? tm('chron.collapseDetails') : tm('chron.showDetails')}
-                              {!expandedCards.has(entry.id) && entry.ai_revision && <FlaskConical className="h-3 w-3 text-hydra-expert ml-1" />}
+                              {!expandedCards.has(entry.id) && entry.ai_revision && <FlaskConical className="h-3.5 w-3.5 text-hydra-expert ml-1" />}
                             </span>
                           </CollapsibleTrigger>
-                          <p className="text-sm text-muted-foreground leading-relaxed mt-2">{loc(entry.hypothesis, entry.hypothesis_en)}</p>
+                          <p className="text-base text-muted-foreground leading-relaxed mt-2">{loc(entry.hypothesis, entry.hypothesis_en)}</p>
                         </div>
 
                         <CollapsibleContent className="space-y-4 mt-4">
                           {entry.summary && (
                             <div className="rounded-lg border border-border bg-muted/20 p-3">
-                              <p className="text-xs font-medium text-muted-foreground mb-2">{tm('chron.result')}</p>
-                              <p className="text-sm text-muted-foreground leading-relaxed">{loc(entry.summary, entry.summary_en)}</p>
+                              <p className="text-sm font-medium text-muted-foreground mb-2">{tm('chron.result')}</p>
+                              <p className="text-base text-muted-foreground leading-relaxed">{loc(entry.summary, entry.summary_en)}</p>
                             </div>
                           )}
 
@@ -855,9 +855,9 @@ export function ChroniclesTab({ language, isSupervisor }: { language: string; is
                             <div className="grid grid-cols-2 gap-3">
                               {mb && Object.keys(mb).length > 0 && (
                                 <div className="rounded-lg border border-border p-3 space-y-1.5">
-                                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{tm('chron.before')}</p>
+                                  <p className="text-sm font-medium text-muted-foreground uppercase tracking-wide">{tm('chron.before')}</p>
                                   {Object.entries(mb).map(([k, v]) => (
-                                    <div key={k} className="flex justify-between text-xs">
+                                    <div key={k} className="flex justify-between text-sm">
                                       <TermLabel term={k} className="text-muted-foreground">{getTermLabel(k, isRu)}</TermLabel>
                                       <span className="font-mono font-medium">{String(v)}</span>
                                     </div>
@@ -866,9 +866,9 @@ export function ChroniclesTab({ language, isSupervisor }: { language: string; is
                               )}
                               {mat && Object.keys(mat).length > 0 && (
                                 <div className="rounded-lg border border-hydra-success/30 bg-hydra-success/5 p-3 space-y-1.5">
-                                  <p className="text-xs font-medium text-hydra-success uppercase tracking-wide">{tm('chron.targetArrow')}</p>
+                                  <p className="text-sm font-medium text-hydra-success uppercase tracking-wide">{tm('chron.targetArrow')}</p>
                                   {Object.entries(mat).map(([k, v]) => (
-                                    <div key={k} className="flex justify-between text-xs">
+                                    <div key={k} className="flex justify-between text-sm">
                                       <TermLabel term={k} className="text-muted-foreground">{getTermLabel(k, isRu)}</TermLabel>
                                       <span className="font-mono font-medium text-hydra-success">{String(v)}</span>
                                     </div>
@@ -882,11 +882,11 @@ export function ChroniclesTab({ language, isSupervisor }: { language: string; is
                             <Collapsible open={expandedRevision === entry.id} onOpenChange={() => setExpandedRevision(expandedRevision === entry.id ? null : entry.id)}>
                               <div className="rounded-lg border border-hydra-expert/30 bg-hydra-expert/5 p-3">
                                 <CollapsibleTrigger className="flex items-center justify-between w-full">
-                                  <div className="flex items-center gap-1.5 text-xs text-hydra-expert font-medium">
-                                    <FlaskConical className="h-3.5 w-3.5" />
+                                  <div className="flex items-center gap-1.5 text-sm text-hydra-expert font-medium">
+                                    <FlaskConical className="h-4 w-4" />
                                      {tm('chron.aiRevision')}
                                   </div>
-                                  <span className="text-xs text-hydra-expert hover:text-hydra-expert/80">
+                                  <span className="text-sm text-hydra-expert hover:text-hydra-expert/80">
                                     {expandedRevision === entry.id ? tm('chron.collapse') : tm('chron.expand')}
                                   </span>
                                 </CollapsibleTrigger>
@@ -907,17 +907,17 @@ export function ChroniclesTab({ language, isSupervisor }: { language: string; is
                       <>
                         {entry.summary && (
                           <div className="rounded-lg border border-border bg-muted/20 p-3">
-                            <p className="text-xs font-medium text-muted-foreground mb-2">{tm('chron.result')}</p>
-                            <p className="text-sm text-muted-foreground leading-relaxed">{loc(entry.summary, entry.summary_en)}</p>
+                            <p className="text-sm font-medium text-muted-foreground mb-2">{tm('chron.result')}</p>
+                            <p className="text-base text-muted-foreground leading-relaxed">{loc(entry.summary, entry.summary_en)}</p>
                           </div>
                         )}
                         {((mb && Object.keys(mb).length > 0) || (mat && Object.keys(mat).length > 0)) && (
                           <div className="grid grid-cols-2 gap-3">
                             {mb && Object.keys(mb).length > 0 && (
                               <div className="rounded-lg border border-border p-3 space-y-1.5">
-                                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{tm('chron.before')}</p>
+                                <p className="text-sm font-medium text-muted-foreground uppercase tracking-wide">{tm('chron.before')}</p>
                                 {Object.entries(mb).map(([k, v]) => (
-                                  <div key={k} className="flex justify-between text-xs">
+                                  <div key={k} className="flex justify-between text-sm">
                                     <TermLabel term={k} className="text-muted-foreground">{getTermLabel(k, isRu)}</TermLabel>
                                     <span className="font-mono font-medium">{String(v)}</span>
                                   </div>
@@ -926,9 +926,9 @@ export function ChroniclesTab({ language, isSupervisor }: { language: string; is
                             )}
                             {mat && Object.keys(mat).length > 0 && (
                               <div className="rounded-lg border border-hydra-success/30 bg-hydra-success/5 p-3 space-y-1.5">
-                                <p className="text-xs font-medium text-hydra-success uppercase tracking-wide">{tm('chron.targetArrow')}</p>
+                                <p className="text-sm font-medium text-hydra-success uppercase tracking-wide">{tm('chron.targetArrow')}</p>
                                 {Object.entries(mat).map(([k, v]) => (
-                                  <div key={k} className="flex justify-between text-xs">
+                                  <div key={k} className="flex justify-between text-sm">
                                     <TermLabel term={k} className="text-muted-foreground">{getTermLabel(k, isRu)}</TermLabel>
                                     <span className="font-mono font-medium text-hydra-success">{String(v)}</span>
                                   </div>
@@ -941,11 +941,11 @@ export function ChroniclesTab({ language, isSupervisor }: { language: string; is
                           <Collapsible open={expandedRevision === entry.id} onOpenChange={() => setExpandedRevision(expandedRevision === entry.id ? null : entry.id)}>
                             <div className="rounded-lg border border-hydra-expert/30 bg-hydra-expert/5 p-3">
                               <CollapsibleTrigger className="flex items-center justify-between w-full">
-                                <div className="flex items-center gap-1.5 text-xs text-hydra-expert font-medium">
-                                  <FlaskConical className="h-3.5 w-3.5" />
+                                <div className="flex items-center gap-1.5 text-sm text-hydra-expert font-medium">
+                                  <FlaskConical className="h-4 w-4" />
                                    {tm('chron.aiRevision')}
                                 </div>
-                                <span className="text-xs text-hydra-expert hover:text-hydra-expert/80">
+                                <span className="text-sm text-hydra-expert hover:text-hydra-expert/80">
                                   {expandedRevision === entry.id ? tm('chron.collapse') : tm('chron.expand')}
                                 </span>
                               </CollapsibleTrigger>
@@ -962,10 +962,10 @@ export function ChroniclesTab({ language, isSupervisor }: { language: string; is
 
                     {/* Resolution row */}
                     <div className="flex items-center gap-2 pt-1 border-t border-border flex-wrap">
-                      <span className="text-xs text-muted-foreground">{tm('chron.supervisorResolution')}</span>
-                      <span className={`text-xs font-medium ${resolutionCfg.color}`}>{resolutionCfg.label[isRu ? 'ru' : 'en']}</span>
+                      <span className="text-sm text-muted-foreground">{tm('chron.supervisorResolution')}</span>
+                      <span className={`text-sm font-medium ${resolutionCfg.color}`}>{resolutionCfg.label[isRu ? 'ru' : 'en']}</span>
                       {entry.supervisor_comment && (
-                        <span className="text-xs text-muted-foreground">— {loc(entry.supervisor_comment, entry.supervisor_comment_en)}</span>
+                        <span className="text-sm text-muted-foreground">— {loc(entry.supervisor_comment, entry.supervisor_comment_en)}</span>
                       )}
                       {isSupervisor && (
                         <div className="flex items-center gap-1 ml-auto">
@@ -973,9 +973,9 @@ export function ChroniclesTab({ language, isSupervisor }: { language: string; is
                             <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
                           ) : (
                             <>
-                              <Button variant="ghost" size="sm" onClick={() => setResolution(entry.id, 'approved')} disabled={entry.supervisor_resolution === 'approved'} className={cn('h-6 text-xs', entry.supervisor_resolution === 'approved' ? 'text-hydra-success bg-hydra-success/10' : 'text-muted-foreground hover:text-hydra-success')}>✅ {tm('chron.agree')}</Button>
-                              <Button variant="ghost" size="sm" onClick={() => setResolution(entry.id, 'wish')} disabled={entry.supervisor_resolution === 'wish'} className={cn('h-6 text-xs', entry.supervisor_resolution === 'wish' ? 'text-hydra-info bg-hydra-info/10' : 'text-muted-foreground hover:text-hydra-info')}>💬 {tm('chron.wish')}</Button>
-                              <Button variant="ghost" size="sm" onClick={() => setResolution(entry.id, 'rejected')} disabled={entry.supervisor_resolution === 'rejected'} className={cn('h-6 text-xs', entry.supervisor_resolution === 'rejected' ? 'text-hydra-critical bg-hydra-critical/10' : 'text-muted-foreground hover:text-hydra-critical')}>❌ {tm('chron.reject')}</Button>
+                              <Button variant="ghost" size="sm" onClick={() => setResolution(entry.id, 'approved')} disabled={entry.supervisor_resolution === 'approved'} className={cn('h-7 text-sm', entry.supervisor_resolution === 'approved' ? 'text-hydra-success bg-hydra-success/10' : 'text-muted-foreground hover:text-hydra-success')}>✅ {tm('chron.agree')}</Button>
+                              <Button variant="ghost" size="sm" onClick={() => setResolution(entry.id, 'wish')} disabled={entry.supervisor_resolution === 'wish'} className={cn('h-7 text-sm', entry.supervisor_resolution === 'wish' ? 'text-hydra-info bg-hydra-info/10' : 'text-muted-foreground hover:text-hydra-info')}>💬 {tm('chron.wish')}</Button>
+                              <Button variant="ghost" size="sm" onClick={() => setResolution(entry.id, 'rejected')} disabled={entry.supervisor_resolution === 'rejected'} className={cn('h-7 text-sm', entry.supervisor_resolution === 'rejected' ? 'text-hydra-critical bg-hydra-critical/10' : 'text-muted-foreground hover:text-hydra-critical')}>❌ {tm('chron.reject')}</Button>
                             </>
                           )}
                         </div>
