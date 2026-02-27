@@ -49,7 +49,8 @@ import {
   Compass,
   Map,
   BrainCircuit,
-  Atom
+  Atom,
+  PanelLeftClose
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useGuideTourContext } from '@/contexts/GuideTourContext';
@@ -102,14 +103,19 @@ export function AppSidebar() {
       <SidebarHeader className="border-b border-sidebar-border">
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton
-              size="lg"
-              tooltip="AI-Hydra"
-              onClick={() => {
-                toggleSidebar();
-              }}
-              className="flex items-center gap-1.5 group cursor-pointer"
-            >
+            <div className="flex items-center w-full">
+              <SidebarMenuButton
+                size="lg"
+                tooltip="AI-Hydra"
+                onClick={() => {
+                  if (isCollapsed) {
+                    toggleSidebar();
+                  } else if (location.pathname !== '/') {
+                    navigate('/');
+                  }
+                }}
+                className="flex items-center gap-1.5 group cursor-pointer flex-1"
+              >
                 <img
                   src={hydraLogo}
                   alt=""
@@ -124,7 +130,18 @@ export function AppSidebar() {
                 >
                   ai*hYdra
                 </span>
-            </SidebarMenuButton>
+              </SidebarMenuButton>
+              {!isCollapsed && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={toggleSidebar}
+                  className="h-7 w-7 shrink-0 text-muted-foreground hover:text-foreground"
+                >
+                  <PanelLeftClose className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
