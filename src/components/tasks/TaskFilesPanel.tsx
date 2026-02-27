@@ -231,7 +231,7 @@ export function TaskFilesPanel({ sessionId, className }: TaskFilesPanelProps) {
         </div>
       ) : (
         <>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2 max-h-[280px] overflow-y-auto pr-1">
             {files.map(file => {
               const isImage = isImageMime(file.mime_type);
               const url = signedUrls[file.file_path];
