@@ -12,6 +12,7 @@ export interface TaskFile {
   file_path: string;
   file_size: number;
   mime_type: string | null;
+  comment: string | null;
   created_at: string;
 }
 
@@ -99,7 +100,18 @@ export function useTaskFiles(sessionId: string | null) {
     }
   }, []);
 
-  
+  const updateFileComment = useCallback(async (fileId: string, comment: string) => {
+    try {
+      const { error } = await supabase
+        .from('task_files')
+        .update({ comment: comment || null })
+        .eq('id', fileId);
+      if (error) throw error;
+      setFiles(prev => prev.map(f => f.id === fileId ? { ...f, comment: comment || null } : f));
+    } catch (e: any) {
+      toast.error(e.message || 'Failed to save comment');
+    }
+  }, []);
 
   const getSignedUrl = useCallback(async (filePath: string) => {
     const { data, error } = await supabase.storage
@@ -109,5 +121,5 @@ export function useTaskFiles(sessionId: string | null) {
     return data.signedUrl;
   }, []);
 
-  return { files, loading, uploading, uploadFile, deleteFile, getSignedUrl };
+  return { files, loading, uploading, uploadFile, deleteFile, updateFileComment, getSignedUrl };
 }

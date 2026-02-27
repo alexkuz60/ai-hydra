@@ -1,16 +1,29 @@
 import React, { useRef, useState, useCallback } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useTaskFiles } from '@/hooks/useTaskFiles';
+import { useFileDigests } from '@/hooks/useFileDigests';
 import { Button } from '@/components/ui/button';
-import { Paperclip, Upload, Trash2, FileText, Image, File, Loader2, Download, ExternalLink } from 'lucide-react';
+import { Paperclip, Upload, Trash2, FileText, Image, File, Loader2, Eye } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
-import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import { wt } from '@/components/warroom/i18n';
+import { FileViewerDialog } from './FileViewerDialog';
+import { toast } from 'sonner';
 
 interface TaskFilesPanelProps {
   sessionId: string | null;
   className?: string;
+}
+
+function isImageMime(mimeType: string | null): boolean {
+  return !!mimeType && mimeType.startsWith('image/');
+}
+
+function getFileIcon(mimeType: string | null) {
+  if (!mimeType) return <File className="h-3.5 w-3.5" />;
+  if (isImageMime(mimeType)) return <Image className="h-3.5 w-3.5 text-blue-400" />;
+  if (mimeType.includes('pdf')) return <FileText className="h-3.5 w-3.5 text-red-400" />;
+  return <FileText className="h-3.5 w-3.5 text-muted-foreground" />;
 }
 
 function formatFileSize(bytes: number): string {
@@ -19,47 +32,14 @@ function formatFileSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-function isImageMime(mimeType: string | null): boolean {
-  return !!mimeType && mimeType.startsWith('image/');
-}
-
-function getFileIcon(mimeType: string | null) {
-  if (!mimeType) return <File className="h-4 w-4" />;
-  if (isImageMime(mimeType)) return <Image className="h-4 w-4 text-blue-400" />;
-  if (mimeType.includes('pdf')) return <FileText className="h-4 w-4 text-red-400" />;
-  return <FileText className="h-4 w-4 text-muted-foreground" />;
-}
-
-/** Image thumbnail with fullscreen dialog on click */
-function ImageFileThumbnail({ url, name }: { url: string; name: string }) {
-  return (
-    <Dialog>
-      <DialogTrigger asChild>
-        <button
-          type="button"
-          className={cn(
-            "relative group rounded-md overflow-hidden border border-border/50",
-            "w-16 h-16 cursor-pointer hover:border-primary/50 transition-colors shrink-0"
-          )}
-        >
-          <img src={url} alt={name} className="w-full h-full object-cover" />
-          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
-            <ExternalLink className="h-4 w-4 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
-          </div>
-        </button>
-      </DialogTrigger>
-      <DialogContent className="max-w-4xl max-h-[90vh] p-2">
-        <img src={url} alt={name} className="w-full h-full object-contain rounded" />
-      </DialogContent>
-    </Dialog>
-  );
-}
-
 export function TaskFilesPanel({ sessionId, className }: TaskFilesPanelProps) {
   const { language } = useLanguage();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { files, loading, uploading, uploadFile, deleteFile, getSignedUrl } = useTaskFiles(sessionId);
+  const { files, loading, uploading, uploadFile, deleteFile, updateFileComment, getSignedUrl } = useTaskFiles(sessionId);
+  const { digests } = useFileDigests(sessionId);
   const [signedUrls, setSignedUrls] = useState<Record<string, string>>({});
+  const [viewerOpen, setViewerOpen] = useState(false);
+  const [viewerInitialFileId, setViewerInitialFileId] = useState<string | undefined>();
 
   // Fetch signed URLs for image files
   const getOrFetchUrl = useCallback(async (filePath: string): Promise<string> => {
@@ -69,7 +49,7 @@ export function TaskFilesPanel({ sessionId, className }: TaskFilesPanelProps) {
     return url;
   }, [signedUrls, getSignedUrl]);
 
-  // Pre-fetch signed URLs for images on mount / file change
+  // Pre-fetch signed URLs for images
   React.useEffect(() => {
     files.forEach(f => {
       if (isImageMime(f.mime_type) && !signedUrls[f.file_path]) {
@@ -97,6 +77,16 @@ export function TaskFilesPanel({ sessionId, className }: TaskFilesPanelProps) {
     } catch {}
   };
 
+  const handleOpenViewer = (fileId?: string) => {
+    setViewerInitialFileId(fileId);
+    setViewerOpen(true);
+  };
+
+  const handleSaveComment = async (fileId: string, comment: string) => {
+    await updateFileComment(fileId, comment);
+    toast.success(wt('taskFiles.commentSaved', language));
+  };
+
   if (!sessionId) return null;
 
   return (
@@ -111,16 +101,29 @@ export function TaskFilesPanel({ sessionId, className }: TaskFilesPanelProps) {
             </span>
           )}
         </h3>
-        <Button
-          variant="outline"
-          size="sm"
-          className="h-7 text-xs gap-1.5"
-          onClick={() => fileInputRef.current?.click()}
-          disabled={uploading}
-        >
-          {uploading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Upload className="h-3 w-3" />}
-          {wt('taskFiles.upload', language)}
-        </Button>
+        <div className="flex items-center gap-1.5">
+          {files.length > 0 && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 text-xs gap-1.5"
+              onClick={() => handleOpenViewer()}
+            >
+              <Eye className="h-3 w-3" />
+              {wt('taskFiles.viewAll', language)}
+            </Button>
+          )}
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-7 text-xs gap-1.5"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploading}
+          >
+            {uploading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Upload className="h-3 w-3" />}
+            {wt('taskFiles.upload', language)}
+          </Button>
+        </div>
         <input
           ref={fileInputRef}
           type="file"
@@ -142,22 +145,46 @@ export function TaskFilesPanel({ sessionId, className }: TaskFilesPanelProps) {
         </div>
       ) : (
         <TooltipProvider delayDuration={200}>
-          {/* Image previews row */}
-          {files.some(f => isImageMime(f.mime_type)) && (
-            <div className="flex flex-wrap gap-2 mb-2">
-              {files.filter(f => isImageMime(f.mime_type)).map(file => (
+          <div className="flex flex-wrap gap-2">
+            {files.map(file => {
+              const isImage = isImageMime(file.mime_type);
+              const url = signedUrls[file.file_path];
+
+              return (
                 <div key={file.id} className="relative group">
-                  {signedUrls[file.file_path] ? (
-                    <ImageFileThumbnail url={signedUrls[file.file_path]} name={file.file_name} />
-                  ) : (
-                    <div className="w-16 h-16 rounded-md border border-border/50 bg-muted/30 flex items-center justify-center">
-                      <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
-                    </div>
-                  )}
+                  <button
+                    type="button"
+                    onClick={() => handleOpenViewer(file.id)}
+                    className={cn(
+                      "rounded-md overflow-hidden border border-border/50",
+                      "hover:border-primary/50 transition-colors cursor-pointer",
+                      isImage ? "w-16 h-16" : "w-auto h-auto px-2.5 py-1.5 flex items-center gap-1.5 bg-muted/20"
+                    )}
+                  >
+                    {isImage && url ? (
+                      <img src={url} alt={file.file_name} className="w-full h-full object-cover" />
+                    ) : isImage ? (
+                      <div className="w-full h-full bg-muted/30 flex items-center justify-center">
+                        <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
+                      </div>
+                    ) : (
+                      <>
+                        {getFileIcon(file.mime_type)}
+                        <span className="text-[11px] font-medium truncate max-w-[100px]">{file.file_name}</span>
+                        <span className="text-[9px] text-muted-foreground">{formatFileSize(file.file_size)}</span>
+                      </>
+                    )}
+                    {file.comment && (
+                      <span className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-[8px] px-1 py-0.5 truncate">
+                        💬 {file.comment}
+                      </span>
+                    )}
+                  </button>
+
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <button
-                        onClick={() => deleteFile(file.id, file.file_path)}
+                        onClick={(e) => { e.stopPropagation(); deleteFile(file.id, file.file_path); }}
                         className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity z-10"
                       >
                         <Trash2 className="h-2.5 w-2.5" />
@@ -166,53 +193,23 @@ export function TaskFilesPanel({ sessionId, className }: TaskFilesPanelProps) {
                     <TooltipContent className="text-xs">{wt('taskFiles.delete', language)}</TooltipContent>
                   </Tooltip>
                 </div>
-              ))}
-            </div>
-          )}
-
-          {/* Non-image file list */}
-          <div className="space-y-1">
-            {files.filter(f => !isImageMime(f.mime_type)).map(file => (
-              <div
-                key={file.id}
-                className="flex items-center gap-2 px-2.5 py-1.5 rounded-md bg-muted/20 border border-border/20 group"
-              >
-                {getFileIcon(file.mime_type)}
-                <span className="text-xs font-medium truncate flex-1">{file.file_name}</span>
-                <span className="text-[10px] text-muted-foreground shrink-0">
-                  {formatFileSize(file.file_size)}
-                </span>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
-                      onClick={() => handleDownload(file.file_path, file.file_name)}
-                    >
-                      <Download className="h-3 w-3" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent className="text-xs">{wt('taskFiles.download', language)}</TooltipContent>
-                </Tooltip>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity text-destructive"
-                      onClick={() => deleteFile(file.id, file.file_path)}
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent className="text-xs">{wt('taskFiles.delete', language)}</TooltipContent>
-                </Tooltip>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </TooltipProvider>
       )}
+
+      <FileViewerDialog
+        open={viewerOpen}
+        onOpenChange={setViewerOpen}
+        files={files}
+        digests={digests}
+        signedUrls={signedUrls}
+        initialFileId={viewerInitialFileId}
+        onSaveComment={handleSaveComment}
+        onDownload={handleDownload}
+        getSignedUrl={getSignedUrl}
+      />
     </section>
   );
 }
