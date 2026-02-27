@@ -385,7 +385,7 @@ export function StorageTab() {
 
       {/* File list grouped by bucket */}
       <div className="border rounded-md overflow-hidden">
-        <ScrollArea className="h-[420px]">
+        <ScrollArea className="h-[calc(100vh-22rem)]">
           {loading ? (
             <div className="flex items-center justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
           ) : displayed.length === 0 ? (
