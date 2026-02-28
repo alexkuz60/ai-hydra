@@ -129,6 +129,8 @@
 | **Дизайн-токены** | Запрещены прямые цвета (`text-white`, `bg-cyan-500`). Только семантические токены из `index.css` | Все компоненты |
 | **Брифинг (Knowledge Pyramid)** | Сборка контекста для AI-роли ОБЯЗАНА использовать 3-уровневую фильтрацию: A (Global) → B (Organizational) → C (Expertise, только целевая роль). Запрещено передавать C-уровень чужой роли — это нарушает изоляцию контекста и вызывает межролевую предвзятость | Edge functions: `hydra-orchestrator` (сборка брифинга), `interview-*` (дельта-брифинг), `contest-*`, Hydrapedia UI (визуализация уровней) |
 | **Сертификация персонала** | При изменении `role_knowledge` или промптов роли ОБЯЗАНА срабатывать проверка версионирования (`useKnowledgeVersioning`). Расхождение → бейдж «Обновлено» → предложение переаттестации | Штатное расписание (`StaffTable`), `RecertificationPanel`, `KnowledgeChangedBadge` |
+| **Memory Hub (Hybrid Search)** | Поиск по памяти ОБЯЗАН использовать полный стек: BM25 + pgvector + RRF (k=60) → HyDE-смешивание (0.4 query + 0.6 hyde) → Gemini Reranking (0.7 rerank + 0.3 hybrid). Запрещено использовать только векторный поиск без reranking — это снижает семантическую точность | Edge functions: `hydra-orchestrator` (RAG-контекст), `hybrid_search_session_memory`, `hybrid_search_role_knowledge`, Memory Hub UI (8 зон) |
+| **Эмбеддинги** | Генерация ОБЯЗАНА использовать `openai/text-embedding-3-small` (1536 dim) через `generate-embeddings`. Fallback: персональный ключ OpenAI. Пакетная обработка по 10 чанков | Edge function: `generate-embeddings`, Memory Hub (пакетная индексация), `role_knowledge`, `session_memory`, `plan_conclusions` |
 
 #### Как добавить новый контракт
 1. Добавь строку в таблицу выше
