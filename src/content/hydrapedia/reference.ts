@@ -687,7 +687,7 @@ DAG-планировщик с параллелизмом. SSE-стриминг. 
 
 Агрегация из чатов, конкурсов, собеседований. Скользящее среднее \`criteria_averages\`. Ручная фиксация галлюцинаций.
 
-### 🧬 Автоактивация Эволюционера (1 контракт)
+### 🧬 Автоактивация Эволюционера (2 контура)
 
 **Контур А** — обнаружение устаревания:
 - ≥2 обновлений \`role_knowledge\` без переаттестации → \`knowledge_drift\`
@@ -695,8 +695,11 @@ DAG-планировщик с параллелизмом. SSE-стриминг. 
 - Триггеры БД: \`trg_knowledge_staleness\`, \`trg_model_change_staleness\`
 - Клиент: \`useKnowledgeStaleness\` → предупреждения в D-Chat, СПРЗ, Конкурсах
 
-**Контур Б** (будущее) — деградация производительности:
-- Скользящее среднее \`arbiter_score < 6.0\` три раза подряд → \`perf_decay\`
+**Контур B** — деградация качества:
+- Триггер БД: \`trg_model_degradation\` на \`model_statistics\`
+- Условие: \`arbiter_score < 6.0\` у последних 3 оценок подряд → \`model_degradation\`
+- Уведомление: полный \`model_id\` (провайдер/модель), роль, средний балл
+- Защита от дублей: одно непрочитанное уведомление на модель
 
 ### 🎨 Стиль (2 контракта)
 
@@ -766,7 +769,7 @@ Visionary → Strategist → Patent Attorney with context accumulation. Auto-cle
 
 Aggregation from chats, contests, interviews. Sliding \`criteria_averages\`. Manual hallucination tracking.
 
-### 🧬 Evolutioner Auto-Activation (1 contract)
+### 🧬 Evolutioner Auto-Activation (2 contours)
 
 **Contour A** — staleness detection:
 - ≥2 \`role_knowledge\` updates without recertification → \`knowledge_drift\`
@@ -774,8 +777,11 @@ Aggregation from chats, contests, interviews. Sliding \`criteria_averages\`. Man
 - DB triggers: \`trg_knowledge_staleness\`, \`trg_model_change_staleness\`
 - Client: \`useKnowledgeStaleness\` → warnings in D-Chat, SPSP, Contests
 
-**Contour B** (future) — performance decay:
-- Sliding average \`arbiter_score < 6.0\` three times in a row → \`perf_decay\`
+**Contour B** — quality degradation:
+- DB trigger: \`trg_model_degradation\` on \`model_statistics\`
+- Condition: \`arbiter_score < 6.0\` for last 3 consecutive evaluations → \`model_degradation\`
+- Notification: full \`model_id\` (provider/model), role, average score
+- Duplicate protection: one unread notification per model
 
 ### 🎨 Style (2 contracts)
 

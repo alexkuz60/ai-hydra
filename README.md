@@ -3,7 +3,7 @@
   <p><em>Where even dogmas evolve</em></p>
   <p><a href="README_RU.md">🇷🇺 Русский</a> · 🇬🇧 <b>English</b></p>
 
-  ![Version](https://img.shields.io/badge/version-0.2.21--alpha-0ff?style=flat-square&logo=semver&logoColor=white)
+  ![Version](https://img.shields.io/badge/version-0.2.22--alpha-0ff?style=flat-square&logo=semver&logoColor=white)
   ![Build](https://img.shields.io/badge/build-passing-brightgreen?style=flat-square&logo=github-actions&logoColor=white)
   ![License](https://img.shields.io/badge/license-MIT-blue?style=flat-square)
   ![Stack](https://img.shields.io/badge/stack-React%2018%20%2B%20TypeScript%20%2B%20Supabase-8b5cf6?style=flat-square)
@@ -254,16 +254,21 @@ A technical audit addressed key bottlenecks:
 | **D-Chat** | Context Isolation, Contest Migration | Per-role C-level briefing; `request_group_id` correlation |
 | **SPSP Pipeline** | Sequential Chain, Auto-Cleanup | Visionary→Strategist→Patent Attorney; `openai/`+`google/` → Lovable AI |
 | **Model Statistics** | Aggregation from all sources | Chat + Contests + Interviews → `model_statistics`; sliding `criteria_averages` |
-| **Evolutioner** | Auto-activation Contour A | ≥2 knowledge updates OR model change → `supervisor_notifications` |
+| **Evolutioner** | Contour A + Contour B | A: ≥2 knowledge updates / model change → `knowledge_drift`/`model_changed`; B: `arbiter_score < 6.0` × 3 in a row → `model_degradation` |
 | **Style** | Design Tokens, Localization | No direct colors; `language === 'ru'` pattern |
 
-### 🧬 Evolutioner Auto-Activation (Contour A)
+### 🧬 Evolutioner Auto-Activation (Contours A & B)
 
-Automatic detection of knowledge drift and model changes for hired staff:
+Two autonomous quality monitoring loops for hired staff:
 
+**Contour A — Knowledge Staleness:**
 - **Backend triggers**: `trg_knowledge_staleness` (on `role_knowledge`) and `trg_model_change_staleness` (on `user_settings`) generate `supervisor_notifications` with codes `knowledge_drift` / `model_changed`
 - **Client hook**: `useKnowledgeStaleness` surfaces warnings in D-Chat, SPSP, and Contest interfaces
-- **UI**: `StalenessWarningBanner` component displays recertification recommendations
+
+**Contour B — Quality Degradation:**
+- **Backend trigger**: `trg_model_degradation` (on `model_statistics`) — when `arbiter_score < 6.0` for the last 3 consecutive evaluations, generates a `model_degradation` notification
+- **Notification content**: full `model_id` (provider/model), role, and average score
+- **Duplicate protection**: no repeat notification while previous is unread
 
 ---
 
