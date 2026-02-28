@@ -89,6 +89,7 @@ export const hydrapediaNavGroups: HydrapediaNavGroup[] = [
       pick(referenceSections, 'api-integrations'),
       pick(referenceSections, 'advanced-patterns'),
       pick(referenceSections, 'faq'),
+      pick(referenceSections, 'architectural-contracts'),
     ],
   },
   {

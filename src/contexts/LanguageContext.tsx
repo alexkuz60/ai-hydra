@@ -347,6 +347,7 @@ const translations: Translations = {
   'hydrapedia.sections.chatActions': { ru: 'Действия с сообщениями', en: 'Message Actions' },
   'hydrapedia.sections.proxyApi': { ru: 'ProxyAPI — Единый ключ', en: 'ProxyAPI — Single Key' },
   'hydrapedia.sections.faq': { ru: 'FAQ и решение проблем', en: 'FAQ & Troubleshooting' },
+  'hydrapedia.sections.architecturalContracts': { ru: 'Архитектурные контракты', en: 'Architectural Contracts' },
   'hydrapedia.sections.guideTours': { ru: 'Интерактивные экскурсии', en: 'Interactive Tours' },
   'hydrapedia.sections.interviewPanel': { ru: 'Собеседование', en: 'Interview Panel' },
   'hydrapedia.sections.duelMode': { ru: 'Режим дуэли', en: 'Duel Mode' },
