@@ -11,6 +11,7 @@ import { useCloudSyncStatus } from '@/hooks/useCloudSettings';
 import { cn } from '@/lib/utils';
 import { useDuelConfig } from '@/hooks/useDuelConfig';
 import { useContestConfig } from '@/hooks/useContestConfig';
+import { StalenessWarningBanner } from '@/components/ui/StalenessWarningBanner';
 
 import TournamentIcon from '@/assets/TournamentIcon';
 import {
@@ -204,7 +205,17 @@ export default function ModelRatings() {
           <ResizableHandle withHandle />
 
           <ResizablePanel defaultSize={100 - nav.panelSize} minSize={50}>
-            <div className="h-full" data-guide="podium-content">
+            <div className="h-full flex flex-col" data-guide="podium-content">
+              {(activeSection === 'contest' || activeSection === 'duel' || activeSection === 'interview') && (
+                <div className="px-4 pt-2">
+                  <StalenessWarningBanner
+                    roles={screeningRole !== 'assistant' ? [screeningRole] : undefined}
+                    isRu={language === 'ru'}
+                    compact
+                  />
+                </div>
+              )}
+              <div className="flex-1 overflow-auto">
               {activeSection === 'portfolio' && <ModelPortfolio />}
               {activeSection === 'rules' && <ContestPodium duelConfig={duelConfig} />}
               {activeSection === 'contest' && <BeautyContest selectedWinners={contestWinners} onToggleWinner={handleToggleContestWinner} onContestSessionChange={setContestSessionId} />}
@@ -217,6 +228,7 @@ export default function ModelRatings() {
                 />
               )}
               {activeSection === 'ratings' && <RatingsContent />}
+              </div>
             </div>
           </ResizablePanel>
         </ResizablePanelGroup>
