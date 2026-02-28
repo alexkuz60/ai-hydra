@@ -8,6 +8,21 @@ export type ConceptExpertType = 'visionary' | 'strategist' | 'patent';
 
 const DEFAULT_MODEL = 'google/gemini-2.5-flash';
 
+/** Models allowed in Lovable AI gateway */
+const LOVABLE_ALLOWED_MODELS = new Set<string>([
+  'openai/gpt-5-mini',
+  'openai/gpt-5',
+  'openai/gpt-5-nano',
+  'openai/gpt-5.2',
+  'google/gemini-2.5-pro',
+  'google/gemini-2.5-flash',
+  'google/gemini-2.5-flash-lite',
+  'google/gemini-2.5-flash-image',
+  'google/gemini-3-pro-preview',
+  'google/gemini-3-flash-preview',
+  'google/gemini-3-pro-image-preview',
+]);
+
 const ROLE_MAP: Record<ConceptExpertType, string> = {
   visionary: 'visionary',
   strategist: 'strategist',
@@ -95,8 +110,9 @@ export function useConceptInvoke({ planId, planTitle, planGoal, onComplete }: Us
       }
 
       if (!sessionId) {
-        toast.error(language === 'ru' ? 'Не найдена сессия концепции' : 'Concept session not found');
-        return null;
+        const msg = language === 'ru' ? 'Не найдена сессия концепции' : 'Concept session not found';
+        toast.error(msg);
+        throw new Error(msg);
       }
 
       // 2. Detect search provider in parallel with building message
@@ -185,9 +201,17 @@ export function useConceptInvoke({ planId, planTitle, planGoal, onComplete }: Us
 
       if (insertError) throw insertError;
 
-      // 6. Determine model and search provider
-      const modelId = modelOverride || DEFAULT_MODEL;
+      const requestedModelId = (modelOverride || DEFAULT_MODEL).trim();
+      const modelId = LOVABLE_ALLOWED_MODELS.has(requestedModelId)
+        ? requestedModelId
+        : DEFAULT_MODEL;
       const searchProvider = await searchProviderPromise;
+
+      if (requestedModelId !== modelId) {
+        console.warn(
+          `[concept-invoke] Unsupported model "${requestedModelId}" for Lovable AI. Fallback to "${modelId}"`
+        );
+      }
 
       // 7. Call hydra-orchestrator with tools enabled
       const role = ROLE_MAP[expertType];
@@ -270,7 +294,7 @@ export function useConceptInvoke({ planId, planTitle, planGoal, onComplete }: Us
           ? 'Ошибка при вызове эксперта'
           : 'Error invoking expert'
       );
-      return null;
+      throw err;
     } finally {
       setLoading(null);
     }

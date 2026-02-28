@@ -208,6 +208,9 @@ export function useConceptPipeline({ planId, planTitle, planGoal, includePatent 
 
         // invoke now returns the AI response content
         const responseContent = await invoke(step, ctx, modelOverrides?.[step]);
+        if (!responseContent?.trim()) {
+          throw new Error(`[pipeline] Empty response for step: ${step}`);
+        }
         pipelineResults[step] = responseContent;
 
         setState(prev => ({
