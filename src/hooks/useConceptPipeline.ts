@@ -120,17 +120,8 @@ export function useConceptPipeline({ planId, planTitle, planGoal, includePatent 
 
   /** Run a single step with cascading context */
   const runStep = useCallback(async (step: ConceptExpertType, modelOverrides?: ConceptModelOverrides) => {
-    // Refresh responses to get latest data
+    // Refresh responses to get latest data for context
     await refetch();
-    
-    const pipelineCtx: PipelineContext = {};
-
-    // Build context from existing responses
-    if (step === 'strategist' || step === 'patent') {
-      // Need visionary response
-      const freshResponses = await refetch();
-      // refetch returns void, so we read from state after await
-    }
 
     setState(prev => ({
       ...prev,
@@ -140,7 +131,6 @@ export function useConceptPipeline({ planId, planTitle, planGoal, includePatent 
     }));
 
     try {
-      // Get latest context from responses + file digests
       const ctx: PipelineContext = {};
       const fileDigests = await getFileDigests();
       if (fileDigests) ctx.fileDigests = fileDigests;
@@ -187,6 +177,13 @@ export function useConceptPipeline({ planId, planTitle, planGoal, includePatent 
       isRunning: true,
     });
 
+    // Accumulate responses through pipeline steps (don't rely on React state)
+    const pipelineResults: Record<string, string | null> = {
+      visionary: null,
+      strategist: null,
+      patent: null,
+    };
+
     for (const step of (includePatent ? PIPELINE_ORDER_FULL : PIPELINE_ORDER_NO_PATENT)) {
       if (abortRef.current) break;
 
@@ -197,37 +194,28 @@ export function useConceptPipeline({ planId, planTitle, planGoal, includePatent 
       }));
 
       try {
-        // Build cascading context from completed steps + file digests
+        // Build cascading context from accumulated pipeline results + file digests
         const ctx: PipelineContext = {};
         const fileDigests = await getFileDigests();
         if (fileDigests) ctx.fileDigests = fileDigests;
         
-        // After step completes, responses are refetched via onComplete
-        // For the pipeline, we need to wait and get fresh data
-        if (step === 'strategist' || step === 'patent') {
-          // Re-fetch to get latest responses from previous steps
-          await refetch();
-          // Small delay to ensure data is available
-          await new Promise(r => setTimeout(r, 500));
-          await refetch();
-        }
-
         if (step === 'strategist') {
-          ctx.visionaryResponse = responses.visionary?.content || null;
+          ctx.visionaryResponse = pipelineResults.visionary || null;
         } else if (step === 'patent') {
-          ctx.visionaryResponse = responses.visionary?.content || null;
-          ctx.strategistResponse = responses.strategist?.content || null;
+          ctx.visionaryResponse = pipelineResults.visionary || null;
+          ctx.strategistResponse = pipelineResults.strategist || null;
         }
 
-        await invoke(step, ctx, modelOverrides?.[step]);
+        // invoke now returns the AI response content
+        const responseContent = await invoke(step, ctx, modelOverrides?.[step]);
+        pipelineResults[step] = responseContent;
 
         setState(prev => ({
           ...prev,
           phaseStatuses: { ...prev.phaseStatuses, [step]: 'done' },
         }));
 
-        // Wait for response to be stored and refetch
-        await new Promise(r => setTimeout(r, 2000));
+        // Refetch for UI display
         await refetch();
       } catch (err) {
         setState(prev => ({
@@ -251,7 +239,7 @@ export function useConceptPipeline({ planId, planTitle, planGoal, includePatent 
         ? 'Полный анализ завершён'
         : 'Full analysis completed'
     );
-  }, [planGoal, language, invoke, refetch, responses, includePatent, getFileDigests]);
+  }, [planGoal, language, invoke, refetch, includePatent, getFileDigests]);
 
   /** Abort the pipeline */
   const abort = useCallback(() => {
