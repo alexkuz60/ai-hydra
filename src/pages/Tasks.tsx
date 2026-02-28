@@ -794,7 +794,7 @@ export default function Tasks() {
               onResize={nav.onPanelResize}
               data-guide="tasks-list"
             >
-             <div className="h-full flex flex-col hydra-nav-surface">
+             <div className="h-full flex flex-col min-h-0 hydra-nav-surface">
                 <NavigatorHeader
                   title={t('tasks.title')}
                   isMinimized={nav.isMinimized}
@@ -870,7 +870,7 @@ export default function Tasks() {
                 </div>
  
                {/* Tasks list */}
-               <div className="flex-1 overflow-auto">
+               <div className="flex-1 overflow-auto min-h-0">
                  {filteredTasks.length === 0 && plans.length === 0 ? (
                    <div className="h-full flex items-center justify-center text-muted-foreground p-8">
                      <div className="text-center">
