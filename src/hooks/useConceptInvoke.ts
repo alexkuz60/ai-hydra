@@ -8,21 +8,6 @@ export type ConceptExpertType = 'visionary' | 'strategist' | 'patent';
 
 const DEFAULT_MODEL = 'google/gemini-2.5-flash';
 
-/** Models supported by Lovable AI directly */
-const LOVABLE_SUPPORTED_MODELS = new Set<string>([
-  'openai/gpt-5-mini',
-  'openai/gpt-5',
-  'openai/gpt-5-nano',
-  'openai/gpt-5.2',
-  'google/gemini-2.5-pro',
-  'google/gemini-2.5-flash',
-  'google/gemini-2.5-flash-lite',
-  'google/gemini-2.5-flash-image',
-  'google/gemini-3-pro-preview',
-  'google/gemini-3-flash-preview',
-  'google/gemini-3-pro-image-preview',
-]);
-
 const ROLE_MAP: Record<ConceptExpertType, string> = {
   visionary: 'visionary',
   strategist: 'strategist',
@@ -203,7 +188,6 @@ export function useConceptInvoke({ planId, planTitle, planGoal, onComplete }: Us
       // 6. Determine model and search provider
       const modelId = modelOverride || DEFAULT_MODEL;
       const searchProvider = await searchProviderPromise;
-      const useLovableAI = LOVABLE_SUPPORTED_MODELS.has(modelId);
 
       // 7. Call hydra-orchestrator with tools enabled
       const role = ROLE_MAP[expertType];
@@ -216,7 +200,7 @@ export function useConceptInvoke({ planId, planTitle, planGoal, onComplete }: Us
           attachments: [],
           models: [{
             model_id: modelId,
-            use_lovable_ai: useLovableAI,
+            use_lovable_ai: true,
             temperature: 0.7,
             max_tokens: 4096,
             role,
