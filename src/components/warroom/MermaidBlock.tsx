@@ -11,7 +11,7 @@ interface MermaidBlockProps {
   defaultZoom?: number;
 }
 
-export function MermaidBlock({ content, className, defaultZoom = 1 }: MermaidBlockProps) {
+export const MermaidBlock = React.memo(function MermaidBlock({ content, className, defaultZoom = 1 }: MermaidBlockProps) {
   const { theme } = useTheme();
   const containerRef = useRef<HTMLDivElement>(null);
   const [svg, setSvg] = useState<string>('');
@@ -125,4 +125,4 @@ export function MermaidBlock({ content, className, defaultZoom = 1 }: MermaidBlo
       </div>
     </div>
   );
-}
+});

@@ -72,7 +72,7 @@ interface ChatMessageProps {
 
 const MAX_COLLAPSED_LINES = 3;
 
-export function ChatMessage({ message, userDisplayInfo, onDelete, onRatingChange, onLikertRate, isCollapsed, onToggleCollapse, onClarifyWithSpecialist, onSaveToMemory, isSavingToMemory, isAlreadySavedToMemory, onUpdateProposals, onRequestProposalDetails, onConsultInDChat, onRequestEvaluation, onHallucination, onChecklistChange, forceInteractiveChecklists }: ChatMessageProps) {
+export const ChatMessage = React.memo(function ChatMessage({ message, userDisplayInfo, onDelete, onRatingChange, onLikertRate, isCollapsed, onToggleCollapse, onClarifyWithSpecialist, onSaveToMemory, isSavingToMemory, isAlreadySavedToMemory, onUpdateProposals, onRequestProposalDetails, onConsultInDChat, onRequestEvaluation, onHallucination, onChecklistChange, forceInteractiveChecklists }: ChatMessageProps) {
   const { t, language } = useLanguage();
   const contentRef = useRef<HTMLDivElement>(null);
   const [localExpanded, setLocalExpanded] = useState(true);
@@ -264,4 +264,4 @@ export function ChatMessage({ message, userDisplayInfo, onDelete, onRatingChange
       />
     </HydraCard>
   );
-}
+});
