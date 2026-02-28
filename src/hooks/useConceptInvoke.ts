@@ -3,18 +3,11 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { toast } from 'sonner';
+import { getModelInfo } from '@/hooks/useAvailableModels';
 
 export type ConceptExpertType = 'visionary' | 'strategist' | 'patent';
 
 const DEFAULT_MODEL = 'google/gemini-3-flash-preview';
-
-/** Prefixes that are routed through Lovable AI gateway (no personal key needed) */
-const LOVABLE_AI_PREFIXES = ['openai/', 'google/'];
-
-/** Check if a model can be served by Lovable AI gateway */
-function isLovableAIModel(modelId: string): boolean {
-  return LOVABLE_AI_PREFIXES.some(prefix => modelId.startsWith(prefix));
-}
 
 const ROLE_MAP: Record<ConceptExpertType, string> = {
   visionary: 'visionary',
@@ -195,12 +188,10 @@ export function useConceptInvoke({ planId, planTitle, planGoal, onComplete }: Us
       if (insertError) throw insertError;
 
       const modelId = (modelOverride || DEFAULT_MODEL).trim();
-      const useLovableAI = isLovableAIModel(modelId);
+      const { isLovable: useLovableAI, provider: modelProvider } = getModelInfo(modelId);
+      console.log(`[concept-invoke] Model "${modelId}" → provider: ${modelProvider}, lovable: ${useLovableAI}`);
       const searchProvider = await searchProviderPromise;
 
-      if (!useLovableAI) {
-        console.log(`[concept-invoke] Model "${modelId}" will use BYOK routing`);
-      }
 
       // 7. Call hydra-orchestrator with tools enabled
       const role = ROLE_MAP[expertType];
