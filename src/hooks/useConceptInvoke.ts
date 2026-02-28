@@ -6,27 +6,15 @@ import { toast } from 'sonner';
 
 export type ConceptExpertType = 'visionary' | 'strategist' | 'patent';
 
-const DEFAULT_MODEL = 'google/gemini-2.5-flash';
+const DEFAULT_MODEL = 'google/gemini-3-flash-preview';
 
-/** Per-expert default models (patent needs a faster/smarter model to avoid timeout) */
-const EXPERT_DEFAULT_MODELS: Partial<Record<ConceptExpertType, string>> = {
-  patent: 'google/gemini-3-flash-preview',
-};
+/** Prefixes that are routed through Lovable AI gateway (no personal key needed) */
+const LOVABLE_AI_PREFIXES = ['openai/', 'google/'];
 
-/** Models allowed in Lovable AI gateway */
-const LOVABLE_ALLOWED_MODELS = new Set<string>([
-  'openai/gpt-5-mini',
-  'openai/gpt-5',
-  'openai/gpt-5-nano',
-  'openai/gpt-5.2',
-  'google/gemini-2.5-pro',
-  'google/gemini-2.5-flash',
-  'google/gemini-2.5-flash-lite',
-  'google/gemini-2.5-flash-image',
-  'google/gemini-3-pro-preview',
-  'google/gemini-3-flash-preview',
-  'google/gemini-3-pro-image-preview',
-]);
+/** Check if a model can be served by Lovable AI gateway */
+function isLovableAIModel(modelId: string): boolean {
+  return LOVABLE_AI_PREFIXES.some(prefix => modelId.startsWith(prefix));
+}
 
 const ROLE_MAP: Record<ConceptExpertType, string> = {
   visionary: 'visionary',
@@ -206,17 +194,12 @@ export function useConceptInvoke({ planId, planTitle, planGoal, onComplete }: Us
 
       if (insertError) throw insertError;
 
-      const expertDefault = EXPERT_DEFAULT_MODELS[expertType] || DEFAULT_MODEL;
-      const requestedModelId = (modelOverride || expertDefault).trim();
-      const modelId = LOVABLE_ALLOWED_MODELS.has(requestedModelId)
-        ? requestedModelId
-        : expertDefault;
+      const modelId = (modelOverride || DEFAULT_MODEL).trim();
+      const useLovableAI = isLovableAIModel(modelId);
       const searchProvider = await searchProviderPromise;
 
-      if (requestedModelId !== modelId) {
-        console.warn(
-          `[concept-invoke] Unsupported model "${requestedModelId}" for Lovable AI. Fallback to "${modelId}"`
-        );
+      if (!useLovableAI) {
+        console.log(`[concept-invoke] Model "${modelId}" will use BYOK routing`);
       }
 
       // 7. Call hydra-orchestrator with tools enabled
@@ -230,7 +213,7 @@ export function useConceptInvoke({ planId, planTitle, planGoal, onComplete }: Us
           attachments: [],
           models: [{
             model_id: modelId,
-            use_lovable_ai: true,
+            use_lovable_ai: useLovableAI,
             temperature: 0.7,
             max_tokens: 4096,
             role,
