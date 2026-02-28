@@ -133,7 +133,45 @@ export function useConceptInvoke({ planId, planTitle, planGoal, onComplete }: Us
       const requestGroupId = crypto.randomUUID();
       const invokeTimestamp = new Date().toISOString();
 
-      // 4. Insert user message with concept_type metadata
+      // 4. Clean up old concept messages & associated memory chunks before re-invocation
+      const { data: oldConceptMsgs } = await supabase
+        .from('messages')
+        .select('id')
+        .eq('session_id', sessionId)
+        .eq('user_id', user.id)
+        .filter('metadata->>concept_type', 'eq', expertType);
+
+      if (oldConceptMsgs && oldConceptMsgs.length > 0) {
+        const oldMsgIds = oldConceptMsgs.map(m => m.id);
+        
+        // Delete session_memory chunks tagged with this concept_type
+        // (chunks created by archivist during previous expert runs)
+        await supabase
+          .from('session_memory')
+          .delete()
+          .eq('session_id', sessionId)
+          .eq('user_id', user.id)
+          .filter('metadata->>concept_type', 'eq', expertType);
+
+        // Also delete chunks linked via source_message_id to old concept messages
+        await supabase
+          .from('session_memory')
+          .delete()
+          .eq('session_id', sessionId)
+          .eq('user_id', user.id)
+          .in('source_message_id', oldMsgIds);
+
+        // Delete old concept messages themselves
+        await supabase
+          .from('messages')
+          .delete()
+          .in('id', oldMsgIds)
+          .eq('user_id', user.id);
+
+        console.log(`[concept-invoke] Cleaned up ${oldMsgIds.length} old ${expertType} messages and associated memory chunks`);
+      }
+
+      // 5. Insert user message with concept_type metadata
       const { error: insertError } = await supabase
         .from('messages')
         .insert([{
@@ -147,11 +185,11 @@ export function useConceptInvoke({ planId, planTitle, planGoal, onComplete }: Us
 
       if (insertError) throw insertError;
 
-      // 5. Determine model and search provider
+      // 6. Determine model and search provider
       const modelId = modelOverride || DEFAULT_MODEL;
       const searchProvider = await searchProviderPromise;
 
-      // 6. Call hydra-orchestrator with tools enabled
+      // 7. Call hydra-orchestrator with tools enabled
       const role = ROLE_MAP[expertType];
       const enabledTools = TOOLS_MAP[expertType];
 
@@ -172,6 +210,7 @@ export function useConceptInvoke({ planId, planTitle, planGoal, onComplete }: Us
             search_provider: searchProvider,
           }],
           request_group_id: requestGroupId,
+          concept_type: expertType,
           history: [],
         },
       });
@@ -180,7 +219,7 @@ export function useConceptInvoke({ planId, planTitle, planGoal, onComplete }: Us
         throw new Error(fnError.message || 'Failed to get AI response');
       }
 
-      // 7. Tag the AI response with concept_type metadata
+      // 8. Tag the AI response with concept_type metadata
       let tagged = false;
       for (let attempt = 0; attempt < 20; attempt++) {
         await new Promise(resolve => setTimeout(resolve, 1500));

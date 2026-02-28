@@ -912,7 +912,7 @@ serve(async (req) => {
       });
     }
     
-    const { session_id, message, attachments, models, history } = requestBody;
+    const { session_id, message, attachments, models, history, concept_type } = requestBody;
 
     if (!session_id || !message || !models || models.length === 0) {
       return new Response(JSON.stringify({ error: "session_id, message, and models are required" }), {
@@ -1007,6 +1007,7 @@ serve(async (req) => {
       userId: user.id,
       supabaseUrl,
       supabaseKey: supabaseServiceKey,
+      conceptType: concept_type,
     });
     console.log(`[Tools] Execution context set for session: ${session_id}`);
     const errors: { model: string; error: string }[] = [];
