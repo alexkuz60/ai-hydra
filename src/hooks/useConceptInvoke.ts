@@ -8,6 +8,21 @@ export type ConceptExpertType = 'visionary' | 'strategist' | 'patent';
 
 const DEFAULT_MODEL = 'google/gemini-2.5-flash';
 
+/** Models supported by Lovable AI directly */
+const LOVABLE_SUPPORTED_MODELS = new Set<string>([
+  'openai/gpt-5-mini',
+  'openai/gpt-5',
+  'openai/gpt-5-nano',
+  'openai/gpt-5.2',
+  'google/gemini-2.5-pro',
+  'google/gemini-2.5-flash',
+  'google/gemini-2.5-flash-lite',
+  'google/gemini-2.5-flash-image',
+  'google/gemini-3-pro-preview',
+  'google/gemini-3-flash-preview',
+  'google/gemini-3-pro-image-preview',
+]);
+
 const ROLE_MAP: Record<ConceptExpertType, string> = {
   visionary: 'visionary',
   strategist: 'strategist',
@@ -188,6 +203,7 @@ export function useConceptInvoke({ planId, planTitle, planGoal, onComplete }: Us
       // 6. Determine model and search provider
       const modelId = modelOverride || DEFAULT_MODEL;
       const searchProvider = await searchProviderPromise;
+      const useLovableAI = LOVABLE_SUPPORTED_MODELS.has(modelId);
 
       // 7. Call hydra-orchestrator with tools enabled
       const role = ROLE_MAP[expertType];
@@ -200,7 +216,7 @@ export function useConceptInvoke({ planId, planTitle, planGoal, onComplete }: Us
           attachments: [],
           models: [{
             model_id: modelId,
-            use_lovable_ai: true,
+            use_lovable_ai: useLovableAI,
             temperature: 0.7,
             max_tokens: 4096,
             role,
@@ -221,47 +237,34 @@ export function useConceptInvoke({ planId, planTitle, planGoal, onComplete }: Us
 
       // 8. Extract AI response content from orchestrator result
       let responseContent: string | null = null;
-      if (fnData?.results && Array.isArray(fnData.results)) {
-        const successResult = fnData.results.find((r: any) => r.content && !r.error);
-        if (successResult) {
-          responseContent = successResult.content;
-        }
+      const successfulResponses = Array.isArray(fnData?.responses)
+        ? fnData.responses.filter((r: any) => r?.content && !r?.error)
+        : [];
+
+      if (successfulResponses.length > 0) {
+        responseContent = successfulResponses[0].content as string;
       }
 
-      // 9. Poll for DB persistence so that useConceptResponses can find the response
+      // 9. If orchestrator returned no successful response, treat as error
       if (!responseContent) {
-        // Orchestrator may return content differently; poll DB as fallback
-        for (let attempt = 0; attempt < 20; attempt++) {
-          await new Promise(resolve => setTimeout(resolve, 1500));
-          const { data: aiResponses } = await supabase
-            .from('messages')
-            .select('id, content, metadata, request_group_id')
-            .eq('session_id', sessionId)
-            .eq('request_group_id', requestGroupId)
-            .neq('role', 'user')
-            .order('created_at', { ascending: false })
-            .limit(5);
+        const errorMessage = Array.isArray(fnData?.errors) && fnData.errors.length > 0
+          ? fnData.errors.map((e: any) => e?.error || e?.message || 'Unknown model error').join('; ')
+          : 'No successful AI response returned';
+        throw new Error(errorMessage);
+      }
 
-          if (aiResponses && aiResponses.length > 0) {
-            responseContent = aiResponses[0].content;
-            break;
-          }
-        }
-      } else {
-        // We got content from orchestrator response; still wait briefly for DB write
-        // so that useConceptResponses picks it up for UI display
-        for (let attempt = 0; attempt < 10; attempt++) {
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          const { data: check } = await supabase
-            .from('messages')
-            .select('id')
-            .eq('session_id', sessionId)
-            .eq('request_group_id', requestGroupId)
-            .neq('role', 'user')
-            .limit(1);
+      // 10. Wait for DB persistence so useConceptResponses can find the response
+      for (let attempt = 0; attempt < 20; attempt++) {
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        const { data: aiResponses } = await supabase
+          .from('messages')
+          .select('id')
+          .eq('session_id', sessionId)
+          .eq('request_group_id', requestGroupId)
+          .neq('role', 'user')
+          .limit(1);
 
-          if (check && check.length > 0) break;
-        }
+        if (aiResponses && aiResponses.length > 0) break;
       }
 
       if (!responseContent) {
