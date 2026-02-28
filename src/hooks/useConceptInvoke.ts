@@ -8,6 +8,11 @@ export type ConceptExpertType = 'visionary' | 'strategist' | 'patent';
 
 const DEFAULT_MODEL = 'google/gemini-2.5-flash';
 
+/** Per-expert default models (patent needs a faster/smarter model to avoid timeout) */
+const EXPERT_DEFAULT_MODELS: Partial<Record<ConceptExpertType, string>> = {
+  patent: 'google/gemini-3-flash-preview',
+};
+
 /** Models allowed in Lovable AI gateway */
 const LOVABLE_ALLOWED_MODELS = new Set<string>([
   'openai/gpt-5-mini',
@@ -201,10 +206,11 @@ export function useConceptInvoke({ planId, planTitle, planGoal, onComplete }: Us
 
       if (insertError) throw insertError;
 
-      const requestedModelId = (modelOverride || DEFAULT_MODEL).trim();
+      const expertDefault = EXPERT_DEFAULT_MODELS[expertType] || DEFAULT_MODEL;
+      const requestedModelId = (modelOverride || expertDefault).trim();
       const modelId = LOVABLE_ALLOWED_MODELS.has(requestedModelId)
         ? requestedModelId
-        : DEFAULT_MODEL;
+        : expertDefault;
       const searchProvider = await searchProviderPromise;
 
       if (requestedModelId !== modelId) {
