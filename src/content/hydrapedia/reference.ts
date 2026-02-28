@@ -626,4 +626,169 @@ Make sure you're authenticated. Check your internet connection.
 Check that all required node inputs are connected. Run logistics for diagnostics.`,
     },
   },
+  {
+    id: 'architectural-contracts',
+    titleKey: 'hydrapedia.sections.architecturalContracts',
+    icon: 'ShieldCheck',
+    content: {
+      ru: `# Архитектурные контракты (MAC)
+
+## Что это?
+
+**Mandatory Architectural Contracts (MAC)** — набор из 18 обязательных кросс-модульных правил, зафиксированных в \`src/styles/DESIGN_SYSTEM.md\` (Раздел 7). Каждый контракт определяет **жёсткое условие (MUST)**, которое должно выполняться при любых изменениях в затронутых подсистемах.
+
+> [!IMPORTANT] Протокол аудита
+> Перед реализацией любой задачи агент ОБЯЗАН проверить, не затрагивает ли она существующие контракты. При команде «Лав, мысли шире» — полный аудит всех 18 контрактов.
+
+## Покрытие подсистем
+
+### 🧭 Маршрутизация моделей (3 контракта)
+
+| Контракт | Правило |
+|----------|---------|
+| **Выбор модели** | \`getModelInfo()\` из \`useAvailableModels\` для определения \`use_lovable_ai\` и провайдера |
+| **Приоритет провайдеров** | Lovable AI → BYOK → OpenRouter → ProxyAPI/DotPoint |
+| **Поисковый провайдер** | Tavily/Perplexity через \`get_my_api_key_status\`, fallback: Tavily |
+
+### 🧠 Знания и память (4 контракта)
+
+| Контракт | Правило |
+|----------|---------|
+| **Knowledge Pyramid** | 3-уровневая фильтрация: A (Global) → B (Org) → C (Expertise). Запрет передачи C-уровня чужой роли |
+| **Сертификация** | \`useKnowledgeVersioning\` при изменении знаний → бейдж «Обновлено» → переаттестация |
+| **Memory Hub** | BM25 + pgvector + RRF (k=60) → HyDE (0.4 query + 0.6 hyde) → Gemini Reranking (0.7 + 0.3) |
+| **Эмбеддинги** | \`text-embedding-3-small\` (1536 dim), батч по 10 чанков |
+
+### 🏆 Конкурсы и Дуэли (3 контракта)
+
+| Контракт | Правило |
+|----------|---------|
+| **Оценка** | 👤 40% \`user_score\` + ⚖️ 60% \`arbiter_score\`. Обязательные критерии: factuality, relevance, depth |
+| **Маршрутизация** | \`getModelInfo()\` + иерархия провайдеров. \`MAX_CONCURRENCY = 2\`. Фиксация \`response_time_ms\`, \`token_count\` |
+| **Победители и найм** | 👑 → \`source_contest_id\` → Interview → \`role_assignment_history\` → \`tech-role-defaults\` |
+
+### 🎤 Собеседования (1 контракт)
+
+3 фазы: Briefing (Knowledge Pyramid + дельта) → Testing (3–7 задач, SSE) → Verdict (Arbiter Fallback: Flash → Pro). 3 повтора, 45с watchdog, частичные результаты.
+
+### 🔄 Flow Runtime (1 контракт)
+
+DAG-планировщик с параллелизмом. SSE-стриминг. Checkpoints. Дефолт: \`gemini-3-flash-preview\`. Автосброс результатов.
+
+### 💬 D-Chat (1 контракт)
+
+Изоляция контекстов per-role. \`request_group_id\` для корреляции. Миграция из конкурсов сохраняет роль и модель. Проверка \`useKnowledgeStaleness\`.
+
+### 📋 СПРЗ (1 контракт)
+
+Визионер → Стратег → Патентовед с накоплением контекста. Автоочистка по \`concept_type\`. Маршрутизация: \`openai/\`, \`google/\` → Lovable AI.
+
+### 📊 Статистика моделей (1 контракт)
+
+Агрегация из чатов, конкурсов, собеседований. Скользящее среднее \`criteria_averages\`. Ручная фиксация галлюцинаций.
+
+### 🧬 Автоактивация Эволюционера (1 контракт)
+
+**Контур А** — обнаружение устаревания:
+- ≥2 обновлений \`role_knowledge\` без переаттестации → \`knowledge_drift\`
+- Смена дефолт-модели роли → \`model_changed\`
+- Триггеры БД: \`trg_knowledge_staleness\`, \`trg_model_change_staleness\`
+- Клиент: \`useKnowledgeStaleness\` → предупреждения в D-Chat, СПРЗ, Конкурсах
+
+**Контур Б** (будущее) — деградация производительности:
+- Скользящее среднее \`arbiter_score < 6.0\` три раза подряд → \`perf_decay\`
+
+### 🎨 Стиль (2 контракта)
+
+| Контракт | Правило |
+|----------|---------|
+| **Дизайн-токены** | Прямые цвета запрещены. Только семантические токены из \`index.css\` |
+| **Локализация** | \`language === 'ru'\`, не \`t('locale')\`. Новые строки — и \`ru\`, и \`en\` |
+
+## Как добавить новый контракт
+
+1. Добавить строку в таблицу в \`DESIGN_SYSTEM.md\` (Раздел 7)
+2. Обновить соответствующую memory-ноту с пометкой \`ОБЯЗАН / MUST\`
+3. Перечислить все модули-потребители — это триггер для кросс-проверки`,
+      en: `# Architectural Contracts (MAC)
+
+## What Are They?
+
+**Mandatory Architectural Contracts (MAC)** — a set of 18 mandatory cross-module rules defined in \`src/styles/DESIGN_SYSTEM.md\` (Section 7). Each contract specifies a **hard requirement (MUST)** that must be satisfied for any change in the affected subsystems.
+
+> [!IMPORTANT] Audit Protocol
+> Before implementing any task, the agent MUST verify whether it affects existing contracts. On the "Think broader" command — full audit of all 18 contracts.
+
+## Subsystem Coverage
+
+### 🧭 Model Routing (3 contracts)
+
+| Contract | Rule |
+|----------|------|
+| **Model Selection** | \`getModelInfo()\` from \`useAvailableModels\` to determine \`use_lovable_ai\` and provider |
+| **Provider Priority** | Lovable AI → BYOK → OpenRouter → ProxyAPI/DotPoint |
+| **Search Provider** | Tavily/Perplexity via \`get_my_api_key_status\`, fallback: Tavily |
+
+### 🧠 Knowledge & Memory (4 contracts)
+
+| Contract | Rule |
+|----------|------|
+| **Knowledge Pyramid** | 3-tier filtering: A (Global) → B (Org) → C (Expertise). Cross-role C-level leakage forbidden |
+| **Certification** | \`useKnowledgeVersioning\` on knowledge change → "Updated" badge → recertification |
+| **Memory Hub** | BM25 + pgvector + RRF (k=60) → HyDE (0.4 query + 0.6 hyde) → Gemini Reranking (0.7 + 0.3) |
+| **Embeddings** | \`text-embedding-3-small\` (1536 dim), batch of 10 chunks |
+
+### 🏆 Contests & Duels (3 contracts)
+
+| Contract | Rule |
+|----------|------|
+| **Scoring** | 👤 40% \`user_score\` + ⚖️ 60% \`arbiter_score\`. Required criteria: factuality, relevance, depth |
+| **Routing** | \`getModelInfo()\` + provider hierarchy. \`MAX_CONCURRENCY = 2\`. Record \`response_time_ms\`, \`token_count\` |
+| **Winners & Hiring** | 👑 → \`source_contest_id\` → Interview → \`role_assignment_history\` → \`tech-role-defaults\` |
+
+### 🎤 Interviews (1 contract)
+
+3 phases: Briefing (Knowledge Pyramid + delta) → Testing (3–7 tasks, SSE) → Verdict (Arbiter Fallback: Flash → Pro). 3 retries, 45s watchdog, partial results saved.
+
+### 🔄 Flow Runtime (1 contract)
+
+DAG scheduler with parallelism. SSE streaming. Checkpoints. Default: \`gemini-3-flash-preview\`. Auto-reset results.
+
+### 💬 D-Chat (1 contract)
+
+Per-role context isolation. \`request_group_id\` correlation. Contest migration preserves role and model. \`useKnowledgeStaleness\` check.
+
+### 📋 SPSP Pipeline (1 contract)
+
+Visionary → Strategist → Patent Attorney with context accumulation. Auto-cleanup by \`concept_type\`. Routing: \`openai/\`, \`google/\` → Lovable AI.
+
+### 📊 Model Statistics (1 contract)
+
+Aggregation from chats, contests, interviews. Sliding \`criteria_averages\`. Manual hallucination tracking.
+
+### 🧬 Evolutioner Auto-Activation (1 contract)
+
+**Contour A** — staleness detection:
+- ≥2 \`role_knowledge\` updates without recertification → \`knowledge_drift\`
+- Default model change → \`model_changed\`
+- DB triggers: \`trg_knowledge_staleness\`, \`trg_model_change_staleness\`
+- Client: \`useKnowledgeStaleness\` → warnings in D-Chat, SPSP, Contests
+
+**Contour B** (future) — performance decay:
+- Sliding average \`arbiter_score < 6.0\` three times in a row → \`perf_decay\`
+
+### 🎨 Style (2 contracts)
+
+| Contract | Rule |
+|----------|------|
+| **Design Tokens** | Direct colors forbidden. Only semantic tokens from \`index.css\` |
+| **Localization** | \`language === 'ru'\`, not \`t('locale')\`. New strings — both \`ru\` and \`en\` |
+
+## How to Add a New Contract
+
+1. Add a row to the table in \`DESIGN_SYSTEM.md\` (Section 7)
+2. Update the corresponding memory note with \`MUST\` label
+3. List all consumer modules — this triggers cross-verification`,
+    },
+  },
 ];

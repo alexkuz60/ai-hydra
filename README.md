@@ -3,7 +3,7 @@
   <p><em>Where even dogmas evolve</em></p>
   <p><a href="README_RU.md">🇷🇺 Русский</a> · 🇬🇧 <b>English</b></p>
 
-  ![Version](https://img.shields.io/badge/version-0.2.20--alpha-0ff?style=flat-square&logo=semver&logoColor=white)
+  ![Version](https://img.shields.io/badge/version-0.2.21--alpha-0ff?style=flat-square&logo=semver&logoColor=white)
   ![Build](https://img.shields.io/badge/build-passing-brightgreen?style=flat-square&logo=github-actions&logoColor=white)
   ![License](https://img.shields.io/badge/license-MIT-blue?style=flat-square)
   ![Stack](https://img.shields.io/badge/stack-React%2018%20%2B%20TypeScript%20%2B%20Supabase-8b5cf6?style=flat-square)
@@ -240,6 +240,33 @@ A technical audit addressed key bottlenecks:
 
 ---
 
+## 🏗️ Mandatory Architectural Contracts (MAC)
+
+18 cross-module contracts are defined in `src/styles/DESIGN_SYSTEM.md` (Section 7). Every subsystem change **MUST** be audited against these rules.
+
+| Domain | Contracts | Key Rules |
+|--------|-----------|-----------|
+| **Model Routing** | Model Selection, Provider Priority, Search Provider | `getModelInfo()` mandatory; Lovable AI → BYOK → OpenRouter → Gateways |
+| **Knowledge & Memory** | Knowledge Pyramid, Certification, Memory Hub, Embeddings | 3-tier briefing (A→B→C); Hybrid Search BM25+pgvector+RRF; `text-embedding-3-small` 1536d |
+| **Contests & Duels** | Scoring, Model Routing, Winners & Hiring | Weighted 40% user + 60% arbiter; `MAX_CONCURRENCY=2`; 👑 → Interview → Hire |
+| **Interviews** | Interview Pipeline, Arbiter Fallback | 3 phases (Briefing→Tests→Verdict); 3 retries; 45s watchdog; partial result save |
+| **Flow Runtime** | DAG Execution, SSE, Checkpoints | Topological sort + parallelism; default model `gemini-3-flash-preview` |
+| **D-Chat** | Context Isolation, Contest Migration | Per-role C-level briefing; `request_group_id` correlation |
+| **SPSP Pipeline** | Sequential Chain, Auto-Cleanup | Visionary→Strategist→Patent Attorney; `openai/`+`google/` → Lovable AI |
+| **Model Statistics** | Aggregation from all sources | Chat + Contests + Interviews → `model_statistics`; sliding `criteria_averages` |
+| **Evolutioner** | Auto-activation Contour A | ≥2 knowledge updates OR model change → `supervisor_notifications` |
+| **Style** | Design Tokens, Localization | No direct colors; `language === 'ru'` pattern |
+
+### 🧬 Evolutioner Auto-Activation (Contour A)
+
+Automatic detection of knowledge drift and model changes for hired staff:
+
+- **Backend triggers**: `trg_knowledge_staleness` (on `role_knowledge`) and `trg_model_change_staleness` (on `user_settings`) generate `supervisor_notifications` with codes `knowledge_drift` / `model_changed`
+- **Client hook**: `useKnowledgeStaleness` surfaces warnings in D-Chat, SPSP, and Contest interfaces
+- **UI**: `StalenessWarningBanner` component displays recertification recommendations
+
+---
+
 ## 🔐 Security
 
 - **RLS policies** on all user tables
@@ -323,4 +350,4 @@ supabase/functions/     # 20 Edge Functions
 
 ---
 
-*Last updated: February 27, 2026*
+*Last updated: February 28, 2026*
