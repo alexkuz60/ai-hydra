@@ -126,6 +126,8 @@ export interface RequestBody {
   history?: HistoryMessage[];
   /** Concept expert type tag — propagated to session_memory chunks */
   concept_type?: string;
+  /** Request group ID for tracking request-response pairs */
+  request_group_id?: string;
   // HTTP tool testing action
   action?: 'test_http_tool';
   http_config?: HttpConfig;
