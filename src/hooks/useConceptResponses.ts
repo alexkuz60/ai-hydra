@@ -50,7 +50,7 @@ export function useConceptResponses(planId: string | null) {
       // Fetch ALL messages (user + assistant) ordered by recency
       const { data: allMessages } = await supabase
         .from('messages')
-        .select('id, role, content, content_en, model_name, created_at, metadata')
+        .select('id, role, content, content_en, model_name, created_at, metadata, request_group_id')
         .eq('session_id', conceptSession.id)
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
@@ -63,46 +63,66 @@ export function useConceptResponses(planId: string | null) {
       }
 
       const nonUserMessages = allMessages.filter(m => m.role !== 'user');
+      const userMessages = allMessages.filter(m => m.role === 'user');
 
-      // Priority 1: Match by metadata concept_type
-      let latestVisionary: ConceptResponse | null = null;
-      let latestStrategist: ConceptResponse | null = null;
-      let latestPatent: ConceptResponse | null = null;
+      const latestRequests = {
+        visionary: userMessages.find(m => (m.metadata as Record<string, unknown> | null)?.concept_type === 'visionary') || null,
+        strategist: userMessages.find(m => (m.metadata as Record<string, unknown> | null)?.concept_type === 'strategist') || null,
+        patent: userMessages.find(m => (m.metadata as Record<string, unknown> | null)?.concept_type === 'patent') || null,
+      };
 
-      for (const msg of nonUserMessages) {
-        const meta = msg.metadata as Record<string, unknown> | null;
-        const conceptType = meta?.concept_type as string | undefined;
+      const findByRequestGroup = (conceptType: 'visionary' | 'strategist' | 'patent'): ConceptResponse | null => {
+        const req = latestRequests[conceptType] as { request_group_id?: string | null } | null;
+        const requestGroupId = req?.request_group_id;
+        if (!requestGroupId) return null;
 
-        if (conceptType === 'visionary' && !latestVisionary) {
-          latestVisionary = msg as unknown as ConceptResponse;
-        } else if (conceptType === 'strategist' && !latestStrategist) {
-          latestStrategist = msg as unknown as ConceptResponse;
-        } else if (conceptType === 'patent' && !latestPatent) {
-          latestPatent = msg as unknown as ConceptResponse;
-        }
+        const byGroup = nonUserMessages.filter(
+          (m: any) => m.request_group_id && m.request_group_id === requestGroupId
+        );
+        if (byGroup.length === 0) return null;
+
+        const exact = byGroup.find((m: any) => {
+          const meta = m.metadata as Record<string, unknown> | null;
+          return meta?.concept_type === conceptType;
+        });
+
+        return (exact || byGroup[0]) as unknown as ConceptResponse;
+      };
+
+      // Priority 1: strict match by the latest request_group_id (prevents stale fallback)
+      let latestVisionary: ConceptResponse | null = findByRequestGroup('visionary');
+      let latestStrategist: ConceptResponse | null = findByRequestGroup('strategist');
+      let latestPatent: ConceptResponse | null = findByRequestGroup('patent');
+
+      // Priority 2: metadata concept_type (only when there is no newer pending request)
+      if (!latestVisionary && !latestRequests.visionary) {
+        latestVisionary = (nonUserMessages.find((m: any) => (m.metadata as Record<string, unknown> | null)?.concept_type === 'visionary') as unknown as ConceptResponse) || null;
+      }
+      if (!latestStrategist && !latestRequests.strategist) {
+        latestStrategist = (nonUserMessages.find((m: any) => (m.metadata as Record<string, unknown> | null)?.concept_type === 'strategist') as unknown as ConceptResponse) || null;
+      }
+      if (!latestPatent && !latestRequests.patent) {
+        latestPatent = (nonUserMessages.find((m: any) => (m.metadata as Record<string, unknown> | null)?.concept_type === 'patent') as unknown as ConceptResponse) || null;
       }
 
-      // Priority 2: Fallback to role-based matching
-      if (!latestVisionary) {
+      // Priority 3: legacy role-based fallback (no pending request only)
+      if (!latestVisionary && !latestRequests.visionary) {
         latestVisionary = (nonUserMessages.find(m => m.role === 'visionary') as unknown as ConceptResponse) || null;
       }
-      if (!latestStrategist) {
+      if (!latestStrategist && !latestRequests.strategist) {
         latestStrategist = (nonUserMessages.find(m => m.role === 'strategist') as unknown as ConceptResponse) || null;
       }
 
-      // Priority 3: For patent (role=assistant), find assistant responses 
-      // that immediately follow a patent user message
-      if (!latestPatent) {
-        const userMessages = allMessages.filter(m => m.role === 'user');
+      // Priority 4: legacy patent fallback for old data without request_group_id/concept_type
+      if (!latestPatent && !latestRequests.patent) {
         for (const userMsg of userMessages) {
           const uMeta = userMsg.metadata as Record<string, unknown> | null;
-          const isPatentRequest = uMeta?.concept_type === 'patent' || 
-            userMsg.content?.includes('[Патентный прогноз]') || 
+          const isPatentRequest = uMeta?.concept_type === 'patent' ||
+            userMsg.content?.includes('[Патентный прогноз]') ||
             userMsg.content?.includes('[Patent Forecast]');
-          
+
           if (isPatentRequest) {
-            // Find the first assistant response created after this user message
-            const candidate = nonUserMessages.find(m => 
+            const candidate = nonUserMessages.find(m =>
               m.role === 'assistant' && m.created_at > userMsg.created_at
             );
             if (candidate) {

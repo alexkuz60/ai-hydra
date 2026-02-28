@@ -74,6 +74,7 @@ export function useConceptInvoke({ planId, planTitle, planGoal, onComplete }: Us
         .eq('plan_id', planId)
         .eq('user_id', user.id)
         .or('title.ilike.%цели и концепция%,title.ilike.%goals and concept%')
+        .order('sort_order', { ascending: true })
         .limit(1)
         .maybeSingle();
 
@@ -181,22 +182,22 @@ export function useConceptInvoke({ planId, planTitle, planGoal, onComplete }: Us
 
       // 7. Tag the AI response with concept_type metadata
       let tagged = false;
-      for (let attempt = 0; attempt < 10; attempt++) {
+      for (let attempt = 0; attempt < 20; attempt++) {
         await new Promise(resolve => setTimeout(resolve, 1500));
 
         const { data: aiResponses } = await supabase
           .from('messages')
-          .select('id, metadata')
+          .select('id, metadata, request_group_id')
           .eq('session_id', sessionId)
+          .eq('request_group_id', requestGroupId)
           .neq('role', 'user')
-          .gt('created_at', invokeTimestamp)
           .order('created_at', { ascending: false })
-          .limit(5);
+          .limit(10);
 
         const target = aiResponses?.find(m => {
           const meta = (m.metadata as Record<string, unknown>) || {};
           return !meta.concept_type || meta.concept_type === expertType;
-        });
+        }) || aiResponses?.[0];
 
         if (target) {
           const existing = (target.metadata as Record<string, unknown>) || {};
@@ -206,6 +207,36 @@ export function useConceptInvoke({ planId, planTitle, planGoal, onComplete }: Us
             .eq('id', target.id);
           tagged = true;
           break;
+        }
+      }
+
+      // Legacy fallback for older runs where request_group_id may be missing on AI rows
+      if (!tagged) {
+        for (let attempt = 0; attempt < 5; attempt++) {
+          await new Promise(resolve => setTimeout(resolve, 1500));
+          const { data: aiResponses } = await supabase
+            .from('messages')
+            .select('id, metadata')
+            .eq('session_id', sessionId)
+            .neq('role', 'user')
+            .gt('created_at', invokeTimestamp)
+            .order('created_at', { ascending: false })
+            .limit(5);
+
+          const target = aiResponses?.find(m => {
+            const meta = (m.metadata as Record<string, unknown>) || {};
+            return !meta.concept_type || meta.concept_type === expertType;
+          });
+
+          if (target) {
+            const existing = (target.metadata as Record<string, unknown>) || {};
+            await supabase
+              .from('messages')
+              .update({ metadata: { ...existing, concept_type: expertType } })
+              .eq('id', target.id);
+            tagged = true;
+            break;
+          }
         }
       }
 
