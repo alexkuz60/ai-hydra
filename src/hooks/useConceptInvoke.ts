@@ -56,13 +56,14 @@ function currentDateString(): string {
   return new Date().toISOString().split('T')[0]; // YYYY-MM-DD
 }
 
+/** Returns the AI response content string (or null on failure) */
 export function useConceptInvoke({ planId, planTitle, planGoal, onComplete }: UseConceptInvokeOptions) {
   const { user } = useAuth();
   const { language } = useLanguage();
   const [loading, setLoading] = useState<ConceptExpertType | null>(null);
 
-  const invoke = useCallback(async (expertType: ConceptExpertType, pipelineContext?: PipelineContext, modelOverride?: string) => {
-    if (!user?.id || !planGoal?.trim()) return;
+  const invoke = useCallback(async (expertType: ConceptExpertType, pipelineContext?: PipelineContext, modelOverride?: string): Promise<string | null> => {
+    if (!user?.id || !planGoal?.trim()) return null;
 
     setLoading(expertType);
 
@@ -95,7 +96,7 @@ export function useConceptInvoke({ planId, planTitle, planGoal, onComplete }: Us
 
       if (!sessionId) {
         toast.error(language === 'ru' ? 'Не найдена сессия концепции' : 'Concept session not found');
-        return;
+        return null;
       }
 
       // 2. Detect search provider in parallel with building message
@@ -218,7 +219,54 @@ export function useConceptInvoke({ planId, planTitle, planGoal, onComplete }: Us
         throw new Error(fnError.message || 'Failed to get AI response');
       }
 
-      // 8. No need for polling/tagging — orchestrator now saves request_group_id + concept_type directly
+      // 8. Extract AI response content from orchestrator result
+      let responseContent: string | null = null;
+      if (fnData?.results && Array.isArray(fnData.results)) {
+        const successResult = fnData.results.find((r: any) => r.content && !r.error);
+        if (successResult) {
+          responseContent = successResult.content;
+        }
+      }
+
+      // 9. Poll for DB persistence so that useConceptResponses can find the response
+      if (!responseContent) {
+        // Orchestrator may return content differently; poll DB as fallback
+        for (let attempt = 0; attempt < 20; attempt++) {
+          await new Promise(resolve => setTimeout(resolve, 1500));
+          const { data: aiResponses } = await supabase
+            .from('messages')
+            .select('id, content, metadata, request_group_id')
+            .eq('session_id', sessionId)
+            .eq('request_group_id', requestGroupId)
+            .neq('role', 'user')
+            .order('created_at', { ascending: false })
+            .limit(5);
+
+          if (aiResponses && aiResponses.length > 0) {
+            responseContent = aiResponses[0].content;
+            break;
+          }
+        }
+      } else {
+        // We got content from orchestrator response; still wait briefly for DB write
+        // so that useConceptResponses picks it up for UI display
+        for (let attempt = 0; attempt < 10; attempt++) {
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          const { data: check } = await supabase
+            .from('messages')
+            .select('id')
+            .eq('session_id', sessionId)
+            .eq('request_group_id', requestGroupId)
+            .neq('role', 'user')
+            .limit(1);
+
+          if (check && check.length > 0) break;
+        }
+      }
+
+      if (!responseContent) {
+        console.warn(`[concept-invoke] No AI response content received for ${expertType}`);
+      }
 
       toast.success(
         language === 'ru' 
@@ -227,6 +275,7 @@ export function useConceptInvoke({ planId, planTitle, planGoal, onComplete }: Us
       );
 
       onComplete?.();
+      return responseContent;
     } catch (err) {
       console.error(`[concept-invoke] ${expertType} error:`, err);
       toast.error(
@@ -234,6 +283,7 @@ export function useConceptInvoke({ planId, planTitle, planGoal, onComplete }: Us
           ? 'Ошибка при вызове эксперта'
           : 'Error invoking expert'
       );
+      return null;
     } finally {
       setLoading(null);
     }
