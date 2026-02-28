@@ -912,7 +912,7 @@ serve(async (req) => {
       });
     }
     
-    const { session_id, message, attachments, models, history, concept_type } = requestBody;
+    const { session_id, message, attachments, models, history, concept_type, request_group_id } = requestBody;
 
     if (!session_id || !message || !models || models.length === 0) {
       return new Response(JSON.stringify({ error: "session_id, message, and models are required" }), {
@@ -1175,6 +1175,7 @@ serve(async (req) => {
           model_name: result.model,
           content: result.content,
           reasoning_path: result.reasoning || null,
+          request_group_id: request_group_id || null,
           metadata: { 
             provider: result.provider,
             prompt_tokens: result.usage?.prompt_tokens || 0,
@@ -1187,6 +1188,8 @@ serve(async (req) => {
             fallback_reason: result.fallback_metadata?.fallback_reason || undefined,
             // Include parsed proposals if found
             proposals: proposals,
+            // Include concept type if present
+            concept_type: concept_type || undefined,
           },
         };
       });
