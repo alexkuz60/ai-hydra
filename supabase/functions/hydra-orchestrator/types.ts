@@ -124,6 +124,8 @@ export interface RequestBody {
   models: ModelRequest[];
   /** Conversation history for multi-turn context */
   history?: HistoryMessage[];
+  /** Concept expert type tag — propagated to session_memory chunks */
+  concept_type?: string;
   // HTTP tool testing action
   action?: 'test_http_tool';
   http_config?: HttpConfig;
@@ -345,6 +347,8 @@ export interface ToolExecutionContext {
   supabaseKey: string;
   /** Current role being used (for role-specific tools) */
   currentRole?: string;
+  /** Concept type tag (visionary/strategist/patent) — passed from concept invocations */
+  conceptType?: string;
 }
 
 // ============================================

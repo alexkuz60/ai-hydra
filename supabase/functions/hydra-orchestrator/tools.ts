@@ -1010,6 +1010,7 @@ async function executeUpdateSessionMemory(args: UpdateSessionMemoryArgs): Promis
     }
     
     // Insert into session_memory
+    const conceptType = currentExecutionContext.conceptType;
     const insertData: Record<string, unknown> = {
       session_id: sessionId,
       user_id: userId,
@@ -1020,6 +1021,7 @@ async function executeUpdateSessionMemory(args: UpdateSessionMemoryArgs): Promis
         tags: parsedTags,
         source: 'tool:update_session_memory',
         created_by: 'archivist',
+        ...(conceptType ? { concept_type: conceptType } : {}),
       },
     };
     
