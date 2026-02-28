@@ -108,6 +108,13 @@ export function ConceptResponsesPreview({
 
   const loadOrParseApprovalSections = useCallback(async () => {
     if (!planId) return;
+
+    // Determine the latest response timestamp to detect stale approval data
+    const latestResponseTime = Math.max(
+      responses.visionary?.created_at ? new Date(responses.visionary.created_at).getTime() : 0,
+      responses.strategist?.created_at ? new Date(responses.strategist.created_at).getTime() : 0,
+      responses.patent?.created_at ? new Date(responses.patent.created_at).getTime() : 0,
+    );
     
     // Try to load existing approval data from plan metadata
     try {
@@ -119,10 +126,21 @@ export function ConceptResponsesPreview({
       
       const meta = data?.metadata as Record<string, unknown> | null;
       if (meta?.approval_sections) {
-        const loaded = sectionsFromJson(meta.approval_sections);
-        setApprovalSections(loaded);
-        initialSectionsRef.current = JSON.stringify(meta.approval_sections);
-        return;
+        // Check if saved data is still fresh (not older than the latest response)
+        const savedAt = Math.max(
+          meta.approval_visionary ? new Date((meta.approval_visionary as any).updated_at || 0).getTime() : 0,
+          meta.approval_strategist ? new Date((meta.approval_strategist as any).updated_at || 0).getTime() : 0,
+          meta.approval_patent ? new Date((meta.approval_patent as any).updated_at || 0).getTime() : 0,
+        );
+
+        if (savedAt >= latestResponseTime && latestResponseTime > 0) {
+          // Saved approval data is up-to-date
+          const loaded = sectionsFromJson(meta.approval_sections);
+          setApprovalSections(loaded);
+          initialSectionsRef.current = JSON.stringify(meta.approval_sections);
+          return;
+        }
+        // Responses are newer — fall through to re-parse
       }
     } catch { /* fall through to parsing */ }
 
