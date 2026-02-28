@@ -2023,7 +2023,7 @@ export async function fetchRoleKnowledgeContext(
 // ============================================
 
 async function executePatentSearch(args: PatentSearchArgs): Promise<string> {
-  const ctx = executionContext;
+  const ctx = currentExecutionContext;
   if (!ctx) {
     return JSON.stringify({ success: false, error: "Контекст выполнения недоступен" });
   }
