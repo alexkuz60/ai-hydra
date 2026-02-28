@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, ReactNode } from 'react';
 
 // Consultant feature translations will be added below
 
@@ -1524,17 +1524,19 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('hydra-language', language);
   }, [language]);
 
-  const t = (key: string): string => {
+  const t = useCallback((key: string): string => {
     return translations[key]?.[language] || key;
-  };
+  }, [language]);
 
-  const availableLanguages = [
+  const availableLanguages = useMemo(() => [
     { code: 'ru' as Language, name: 'Русский' },
     { code: 'en' as Language, name: 'English' },
-  ];
+  ], []);
+
+  const value = useMemo(() => ({ language, setLanguage, t, availableLanguages }), [language, t, availableLanguages]);
 
   return (
-    <LanguageContext.Provider value={{ language, setLanguage, t, availableLanguages }}>
+    <LanguageContext.Provider value={value}>
       {children}
     </LanguageContext.Provider>
   );
