@@ -14,6 +14,7 @@ import { useTaskFiles } from '@/hooks/useTaskFiles';
 import { supabase } from '@/integrations/supabase/client';
 
 import { ConceptPatentSearch } from './ConceptPatentSearch';
+import { StalenessWarningBanner } from '@/components/ui/StalenessWarningBanner';
 import { ConceptVisionaryCall } from './ConceptVisionaryCall';
 import { ConceptStrategistCall } from './ConceptStrategistCall';
 import { ConceptResponsesPreview } from './ConceptResponsesPreview';
@@ -507,6 +508,11 @@ export function TaskDetailsPanel({
               {/* Concept Pipeline — only for plan-level */}
               {isPlanLevel && (
                 <section className="border-t pt-4 space-y-4">
+                  {/* Knowledge staleness warning for SPRZ experts */}
+                  <StalenessWarningBanner
+                    roles={['visionary', 'strategist', 'patent_attorney']}
+                    isRu={language === 'ru'}
+                  />
                   {/* Pipeline Timeline */}
                   <div className="flex items-center gap-3">
                     <div className="flex-1">

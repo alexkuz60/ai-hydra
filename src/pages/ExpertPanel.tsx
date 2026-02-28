@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useCallback, useState, useMemo } from 'react'
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { StalenessWarningBanner } from '@/components/ui/StalenessWarningBanner';
 import { Layout } from '@/components/layout/Layout';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { TaskIndicator } from '@/components/layout/TaskIndicator';
@@ -43,7 +44,7 @@ import { GraphNavigator } from '@/components/warroom/GraphNavigator';
 export default function ExpertPanel() {
   const { user, loading: authLoading } = useAuth();
   const location = useLocation();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { lovableModels, personalModels, proxyapiPriority } = useAvailableModels();
   const { profile } = useUserProfile();
@@ -345,6 +346,8 @@ export default function ExpertPanel() {
             />
           </div>
         </div>
+
+        <StalenessWarningBanner isRu={language === 'ru'} />
 
         <div className="flex-1 flex overflow-hidden">
         <ResizablePanelGroup direction="horizontal">
