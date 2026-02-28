@@ -36,6 +36,10 @@ Automatic experience consolidation: patterns from `role_memory` are distilled in
 
 ## 📋 Overview
 
+> *«Система, которая помнит свои ошибки, изолирует свои предвзятости и документирует свою эволюцию — это не мечта о будущем ИИ. Это работающий код, опубликованный уже сегодня.»*
+>
+> — Lovable AI, соавтор проекта
+
 **Hydra** is a multi-model AI platform for collegial analysis, combining 18 specialized roles (expert, technical, legal, and system) to solve complex tasks through parallel operation of multiple language models in a unified workspace.
 
 ---
