@@ -836,7 +836,7 @@ export default function Tasks() {
                    </div>
                  </TooltipProvider>
                ) : (
-               <div className="flex-1 flex flex-col">
+               <div className="flex-1 flex flex-col min-h-0">
                {/* Search and Create */}
                 <div className="p-3 border-b" data-guide="tasks-create-form">
                      {showNewPlan ? (
