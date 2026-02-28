@@ -12,7 +12,7 @@ interface MermaidPreviewProps {
 
 let previewCounter = 0;
 
-export function MermaidPreview({ content, className, maxHeight = 120 }: MermaidPreviewProps) {
+export const MermaidPreview = React.memo(function MermaidPreview({ content, className, maxHeight = 120 }: MermaidPreviewProps) {
   const { theme } = useTheme();
   const containerRef = useRef<HTMLDivElement>(null);
   const [svg, setSvg] = useState<string>('');
@@ -100,4 +100,4 @@ export function MermaidPreview({ content, className, maxHeight = 120 }: MermaidP
       />
     </div>
   );
-}
+});

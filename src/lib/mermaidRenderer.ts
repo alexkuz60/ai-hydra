@@ -1,4 +1,13 @@
-import mermaid from 'mermaid';
+// Lazy-loaded mermaid to reduce initial bundle size
+let mermaidModule: typeof import('mermaid')['default'] | null = null;
+
+async function getMermaid() {
+  if (!mermaidModule) {
+    const m = await import('mermaid');
+    mermaidModule = m.default;
+  }
+  return mermaidModule;
+}
 
 /**
  * Centralized Mermaid renderer that serializes all render calls
@@ -63,7 +72,7 @@ function getThemeConfig(theme: string) {
   };
 }
 
-function ensureInitialized(theme: string) {
+function ensureInitialized(mermaid: Awaited<ReturnType<typeof getMermaid>>, theme: string) {
   if (currentTheme !== theme) {
     mermaid.initialize(getThemeConfig(theme));
     currentTheme = theme;
@@ -112,8 +121,9 @@ export async function renderMermaid(
       cleanupOrphans(idPrefix);
 
       try {
+        const mermaid = await getMermaid();
         // Re-initialize if theme changed
-        ensureInitialized(theme);
+        ensureInitialized(mermaid, theme);
 
         // Wait for webfonts to be ready to avoid text clipping in calculated node widths.
         if (typeof document !== 'undefined' && 'fonts' in document) {

@@ -184,7 +184,7 @@ function CodeBlock({
   );
 }
 
-export function MarkdownRenderer({ content, className, streaming = false, interactiveChecklists = false, checklistState, onChecklistChange, mermaidZoom = 0.5 }: MarkdownRendererProps) {
+export const MarkdownRenderer = React.memo(function MarkdownRenderer({ content, className, streaming = false, interactiveChecklists = false, checklistState, onChecklistChange, mermaidZoom = 0.5 }: MarkdownRendererProps) {
   // Track checkbox index across the entire render
   const checkboxIndexRef = React.useRef(0);
   
@@ -316,4 +316,4 @@ export function MarkdownRenderer({ content, className, streaming = false, intera
       </ReactMarkdown>
     </div>
   );
-}
+});
