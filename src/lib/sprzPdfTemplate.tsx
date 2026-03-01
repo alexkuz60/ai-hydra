@@ -134,7 +134,7 @@ function makeStyles(c: ThemeColors) {
     },
     bodyText: {
       fontSize: 11,
-      fontWeight: 'bold',
+      fontWeight: 'normal',
       color: c.fgStrong,
       lineHeight: 1.5,
       marginBottom: 6,
@@ -160,7 +160,7 @@ function makeStyles(c: ThemeColors) {
     },
     cardBody: {
       fontSize: 11,
-      fontWeight: 'bold',
+      fontWeight: 'normal',
       color: c.fgStrong,
       lineHeight: 1.45,
     },
@@ -199,31 +199,31 @@ function makeStyles(c: ThemeColors) {
       borderRadius: 4,
     },
     taxonomyIcon: {
-      fontSize: 10,
+      fontSize: 12,
       fontWeight: 'bold',
-      width: 28,
-      color: c.muted,
+      width: 30,
+      color: c.primary,
     },
     taxonomyLabel: {
-      fontSize: 10,
-      fontWeight: 500,
-      color: c.fg,
+      fontSize: 12,
+      fontWeight: 'bold',
+      color: c.fgStrong,
     },
     taxonomySubRow: {
       flexDirection: 'row',
       alignItems: 'center',
-      paddingLeft: 36,
-      paddingVertical: 2,
+      paddingLeft: 38,
+      paddingVertical: 3,
     },
     taxonomyDot: {
-      width: 5,
-      height: 5,
+      width: 6,
+      height: 6,
       borderRadius: 3,
-      marginRight: 6,
+      marginRight: 8,
     },
     taxonomySub: {
-      fontSize: 9,
-      color: c.muted,
+      fontSize: 11,
+      color: c.fg,
     },
     footer: {
       position: 'absolute',
@@ -303,32 +303,33 @@ function TaxonomyTree({ typeIds, subtypeIds, lang, s, c }: {
   s: ReturnType<typeof makeStyles>; c: ThemeColors;
 }) {
   const isRu = lang === 'ru';
+  // Only show selected types
+  const selectedTypes = SPRZ_TAXONOMY.filter(t => typeIds.includes(t.id));
+  if (selectedTypes.length === 0) return null;
+
   return (
     <View>
       <Text style={s.sectionSubtitle}>{isRu ? 'Типизация проекта' : 'Project Classification'}</Text>
-      {SPRZ_TAXONOMY.map(type => {
-        const active = typeIds.includes(type.id);
+      {selectedTypes.map(type => {
+        const selectedSubs = type.subtypes.filter(sub => subtypeIds.includes(sub.id));
         return (
-          <View key={type.id}>
-            <View style={[s.taxonomyRow, active && s.taxonomyActive]}>
-              <Text style={[s.taxonomyIcon, active && { color: c.primary }]}>
-                {PDF_TYPE_ICONS[type.id] || '[-]'}
+          <View key={type.id} style={{ marginBottom: 8 }}>
+            <View style={[s.taxonomyRow, s.taxonomyActive]}>
+              <Text style={s.taxonomyIcon}>
+                {type.icon}
               </Text>
-              <Text style={[s.taxonomyLabel, active && { color: c.primary }]}>
+              <Text style={s.taxonomyLabel}>
                 {isRu ? type.label.ru : type.label.en}
               </Text>
             </View>
-            {active && type.subtypes.map(sub => {
-              const subActive = subtypeIds.includes(sub.id);
-              return (
-                <View key={sub.id} style={s.taxonomySubRow}>
-                  <View style={[s.taxonomyDot, { backgroundColor: subActive ? c.primary : c.muted }]} />
-                  <Text style={[s.taxonomySub, subActive && { color: c.fg }]}>
-                    {isRu ? sub.label.ru : sub.label.en}
-                  </Text>
-                </View>
-              );
-            })}
+            {selectedSubs.map(sub => (
+              <View key={sub.id} style={s.taxonomySubRow}>
+                <View style={[s.taxonomyDot, { backgroundColor: c.primary }]} />
+                <Text style={s.taxonomySub}>
+                  {isRu ? sub.label.ru : sub.label.en}
+                </Text>
+              </View>
+            ))}
           </View>
         );
       })}
