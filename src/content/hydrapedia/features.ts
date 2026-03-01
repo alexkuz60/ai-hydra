@@ -718,7 +718,62 @@ StrategySyncEngine
 - **Статистика моделей** — базовые данные для досье и портфолио
 
 ### 📋 Клонирование
-Учебные примеры можно клонировать в личные задачи для редактирования и экспериментов. Оригинал остаётся неизменным.`,
+Учебные примеры можно клонировать в личные задачи для редактирования и экспериментов. Оригинал остаётся неизменным.
+
+## 📄 PDF-презентация (Экспорт)
+
+Стратегический план можно экспортировать в профессиональный PDF-отчёт формата «Pitch Deck» (A4 Landscape).
+
+### Темы оформления
+
+Экспорт доступен в двух темах через выпадающее меню:
+
+| Тема | Описание |
+|------|----------|
+| 🌙 **Тёмная** | Высококонтрастная тема с тёмным фоном для презентаций |
+| ☀️ **Светлая** | Чистая тема с белым фоном для печати |
+
+### Структура документа
+
+PDF-отчёт формируется из 8 разделов в фиксированной последовательности:
+
+1. **Обложка** — название проекта, цель, типизация, дата
+2. **Содержание** — интерактивное оглавление с кликабельными ссылками и номерами страниц
+3. **Цель и прогресс** — прогресс-бар, статус, таксономия СПРЗ (дерево категорий)
+4. **Стратегическое видение** — полный текст Визионера с Markdown-форматированием
+5. **План реализации** — секции стратегии со статусами (approved/rejected/rework)
+6. **Патентный прогноз** — полный текст Патентоведа с Markdown-форматированием
+7. **Этапы работы** — список аспектов/подзадач плана
+8. **Ключевые выводы** — зафиксированные выводы (plan_conclusions) с отметкой 📌
+
+> Разделы 4–8 включаются только при наличии данных.
+
+### Интерактивное оглавление
+
+- Каждый раздел — кликабельная ссылка с якорем на соответствующую страницу
+- Подзаголовки извлекаются автоматически из Markdown-контента (заголовки \`#\`, \`##\`, \`###\`) и названий секций
+- Справа от каждого пункта — номер страницы
+
+### Markdown-рендеринг
+
+Модуль \`pdfMarkdownRenderer.tsx\` парсит Markdown и рендерит для \`@react-pdf/renderer\`:
+- Заголовки H1–H4 с цветовой дифференциацией
+- Маркированные и нумерованные списки
+- **Жирный текст** через \`**text**\`
+- Горизонтальные разделители (\`---\`)
+
+### Кириллическая поддержка
+
+Используется шрифт **Roboto** (Regular + Bold) для полной поддержки кириллицы. Эмодзи заменены текстовыми маркерами: \`[S]\` Наука, \`[T]\` Технологии, \`[V]\` Вайб-кодинг, \`[C]\` Социум, \`[D]\` Дизайн, \`[B]\` Бизнес, \`[A]\` Творчество.
+
+### Техническая реализация
+
+| Файл | Назначение |
+|------|------------|
+| \`sprzPdfTemplate.tsx\` | React-PDF компонент документа (темы, стили, структура) |
+| \`pdfMarkdownRenderer.tsx\` | Парсер Markdown → React-PDF элементы |
+| \`useSprzPdfExport.ts\` | Хук: загрузка данных из БД → генерация blob → скачивание |
+| \`sprzTaxonomy.ts\` | Таксономия: 7 категорий, подтипы, утилиты форматирования |`,
       en: `# Tasks
 
 Task management module for organizing work with AI.
@@ -896,7 +951,62 @@ StrategySyncEngine
 - **Model statistics** — baseline data for dossiers and portfolios
 
 ### 📋 Cloning
-Tutorial examples can be cloned into personal tasks for editing and experimentation. The original remains unchanged.`,
+Tutorial examples can be cloned into personal tasks for editing and experimentation. The original remains unchanged.
+
+## 📄 PDF Presentation (Export)
+
+A strategic plan can be exported as a professional PDF report in "Pitch Deck" format (A4 Landscape).
+
+### Themes
+
+Export is available in two themes via a dropdown menu:
+
+| Theme | Description |
+|-------|-------------|
+| 🌙 **Dark** | High-contrast dark background for presentations |
+| ☀️ **Light** | Clean white background for printing |
+
+### Document Structure
+
+The PDF report consists of 8 sections in a fixed sequence:
+
+1. **Cover** — project title, goal, classification, date
+2. **Table of Contents** — interactive TOC with clickable links and page numbers
+3. **Goal & Progress** — progress bar, status, SPRS taxonomy tree
+4. **Strategic Vision** — full Visionary text with Markdown formatting
+5. **Implementation Plan** — strategy sections with statuses (approved/rejected/rework)
+6. **Patent Forecast** — full Patent Attorney text with Markdown formatting
+7. **Work Stages** — list of plan aspects/subtasks
+8. **Key Conclusions** — fixated conclusions (plan_conclusions) with 📌 markers
+
+> Sections 4–8 are included only when data is available.
+
+### Interactive Table of Contents
+
+- Each section is a clickable link with an anchor to the corresponding page
+- Sub-items are extracted automatically from Markdown content (headings \`#\`, \`##\`, \`###\`) and section titles
+- Page numbers appear on the right side of each entry
+
+### Markdown Rendering
+
+The \`pdfMarkdownRenderer.tsx\` module parses Markdown and renders it for \`@react-pdf/renderer\`:
+- H1–H4 headings with color differentiation
+- Bullet and numbered lists
+- **Bold text** via \`**text**\`
+- Horizontal rules (\`---\`)
+
+### Cyrillic Support
+
+Uses **Roboto** font (Regular + Bold) for full Cyrillic support. Emojis are replaced with text markers: \`[S]\` Science, \`[T]\` Technology, \`[V]\` Vibe Coding, \`[C]\` Society, \`[D]\` Design, \`[B]\` Business, \`[A]\` Creativity.
+
+### Technical Implementation
+
+| File | Purpose |
+|------|---------|
+| \`sprzPdfTemplate.tsx\` | React-PDF document component (themes, styles, structure) |
+| \`pdfMarkdownRenderer.tsx\` | Markdown → React-PDF element parser |
+| \`useSprzPdfExport.ts\` | Hook: load data from DB → generate blob → download |
+| \`sprzTaxonomy.ts\` | Taxonomy: 7 categories, subtypes, formatting utilities |`,
     },
   },
   {
