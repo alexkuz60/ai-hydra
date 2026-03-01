@@ -72,7 +72,7 @@ Automatic experience consolidation: patterns from `role_memory` are distilled in
 
 **Staff Roles (HR Department)** — Role hierarchy editor, behavioral patterns, model interviews (briefing → tests → verdict), interview history table, Role Knowledge Base (RAG), certification 🛡️, 3-tier Context Pyramid (Global → Org → Expertise)
 
-**Task Management** — Session hub, model configuration via Sheet, task files, session memory (embeddings), tutorial examples with 26 pre-seeded conversations (clone-to-personal), **StrategySyncEngine** (auto-sync approved strategies to task tree, intelligent diff, soft-delete), **SPSP Taxonomy** (7-type multi-select classification: 🔬Science, 💻Technology, 🎨Vibe-coding, 🏛Society, 🎯Design, 💼Business, ✨Creativity — each with 4-5 subtypes, injected into expert system prompts)
+**Task Management** — Session hub, model configuration via Sheet, task files, session memory (embeddings), tutorial examples with 26 pre-seeded conversations (clone-to-personal), **StrategySyncEngine** (auto-sync approved strategies to task tree, intelligent diff, soft-delete), **SPSP Taxonomy** (7-type multi-select classification: 🔬Science, 💻Technology, 🎨Vibe-coding, 🏛Society, 🎯Design, 💼Business, ✨Creativity — each with 4-5 subtypes, injected into expert system prompts), **PDF Presentation Export** (pitch-deck style report with Dark/Light themes, interactive TOC with page numbers, Markdown rendering, full Cyrillic support via Roboto fonts)
 
 **Cross-task Memory** — Vector-embedded verdict fixation (`plan_conclusions`, 1536-dim embeddings) for sharing "institutional memory" across subtasks within a strategic plan
 
