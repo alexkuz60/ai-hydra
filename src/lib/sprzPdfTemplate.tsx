@@ -152,8 +152,6 @@ function makeStyles(c: ThemeColors) {
       marginBottom: 10,
       borderLeftWidth: 3,
       borderLeftColor: c.cardBorder,
-      position: 'relative',
-      zIndex: 1,
     },
     cardTitle: {
       fontSize: 12,
@@ -166,9 +164,6 @@ function makeStyles(c: ThemeColors) {
       fontWeight: 'bold',
       color: c.fgStrong,
       lineHeight: 1.5,
-      position: 'relative',
-      zIndex: 2,
-      opacity: 1,
     },
     progressContainer: {
       flexDirection: 'row',
@@ -385,7 +380,7 @@ export function SprzPdfDocument({ data }: { data: SprzPdfData }) {
         {data.goal && (
           <View style={s.card}>
             <Text style={s.cardTitle}>{isRu ? 'Цель проекта' : 'Project Goal'}</Text>
-            <Text style={s.cardBody}>{data.goal}</Text>
+            <Text style={[s.cardBody, { color: theme === 'dark' ? '#ffffff' : '#000000' }]}>{data.goal}</Text>
           </View>
         )}
         <View style={s.progressContainer}>
@@ -418,7 +413,7 @@ export function SprzPdfDocument({ data }: { data: SprzPdfData }) {
                 </View>
               </View>
               {section.body && (
-                <Text style={s.cardBody}>{section.body.slice(0, 400)}{section.body.length > 400 ? '...' : ''}</Text>
+                <Text style={[s.cardBody, { color: theme === 'dark' ? '#ffffff' : '#000000' }]}>{section.body.slice(0, 400)}{section.body.length > 400 ? '...' : ''}</Text>
               )}
               {section.children && section.children.length > 0 && (
                 <View style={{ marginTop: 6, paddingLeft: 8, borderLeftWidth: 1, borderLeftColor: c.muted }}>
@@ -443,9 +438,9 @@ export function SprzPdfDocument({ data }: { data: SprzPdfData }) {
             <View key={i} style={s.card} wrap={false}>
               <Text style={s.cardTitle}>{session.title}</Text>
               {session.description && (
-                <Text style={s.cardBody}>{session.description.slice(0, 300)}</Text>
+                <Text style={[s.cardBody, { color: theme === 'dark' ? '#ffffff' : '#000000' }]}>{session.description.slice(0, 300)}</Text>
               )}
-              <Text style={s.mutedText}>{session.updatedAt}</Text>
+              <Text style={[s.mutedText, { color: theme === 'dark' ? '#d0d0d0' : '#333333' }]}>{session.updatedAt}</Text>
             </View>
           ))}
           <Footer s={s} />
@@ -458,9 +453,9 @@ export function SprzPdfDocument({ data }: { data: SprzPdfData }) {
           <Text style={s.sectionTitle}>{isRu ? 'Ключевые выводы' : 'Key Conclusions'}</Text>
           {data.conclusions.map((cc, i) => (
             <View key={i} style={s.conclusionCard} wrap={false}>
-              <Text style={s.cardBody}>{cc.content.slice(0, 500)}{cc.content.length > 500 ? '...' : ''}</Text>
+              <Text style={[s.cardBody, { color: theme === 'dark' ? '#ffffff' : '#000000' }]}>{cc.content.slice(0, 500)}{cc.content.length > 500 ? '...' : ''}</Text>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 4 }}>
-                <Text style={s.mutedText}>{cc.createdAt}</Text>
+                <Text style={[s.mutedText, { color: theme === 'dark' ? '#d0d0d0' : '#333333' }]}>{cc.createdAt}</Text>
                 {cc.isPinned && (
                   <Text style={{ fontSize: 8, fontWeight: 'bold', color: c.warning }}>[*] {isRu ? 'Закреплено' : 'Pinned'}</Text>
                 )}
