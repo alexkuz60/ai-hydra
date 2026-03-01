@@ -244,6 +244,17 @@ function Footer({ pageNum, lang }: { pageNum: number; lang: string }) {
   );
 }
 
+// Text-based icons for PDF (emojis don't render in @react-pdf/renderer)
+const PDF_TYPE_ICONS: Record<string, string> = {
+  science: '[S]',
+  technology: '[T]',
+  vibe_coding: '[V]',
+  society: '[C]',
+  design: '[D]',
+  business: '[B]',
+  creativity: '[A]',
+};
+
 function TaxonomyTree({ typeIds, subtypeIds, lang }: { typeIds: string[]; subtypeIds: string[]; lang: string }) {
   const isRu = lang === 'ru';
   return (
@@ -254,7 +265,9 @@ function TaxonomyTree({ typeIds, subtypeIds, lang }: { typeIds: string[]; subtyp
         return (
           <View key={type.id}>
             <View style={[s.taxonomyRow, active && s.taxonomyActive]}>
-              <Text style={s.taxonomyIcon}>{type.icon}</Text>
+              <Text style={[s.taxonomyIcon, active && { color: COLORS.primary }]}>
+                {PDF_TYPE_ICONS[type.id] || '[-]'}
+              </Text>
               <Text style={[s.taxonomyLabel, active && { color: COLORS.primary }]}>
                 {isRu ? type.label.ru : type.label.en}
               </Text>
@@ -291,7 +304,7 @@ export function SprzPdfDocument({ data }: { data: SprzPdfData }) {
   const typeLabels = data.typeIds
     .map(id => SPRZ_TAXONOMY.find(t => t.id === id))
     .filter(Boolean)
-    .map(t => `${t!.icon} ${isRu ? t!.label.ru : t!.label.en}`)
+    .map(t => `${PDF_TYPE_ICONS[t!.id] || ''} ${isRu ? t!.label.ru : t!.label.en}`)
     .join(' + ');
 
   const dateStr = new Date(data.createdAt).toLocaleDateString(isRu ? 'ru-RU' : 'en-US', {
@@ -405,7 +418,7 @@ export function SprzPdfDocument({ data }: { data: SprzPdfData }) {
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 4 }}>
                 <Text style={s.mutedText}>{c.createdAt}</Text>
                 {c.isPinned && (
-                  <Text style={{ fontSize: 8, color: COLORS.warning }}>📌 {isRu ? 'Закреплено' : 'Pinned'}</Text>
+                  <Text style={{ fontSize: 8, color: COLORS.warning }}>[*] {isRu ? 'Закреплено' : 'Pinned'}</Text>
                 )}
               </View>
             </View>
