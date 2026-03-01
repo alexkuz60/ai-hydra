@@ -72,6 +72,7 @@ export function useSprzPdfExport({ planId, lang }: UseSprzPdfExportOptions) {
           const patentMsg = conceptMsgs.find((m: any) => (m.metadata as any)?.concept_type === 'patent');
           if (visionMsg) visionContent = (isRuLocal ? visionMsg.content : visionMsg.content_en) || visionMsg.content;
           if (patentMsg) patentContent = (isRuLocal ? patentMsg.content : patentMsg.content_en) || patentMsg.content;
+          console.log('[PDF] conceptMsgs count:', conceptMsgs.length, 'vision:', !!visionMsg, 'patent:', !!patentMsg);
         }
       }
 
