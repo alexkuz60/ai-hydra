@@ -235,11 +235,11 @@ export interface SprzPdfData {
   publicUrl?: string;
 }
 
-function Footer({ pageNum, lang }: { pageNum: number; lang: string }) {
+function Footer() {
   return (
     <View style={s.footer} fixed>
       <Text>AI Hydra • SPRS</Text>
-      <Text>{pageNum}</Text>
+      <Text render={({ pageNumber, totalPages }) => `${pageNumber} / ${totalPages}`} />
     </View>
   );
 }
@@ -352,7 +352,7 @@ export function SprzPdfDocument({ data }: { data: SprzPdfData }) {
         </View>
 
         <TaxonomyTree typeIds={data.typeIds} subtypeIds={data.subtypeIds} lang={data.lang} />
-        <Footer pageNum={2} lang={data.lang} />
+        <Footer />
       </Page>
 
       {/* Page 3: Strategy sections */}
@@ -383,7 +383,7 @@ export function SprzPdfDocument({ data }: { data: SprzPdfData }) {
               )}
             </View>
           ))}
-          <Footer pageNum={3} lang={data.lang} />
+          <Footer />
         </Page>
       )}
 
@@ -402,7 +402,7 @@ export function SprzPdfDocument({ data }: { data: SprzPdfData }) {
               <Text style={s.mutedText}>{session.updatedAt}</Text>
             </View>
           ))}
-          <Footer pageNum={4} lang={data.lang} />
+          <Footer />
         </Page>
       )}
 
@@ -423,7 +423,7 @@ export function SprzPdfDocument({ data }: { data: SprzPdfData }) {
               </View>
             </View>
           ))}
-          <Footer pageNum={5} lang={data.lang} />
+          <Footer />
         </Page>
       )}
     </Document>
