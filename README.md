@@ -72,7 +72,22 @@ Automatic experience consolidation: patterns from `role_memory` are distilled in
 
 **Staff Roles (HR Department)** — Role hierarchy editor, behavioral patterns, model interviews (briefing → tests → verdict), interview history table, Role Knowledge Base (RAG), certification 🛡️, 3-tier Context Pyramid (Global → Org → Expertise)
 
-**Task Management** — Session hub, model configuration via Sheet, task files, session memory (embeddings), tutorial examples with 26 pre-seeded conversations (clone-to-personal), **StrategySyncEngine** (auto-sync approved strategies to task tree, intelligent diff, soft-delete), **SPSP Taxonomy** (7-type multi-select classification: 🔬Science, 💻Technology, 🎨Vibe-coding, 🏛Society, 🎯Design, 💼Business, ✨Creativity — each with 4-5 subtypes, injected into expert system prompts), **PDF Presentation Export** (pitch-deck style report with Dark/Light themes, interactive TOC with page numbers, Markdown rendering, full Cyrillic support via Roboto fonts)
+**Task Management** — Session hub, model configuration via Sheet, task files, session memory (embeddings), tutorial examples with 26 pre-seeded conversations (clone-to-personal), **StrategySyncEngine** (auto-sync approved strategies to task tree, intelligent diff, soft-delete), **PDF Presentation Export** (pitch-deck style report with Dark/Light themes, interactive TOC with page numbers, Markdown rendering, full Cyrillic support via Roboto fonts)
+
+**SPSP — Strategic Plan (СПРЗ)** — End-to-end automated strategic planning pipeline:
+
+| Stage | Agent | Output |
+|-------|-------|--------|
+| 1. Strategic Vision | **Visionary** | Goals, market analysis, competitive landscape |
+| 2. Implementation Plan | **Strategist** | Phased roadmap, milestones, resource allocation |
+| 3. Patent Forecast | **Patent Attorney** | Prior art search, patentability assessment, IP strategy |
+
+- **Sequential chain** with context accumulation: Visionary → Strategist → Patent Attorney
+- **SPSP Taxonomy** — 7-type multi-select classification (🔬Science, 💻Technology, 🎨Vibe-coding, 🏛Society, 🎯Design, 💼Business, ✨Creativity — each with 4-5 subtypes), injected into expert system prompts for domain accuracy
+- **Cross-task Memory** — Vector-embedded conclusions (`plan_conclusions`, 1536-dim) shared across subtasks within a plan
+- **Auto-cleanup protocol** — Old expert responses purged before re-invocation to prevent context degradation
+- **2-level hierarchy** — Plan → Aspects → Tasks with concept session auto-initialization
+- **Approval workflow** — Expandable expert previews with save/edit/approve controls
 
 **Cross-task Memory** — Vector-embedded verdict fixation (`plan_conclusions`, 1536-dim embeddings) for sharing "institutional memory" across subtasks within a strategic plan
 
