@@ -1,6 +1,6 @@
 /**
  * SPRZ type taxonomy: categories and subcategories for strategic plans.
- * Stored in strategic_plans.metadata as { sprzType, sprzSubtype }.
+ * Stored in strategic_plans.metadata as { sprzType: string[], sprzSubtype: string[] }.
  */
 
 export interface SprzSubtype {
@@ -106,26 +106,44 @@ export function getSprzSubtypes(typeId: string): SprzSubtype[] {
   return getSprzType(typeId)?.subtypes ?? [];
 }
 
-/** Format a human-readable label for type + subtypes (supports array or single string) */
+/** Get aggregated subtypes for multiple type ids, grouped by type */
+export function getSprzSubtypesForTypes(typeIds: string[]): { type: SprzType; subtypes: SprzSubtype[] }[] {
+  return typeIds
+    .map(id => getSprzType(id))
+    .filter((t): t is SprzType => !!t)
+    .map(type => ({ type, subtypes: type.subtypes }));
+}
+
+/** Normalize legacy single-string type to array */
+export function normalizeTypeIds(raw: unknown): string[] {
+  if (Array.isArray(raw)) return raw;
+  if (typeof raw === 'string' && raw) return [raw];
+  return [];
+}
+
+/** Format a human-readable label for type(s) + subtypes */
 export function formatSprzTypeLabel(
-  typeId: string | undefined,
+  typeIds: string | string[] | undefined,
   subtypeIds: string | string[] | undefined,
   lang: string,
 ): string {
-  if (!typeId) return '';
-  const type = getSprzType(typeId);
-  if (!type) return '';
-  const typeLabel = lang === 'ru' ? type.label.ru : type.label.en;
-  
-  // Normalize to array
-  const ids = Array.isArray(subtypeIds) ? subtypeIds : (subtypeIds ? [subtypeIds] : []);
-  if (ids.length === 0) return `${type.icon} ${typeLabel}`;
-  
-  const labels = ids
-    .map(id => type.subtypes.find(s => s.id === id))
+  const tIds = normalizeTypeIds(typeIds);
+  if (tIds.length === 0) return '';
+
+  const types = tIds.map(id => getSprzType(id)).filter((t): t is SprzType => !!t);
+  if (types.length === 0) return '';
+
+  const typeLabel = types.map(t => `${t.icon} ${lang === 'ru' ? t.label.ru : t.label.en}`).join(' + ');
+
+  const subIds = Array.isArray(subtypeIds) ? subtypeIds : (subtypeIds ? [subtypeIds] : []);
+  if (subIds.length === 0) return typeLabel;
+
+  const allSubtypes = types.flatMap(t => t.subtypes);
+  const labels = subIds
+    .map(id => allSubtypes.find(s => s.id === id))
     .filter(Boolean)
     .map(s => (lang === 'ru' ? s!.label.ru : s!.label.en));
-  
-  if (labels.length === 0) return `${type.icon} ${typeLabel}`;
-  return `${type.icon} ${typeLabel} → ${labels.join(', ')}`;
+
+  if (labels.length === 0) return typeLabel;
+  return `${typeLabel} → ${labels.join(', ')}`;
 }

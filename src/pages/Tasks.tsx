@@ -609,12 +609,12 @@ export default function Tasks() {
            if ((config as any)?.includePatent !== undefined) {
              metaUpdates.includePatent = !!(config as any).includePatent;
            }
-           if ((config as any)?.sprzType !== undefined) {
-             metaUpdates.sprzType = (config as any).sprzType || null;
-           }
-           if ((config as any)?.sprzSubtype !== undefined) {
-             metaUpdates.sprzSubtype = (config as any).sprzSubtype || null;
-           }
+            if ((config as any)?.sprzType !== undefined) {
+              metaUpdates.sprzType = (config as any).sprzType || [];
+            }
+            if ((config as any)?.sprzSubtype !== undefined) {
+              metaUpdates.sprzSubtype = (config as any).sprzSubtype || [];
+            }
            updates.metadata = metaUpdates;
           await updatePlan(planId, updates as any);
           if (selectedTask?.id === taskId) {

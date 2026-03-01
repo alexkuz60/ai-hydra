@@ -151,7 +151,7 @@ export function TaskDetailsPanel({
   const [taskDescription, setTaskDescription] = useState('');
   const [hasChanges, setHasChanges] = useState(false);
   const [includePatent, setIncludePatent] = useState(false);
-  const [sprzType, setSprzType] = useState('');
+  const [sprzType, setSprzType] = useState<string[]>([]);
   const [sprzSubtype, setSprzSubtype] = useState<string[]>([]);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewTab, setPreviewTab] = useState<'visionary' | 'strategist' | 'patent'>('visionary');
@@ -252,8 +252,9 @@ export function TaskDetailsPanel({
       setIncludePatent(!!(task.session_config as any)?.includePatent);
       // Load SPRZ type from plan metadata
       const meta = (task.session_config as any)?.__planMeta;
-      setSprzType(meta?.sprzType || '');
-      // Normalize legacy single-string to array
+      // Normalize legacy single-string to array for both type and subtype
+      const rawType = meta?.sprzType;
+      setSprzType(Array.isArray(rawType) ? rawType : (typeof rawType === 'string' && rawType ? [rawType] : []));
       const rawSub = meta?.sprzSubtype;
       setSprzSubtype(Array.isArray(rawSub) ? rawSub : (rawSub ? [rawSub] : []));
       setHasChanges(false);
@@ -399,7 +400,7 @@ export function TaskDetailsPanel({
                )}
                 <div className="flex items-center gap-2 mt-1 text-base text-muted-foreground flex-wrap">
                   <span>{format(new Date(task.updated_at), 'dd.MM.yyyy HH:mm')}</span>
-                  {isPlanLevel && sprzType && (
+                  {isPlanLevel && sprzType.length > 0 && (
                     <>
                       <span>•</span>
                       <Badge variant="outline" className="text-xs">
@@ -493,7 +494,7 @@ export function TaskDetailsPanel({
               {isPlanLevel && (
                 <div className="mb-3">
                   <SprzTypeSelector
-                    typeId={sprzType}
+                    typeIds={sprzType}
                     subtypeIds={sprzSubtype}
                     onTypeChange={(v) => { setSprzType(v); userInteractedRef.current = true; setHasChanges(true); }}
                     onSubtypeChange={(v) => { setSprzSubtype(v); userInteractedRef.current = true; setHasChanges(true); }}
