@@ -316,7 +316,7 @@ function TaxonomyTree({ typeIds, subtypeIds, lang, s, c }: {
           <View key={type.id} style={{ marginBottom: 8 }}>
             <View style={[s.taxonomyRow, s.taxonomyActive]}>
               <Text style={s.taxonomyIcon}>
-                {type.icon}
+                {PDF_TYPE_ICONS[type.id] || '[~]'}
               </Text>
               <Text style={s.taxonomyLabel}>
                 {isRu ? type.label.ru : type.label.en}
@@ -413,7 +413,16 @@ export function SprzPdfDocument({ data }: { data: SprzPdfData }) {
                 </View>
               </View>
               {section.body && (
-                <Text style={[s.cardBody, { color: theme === 'dark' ? '#ffffff' : '#000000' }]}>{section.body.slice(0, 400)}{section.body.length > 400 ? '...' : ''}</Text>
+                <Text style={[s.cardBody, { color: theme === 'dark' ? '#ffffff' : '#000000' }]}>{(() => {
+                  let text = section.body;
+                  // Remove duplicated title from body start
+                  if (text.startsWith(section.title)) {
+                    text = text.slice(section.title.length).replace(/^[\s:.\-—]+/, '');
+                  }
+                  // Also strip markdown-style title patterns like "**Title**\n"
+                  text = text.replace(/^\*\*[^*]+\*\*[\s:.\-—]*/m, '').trim();
+                  return text.slice(0, 400) + (text.length > 400 ? '...' : '');
+                })()}</Text>
               )}
               {section.children && section.children.length > 0 && (
                 <View style={{ marginTop: 6, paddingLeft: 8, borderLeftWidth: 1, borderLeftColor: c.muted }}>
