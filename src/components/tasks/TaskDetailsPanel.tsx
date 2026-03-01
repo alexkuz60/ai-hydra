@@ -152,7 +152,7 @@ export function TaskDetailsPanel({
   const [hasChanges, setHasChanges] = useState(false);
   const [includePatent, setIncludePatent] = useState(false);
   const [sprzType, setSprzType] = useState('');
-  const [sprzSubtype, setSprzSubtype] = useState('');
+  const [sprzSubtype, setSprzSubtype] = useState<string[]>([]);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewTab, setPreviewTab] = useState<'visionary' | 'strategist' | 'patent'>('visionary');
 
@@ -253,7 +253,9 @@ export function TaskDetailsPanel({
       // Load SPRZ type from plan metadata
       const meta = (task.session_config as any)?.__planMeta;
       setSprzType(meta?.sprzType || '');
-      setSprzSubtype(meta?.sprzSubtype || '');
+      // Normalize legacy single-string to array
+      const rawSub = meta?.sprzSubtype;
+      setSprzSubtype(Array.isArray(rawSub) ? rawSub : (rawSub ? [rawSub] : []));
       setHasChanges(false);
     }
   }, [task?.id, configKey]);
@@ -492,7 +494,7 @@ export function TaskDetailsPanel({
                 <div className="mb-3">
                   <SprzTypeSelector
                     typeId={sprzType}
-                    subtypeId={sprzSubtype}
+                    subtypeIds={sprzSubtype}
                     onTypeChange={(v) => { setSprzType(v); userInteractedRef.current = true; setHasChanges(true); }}
                     onSubtypeChange={(v) => { setSprzSubtype(v); userInteractedRef.current = true; setHasChanges(true); }}
                     disabled={task.is_system}

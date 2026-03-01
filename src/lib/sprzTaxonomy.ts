@@ -106,19 +106,26 @@ export function getSprzSubtypes(typeId: string): SprzSubtype[] {
   return getSprzType(typeId)?.subtypes ?? [];
 }
 
-/** Format a human-readable label for type + subtype */
+/** Format a human-readable label for type + subtypes (supports array or single string) */
 export function formatSprzTypeLabel(
   typeId: string | undefined,
-  subtypeId: string | undefined,
+  subtypeIds: string | string[] | undefined,
   lang: string,
 ): string {
   if (!typeId) return '';
   const type = getSprzType(typeId);
   if (!type) return '';
   const typeLabel = lang === 'ru' ? type.label.ru : type.label.en;
-  if (!subtypeId) return `${type.icon} ${typeLabel}`;
-  const subtype = type.subtypes.find(s => s.id === subtypeId);
-  if (!subtype) return `${type.icon} ${typeLabel}`;
-  const subtypeLabel = lang === 'ru' ? subtype.label.ru : subtype.label.en;
-  return `${type.icon} ${typeLabel} → ${subtypeLabel}`;
+  
+  // Normalize to array
+  const ids = Array.isArray(subtypeIds) ? subtypeIds : (subtypeIds ? [subtypeIds] : []);
+  if (ids.length === 0) return `${type.icon} ${typeLabel}`;
+  
+  const labels = ids
+    .map(id => type.subtypes.find(s => s.id === id))
+    .filter(Boolean)
+    .map(s => (lang === 'ru' ? s!.label.ru : s!.label.en));
+  
+  if (labels.length === 0) return `${type.icon} ${typeLabel}`;
+  return `${type.icon} ${typeLabel} → ${labels.join(', ')}`;
 }
