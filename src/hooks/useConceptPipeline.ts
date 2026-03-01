@@ -23,6 +23,7 @@ interface UseConceptPipelineOptions {
   planId: string;
   planTitle: string;
   planGoal: string;
+  sprzLabel?: string;
   includePatent?: boolean;
   onStepComplete?: () => void;
 }
@@ -59,7 +60,7 @@ async function fetchFileDigestsForPlan(planId: string, userId: string): Promise<
   }
 }
 
-export function useConceptPipeline({ planId, planTitle, planGoal, includePatent = false, onStepComplete }: UseConceptPipelineOptions) {
+export function useConceptPipeline({ planId, planTitle, planGoal, sprzLabel, includePatent = false, onStepComplete }: UseConceptPipelineOptions) {
   const { user } = useAuth();
   const { language } = useLanguage();
   const { responses, loading: responsesLoading, refetch } = useConceptResponses(planId || null);
@@ -112,6 +113,7 @@ export function useConceptPipeline({ planId, planTitle, planGoal, includePatent 
     planId,
     planTitle,
     planGoal,
+    sprzLabel,
     onComplete: () => {
       refetch();
       onStepComplete?.();

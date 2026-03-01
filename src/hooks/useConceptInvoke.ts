@@ -33,6 +33,8 @@ interface UseConceptInvokeOptions {
   planId: string;
   planTitle: string;
   planGoal: string;
+  /** Human-readable SPRS taxonomy label, e.g. "💻 Technology + 🎯 Design → Architecture, UX/UI" */
+  sprzLabel?: string;
   onComplete?: () => void;
 }
 
@@ -58,7 +60,7 @@ function currentDateString(): string {
 }
 
 /** Returns the AI response content string (or null on failure) */
-export function useConceptInvoke({ planId, planTitle, planGoal, onComplete }: UseConceptInvokeOptions) {
+export function useConceptInvoke({ planId, planTitle, planGoal, sprzLabel, onComplete }: UseConceptInvokeOptions) {
   const { user } = useAuth();
   const { language } = useLanguage();
   const [loading, setLoading] = useState<ConceptExpertType | null>(null);
@@ -116,19 +118,21 @@ export function useConceptInvoke({ planId, planTitle, planGoal, onComplete }: Us
       const stratCtxEn = sCtx ? `\n\n--- Strategic Structure ---\n${sCtx}` : '';
       const filesCtxRu = fCtx ? `\n\n--- Прикреплённые материалы (дайджесты файлов) ---\n${fCtx}` : '';
       const filesCtxEn = fCtx ? `\n\n--- Attached Materials (File Digests) ---\n${fCtx}` : '';
+      const sprzCtxRu = sprzLabel ? `\nКатегория СПРЗ: ${sprzLabel}.` : '';
+      const sprzCtxEn = sprzLabel ? `\nSPRS Category: ${sprzLabel}.` : '';
 
       const messages: Record<ConceptExpertType, Record<string, string>> = {
         visionary: {
-          ru: `[Видение Визионера] Дата запроса: ${today}. Сформулируй визионерскую концепцию проекта "${planTitle}". Рассмотри созвучность актуальным трендам, рыночным потребностям и конкурентный ландшафт по теме плана. Используй web_search для поиска самых свежих данных о трендах и рынке. Концепция: ${planGoal}${filesCtxRu}`,
-          en: `[Visionary Vision] Request date: ${today}. Formulate a visionary concept for the project "${planTitle}". Consider alignment with current trends, market needs, and the competitive landscape for this plan's topic. Use web_search to find the latest data on trends and market. Concept: ${planGoal}${filesCtxEn}`,
+          ru: `[Видение Визионера] Дата запроса: ${today}.${sprzCtxRu} Сформулируй визионерскую концепцию проекта "${planTitle}". Рассмотри созвучность актуальным трендам, рыночным потребностям и конкурентный ландшафт по теме плана. Используй web_search для поиска самых свежих данных о трендах и рынке. Концепция: ${planGoal}${filesCtxRu}`,
+          en: `[Visionary Vision] Request date: ${today}.${sprzCtxEn} Formulate a visionary concept for the project "${planTitle}". Consider alignment with current trends, market needs, and the competitive landscape for this plan's topic. Use web_search to find the latest data on trends and market. Concept: ${planGoal}${filesCtxEn}`,
         },
         strategist: {
-          ru: `[Стратегическая структура] Дата запроса: ${today}. Декомпозируй цели проекта "${planTitle}" в иерархию аспектов и задач. Используй web_search для поиска актуальных методологий и лучших практик. Концепция: ${planGoal}${visionCtxRu}${filesCtxRu}`,
-          en: `[Strategic Structure] Request date: ${today}. Decompose the goals of project "${planTitle}" into a hierarchy of aspects and tasks. Use web_search to find current methodologies and best practices. Concept: ${planGoal}${visionCtxEn}${filesCtxEn}`,
+          ru: `[Стратегическая структура] Дата запроса: ${today}.${sprzCtxRu} Декомпозируй цели проекта "${planTitle}" в иерархию аспектов и задач. Используй web_search для поиска актуальных методологий и лучших практик. Концепция: ${planGoal}${visionCtxRu}${filesCtxRu}`,
+          en: `[Strategic Structure] Request date: ${today}.${sprzCtxEn} Decompose the goals of project "${planTitle}" into a hierarchy of aspects and tasks. Use web_search to find current methodologies and best practices. Concept: ${planGoal}${visionCtxEn}${filesCtxEn}`,
         },
         patent: {
-          ru: `[Патентный прогноз] Дата запроса: ${today}. Проведи патентный анализ концепции "${planTitle}". Используй patent_search и web_search для поиска актуальных патентных аналогов и уровня техники. Описание: ${planGoal}${visionCtxRu}${stratCtxRu}${filesCtxRu}`,
-          en: `[Patent Forecast] Request date: ${today}. Conduct a patent analysis for the concept "${planTitle}". Use patent_search and web_search to find current patent analogues and prior art. Description: ${planGoal}${visionCtxEn}${stratCtxEn}${filesCtxEn}`,
+          ru: `[Патентный прогноз] Дата запроса: ${today}.${sprzCtxRu} Проведи патентный анализ концепции "${planTitle}". Используй patent_search и web_search для поиска актуальных патентных аналогов и уровня техники. Описание: ${planGoal}${visionCtxRu}${stratCtxRu}${filesCtxRu}`,
+          en: `[Patent Forecast] Request date: ${today}.${sprzCtxEn} Conduct a patent analysis for the concept "${planTitle}". Use patent_search and web_search to find current patent analogues and prior art. Description: ${planGoal}${visionCtxEn}${stratCtxEn}${filesCtxEn}`,
         },
       };
 
@@ -278,7 +282,7 @@ export function useConceptInvoke({ planId, planTitle, planGoal, onComplete }: Us
     } finally {
       setLoading(null);
     }
-  }, [user?.id, planId, planTitle, planGoal, language, onComplete]);
+  }, [user?.id, planId, planTitle, planGoal, sprzLabel, language, onComplete]);
 
   return { invoke, loading };
 }
