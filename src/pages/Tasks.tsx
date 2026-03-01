@@ -132,6 +132,7 @@ export default function Tasks() {
       session_config: {
         __isPlan: true,
         __planId: plan.id,
+        __planMeta: plan.metadata || {},
         status: plan.status,
         includePatent: !!(plan.metadata as any)?.includePatent,
       } as any,
@@ -601,12 +602,20 @@ export default function Tasks() {
           const updates: Record<string, unknown> = {};
           if (description !== undefined) updates.goal = description;
           if ((config as any)?.status) updates.status = (config as any).status;
-          // Persist includePatent in plan metadata
-          const existingPlan = plans.find(p => p.id === planId);
-          const existingMeta = (existingPlan?.metadata as Record<string, unknown>) || {};
-          if ((config as any)?.includePatent !== undefined) {
-            updates.metadata = { ...existingMeta, includePatent: !!(config as any).includePatent };
-          }
+           // Persist includePatent and sprzType/sprzSubtype in plan metadata
+           const existingPlan = plans.find(p => p.id === planId);
+           const existingMeta = (existingPlan?.metadata as Record<string, unknown>) || {};
+           const metaUpdates: Record<string, unknown> = { ...existingMeta };
+           if ((config as any)?.includePatent !== undefined) {
+             metaUpdates.includePatent = !!(config as any).includePatent;
+           }
+           if ((config as any)?.sprzType !== undefined) {
+             metaUpdates.sprzType = (config as any).sprzType || null;
+           }
+           if ((config as any)?.sprzSubtype !== undefined) {
+             metaUpdates.sprzSubtype = (config as any).sprzSubtype || null;
+           }
+           updates.metadata = metaUpdates;
           await updatePlan(planId, updates as any);
           if (selectedTask?.id === taskId) {
             setSelectedTask({ 
