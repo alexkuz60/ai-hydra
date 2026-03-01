@@ -36,6 +36,14 @@ function renderInline(text: string, color: string) {
   );
 }
 
+/** Extract headings from markdown for TOC sub-items */
+export function extractMarkdownHeadings(content: string): string[] {
+  if (!content) return [];
+  return content.split('\n')
+    .filter(l => /^#{1,3}\s+/.test(l.trim()))
+    .map(l => l.trim().replace(/^#+\s+/, ''));
+}
+
 /** Parse markdown string into react-pdf elements */
 export function renderMarkdownForPdf(content: string, colors: MdStyles) {
   if (!content) return null;
