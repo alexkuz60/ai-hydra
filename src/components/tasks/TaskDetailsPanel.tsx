@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
-import { MessageSquare, Play, Trash2, Pencil, Check, X, Bot, Sparkles, Cpu, Loader2, Save, Lock, Copy, FileText, Target, Zap, StopCircle } from 'lucide-react';
+import { MessageSquare, Play, Trash2, Pencil, Check, X, Bot, Sparkles, Cpu, Loader2, Save, Lock, Copy, FileText, Target, Zap, StopCircle, Download } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { TaskFilesPanel } from './TaskFilesPanel';
 import { FileUpload, AttachedFile } from '@/components/warroom/FileUpload';
@@ -26,7 +26,9 @@ import { useConceptInvoke } from '@/hooks/useConceptInvoke';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { SprzTypeSelector } from './SprzTypeSelector';
+import { SprzTaxonomyTree } from './SprzTaxonomyTree';
 import { formatSprzTypeLabel } from '@/lib/sprzTaxonomy';
+import { useSprzPdfExport } from '@/hooks/useSprzPdfExport';
 import { MultiModelSelector } from '@/components/warroom/MultiModelSelector';
 import { PerModelSettings, PerModelSettingsData, DEFAULT_MODEL_SETTINGS } from '@/components/warroom/PerModelSettings';
 import { SessionSettings } from '@/components/warroom/SessionSettings';
@@ -198,6 +200,12 @@ export function TaskDetailsPanel({
 
   // Build SPRS label for expert context
   const currentSprzLabel = sprzType.length > 0 ? formatSprzTypeLabel(sprzType, sprzSubtype, language) : undefined;
+
+  // PDF export for plan-level
+  const { exportPdf: exportSprzPdf, generating: pdfGenerating } = useSprzPdfExport({
+    planId: conceptPlanId || '',
+    lang: language === 'ru' ? 'ru' : 'en',
+  });
 
   // Pipeline for concept analysis
   const pipeline = useConceptPipeline({
@@ -437,8 +445,20 @@ export function TaskDetailsPanel({
                    {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
                    {isPlanLevel ? t('plans.save') : t('tasks.saveTask')}
                  </Button>
-               )}
-               {task.is_system && onDuplicate && (
+                )}
+                {isPlanLevel && conceptPlanId && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-9 gap-2 text-primary border-primary/40 hover:bg-primary/10"
+                    onClick={exportSprzPdf}
+                    disabled={pdfGenerating}
+                  >
+                    {pdfGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+                    PDF
+                   </Button>
+                )}
+                {task.is_system && onDuplicate && (
                  <Button
                    variant="outline"
                    size="sm"
@@ -504,6 +524,16 @@ export function TaskDetailsPanel({
                     onTypeChange={(v) => { setSprzType(v); userInteractedRef.current = true; setHasChanges(true); }}
                     onSubtypeChange={(v) => { setSprzSubtype(v); userInteractedRef.current = true; setHasChanges(true); }}
                     disabled={task.is_system}
+                  />
+                </div>
+              )}
+              {/* Taxonomy tree — shown when types are selected */}
+              {isPlanLevel && sprzType.length > 0 && (
+                <div className="mb-3 p-3 rounded-lg border border-border/50 bg-card/50">
+                  <SprzTaxonomyTree
+                    activeTypeIds={sprzType}
+                    activeSubtypeIds={sprzSubtype}
+                    compact
                   />
                 </div>
               )}
