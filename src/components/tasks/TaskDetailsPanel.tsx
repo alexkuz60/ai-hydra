@@ -25,6 +25,8 @@ import { useConceptResponses } from '@/hooks/useConceptResponses';
 import { useConceptInvoke } from '@/hooks/useConceptInvoke';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
+import { SprzTypeSelector } from './SprzTypeSelector';
+import { formatSprzTypeLabel } from '@/lib/sprzTaxonomy';
 import { MultiModelSelector } from '@/components/warroom/MultiModelSelector';
 import { PerModelSettings, PerModelSettingsData, DEFAULT_MODEL_SETTINGS } from '@/components/warroom/PerModelSettings';
 import { SessionSettings } from '@/components/warroom/SessionSettings';
@@ -149,6 +151,8 @@ export function TaskDetailsPanel({
   const [taskDescription, setTaskDescription] = useState('');
   const [hasChanges, setHasChanges] = useState(false);
   const [includePatent, setIncludePatent] = useState(false);
+  const [sprzType, setSprzType] = useState('');
+  const [sprzSubtype, setSprzSubtype] = useState('');
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewTab, setPreviewTab] = useState<'visionary' | 'strategist' | 'patent'>('visionary');
 
@@ -246,6 +250,10 @@ export function TaskDetailsPanel({
       setUseHybridStreaming(task.session_config?.useHybridStreaming ?? true);
       setTaskDescription(task.description || '');
       setIncludePatent(!!(task.session_config as any)?.includePatent);
+      // Load SPRZ type from plan metadata
+      const meta = (task.session_config as any)?.__planMeta;
+      setSprzType(meta?.sprzType || '');
+      setSprzSubtype(meta?.sprzSubtype || '');
       setHasChanges(false);
     }
   }, [task?.id, configKey]);
@@ -301,13 +309,13 @@ export function TaskDetailsPanel({
    };
 
    const handleSaveConfig = async () => {
-     await onUpdateConfig(task.id, {
-       selectedModels,
-       perModelSettings,
-       useHybridStreaming,
-       ...(isPlanLevel ? { includePatent } : {}),
-     }, taskDescription);
-     setHasChanges(false);
+      await onUpdateConfig(task.id, {
+        selectedModels,
+        perModelSettings,
+        useHybridStreaming,
+        ...(isPlanLevel ? { includePatent, sprzType, sprzSubtype } : {}),
+      }, taskDescription);
+      setHasChanges(false);
    };
  
    const handleOpenTask = () => {
@@ -387,17 +395,25 @@ export function TaskDetailsPanel({
                     )}
                   </div>
                )}
-               <div className="flex items-center gap-2 mt-1 text-base text-muted-foreground">
-                 <span>{format(new Date(task.updated_at), 'dd.MM.yyyy HH:mm')}</span>
-                 {!isPlanLevel && selectedModels.length > 0 && (
-                   <>
-                     <span>•</span>
-                     <Badge variant="secondary" className="text-sm">
-                       {selectedModels.length} {selectedModels.length === 1 ? t('tasks.model') : t('tasks.models')}
-                     </Badge>
-                   </>
-                 )}
-               </div>
+                <div className="flex items-center gap-2 mt-1 text-base text-muted-foreground flex-wrap">
+                  <span>{format(new Date(task.updated_at), 'dd.MM.yyyy HH:mm')}</span>
+                  {isPlanLevel && sprzType && (
+                    <>
+                      <span>•</span>
+                      <Badge variant="outline" className="text-xs">
+                        {formatSprzTypeLabel(sprzType, sprzSubtype, language)}
+                      </Badge>
+                    </>
+                  )}
+                  {!isPlanLevel && selectedModels.length > 0 && (
+                    <>
+                      <span>•</span>
+                      <Badge variant="secondary" className="text-sm">
+                        {selectedModels.length} {selectedModels.length === 1 ? t('tasks.model') : t('tasks.models')}
+                      </Badge>
+                    </>
+                  )}
+                </div>
              </div>
            </div>
            
@@ -470,15 +486,27 @@ export function TaskDetailsPanel({
                 {isPlanLevel && (
                   <ConceptFileUpload taskId={task.id} />
                 )}
-              </div>
-             <Textarea
-               value={taskDescription}
-               onChange={(e) => handleDescriptionChange(e.target.value)}
-               placeholder={isPlanLevel ? t('plans.goalPlaceholder') : t('tasks.formulationPlaceholder')}
-               className={cn("resize-y text-sm", isPlanLevel ? "min-h-[160px]" : "min-h-[80px]")}
-               disabled={task.is_system}
-             />
-            </section>
+               </div>
+              {/* SPRZ Type selector — plan-level only */}
+              {isPlanLevel && (
+                <div className="mb-3">
+                  <SprzTypeSelector
+                    typeId={sprzType}
+                    subtypeId={sprzSubtype}
+                    onTypeChange={(v) => { setSprzType(v); userInteractedRef.current = true; setHasChanges(true); }}
+                    onSubtypeChange={(v) => { setSprzSubtype(v); userInteractedRef.current = true; setHasChanges(true); }}
+                    disabled={task.is_system}
+                  />
+                </div>
+              )}
+              <Textarea
+                value={taskDescription}
+                onChange={(e) => handleDescriptionChange(e.target.value)}
+                placeholder={isPlanLevel ? t('plans.goalPlaceholder') : t('tasks.formulationPlaceholder')}
+                className={cn("resize-y text-sm", isPlanLevel ? "min-h-[160px]" : "min-h-[80px]")}
+                disabled={task.is_system}
+              />
+             </section>
 
             {/* Patent toggle — only for plan-level */}
             {isPlanLevel && (
