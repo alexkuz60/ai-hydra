@@ -32,10 +32,10 @@ interface ThemeColors {
 const THEMES: Record<PdfTheme, ThemeColors> = {
   dark: {
     bg: '#1a1a2e',
-    bgCard: '#16213e',
-    fg: '#fafafa',
+    bgCard: '#111a35',
+    fg: '#ffffff',
     fgStrong: '#ffffff',
-    muted: '#c8c8c8',
+    muted: '#d0d0d0',
     primary: '#00BCD4',
     primaryDark: '#0097A7',
     accent: '#7c3aed',
@@ -49,10 +49,10 @@ const THEMES: Record<PdfTheme, ThemeColors> = {
   },
   light: {
     bg: '#ffffff',
-    bgCard: '#f4f6f8',
-    fg: '#0a0a0a',
+    bgCard: '#f8f9fb',
+    fg: '#000000',
     fgStrong: '#000000',
-    muted: '#3f3f3f',
+    muted: '#333333',
     primary: '#0097A7',
     primaryDark: '#00796B',
     accent: '#6d28d9',
@@ -152,6 +152,8 @@ function makeStyles(c: ThemeColors) {
       marginBottom: 10,
       borderLeftWidth: 3,
       borderLeftColor: c.cardBorder,
+      position: 'relative',
+      zIndex: 1,
     },
     cardTitle: {
       fontSize: 12,
@@ -160,10 +162,13 @@ function makeStyles(c: ThemeColors) {
       marginBottom: 4,
     },
     cardBody: {
-      fontSize: 9,
-      fontWeight: 500,
+      fontSize: 10,
+      fontWeight: 'bold',
       color: c.fgStrong,
       lineHeight: 1.5,
+      position: 'relative',
+      zIndex: 2,
+      opacity: 1,
     },
     progressContainer: {
       flexDirection: 'row',
