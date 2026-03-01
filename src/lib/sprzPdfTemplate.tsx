@@ -14,7 +14,6 @@ Font.register({
   family: 'Roboto',
   fonts: [
     { src: '/fonts/Roboto-Regular.ttf', fontWeight: 'normal' },
-    { src: '/fonts/Roboto-Medium.ttf', fontWeight: 500 },
     { src: '/fonts/Roboto-Bold.ttf', fontWeight: 'bold' },
   ],
 });
@@ -127,23 +126,23 @@ function makeStyles(c: ThemeColors) {
       borderBottomColor: c.sectionBorder,
     },
     sectionSubtitle: {
-      fontSize: 13,
-      fontWeight: 500,
+      fontSize: 14,
+      fontWeight: 'bold',
       color: c.fgStrong,
       marginBottom: 8,
       marginTop: 12,
     },
     bodyText: {
-      fontSize: 10,
-      fontWeight: 500,
+      fontSize: 11,
+      fontWeight: 'bold',
       color: c.fgStrong,
-      lineHeight: 1.6,
+      lineHeight: 1.5,
       marginBottom: 6,
     },
     mutedText: {
-      fontSize: 9,
+      fontSize: 10,
       color: c.muted,
-      lineHeight: 1.5,
+      lineHeight: 1.4,
     },
     card: {
       backgroundColor: c.bgCard,
@@ -154,16 +153,16 @@ function makeStyles(c: ThemeColors) {
       borderLeftColor: c.cardBorder,
     },
     cardTitle: {
-      fontSize: 12,
+      fontSize: 13,
       fontWeight: 'bold',
       color: c.fgStrong,
-      marginBottom: 4,
+      marginBottom: 5,
     },
     cardBody: {
-      fontSize: 10,
+      fontSize: 11,
       fontWeight: 'bold',
       color: c.fgStrong,
-      lineHeight: 1.5,
+      lineHeight: 1.45,
     },
     progressContainer: {
       flexDirection: 'row',
