@@ -3,7 +3,7 @@
   <p><em>Where even dogmas evolve</em></p>
   <p><a href="README_RU.md">🇷🇺 Русский</a> · 🇬🇧 <b>English</b></p>
 
-  ![Version](https://img.shields.io/badge/version-0.2.22--alpha-0ff?style=flat-square&logo=semver&logoColor=white)
+  ![Version](https://img.shields.io/badge/version-0.2.23--alpha-0ff?style=flat-square&logo=semver&logoColor=white)
   ![Build](https://img.shields.io/badge/build-passing-brightgreen?style=flat-square&logo=github-actions&logoColor=white)
   ![License](https://img.shields.io/badge/license-MIT-blue?style=flat-square)
   ![Stack](https://img.shields.io/badge/stack-React%2018%20%2B%20TypeScript%20%2B%20Supabase-8b5cf6?style=flat-square)
@@ -345,8 +345,15 @@ src/
 ├── styles/             # Design system docs
 └── types/              # TypeScript definitions
 
-supabase/functions/     # 20 Edge Functions
+supabase/functions/     # 20+ Edge Functions
 ```
+
+---
+
+### User Profile
+- **Avatar** — photo upload with Canvas cropper (drag, scroll-zoom, 260×260 JPEG, 2MB limit)
+- Signed URL generated dynamically for 2 hours — avatars never expire
+- Tabs: Profile (avatar/name), Preferences (theme/language), API Keys, ProxyAPI, Stats
 
 ---
 
@@ -370,4 +377,4 @@ supabase/functions/     # 20 Edge Functions
 
 ---
 
-*Last updated: February 28, 2026*
+*Last updated: March 1, 2026*

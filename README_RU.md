@@ -3,7 +3,7 @@
   <p><em>Здесь даже догмы эволюционируют</em></p>
   <p>🇷🇺 <b>Русский</b> · <a href="README.md">🇬🇧 English</a></p>
 
-  ![Version](https://img.shields.io/badge/version-0.2.22--alpha-0ff?style=flat-square&logo=semver&logoColor=white)
+  ![Version](https://img.shields.io/badge/version-0.2.23--alpha-0ff?style=flat-square&logo=semver&logoColor=white)
   ![Build](https://img.shields.io/badge/build-passing-brightgreen?style=flat-square&logo=github-actions&logoColor=white)
   ![License](https://img.shields.io/badge/license-MIT-blue?style=flat-square)
   ![Stack](https://img.shields.io/badge/stack-React%2018%20%2B%20TypeScript%20%2B%20Supabase-8b5cf6?style=flat-square)
@@ -327,10 +327,10 @@ src/
 │   ├── layout/         # Layout, Sidebar, Navigator
 │   ├── memory/         # Hydra Memory Hub (11 модулей: табы, shared-утилиты)
 │   ├── patterns/       # Behavioral Patterns editor
-│   ├── profile/        # Профиль, API-ключи, ProxyAPI
+│   ├── profile/        # Профиль, API-ключи, ProxyAPI, Canvas-кроппер аватара
 │   ├── prompts/        # Prompt Library
-│   ├── ratings/        # Contest, Duel, Podium, Scoreboard
-│   ├── staff/          # Interview, Role management
+│   ├── ratings/        # Contest, Duel, Podium, Scoreboard, Screening
+│   ├── staff/          # Interview, Role management, History table
 │   ├── tasks/          # Task management
 │   ├── tools/          # Custom Tools editor & tester
 │   ├── ui/             # shadcn/ui компоненты (50+)
@@ -377,4 +377,4 @@ supabase/functions/     # 20+ Edge Functions
 
 ---
 
-*Последнее обновление: 28 Февраля 2026*
+*Последнее обновление: 1 Марта 2026*
