@@ -6,9 +6,10 @@ import {
   View,
   StyleSheet,
   Font,
+  Link,
 } from '@react-pdf/renderer';
 import { SPRZ_TAXONOMY } from './sprzTaxonomy';
-import { renderMarkdownForPdf } from './pdfMarkdownRenderer';
+import { renderMarkdownForPdf, extractMarkdownHeadings } from './pdfMarkdownRenderer';
 
 // Register Roboto with weight variants for Cyrillic
 Font.register({
@@ -369,14 +370,39 @@ export function SprzPdfDocument({ data }: { data: SprzPdfData }) {
     year: 'numeric', month: 'long', day: 'numeric',
   });
 
-  // Build TOC entries
-  const tocEntries: string[] = [];
-  tocEntries.push(isRu ? 'Цель и прогресс' : 'Goal & Progress');
-  if (data.visionContent) tocEntries.push(isRu ? 'Стратегическое видение' : 'Strategic Vision');
-  if (data.approvalSections && data.approvalSections.length > 0) tocEntries.push(isRu ? 'План реализации' : 'Implementation Plan');
-  if (data.patentContent) tocEntries.push(isRu ? 'Патентный прогноз' : 'Patent Forecast');
-  if (data.sessions && data.sessions.length > 0) tocEntries.push(isRu ? 'Этапы работы' : 'Work Stages');
-  if (data.conclusions && data.conclusions.length > 0) tocEntries.push(isRu ? 'Ключевые выводы' : 'Key Conclusions');
+  // Build TOC entries with sub-items and anchor ids
+  interface TocEntry { label: string; id: string; subs: string[] }
+  const tocEntries: TocEntry[] = [];
+
+  tocEntries.push({ label: isRu ? 'Цель и прогресс' : 'Goal & Progress', id: 'sec-goal', subs: [] });
+
+  if (data.visionContent) {
+    tocEntries.push({
+      label: isRu ? 'Стратегическое видение' : 'Strategic Vision', id: 'sec-vision',
+      subs: extractMarkdownHeadings(data.visionContent).slice(0, 8),
+    });
+  }
+  if (data.approvalSections && data.approvalSections.length > 0) {
+    tocEntries.push({
+      label: isRu ? 'План реализации' : 'Implementation Plan', id: 'sec-plan',
+      subs: data.approvalSections.map(s => s.title).slice(0, 8),
+    });
+  }
+  if (data.patentContent) {
+    tocEntries.push({
+      label: isRu ? 'Патентный прогноз' : 'Patent Forecast', id: 'sec-patent',
+      subs: extractMarkdownHeadings(data.patentContent).slice(0, 8),
+    });
+  }
+  if (data.sessions && data.sessions.length > 0) {
+    tocEntries.push({
+      label: isRu ? 'Этапы работы' : 'Work Stages', id: 'sec-stages',
+      subs: data.sessions.map(s => s.title).slice(0, 6),
+    });
+  }
+  if (data.conclusions && data.conclusions.length > 0) {
+    tocEntries.push({ label: isRu ? 'Ключевые выводы' : 'Key Conclusions', id: 'sec-conclusions', subs: [] });
+  }
 
   return (
     <Document>
@@ -392,16 +418,26 @@ export function SprzPdfDocument({ data }: { data: SprzPdfData }) {
       <Page size="A4" orientation="landscape" style={s.page}>
         <Text style={s.sectionTitle}>{isRu ? 'Содержание' : 'Table of Contents'}</Text>
         {tocEntries.map((entry, i) => (
-          <View key={i} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: c.trackBg }}>
-            <Text style={{ fontSize: 14, fontWeight: 'bold', color: c.primary, width: 28 }}>{i + 1}.</Text>
-            <Text style={{ fontSize: 13, fontWeight: 'bold', color: c.fgStrong }}>{entry}</Text>
+          <View key={i} style={{ marginBottom: 6 }}>
+            <Link src={`#${entry.id}`} style={{ textDecoration: 'none' }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 5, borderBottomWidth: 1, borderBottomColor: c.trackBg }}>
+                <Text style={{ fontSize: 14, fontWeight: 'bold', color: c.primary, width: 28 }}>{i + 1}.</Text>
+                <Text style={{ fontSize: 13, fontWeight: 'bold', color: c.fgStrong }}>{entry.label}</Text>
+              </View>
+            </Link>
+            {entry.subs.length > 0 && entry.subs.map((sub, j) => (
+              <View key={j} style={{ flexDirection: 'row', alignItems: 'center', paddingLeft: 36, paddingVertical: 2 }}>
+                <View style={{ width: 5, height: 5, borderRadius: 3, backgroundColor: c.primary, marginRight: 8 }} />
+                <Text style={{ fontSize: 10, color: c.muted }}>{sub}</Text>
+              </View>
+            ))}
           </View>
         ))}
         <Footer s={s} />
       </Page>
 
       {/* Goal + Progress + Taxonomy */}
-      <Page size="A4" orientation="landscape" style={s.page}>
+      <Page size="A4" orientation="landscape" style={s.page} id="sec-goal">
         <Text style={s.sectionTitle}>{isRu ? 'Цель и прогресс' : 'Goal & Progress'}</Text>
         {data.goal && (
           <View style={s.card}>
@@ -428,7 +464,7 @@ export function SprzPdfDocument({ data }: { data: SprzPdfData }) {
 
       {/* Strategic Vision */}
       {data.visionContent && (
-        <Page size="A4" orientation="landscape" style={s.page} wrap>
+        <Page size="A4" orientation="landscape" style={s.page} wrap id="sec-vision">
           <Text style={s.sectionTitle}>{isRu ? 'Стратегическое видение' : 'Strategic Vision'}</Text>
           <View style={s.card}>
             {renderMarkdownForPdf(data.visionContent, mdColors)}
@@ -439,7 +475,7 @@ export function SprzPdfDocument({ data }: { data: SprzPdfData }) {
 
       {/* Strategy / Implementation Plan */}
       {data.approvalSections && data.approvalSections.length > 0 && (
-        <Page size="A4" orientation="landscape" style={s.page} wrap>
+        <Page size="A4" orientation="landscape" style={s.page} wrap id="sec-plan">
           <Text style={s.sectionTitle}>{isRu ? 'План реализации' : 'Implementation Plan'}</Text>
           {data.approvalSections.map((section, i) => (
             <View key={i} style={s.card} wrap={false}>
@@ -476,7 +512,7 @@ export function SprzPdfDocument({ data }: { data: SprzPdfData }) {
 
       {/* Patent Forecast */}
       {data.patentContent && (
-        <Page size="A4" orientation="landscape" style={s.page} wrap>
+        <Page size="A4" orientation="landscape" style={s.page} wrap id="sec-patent">
           <Text style={s.sectionTitle}>{isRu ? 'Патентный прогноз' : 'Patent Forecast'}</Text>
           <View style={s.card}>
             {renderMarkdownForPdf(data.patentContent, mdColors)}
@@ -487,7 +523,7 @@ export function SprzPdfDocument({ data }: { data: SprzPdfData }) {
 
       {/* Sessions */}
       {data.sessions && data.sessions.length > 0 && (
-        <Page size="A4" orientation="landscape" style={s.page} wrap>
+        <Page size="A4" orientation="landscape" style={s.page} wrap id="sec-stages">
           <Text style={s.sectionTitle}>{isRu ? 'Этапы работы' : 'Work Stages'}</Text>
           {data.sessions.map((session, i) => (
             <View key={i} style={s.card} wrap={false}>
@@ -504,7 +540,7 @@ export function SprzPdfDocument({ data }: { data: SprzPdfData }) {
 
       {/* Conclusions */}
       {data.conclusions && data.conclusions.length > 0 && (
-        <Page size="A4" orientation="landscape" style={s.page} wrap>
+        <Page size="A4" orientation="landscape" style={s.page} wrap id="sec-conclusions">
           <Text style={s.sectionTitle}>{isRu ? 'Ключевые выводы' : 'Key Conclusions'}</Text>
           {data.conclusions.map((cc, i) => (
             <View key={i} style={s.conclusionCard} wrap={false}>
