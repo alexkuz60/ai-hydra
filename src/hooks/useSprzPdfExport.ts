@@ -9,13 +9,12 @@ import { normalizeTypeIds } from '@/lib/sprzTaxonomy';
 interface UseSprzPdfExportOptions {
   planId: string;
   lang: 'ru' | 'en';
-  theme?: PdfTheme;
 }
 
-export function useSprzPdfExport({ planId, lang, theme = 'dark' }: UseSprzPdfExportOptions) {
+export function useSprzPdfExport({ planId, lang }: UseSprzPdfExportOptions) {
   const [generating, setGenerating] = useState(false);
 
-  const exportPdf = useCallback(async () => {
+  const exportPdf = useCallback(async (theme: PdfTheme = 'dark') => {
     if (generating) return;
     setGenerating(true);
 
@@ -103,7 +102,7 @@ export function useSprzPdfExport({ planId, lang, theme = 'dark' }: UseSprzPdfExp
     } finally {
       setGenerating(false);
     }
-  }, [planId, lang, theme, generating]);
+  }, [planId, lang, generating]);
 
   return { exportPdf, generating };
 }
