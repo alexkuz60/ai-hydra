@@ -60,9 +60,9 @@ function CollapsedResponse({ content, contentEn, className, onExpand, accentClas
       </div>
       <div className="flex gap-1 mt-1">
         <Button
-          variant="ghost"
+          variant="outline"
           size="sm"
-          className="h-6 px-2 text-sm gap-1 opacity-70 hover:opacity-100"
+          className="h-6 px-2 text-xs gap-1 text-primary border-primary/30 hover:bg-primary/10"
           onClick={() => setIsExpanded(!isExpanded)}
         >
           {isExpanded
@@ -71,9 +71,9 @@ function CollapsedResponse({ content, contentEn, className, onExpand, accentClas
           }
         </Button>
         <Button
-          variant="ghost"
+          variant="outline"
           size="sm"
-          className="h-6 px-2 text-sm gap-1 opacity-70 hover:opacity-100"
+          className="h-6 px-2 text-xs gap-1 text-accent-foreground border-accent/50 hover:bg-accent/20"
           onClick={onExpand}
         >
           <Maximize2 className="h-3 w-3" />
