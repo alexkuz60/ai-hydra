@@ -428,7 +428,7 @@ function SectionNode({ section, selectedId, onSelect, toolbarSignal, onChange }:
 
               return (
                 <p className={cn('text-sm text-muted-foreground mt-1 whitespace-pre-wrap', section.status === 'rejected' && 'line-through')}>
-                  {section.body!.length > 200 ? section.body!.substring(0, 200) + '...' : section.body}
+                  {section.body}
                 </p>
               );
             })()}
