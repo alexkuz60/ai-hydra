@@ -35,7 +35,7 @@ function CollapsedResponse({ content, contentEn, className, onExpand, accentClas
 
   return (
     <div className={cn('relative mt-2 group', className)}>
-      <div className="text-sm text-muted-foreground line-clamp-5 whitespace-pre-wrap border-l-2 pl-3 py-1" style={{ borderColor: `hsl(var(--${accentClass}))` }}>
+      <div className="text-sm text-muted-foreground whitespace-pre-wrap border-l-2 pl-3 py-1" style={{ borderColor: `hsl(var(--${accentClass}))` }}>
         <ReactMarkdown
           components={{
             p: ({ children }) => <p className="mb-1">{children}</p>,
