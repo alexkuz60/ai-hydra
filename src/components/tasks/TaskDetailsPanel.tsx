@@ -196,11 +196,15 @@ export function TaskDetailsPanel({
     });
   }, [conceptPlanId]);
 
+  // Build SPRS label for expert context
+  const currentSprzLabel = sprzType.length > 0 ? formatSprzTypeLabel(sprzType, sprzSubtype, language) : undefined;
+
   // Pipeline for concept analysis
   const pipeline = useConceptPipeline({
     planId: conceptPlanId || '',
     planTitle: displayTitle,
     planGoal: taskDescription,
+    sprzLabel: currentSprzLabel,
     includePatent,
     onStepComplete: refetchResponses,
   });
@@ -210,6 +214,7 @@ export function TaskDetailsPanel({
     planId: conceptPlanId || '',
     planTitle: displayTitle,
     planGoal: taskDescription,
+    sprzLabel: currentSprzLabel,
     onComplete: refetchResponses,
   });
 
