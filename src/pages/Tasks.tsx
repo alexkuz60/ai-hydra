@@ -621,7 +621,12 @@ export default function Tasks() {
             setSelectedTask({ 
               ...selectedTask, 
               description: description ?? selectedTask.description,
-              session_config: config,
+              session_config: {
+                ...config,
+                __isPlan: true,
+                __planId: planId,
+                __planMeta: metaUpdates,
+              } as any,
               updated_at: new Date().toISOString(),
             });
           }
