@@ -45,6 +45,36 @@ export function useSprzPdfExport({ planId, lang }: UseSprzPdfExportOptions) {
         .order('created_at', { ascending: false })
         .limit(20);
 
+      // 4. Fetch concept responses (vision, patent) from concept session
+      let visionContent: string | undefined;
+      let patentContent: string | undefined;
+
+      const { data: conceptSession } = await supabase
+        .from('sessions')
+        .select('id')
+        .eq('plan_id', planId)
+        .or('title.ilike.%цели и концепция%,title.ilike.%goals and concept%')
+        .limit(1)
+        .maybeSingle();
+
+      if (conceptSession) {
+        const { data: conceptMsgs } = await supabase
+          .from('messages')
+          .select('content, content_en, metadata, role')
+          .eq('session_id', conceptSession.id)
+          .neq('role', 'user')
+          .order('created_at', { ascending: false })
+          .limit(50);
+
+        if (conceptMsgs) {
+          const isRuLocal = lang === 'ru';
+          const visionMsg = conceptMsgs.find((m: any) => (m.metadata as any)?.concept_type === 'visionary');
+          const patentMsg = conceptMsgs.find((m: any) => (m.metadata as any)?.concept_type === 'patent');
+          if (visionMsg) visionContent = (isRuLocal ? visionMsg.content : visionMsg.content_en) || visionMsg.content;
+          if (patentMsg) patentContent = (isRuLocal ? patentMsg.content : patentMsg.content_en) || patentMsg.content;
+        }
+      }
+
       // Build sections from metadata
       const approvalSections = (meta.approvalSections || []).map((s: any) => ({
         title: s.title || '',
@@ -69,7 +99,9 @@ export function useSprzPdfExport({ planId, lang }: UseSprzPdfExportOptions) {
         createdAt: plan.created_at,
         lang,
         theme,
+        visionContent,
         approvalSections,
+        patentContent,
         sessions: (sessions || []).map(s => ({
           title: (isRu ? s.title : s.title_en) || s.title,
           description: (isRu ? s.description : s.description_en) || s.description || undefined,

@@ -265,6 +265,7 @@ export interface SprzPdfData {
   createdAt: string;
   lang: 'ru' | 'en';
   theme?: PdfTheme;
+  visionContent?: string;
   approvalSections?: Array<{
     title: string;
     body: string;
@@ -272,6 +273,7 @@ export interface SprzPdfData {
     source: string;
     children?: Array<{ title: string; body: string; status: string }>;
   }>;
+  patentContent?: string;
   sessions?: Array<{ title: string; description?: string; updatedAt: string }>;
   conclusions?: Array<{ content: string; isPinned: boolean; createdAt: string }>;
   publicUrl?: string;
@@ -400,10 +402,23 @@ export function SprzPdfDocument({ data }: { data: SprzPdfData }) {
         <Footer s={s} />
       </Page>
 
-      {/* Strategy */}
+      {/* Strategic Vision */}
+      {data.visionContent && (
+        <Page size="A4" orientation="landscape" style={s.page} wrap>
+          <Text style={s.sectionTitle}>{isRu ? 'Стратегическое видение' : 'Strategic Vision'}</Text>
+          <View style={s.card}>
+            <Text style={[s.cardBody, { color: theme === 'dark' ? '#ffffff' : '#000000' }]}>
+              {data.visionContent.slice(0, 1500)}{data.visionContent.length > 1500 ? '...' : ''}
+            </Text>
+          </View>
+          <Footer s={s} />
+        </Page>
+      )}
+
+      {/* Strategy / Implementation Plan */}
       {data.approvalSections && data.approvalSections.length > 0 && (
         <Page size="A4" orientation="landscape" style={s.page} wrap>
-          <Text style={s.sectionTitle}>{isRu ? 'Стратегия' : 'Strategy'}</Text>
+          <Text style={s.sectionTitle}>{isRu ? 'План реализации' : 'Implementation Plan'}</Text>
           {data.approvalSections.map((section, i) => (
             <View key={i} style={s.card} wrap={false}>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -415,11 +430,9 @@ export function SprzPdfDocument({ data }: { data: SprzPdfData }) {
               {section.body && (
                 <Text style={[s.cardBody, { color: theme === 'dark' ? '#ffffff' : '#000000' }]}>{(() => {
                   let text = section.body;
-                  // Remove duplicated title from body start
                   if (text.startsWith(section.title)) {
                     text = text.slice(section.title.length).replace(/^[\s:.\-—]+/, '');
                   }
-                  // Also strip markdown-style title patterns like "**Title**\n"
                   text = text.replace(/^\*\*[^*]+\*\*[\s:.\-—]*/m, '').trim();
                   return text.slice(0, 400) + (text.length > 400 ? '...' : '');
                 })()}</Text>
@@ -435,6 +448,19 @@ export function SprzPdfDocument({ data }: { data: SprzPdfData }) {
               )}
             </View>
           ))}
+          <Footer s={s} />
+        </Page>
+      )}
+
+      {/* Patent Forecast */}
+      {data.patentContent && (
+        <Page size="A4" orientation="landscape" style={s.page} wrap>
+          <Text style={s.sectionTitle}>{isRu ? 'Патентный прогноз' : 'Patent Forecast'}</Text>
+          <View style={s.card}>
+            <Text style={[s.cardBody, { color: theme === 'dark' ? '#ffffff' : '#000000' }]}>
+              {data.patentContent.slice(0, 1500)}{data.patentContent.length > 1500 ? '...' : ''}
+            </Text>
+          </View>
           <Footer s={s} />
         </Page>
       )}

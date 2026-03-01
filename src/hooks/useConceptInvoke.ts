@@ -112,10 +112,10 @@ export function useConceptInvoke({ planId, planTitle, planGoal, sprzLabel, onCom
       const vCtx = pipelineContext?.visionaryResponse;
       const sCtx = pipelineContext?.strategistResponse;
       const fCtx = pipelineContext?.fileDigests;
-      const visionCtxRu = vCtx ? `\n\n--- Видение Визионера ---\n${vCtx}` : '';
-      const visionCtxEn = vCtx ? `\n\n--- Visionary's Vision ---\n${vCtx}` : '';
-      const stratCtxRu = sCtx ? `\n\n--- Стратегическая структура ---\n${sCtx}` : '';
-      const stratCtxEn = sCtx ? `\n\n--- Strategic Structure ---\n${sCtx}` : '';
+      const visionCtxRu = vCtx ? `\n\n--- Стратегическое видение ---\n${vCtx}` : '';
+      const visionCtxEn = vCtx ? `\n\n--- Strategic Vision ---\n${vCtx}` : '';
+      const stratCtxRu = sCtx ? `\n\n--- План реализации ---\n${sCtx}` : '';
+      const stratCtxEn = sCtx ? `\n\n--- Implementation Plan ---\n${sCtx}` : '';
       const filesCtxRu = fCtx ? `\n\n--- Прикреплённые материалы (дайджесты файлов) ---\n${fCtx}` : '';
       const filesCtxEn = fCtx ? `\n\n--- Attached Materials (File Digests) ---\n${fCtx}` : '';
       const sprzCtxRu = sprzLabel ? `\nКатегория СПРЗ: ${sprzLabel}.` : '';
@@ -123,12 +123,12 @@ export function useConceptInvoke({ planId, planTitle, planGoal, sprzLabel, onCom
 
       const messages: Record<ConceptExpertType, Record<string, string>> = {
         visionary: {
-          ru: `[Видение Визионера] Дата запроса: ${today}.${sprzCtxRu} Сформулируй визионерскую концепцию проекта "${planTitle}". Рассмотри созвучность актуальным трендам, рыночным потребностям и конкурентный ландшафт по теме плана. Используй web_search для поиска самых свежих данных о трендах и рынке. Концепция: ${planGoal}${filesCtxRu}`,
-          en: `[Visionary Vision] Request date: ${today}.${sprzCtxEn} Formulate a visionary concept for the project "${planTitle}". Consider alignment with current trends, market needs, and the competitive landscape for this plan's topic. Use web_search to find the latest data on trends and market. Concept: ${planGoal}${filesCtxEn}`,
+          ru: `[Стратегическое видение] Дата запроса: ${today}.${sprzCtxRu} Сформулируй визионерскую концепцию проекта "${planTitle}". Рассмотри созвучность актуальным трендам, рыночным потребностям и конкурентный ландшафт по теме плана. Используй web_search для поиска самых свежих данных о трендах и рынке. Концепция: ${planGoal}${filesCtxRu}`,
+          en: `[Strategic Vision] Request date: ${today}.${sprzCtxEn} Formulate a visionary concept for the project "${planTitle}". Consider alignment with current trends, market needs, and the competitive landscape for this plan's topic. Use web_search to find the latest data on trends and market. Concept: ${planGoal}${filesCtxEn}`,
         },
         strategist: {
-          ru: `[Стратегическая структура] Дата запроса: ${today}.${sprzCtxRu} Декомпозируй цели проекта "${planTitle}" в иерархию аспектов и задач. Используй web_search для поиска актуальных методологий и лучших практик. Концепция: ${planGoal}${visionCtxRu}${filesCtxRu}`,
-          en: `[Strategic Structure] Request date: ${today}.${sprzCtxEn} Decompose the goals of project "${planTitle}" into a hierarchy of aspects and tasks. Use web_search to find current methodologies and best practices. Concept: ${planGoal}${visionCtxEn}${filesCtxEn}`,
+          ru: `[План реализации] Дата запроса: ${today}.${sprzCtxRu} Декомпозируй цели проекта "${planTitle}" в иерархию аспектов и задач. Используй web_search для поиска актуальных методологий и лучших практик. Концепция: ${planGoal}${visionCtxRu}${filesCtxRu}`,
+          en: `[Implementation Plan] Request date: ${today}.${sprzCtxEn} Decompose the goals of project "${planTitle}" into a hierarchy of aspects and tasks. Use web_search to find current methodologies and best practices. Concept: ${planGoal}${visionCtxEn}${filesCtxEn}`,
         },
         patent: {
           ru: `[Патентный прогноз] Дата запроса: ${today}.${sprzCtxRu} Проведи патентный анализ концепции "${planTitle}". Используй patent_search и web_search для поиска актуальных патентных аналогов и уровня техники. Описание: ${planGoal}${visionCtxRu}${stratCtxRu}${filesCtxRu}`,
