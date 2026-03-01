@@ -427,8 +427,8 @@ function SectionNode({ section, selectedId, onSelect, toolbarSignal, onChange }:
               }
 
               return (
-                <p className={cn('text-sm text-muted-foreground mt-1 whitespace-pre-wrap', section.status === 'rejected' && 'line-through')}>
-                  {section.body}
+                <p className={cn('text-sm text-muted-foreground mt-1 whitespace-pre-wrap leading-snug', section.status === 'rejected' && 'line-through')}>
+                  {section.body?.replace(/\n{3,}/g, '\n\n')}
                 </p>
               );
             })()}
