@@ -370,38 +370,46 @@ export function SprzPdfDocument({ data }: { data: SprzPdfData }) {
     year: 'numeric', month: 'long', day: 'numeric',
   });
 
-  // Build TOC entries with sub-items and anchor ids
-  interface TocEntry { label: string; id: string; subs: string[] }
+  // Build TOC entries with sub-items, anchor ids, and page numbers
+  // Pages: 1=Cover, 2=TOC, then sections sequentially
+  interface TocEntry { label: string; id: string; subs: string[]; page: number }
   const tocEntries: TocEntry[] = [];
+  let pageNum = 3; // first content page after Cover + TOC
 
-  tocEntries.push({ label: isRu ? 'Цель и прогресс' : 'Goal & Progress', id: 'sec-goal', subs: [] });
+  tocEntries.push({ label: isRu ? 'Цель и прогресс' : 'Goal & Progress', id: 'sec-goal', subs: [], page: pageNum });
+  pageNum++;
 
   if (data.visionContent) {
     tocEntries.push({
       label: isRu ? 'Стратегическое видение' : 'Strategic Vision', id: 'sec-vision',
-      subs: extractMarkdownHeadings(data.visionContent).slice(0, 8),
+      subs: extractMarkdownHeadings(data.visionContent).slice(0, 8), page: pageNum,
     });
+    pageNum++;
   }
   if (data.approvalSections && data.approvalSections.length > 0) {
     tocEntries.push({
       label: isRu ? 'План реализации' : 'Implementation Plan', id: 'sec-plan',
-      subs: data.approvalSections.map(s => s.title).slice(0, 8),
+      subs: data.approvalSections.map(s => s.title).slice(0, 8), page: pageNum,
     });
+    pageNum++;
   }
   if (data.patentContent) {
     tocEntries.push({
       label: isRu ? 'Патентный прогноз' : 'Patent Forecast', id: 'sec-patent',
-      subs: extractMarkdownHeadings(data.patentContent).slice(0, 8),
+      subs: extractMarkdownHeadings(data.patentContent).slice(0, 8), page: pageNum,
     });
+    pageNum++;
   }
   if (data.sessions && data.sessions.length > 0) {
     tocEntries.push({
       label: isRu ? 'Этапы работы' : 'Work Stages', id: 'sec-stages',
-      subs: data.sessions.map(s => s.title).slice(0, 6),
+      subs: data.sessions.map(s => s.title).slice(0, 6), page: pageNum,
     });
+    pageNum++;
   }
   if (data.conclusions && data.conclusions.length > 0) {
-    tocEntries.push({ label: isRu ? 'Ключевые выводы' : 'Key Conclusions', id: 'sec-conclusions', subs: [] });
+    tocEntries.push({ label: isRu ? 'Ключевые выводы' : 'Key Conclusions', id: 'sec-conclusions', subs: [], page: pageNum });
+    pageNum++;
   }
 
   return (
@@ -422,13 +430,15 @@ export function SprzPdfDocument({ data }: { data: SprzPdfData }) {
             <Link src={`#${entry.id}`} style={{ textDecoration: 'none' }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 5, borderBottomWidth: 1, borderBottomColor: c.trackBg }}>
                 <Text style={{ fontSize: 14, fontWeight: 'bold', color: c.primary, width: 28 }}>{i + 1}.</Text>
-                <Text style={{ fontSize: 13, fontWeight: 'bold', color: c.fgStrong }}>{entry.label}</Text>
+                <Text style={{ fontSize: 13, fontWeight: 'bold', color: c.fgStrong, flex: 1 }}>{entry.label}</Text>
+                <Text style={{ fontSize: 11, color: c.muted, minWidth: 20, textAlign: 'right' }}>{entry.page}</Text>
               </View>
             </Link>
             {entry.subs.length > 0 && entry.subs.map((sub, j) => (
               <View key={j} style={{ flexDirection: 'row', alignItems: 'center', paddingLeft: 36, paddingVertical: 2 }}>
                 <View style={{ width: 5, height: 5, borderRadius: 3, backgroundColor: c.primary, marginRight: 8 }} />
-                <Text style={{ fontSize: 10, color: c.muted }}>{sub}</Text>
+                <Text style={{ fontSize: 10, color: c.muted, flex: 1 }}>{sub}</Text>
+                <Text style={{ fontSize: 9, color: c.muted, minWidth: 20, textAlign: 'right' }}>{entry.page}</Text>
               </View>
             ))}
           </View>
