@@ -29,13 +29,20 @@ interface CollapsedResponseProps {
 
 function CollapsedResponse({ content, contentEn, className, onExpand, accentClass }: CollapsedResponseProps) {
   const { language } = useLanguage();
+  const [isExpanded, setIsExpanded] = useState(false);
   const text = (language === 'en' && contentEn) ? contentEn : content;
   
   if (!text) return null;
 
   return (
     <div className={cn('relative mt-2 group', className)}>
-      <div className="text-sm text-muted-foreground whitespace-pre-wrap border-l-2 pl-3 py-1" style={{ borderColor: `hsl(var(--${accentClass}))` }}>
+      <div
+        className={cn(
+          'text-sm text-muted-foreground whitespace-pre-wrap border-l-2 pl-3 py-1 overflow-hidden transition-all',
+          !isExpanded && 'line-clamp-5'
+        )}
+        style={{ borderColor: `hsl(var(--${accentClass}))` }}
+      >
         <ReactMarkdown
           components={{
             p: ({ children }) => <p className="mb-1">{children}</p>,
@@ -49,15 +56,28 @@ function CollapsedResponse({ content, contentEn, className, onExpand, accentClas
           {text}
         </ReactMarkdown>
       </div>
-      <Button
-        variant="ghost"
-        size="sm"
-        className={cn('h-6 px-2 text-sm mt-1 gap-1 opacity-70 hover:opacity-100')}
-        onClick={onExpand}
-      >
-        <Maximize2 className="h-3 w-3" />
-        {language === 'ru' ? 'Развернуть' : 'Expand'}
-      </Button>
+      <div className="flex gap-1 mt-1">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-6 px-2 text-sm gap-1 opacity-70 hover:opacity-100"
+          onClick={() => setIsExpanded(!isExpanded)}
+        >
+          {isExpanded
+            ? <>{language === 'ru' ? 'Свернуть' : 'Collapse'}</>
+            : <>{language === 'ru' ? 'Показать всё' : 'Show all'}</>
+          }
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-6 px-2 text-sm gap-1 opacity-70 hover:opacity-100"
+          onClick={onExpand}
+        >
+          <Maximize2 className="h-3 w-3" />
+          {language === 'ru' ? 'Открыть' : 'Open'}
+        </Button>
+      </div>
     </div>
   );
 }
