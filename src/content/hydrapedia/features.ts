@@ -583,6 +583,23 @@ The indicator is consolidated in one place (page header) instead of being duplic
 | **Стратег** | 🎯 | Декомпозиция целей в иерархию задач | Визионер завершён |
 | **Патентовед** | 📋 | Патентный анализ, поиск аналогов | Стратег завершён |
 
+### 🏷️ Типизация СПРЗ (Taxonomy)
+
+Каждому стратегическому плану присваивается классификация из 7 категорий с возможностью **мультивыбора** (междисциплинарные проекты). Выбранная типизация инъектируется в системные промпты экспертов (Визионер, Стратег, Патентовед) для доменно-точных ответов.
+
+| Категория | Подтипы |
+|-----------|---------|
+| 🔬 **Наука** | Исследование, Проверка гипотезы, Дипломная работа, Междисциплинарное, Учебник |
+| 💻 **Технологии** | Архитектура, Инфраструктура, ML/AI, Автоматизация |
+| 🎨 **Вайб-кодинг** | MVP, Прототип, Pet-проект, Хакатон |
+| 🏛 **Социум** | Образование, Политика, Экология, НКО |
+| 🎯 **Дизайн** | UX/UI, Брендинг, Продуктовый, Промышленный |
+| 💼 **Бизнес** | Стартап, Масштабирование, Оптимизация, Выход на рынок |
+| ✨ **Творчество** | Литература, Музыка, Видео, Игры |
+
+> **Пример мультивыбора**: Проект «Реализация Гидры» → 💻 Технологии + 🎯 Дизайн → Архитектура, Автоматизация, ML/AI, UX/UI.
+> Эксперты получают контекст \`Категория СПРЗ: 💻 Технологии + 🎯 Дизайн → Архитектура, Автоматизация, ML/AI, UX/UI\` в системном промпте.
+
 ### Валидация последовательности
 - Каждый шаг блокируется до завершения предыдущего
 - Заблокированные кнопки отображаются полупрозрачными с тултипом-подсказкой
@@ -743,6 +760,23 @@ A 4-step pipeline built into the task panel for deep project concept analysis:
 | **Visionary** | 🔮 | Visionary concept: trends, market needs | Concept filled |
 | **Strategist** | 🎯 | Goal decomposition into task hierarchy | Visionary completed |
 | **Patent Attorney** | 📋 | Patent analysis, prior art search | Strategist completed |
+
+### 🏷️ SPSP Taxonomy
+
+Each strategic plan is classified using 7 categories with **multi-select** support (for interdisciplinary projects). The selected taxonomy is injected into expert system prompts (Visionary, Strategist, Patent Attorney) for domain-accurate responses.
+
+| Category | Subtypes |
+|----------|----------|
+| 🔬 **Science** | Research, Hypothesis Testing, Thesis, Interdisciplinary, Textbook |
+| 💻 **Technology** | Architecture, Infrastructure, ML/AI, Automation |
+| 🎨 **Vibe Coding** | MVP, Prototype, Pet Project, Hackathon |
+| 🏛 **Society** | Education, Politics, Ecology, NGO |
+| 🎯 **Design** | UX/UI, Branding, Product, Industrial |
+| 💼 **Business** | Startup, Scaling, Optimization, Market Entry |
+| ✨ **Creativity** | Literature, Music, Video, Games |
+
+> **Multi-select example**: Project "Hydra Implementation" → 💻 Technology + 🎯 Design → Architecture, Automation, ML/AI, UX/UI.
+> Experts receive context \`SPSP Category: 💻 Technology + 🎯 Design → Architecture, Automation, ML/AI, UX/UI\` in their system prompt.
 
 ### Sequence Validation
 - Each step is locked until the previous one completes

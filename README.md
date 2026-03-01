@@ -72,7 +72,7 @@ Automatic experience consolidation: patterns from `role_memory` are distilled in
 
 **Staff Roles (HR Department)** — Role hierarchy editor, behavioral patterns, model interviews (briefing → tests → verdict), interview history table, Role Knowledge Base (RAG), certification 🛡️, 3-tier Context Pyramid (Global → Org → Expertise)
 
-**Task Management** — Session hub, model configuration via Sheet, task files, session memory (embeddings), tutorial examples with 26 pre-seeded conversations (clone-to-personal), **StrategySyncEngine** (auto-sync approved strategies to task tree, intelligent diff, soft-delete)
+**Task Management** — Session hub, model configuration via Sheet, task files, session memory (embeddings), tutorial examples with 26 pre-seeded conversations (clone-to-personal), **StrategySyncEngine** (auto-sync approved strategies to task tree, intelligent diff, soft-delete), **SPSP Taxonomy** (7-type multi-select classification: 🔬Science, 💻Technology, 🎨Vibe-coding, 🏛Society, 🎯Design, 💼Business, ✨Creativity — each with 4-5 subtypes, injected into expert system prompts)
 
 **Cross-task Memory** — Vector-embedded verdict fixation (`plan_conclusions`, 1536-dim embeddings) for sharing "institutional memory" across subtasks within a strategic plan
 
@@ -252,7 +252,7 @@ A technical audit addressed key bottlenecks:
 | **Interviews** | Interview Pipeline, Arbiter Fallback | 3 phases (Briefing→Tests→Verdict); 3 retries; 45s watchdog; partial result save |
 | **Flow Runtime** | DAG Execution, SSE, Checkpoints | Topological sort + parallelism; default model `gemini-3-flash-preview` |
 | **D-Chat** | Context Isolation, Contest Migration | Per-role C-level briefing; `request_group_id` correlation |
-| **SPSP Pipeline** | Sequential Chain, Auto-Cleanup | Visionary→Strategist→Patent Attorney; `openai/`+`google/` → Lovable AI |
+| **SPSP Pipeline** | Sequential Chain, Auto-Cleanup, Taxonomy | Visionary→Strategist→Patent Attorney; `openai/`+`google/` → Lovable AI; 7-type multi-select taxonomy injected into expert prompts |
 | **Model Statistics** | Aggregation from all sources | Chat + Contests + Interviews → `model_statistics`; sliding `criteria_averages` |
 | **Evolutioner** | Contour A + Contour B | A: ≥2 knowledge updates / model change → `knowledge_drift`/`model_changed`; B: `arbiter_score < 6.0` × 3 in a row → `model_degradation` |
 | **Style** | Design Tokens, Localization | No direct colors; `language === 'ru'` pattern |
