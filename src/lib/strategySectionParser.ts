@@ -286,11 +286,10 @@ function createAspect(title: string, source: ApprovalSection['source']): Approva
 }
 
 function extractTaskTitle(text: string): string {
-  // Take first line as title, truncate if needed
+  // Take first line as title
   const firstLine = text.split('\n')[0];
   // Remove bold markers
-  const clean = firstLine.replace(/\*\*/g, '').trim();
-  return clean.length > 120 ? clean.substring(0, 117) + '...' : clean;
+  return firstLine.replace(/\*\*/g, '').trim();
 }
 
 /**
