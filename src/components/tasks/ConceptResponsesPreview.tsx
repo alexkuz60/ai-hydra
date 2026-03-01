@@ -43,18 +43,20 @@ function CollapsedResponse({ content, contentEn, className, onExpand, accentClas
         )}
         style={{ borderColor: `hsl(var(--${accentClass}))` }}
       >
+        <div className="[&>*:last-child]:mb-0">
         <ReactMarkdown
           components={{
-            p: ({ children }) => <p className="mb-1">{children}</p>,
-            h1: ({ children }) => <span className="font-bold">{children}</span>,
-            h2: ({ children }) => <span className="font-bold">{children}</span>,
-            h3: ({ children }) => <span className="font-semibold">{children}</span>,
-            ul: ({ children }) => <span>{children}</span>,
-            li: ({ children }) => <span>• {children} </span>,
+            p: ({ children }) => <p className="mb-0.5">{children}</p>,
+            h1: ({ children }) => <p className="font-bold mb-0.5">{children}</p>,
+            h2: ({ children }) => <p className="font-bold mb-0.5">{children}</p>,
+            h3: ({ children }) => <p className="font-semibold mb-0.5">{children}</p>,
+            ul: ({ children }) => <ul className="mb-0.5">{children}</ul>,
+            li: ({ children }) => <li className="mb-0">• {children}</li>,
           }}
         >
           {text}
         </ReactMarkdown>
+        </div>
       </div>
       <div className="flex gap-1 mt-1">
         <Button
