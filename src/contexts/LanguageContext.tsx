@@ -857,13 +857,13 @@ const translations: Translations = {
     'concept.patentSearch.needGoal': { ru: 'Заполните описание концепции, чтобы запустить анализ.', en: 'Fill in the concept description to start analysis.' },
 
     // Concept Visionary Call
-    'concept.visionary.title': { ru: 'Видение Визионера', en: 'Visionary Vision' },
+    'concept.visionary.title': { ru: 'Стратегическое видение', en: 'Strategic Vision' },
     'concept.visionary.description': { ru: 'Вызов Визионера для формулировки миссии, видения и стратегической цели проекта — определение «Что» и «Зачем».', en: 'Invoke Visionary to formulate mission, vision, and strategic goal — defining the "What" and "Why".' },
     'concept.visionary.invoke': { ru: 'Запросить Видение', en: 'Request Vision' },
     'concept.visionary.needGoal': { ru: 'Заполните описание концепции для вызова Визионера.', en: 'Fill in the concept description to invoke Visionary.' },
 
     // Concept Strategist Call
-    'concept.strategist.title': { ru: 'Стратегическая структура', en: 'Strategic Structure' },
+    'concept.strategist.title': { ru: 'План реализации', en: 'Implementation Plan' },
     'concept.strategist.description': { ru: 'Вызов Стратега для декомпозиции целей в иерархию аспектов и задач — определение «Как» и «Когда».', en: 'Invoke Strategist to decompose goals into aspects and tasks — defining the "How" and "When".' },
     'concept.strategist.invoke': { ru: 'Запросить Структуру', en: 'Request Structure' },
     'concept.strategist.needGoal': { ru: 'Заполните описание концепции для вызова Стратега.', en: 'Fill in the concept description to invoke Strategist.' },
