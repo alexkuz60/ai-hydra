@@ -33,9 +33,9 @@ const THEMES: Record<PdfTheme, ThemeColors> = {
   dark: {
     bg: '#1a1a2e',
     bgCard: '#16213e',
-    fg: '#f0f0f0',
+    fg: '#fafafa',
     fgStrong: '#ffffff',
-    muted: '#b0b0b0',
+    muted: '#c8c8c8',
     primary: '#00BCD4',
     primaryDark: '#0097A7',
     accent: '#7c3aed',
@@ -50,9 +50,9 @@ const THEMES: Record<PdfTheme, ThemeColors> = {
   light: {
     bg: '#ffffff',
     bgCard: '#f4f6f8',
-    fg: '#1a1a1a',
+    fg: '#0a0a0a',
     fgStrong: '#000000',
-    muted: '#555555',
+    muted: '#3f3f3f',
     primary: '#0097A7',
     primaryDark: '#00796B',
     accent: '#6d28d9',
@@ -129,13 +129,14 @@ function makeStyles(c: ThemeColors) {
     sectionSubtitle: {
       fontSize: 13,
       fontWeight: 500,
-      color: c.fg,
+      color: c.fgStrong,
       marginBottom: 8,
       marginTop: 12,
     },
     bodyText: {
       fontSize: 10,
-      color: c.fg,
+      fontWeight: 500,
+      color: c.fgStrong,
       lineHeight: 1.6,
       marginBottom: 6,
     },
@@ -160,7 +161,8 @@ function makeStyles(c: ThemeColors) {
     },
     cardBody: {
       fontSize: 9,
-      color: c.fg,
+      fontWeight: 500,
+      color: c.fgStrong,
       lineHeight: 1.5,
     },
     progressContainer: {
