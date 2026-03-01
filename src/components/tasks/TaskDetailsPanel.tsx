@@ -6,8 +6,14 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
-import { MessageSquare, Play, Trash2, Pencil, Check, X, Bot, Sparkles, Cpu, Loader2, Save, Lock, Copy, FileText, Target, Zap, StopCircle, Download } from 'lucide-react';
+import { MessageSquare, Play, Trash2, Pencil, Check, X, Bot, Sparkles, Cpu, Loader2, Save, Lock, Copy, FileText, Target, Zap, StopCircle, Download, Sun, Moon } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { TaskFilesPanel } from './TaskFilesPanel';
 import { FileUpload, AttachedFile } from '@/components/warroom/FileUpload';
 import { useTaskFiles } from '@/hooks/useTaskFiles';
@@ -447,16 +453,29 @@ export function TaskDetailsPanel({
                  </Button>
                 )}
                 {isPlanLevel && conceptPlanId && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-9 gap-2 text-primary border-primary/40 hover:bg-primary/10"
-                    onClick={exportSprzPdf}
-                    disabled={pdfGenerating}
-                  >
-                    {pdfGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
-                    PDF
-                   </Button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-9 gap-2 text-primary border-primary/40 hover:bg-primary/10"
+                        disabled={pdfGenerating}
+                      >
+                        {pdfGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+                        PDF
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => exportSprzPdf('dark')}>
+                        <Moon className="h-4 w-4 mr-2" />
+                        {language === 'ru' ? 'Тёмная тема' : 'Dark theme'}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => exportSprzPdf('light')}>
+                        <Sun className="h-4 w-4 mr-2" />
+                        {language === 'ru' ? 'Светлая (для печати)' : 'Light (print)'}
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 )}
                 {task.is_system && onDuplicate && (
                  <Button
