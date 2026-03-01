@@ -38,7 +38,7 @@ function CollapsedResponse({ content, contentEn, className, onExpand, accentClas
     <div className={cn('relative mt-2 group', className)}>
       <div
         className={cn(
-          'text-sm text-muted-foreground whitespace-pre-wrap border-l-2 pl-3 py-1 overflow-hidden transition-all',
+          'text-sm text-muted-foreground whitespace-pre-wrap border-l-2 pl-3 py-1 overflow-hidden transition-all leading-snug',
           !isExpanded && 'line-clamp-5'
         )}
         style={{ borderColor: `hsl(var(--${accentClass}))` }}
