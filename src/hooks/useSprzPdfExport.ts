@@ -72,17 +72,16 @@ export function useSprzPdfExport({ planId, lang }: UseSprzPdfExportOptions) {
           const patentMsg = conceptMsgs.find((m: any) => (m.metadata as any)?.concept_type === 'patent');
           if (visionMsg) visionContent = (isRuLocal ? visionMsg.content : visionMsg.content_en) || visionMsg.content;
           if (patentMsg) patentContent = (isRuLocal ? patentMsg.content : patentMsg.content_en) || patentMsg.content;
-          console.log('[PDF] conceptMsgs count:', conceptMsgs.length, 'vision:', !!visionMsg, 'patent:', !!patentMsg);
         }
       }
 
       // Build sections from metadata
-      const approvalSections = (meta.approvalSections || []).map((s: any) => ({
-        title: s.title || '',
-        body: s.body || '',
-        status: s.status || 'pending',
-        source: s.source || 'strategist',
-        children: (s.children || []).map((c: any) => ({
+      const approvalSections = (meta.approvalSections || []).map((sec: any) => ({
+        title: sec.title || '',
+        body: sec.body || '',
+        status: sec.status || 'pending',
+        source: sec.source || 'strategist',
+        children: (sec.children || []).map((c: any) => ({
           title: c.title || '',
           body: c.body || '',
           status: c.status || 'pending',
