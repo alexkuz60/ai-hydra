@@ -3,15 +3,16 @@ import { pdf } from '@react-pdf/renderer';
 import React from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { SprzPdfDocument, type SprzPdfData } from '@/lib/sprzPdfTemplate';
+import { SprzPdfDocument, type SprzPdfData, type PdfTheme } from '@/lib/sprzPdfTemplate';
 import { normalizeTypeIds } from '@/lib/sprzTaxonomy';
 
 interface UseSprzPdfExportOptions {
   planId: string;
   lang: 'ru' | 'en';
+  theme?: PdfTheme;
 }
 
-export function useSprzPdfExport({ planId, lang }: UseSprzPdfExportOptions) {
+export function useSprzPdfExport({ planId, lang, theme = 'dark' }: UseSprzPdfExportOptions) {
   const [generating, setGenerating] = useState(false);
 
   const exportPdf = useCallback(async () => {
@@ -68,6 +69,7 @@ export function useSprzPdfExport({ planId, lang }: UseSprzPdfExportOptions) {
         subtypeIds: Array.isArray(meta.sprzSubtype) ? meta.sprzSubtype : [],
         createdAt: plan.created_at,
         lang,
+        theme,
         approvalSections,
         sessions: (sessions || []).map(s => ({
           title: (isRu ? s.title : s.title_en) || s.title,
@@ -101,7 +103,7 @@ export function useSprzPdfExport({ planId, lang }: UseSprzPdfExportOptions) {
     } finally {
       setGenerating(false);
     }
-  }, [planId, lang, generating]);
+  }, [planId, lang, theme, generating]);
 
   return { exportPdf, generating };
 }
