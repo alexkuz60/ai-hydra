@@ -8,6 +8,7 @@ import {
   Font,
 } from '@react-pdf/renderer';
 import { SPRZ_TAXONOMY } from './sprzTaxonomy';
+import { renderMarkdownForPdf } from './pdfMarkdownRenderer';
 
 // Register Roboto with weight variants for Cyrillic
 Font.register({
@@ -356,6 +357,8 @@ export function SprzPdfDocument({ data }: { data: SprzPdfData }) {
   const s = makeStyles(c);
   const isRu = data.lang === 'ru';
 
+  const mdColors = { fg: theme === 'dark' ? '#ffffff' : '#000000', muted: c.muted, primary: c.primary, accent: c.accent };
+
   const typeLabels = data.typeIds
     .map(id => SPRZ_TAXONOMY.find(t => t.id === id))
     .filter(Boolean)
@@ -366,6 +369,15 @@ export function SprzPdfDocument({ data }: { data: SprzPdfData }) {
     year: 'numeric', month: 'long', day: 'numeric',
   });
 
+  // Build TOC entries
+  const tocEntries: string[] = [];
+  tocEntries.push(isRu ? 'Цель и прогресс' : 'Goal & Progress');
+  if (data.visionContent) tocEntries.push(isRu ? 'Стратегическое видение' : 'Strategic Vision');
+  if (data.approvalSections && data.approvalSections.length > 0) tocEntries.push(isRu ? 'План реализации' : 'Implementation Plan');
+  if (data.patentContent) tocEntries.push(isRu ? 'Патентный прогноз' : 'Patent Forecast');
+  if (data.sessions && data.sessions.length > 0) tocEntries.push(isRu ? 'Этапы работы' : 'Work Stages');
+  if (data.conclusions && data.conclusions.length > 0) tocEntries.push(isRu ? 'Ключевые выводы' : 'Key Conclusions');
+
   return (
     <Document>
       {/* Cover */}
@@ -374,6 +386,18 @@ export function SprzPdfDocument({ data }: { data: SprzPdfData }) {
         <Text style={s.coverTitle}>{data.title}</Text>
         {data.goal && <Text style={s.coverSubtitle}>{data.goal}</Text>}
         <Text style={s.coverDate}>{dateStr}</Text>
+      </Page>
+
+      {/* Table of Contents */}
+      <Page size="A4" orientation="landscape" style={s.page}>
+        <Text style={s.sectionTitle}>{isRu ? 'Содержание' : 'Table of Contents'}</Text>
+        {tocEntries.map((entry, i) => (
+          <View key={i} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: c.trackBg }}>
+            <Text style={{ fontSize: 14, fontWeight: 'bold', color: c.primary, width: 28 }}>{i + 1}.</Text>
+            <Text style={{ fontSize: 13, fontWeight: 'bold', color: c.fgStrong }}>{entry}</Text>
+          </View>
+        ))}
+        <Footer s={s} />
       </Page>
 
       {/* Goal + Progress + Taxonomy */}
@@ -407,9 +431,7 @@ export function SprzPdfDocument({ data }: { data: SprzPdfData }) {
         <Page size="A4" orientation="landscape" style={s.page} wrap>
           <Text style={s.sectionTitle}>{isRu ? 'Стратегическое видение' : 'Strategic Vision'}</Text>
           <View style={s.card}>
-            <Text style={[s.cardBody, { color: theme === 'dark' ? '#ffffff' : '#000000' }]}>
-              {data.visionContent.slice(0, 1500)}{data.visionContent.length > 1500 ? '...' : ''}
-            </Text>
+            {renderMarkdownForPdf(data.visionContent, mdColors)}
           </View>
           <Footer s={s} />
         </Page>
@@ -457,9 +479,7 @@ export function SprzPdfDocument({ data }: { data: SprzPdfData }) {
         <Page size="A4" orientation="landscape" style={s.page} wrap>
           <Text style={s.sectionTitle}>{isRu ? 'Патентный прогноз' : 'Patent Forecast'}</Text>
           <View style={s.card}>
-            <Text style={[s.cardBody, { color: theme === 'dark' ? '#ffffff' : '#000000' }]}>
-              {data.patentContent.slice(0, 1500)}{data.patentContent.length > 1500 ? '...' : ''}
-            </Text>
+            {renderMarkdownForPdf(data.patentContent, mdColors)}
           </View>
           <Footer s={s} />
         </Page>
